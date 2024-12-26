@@ -22,6 +22,7 @@ import importlib
 import io
 
 import urllib.request
+import urllib.error
 
 class M3uToFreeboxApplication:
     """ Application """
@@ -39,11 +40,33 @@ class M3uToFreeboxApplication:
         logger_config.print_and_log_info(f'File to download size {url_open.length}')
         logger_config.print_and_log_info(f"File to download meta content length {meta.get('Content-Length')}")
 
-            
+        try:    
+            urlretrieve_result = urllib.request.urlretrieve(m3u_entry.link, file_destination_full_path)
+        except urllib.error.URLError as e:
+            print(e)
+            #logger_config.print_and_log_info(e.)
+            pass
+        except urllib.error.HTTPError as e:
+            print(e)
+            #logger_config.print_and_log_info(e)
+            pass
+        except urllib.error.ContentTooShortError as e:
+            print(e)
+            #logger_config.print_and_log_info(e)
+            pass
+        except OSError as e:
+            print(e)
+            #logger_config.print_and_log_info(e)
+            pass
+        except Exception as e:
+            print(e)
+            #logger_config.print_and_log_info(e)
+            pass
+        logger_config.print_and_log_info(f"Download ended. urlretrieve_result {urlretrieve_result}")
+
+        #self.download_tqdm(m3u_entry.link, file_destination_full_path)
 
 
-        urllib.request.urlretrieve(m3u_entry.link, file_destination_full_path)
-        self.download_tqdm(m3u_entry.link, file_destination_full_path)
 
     def download_urllib_request_with_progress(self, url: str, filename: str):
         with urllib.request.urlopen(url) as Response:
