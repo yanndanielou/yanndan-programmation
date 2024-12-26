@@ -32,6 +32,19 @@ class M3uToFreeboxApplication:
 
         self._main_view:main_view.M3uToFreeboxMainView = main_view
 
+    def download_file_blocking_without_progress(self, file_destination_full_path:str, m3u_entry:m3u.M3uEntry, filename: str):
+        logger_config.print_and_log_info("Start download of " + file_destination_full_path)
+        url_open = urllib.request.urlopen(m3u_entry.link)
+        meta = url_open.info()
+        logger_config.print_and_log_info(f'File to download size {url_open.length}')
+        logger_config.print_and_log_info(f"File to download meta content length {meta.get('Content-Length')}")
+
+            
+
+
+        #urllib.request.urlretrieve(m3u_entry.link, file_destination_full_path)
+        #self.download_tqdm(m3u_entry.link, file_destination_full_path)
+
     def download_urllib_request_with_progress(self, url: str, filename: str):
         with urllib.request.urlopen(url) as Response:
             Length = Response.getheader('content-length')
@@ -87,21 +100,14 @@ class M3uToFreeboxApplication:
         m3u_entry_id_int = int(m3u_entry_id)
         self.download_movie_file_by_id(destination_directory, m3u_entry_id_int)
 
+
+
+
     def download_movie_file_by_id(self, destination_directory:str, m3u_entry_id:int):
         m3u_entry = self.m3u_library.get_m3u_entry_by_id(m3u_entry_id)
         if m3u_entry.can_be_downloaded():
             file_destination_full_path = destination_directory + "\\" + m3u_entry.title_as_valid_file_name + m3u_entry.file_extension
-            logger_config.print_and_log_info("Start download of " + file_destination_full_path)
-            url_open = urllib.request.urlopen(m3u_entry.link)
-            meta = url_open.info()
-            logger_config.print_and_log_info(f'File to download size {url_open.length}')
-            logger_config.print_and_log_info(f"File to download meta content length {meta.get('Content-Length')}")
 
-             
-
-
-            #urllib.request.urlretrieve(m3u_entry.link, file_destination_full_path)
-            #self.download_tqdm(m3u_entry.link, file_destination_full_path)
             with open(file_destination_full_path, 'wb') as f:
                 # Get Response From URL
                 response = requests.get(m3u_entry.link, stream=True)
@@ -110,7 +116,10 @@ class M3uToFreeboxApplication:
                 logger_config.print_and_log_info(f'total_length: {total_length}')
                 # Number Of Iterations To Write To The File
                 self.download_urllib_request_with_progress(m3u_entry.link, file_destination_full_path)
-                chunk_size = 4096
+                #chunk_size = 4096
+
+                self.download_file_blocking_without_progress(file_destination_full_path,m3u_entry,file_destination_full_path)
+
             logger_config.print_and_log_info("Download ended")
 
         else:
