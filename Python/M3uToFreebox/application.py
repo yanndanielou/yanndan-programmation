@@ -42,8 +42,8 @@ class M3uToFreeboxApplication:
             
 
 
-        #urllib.request.urlretrieve(m3u_entry.link, file_destination_full_path)
-        #self.download_tqdm(m3u_entry.link, file_destination_full_path)
+        urllib.request.urlretrieve(m3u_entry.link, file_destination_full_path)
+        self.download_tqdm(m3u_entry.link, file_destination_full_path)
 
     def download_urllib_request_with_progress(self, url: str, filename: str):
         with urllib.request.urlopen(url) as Response:
@@ -115,7 +115,7 @@ class M3uToFreeboxApplication:
                 total_length = response.headers.get('content-length')
                 logger_config.print_and_log_info(f'total_length: {total_length}')
                 # Number Of Iterations To Write To The File
-                self.download_urllib_request_with_progress(m3u_entry.link, file_destination_full_path)
+                #self.download_urllib_request_with_progress(m3u_entry.link, file_destination_full_path)
                 #chunk_size = 4096
 
                 self.download_file_blocking_without_progress(file_destination_full_path,m3u_entry,file_destination_full_path)
