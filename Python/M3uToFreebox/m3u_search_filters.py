@@ -132,13 +132,13 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
         if self._filter_text != filter_text:
             self._filter_text = filter_text
             self._filter_text_language = language_utils.get_full_language_name(language_utils.detect_language_with_langid(filter_text))
-            self._filter_text_words = tokenization_string.tokenize_text_with_nltk_word_tokenize(filter_text, self._filter_text_language)
+            self._filter_text_words = tokenization_string.tokenize_text_with_nltk_regexp_tokenizer(filter_text)
 
 
     def match_m3u(self, m3u_entry:M3uEntry, filter_text):
         
         if not self._whole_words:
-            filter_text_words = tokenization_string.tokenize_text_with_nltk_word_tokenize(filter_text)
+            filter_text_words = tokenization_string.tokenize_text_with_nltk_regexp_tokenizer(filter_text)
             for filter_word in filter_text_words:
                 title_contains_exactly_word = TitleContainsExactlyFilter(self.case_sensitive, self.label + filter_word)
                 if not title_contains_exactly_word.match_m3u(m3u_entry, filter_word):
@@ -153,7 +153,7 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
 
             self.recompute_filter_text_words_and_language(filter_text)
 
-            self._m3u_entry_original_words = tokenization_string.tokenize_text_with_nltk_word_tokenize(m3u_entry_original_raw_title, self._filter_text_language)
+            self._m3u_entry_original_words = tokenization_string.tokenize_text_with_nltk_regexp_tokenizer(m3u_entry_original_raw_title)
 
             return list_utils.are_all_elements_of_list_included_in_list(self._filter_text_words, self._m3u_entry_original_words)
 

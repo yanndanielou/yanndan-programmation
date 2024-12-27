@@ -22,7 +22,8 @@ class TestM3uSearchFilter(Dependencies.Common.unit_tests_helpers.TestCaseBase):
         maman_jai_rate_lavion_m3u_entry = m3u.M3uEntry(m3u_entry_string_definition)
 
 
-        self.contains_all_worlds_case_sensitive = TitleContainsAllWordsFilter(True, True, "TitleContainsAllWordsFilter_whole_word_case_sensitive")
+        self.contains_all_worlds_case_sensitive = TitleContainsAllWordsFilter(False, True, "TitleContainsAllWordsFilter_whole_word_case_sensitive")
+        #self.assertTrue(self.contains_all_worlds_case_sensitive.match_m3u(maman_jai_rate_lavion_m3u_entry, "Maman l'avion"))
         self.assertTrue(self.contains_all_worlds_case_sensitive.match_m3u(maman_jai_rate_lavion_m3u_entry, "Maman avion"))
         self.assertTrue(self.contains_all_worlds_case_sensitive.match_m3u(maman_jai_rate_lavion_m3u_entry, "Mama avio"))
 

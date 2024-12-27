@@ -12,3 +12,9 @@ class TestCaseBase(unittest.TestCase):
     def assertNotEmpty(self, obj):
         self.assertTrue(obj)
             
+    def assertListContains(self,obj:list, element):
+        self.assertTrue(element in obj)
+        
+    def assertListDoesNotContains(self,obj:list, element):
+        self.assertFalse(element in obj)
+
