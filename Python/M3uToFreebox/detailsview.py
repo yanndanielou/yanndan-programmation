@@ -25,6 +25,9 @@ import tkinter
 #from main import main
 import importlib
 
+import time
+
+
 from m3u_search_filters import M3uEntryByTitleFilter, TitleContainsExactlyFilter, M3uFiltersManager
 
 
@@ -349,7 +352,10 @@ class DetailsViewTab(ttk.Frame):
 
     def fill_m3u_entries(self):
         """ fill_m3u_entries """
+        fill_m3u_entries_start_time = time.time()
+        logger_config.print_and_log_info("fill_m3u_entries: begin")
         self._reset_list()
+        logger_config.print_and_log_info(f"fill_m3u_entries: list reset. Elapsed:{date_time_formats.format_duration_to_string(time.time() - fill_m3u_entries_start_time)}" )
         m3u_entry_number = 0
         
         selected_filter_name = self._title_filter_option_var.get()
@@ -378,10 +384,10 @@ class DetailsViewTab(ttk.Frame):
 
             self._tree_view.insert("",'end', iid=m3u_entry.id, values=tree_view_entry_values)
 
-            if m3u_entry_number % 10000 == 0:
+            if m3u_entry_number % 50000 == 0:
                 logger_config.print_and_log_info(str(m3u_entry_number) + " entries filled (in progress)")
         
-        logger_config.print_and_log_info(str(m3u_entry_number) + " entries filled (end)")
+        logger_config.print_and_log_info(f"fill_m3u_entries: list ended. {m3u_entry_number} entries filled. Elapsed:{date_time_formats.format_duration_to_string(time.time() - fill_m3u_entries_start_time)}")
         
     def selection(self):
         print(self.tree_view_context_menu.selection)
