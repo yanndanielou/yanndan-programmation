@@ -16,18 +16,18 @@ from m3u import M3uEntry
 class M3uFiltersManager(metaclass=Singleton):
     """ Manager of m3u filters"""
     def __init__(self):
-        self._filters : list[M3uEntryByTitleFilter] = []
-        self._filters.append(TitleContainsExactlyFilter(True, "Contains Exactly (case sensitive)"))
-        self._filters.append(TitleContainsExactlyFilter(False, "Contains Exactly (case NOT sensitive)")) 
+        self._by_title_filters : list[M3uEntryByTitleFilter] = []
+        self._by_title_filters.append(TitleContainsExactlyFilter(True, "Contains Exactly (case sensitive)"))
+        self._by_title_filters.append(TitleContainsExactlyFilter(False, "Contains Exactly (case NOT sensitive)")) 
 
     @property
     def filters(self):
         """ Getter filters """
-        return self._filters
+        return self._by_title_filters
 
     @filters.setter
     def filters(self, value):
-        self._filters = value
+        self._by_title_filters = value
 
 
 class M3uEntryByTitleFilter:
