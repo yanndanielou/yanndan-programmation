@@ -44,7 +44,7 @@ class M3uToFreeboxApplication:
             urlretrieve_result = urllib.request.urlretrieve(m3u_entry.link, file_destination_full_path)
         except urllib.error.URLError as e:
             print(e)
-            #logger_config.print_and_log_info(e.)
+            #logger_config.print_and_log_info(e)
             pass
         except urllib.error.HTTPError as e:
             print(e)

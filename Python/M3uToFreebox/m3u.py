@@ -14,7 +14,9 @@ import Dependencies.Common.Constants
 
 from enum import Enum
 
-#from m3u_search_filters import M3uEntryByTitleFilter
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from m3u_search_filters import M3uEntryByTitleFilter, M3uEntryByTypeFilter
 
 MRU_FIRST_LINE = "#EXTM3U"
 M3U_ENTRY_FIRST_LINE_BEGIN = "#EXTINF"
@@ -262,7 +264,7 @@ class M3uEntriesLibrary:
         logger_config.logging.debug("M3u entry for id:" + str(m3u_entry_id) + " : " + str (m3u_entry))
         return m3u_entry
         
-    def get_m3u_entries_with_filter(self, typed_text: str, selected_filter) -> list[M3uEntry]:
+    def get_m3u_entries_with_filter(self, typed_text: str, selected_title_filter:'M3uEntryByTitleFilter', selected_type_filter:'M3uEntryByTypeFilter') -> list[M3uEntry]:
         """ filter list of m3u """
         ret: list[M3uEntry] = []
         
@@ -270,7 +272,7 @@ class M3uEntriesLibrary:
             return self._m3u_entries
         
         for m3u_entry in self._m3u_entries:
-            if selected_filter.match_m3u(m3u_entry, typed_text):
+            if selected_type_filter.match_m3u(m3u_entry) and selected_title_filter.match_m3u(m3u_entry, typed_text):
                 ret.append(m3u_entry)
         
         logger_config.print_and_log_info("Number of entries with typed text:" + typed_text + ": " + str(len(ret)))

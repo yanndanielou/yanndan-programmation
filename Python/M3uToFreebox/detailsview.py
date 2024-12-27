@@ -28,7 +28,7 @@ import importlib
 import time
 
 
-from m3u_search_filters import M3uEntryByTitleFilter, TitleContainsExactlyFilter, M3uFiltersManager
+from m3u_search_filters import M3uEntryByTitleFilter, M3uEntryByTypeFilter, TitleContainsExactlyFilter, M3uFiltersManager
 
 
 
@@ -59,12 +59,10 @@ class DetailsViewTab(ttk.Frame):
         import main_view
         self._parent:main_view.M3uToFreeboxMainView = parent
         
-        self._by_title_filters:list[M3uEntryByTitleFilter] = M3uFiltersManager().filters
+        self._by_title_filters:list[M3uEntryByTitleFilter] = M3uFiltersManager().by_title_filters
 
-        self._by_type_filters:list[m3u.M3uEntry.EntryType] = [None] + [e.value for e in m3u.M3uEntry.EntryType]
-        
-        [True, False, None]
-
+        self._by_type_filters:list[M3uEntryByTypeFilter] = M3uFiltersManager().by_type_filters
+    
         self._create_view()
         self._create_context_menu()
         
@@ -112,7 +110,8 @@ class DetailsViewTab(ttk.Frame):
         self._type_filter_option_description_label.grid(row= 0, column=3, padx=20, pady=10)
 
         # Title filter
-        type_filters_texts = [str(o) for o in self._by_type_filters]
+        type_filters_texts = [o.label for o in self._by_type_filters]
+
         # set up variable
         self._type_filter_option_var = tkinter.StringVar(self)
         # option menu
@@ -349,6 +348,16 @@ class DetailsViewTab(ttk.Frame):
         self._tree_view.delete(* self._tree_view.get_children())
 
 
+    def __get_selected_title_filter(self):
+        selected_title_filter_name = self._title_filter_option_var.get()
+        selected_title_filter = [filter for filter in self._by_title_filters if filter.label == selected_title_filter_name][0]
+        return selected_title_filter
+
+    def __get_selected_type_filter(self):
+        selected_type_filter_name = self._type_filter_option_var.get()
+        selected_type_filter = [filter for filter in self._by_type_filters if filter.label == selected_type_filter_name][0]
+        return selected_type_filter
+        
 
     def fill_m3u_entries(self):
         """ fill_m3u_entries """
@@ -358,11 +367,12 @@ class DetailsViewTab(ttk.Frame):
         logger_config.print_and_log_info(f"fill_m3u_entries: list reset. Elapsed:{date_time_formats.format_duration_to_string(time.time() - fill_m3u_entries_start_time)}" )
         m3u_entry_number = 0
         
-        selected_filter_name = self._title_filter_option_var.get()
-        
-        selected_filter = [filter for filter in self._by_title_filters if filter.label == selected_filter_name][0]
-        
-        for m3u_entry in self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entries_with_filter(self._filter_input_text.get(), selected_filter):
+        selected_title_filter = self.__get_selected_title_filter()
+        selected_type_filter = self.__get_selected_type_filter()
+
+
+
+        for m3u_entry in self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entries_with_filter(self._filter_input_text.get(), selected_title_filter, selected_type_filter):
             m3u_entry_number = m3u_entry_number + 1
             tree_view_entry_values = [m3u_entry.id,m3u_entry.cleaned_title,m3u_entry.original_raw_title,m3u_entry.title_as_valid_file_name, m3u_entry.group_title, m3u_entry._type.value]
             if param.DISPLAY_FILES_SIZE and m3u_entry.can_be_downloaded():

@@ -11,6 +11,21 @@ import Dependencies.Logger.logger_config as logger_config
 from Dependencies.Common.singleton import Singleton
 
 from m3u import M3uEntry
+import m3u
+
+
+class M3uEntryFilter:
+    """ base class """
+    def __init__(self, label:str):
+        self._label:str = label
+
+    @property
+    def label(self):
+        return self._label
+
+    @label.setter
+    def label(self, value):
+        self._label = value
 
 
 class M3uFiltersManager(metaclass=Singleton):
@@ -20,22 +35,49 @@ class M3uFiltersManager(metaclass=Singleton):
         self._by_title_filters.append(TitleContainsExactlyFilter(True, "Contains Exactly (case sensitive)"))
         self._by_title_filters.append(TitleContainsExactlyFilter(False, "Contains Exactly (case NOT sensitive)")) 
 
+        self._by_type_filters : list[M3uEntryByTypeFilter] = []
+        self._by_type_filters.append(M3uEntryByTypeFilter(None))
+        for e in M3uEntry.EntryType:
+            self._by_type_filters.append(M3uEntryByTypeFilter(e))
+        
+
     @property
-    def filters(self):
+    def by_title_filters(self):
         """ Getter filters """
         return self._by_title_filters
 
-    @filters.setter
-    def filters(self, value):
+    @by_title_filters.setter
+    def by_title_filters(self, value):
         self._by_title_filters = value
 
+        
+    @property
+    def by_type_filters(self):
+        """ Getter filters """
+        return self._by_type_filters
 
-class M3uEntryByTitleFilter:
+    @by_type_filters.setter
+    def by_type_filters(self, value):
+        self._by_type_filters = value
+
+
+class M3uEntryByTypeFilter(M3uEntryFilter):
+    def __init__(self, entry_type = M3uEntry.EntryType):
+        super().__init__("Any" if entry_type is None else str(entry_type.value))
+        self._entry_type:M3uEntry = entry_type
+
+    def match_m3u(self, m3u_entry:M3uEntry):
+        if self._entry_type is None:
+            return True
+        return self._entry_type == m3u_entry.type
+    
+
+class M3uEntryByTitleFilter(M3uEntryFilter):
     """ base class """
     def __init__(self, case_sensitive:bool, label:str):
+        super().__init__(label)
         self._case_sensitive:bool = case_sensitive
-        self._label:str = label
-
+    
     @property
     def case_sensitive(self):
         return self._case_sensitive
@@ -43,14 +85,6 @@ class M3uEntryByTitleFilter:
     @case_sensitive.setter
     def case_sensitive(self, value):
         self._case_sensitive = value
-
-    @property
-    def label(self):
-        return self._label
-
-    @label.setter
-    def label(self, value):
-        self._label = value
 
       
     @abstractmethod
