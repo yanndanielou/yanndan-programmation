@@ -65,6 +65,8 @@ class DetailsViewTab(ttk.Frame):
     
         self._create_view()
         self._create_context_menu()
+
+        self._title_filter_text_content:str = None
         
         #self._organize_widgets()
 
@@ -313,8 +315,11 @@ class DetailsViewTab(ttk.Frame):
         pass
 
     def filter_updated(self, *args):
-        filter_text = self._filter_input_text.get()
-        self.fill_m3u_entries()
+        if self._title_filter_text_content != self._filter_input_text.get():
+            self._title_filter_text_content = self._filter_input_text.get()
+            self.fill_m3u_entries()
+        else:
+            logger_config.print_and_log_info(f"Title filter text content not changed. Still:{self._title_filter_text_content}")
 
 
     def treeview_sort_column(self, tv, col, reverse):
