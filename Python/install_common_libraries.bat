@@ -1,6 +1,9 @@
 @CALL SET_PYTHON_HOME.bat
 
 
+@call :INSTALL_PYTHON_LIB langdetect
+@call :INSTALL_PYTHON_LIB Langid
+@call :INSTALL_PYTHON_LIB py3langid
 @call :INSTALL_PYTHON_LIB nltk
 @call :INSTALL_PYTHON_LIB requests
 @call :INSTALL_PYTHON_LIB tqdm
