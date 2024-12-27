@@ -34,6 +34,8 @@ class M3uFiltersManager(metaclass=Singleton):
         self._by_title_filters : list[M3uEntryByTitleFilter] = []
         self._by_title_filters.append(TitleContainsExactlyFilter(True, "Contains Exactly (case sensitive)"))
         self._by_title_filters.append(TitleContainsExactlyFilter(False, "Contains Exactly (case NOT sensitive)")) 
+        self._by_title_filters.append(TitleContainsExactlyFilter(True, "Contains all words (case sensitive)"))
+        self._by_title_filters.append(TitleContainsExactlyFilter(False, "Contains all words (case NOT sensitive)")) 
 
         self._by_type_filters : list[M3uEntryByTypeFilter] = []
         self._by_type_filters.append(M3uEntryByTypeFilter(None))
@@ -106,3 +108,20 @@ class TitleContainsExactlyFilter(M3uEntryByTitleFilter):
         
 
     
+
+class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
+    """ TitleContainsExactlyFilter """
+    def __init__(self, whole_words, case_sensitive, label):
+        super().__init__(case_sensitive, label)
+        self._whole_words = whole_words
+    
+    def match_m3u(self, m3u_entry, filter_text):
+        if self._case_sensitive:
+            return filter_text in m3u_entry.original_raw_title
+        
+        
+
+
+        return filter_text.lower() in m3u_entry.original_raw_title.lower()
+        
+
