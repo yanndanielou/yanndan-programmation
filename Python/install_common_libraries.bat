@@ -1,6 +1,7 @@
 @CALL SET_PYTHON_HOME.bat
 
 
+@call :INSTALL_PYTHON_LIB nltk
 @call :INSTALL_PYTHON_LIB requests
 @call :INSTALL_PYTHON_LIB tqdm
 @call %PYTHON_HOME%\python.exe -m pip install --upgrade nltk
