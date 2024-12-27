@@ -18,7 +18,7 @@ import tkinter
 
 import param
 
-
+import m3u
 
 import tkinter
 #import detailspopup
@@ -56,7 +56,11 @@ class DetailsViewTab(ttk.Frame):
         import main_view
         self._parent:main_view.M3uToFreeboxMainView = parent
         
-        self._filters:list[M3uEntryByTitleFilter] = M3uFiltersManager().filters
+        self._by_title_filters:list[M3uEntryByTitleFilter] = M3uFiltersManager().filters
+
+        self._by_type_filters:list[m3u.M3uEntry.EntryType] = [None] + [e.value for e in m3u.M3uEntry.EntryType]
+        
+        [True, False, None]
 
         self._create_view()
         self._create_context_menu()
@@ -73,32 +77,50 @@ class DetailsViewTab(ttk.Frame):
         self._filter_input_text.bind("<KeyRelease>", self.filter_updated)
         self._filter_input_text.grid(row= 0, column=0, padx=20, pady=10)
         
-        
-        
         # padding for widgets using the grid layout
         paddings = {'padx': 5, 'pady': 5}
-        
-        
-        # output label
-        self.filter_option_description_label = ttk.Label(self._filter_frame, foreground='black')
-        self.filter_option_description_label['text'] = f'Type of filter:'
-        self.filter_option_description_label.grid(row= 0, column=1, padx=20, pady=10)
+        self._create_title_filter()
+        self._create_type_filter()
 
+    def _create_title_filter(self):
+        # Filter label
+        self._title_filter_option_description_label = ttk.Label(self._filter_frame, foreground='black')
+        self._title_filter_option_description_label['text'] = f'Type of title filter:'
+        self._title_filter_option_description_label.grid(row= 0, column=1, padx=20, pady=10)
 
-        filters_texts = [o.label for o in self._filters]
-
+        # Title filter
+        title_filters_texts = [o.label for o in self._by_title_filters]
         # set up variable
-        self.option_var = tkinter.StringVar(self)
+        self._title_filter_option_var = tkinter.StringVar(self)
         # option menu
-        self._filter_option_menu = ttk.OptionMenu(
+        self._title_filter_option_menu = ttk.OptionMenu(
             self._filter_frame,
-            self.option_var,
-            filters_texts[0],
-            *filters_texts,
-            command=self.filter_option_changed)
+            self._title_filter_option_var,
+            title_filters_texts[0],
+            *title_filters_texts,
+            command=self.title_filter_option_changed)        
+        self._title_filter_option_menu.grid(row= 0, column=2, padx=5, pady=10)
+
+
+    def _create_type_filter(self):
+        # Filter label
+        self._type_filter_option_description_label = ttk.Label(self._filter_frame, foreground='black')
+        self._type_filter_option_description_label['text'] = f'Type of m3u:'
+        self._type_filter_option_description_label.grid(row= 0, column=3, padx=20, pady=10)
+
+        # Title filter
+        type_filters_texts = [str(o) for o in self._by_type_filters]
+        # set up variable
+        self._type_filter_option_var = tkinter.StringVar(self)
+        # option menu
+        self._type_filter_option_menu = ttk.OptionMenu(
+            self._filter_frame,
+            self._type_filter_option_var,
+            type_filters_texts[0],
+            *type_filters_texts,
+            command=self.type_filter_option_changed)        
+        self._type_filter_option_menu.grid(row= 0, column=4, padx=5, pady=10)
         
-        
-        self._filter_option_menu.grid(row= 0, column=2, padx=5, pady=10)
 
     def _create_tree_view_frame(self):
         self._tree_view_frame = tkinter.Frame(self)
@@ -151,8 +173,13 @@ class DetailsViewTab(ttk.Frame):
         
 
         
-    def filter_option_changed(self, *args):
-        logger_config.print_and_log_info(f'You selected: {self.option_var.get()}')
+    def type_filter_option_changed(self, *args):
+        logger_config.print_and_log_info(f'You selected: {self._type_filter_option_var.get()}')
+        self.fill_m3u_entries()
+
+        
+    def title_filter_option_changed(self, *args):
+        logger_config.print_and_log_info(f'You selected: {self._title_filter_option_var.get()}')
         self.fill_m3u_entries()
 
         
@@ -325,9 +352,9 @@ class DetailsViewTab(ttk.Frame):
         self._reset_list()
         m3u_entry_number = 0
         
-        selected_filter_name = self.option_var.get()
+        selected_filter_name = self._title_filter_option_var.get()
         
-        selected_filter = [filter for filter in self._filters if filter.label == selected_filter_name][0]
+        selected_filter = [filter for filter in self._by_title_filters if filter.label == selected_filter_name][0]
         
         for m3u_entry in self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entries_with_filter(self._filter_input_text.get(), selected_filter):
             m3u_entry_number = m3u_entry_number + 1
