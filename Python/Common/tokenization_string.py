@@ -4,10 +4,13 @@
 
 import nltk
 
-def tokenize_text_with_nltk_word_tokenize(self, text_to_tokenize:str):
+nltk.download('punkt')
+nltk.download('punkt_tab')
+
+def tokenize_text_with_nltk_word_tokenize(text_to_tokenize:str):
     tokens = nltk.word_tokenize(text_to_tokenize)
     return tokens
 
-def tokenize_text_with_nltk_sent_tokenize(self, text_to_tokenize:str):
+def tokenize_text_with_nltk_sent_tokenize(text_to_tokenize:str):
     tokens = nltk.sent_tokenize(text_to_tokenize)
     return tokens
