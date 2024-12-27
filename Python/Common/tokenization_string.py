@@ -7,10 +7,11 @@ import nltk
 nltk.download('punkt')
 nltk.download('punkt_tab')
 
-def tokenize_text_with_nltk_word_tokenize(text_to_tokenize:str):
-    tokens = nltk.word_tokenize(text_to_tokenize)
+
+def tokenize_text_with_nltk_word_tokenize(text_to_tokenize:str, language="english"):
+    tokens = nltk.word_tokenize(text_to_tokenize, language)
     return tokens
 
-def tokenize_text_with_nltk_sent_tokenize(text_to_tokenize:str):
-    tokens = nltk.sent_tokenize(text_to_tokenize)
+def tokenize_text_with_nltk_sent_tokenize(text_to_tokenize:str, language="english"):
+    tokens = nltk.sent_tokenize(text_to_tokenize, language)
     return tokens
