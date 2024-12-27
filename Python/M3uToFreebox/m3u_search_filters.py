@@ -10,6 +10,9 @@ import Dependencies.Logger.logger_config as logger_config
 
 from Dependencies.Common.singleton import Singleton
 
+
+import Dependencies.Common.tokenization_string as tokenization_string
+
 from m3u import M3uEntry
 import m3u
 
@@ -34,8 +37,8 @@ class M3uFiltersManager(metaclass=Singleton):
         self._by_title_filters : list[M3uEntryByTitleFilter] = []
         self._by_title_filters.append(TitleContainsExactlyFilter(True, "Contains Exactly (case sensitive)"))
         self._by_title_filters.append(TitleContainsExactlyFilter(False, "Contains Exactly (case NOT sensitive)")) 
-        self._by_title_filters.append(TitleContainsExactlyFilter(True, "Contains all words (case sensitive)"))
-        self._by_title_filters.append(TitleContainsExactlyFilter(False, "Contains all words (case NOT sensitive)")) 
+        self._by_title_filters.append(TitleContainsAllWordsFilter(True, "Contains all words (case sensitive)"))
+        self._by_title_filters.append(TitleContainsAllWordsFilter(False, "Contains all words (case NOT sensitive)")) 
 
         self._by_type_filters : list[M3uEntryByTypeFilter] = []
         self._by_type_filters.append(M3uEntryByTypeFilter(None))
@@ -111,17 +114,19 @@ class TitleContainsExactlyFilter(M3uEntryByTitleFilter):
 
 class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
     """ TitleContainsExactlyFilter """
-    def __init__(self, whole_words, case_sensitive, label):
+    def __init__(self, case_sensitive, label):
         super().__init__(case_sensitive, label)
-        self._whole_words = whole_words
+        #self._whole_words = whole_words
     
     def match_m3u(self, m3u_entry, filter_text):
         if self._case_sensitive:
             return filter_text in m3u_entry.original_raw_title
         
-        
-
-
-        return filter_text.lower() in m3u_entry.original_raw_title.lower()
-        
+        filter_words = tokenization_string.tokenize_text_with_nltk_word_tokenize(filter_text)
+        for filter_word in filter_words:
+            title_contains_exactly_word = TitleContainsExactlyFilter(self.case_sensitive, self.label + filter_word)
+            if not title_contains_exactly_word.match_m3u(m3u_entry, filter_word):
+                return False
+            
+        return True
 
