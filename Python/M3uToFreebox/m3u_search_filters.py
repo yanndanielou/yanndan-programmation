@@ -13,6 +13,8 @@ from Dependencies.Common.singleton import Singleton
 
 import Dependencies.Common.tokenization_string as tokenization_string
 
+import Dependencies.Common.language_utils as language_utils
+
 import Dependencies.Common.list_utils as list_utils
 
 from m3u import M3uEntry
@@ -121,7 +123,18 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
     def __init__(self, whole_words, case_sensitive, label):
         super().__init__(case_sensitive, label)
         self._whole_words = whole_words
+
+        self._filter_text = None
+        self._filter_text_language = None
+        self._filter_text_words = None
     
+    def recompute_filter_text_words_and_language(self, filter_text):
+        if self._filter_text != filter_text:
+            self._filter_text = filter_text
+            self._filter_text_language = language_utils.get_full_language_name(language_utils.detect_language_with_langid(filter_text))
+            self._filter_text_words = tokenization_string.tokenize_text_with_nltk_word_tokenize(filter_text, self._filter_text_language)
+
+
     def match_m3u(self, m3u_entry:M3uEntry, filter_text):
         
         if not self._whole_words:
@@ -137,9 +150,10 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
             m3u_entry_original_raw_title = m3u_entry.original_raw_title if self.case_sensitive else m3u_entry.original_raw_title.lower()
             if not self.case_sensitive:
                 filter_text = filter_text.lower()
-                
-            filter_text_words = tokenization_string.tokenize_text_with_nltk_word_tokenize(filter_text)
-            m3u_entry_original_words = tokenization_string.tokenize_text_with_nltk_word_tokenize(m3u_entry_original_raw_title)
 
-            return list_utils.are_all_elements_of_list_included_in_list(filter_text_words, m3u_entry_original_words)
+            self.recompute_filter_text_words_and_language(filter_text)
+
+            self._m3u_entry_original_words = tokenization_string.tokenize_text_with_nltk_word_tokenize(m3u_entry_original_raw_title, self._filter_text_language)
+
+            return list_utils.are_all_elements_of_list_included_in_list(self._filter_text_words, self._m3u_entry_original_words)
 
