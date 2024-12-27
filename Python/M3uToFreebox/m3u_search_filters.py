@@ -108,7 +108,7 @@ class TitleContainsExactlyFilter(M3uEntryByTitleFilter):
         super().__init__(case_sensitive, label)
         pass
     
-    def match_m3u(self, m3u_entry, filter_text):
+    def match_m3u(self, m3u_entry:M3uEntry, filter_text):
         if self._case_sensitive:
             return filter_text in m3u_entry.original_raw_title
         return filter_text.lower() in m3u_entry.original_raw_title.lower()
@@ -122,9 +122,7 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
         super().__init__(case_sensitive, label)
         self._whole_words = whole_words
     
-    def match_m3u(self, m3u_entry, filter_text):
-        if self._case_sensitive:
-            return filter_text in m3u_entry.original_raw_title
+    def match_m3u(self, m3u_entry:M3uEntry, filter_text):
         
         if not self._whole_words:
             filter_text_words = tokenization_string.tokenize_text_with_nltk_word_tokenize(filter_text)
@@ -136,12 +134,12 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
             return True
 
         else:
-            m3u_entry_original_raw_title = m3u_entry.original_raw_title if not self.case_sensitive else m3u_entry.original_raw_title.lower()
+            m3u_entry_original_raw_title = m3u_entry.original_raw_title if self.case_sensitive else m3u_entry.original_raw_title.lower()
             if not self.case_sensitive:
                 filter_text = filter_text.lower()
                 
             filter_text_words = tokenization_string.tokenize_text_with_nltk_word_tokenize(filter_text)
             m3u_entry_original_words = tokenization_string.tokenize_text_with_nltk_word_tokenize(m3u_entry_original_raw_title)
 
-            return list_utils.are_list_equals(filter_text_words, m3u_entry_original_words)
+            return list_utils.are_all_elements_of_list_included_in_list(filter_text_words, m3u_entry_original_words)
 
