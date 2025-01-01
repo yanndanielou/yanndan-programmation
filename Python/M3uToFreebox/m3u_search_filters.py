@@ -4,6 +4,7 @@
 from abc import ABC
 from abc import abstractmethod
 
+import importlib
 
 import Dependencies.Common.string_utils as string_utils
 import Dependencies.Logger.logger_config as logger_config
@@ -18,8 +19,8 @@ import Dependencies.Common.language_utils as language_utils
 import Dependencies.Common.list_utils as list_utils
 
 from m3u import M3uEntry
-import m3u
 
+import re
 
 class M3uEntryFilter:
     """ base class """
@@ -44,7 +45,9 @@ class M3uFiltersManager(metaclass=Singleton):
         self._by_title_filters.append(TitleContainsAllWordsFilter(False, True, "Contains all words (case sensitive)"))
         self._by_title_filters.append(TitleContainsAllWordsFilter(False, False, "Contains all words (case NOT sensitive)")) 
         self._by_title_filters.append(TitleContainsAllWordsFilter(True, True, "Contains all words (whole worlds case sensitive)"))
-        self._by_title_filters.append(TitleContainsAllWordsFilter(True, False, "Contains all words (whole worlds case NOT sensitive)")) 
+        self._by_title_filters.append(TitleContainsAllWordsFilter(True, False, "Contains all words (whole worlds case NOT sensitive)"))
+        self._by_title_filters.append(TitleMatchesFilterTextRegex(True, "Matches Regex"))
+        self._by_title_filters.append(TitleMatchesFilterTextRegex(False, "Matches Regex (not case sensitive: treat texts as lower)")) 
 
         self._by_type_filters : list[M3uEntryByTypeFilter] = []
         self._by_type_filters.append(M3uEntryByTypeFilter(None))
@@ -116,7 +119,29 @@ class TitleContainsExactlyFilter(M3uEntryByTitleFilter):
         return filter_text.lower() in m3u_entry.original_raw_title.lower()
         
 
+class TitleMatchesFilterTextRegex(M3uEntryByTitleFilter):
+    """ TitleMatchesFilterTextRegex """
+    def __init__(self, case_sensitive, label):
+        super().__init__(case_sensitive, label)
+        
+        self._filter_text = None
+        self._regex_pattern = None
+
     
+    def match_m3u(self, m3u_entry:M3uEntry, filter_text):
+
+        if not self._case_sensitive:
+            filter_text = filter_text.lower()
+
+        if self._filter_text != filter_text:
+            self._filter_text = filter_text
+            self._regex_pattern = re.compile(filter_text)
+
+
+        m3u_entry_original_raw_title = m3u_entry.original_raw_title if self.case_sensitive else m3u_entry.original_raw_title.lower()
+
+        match = self._regex_pattern.match(m3u_entry_original_raw_title)
+        return match is not None
 
 class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
     """ TitleContainsExactlyFilter """
@@ -156,4 +181,9 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
             self._m3u_entry_original_words = tokenization_string.tokenize_text_with_nltk_regexp_tokenizer(m3u_entry_original_raw_title)
 
             return list_utils.are_all_elements_of_list_included_in_list(self._filter_text_words, self._m3u_entry_original_words)
+
+if __name__ == "__main__":
+    # sys.argv[1:]
+    main = importlib.import_module("main")
+    main.main()
 
