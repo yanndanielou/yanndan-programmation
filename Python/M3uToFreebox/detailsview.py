@@ -322,6 +322,7 @@ class DetailsViewTab(ttk.Frame):
 
     def treeview_sort_column(self, tv, col, reverse):
         """ Sort """
+        logger_config.print_and_log_info(f"Sort by column:{col}, reverse:{reverse}")
         l = [(tv.set(k, col), k) for k in tv.get_children('')]
         l.sort(reverse=reverse)
 
