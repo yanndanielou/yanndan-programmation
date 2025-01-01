@@ -1,34 +1,21 @@
 # -*-coding:Utf-8 -*
 
-import random
-
-
-#import sys
-
-import time
 
 import tkinter
-
-
-import os
-
+import importlib
 
 from tkinter import (
   filedialog, 
   ttk
 )
 
-
 from Dependencies.Logger import logger_config
-from Dependencies.Common import date_time_formats
 
-
-import m3u
 from detailsview import DetailsViewTab
-import application
-import main_view
 
-
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import application
 
 class M3uToFreeboxMainView (tkinter.Tk):
     """ Main view of application """
@@ -124,3 +111,10 @@ class M3uToFreeboxMainView (tkinter.Tk):
     @m3u_to_freebox_application.setter
     def m3u_to_freebox_application(self, value):
         self._m3u_to_freebox_application = value
+
+    
+if __name__ == "__main__":
+    # sys.argv[1:]
+    main = importlib.import_module("main")
+    main.main()
+
