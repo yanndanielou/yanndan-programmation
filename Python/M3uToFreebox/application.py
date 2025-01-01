@@ -16,7 +16,9 @@ import Dependencies.Common.date_time_formats as date_time_formats
 import m3u
 import xspf
 
-import main_view
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from main_view import M3uToFreeboxMainView
 import importlib
 
 import io
@@ -27,11 +29,11 @@ import urllib.error
 class M3uToFreeboxApplication:
     """ Application """
 
-    def __init__(self, main_view):
+    def __init__(self, mainview):
 
         self._m3u_library: m3u.M3uEntriesLibrary = m3u.M3uEntriesLibrary()
 
-        self._main_view:main_view.M3uToFreeboxMainView = main_view
+        self._main_view:'M3uToFreeboxMainView' = mainview
 
     def download_file_blocking_without_progress(self, file_destination_full_path:str, m3u_entry:m3u.M3uEntry, filename: str):
         logger_config.print_and_log_info("Start download of " + file_destination_full_path)
