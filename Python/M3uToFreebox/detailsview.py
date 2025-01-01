@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from m3u_search_filters import M3uEntryByTitleFilter, M3uEntryByTypeFilter
 
+import m3u
 from m3u_search_filters import M3uFiltersManager
 
 
@@ -265,7 +266,7 @@ class DetailsViewTab(ttk.Frame):
         self._parent.m3u_to_freebox_application.load_m3u_entry_size_by_id_str(m3u_entry_id_str)
 
         m3u_entry = self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entry_by_id(int(m3u_entry_id_str))
-        self._tree_view.set(m3u_entry.id, column="Size", value = m3u_entry.file_size)
+        self._tree_view.set(m3u_entry.id, column="Size", value = m3u_entry.get_file_size_to_display())
 
 
     def _select_directory_popup_and_create_xspf(self):
@@ -374,7 +375,7 @@ class DetailsViewTab(ttk.Frame):
 
         for m3u_entry in self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entries_with_filter(self._filter_input_text.get(), selected_title_filter, selected_type_filter):
             m3u_entry_number = m3u_entry_number + 1
-            tree_view_entry_values = [m3u_entry.id,m3u_entry.cleaned_title,m3u_entry.original_raw_title,m3u_entry.title_as_valid_file_name, m3u_entry.group_title, m3u_entry._type.value, '']
+            tree_view_entry_values = [m3u_entry.id,m3u_entry.cleaned_title,m3u_entry.original_raw_title,m3u_entry.title_as_valid_file_name, m3u_entry.group_title, m3u_entry._type.value, m3u_entry.get_file_size_to_display()]
 
 
             self._tree_view.insert("",'end', iid=m3u_entry.id, values=tree_view_entry_values)

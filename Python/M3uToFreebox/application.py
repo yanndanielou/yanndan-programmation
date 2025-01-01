@@ -166,15 +166,12 @@ class M3uToFreeboxApplication:
             result, length_or_error = file_size_utils.get_url_file_size(m3u_entry.link)
 
             if result:
-                m3u_entry.file_size = file_size_utils.convert_bits_to_human_readable_size(length_or_error)
+                m3u_entry.set_last_computed_file_size(file_size_utils.convert_bits_to_human_readable_size(length_or_error))
                 return True
 
             else:
                 logger_config.print_and_log_error(f'Error code: {length_or_error} for {m3u_entry}')
-                m3u_entry.file_size = f'Error! {length_or_error}'
-
-        else:
-            m3u_entry.file_size = 'NA'
+                m3u_entry.last_error_when_trying_to_retrieve_size = f'Error! {length_or_error}'
         
         return False
 
