@@ -1,6 +1,7 @@
 @CALL SET_PYTHON_HOME.bat
 
 
+@call :INSTALL_PYTHON_LIB humanize
 @call :INSTALL_PYTHON_LIB langdetect
 @call :INSTALL_PYTHON_LIB Langid
 @call :INSTALL_PYTHON_LIB py3langid

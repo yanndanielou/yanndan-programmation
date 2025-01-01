@@ -7,6 +7,8 @@ import tqdm
 
 import Dependencies.Logger.logger_config as logger_config
 import Dependencies.Common.date_time_formats as date_time_formats
+import Dependencies.Common.file_size_utils as file_size_utils
+
 
 import m3u
 import xspf
@@ -161,18 +163,15 @@ class M3uToFreeboxApplication:
         m3u_entry:m3u.M3uEntry = self.m3u_library.get_m3u_entry_by_id(m3u_entry_id_int)       
 
         if m3u_entry.can_be_downloaded():
-            try:
-                with urllib.request.urlopen(m3u_entry.link) as url_open:
-                    m3u_entry.file_size = url_open.length
-                    return True
-            except HTTPError as e:
-                # do something
-                logger_config.print_and_log_error(f'Error code: {e.code} for {m3u_entry}')
-                m3u_entry.file_size = f'Error! {e}'
-            except URLError as e:
-                # do something
-                logger_config.print_and_log_error(f'Error code: {e.code} for {m3u_entry}')
-                m3u_entry.file_size = f'Error! {e}'
+            result, length_or_error = file_size_utils.get_url_file_size(m3u_entry.link)
+
+            if result:
+                m3u_entry.file_size = file_size_utils.convert_bits_to_human_readable_size(length_or_error)
+                return True
+
+            else:
+                logger_config.print_and_log_error(f'Error code: {length_or_error} for {m3u_entry}')
+                m3u_entry.file_size = f'Error! {length_or_error}'
 
         else:
             m3u_entry.file_size = 'NA'
