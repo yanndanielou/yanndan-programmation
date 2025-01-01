@@ -5,7 +5,7 @@
 import Dependencies.Logger.logger_config as logger_config
 import Dependencies.Common.date_time_formats as date_time_formats
 
-from destinations import DestinationsFolders
+from destinations import DestinationsFolders, DestinationFolder
 
 import tkinter
 
@@ -179,18 +179,20 @@ class DetailsViewTab(ttk.Frame):
         self.tree_view_context_menu: tkinter.Menu = tkinter.Menu(self, tearoff=0)
         
         self.tree_view_context_menu.add_command(label="Load file size", command=self._load_selected_file_size)
+        self.tree_view_context_menu.add_separator()
 
-
-        self.tree_view_context_menu.add_command(label="Create xspf on ...", command=self._select_directory_popup_and_create_xspf)
-        
-        destinations_folders  = DestinationsFolders().destinations_folders
 
         for action in Action:
-            for destination_folder in destinations_folders:
-                self.tree_view_context_menu.add_command(label=action.value + " on " + destination_folder[0], command=lambda lambda_dest_folder=destination_folder, lambda_action = action: self._perform_action_on_destination_context_menu_choosen(lambda_action, lambda_dest_folder))
+            action_sub_context_menu: tkinter.Menu = tkinter.Menu(self, tearoff=0)
+            self.tree_view_context_menu.add_cascade(label = action.value, menu = action_sub_context_menu)
+            for destination_folder in DestinationsFolders().destinations_folders:
+                action_sub_context_menu.add_command(label=action.value + " on " + destination_folder._label, command=lambda lambda_dest_folder=destination_folder, lambda_action = action: self._perform_action_on_destination_context_menu_choosen(lambda_action, lambda_dest_folder))
             
+        self.tree_view_context_menu.add_separator()
         self.tree_view_context_menu.add_command(label="Show detail", command=self._open_m3u_entry_detail_popup)
-        self.tree_view_context_menu.add_command(label="Reset", command=self._reset_list)
+        self.tree_view_context_menu.add_command(label="Clear List", command=self._clear_list)
+        self.tree_view_context_menu.add_command(label="Reset List", command=self.fill_m3u_entries)
+        self.tree_view_context_menu.add_command(label="Reset Library", command=self._reset_library)
         self.tree_view_context_menu.add_separator()
 
         def do_popup(event):
@@ -225,7 +227,7 @@ class DetailsViewTab(ttk.Frame):
         m3u_entry_id_str = m3u_entry_line['ID']  
         return m3u_entry_id_str           
 
-    def _perform_action_on_destination_context_menu_choosen(self, action:Action, destination):
+    def _perform_action_on_destination_context_menu_choosen(self, action:Action, destination:DestinationFolder):
 
         logger_config.print_and_log_info("destination chosen: " + str(destination))
         logger_config.print_and_log_info("action chosen: " + str(action))
@@ -233,11 +235,16 @@ class DetailsViewTab(ttk.Frame):
         m3u_entry_id_str = self._get_selected_m3u_entry_id_str()
         
         
-        destination_directory = destination[1] 
+        destination_directory = destination.get_path()
         logger_config.print_and_log_info(f"destination_directory chosen:{destination_directory} ")
     
         if m3u_entry_id_str is None:
             return
+        
+        if destination_directory is None:
+            return
+        
+        
                   
   
         match action:
@@ -253,23 +260,6 @@ class DetailsViewTab(ttk.Frame):
 
         m3u_entry = self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entry_by_id(int(m3u_entry_id_str))
         self._tree_view.set(m3u_entry.id, column="Size", value = m3u_entry.get_file_size_to_display())
-
-
-    def _select_directory_popup_and_create_xspf(self):
-        tree_view_selection = self._tree_view.selection()
-        logger_config.print_and_log_info("tree_view_selection:"  + str(tree_view_selection))
-        
-        directory_path:filedialog.Directory = filedialog.askdirectory()
-        directory_path_name = str(directory_path)
-        logger_config.print_and_log_info("Directory chosen:" + str(directory_path_name))
-
-        if directory_path_name != "":
-            m3u_entry_line = self.tree_view_context_menu.selection
-            m3u_entry_id_str = m3u_entry_line['ID']
-            
-            self._parent.m3u_to_freebox_application.create_xspf_file_by_id_str(directory_path_name, m3u_entry_id_str)
-        else:
-            logger_config.print_and_log_info("No directory chosen")
 
     def _create_xspf_on_destination_context_menu_choosen(self, destination):
         logger_config.print_and_log_info("destination chosen: " + str(destination))
@@ -334,7 +324,7 @@ class DetailsViewTab(ttk.Frame):
         self._parent.m3u_to_freebox_application.reset_library()
         self.filter_updated()
 
-    def _reset_list(self):
+    def _clear_list(self):
         self._tree_view.delete(* self._tree_view.get_children())
 
 
@@ -353,7 +343,7 @@ class DetailsViewTab(ttk.Frame):
         """ fill_m3u_entries """
         fill_m3u_entries_start_time = time.time()
         logger_config.print_and_log_info("fill_m3u_entries: begin")
-        self._reset_list()
+        self._clear_list()
         logger_config.print_and_log_info(f"fill_m3u_entries: list reset. Elapsed:{date_time_formats.format_duration_to_string(time.time() - fill_m3u_entries_start_time)}" )
         m3u_entry_number = 0
         
