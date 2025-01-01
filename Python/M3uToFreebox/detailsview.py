@@ -1,10 +1,6 @@
 # -*-coding:Utf-8 -*
 
 """ https://tkdocs.com/tutorial/firstexample.html """
-import random
-
-
-import sys
 
 import Dependencies.Logger.logger_config as logger_config
 import Dependencies.Common.date_time_formats as date_time_formats
@@ -18,18 +14,17 @@ import tkinter
 
 import param
 
-import m3u
-
 import tkinter
-#import detailspopup
-#from main import main
+
 import importlib
 
 import time
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from m3u_search_filters import M3uEntryByTitleFilter, M3uEntryByTypeFilter
 
-from m3u_search_filters import M3uEntryByTitleFilter, M3uEntryByTypeFilter, TitleContainsExactlyFilter, M3uFiltersManager
-
+from m3u_search_filters import M3uFiltersManager
 
 
 from tkinter import (
