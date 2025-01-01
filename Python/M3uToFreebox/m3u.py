@@ -68,6 +68,8 @@ class M3uEntry:
         self._tvg_logo = self.decode_field(self._line1, "tvg-logo")
         self._group_title = self.decode_field(self._line1, "group-title")
         self._original_raw_title:str = self._line1.split('"')[len(self._line1.split('"'))-1][1:]
+        
+        self._file_size = None
 
         self._compute_title_as_valid_file_name()
         self._compute_cleaned_title()
@@ -187,6 +189,15 @@ class M3uEntry:
     @group_title.setter
     def group_title(self, value):
         self._group_title = value
+
+    @property
+    def file_size(self):
+        """ getter _file_size """
+        return self._file_size
+
+    @file_size.setter
+    def file_size(self, value):
+        self._file_size = value
 
     @property
     def original_raw_title(self):

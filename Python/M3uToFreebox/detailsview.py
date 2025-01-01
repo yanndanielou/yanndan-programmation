@@ -5,10 +5,10 @@
 import Dependencies.Logger.logger_config as logger_config
 import Dependencies.Common.date_time_formats as date_time_formats
 
+import application
 from destinations import DestinationsFolders
 
-import urllib.request
-from urllib.error import URLError, HTTPError
+
 
 import tkinter
 
@@ -139,11 +139,8 @@ class DetailsViewTab(ttk.Frame):
         #Configure the scrollbar
         self._tree_scroll_vertical.config(command=self._tree_view.yview)
 
-        columns = ['ID','Cleaned title','Original title', 'File name', 'Group', 'type']
+        columns = ['ID','Cleaned title','Original title', 'File name', 'Group', 'type', 'Size']
         
-        if param.DISPLAY_FILES_SIZE:
-            columns.append("Size")
-            #column.p
 
         self._tree_view["column"] = columns
 
@@ -187,7 +184,9 @@ class DetailsViewTab(ttk.Frame):
         #Create context menu
         self.tree_view_context_menu: tkinter.Menu = tkinter.Menu(self, tearoff=0)
         
-        
+        self.tree_view_context_menu.add_command(label="Load file size", command=self._load_selected_file_size)
+
+
         self.tree_view_context_menu.add_command(label="Create xspf on ...", command=self._select_directory_popup_and_create_xspf)
         
         destinations_folders  = DestinationsFolders().destinations_folders
@@ -243,28 +242,47 @@ class DetailsViewTab(ttk.Frame):
     def _open_m3u_entry_detail_popup(self):
         m3u_entry_line = self.tree_view_context_menu.selection
         #m3u_entry_detail_popup = detailspopup.M3uEntryDetailPopup(self, None)
-    
+
+    def _get_selected_m3u_entry_id_str(self)->str:
+        m3u_entry_line = self.tree_view_context_menu.selection
+        if len(m3u_entry_line) == 0:
+            logger_config.print_and_log_info("No line selected")
+            return None
+
+        m3u_entry_id_str = m3u_entry_line['ID']  
+        return m3u_entry_id_str           
+
     def _perform_action_on_destination_context_menu_choosen(self, action:Action, destination):
 
         logger_config.print_and_log_info("destination chosen: " + str(destination))
         logger_config.print_and_log_info("action chosen: " + str(action))
 
-        m3u_entry_line = self.tree_view_context_menu.selection        
-        if len(m3u_entry_line) == 0:
-            logger_config.print_and_log_info("No line selected")
-            return
-
-
-        m3u_entry_id_str = m3u_entry_line['ID']        
+        m3u_entry_id_str = self._get_selected_m3u_entry_id_str()
         destination_directory = destination[1]        
   
-
         match action:
             case Action.DONWLOAD_MOVIE:
                 self._parent.m3u_to_freebox_application.download_movie_file_by_id_str(destination_directory, m3u_entry_id_str)
 
             case Action.CREATE_XSPF_FILE:
                 self._parent.m3u_to_freebox_application.create_xspf_file_by_id_str(destination_directory, m3u_entry_id_str)
+
+    def _load_selected_file_size(self):
+        m3u_entry_id_str = self._get_selected_m3u_entry_id_str()
+        #loaded_file_result = self._parent.m3u_to_freebox_application.load_m3u_entry_size_by_id_str(m3u_entry_id_str)
+        loaded_file_result = self._parent.m3u_to_freebox_application.load_fake(m3u_entry_id_str)
+
+
+        m3u_entry_line = self.tree_view_context_menu.selection
+
+        m3u_entry = self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entry_by_id(int(m3u_entry_id_str))
+        tree_view_entry_values = [m3u_entry.id,m3u_entry.cleaned_title,m3u_entry.original_raw_title,m3u_entry.title_as_valid_file_name, m3u_entry.group_title, m3u_entry._type.value, m3u_entry.file_size]
+        self._tree_view.delete(m3u_entry.id)
+        self._tree_view.insert("",'end', iid=m3u_entry.id, values=tree_view_entry_values)
+
+        #self._tree_view.item
+        #tview.item(focused, values=("", str(x)))
+    
 
     def _select_directory_popup_and_create_xspf(self):
         tree_view_selection = self._tree_view.selection()
@@ -287,7 +305,7 @@ class DetailsViewTab(ttk.Frame):
         m3u_entry_line = self.tree_view_context_menu.selection
         
         if len(m3u_entry_line) == 0:
-            logger_config.print_and_log_info("No line selected")
+            logger_config.print_and_log_info("N-o line selected")
             return
 
 
@@ -370,27 +388,10 @@ class DetailsViewTab(ttk.Frame):
         selected_title_filter = self.__get_selected_title_filter()
         selected_type_filter = self.__get_selected_type_filter()
 
-
-
         for m3u_entry in self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entries_with_filter(self._filter_input_text.get(), selected_title_filter, selected_type_filter):
             m3u_entry_number = m3u_entry_number + 1
-            tree_view_entry_values = [m3u_entry.id,m3u_entry.cleaned_title,m3u_entry.original_raw_title,m3u_entry.title_as_valid_file_name, m3u_entry.group_title, m3u_entry._type.value]
-            if param.DISPLAY_FILES_SIZE and m3u_entry.can_be_downloaded():
-                try:
-                    with urllib.request.urlopen(m3u_entry.link) as url_open:
-                        tree_view_entry_values.append(f'{url_open.length}')
-                        #logger_config.print_and_log_info(f'File to download size {url_open.length}')
-                except HTTPError as e:
-                    # do something
-                    logger_config.print_and_log_error(f'Error code: {e.code} for {m3u_entry}')
-                    tree_view_entry_values.append(f'Error! {e}')
-                except URLError as e:
-                    # do something
-                    logger_config.print_and_log_error(f'Error code: {e.code} for {m3u_entry}')
-                    tree_view_entry_values.append(f'Error! {e}')
+            tree_view_entry_values = [m3u_entry.id,m3u_entry.cleaned_title,m3u_entry.original_raw_title,m3u_entry.title_as_valid_file_name, m3u_entry.group_title, m3u_entry._type.value, '']
 
-            else:
-                tree_view_entry_values.append('NA')
 
             self._tree_view.insert("",'end', iid=m3u_entry.id, values=tree_view_entry_values)
 
