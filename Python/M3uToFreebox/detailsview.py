@@ -139,8 +139,8 @@ class DetailsViewTab(ttk.Frame):
         self._tree_view["column"] = columns
 
         for column in self._tree_view["column"]:
-                self._tree_view.heading(column, text=column, command=lambda: \
-                   self.treeview_sort_column(self._tree_view, column, False), anchor='center')
+                self._tree_view.heading(column, text=column, command=lambda col2=column: \
+                   self.treeview_sort_column(self._tree_view, col2, False), anchor='center')
         
 
         self._tree_view.column(self._tree_view["columns"][0],width=40)
@@ -184,26 +184,11 @@ class DetailsViewTab(ttk.Frame):
         self.tree_view_context_menu.add_command(label="Create xspf on ...", command=self._select_directory_popup_and_create_xspf)
         
         destinations_folders  = DestinationsFolders().destinations_folders
-        #self.tree_view_context_menu.add_command(label="Create xspf on " + destinations_folders[0][0], command=lambda: self._create_xspf_on_destination_context_menu_choosen(destinations_folders[0]))
-        #self.tree_view_context_menu.add_command(label="Create xspf on " + destinations_folders[1][0], command=lambda: self._create_xspf_on_destination_context_menu_choosen(destinations_folders[1]))
-        
-        
-        action = Action.DONWLOAD_MOVIE
-        self.tree_view_context_menu.add_command(label=action.value + " on " + destinations_folders[0][0], command=lambda: self._perform_action_on_destination_context_menu_choosen(Action.DONWLOAD_MOVIE, destinations_folders[0]))
-        self.tree_view_context_menu.add_command(label=action.value + " on " + destinations_folders[1][0], command=lambda: self._perform_action_on_destination_context_menu_choosen(Action.DONWLOAD_MOVIE, destinations_folders[1]))
 
-        action = Action.CREATE_XSPF_FILE
-        self.tree_view_context_menu.add_command(label=action.value + " on " + destinations_folders[0][0], command=lambda: self._perform_action_on_destination_context_menu_choosen(Action.CREATE_XSPF_FILE, destinations_folders[0]))
-        self.tree_view_context_menu.add_command(label=action.value + " on " + destinations_folders[1][0], command=lambda: self._perform_action_on_destination_context_menu_choosen(Action.CREATE_XSPF_FILE, destinations_folders[1]))
-        
-        
+        for action in [Action.DONWLOAD_MOVIE, Action.CREATE_XSPF_FILE]:
+            for destination_folder in destinations_folders:
+                self.tree_view_context_menu.add_command(label=action.value + " on " + destination_folder[0], command=lambda lambda_dest_folder=destination_folder, lambda_action = action: self._perform_action_on_destination_context_menu_choosen(lambda_action, lambda_dest_folder))
 
-        #for i, destination_folder in enumerate (DestinationsFolders().destinations_folders):
-        #    self.tree_view_context_menu.add_command(label="Create xspf on " + destination_folder[0], command=lambda: self._create_xspf_on_destination_context_menu_choosen(destination_folder[1]))
-        
-        #        
-        #self.tree_view_context_menu.add_command(label="Create xspf on " + destinations_folders[1][0], command=lambda: self._create_xspf_on_destination_context_menu_choosen(destinations_folders[1][1]))
-        
         for destination_folder in DestinationsFolders().destinations_folders :
             print(destination_folder[0])
             print(destination_folder)
@@ -252,7 +237,14 @@ class DetailsViewTab(ttk.Frame):
         logger_config.print_and_log_info("action chosen: " + str(action))
 
         m3u_entry_id_str = self._get_selected_m3u_entry_id_str()
-        destination_directory = destination[1]        
+        
+        
+        destination_directory = destination[1] 
+        logger_config.print_and_log_info(f"destination_directory chosen:{destination_directory} ")
+    
+        if m3u_entry_id_str is None:
+            return
+                  
   
         match action:
             case Action.DONWLOAD_MOVIE:
