@@ -6,11 +6,7 @@ from abc import abstractmethod
 
 import importlib
 
-import Dependencies.Common.string_utils as string_utils
-import Dependencies.Logger.logger_config as logger_config
-
 from Dependencies.Common.singleton import Singleton
-
 
 import Dependencies.Common.tokenization_string as tokenization_string
 

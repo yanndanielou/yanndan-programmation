@@ -4,12 +4,6 @@
 import requests
 import tqdm
 
-
-import random
-
-
-import sys
-
 import Dependencies.Logger.logger_config as logger_config
 import Dependencies.Common.date_time_formats as date_time_formats
 
