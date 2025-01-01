@@ -5,14 +5,7 @@
 import Dependencies.Logger.logger_config as logger_config
 import Dependencies.Common.date_time_formats as date_time_formats
 
-import application
 from destinations import DestinationsFolders
-
-
-
-import tkinter
-
-import param
 
 import tkinter
 
@@ -269,20 +262,11 @@ class DetailsViewTab(ttk.Frame):
 
     def _load_selected_file_size(self):
         m3u_entry_id_str = self._get_selected_m3u_entry_id_str()
-        #loaded_file_result = self._parent.m3u_to_freebox_application.load_m3u_entry_size_by_id_str(m3u_entry_id_str)
-        loaded_file_result = self._parent.m3u_to_freebox_application.load_fake(m3u_entry_id_str)
-
-
-        m3u_entry_line = self.tree_view_context_menu.selection
+        self._parent.m3u_to_freebox_application.load_m3u_entry_size_by_id_str(m3u_entry_id_str)
 
         m3u_entry = self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entry_by_id(int(m3u_entry_id_str))
-        tree_view_entry_values = [m3u_entry.id,m3u_entry.cleaned_title,m3u_entry.original_raw_title,m3u_entry.title_as_valid_file_name, m3u_entry.group_title, m3u_entry._type.value, m3u_entry.file_size]
-        self._tree_view.delete(m3u_entry.id)
-        self._tree_view.insert("",'end', iid=m3u_entry.id, values=tree_view_entry_values)
+        self._tree_view.set(m3u_entry.id, column="Size", value = m3u_entry.file_size)
 
-        #self._tree_view.item
-        #tview.item(focused, values=("", str(x)))
-    
 
     def _select_directory_popup_and_create_xspf(self):
         tree_view_selection = self._tree_view.selection()

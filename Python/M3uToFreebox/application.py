@@ -1,5 +1,6 @@
 # -*-coding:Utf-8 -*
 
+from warnings import deprecated
 
 import requests
 import tqdm
@@ -148,6 +149,7 @@ class M3uToFreeboxApplication:
             logger_config.print_and_log_error(str(m3u_entry) + " cannot be downloaded")
 
 
+    @deprecated("Just for tests")
     def load_fake(self, m3u_entry_id_str:str) -> bool:
         m3u_entry_id_int = int(m3u_entry_id_str)
         m3u_entry:m3u.M3uEntry = self.m3u_library.get_m3u_entry_by_id(m3u_entry_id_int)       
