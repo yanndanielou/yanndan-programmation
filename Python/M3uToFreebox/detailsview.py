@@ -185,15 +185,9 @@ class DetailsViewTab(ttk.Frame):
         
         destinations_folders  = DestinationsFolders().destinations_folders
 
-        for action in [Action.DONWLOAD_MOVIE, Action.CREATE_XSPF_FILE]:
+        for action in Action:
             for destination_folder in destinations_folders:
                 self.tree_view_context_menu.add_command(label=action.value + " on " + destination_folder[0], command=lambda lambda_dest_folder=destination_folder, lambda_action = action: self._perform_action_on_destination_context_menu_choosen(lambda_action, lambda_dest_folder))
-
-        for destination_folder in DestinationsFolders().destinations_folders :
-            print(destination_folder[0])
-            print(destination_folder)
-            #destination_folder_path = str(destination_folder[1)])
-            #self.tree_view_context_menu.add_command(label="Create xspf on " + destination_folder[0], command=lambda: self._create_xspf_on_destination_context_menu_choosen(destination_folder[1]))
             
         self.tree_view_context_menu.add_command(label="Show detail", command=self._open_m3u_entry_detail_popup)
         self.tree_view_context_menu.add_command(label="Reset", command=self._reset_list)
