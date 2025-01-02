@@ -68,6 +68,9 @@ class M3uEntry:
         self._tvg_logo = self.decode_field(self._line1, "tvg-logo")
         self._group_title = self.decode_field(self._line1, "group-title")
         self._original_raw_title:str = self._line1.split('"')[len(self._line1.split('"'))-1][1:]
+        
+        self._last_computed_file_size = None
+        self._last_error_when_trying_to_retrieve_size = None
 
         self._compute_title_as_valid_file_name()
         self._compute_cleaned_title()
@@ -188,6 +191,18 @@ class M3uEntry:
     def group_title(self, value):
         self._group_title = value
 
+    def get_file_size_to_display(self):
+        if self.can_be_downloaded():
+            if self._last_error_when_trying_to_retrieve_size is not None:
+                return self._last_error_when_trying_to_retrieve_size
+            
+            return self._last_computed_file_size if self._last_computed_file_size is not None else ""
+        else:
+            return "NA"
+
+    def set_last_computed_file_size(self, value):
+        self._last_computed_file_size = value
+
     @property
     def original_raw_title(self):
         """ getter _title """
@@ -196,6 +211,9 @@ class M3uEntry:
     @original_raw_title.setter
     def original_raw_title(self, value):
         self._original_raw_title = value
+
+    def last_error_when_trying_to_retrieve_size(self, value):
+        self._last_error_when_trying_to_retrieve_size = value
         
     @property
     def title_as_valid_file_name(self):

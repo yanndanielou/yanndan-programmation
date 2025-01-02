@@ -1,35 +1,11 @@
 # -*-coding:Utf-8 -*
 
 """ https://tkdocs.com/tutorial/firstexample.html """
-import random
-
-
-import sys
-
-import Dependencies.Logger.logger_config as logger_config
-import Dependencies.Common.date_time_formats as date_time_formats
-
-
-import time
 
 import tkinter
-
-
-import os
 
 import tkinter
 import m3u
-
-
-from tkinter import (
-  filedialog, 
-  simpledialog, 
-  messagebox, 
-  scrolledtext, 
-  Menu,
-  colorchooser,
-  ttk
-  )
 
 
 class M3uEntryDetailPopup(tkinter.Toplevel):

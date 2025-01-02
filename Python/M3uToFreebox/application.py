@@ -1,22 +1,21 @@
 # -*-coding:Utf-8 -*
 
+from warnings import deprecated
 
 import requests
 import tqdm
 
-
-import random
-
-
-import sys
-
 import Dependencies.Logger.logger_config as logger_config
 import Dependencies.Common.date_time_formats as date_time_formats
+import Dependencies.Common.file_size_utils as file_size_utils
+
 
 import m3u
 import xspf
 
-import main_view
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from main_view import M3uToFreeboxMainView
 import importlib
 
 import io
@@ -24,14 +23,17 @@ import io
 import urllib.request
 import urllib.error
 
+import urllib.request
+from urllib.error import URLError, HTTPError
+
 class M3uToFreeboxApplication:
     """ Application """
 
-    def __init__(self, main_view):
+    def __init__(self, mainview):
 
         self._m3u_library: m3u.M3uEntriesLibrary = m3u.M3uEntriesLibrary()
 
-        self._main_view:main_view.M3uToFreeboxMainView = main_view
+        self._main_view:'M3uToFreeboxMainView' = mainview
 
     def download_file_blocking_without_progress(self, file_destination_full_path:str, m3u_entry:m3u.M3uEntry, filename: str):
         logger_config.print_and_log_info("Start download of " + file_destination_full_path)
@@ -127,7 +129,7 @@ class M3uToFreeboxApplication:
 
 
     def download_movie_file_by_id(self, destination_directory:str, m3u_entry_id:int):
-        m3u_entry = self.m3u_library.get_m3u_entry_by_id(m3u_entry_id)
+        m3u_entry:m3u.M3uEntry = self.m3u_library.get_m3u_entry_by_id(m3u_entry_id)
         if m3u_entry.can_be_downloaded():
             file_destination_full_path = destination_directory + "\\" + m3u_entry.title_as_valid_file_name + m3u_entry.file_extension
 
@@ -149,13 +151,37 @@ class M3uToFreeboxApplication:
             logger_config.print_and_log_error(str(m3u_entry) + " cannot be downloaded")
 
 
+    @deprecated("Just for tests")
+    def load_fake(self, m3u_entry_id_str:str) -> bool:
+        m3u_entry_id_int = int(m3u_entry_id_str)
+        m3u_entry:m3u.M3uEntry = self.m3u_library.get_m3u_entry_by_id(m3u_entry_id_int)       
+        m3u_entry.file_size = 105
+        return True
+
+    def load_m3u_entry_size_by_id_str(self, m3u_entry_id_str:str) -> bool:
+        m3u_entry_id_int = int(m3u_entry_id_str)
+        m3u_entry:m3u.M3uEntry = self.m3u_library.get_m3u_entry_by_id(m3u_entry_id_int)       
+
+        if m3u_entry.can_be_downloaded():
+            result, length_or_error = file_size_utils.get_url_file_size(m3u_entry.link)
+
+            if result:
+                m3u_entry.set_last_computed_file_size(file_size_utils.convert_bits_to_human_readable_size(length_or_error))
+                return True
+
+            else:
+                logger_config.print_and_log_error(f'Error code: {length_or_error} for {m3u_entry}')
+                m3u_entry.last_error_when_trying_to_retrieve_size = f'Error! {length_or_error}'
+        
+        return False
+
     def create_xspf_file_by_id_str(self, destination_directory:str, m3u_entry_id:str):
         m3u_entry_id_int = int(m3u_entry_id)
         self.create_xspf_file_by_id(destination_directory, m3u_entry_id_int)
         
     def create_xspf_file_by_id(self, destination_directory:str, m3u_entry_id:int):
         
-        m3u_entry = self.m3u_library.get_m3u_entry_by_id(m3u_entry_id)
+        m3u_entry:m3u.M3uEntry = self.m3u_library.get_m3u_entry_by_id(m3u_entry_id)
 
         xspf_file_content = xspf.XspfFileContent(m3u_entry.cleaned_title, m3u_entry.link)
         xsp_file_creator = xspf.XspfFileCreator()

@@ -1,35 +1,24 @@
 # -*-coding:Utf-8 -*
 
 """ https://tkdocs.com/tutorial/firstexample.html """
-import random
-
-
-import sys
 
 import Dependencies.Logger.logger_config as logger_config
 import Dependencies.Common.date_time_formats as date_time_formats
 
-from destinations import DestinationsFolders
-
-import urllib.request
-from urllib.error import URLError, HTTPError
+from destinations import DestinationsFolders, DestinationFolder
 
 import tkinter
 
-import param
-
-import m3u
-
-import tkinter
-#import detailspopup
-#from main import main
 import importlib
 
 import time
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from m3u_search_filters import M3uEntryByTitleFilter, M3uEntryByTypeFilter
 
-from m3u_search_filters import M3uEntryByTitleFilter, M3uEntryByTypeFilter, TitleContainsExactlyFilter, M3uFiltersManager
-
+import m3u
+from m3u_search_filters import M3uFiltersManager
 
 
 from tkinter import (
@@ -144,17 +133,14 @@ class DetailsViewTab(ttk.Frame):
         #Configure the scrollbar
         self._tree_scroll_vertical.config(command=self._tree_view.yview)
 
-        columns = ['ID','Cleaned title','Original title', 'File name', 'Group', 'type']
+        columns = ['ID','Cleaned title','Original title', 'File name', 'Group', 'type', 'Size']
         
-        if param.DISPLAY_FILES_SIZE:
-            columns.append("Size")
-            #column.p
 
         self._tree_view["column"] = columns
 
         for column in self._tree_view["column"]:
-                self._tree_view.heading(column, text=column, command=lambda: \
-                   self.treeview_sort_column(self._tree_view, column, False), anchor='center')
+                self._tree_view.heading(column, text=column, command=lambda col2=column: \
+                   self.treeview_sort_column(self._tree_view, col2, False), anchor='center')
         
 
         self._tree_view.column(self._tree_view["columns"][0],width=40)
@@ -192,38 +178,21 @@ class DetailsViewTab(ttk.Frame):
         #Create context menu
         self.tree_view_context_menu: tkinter.Menu = tkinter.Menu(self, tearoff=0)
         
-        
-        self.tree_view_context_menu.add_command(label="Create xspf on ...", command=self._select_directory_popup_and_create_xspf)
-        
-        destinations_folders  = DestinationsFolders().destinations_folders
-        #self.tree_view_context_menu.add_command(label="Create xspf on " + destinations_folders[0][0], command=lambda: self._create_xspf_on_destination_context_menu_choosen(destinations_folders[0]))
-        #self.tree_view_context_menu.add_command(label="Create xspf on " + destinations_folders[1][0], command=lambda: self._create_xspf_on_destination_context_menu_choosen(destinations_folders[1]))
-        
-        
-        action = Action.DONWLOAD_MOVIE
-        self.tree_view_context_menu.add_command(label=action.value + " on " + destinations_folders[0][0], command=lambda: self._perform_action_on_destination_context_menu_choosen(Action.DONWLOAD_MOVIE, destinations_folders[0]))
-        self.tree_view_context_menu.add_command(label=action.value + " on " + destinations_folders[1][0], command=lambda: self._perform_action_on_destination_context_menu_choosen(Action.DONWLOAD_MOVIE, destinations_folders[1]))
+        self.tree_view_context_menu.add_command(label="Load file size", command=self._load_selected_file_size)
+        self.tree_view_context_menu.add_separator()
 
-        action = Action.CREATE_XSPF_FILE
-        self.tree_view_context_menu.add_command(label=action.value + " on " + destinations_folders[0][0], command=lambda: self._perform_action_on_destination_context_menu_choosen(Action.CREATE_XSPF_FILE, destinations_folders[0]))
-        self.tree_view_context_menu.add_command(label=action.value + " on " + destinations_folders[1][0], command=lambda: self._perform_action_on_destination_context_menu_choosen(Action.CREATE_XSPF_FILE, destinations_folders[1]))
-        
-        
 
-        #for i, destination_folder in enumerate (DestinationsFolders().destinations_folders):
-        #    self.tree_view_context_menu.add_command(label="Create xspf on " + destination_folder[0], command=lambda: self._create_xspf_on_destination_context_menu_choosen(destination_folder[1]))
-        
-        #        
-        #self.tree_view_context_menu.add_command(label="Create xspf on " + destinations_folders[1][0], command=lambda: self._create_xspf_on_destination_context_menu_choosen(destinations_folders[1][1]))
-        
-        for destination_folder in DestinationsFolders().destinations_folders :
-            print(destination_folder[0])
-            print(destination_folder)
-            #destination_folder_path = str(destination_folder[1)])
-            #self.tree_view_context_menu.add_command(label="Create xspf on " + destination_folder[0], command=lambda: self._create_xspf_on_destination_context_menu_choosen(destination_folder[1]))
+        for action in Action:
+            action_sub_context_menu: tkinter.Menu = tkinter.Menu(self, tearoff=0)
+            self.tree_view_context_menu.add_cascade(label = action.value, menu = action_sub_context_menu)
+            for destination_folder in DestinationsFolders().destinations_folders:
+                action_sub_context_menu.add_command(label=action.value + " on " + destination_folder._label, command=lambda lambda_dest_folder=destination_folder, lambda_action = action: self._perform_action_on_destination_context_menu_choosen(lambda_action, lambda_dest_folder))
             
+        self.tree_view_context_menu.add_separator()
         self.tree_view_context_menu.add_command(label="Show detail", command=self._open_m3u_entry_detail_popup)
-        self.tree_view_context_menu.add_command(label="Reset", command=self._reset_list)
+        self.tree_view_context_menu.add_command(label="Clear List", command=self._clear_list)
+        self.tree_view_context_menu.add_command(label="Reset List", command=self.fill_m3u_entries)
+        self.tree_view_context_menu.add_command(label="Reset Library", command=self._reset_library)
         self.tree_view_context_menu.add_separator()
 
         def do_popup(event):
@@ -248,22 +217,36 @@ class DetailsViewTab(ttk.Frame):
     def _open_m3u_entry_detail_popup(self):
         m3u_entry_line = self.tree_view_context_menu.selection
         #m3u_entry_detail_popup = detailspopup.M3uEntryDetailPopup(self, None)
-    
-    def _perform_action_on_destination_context_menu_choosen(self, action:Action, destination):
+
+    def _get_selected_m3u_entry_id_str(self)->str:
+        m3u_entry_line = self.tree_view_context_menu.selection
+        if len(m3u_entry_line) == 0:
+            logger_config.print_and_log_info("No line selected")
+            return None
+
+        m3u_entry_id_str = m3u_entry_line['ID']  
+        return m3u_entry_id_str           
+
+    def _perform_action_on_destination_context_menu_choosen(self, action:Action, destination:DestinationFolder):
 
         logger_config.print_and_log_info("destination chosen: " + str(destination))
         logger_config.print_and_log_info("action chosen: " + str(action))
 
-        m3u_entry_line = self.tree_view_context_menu.selection        
-        if len(m3u_entry_line) == 0:
-            logger_config.print_and_log_info("No line selected")
+        m3u_entry_id_str = self._get_selected_m3u_entry_id_str()
+        
+        
+        destination_directory = destination.get_path()
+        logger_config.print_and_log_info(f"destination_directory chosen:{destination_directory} ")
+    
+        if m3u_entry_id_str is None:
             return
-
-
-        m3u_entry_id_str = m3u_entry_line['ID']        
-        destination_directory = destination[1]        
+        
+        if destination_directory is None:
+            return
+        
+        
+                  
   
-
         match action:
             case Action.DONWLOAD_MOVIE:
                 self._parent.m3u_to_freebox_application.download_movie_file_by_id_str(destination_directory, m3u_entry_id_str)
@@ -271,28 +254,19 @@ class DetailsViewTab(ttk.Frame):
             case Action.CREATE_XSPF_FILE:
                 self._parent.m3u_to_freebox_application.create_xspf_file_by_id_str(destination_directory, m3u_entry_id_str)
 
-    def _select_directory_popup_and_create_xspf(self):
-        tree_view_selection = self._tree_view.selection()
-        logger_config.print_and_log_info("tree_view_selection:"  + str(tree_view_selection))
-        
-        directory_path:filedialog.Directory = filedialog.askdirectory()
-        directory_path_name = str(directory_path)
-        logger_config.print_and_log_info("Directory chosen:" + str(directory_path_name))
+    def _load_selected_file_size(self):
+        m3u_entry_id_str = self._get_selected_m3u_entry_id_str()
+        self._parent.m3u_to_freebox_application.load_m3u_entry_size_by_id_str(m3u_entry_id_str)
 
-        if directory_path_name != "":
-            m3u_entry_line = self.tree_view_context_menu.selection
-            m3u_entry_id_str = m3u_entry_line['ID']
-            
-            self._parent.m3u_to_freebox_application.create_xspf_file_by_id_str(directory_path_name, m3u_entry_id_str)
-        else:
-            logger_config.print_and_log_info("No directory chosen")
+        m3u_entry = self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entry_by_id(int(m3u_entry_id_str))
+        self._tree_view.set(m3u_entry.id, column="Size", value = m3u_entry.get_file_size_to_display())
 
     def _create_xspf_on_destination_context_menu_choosen(self, destination):
         logger_config.print_and_log_info("destination chosen: " + str(destination))
         m3u_entry_line = self.tree_view_context_menu.selection
         
         if len(m3u_entry_line) == 0:
-            logger_config.print_and_log_info("No line selected")
+            logger_config.print_and_log_info("N-o line selected")
             return
 
 
@@ -324,6 +298,7 @@ class DetailsViewTab(ttk.Frame):
 
     def treeview_sort_column(self, tv, col, reverse):
         """ Sort """
+        logger_config.print_and_log_info(f"Sort by column:{col}, reverse:{reverse}")
         l = [(tv.set(k, col), k) for k in tv.get_children('')]
         l.sort(reverse=reverse)
 
@@ -349,7 +324,7 @@ class DetailsViewTab(ttk.Frame):
         self._parent.m3u_to_freebox_application.reset_library()
         self.filter_updated()
 
-    def _reset_list(self):
+    def _clear_list(self):
         self._tree_view.delete(* self._tree_view.get_children())
 
 
@@ -368,34 +343,17 @@ class DetailsViewTab(ttk.Frame):
         """ fill_m3u_entries """
         fill_m3u_entries_start_time = time.time()
         logger_config.print_and_log_info("fill_m3u_entries: begin")
-        self._reset_list()
+        self._clear_list()
         logger_config.print_and_log_info(f"fill_m3u_entries: list reset. Elapsed:{date_time_formats.format_duration_to_string(time.time() - fill_m3u_entries_start_time)}" )
         m3u_entry_number = 0
         
         selected_title_filter = self.__get_selected_title_filter()
         selected_type_filter = self.__get_selected_type_filter()
 
-
-
         for m3u_entry in self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entries_with_filter(self._filter_input_text.get(), selected_title_filter, selected_type_filter):
             m3u_entry_number = m3u_entry_number + 1
-            tree_view_entry_values = [m3u_entry.id,m3u_entry.cleaned_title,m3u_entry.original_raw_title,m3u_entry.title_as_valid_file_name, m3u_entry.group_title, m3u_entry._type.value]
-            if param.DISPLAY_FILES_SIZE and m3u_entry.can_be_downloaded():
-                try:
-                    with urllib.request.urlopen(m3u_entry.link) as url_open:
-                        tree_view_entry_values.append(f'{url_open.length}')
-                        #logger_config.print_and_log_info(f'File to download size {url_open.length}')
-                except HTTPError as e:
-                    # do something
-                    logger_config.print_and_log_error(f'Error code: {e.code} for {m3u_entry}')
-                    tree_view_entry_values.append(f'Error! {e}')
-                except URLError as e:
-                    # do something
-                    logger_config.print_and_log_error(f'Error code: {e.code} for {m3u_entry}')
-                    tree_view_entry_values.append(f'Error! {e}')
+            tree_view_entry_values = [m3u_entry.id,m3u_entry.cleaned_title,m3u_entry.original_raw_title,m3u_entry.title_as_valid_file_name, m3u_entry.group_title, m3u_entry._type.value, m3u_entry.get_file_size_to_display()]
 
-            else:
-                tree_view_entry_values.append('NA')
 
             self._tree_view.insert("",'end', iid=m3u_entry.id, values=tree_view_entry_values)
 
