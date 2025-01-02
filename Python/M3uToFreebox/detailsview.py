@@ -2,6 +2,15 @@
 
 """ https://tkdocs.com/tutorial/firstexample.html """
 
+import sys
+import os
+
+#sys.path.insert(1, os.getcwd())
+#sys.path.append("D:/GitHub/yanndanielou-programmation/Python/Logger")
+#sys.path.append("../Logger")
+
+#import logger_config
+
 import Dependencies.Logger.logger_config as logger_config
 import Dependencies.Common.date_time_formats as date_time_formats
 
@@ -341,27 +350,28 @@ class DetailsViewTab(ttk.Frame):
 
     def fill_m3u_entries(self):
         """ fill_m3u_entries """
-        fill_m3u_entries_start_time = time.time()
-        logger_config.print_and_log_info("fill_m3u_entries: begin")
-        self._clear_list()
-        logger_config.print_and_log_info(f"fill_m3u_entries: list reset. Elapsed:{date_time_formats.format_duration_to_string(time.time() - fill_m3u_entries_start_time)}" )
-        m3u_entry_number = 0
-        
-        selected_title_filter = self.__get_selected_title_filter()
-        selected_type_filter = self.__get_selected_type_filter()
+        with logger_config.stopwatch_with_label("Fill m3u entries"):
+            fill_m3u_entries_start_time = time.time()
+            logger_config.print_and_log_info("fill_m3u_entries: begin")
+            self._clear_list()
+            logger_config.print_and_log_info(f"fill_m3u_entries: list reset. Elapsed:{date_time_formats.format_duration_to_string(time.time() - fill_m3u_entries_start_time)}" )
+            m3u_entry_number = 0
+            
+            selected_title_filter = self.__get_selected_title_filter()
+            selected_type_filter = self.__get_selected_type_filter()
 
-        for m3u_entry in self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entries_with_filter(self._filter_input_text.get(), selected_title_filter, selected_type_filter):
-            m3u_entry_number = m3u_entry_number + 1
-            tree_view_entry_values = [m3u_entry.id,m3u_entry.cleaned_title,m3u_entry.original_raw_title,m3u_entry.title_as_valid_file_name, m3u_entry.group_title, m3u_entry._type.value, m3u_entry.get_file_size_to_display()]
+            for m3u_entry in self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entries_with_filter(self._filter_input_text.get(), selected_title_filter, selected_type_filter):
+                m3u_entry_number = m3u_entry_number + 1
+                tree_view_entry_values = [m3u_entry.id,m3u_entry.cleaned_title,m3u_entry.original_raw_title,m3u_entry.title_as_valid_file_name, m3u_entry.group_title, m3u_entry._type.value, m3u_entry.get_file_size_to_display()]
 
 
-            self._tree_view.insert("",'end', iid=m3u_entry.id, values=tree_view_entry_values)
+                self._tree_view.insert("",'end', iid=m3u_entry.id, values=tree_view_entry_values)
 
-            if m3u_entry_number % 50000 == 0:
-                logger_config.print_and_log_info(str(m3u_entry_number) + " entries filled (in progress)")
-        
-        logger_config.print_and_log_info(f"fill_m3u_entries: list ended. {m3u_entry_number} entries filled. Elapsed:{date_time_formats.format_duration_to_string(time.time() - fill_m3u_entries_start_time)}")
-        
+                if m3u_entry_number % 50000 == 0:
+                    logger_config.print_and_log_info(str(m3u_entry_number) + " entries filled (in progress)")
+            
+            logger_config.print_and_log_info(f"fill_m3u_entries: list ended. {m3u_entry_number} entries filled. Elapsed:{date_time_formats.format_duration_to_string(time.time() - fill_m3u_entries_start_time)}")
+            
     def selection(self):
         print(self.tree_view_context_menu.selection)
         
