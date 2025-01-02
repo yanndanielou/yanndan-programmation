@@ -1,4 +1,4 @@
-""" logger """
+﻿""" logger """
 
 # -*-coding:Utf-8 -*
 import logging
@@ -7,6 +7,9 @@ import sys
 
 import time
 
+from warnings import deprecated
+
+from contextlib import contextmanager
 
 # To get line number for logs
 #from inspect import currentframe, getframeinfo
@@ -151,3 +154,13 @@ class PrintInputAndOutput(object):
         # pylint: disable=line-too-long
         logging.debug(f"Arguments passed to {self.f.__name__ } called with: {str(args)} returns: {str(ret)}")
         return ret
+
+
+@contextmanager
+def stopwatch_with_label(label:str = None):
+    """ écorateur de contexte pour mesurer le temps d'exécution d'une fonction : https://www.docstring.fr/glossaire/with/ """
+    debut = time.perf_counter()
+    yield
+    fin = time.perf_counter()
+    duree = fin - debut
+    print_and_log_info(f"{label} Elapsed: {duree:.2f} seconds")
