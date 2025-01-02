@@ -13,6 +13,8 @@ import Dependencies.Common.file_size_utils as file_size_utils
 import m3u
 import xspf
 
+import param
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main_view import M3uToFreeboxMainView
@@ -191,7 +193,7 @@ class M3uToFreeboxApplication:
         self._m3u_library = m3u.M3uEntriesLibrary()
     
         
-    def load_file(self, file_path):
+    def load_file(self, file_path, save_path_of_m3u_file:bool=True):
         """ Load file """
         logger_config.print_and_log_info("Load file:" + file_path)
 
@@ -200,6 +202,23 @@ class M3uToFreeboxApplication:
         m3u_file_parser =  m3u.M3uFileParser()
         for m3u_entry in m3u_file_parser.parse_file(file_path):
             self._m3u_library.add(m3u_entry)
+         
+        if save_path_of_m3u_file:   
+            with open(param.PATH_OF_FILE_LISTING_LAST_M3U_FILE_LOADED, 'w', encoding="utf-8") as file_listing_last_m3u_file_loaded:
+                file_listing_last_m3u_file_loaded.write(f"{file_path}")
+
+    def load_last_loaded_m3u_file(self)->bool:
+        """ load_last_loaded_m3u_file """
+        try:
+            with open(param.PATH_OF_FILE_LISTING_LAST_M3U_FILE_LOADED, 'r', encoding="utf-8") as file_listing_last_m3u_file_loaded:
+                content = file_listing_last_m3u_file_loaded.read()
+                logger_config.print_and_log_info(f'Last loaded m3u file:{content}')
+                self.load_file(content, False)
+                return True
+        
+        except FileNotFoundError:
+            logger_config.print_and_log_info(f'Could not open file:{param.PATH_OF_FILE_LISTING_LAST_M3U_FILE_LOADED}')
+            return False
         
     @property
     def m3u_library(self) -> m3u.M3uEntriesLibrary :

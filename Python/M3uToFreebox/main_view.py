@@ -77,13 +77,24 @@ class M3uToFreeboxMainView (tkinter.Tk):
         )
         menu_bar.add_cascade(label="File", menu=file_menu)
 
-        file_menu.add_command(label="Open", accelerator="Ctrl+o", command=self.menu_open_file)
-        self.bind_all("<Control-o>", lambda x: self.menu_open_file())
+        file_menu.add_command(label="Open..", accelerator="Ctrl+o", command=self.menu_select_and_open_file)
+        self.bind_all("<Control-o>", lambda x: self.menu_select_and_open_file())
+
+        file_menu.add_command(label="Open last m3u file loaded", accelerator="Ctrl+l", command=self.menu_open_last_m3u_file_loaded)
+        self.bind_all("<Control-l>", lambda x: self.menu_open_last_m3u_file_loaded())
 
 
 
-    def menu_open_file(self):
-        """ Open new file """
+    def menu_open_last_m3u_file_loaded(self):
+        """ Select and open new file """
+        logger_config.print_and_log_info("menu_open_last_m3u_file_loaded")
+        
+        if self._m3u_to_freebox_application.load_last_loaded_m3u_file():
+            self._tab_list_details.fill_m3u_entries()
+
+
+    def menu_select_and_open_file(self):
+        """ Select and open new file """
         logger_config.print_and_log_info("open menu executed")
 
         file_path = filedialog.askopenfilename(
@@ -95,9 +106,8 @@ class M3uToFreeboxMainView (tkinter.Tk):
         if file_path:
             logger_config.print_and_log_info("Open file:" + file_path)
 
-            self._m3u_to_freebox_application.load_file(file_path)
+            self._m3u_to_freebox_application.load_file(file_path, True)
             self._tab_list_details.fill_m3u_entries()
-            
             
         else:
             logger_config.print_and_log_info("Open menu cancelled")
