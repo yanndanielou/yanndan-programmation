@@ -1,11 +1,5 @@
-*.xspf
 *.7z
 *.zip
-*.m3u
 *.txt
-*.mkv
-*.mp4
 /.mypy_cache/
 Dependencies/
-Logger
-#http://vevoxtv.top:2103/get.php?username=412910643GRB&password=dn5QFp3&type=m3u_plus&output=ts
