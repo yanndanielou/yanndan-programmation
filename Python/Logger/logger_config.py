@@ -7,6 +7,8 @@ import sys
 
 import time
 
+import random
+
 from warnings import deprecated
 
 from contextlib import contextmanager
@@ -81,6 +83,13 @@ def print_and_log_error(to_print_and_log):
     # pylint: disable=line-too-long
     print(log_timestamp + '\t' + __get_calling_file_name_and_line_number() + '\t' + str() + to_print_and_log)
     logging.error(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
+
+def configure_logger_with_random_log_file_suffix(log_file_name_prefix,
+                                                 log_file_extension = "log",
+                                                 logger_level = logging.INFO):
+    """ Configure the logger with_random_log_file_suffix"""   
+    log_file_name = f'{log_file_name_prefix}_{str(random.randrange(100000))}.{log_file_extension}'
+    configure_logger(log_file_name, logger_level)
 
 def configure_logger(log_file_name, logger_level = logging.INFO):
     """ Configure the logger """
