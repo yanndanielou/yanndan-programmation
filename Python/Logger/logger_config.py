@@ -20,35 +20,33 @@ import inspect
 # pylint: enable=logging-not-lazy
 # pylint: disable=logging-fstring-interpolation
 
-def __get_calling_file_name_and_line_number():
+def __get_calling_file_name_and_line_number()->str:
     previous_stack = inspect.stack(1)[2]
     file_name = previous_stack.filename
     line_number = previous_stack.lineno
     return file_name  + ", line " + str(line_number)
 
-def __get_calling_file_name():
+def __get_calling_file_name()->str:
     previous_stack = inspect.stack(1)[1]
     file_name = previous_stack.filename
     return file_name
 
-def __get_calling_line_number():
+def __get_calling_line_number()->int:
     previous_stack = inspect.stack(1)[1]
     line_number = previous_stack.lineno
     return line_number
 
-def print_and_log_critical_and_kill(to_print_and_log):
+def print_and_log_critical_and_kill(to_print_and_log:str)->None:
     """ Print in standard output and log in file as info critical, then kill application"""
     log_timestamp = time.asctime( time.localtime(time.time()))
 
     # pylint: disable=line-too-long
     print(log_timestamp + '\t' + __get_calling_file_name_and_line_number() + '\t' + to_print_and_log)
 
-
     logging.critical(f"{__get_calling_file_name_and_line_number()} '\t' {to_print_and_log}")
     sys.exit()
 
-
-def print_and_log_info_if(condition, to_print_and_log):
+def print_and_log_info_if(condition:bool, to_print_and_log:str)->None:
     """ Print in standard output and log in file as info level"""
     
     if condition:
@@ -59,7 +57,7 @@ def print_and_log_info_if(condition, to_print_and_log):
         logging.info(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
 
-def print_and_log_info(to_print_and_log):
+def print_and_log_info(to_print_and_log:str)->None:
     """ Print in standard output and log in file as info level"""
     log_timestamp = time.asctime( time.localtime(time.time()))
 
@@ -68,7 +66,7 @@ def print_and_log_info(to_print_and_log):
     logging.info(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
 
-def print_and_log_warning(to_print_and_log):
+def print_and_log_warning(to_print_and_log:str)->None:
     """ Print in standard output and log in file as info level"""
     log_timestamp = time.asctime( time.localtime(time.time()))
 
@@ -76,7 +74,7 @@ def print_and_log_warning(to_print_and_log):
     print(log_timestamp + '\t' + __get_calling_file_name_and_line_number() + '\t' + str() + to_print_and_log)
     logging.warning(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
-def print_and_log_error(to_print_and_log):
+def print_and_log_error(to_print_and_log:str)->None:
     """ Print in standard output and log in file as error level"""
     log_timestamp = time.asctime( time.localtime(time.time()))
     print(log_timestamp + '\t' + "!!ERROR!!")
@@ -84,14 +82,14 @@ def print_and_log_error(to_print_and_log):
     print(log_timestamp + '\t' + __get_calling_file_name_and_line_number() + '\t' + str() + to_print_and_log)
     logging.error(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
-def configure_logger_with_random_log_file_suffix(log_file_name_prefix,
-                                                 log_file_extension = "log",
-                                                 logger_level = logging.INFO):
+def configure_logger_with_random_log_file_suffix(log_file_name_prefix:str,
+                                                 log_file_extension:str = "log",
+                                                 logger_level:int = logging.INFO)->None:
     """ Configure the logger with_random_log_file_suffix"""   
     log_file_name = f'{log_file_name_prefix}_{str(random.randrange(100000))}.{log_file_extension}'
     configure_logger(log_file_name, logger_level)
 
-def configure_logger(log_file_name, logger_level = logging.INFO):
+def configure_logger(log_file_name:str, logger_level:int = logging.INFO)->None:
     """ Configure the logger """
     logger_directory = "logs"
 
@@ -115,9 +113,11 @@ def configure_logger(log_file_name, logger_level = logging.INFO):
 class ExecutionTime(object):
     """ Print execution time of a function """
     def __init__(self, f):
+        # type: (ExecutionTime) -> None
         self.f = f
 
     def __call__(self, *args):
+        # type: (None) -> any
         # pylint: enable=logging-not-lazy
         # pylint: disable=logging-fstring-interpolation
         logging.info(f'Entering {self.f.__name__}')
@@ -135,7 +135,7 @@ class ExecutionTime(object):
 class PrintOutput(object):
     """ print output of function"""
 
-    def __init__(self, f):
+    def __init__(self, f)->None:
         self.f = f
 
     def __call__(self, *args):
@@ -166,7 +166,7 @@ class PrintInputAndOutput(object):
 
 
 @contextmanager
-def stopwatch_with_label(label:str = None):
+def stopwatch_with_label(label:str|None = None):
     """ écorateur de contexte pour mesurer le temps d'exécution d'une fonction : https://www.docstring.fr/glossaire/with/ """
     debut = time.perf_counter()
     yield
