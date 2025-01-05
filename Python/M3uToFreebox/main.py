@@ -22,8 +22,7 @@ def main()->None:
     
     with logger_config.stopwatch_with_label("Application duration"):
         application_start_time = time.time()
-        log_file_name = os.path.basename(__file__) + str(random.randrange(100000)) + ".log"
-        logger_config.configure_logger(log_file_name)
+        logger_config.configure_logger()
 
         logger_config.print_and_log_info('Start application')
 
