@@ -11,6 +11,7 @@ import random
 
 from warnings import deprecated
 
+from collections.abc import Generator
 from contextlib import contextmanager
 
 # To get line number for logs
@@ -48,7 +49,6 @@ def print_and_log_critical_and_kill(to_print_and_log:str)->None:
 
 def print_and_log_info_if(condition:bool, to_print_and_log:str)->None:
     """ Print in standard output and log in file as info level"""
-    
     if condition:
         log_timestamp = time.asctime( time.localtime(time.time()))
 
@@ -112,12 +112,10 @@ def configure_logger(log_file_name:str, logger_level:int = logging.INFO)->None:
 
 class ExecutionTime(object):
     """ Print execution time of a function """
-    def __init__(self, f):
-        # type: (ExecutionTime) -> None
+    def __init__(self, f):# type: ignore
         self.f = f
 
-    def __call__(self, *args):
-        # type: (None) -> any
+    def __call__(self, *args):# type: ignore
         # pylint: enable=logging-not-lazy
         # pylint: disable=logging-fstring-interpolation
         logging.info(f'Entering {self.f.__name__}')
@@ -135,10 +133,10 @@ class ExecutionTime(object):
 class PrintOutput(object):
     """ print output of function"""
 
-    def __init__(self, f)->None:
+    def __init__(self, f)->None:# type: ignore
         self.f = f
 
-    def __call__(self, *args):
+    def __call__(self, *args):# type: ignore
 
         #Call method
         ret = self.f(*args)
@@ -150,10 +148,10 @@ class PrintOutput(object):
 class PrintInputAndOutput(object):
     """ print input and output of function"""
 
-    def __init__(self, f):
+    def __init__(self, f):# type: ignore
         self.f = f
 
-    def __call__(self, *args):
+    def __call__(self, *args):# type: ignore
 
         #Call method
         ret = self.f(*args)
@@ -164,9 +162,8 @@ class PrintInputAndOutput(object):
         logging.debug(f"Arguments passed to {self.f.__name__ } called with: {str(args)} returns: {str(ret)}")
         return ret
 
-
 @contextmanager
-def stopwatch_with_label(label:str|None = None):
+def stopwatch_with_label(label:str)-> Generator[float, None, None]:
     """ écorateur de contexte pour mesurer le temps d'exécution d'une fonction : https://www.docstring.fr/glossaire/with/ """
     debut = time.perf_counter()
     yield
