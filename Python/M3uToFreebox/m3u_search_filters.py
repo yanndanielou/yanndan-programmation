@@ -34,7 +34,7 @@ class M3uEntryFilter:
 
 class M3uFiltersManager(metaclass=Singleton):
     """ Manager of m3u filters"""
-    def __init__(self):
+    def __init__(self):# type: ignore
         self._by_title_filters : list[M3uEntryByTitleFilter] = []
         self._by_title_filters.append(TitleContainsExactlyFilter(True, "Contains Exactly (case sensitive)"))
         self._by_title_filters.append(TitleContainsExactlyFilter(False, "Contains Exactly (case NOT sensitive)")) 
@@ -72,11 +72,11 @@ class M3uFiltersManager(metaclass=Singleton):
 
 
 class M3uEntryByTypeFilter(M3uEntryFilter):
-    def __init__(self, entry_type = M3uEntry.EntryType):
+    def __init__(self, entry_type:M3uEntry.EntryType):
         super().__init__("Any" if entry_type is None else str(entry_type.value))
-        self._entry_type:M3uEntry = entry_type
+        self._entry_type:M3uEntry.EntryType = entry_type
 
-    def match_m3u(self, m3u_entry:M3uEntry):
+    def match_m3u(self, m3u_entry:M3uEntry)->bool:
         if self._entry_type is None:
             return True
         return self._entry_type == m3u_entry.type
@@ -89,11 +89,12 @@ class M3uEntryByTitleFilter(M3uEntryFilter):
         self._case_sensitive:bool = case_sensitive
     
     @property
-    def case_sensitive(self):
+    def case_sensitive(self)->bool:
+        """ case_sensitive getter """
         return self._case_sensitive
 
     @case_sensitive.setter
-    def case_sensitive(self, value):
+    def case_sensitive(self, value:bool)->None:
         self._case_sensitive = value
 
       
@@ -105,15 +106,13 @@ class M3uEntryByTitleFilter(M3uEntryFilter):
 
 class TitleContainsExactlyFilter(M3uEntryByTitleFilter):
     """ TitleContainsExactlyFilter """
-    def __init__(self, case_sensitive, label):
+    def __init__(self, case_sensitive:bool, label:str):
         super().__init__(case_sensitive, label)
-        pass
-    
-    def match_m3u(self, m3u_entry:M3uEntry, filter_text):
+
+    def match_m3u(self, m3u_entry:M3uEntry, filter_text:str)->bool:
         if self._case_sensitive:
             return filter_text in m3u_entry.original_raw_title
         return filter_text.lower() in m3u_entry.original_raw_title.lower()
-        
 
 class TitleMatchesFilterTextRegex(M3uEntryByTitleFilter):
     """ TitleMatchesFilterTextRegex """
