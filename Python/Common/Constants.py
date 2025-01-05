@@ -1,4 +1,4 @@
 # -*-coding:Utf-8 -*
+""" Common constants """
 
-end_line_character_in_text_file = "\n"
-
+END_LINE_CHARACTER_IN_TEXT_FILE = "\n"
