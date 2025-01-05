@@ -15,7 +15,7 @@ from detailsview import DetailsViewTab
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    import application
+    from application import M3uToFreeboxApplication
 
 class M3uToFreeboxMainView (tkinter.Tk):
     """ Main view of application """
@@ -25,7 +25,7 @@ class M3uToFreeboxMainView (tkinter.Tk):
 
         self.title("M3U to Freebox")
 
-        self._m3u_to_freebox_application: application.M3uToFreeboxApplication = None
+        self._m3u_to_freebox_application: 'M3uToFreeboxApplication'|None = None
 
 
         self._create_menu()
@@ -39,17 +39,17 @@ class M3uToFreeboxMainView (tkinter.Tk):
         #self._create_main_frame()
 
 
-    def create_tab_list_details(self):
+    def create_tab_list_details(self)->None:
         """ Create tab details """
         self._tab_list_details = DetailsViewTab(self, self._tab_control)
         self._tab_control.add(self._tab_list_details, text ='List detail')
 
-    def create_tab_empty(self):
+    def create_tab_empty(self)->None:
         self._tab_empty = ttk.Frame(self._tab_control)
         self._tab_control.add(self._tab_empty, text ='Empty')
 
         
-    def _create_menu(self):
+    def _create_menu(self)->None:
 
         menu_bg = "black"
         menu_fg = "lightgrey"
@@ -114,12 +114,12 @@ class M3uToFreeboxMainView (tkinter.Tk):
 
 
     @property
-    def m3u_to_freebox_application(self):
+    def m3u_to_freebox_application(self)->'M3uToFreeboxApplication':
         """ Getter for _m3u_to_freebox_application """
         return self._m3u_to_freebox_application
 
     @m3u_to_freebox_application.setter
-    def m3u_to_freebox_application(self, value):
+    def m3u_to_freebox_application(self, value:'M3uToFreeboxApplication')->None:
         self._m3u_to_freebox_application = value
 
     

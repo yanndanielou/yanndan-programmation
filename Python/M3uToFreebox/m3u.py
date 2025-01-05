@@ -258,17 +258,15 @@ class M3uEntriesLibrary:
         
         if str is None:
             return self._m3u_entries
-        
+
         for m3u_entry in self._m3u_entries:
             if selected_type_filter.match_m3u(m3u_entry) and selected_title_filter.match_m3u(m3u_entry, typed_text):
                 ret.append(m3u_entry)
-        
+
         logger_config.print_and_log_info("Number of entries with typed text:" + typed_text + ": " + str(len(ret)))
         return ret
-        
     
 if __name__ == "__main__":
     # sys.argv[1:]
     main = importlib.import_module("main")
     main.main()
-

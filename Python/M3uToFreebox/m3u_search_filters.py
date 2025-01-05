@@ -140,7 +140,7 @@ class TitleMatchesFilterTextRegex(M3uEntryByTitleFilter):
 
 class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
     """ TitleContainsExactlyFilter """
-    def __init__(self, whole_words, case_sensitive, label):
+    def __init__(self, whole_words:bool, case_sensitive:bool, label:str):
         super().__init__(case_sensitive, label)
         self._whole_words = whole_words
 
@@ -148,14 +148,14 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
         self._filter_text_language = None
         self._filter_text_words = None
     
-    def recompute_filter_text_words_and_language(self, filter_text):
+    def recompute_filter_text_words_and_language(self, filter_text:str):
         if self._filter_text != filter_text:
             self._filter_text = filter_text
             self._filter_text_language = language_utils.get_full_language_name(language_utils.detect_language_with_langid(filter_text))
             self._filter_text_words = tokenization_string.tokenize_text_with_nltk_regexp_tokenizer(filter_text)
 
 
-    def match_m3u(self, m3u_entry:M3uEntry, filter_text):
+    def match_m3u(self, m3u_entry:M3uEntry, filter_text:str):
         
         if not self._whole_words:
             filter_text_words = tokenization_string.tokenize_text_with_nltk_regexp_tokenizer(filter_text)
