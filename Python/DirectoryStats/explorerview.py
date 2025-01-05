@@ -51,9 +51,9 @@ class ExplorerViewFrame(ttk.Frame):
         
         self._paddings = {'padx': 5, 'pady': 5}
 
-        self._parent:'DirectoryStatsMainView' = parent    
+        self._parent:'DirectoryStatsMainView' = parent
         
-                # show="tree" removes the column header, since we
+        # show="tree" removes the column header, since we
         # are not using the table feature.
         self.treeview = ttk.Treeview(self, show="tree")
         self.treeview.grid(row=0, column=0, sticky="nsew")
@@ -70,8 +70,8 @@ class ExplorerViewFrame(ttk.Frame):
         # This dictionary maps the treeview items IDs with the
         # path of the file or folder.
         self.fsobjects: dict[str, Path] = {}
-        self.file_image = tk.PhotoImage(file="ressources/file.png")
-        self.folder_image = tk.PhotoImage(file="ressources/folder.png")
+        self.file_image = tk.PhotoImage(file="ressources/file_icon.png")
+        self.folder_image = tk.PhotoImage(file="ressources/folder_icon.png")
         # Load the root directory.
         self.load_tree(Path(Path(sys.executable).anchor))
 
@@ -82,7 +82,7 @@ class ExplorerViewFrame(ttk.Frame):
         try:
             return tuple(path.iterdir())
         except PermissionError:
-            print("You don't have permission to read", path)
+            logger_config.print_and_log_warning(f"You don't have permission to read {path}")
             return ()
 
     def get_icon(self, path: Path) -> tk.PhotoImage:
@@ -106,6 +106,7 @@ class ExplorerViewFrame(ttk.Frame):
         """
         Load the contents of `path` into the treeview.
         """
+        logger_config.print_and_log_info(f'load_tree path:{path}, parent:{parent}')
         for fsobj in self.safe_iterdir(path):
             fullpath = path / fsobj
             child = self.insert_item(fsobj.name, fullpath, parent)
@@ -120,6 +121,8 @@ class ExplorerViewFrame(ttk.Frame):
         Load the content of each folder inside the specified item
         into the treeview.
         """
+        logger_config.print_and_log_info(f'load_subitems iid:{iid}')
+
         for child_iid in self.treeview.get_children(iid):
             if self.fsobjects[child_iid].is_dir():
                 self.load_tree(self.fsobjects[child_iid],
