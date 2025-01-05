@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class M3uToFreeboxMainView (tkinter.Tk):
     """ Main view of application """
 
-    def __init__(self):
+    def __init__(self)->None:
         super().__init__()        
 
         self.title("M3U to Freebox")

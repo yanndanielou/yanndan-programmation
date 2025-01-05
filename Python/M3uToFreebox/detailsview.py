@@ -43,8 +43,9 @@ from enum import Enum
 class Action(Enum):
     CREATE_XSPF_FILE = "Create xspf file"
     DONWLOAD_MOVIE= "Download movie"
-    
+
 class DetailsViewTab(ttk.Frame):
+    """ DetailsViewTab """
 
     
     def __init__(self, parent, tab_control):# type: ignore

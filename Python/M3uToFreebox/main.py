@@ -17,7 +17,7 @@ from main_view import M3uToFreeboxMainView
 
 
 
-def main():
+def main()->None:
     """ Main function """
     
     with logger_config.stopwatch_with_label("Application duration"):
