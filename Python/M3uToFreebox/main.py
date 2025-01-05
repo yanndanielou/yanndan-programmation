@@ -22,7 +22,7 @@ def main()->None:
     
     with logger_config.stopwatch_with_label("Application duration"):
         application_start_time = time.time()
-        logger_config.configure_logger()
+        logger_config.configure_logger_with_random_log_file_suffix("M3uToFreebox")
 
         logger_config.print_and_log_info('Start application')
 

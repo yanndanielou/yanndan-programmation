@@ -66,7 +66,7 @@ class DetailsViewTab(ttk.Frame):
         
         #self._organize_widgets()
 
-    def _create_filter_frame(self):
+    def _create_filter_frame(self)->None:
         """ Filter """
 
         self._filter_frame =tkinter.LabelFrame(self, text="Filters")    
@@ -81,7 +81,7 @@ class DetailsViewTab(ttk.Frame):
         self._create_title_filter()
         self._create_type_filter()
 
-    def _create_title_filter(self):
+    def _create_title_filter(self)->None:
         # Filter label
         self._title_filter_option_description_label = ttk.Label(self._filter_frame, foreground='black')
         self._title_filter_option_description_label['text'] = f'Type of title filter:'
@@ -101,7 +101,7 @@ class DetailsViewTab(ttk.Frame):
         self._title_filter_option_menu.grid(row= 0, column=2, padx=5, pady=10)
 
 
-    def _create_type_filter(self):
+    def _create_type_filter(self)->None:
         # Filter label
         self._type_filter_option_description_label = ttk.Label(self._filter_frame, foreground='black')
         self._type_filter_option_description_label['text'] = f'Type of m3u:'
@@ -122,7 +122,7 @@ class DetailsViewTab(ttk.Frame):
         self._type_filter_option_menu.grid(row= 0, column=4, padx=5, pady=10)
         
 
-    def _create_tree_view_frame(self):
+    def _create_tree_view_frame(self)->None:
         self._tree_view_frame = tkinter.Frame(self)
         self._tree_view_frame.grid(row= 1, column=0, padx=20, pady=10)
 
@@ -155,7 +155,7 @@ class DetailsViewTab(ttk.Frame):
         self._tree_view.pack()
         self._tree_scroll_vertical.pack(side=tkinter.RIGHT, fill=tkinter.Y)
 
-    def _create_bottom_frame(self):
+    def _create_bottom_frame(self)->None:
         
         self._bottom_frame = tkinter.Frame(self)
         self._bottom_frame.grid(row=2, column=0, padx=20, pady=10)
@@ -170,18 +170,18 @@ class DetailsViewTab(ttk.Frame):
         
 
         
-    def type_filter_option_changed(self, *args):
+    def type_filter_option_changed(self, *args)->None:
         logger_config.print_and_log_info(f'You selected: {self._type_filter_option_var.get()}')
         self.fill_m3u_entries()
 
         
-    def title_filter_option_changed(self, *args):
+    def title_filter_option_changed(self, *args)->None:
         logger_config.print_and_log_info(f'You selected: {self._title_filter_option_var.get()}')
         self.fill_m3u_entries()
 
         
     
-    def _create_context_menu(self):
+    def _create_context_menu(self)->None:
         #Create context menu
         self.tree_view_context_menu: tkinter.Menu = tkinter.Menu(self, tearoff=0)
         
@@ -202,7 +202,7 @@ class DetailsViewTab(ttk.Frame):
         self.tree_view_context_menu.add_command(label="Reset Library", command=self._reset_library)
         self.tree_view_context_menu.add_separator()
 
-        def do_popup(event):
+        def do_popup(event:tkinter.Event)->None:
             # display the popup menu
             try:
                 row_identified = self._tree_view.identify_row(event.y)
@@ -221,7 +221,7 @@ class DetailsViewTab(ttk.Frame):
         self._tree_view.bind("<Button-3>", do_popup)
 
 
-    def _open_m3u_entry_detail_popup(self):
+    def _open_m3u_entry_detail_popup(self)->None:
         m3u_entry_line = self.tree_view_context_menu.selection
         #m3u_entry_detail_popup = detailspopup.M3uEntryDetailPopup(self, None)
 
@@ -234,7 +234,7 @@ class DetailsViewTab(ttk.Frame):
         m3u_entry_id_str:str = m3u_entry_line['ID']  
         return m3u_entry_id_str        
 
-    def _perform_action_on_destination_context_menu_choosen(self, action:Action, destination:DestinationFolder):
+    def _perform_action_on_destination_context_menu_choosen(self, action:Action, destination:DestinationFolder)->None:
 
         logger_config.print_and_log_info("destination chosen: " + str(destination))
         logger_config.print_and_log_info("action chosen: " + str(action))
@@ -250,10 +250,7 @@ class DetailsViewTab(ttk.Frame):
         
         if destination_directory is None:
             return
-        
-        
-                  
-  
+ 
         match action:
             case Action.DONWLOAD_MOVIE:
                 self._parent.m3u_to_freebox_application.download_movie_file_by_id_str(destination_directory, m3u_entry_id_str)
@@ -261,29 +258,14 @@ class DetailsViewTab(ttk.Frame):
             case Action.CREATE_XSPF_FILE:
                 self._parent.m3u_to_freebox_application.create_xspf_file_by_id_str(destination_directory, m3u_entry_id_str)
 
-    def _load_selected_file_size(self):
+    def _load_selected_file_size(self)->None:
         m3u_entry_id_str = self._get_selected_m3u_entry_id_str()
         self._parent.m3u_to_freebox_application.load_m3u_entry_size_by_id_str(m3u_entry_id_str)
 
         m3u_entry = self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entry_by_id(int(m3u_entry_id_str))
         self._tree_view.set(m3u_entry.id, column="Size", value = m3u_entry.get_file_size_to_display())
-
-    def _create_xspf_on_destination_context_menu_choosen(self, destination):
-        logger_config.print_and_log_info("destination chosen: " + str(destination))
-        m3u_entry_line = self.tree_view_context_menu.selection
-        
-        if len(m3u_entry_line) == 0:
-            logger_config.print_and_log_info("N-o line selected")
-            return
-
-
-        m3u_entry_id_str = m3u_entry_line['ID']
-        
-        directory = destination[1]
-        
-        self._parent.m3u_to_freebox_application.create_xspf_file_by_id_str(directory, m3u_entry_id_str)
   
-    def _create_view(self):
+    def _create_view(self)->None:
                 
         self._create_filter_frame()
         self._create_tree_view_frame()
@@ -292,10 +274,10 @@ class DetailsViewTab(ttk.Frame):
 
 
       
-    def create_scrollbar(self):  
+    def create_scrollbar(self)->None:
         pass
 
-    def filter_updated(self, *args):
+    def filter_updated(self, *args:None)->None:
         if self._title_filter_text_content != self._filter_input_text.get():
             self._title_filter_text_content = self._filter_input_text.get()
             self.fill_m3u_entries()
@@ -303,7 +285,7 @@ class DetailsViewTab(ttk.Frame):
             logger_config.print_and_log_info(f"Title filter text content not changed. Still:{self._title_filter_text_content}")
 
 
-    def treeview_sort_column(self, tv, col, reverse):
+    def treeview_sort_column(self, tv:ttk.Treeview, col:int, reverse:bool)->None:
         """ Sort """
         logger_config.print_and_log_info(f"Sort by column:{col}, reverse:{reverse}")
         l = [(tv.set(k, col), k) for k in tv.get_children('')]
@@ -323,30 +305,30 @@ class DetailsViewTab(ttk.Frame):
             return self._parent
 
         @parent.setter
-        def parent(self, value: main_view.M3uToFreeboxMainView):
+        def parent(self, value: main_view.M3uToFreeboxMainView)->None:
             self._parent = value
 
 
-    def _reset_library(self):
+    def _reset_library(self)->None:
         self._parent.m3u_to_freebox_application.reset_library()
         self.filter_updated()
 
-    def _clear_list(self):
+    def _clear_list(self)->None:
         self._tree_view.delete(* self._tree_view.get_children())
 
 
-    def __get_selected_title_filter(self):
+    def __get_selected_title_filter(self)->None:
         selected_title_filter_name = self._title_filter_option_var.get()
         selected_title_filter = [filter for filter in self._by_title_filters if filter.label == selected_title_filter_name][0]
         return selected_title_filter
 
-    def __get_selected_type_filter(self):
+    def __get_selected_type_filter(self)->None:
         selected_type_filter_name = self._type_filter_option_var.get()
         selected_type_filter = [filter for filter in self._by_type_filters if filter.label == selected_type_filter_name][0]
         return selected_type_filter
         
 
-    def fill_m3u_entries(self):
+    def fill_m3u_entries(self)->None:
         """ fill_m3u_entries """
         with logger_config.stopwatch_with_label("Fill m3u entries"):
             fill_m3u_entries_start_time = time.time()
@@ -370,7 +352,7 @@ class DetailsViewTab(ttk.Frame):
             
             logger_config.print_and_log_info(f"fill_m3u_entries: list ended. {m3u_entry_number} entries filled. Elapsed:{date_time_formats.format_duration_to_string(time.time() - fill_m3u_entries_start_time)}")
             
-    def selection(self):
+    def selection(self)->None:
         print(self.tree_view_context_menu.selection)
         
 
