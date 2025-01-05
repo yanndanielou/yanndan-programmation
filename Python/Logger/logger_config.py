@@ -89,7 +89,7 @@ def configure_logger_with_random_log_file_suffix(log_file_name_prefix:str,
     log_file_name = f'{log_file_name_prefix}_{str(random.randrange(100000))}.{log_file_extension}'
     configure_logger_with_exact_file_name(log_file_name, logger_level)
     
-def configure_logger(logger_level:int = logging.INFO)->None:
+def configure_logger_not_working(logger_level:int = logging.INFO)->None:
     """ Configure the logger with_random_log_file_suffix"""   
     previous_stack = inspect.stack(1)[2]
     calling_script_file_name = previous_stack.filename
