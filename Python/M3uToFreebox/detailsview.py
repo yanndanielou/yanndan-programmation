@@ -2,19 +2,13 @@
 
 """ https://tkdocs.com/tutorial/firstexample.html """
 
-import sys
-import os
-
 #sys.path.insert(1, os.getcwd())
 #sys.path.append("D:/GitHub/yanndanielou-programmation/Python/Logger")
 #sys.path.append("../Logger")
 
 #import logger_config
 
-import Dependencies.Logger.logger_config as logger_config
-import Dependencies.Common.date_time_formats as date_time_formats
-
-from destinations import DestinationsFolders, DestinationFolder
+from typing import TYPE_CHECKING
 
 import tkinter
 
@@ -22,11 +16,15 @@ import importlib
 
 import time
 
-from typing import TYPE_CHECKING
+import Dependencies.Logger.logger_config as logger_config
+import Dependencies.Common.date_time_formats as date_time_formats
+
+from destinations import DestinationsFolders, DestinationFolder
+
 if TYPE_CHECKING:
     from m3u_search_filters import M3uEntryByTitleFilter, M3uEntryByTypeFilter
+    from main_view import M3uToFreeboxMainView
 
-import m3u
 from m3u_search_filters import M3uFiltersManager
 
 
@@ -49,13 +47,12 @@ class Action(Enum):
 class DetailsViewTab(ttk.Frame):
 
     
-    def __init__(self, parent, tab_control):
+    def __init__(self, parent, tab_control):# type: ignore
         super().__init__(tab_control)
         
         self._paddings = {'padx': 5, 'pady': 5}
 
-        import main_view
-        self._parent:main_view.M3uToFreeboxMainView = parent
+        self._parent:'M3uToFreeboxMainView' = parent
         
         self._by_title_filters:list[M3uEntryByTitleFilter] = M3uFiltersManager().by_title_filters
 
@@ -227,14 +224,14 @@ class DetailsViewTab(ttk.Frame):
         m3u_entry_line = self.tree_view_context_menu.selection
         #m3u_entry_detail_popup = detailspopup.M3uEntryDetailPopup(self, None)
 
-    def _get_selected_m3u_entry_id_str(self)->str:
+    def _get_selected_m3u_entry_id_str(self)->str|None:
         m3u_entry_line = self.tree_view_context_menu.selection
         if len(m3u_entry_line) == 0:
             logger_config.print_and_log_info("No line selected")
             return None
 
-        m3u_entry_id_str = m3u_entry_line['ID']  
-        return m3u_entry_id_str           
+        m3u_entry_id_str:str = m3u_entry_line['ID']  
+        return m3u_entry_id_str        
 
     def _perform_action_on_destination_context_menu_choosen(self, action:Action, destination:DestinationFolder):
 
