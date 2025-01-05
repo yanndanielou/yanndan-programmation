@@ -6,7 +6,8 @@ import importlib
 
 from tkinter import (
   filedialog, 
-  ttk
+  ttk,
+  Frame
 )
 
 from typing import TYPE_CHECKING
@@ -18,20 +19,21 @@ from Dependencies.Logger import logger_config
 from explorerview import ExplorerViewFrame
 from detailview import DetailViewFrame
 
-class DirectoryStatsMainView (tkinter.Tk):
+class DirectoryStatsMainView (tkinter.Frame):
     """ Main view of application """
 
-    def __init__(self)->None:
+    def __init__(self, top_level_window: tkinter.Tk | tkinter.Toplevel)->None:
         super().__init__()
 
-        self.title("Directory Stats")
+        self._top_level_window = top_level_window
+        top_level_window.title("Directory Stats")
 
-        self._directory_stats_application: application.DirectoryStatsApplication|None = None
+        self._directory_stats_application: application.DirectoryStatsApplication
 
         self._create_menu_bar()
 
-        self._explorer_view = ExplorerViewFrame(self)
-        self._detail_view = DetailViewFrame(self)
+        self._explorer_view = ExplorerViewFrame(self, top_level_window)
+        self._detail_view = DetailViewFrame(self, top_level_window)
        
         #self._create_main_frame()
 
@@ -53,7 +55,7 @@ class DirectoryStatsMainView (tkinter.Tk):
         submenu_fg = "lightgrey"
 
         menu_bar = tkinter.Menu(self)
-        self.config(menu=menu_bar)
+        self._top_level_window.config(menu=menu_bar)
         menu_bar.config(
             font=("Courier", 11),
             bg=menu_bg,
@@ -75,7 +77,7 @@ class DirectoryStatsMainView (tkinter.Tk):
         self.bind_all("<Control-o>", lambda x: self.menu_select_and_scan_directory())
 
 
-    def menu_select_and_scan_directory(self):
+    def menu_select_and_scan_directory(self)->None:
         """ Select and open new file """
         logger_config.print_and_log_info("open menu executed")
         
@@ -84,20 +86,10 @@ class DirectoryStatsMainView (tkinter.Tk):
         logger_config.print_and_log_info("Directory chosen:" + str(directory_path_name))
 
         if directory_path:
-            self._directory_stats_application.select_root_directory(directory_path_name, True)
+            self._directory_stats_application.select_root_directory(directory_path_name)
 
         else:
             logger_config.print_and_log_info("Menu select_and_scan_directory cancelled")
-
-
-    @property
-    def directory_stats_application(self):
-        """ Getter for _m3u_to_freebox_application """
-        return self._directory_stats_application
-
-    @directory_stats_application.setter
-    def directory_stats_application(self, value):
-        self._directory_stats_application = value
 
     
 if __name__ == "__main__":

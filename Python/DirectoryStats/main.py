@@ -14,6 +14,7 @@ from Dependencies.Common import date_time_formats
 from application import DirectoryStatsApplication
 from main_view import DirectoryStatsMainView
 
+from tkinter import Tk
 
 
 def main()->None:
@@ -24,9 +25,9 @@ def main()->None:
 
         logger_config.print_and_log_info('Start application')
 
-        mainview = DirectoryStatsMainView()
+        root = Tk()
+        mainview = DirectoryStatsMainView(root)
         app: DirectoryStatsApplication = DirectoryStatsApplication(mainview)
-        mainview.directory_stats_application = app
         mainview.mainloop()
 
         logger_config.print_and_log_info("End. Nominal end of application")

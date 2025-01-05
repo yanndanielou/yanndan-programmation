@@ -38,7 +38,7 @@ from tkinter import (
 class DetailViewFrame(ttk.Frame):
     """ DetailViewFrame """
     
-    def __init__(self, parent:'DirectoryStatsMainView'):
+    def __init__(self, parent:'DirectoryStatsMainView', top_level_window: tkinter.Tk | tkinter.Toplevel):
         super().__init__()
         
         self._paddings = {'padx': 5, 'pady': 5}
