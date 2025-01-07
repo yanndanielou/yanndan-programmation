@@ -20,6 +20,7 @@ CD %1
 
 CALL :COPY_DEPENDENCY Common
 CALL :COPY_DEPENDENCY Logger
+CALL :CREATE_PYPROJECT_TOML
 CD %SCRIPT_DIRECTORY%
 @EXIT /B 0
 
@@ -29,6 +30,12 @@ CD %SCRIPT_DIRECTORY%
 @Echo install %1
 @MD Dependencies\%1
 ROBOCOPY %SCRIPT_DIRECTORY%\%1 Dependencies\%1 *.py
+@EXIT /B 0
+
+:CREATE_PYPROJECT_TOML
+
+echo [tool.pylint.'MESSAGES CONTROL'] > pyproject.toml
+echo max-line-length = 130 >> pyproject.toml
 @EXIT /B 0
 
 

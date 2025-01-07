@@ -1,6 +1,5 @@
 # -*-coding:Utf-8 -*
-
-import os
+""" test custom """
 import unittest
 
 import unit_tests_helpers
@@ -8,8 +7,6 @@ from  custom_iterator import SimpleIntCustomIncrementDecrement
 
 class SimpleIntCustomIncrementDecrementTest(unit_tests_helpers.TestCaseBase):
     """ SimpleIntCustomIncrementDecrementTest """
-    def __init__(self, methodName='runTest'):
-        super().__init__(methodName)
 
     def test_increment(self):
         """ test """

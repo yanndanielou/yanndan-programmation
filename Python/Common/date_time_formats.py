@@ -9,10 +9,6 @@ def format_duration_to_string(duration_in_seconds_as_float: float) -> str:
     hours, remainder = divmod(duration_in_seconds_as_int, 3600)
     minutes, seconds = divmod(remainder, 60)
 
-    result = '{:02}:{:02}:{:02}.{:03}'.format(
-        int(hours),
-        int(minutes),
-        int(seconds),
-        int(milliseconds))
+    result = f'{int(hours):02}:{int(minutes):02}:{int(seconds):02}.{int(milliseconds):03}'
 
     return result

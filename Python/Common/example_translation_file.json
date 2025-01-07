@@ -1,0 +1,21 @@
+{
+    "fr": {
+        "title": "Application de Changement de Langue",
+        "label": "Bonjour, {name}! Comment ça va, {name}?",
+        "button": "Changer de langue"
+    },
+    "en": {
+        "title": "Language Switcher App",
+        "label": "Hello, {name}! How are you, {name}?",
+        "button": "Change Language"
+    },
+    "es": {
+        "title": "Aplicación de cambio de idioma",
+        "button": "Cambiar idioma"
+    },
+    "de": {
+        "title": "Sprachwechsler-App",
+        "label": "Hallo, {name}! Wie geht es dir, {name}?",
+        "button": "Sprache ändern"
+    }
+}

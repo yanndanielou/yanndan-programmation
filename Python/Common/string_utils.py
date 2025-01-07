@@ -1,6 +1,6 @@
 # -*-coding:Utf-8 -*
+""" Utils for strings """
 
-import string
 from unidecode import unidecode
 
 def format_filename(input_original_string:str, allow_spaces:bool = True):
@@ -17,13 +17,13 @@ Taken from https://gist.github.com/seanh/93666#file-formatfilename-py
  
 """
 
-    windows_reserved_filemanes = ["CON, PRN, AUX, NUL, COM1, COM2, COM3, COM4, COM5, COM6, COM7, COM8, COM9, LPT1, LPT2, LPT3, LPT4, LPT5, LPT6, LPT7, LPT8, LPT9"]
+    windows_reserved_filemanes = ["CON, PRN, AUX, NUL, COM1, COM2, COM3, COM4, COM5, COM6, COM7, COM8, COM9, LPT1, LPT2, LPT3, LPT4, LPT5, LPT6, LPT7, LPT8, LPT9"]# pylint: disable=line-too-long
     forbidden_windows_caracters = [("<","(less than)"), (">" ,"(greater than)"), (":", "(colon - sometimes works, but is actually NTFS Alternate Data Streams)"),('"',"(double quote)"),("/","(forward slash)"),("\\","(backslash)"),("|","(vertical bar or pipe)"),("?","(question mark)"),("*","(asterisk)")]
 
     not_convenient_caracters = [chr(9600), chr(9604)]
 
     #0-31 (ASCII control characters)
-    windows_non_printable_characters = list(map(lambda x: chr(x), range(0, 31)))
+    windows_non_printable_characters = list(map(chr, range(0, 31))) # previously list(map(lambda x: chr(x), range(0, 31)))# pylint: disable=line-too-long
 
     if input_original_string in windows_reserved_filemanes:
         return "_" + input_original_string
@@ -32,7 +32,7 @@ Taken from https://gist.github.com/seanh/93666#file-formatfilename-py
         input_original_string = input_original_string.replace(forbidden_windows_caracter, "")
 
     if not allow_spaces:
-        input_original_string = input_original_string.replace(' ','_') # I don't like spaces in filenames.
+        input_original_string = input_original_string.replace(' ','_')
 
     return input_original_string
 
