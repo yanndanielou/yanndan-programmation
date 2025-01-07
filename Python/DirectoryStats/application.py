@@ -2,8 +2,6 @@
 
 from warnings import deprecated
 
-import tqdm
-
 import Dependencies.Logger.logger_config as logger_config
 import Dependencies.Common.date_time_formats as date_time_formats
 import Dependencies.Common.file_size_utils as file_size_utils
