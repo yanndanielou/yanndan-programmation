@@ -1,5 +1,9 @@
+@SET SCRIPT_DIRECTORY=%CD%
+@ECHO Execute script %SCRIPT_DIRECTORY%
+
 CALL :HANDLE_ONE_PROJECT DirectoryStats
 CALL :HANDLE_ONE_PROJECT M3uToFreebox
+CALL :HANDLE_ONE_PROJECT Sandbox\multilanguage-application-tkinter
 
 
 
@@ -16,7 +20,7 @@ CD %1
 
 CALL :COPY_DEPENDENCY Common
 CALL :COPY_DEPENDENCY Logger
-CD ..
+CD %SCRIPT_DIRECTORY%
 @EXIT /B 0
 
 
@@ -24,7 +28,7 @@ CD ..
 :COPY_DEPENDENCY
 @Echo install %1
 @MD Dependencies\%1
-ROBOCOPY ..\%1 Dependencies\%1 *.py
+ROBOCOPY %SCRIPT_DIRECTORY%\%1 Dependencies\%1 *.py
 @EXIT /B 0
 
 
