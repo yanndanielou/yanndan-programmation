@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "logger-library"
+description = "Handle loggers"
+
+[tool.black]
+line-length = 120  # Longueur maximale des lignes pour Black
+
+[tool.mypy]
+files = "src"
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+warn_unused_configs = true
+
+[tool.pylint]
+disable = ["C0114", "C0115", "C0116"]  # Désactivation de certaines règles
+#missing-function-docstring
+#missing-module-docstring
+#Missing class docstringPylintC0115:missing-class-docstring
+max-line-length = 120  # Longueur maximale des lignes
