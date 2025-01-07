@@ -16,29 +16,30 @@ import importlib
 
 import time
 
-import Dependencies.Logger.logger_config as logger_config
-import Dependencies.Common.date_time_formats as date_time_formats
+from tkinter import (
+  #filedialog, 
+  #simpledialog, 
+  #messagebox, 
+  #scrolledtext, 
+  #Menu,
+  #colorchooser,
+  ttk
+  )
+
+from enum import Enum
+
+from logger import logger_config
+from common import date_time_formats, custom_iterator
 
 from destinations import DestinationsFolders, DestinationFolder
+
+from m3u_search_filters import M3uFiltersManager
 
 if TYPE_CHECKING:
     from m3u_search_filters import M3uEntryByTitleFilter, M3uEntryByTypeFilter
     from main_view import M3uToFreeboxMainView
 
-from m3u_search_filters import M3uFiltersManager
 
-
-from tkinter import (
-  filedialog, 
-  simpledialog, 
-  messagebox, 
-  scrolledtext, 
-  Menu,
-  colorchooser,
-  ttk
-  )
-
-from enum import Enum
 
 class Action(Enum):
     CREATE_XSPF_FILE = "Create xspf file"
@@ -47,18 +48,26 @@ class Action(Enum):
 class DetailsViewTab(ttk.Frame):
     """ DetailsViewTab """
 
-    
     def __init__(self, parent, tab_control):# type: ignore
         super().__init__(tab_control)
-        
+
         self._paddings = {'padx': 5, 'pady': 5}
 
         self._parent:'M3uToFreeboxMainView' = parent
-        
+
         self._by_title_filters:list[M3uEntryByTitleFilter] = M3uFiltersManager().by_title_filters
 
         self._by_type_filters:list[M3uEntryByTypeFilter] = M3uFiltersManager().by_type_filters
-    
+
+        self._filter_frame:tkinter.LabelFrame = tkinter.LabelFrame(self, text="Filters")    
+        self._filter_input_text = tkinter.Entry(self._filter_frame,font=('verdana',14))
+
+        self._ignore_diacritics_checkbox_variable:tkinter.BooleanVar = tkinter.BooleanVar()
+        self._ignore_diacritics_checkbox = tkinter.Checkbutton(self._filter_frame, text="Ignore Diacritics", variable=self._ignore_diacritics_checkbox_variable, onvalue=True, offvalue=False, command=self._on_ignore_diacritics_checkbox_selected)
+
+        self._ignore_case_checkbox_variable:tkinter.BooleanVar = tkinter.BooleanVar()
+        self._ignore_case_checkbox = tkinter.Checkbutton(self._filter_frame, text="Ignore Case", variable=self._ignore_case_checkbox_variable, onvalue=True, offvalue=False, command=self._on_ignore_case_checkbox_selected)
+
         self._create_view()
         self._create_context_menu()
 
@@ -69,23 +78,28 @@ class DetailsViewTab(ttk.Frame):
     def _create_filter_frame(self)->None:
         """ Filter """
 
-        self._filter_frame =tkinter.LabelFrame(self, text="Filters")    
         self._filter_frame.grid(row= 0, column=0, padx=20, pady=10)
         
-        self._filter_input_text = tkinter.Entry(self._filter_frame,font=('verdana',14))
-        self._filter_input_text.bind("<KeyRelease>", self.filter_updated)
-        self._filter_input_text.grid(row= 0, column=0, padx=20, pady=10)
+        self._filter_input_text.bind("<KeyRelease>", self._filter_text_updated)
         
         # padding for widgets using the grid layout
-        paddings = {'padx': 5, 'pady': 5}
+        #paddings = {'padx': 5, 'pady': 5}
         self._create_title_filter()
         self._create_type_filter()
+
+        column_it = custom_iterator.SimpleIntCustomIncrementDecrement()
+        self._filter_input_text.grid(row= 0, column=column_it.postfix_increment(), padx=20, pady=10)
+        self._ignore_diacritics_checkbox.grid(row= 0, column=column_it.postfix_increment(), padx=20, pady=10)
+        self._ignore_case_checkbox.grid(row= 0, column=column_it.postfix_increment(), padx=20, pady=10)
+        self._title_filter_option_description_label.grid(row= 0, column=column_it.postfix_increment(), padx=20, pady=10)
+        self._title_filter_option_menu.grid(row= 0, column=column_it.postfix_increment(), padx=5, pady=10)
+        self._type_filter_option_description_label.grid(row= 0, column=column_it.postfix_increment(), padx=20, pady=10)
+        self._type_filter_option_menu.grid(row= 0, column=column_it.postfix_increment(), padx=5, pady=10)
 
     def _create_title_filter(self)->None:
         # Filter label
         self._title_filter_option_description_label = ttk.Label(self._filter_frame, foreground='black')
         self._title_filter_option_description_label['text'] = f'Type of title filter:'
-        self._title_filter_option_description_label.grid(row= 0, column=1, padx=20, pady=10)
 
         # Title filter
         title_filters_texts = [o.label for o in self._by_title_filters]
@@ -98,14 +112,12 @@ class DetailsViewTab(ttk.Frame):
             title_filters_texts[0],
             *title_filters_texts,
             command=self.title_filter_option_changed)        
-        self._title_filter_option_menu.grid(row= 0, column=2, padx=5, pady=10)
 
 
     def _create_type_filter(self)->None:
         # Filter label
         self._type_filter_option_description_label = ttk.Label(self._filter_frame, foreground='black')
         self._type_filter_option_description_label['text'] = f'Type of m3u:'
-        self._type_filter_option_description_label.grid(row= 0, column=3, padx=20, pady=10)
 
         # Title filter
         type_filters_texts = [o.label for o in self._by_type_filters]
@@ -119,7 +131,6 @@ class DetailsViewTab(ttk.Frame):
             type_filters_texts[0],
             *type_filters_texts,
             command=self.type_filter_option_changed)        
-        self._type_filter_option_menu.grid(row= 0, column=4, padx=5, pady=10)
         
 
     def _create_tree_view_frame(self)->None:
@@ -172,12 +183,12 @@ class DetailsViewTab(ttk.Frame):
         
     def type_filter_option_changed(self, *args)->None:
         logger_config.print_and_log_info(f'You selected: {self._type_filter_option_var.get()}')
-        self.fill_m3u_entries()
+        self.refresh_m3u_entries()
 
         
     def title_filter_option_changed(self, *args)->None:
         logger_config.print_and_log_info(f'You selected: {self._title_filter_option_var.get()}')
-        self.fill_m3u_entries()
+        self.refresh_m3u_entries()
 
         
     
@@ -198,7 +209,7 @@ class DetailsViewTab(ttk.Frame):
         self.tree_view_context_menu.add_separator()
         self.tree_view_context_menu.add_command(label="Show detail", command=self._open_m3u_entry_detail_popup)
         self.tree_view_context_menu.add_command(label="Clear List", command=self._clear_list)
-        self.tree_view_context_menu.add_command(label="Reset List", command=self.fill_m3u_entries)
+        self.tree_view_context_menu.add_command(label="Reset List", command=self.refresh_m3u_entries)
         self.tree_view_context_menu.add_command(label="Reset Library", command=self._reset_library)
         self.tree_view_context_menu.add_separator()
 
@@ -272,18 +283,26 @@ class DetailsViewTab(ttk.Frame):
         self._create_bottom_frame()
         
 
-
+    def _on_ignore_diacritics_checkbox_selected(self)-> None:
+        ignore_diacritics_checkbox_value = self._ignore_diacritics_checkbox_variable.get()
+        logger_config.print_and_log_info(f"Ignore diacritics switched to:{ignore_diacritics_checkbox_value}")
+        self.refresh_m3u_entries()
       
+    def _on_ignore_case_checkbox_selected(self) -> None:
+        ignore_case_checkbox_value = self._ignore_case_checkbox_variable.get()
+        logger_config.print_and_log_info(f"Ignore case switched to:{ignore_case_checkbox_value}")
+        self.refresh_m3u_entries()
+
     def create_scrollbar(self)->None:
         pass
-
-    def filter_updated(self, *args:None)->None:
+    
+    
+    def _filter_text_updated(self)->None:
         if self._title_filter_text_content != self._filter_input_text.get():
             self._title_filter_text_content = self._filter_input_text.get()
-            self.fill_m3u_entries()
+            self.refresh_m3u_entries()
         else:
             logger_config.print_and_log_info(f"Title filter text content not changed. Still:{self._title_filter_text_content}")
-
 
     def treeview_sort_column(self, tv:ttk.Treeview, col:int, reverse:bool)->None:
         """ Sort """
@@ -311,7 +330,7 @@ class DetailsViewTab(ttk.Frame):
 
     def _reset_library(self)->None:
         self._parent.m3u_to_freebox_application.reset_library()
-        self.filter_updated()
+        self.refresh_m3u_entries()
 
     def _clear_list(self)->None:
         self._tree_view.delete(* self._tree_view.get_children())
@@ -326,9 +345,8 @@ class DetailsViewTab(ttk.Frame):
         selected_type_filter_name = self._type_filter_option_var.get()
         selected_type_filter = [filter for filter in self._by_type_filters if filter.label == selected_type_filter_name][0]
         return selected_type_filter
-        
 
-    def fill_m3u_entries(self)->None:
+    def refresh_m3u_entries(self)->None:
         """ fill_m3u_entries """
         with logger_config.stopwatch_with_label("Fill m3u entries"):
             fill_m3u_entries_start_time = time.time()
@@ -340,7 +358,7 @@ class DetailsViewTab(ttk.Frame):
             selected_title_filter = self.__get_selected_title_filter()
             selected_type_filter = self.__get_selected_type_filter()
 
-            for m3u_entry in self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entries_with_filter(self._filter_input_text.get(), selected_title_filter, selected_type_filter):
+            for m3u_entry in self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entries_with_filter(self._filter_input_text.get(), selected_title_filter, selected_type_filter, ignore_case=self._ignore_diacritics_checkbox_variable.get(), ignore_diacritics=self._ignore_diacritics_checkbox_variable.get()):
                 m3u_entry_number = m3u_entry_number + 1
                 tree_view_entry_values = [m3u_entry.id,m3u_entry.cleaned_title,m3u_entry.original_raw_title,m3u_entry.title_as_valid_file_name, m3u_entry.group_title, m3u_entry._type.value, m3u_entry.get_file_size_to_display()]
 

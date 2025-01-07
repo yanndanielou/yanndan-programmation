@@ -1,6 +1,8 @@
 @CALL SET_PYTHON_HOME.bat
 
 
+@call :INSTALL_PYTHON_LIB pytest-cov
+@call :INSTALL_PYTHON_LIB unidecode
 @call :INSTALL_PYTHON_LIB humanize
 @call :INSTALL_PYTHON_LIB langdetect
 @call :INSTALL_PYTHON_LIB Langid

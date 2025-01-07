@@ -5,7 +5,18 @@ Exemple 3 ( Interface utilisateur avec deux panneaux et boutons de redimensionne
 root = tk.Tk()
 root.geometry("400x300")
 
-paned_window = tk.PanedWindow(root, orient="horizontal")
+paned_window = tk.PanedWindow(root,
+    background="cyan",
+    bd=4,
+    orient=tk.HORIZONTAL,
+    sashrelief=tk.RAISED,
+    sashwidth=4,
+    showhandle=False,
+    sashpad=5,
+    sashcursor="sb_h_double_arrow")
+
+
+
 paned_window.pack(fill="both", expand=True)
 
 left_frame = tk.Frame(paned_window, background="red")

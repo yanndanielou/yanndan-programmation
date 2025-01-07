@@ -2,16 +2,10 @@
 
 from warnings import deprecated
 
-import Dependencies.Logger.logger_config as logger_config
-import Dependencies.Common.date_time_formats as date_time_formats
-import Dependencies.Common.file_size_utils as file_size_utils
-
 
 import param
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from main_view import DirectoryStatsMainView
 import importlib
 
 import io
@@ -21,6 +15,13 @@ import urllib.error
 
 import urllib.request
 from urllib.error import URLError, HTTPError
+
+from logger import logger_config
+from common import date_time_formats, file_size_utils
+
+if TYPE_CHECKING:
+    from main_view import DirectoryStatsMainView
+
 
 class DirectoryStatsApplication:
     """ Application """

@@ -5,10 +5,8 @@ from warnings import deprecated
 import requests
 import tqdm
 
-import Dependencies.Logger.logger_config as logger_config
-import Dependencies.Common.date_time_formats as date_time_formats
-import Dependencies.Common.file_size_utils as file_size_utils
-
+from logger import logger_config
+from common import file_size_utils
 
 import m3u
 import xspf
@@ -25,7 +23,6 @@ import io
 import urllib.request
 import urllib.error
 
-import urllib.request
 from urllib.error import URLError, HTTPError, ContentTooShortError
 
 class M3uToFreeboxApplication:

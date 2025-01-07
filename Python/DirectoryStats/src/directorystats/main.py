@@ -8,8 +8,9 @@ import time
 import os
 
 
-from Dependencies.Logger import logger_config
-from Dependencies.Common import date_time_formats
+from logger import logger_config
+from common import date_time_formats
+
 
 from application import DirectoryStatsApplication
 from main_view import DirectoryStatsMainView

@@ -1,22 +1,15 @@
 """ Filters to search M3u entry by criteria """
 # -*-coding:Utf-8 -*
 
-from abc import ABC
 from abc import abstractmethod
+import re
 
 import importlib
 
-from Dependencies.Common.singleton import Singleton
-
-import Dependencies.Common.tokenization_string as tokenization_string
-
-import Dependencies.Common.language_utils as language_utils
-
-import Dependencies.Common.list_utils as list_utils
+from  common import singleton, tokenization_string, language_utils, list_utils
 
 from m3u import M3uEntry
 
-import re
 
 class M3uEntryFilter:
     """ base class """
@@ -32,9 +25,9 @@ class M3uEntryFilter:
         self._label = value
 
 
-class M3uFiltersManager(metaclass=Singleton):
+class M3uFiltersManager(metaclass=singleton.Singleton):
     """ Manager of m3u filters"""
-    def __init__(self):# type: ignore
+    def __init__(self):
         self._by_title_filters : list[M3uEntryByTitleFilter] = []
         self._by_title_filters.append(TitleContainsExactlyFilter(True, "Contains Exactly (case sensitive)"))
         self._by_title_filters.append(TitleContainsExactlyFilter(False, "Contains Exactly (case NOT sensitive)")) 
@@ -99,7 +92,7 @@ class M3uEntryByTitleFilter(M3uEntryFilter):
 
       
     @abstractmethod
-    def match_m3u(self, m3u_entry:M3uEntry, filter_text:str) -> bool:
+    def match_m3u(self, m3u_entry:M3uEntry, filter_text:str, ignore_case:bool, ignore_diacritics:bool) -> bool:
         """ Check if match m3u """
         raise NotImplementedError()
 
@@ -109,7 +102,7 @@ class TitleContainsExactlyFilter(M3uEntryByTitleFilter):
     def __init__(self, case_sensitive:bool, label:str):
         super().__init__(case_sensitive, label)
 
-    def match_m3u(self, m3u_entry:M3uEntry, filter_text:str)->bool:
+    def match_m3u(self, m3u_entry:M3uEntry, filter_text:str, ignore_case:bool, ignore_diacritics:bool)->bool:
         if self._case_sensitive:
             return filter_text in m3u_entry.original_raw_title
         return filter_text.lower() in m3u_entry.original_raw_title.lower()
@@ -123,7 +116,7 @@ class TitleMatchesFilterTextRegex(M3uEntryByTitleFilter):
         self._regex_pattern = None
 
     
-    def match_m3u(self, m3u_entry:M3uEntry, filter_text):
+    def match_m3u(self, m3u_entry:M3uEntry, filter_text:str, ignore_case:bool, ignore_diacritics:bool):
 
         if not self._case_sensitive:
             filter_text = filter_text.lower()
@@ -176,6 +169,11 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
             self._m3u_entry_original_words = tokenization_string.tokenize_text_with_nltk_regexp_tokenizer(m3u_entry_original_raw_title)
 
             return list_utils.are_all_elements_of_list_included_in_list(self._filter_text_words, self._m3u_entry_original_words)
+
+
+    def toto(self, tt, ff):
+        """ """
+        return 1
 
 if __name__ == "__main__":
     # sys.argv[1:]

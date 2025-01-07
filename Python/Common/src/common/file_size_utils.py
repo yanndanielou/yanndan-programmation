@@ -1,17 +1,9 @@
 # -*-coding:Utf-8 -*
 
-import importlib.util, sys
 
 import humanize
 
-import os
-cwd = os.getcwd()
-
-sys.path.insert(1, os.getcwd())
-sys.path.insert(1, "Dependencies/Common")
-sys.path.insert(1, "Dependencies/Logger")
-
-import logger_config
+from logger import logger_config
 
 import urllib.request
 from urllib.error import URLError, HTTPError

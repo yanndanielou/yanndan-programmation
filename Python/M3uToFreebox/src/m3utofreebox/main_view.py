@@ -5,15 +5,16 @@ import tkinter
 import importlib
 
 from tkinter import (
-  filedialog, 
+  filedialog,
   ttk
 )
 
-from Dependencies.Logger import logger_config
+from typing import TYPE_CHECKING
+
+from logger import logger_config
 
 from detailsview import DetailsViewTab
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from application import M3uToFreeboxApplication
 
@@ -90,7 +91,7 @@ class M3uToFreeboxMainView (tkinter.Tk):
         logger_config.print_and_log_info("menu_open_last_m3u_file_loaded")
         
         if self._m3u_to_freebox_application.load_last_loaded_m3u_file():
-            self._tab_list_details.fill_m3u_entries()
+            self._tab_list_details.refresh_m3u_entries()
 
 
     def menu_select_and_open_file(self):
@@ -107,7 +108,7 @@ class M3uToFreeboxMainView (tkinter.Tk):
             logger_config.print_and_log_info("Open file:" + file_path)
 
             self._m3u_to_freebox_application.load_file(file_path, True)
-            self._tab_list_details.fill_m3u_entries()
+            self._tab_list_details.refresh_m3u_entries()
             
         else:
             logger_config.print_and_log_info("Open menu cancelled")

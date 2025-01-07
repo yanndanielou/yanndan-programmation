@@ -1,15 +1,14 @@
 """ Filters to search M3u entry by criteria """
 # -*-coding:Utf-8 -*
 
-from Dependencies.Common.singleton import Singleton
-from Dependencies.Logger import logger_config
-
-
 from tkinter import (
   filedialog
   )
 
-class DestinationsFolders(metaclass=Singleton):
+from common import singleton
+from logger import logger_config
+
+class DestinationsFolders(metaclass=singleton.Singleton):
     """ Manager of m3u filters"""
     def __init__(self)->None:
         self._destinations_folders:list[DestinationFolder] = [DestinationFolder("Freebox", "\\\\Freebox_Server\\NO NAME\\M3U_Playlist"),

@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import application
 
-from Dependencies.Logger import logger_config
+from logger import logger_config
 
 from explorerview import ExplorerViewFrame
 from detailview import DetailViewFrame
@@ -24,20 +24,52 @@ class DirectoryStatsMainView (tkinter.Frame):
 
     def __init__(self, top_level_window: tkinter.Tk | tkinter.Toplevel)->None:
         super().__init__()
-
-        self._top_level_window = top_level_window
+    
+        self._top_level_window:tkinter.Tk = top_level_window
         top_level_window.title("Directory Stats")
+        
+        paned_window = tkinter.PanedWindow(self,
+            background="cyan",
+            bd=4,
+            orient=tkinter.HORIZONTAL,
+            sashrelief=tkinter.RAISED,
+            sashwidth=4,
+            showhandle=False,
+            sashpad=5,
+            sashcursor="sb_h_double_arrow")
+
+        paned_window.pack(fill="both", expand=True)
 
         self._directory_stats_application: application.DirectoryStatsApplication
 
         self._create_menu_bar()
 
-        self._explorer_view = ExplorerViewFrame(self, top_level_window)
-        self._detail_view = DetailViewFrame(self, top_level_window)
-       
+        self._explorer_view = ExplorerViewFrame(paned_window, self, top_level_window)
+        self._detail_view = DetailViewFrame(paned_window, self, top_level_window)
+
+        paned_window.add(self._explorer_view, minsize=100)
+        paned_window.add(self._detail_view, minsize=100)
+
+        sashframe = tkinter.Frame(paned_window, background="blue")
+        sashframe.place(relx=0.5, rely=0.5, relwidth=0.02, relheight=1.0, anchor="center")
+
+        sashlabel = tkinter.Label(sashframe, background="red")
+        sashlabel.pack(fill="both", expand=True)
+
+
+
+        self.bind("<B1-Motion>", self.on_dragged)
         #self._create_main_frame()
 
-
+    def on_dragged(self, event:tkinter.Event)->None:
+        """ on_dragged """
+        print(f"on_dragged {event}")
+        sash_x = event.x
+        if sash_x > 10 and sash_x < root.winfo_width() - 10:
+            #sashframe.place(x=sash_x, y=0, relwidth=0.02, relheight=1.0, anchor="center")
+            #paned_window.sash_place(0, sash_x, 0)
+            pass
+            
     def create_tab_list_details(self)->None:
         """ Create tab details """
         #self._tab_list_details = ExplorerViewTab(self, self._tab_control)

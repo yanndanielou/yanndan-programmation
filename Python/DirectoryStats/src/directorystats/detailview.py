@@ -9,8 +9,8 @@ import os
 
 #import logger_config
 
-import Dependencies.Logger.logger_config as logger_config
-import Dependencies.Common.date_time_formats as date_time_formats
+from logger import logger_config
+from common import date_time_formats
 
 import tkinter
 
@@ -38,9 +38,12 @@ from tkinter import (
 class DetailViewFrame(ttk.Frame):
     """ DetailViewFrame """
     
-    def __init__(self, parent:'DirectoryStatsMainView', top_level_window: tkinter.Tk | tkinter.Toplevel):
-        super().__init__()
+    def __init__(self, parent_paned_window:tkinter.PanedWindow, parent:'DirectoryStatsMainView', top_level_window: tkinter.Tk | tkinter.Toplevel):
+        super().__init__(parent_paned_window)
         
+        #canvas = tkinter.Canvas(self, bg='lightcoral')
+        #canvas.pack(fill=tkinter.BOTH, expand=True)
+
         self._paddings = {'padx': 5, 'pady': 5}
 
         self._parent:'DirectoryStatsMainView' = parent

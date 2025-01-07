@@ -7,15 +7,9 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
+from logger import logger_config
+from common import date_time_formats, file_size_utils
 
-#sys.path.insert(1, os.getcwd())
-#sys.path.append("D:/GitHub/yanndanielou-programmation/Python/Logger")
-#sys.path.append("../Logger")
-
-#import logger_config
-
-import Dependencies.Logger.logger_config as logger_config
-import Dependencies.Common.date_time_formats as date_time_formats
 
 import tkinter
 
@@ -46,12 +40,15 @@ from enum import Enum
 class ExplorerViewFrame(ttk.Frame):
     """ ExplorerViewFrame """
     
-    def __init__(self, parent:'DirectoryStatsMainView', top_level_window: tkinter.Tk | tkinter.Toplevel):
-        super().__init__()
-        
+    def __init__(self, parent_paned_window:tkinter.PanedWindow, directory_stats_main_view:'DirectoryStatsMainView', top_level_window: tkinter.Tk | tkinter.Toplevel):
+        super().__init__(parent_paned_window)
+                      
+        #canvas = tkinter.Canvas(self, bg='lightblue')
+        #canvas.pack(fill=tkinter.BOTH, expand=True)
+
         self._paddings = {'padx': 5, 'pady': 5}
 
-        self._parent:'DirectoryStatsMainView' = parent
+        self._directory_stats_main_view:'DirectoryStatsMainView' = directory_stats_main_view
         
         # show="tree" removes the column header, since we
         # are not using the table feature.

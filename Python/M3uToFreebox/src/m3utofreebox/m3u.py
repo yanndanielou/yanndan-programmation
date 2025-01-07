@@ -6,15 +6,14 @@ from itertools import count
 import importlib
 from enum import Enum
 
-import Dependencies.Common.string_utils as string_utils
-
-import Dependencies.Logger.logger_config as logger_config
-import Dependencies.Common.file_name_utils as file_name_utils
-import Dependencies.Common.constants
-
 from typing import TYPE_CHECKING
+
+from common import string_utils, file_name_utils, constants
+from logger import logger_config
+
 if TYPE_CHECKING:
     from m3u_search_filters import M3uEntryByTitleFilter, M3uEntryByTypeFilter
+
 
 MRU_FIRST_LINE = "#EXTM3U"
 M3U_ENTRY_FIRST_LINE_BEGIN = "#EXTINF"
@@ -206,7 +205,7 @@ class M3uFileParser:
             content = file.read()
 
             current_m3u_entry_string_definition = M3uEntryStringDefinition()
-            lines = content.split(Dependencies.Common.constants.END_LINE_CHARACTER_IN_TEXT_FILE)
+            lines = content.split(constants.END_LINE_CHARACTER_IN_TEXT_FILE)
             for line in lines:
                 if MRU_FIRST_LINE == line:
                     continue
@@ -252,7 +251,7 @@ class M3uEntriesLibrary:
         logger_config.logging.debug("M3u entry for id:" + str(m3u_entry_id) + " : " + str (m3u_entry))
         return m3u_entry
         
-    def get_m3u_entries_with_filter(self, typed_text: str, selected_title_filter:'M3uEntryByTitleFilter', selected_type_filter:'M3uEntryByTypeFilter') -> list[M3uEntry]:
+    def get_m3u_entries_with_filter(self, typed_text: str, selected_title_filter:'M3uEntryByTitleFilter', selected_type_filter:'M3uEntryByTypeFilter', ignore_case:bool, ignore_diacritics:bool) -> list[M3uEntry]:
         """ filter list of m3u """
         ret: list[M3uEntry] = []
         
@@ -260,7 +259,7 @@ class M3uEntriesLibrary:
             return self._m3u_entries
 
         for m3u_entry in self._m3u_entries:
-            if selected_type_filter.match_m3u(m3u_entry) and selected_title_filter.match_m3u(m3u_entry, typed_text):
+            if selected_type_filter.match_m3u(m3u_entry) and selected_title_filter.match_m3u(m3u_entry, typed_text, ignore_case, ignore_diacritics):
                 ret.append(m3u_entry)
 
         logger_config.print_and_log_info("Number of entries with typed text:" + typed_text + ": " + str(len(ret)))
