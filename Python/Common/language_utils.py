@@ -17,7 +17,7 @@ def detect_language_with_langdetect(line):
             # The first one returned is usually the one that has the highest probability
             return item.lang, item.prob
     except:
-        return "err", 0.0 
+        return "err", 0.0
 
 def get_full_language_name(short_language_name):
     """ get_full_language_name """
