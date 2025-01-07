@@ -171,9 +171,8 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
             return list_utils.are_all_elements_of_list_included_in_list(self._filter_text_words, self._m3u_entry_original_words)
 
 
-    def toto(self, tt, ff):
-        """ """
-        return 1
+    def tdoto(self, tt, ff):
+        return tt+ff
 
 if __name__ == "__main__":
     # sys.argv[1:]
