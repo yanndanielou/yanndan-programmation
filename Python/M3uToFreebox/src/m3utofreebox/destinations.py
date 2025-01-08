@@ -43,3 +43,6 @@ class DestinationFolder():
             else:
                 logger_config.print_and_log_info("No directory chosen")
                 return None
+    @property
+    def label(self)->str:
+        return self._label
