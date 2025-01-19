@@ -1,0 +1,24 @@
+{
+    "application_title": {
+        "fr": "Application de Changement de Langue",
+        "en": "Language Switcher App",
+        "es": "Aplicación de cambio de idioma",
+        "de": "Sprachwechsler-App"
+    },
+    "checkbox_1_label": {
+        "fr": "Checkbox 1 label francais",
+        "en": "Application de Changement de Langue",
+        "es": "Application de Changement de Langue"
+    },
+    "label": {
+        "fr": "Bonjour, {name}! Comment ça va, {name}?",
+        "en": "Hello, {name}! How are you, {name}?",
+        "de": "Hallo, {name}! Wie geht es dir, {name}?"
+    },
+    "button": {
+        "fr": "Changer de langue",
+        "en": "Change Language",
+        "es": "Cambiar idioma",
+        "de": "Sprache ändern"
+    }
+}

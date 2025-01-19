@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "sample-tkinter-application-structure"
-version = "0.0.1"
-description = "Sample sample-tkinter-application-structure"
+name = "common-library"
+version = "0.1.0"
+description = "Une bibliothèque partagée pour plusieurs projets"
 
 # Détails sur les dépendances
 [tool.poetry.dependencies]
