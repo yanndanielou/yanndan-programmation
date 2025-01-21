@@ -14,6 +14,17 @@ from logger import logger_config
 
 
 checker:application.Application = application.Application()
+
+        
+class TestOneStep:
+    
+ def test_last_step(self)->None:
+     
+        all_possibilities_with_hatches = checker.compute_all_possibilities_with_hatches([1,2,3])
+        
+        assert all_possibilities_with_hatches is not None
+        
+
         
 class TestUniqueccombinaisonsToReachExacltySumUsingElementNoMoreThanOnce:
     """ TestApplicationWithoutHmi """
