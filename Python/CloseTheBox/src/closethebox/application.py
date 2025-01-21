@@ -11,6 +11,15 @@ class Application:
         """ Run """
         pass
     
+    def get_all_unique_combinaisons_to_reach_exaclty_sum_using_element_no_more_than_once(self,
+                                                                                           elements:list[int],
+                                                                                           sum_to_attain:int)->set[set[int]]:
+        
+        all_unique_combinaisons_to_reach_exaclty_sum_using_element_no_more_than_once:set[set[int]] = set({})
+        
+        
+        return all_unique_combinaisons_to_reach_exaclty_sum_using_element_no_more_than_once
+    
     def get_two_dices_all_combinaisons_with_occurences(self)->dict[int, int]:
         one_dices_combinaisons = range(1,7)
         

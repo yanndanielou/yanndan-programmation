@@ -18,3 +18,4 @@ disable = ["C0114", "C0115", "C0116"]  # Désactivation de certaines règles
 #missing-module-docstring
 #Missing class docstringPylintC0115:missing-class-docstring
 max-line-length = 120  # Longueur maximale des lignes
+ignored-modules = collections.abc

@@ -9,7 +9,7 @@ import time
 
 import random
 
-from warnings import deprecated
+#from warnings import deprecated
 
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -176,7 +176,7 @@ class PrintInputAndOutput(object):
 def stopwatch_with_label(label:str)-> Generator[float, None, None]:
     """ écorateur de contexte pour mesurer le temps d'exécution d'une fonction : https://www.docstring.fr/glossaire/with/ """
     debut = time.perf_counter()
-    yield
+    yield time.perf_counter() - debut
     fin = time.perf_counter()
     duree = fin - debut
     print_and_log_info(f"{label} Elapsed: {duree:.2f} seconds")
