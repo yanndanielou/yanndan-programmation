@@ -2,6 +2,11 @@
 """ Main """
 from logger import logger_config
 
+class History:
+    def __init__(self):
+        self._dices_rolled_history = list()
+        self._hashes_closed_history = list()
+
 class Application:
     """ Close the box application """
     def __init__(self)->None:
@@ -10,7 +15,25 @@ class Application:
     def run(self)->None:
         """ Run """
         pass
-       
+
+    def compute_all_possibilities_from_beginning(self)->None:
+        initial_opened_hatches = list(range(1,10))
+        self.compute_all_possibilities_with_hatches(initial_opened_hatches)
+        
+        
+    def compute_all_possibilities_with_hatches(self, opened_hatches:list[int])->None:
+        two_dices_all_combinaisons_with_occurences:dict[int, int] = self.get_two_dices_all_combinaisons_with_occurences()
+        
+        for two_dices_combinaison, occurences in two_dices_all_combinaisons_with_occurences.items():
+            all_hatches_combinaisons = self.get_all_unique_combinaisons_to_reach_exaclty_sum_using_element_no_more_than_once(opened_hatches, two_dices_combinaison)
+            for hatches_combinaison in all_hatches_combinaisons:
+                new_opened_hatches = list(set(opened_hatches) - set(hatches_combinaison))
+                self.compute_all_possibilities_with_hatches(new_opened_hatches)
+        
+    def play_round_with_dices_result(self, dices_result:int, opened_hatches:list[int])->int:
+        
+        return 0
+
     def get_all_unique_combinaisons_to_reach_exaclty_sum_using_element_no_more_than_once(self,
                                                                                            elements:list[int],
                                                                                            sum_to_attain:int)->list[list[int]]:
