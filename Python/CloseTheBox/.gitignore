@@ -1,0 +1,5 @@
+*.7z
+*.zip
+*.txt
+/.mypy_cache/
+Dependencies/

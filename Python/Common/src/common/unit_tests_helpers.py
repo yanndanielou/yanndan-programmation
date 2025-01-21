@@ -25,4 +25,7 @@ class TestCaseBase(unittest.TestCase):
     def assert_list_does_not_contain(self,obj:list, element)->None:
         """ Assert list does not contain element """
         self.assertFalse(element in obj)
-
+        
+    def assert_length(self,obj, expected_length)->None:
+        """ Assert lenght is equal to """
+        self.assertEqual(len(obj), expected_length)

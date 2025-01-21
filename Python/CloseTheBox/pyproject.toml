@@ -1,0 +1,7 @@
+[tool.pylint.'MESSAGES CONTROL']
+[tool.pylint]
+disable = ["C0114", "C0115", "C0116"]  # Désactivation de certaines règles
+#missing-function-docstring
+#missing-module-docstring
+#Missing class docstringPylintC0115:missing-class-docstring
+max-line-length = 130 
