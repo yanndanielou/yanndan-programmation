@@ -53,6 +53,10 @@ class Application:
         for dices_results in two_dices_results:
             
             all_hatches_combinaisons = self.get_all_unique_combinaisons_to_reach_exaclty_sum_using_element_no_more_than_once(opened_hatches, two_dices_sum)
+            
+            if not all_hatches_combinaisons:
+                all_possibilities_with_hatches += [OneGame(final_opened_hatches=opened_hatches.copy(), turns=previous_turns.copy())]
+            
             for hatches_combinaison in all_hatches_combinaisons:
 
                 new_opened_hatches:list[int] = list(set(opened_hatches) - set(hatches_combinaison))
@@ -82,9 +86,6 @@ class Application:
                 
         return all_possibilities_with_hatches + [OneGame(final_opened_hatches=opened_hatches.copy(), turns=previous_turns.copy())]
         
-    def play_round_with_dices_result(self, dices_result:int, opened_hatches:list[int])->int:
-        
-        return 0
 
     def get_all_unique_combinaisons_to_reach_exaclty_sum_using_element_no_more_than_once(self,
                                                                                            elements:list[int],
@@ -115,8 +116,8 @@ class Application:
         return results
 
 checker:Application = Application()
-all_possibilities_with_hatches:list[OneGame] = checker.compute_all_possibilities_with_hatches([1,2])
-print(f"{len(all_possibilities_with_hatches)} possibilities found: \n\n" + "\n\n".join([str(game) for game in all_possibilities_with_hatches]))
+res_all_possibilities_with_hatches:list[OneGame] = checker.compute_all_possibilities_with_hatches([1,2])
+print(f"{len(res_all_possibilities_with_hatches)} possibilities found: \n\n" + "\n\n".join([str(game) for game in res_all_possibilities_with_hatches]))
 #for game in all_possibilities_with_hatches:
 #    print(f"Game :\n {str(game)}")
 
