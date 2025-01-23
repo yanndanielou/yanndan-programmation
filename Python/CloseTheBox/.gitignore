@@ -3,3 +3,5 @@
 *.txt
 /.mypy_cache/
 Dependencies/
+all_possibilities.json
+test*.json
