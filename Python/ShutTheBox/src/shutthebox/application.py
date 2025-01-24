@@ -4,7 +4,7 @@
 from dataclasses import dataclass, field
 from typing import List, Tuple
 
-from dices import Dices
+from shutthebox.dices import Dices
 
 from logger import logger_config
 
@@ -129,7 +129,7 @@ class Application:
 checker:Application = Application()
 res_all_possibilities_with_hatches:list[OneGame] = checker.compute_all_possibilities_with_hatches([2])
 
-json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(res_all_possibilities_with_hatches, "all_possibilities.json")
+json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(res_all_possibilities_with_hatches, "test_all_possibilities.json")
 
 print(f"{len(res_all_possibilities_with_hatches)} possibilities found: \n\n" + "\n\n".join([str(game) for game in res_all_possibilities_with_hatches]))
 #for game in all_possibilities_with_hatches:

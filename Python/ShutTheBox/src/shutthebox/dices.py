@@ -4,9 +4,11 @@
 from typing import List, Tuple, cast, Dict
 import itertools
 
-from common import singleton
+#from common import singleton
 
-class Dices(metaclass=singleton.Singleton):
+#class Dices(metaclass=singleton.Singleton):
+class Dices:
+
     """ Dices """
 
     @staticmethod

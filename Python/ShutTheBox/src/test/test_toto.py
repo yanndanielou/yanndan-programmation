@@ -5,11 +5,9 @@ import pytest
 import os
 import sys
 
-
-
 from typing import List, Tuple
 
-import shutthebox
+import shutthebox.dices
 
 class TestCombinaisons:
     """ TestApplicationWithoutHmi """
@@ -34,10 +32,9 @@ class TestCombinaisons:
 
         def test_get_several_dices_all_combinaisons_by_sum(self)->None:
             """ Number of results """
-            dices_all_combinaisons_with_occurences:dict[int,list[Tuple[int, ...]]] = dices.Dices.get_several_dices_all_combinaisons_by_sum(self.number_of_dices)
+            dices_all_combinaisons_with_occurences:dict[int,list[Tuple[int, ...]]] = shutthebox.dices.Dices.get_several_dices_all_combinaisons_by_sum(self.number_of_dices)
 
             #assert two_dices_all_combinaisons_with_occurences[1] is None
             #assert two_dices_all_combinaisons_with_occurences[2] is None
             assert len(dices_all_combinaisons_with_occurences[3]) == 1
             assert dices_all_combinaisons_with_occurences[3] == [(1,1,1)]
-
