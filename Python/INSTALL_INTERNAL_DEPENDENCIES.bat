@@ -1,19 +1,30 @@
 @CALL SET_PYTHON_HOME.bat
 
-CALL :UNINSTALL_INTERNAL_PYTHON_LIB ShutTheBox
-CALL :UNINSTALL_INTERNAL_PYTHON_LIB Logger
-CALL :UNINSTALL_INTERNAL_PYTHON_LIB Common
-pause
-exit
+@CALL :UNINSTALL_INTERNAL_PYTHON_LIB ShutTheBox
+@CALL :UNINSTALL_INTERNAL_PYTHON_LIB Logger
+@CALL :UNINSTALL_INTERNAL_PYTHON_LIB Common
 
-CALL :INSTALL_INTERNAL_PYTHON_LIB ShutTheBox
-pause
+@timeout /t 100
 
-rem CALL :INSTALL_INTERNAL_PYTHON_LIB Common
-CALL :INSTALL_INTERNAL_PYTHON_LIB Logger
-pause
+CALL :UNINSTALL_UNKNWOWN_LIBS
+rem exit
+@timeout /t 100
+
+
+@CALL :INSTALL_INTERNAL_PYTHON_LIB ShutTheBox
+@CALL :INSTALL_INTERNAL_PYTHON_LIB Common
+@CALL :INSTALL_INTERNAL_PYTHON_LIB Logger
+@timeout /t 100
 
 @GOTO :END_OF_FILE
+
+
+
+
+:UNINSTALL_UNKNWOWN_LIBS
+del %PYTHON_HOME%\Lib\site-packages\__editable__.UNKNOWN-0.0.0.pth
+RD /S /Q %PYTHON_HOME%\Lib\site-packages\UNKNOWN-0.0.0.dist-info
+@EXIT /B 0
 
 
 :INSTALL_INTERNAL_PYTHON_LIB
@@ -25,13 +36,12 @@ call %PYTHON_HOME%\python.exe -m pip install -e %1
 :UNINSTALL_INTERNAL_PYTHON_LIB
 @Title uninstall internal python library %1
 @Echo uninstall internal python library %1
-call %PYTHON_HOME%\python.exe -m pip uninstall %1
-@EXIT /B 0
+call %PYTHON_HOME%\python.exe -m pip uninstall %1 -y
 
-:INSTALL_WITH_MANUAL_FILE_COPYINTERNAL_PYTHON_LIB
-@Title install internal python library %1
-@Echo install internal python library %1
-call %PYTHON_HOME%\python.exe -m pip install -e %1
+del %PYTHON_HOME%\Lib\site-packages\__editable__.%1%*.pth
+RD /S /Q %PYTHON_HOME%\Lib\site-packages\%1%-0.0.0.dist-info
+
+
 @EXIT /B 0
 
 
