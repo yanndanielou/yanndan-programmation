@@ -21,5 +21,5 @@ class TestAreAllElementsOfListIncludedInList():
         assert list_utils.are_all_elements_of_list_included_in_list(['x', 'y', 'z'],['x', 'a', 'y', 'x', 'b', 'z'])
         assert list_utils.are_all_elements_of_list_included_in_list([0,1],[0,1])
         assert list_utils.are_all_elements_of_list_included_in_list([0,1,1],[0,1,1,2])
-        assert list_utils.are_all_elements_of_list_included_in_list([0,1,2],[0,1,3])
+        assert not list_utils.are_all_elements_of_list_included_in_list([0,1,2],[0,1,3])
 
