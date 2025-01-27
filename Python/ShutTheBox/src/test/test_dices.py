@@ -9,7 +9,7 @@ import sys
 
 from typing import List, Tuple
 
-import shutthebox
+from shutthebox import dices
 
 class TestCombinaisons:
     """ TestApplicationWithoutHmi """
@@ -18,7 +18,7 @@ class TestCombinaisons:
 
         def test_get_two_dices_all_combinaisons_with_occurences(self)->None:
             """ Number of results """
-            two_dices_all_combinaisons_with_occurences:dict[int,list[Tuple[int, int]]] = shutthebox.dices.Dices.get_two_dices_all_combinaisons_by_sum()
+            two_dices_all_combinaisons_with_occurences:dict[int,list[Tuple[int, int]]] = dices.Dices.get_two_dices_all_combinaisons_by_sum()
             
             #assert two_dices_all_combinaisons_with_occurences[1] is None
             assert two_dices_all_combinaisons_with_occurences[2] == [(1,1)]
