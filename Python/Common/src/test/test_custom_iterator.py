@@ -2,13 +2,13 @@
 """ test custom """
 import unittest
 
-import unit_tests_helpers
-from  custom_iterator import SimpleIntCustomIncrementDecrement
+import common.unit_tests_helpers
+from  common.custom_iterator import SimpleIntCustomIncrementDecrement
 
-class SimpleIntCustomIncrementDecrementTest(unit_tests_helpers.TestCaseBase):
+class SimpleIntCustomIncrementDecrementTest(common.unit_tests_helpers.TestCaseBase):
     """ SimpleIntCustomIncrementDecrementTest """
 
-    def test_increment(self):
+    def test_increment(self) -> None:
         """ test """
         increment_test:SimpleIntCustomIncrementDecrement = SimpleIntCustomIncrementDecrement()
         self.assertEqual(0, increment_test.value)
@@ -19,7 +19,7 @@ class SimpleIntCustomIncrementDecrementTest(unit_tests_helpers.TestCaseBase):
         self.assertEqual(2, increment_test.postfix_increment())
         self.assertEqual(3, increment_test.value)
 
-    def test_decrement(self):
+    def test_decrement(self) -> None:
         """ test """
         increment_test:SimpleIntCustomIncrementDecrement = SimpleIntCustomIncrementDecrement(10)
         self.assertEqual(10, increment_test.value)
