@@ -9,11 +9,9 @@ import sys
 from typing import List, Tuple
 
 from shutthebox import application
- 
-        
+    
 class TestOneStep:
     
-    from shutthebox import application
     checker:application.Application = application.Application()
 
     
