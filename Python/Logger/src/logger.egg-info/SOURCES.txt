@@ -1,7 +1,0 @@
-pyproject.toml
-src/logger/__init__.py
-src/logger/logger_config.py
-src/logger.egg-info/PKG-INFO
-src/logger.egg-info/SOURCES.txt
-src/logger.egg-info/dependency_links.txt
-src/logger.egg-info/top_level.txt
