@@ -1,5 +1,4 @@
 /.mypy_cache/
 .coverage
-UNKNOWN.egg-info
 *.egg-info
 
