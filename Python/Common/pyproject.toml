@@ -1,19 +1,32 @@
+[project]
+# This is the name of your project. The first time you publish this
+# package, this name will be registered for you. It will determine how
+# users can install this project, e.g.:
+#
+# $ pip install sampleproject
+#
+# And where it will live on PyPI: https://pypi.org/project/sampleproject/
+#
+# There are some restrictions on what makes a valid project name
+# specification here:
+# https://packaging.python.org/specifications/core-metadata/#name
+name = "common" # REQUIRED, is the only field that cannot be marked as dynamic.
+
+# Versions should comply with PEP 440:
+# https://www.python.org/dev/peps/pep-0440/
+#
+# For a discussion on single-sourcing the version, see
+# https://packaging.python.org/guides/single-sourcing-package-version/
+version = "0.0.0" # REQUIRED, although can be dynamic
+
+# This is a one-line description or tagline of what your project does. This
+# corresponds to the "Summary" metadata field:
+# https://packaging.python.org/specifications/core-metadata/#summary
+description = "Common library"
+
 [tool.poetry]
 name = "common-library"
-version = "0.1.0"
-description = "Une bibliothèque partagée pour plusieurs projets"
-
-# Détails sur les dépendances
-[tool.poetry.dependencies]
-
-
-# Configuration de développement (si nécessaire)
-[tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-black = "^21.9b0"
-mypy = "^0.910"
-pylint = "^2.10.2"
-
+description = "Common lib"
 
 [tool.black]
 line-length = 88  # Longueur maximale des lignes pour Black
