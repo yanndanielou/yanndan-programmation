@@ -50,7 +50,7 @@ disable = ["C0114", "C0115", "C0116"]  # Désactivation de certaines règles
 #missing-function-docstring
 #missing-module-docstring
 #Missing class docstringPylintC0115:missing-class-docstring
-max-line-length = 130 
+max-line-length = 150
 
 [tool.mypy]
 # Specify files or directories to analyze
