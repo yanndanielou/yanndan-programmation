@@ -10,6 +10,7 @@ import time
 import random
 
 #from warnings import deprecated
+from logging.handlers import RotatingFileHandler
 
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -20,6 +21,7 @@ import inspect
 
 # pylint: enable=logging-not-lazy
 # pylint: disable=logging-fstring-interpolation
+
 
 def __get_calling_file_name_and_line_number()->str:
     previous_stack = inspect.stack(1)[2]
@@ -172,6 +174,27 @@ class PrintInputAndOutput(object):
         logging.debug(f"Arguments passed to {self.f.__name__ } called with: {str(args)} returns: {str(ret)}")
         return ret
 
+def get_logger(name: str, level: int=logging.DEBUG) -> logging.Logger:
+    """Create and configure a logger."""
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+
+    # Create logs directory if it doesn't exist
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+
+    # Create a rotating file handler
+    handler = RotatingFileHandler(
+        "logs/sudoku.log", maxBytes=1024 * 1024, backupCount=5
+    )
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s [%(filename)s:%(lineno)d]"
+    )
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    return logger
+
 @contextmanager
 def stopwatch_with_label(label:str)-> Generator[float, None, None]:
     """ écorateur de contexte pour mesurer le temps d'exécution d'une fonction : https://www.docstring.fr/glossaire/with/ """
@@ -180,3 +203,4 @@ def stopwatch_with_label(label:str)-> Generator[float, None, None]:
     fin = time.perf_counter()
     duree = fin - debut
     print_and_log_info(f"{label} Elapsed: {duree:.2f} seconds")
+
