@@ -7,7 +7,7 @@ logging.basicConfig(
 )
 
 
-def is_valid(board, row: int, col: int, num: int) -> bool:
+def is_valid(board, row, col, num):
     logging.debug(f"Checking if {num} is valid at ({row}, {col})")
     for i in range(9):
         if board[row][i] == num or board[i][col] == num:

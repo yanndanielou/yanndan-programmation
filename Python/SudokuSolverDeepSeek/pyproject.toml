@@ -47,7 +47,8 @@ disable = [
     "too-many-arguments",
     "too-many-locals",
     "too-many-branches",
-    "too-many-statements"
+    "too-many-statements",
+    "logging-fstring-interpolation"
 ]
 
 [tool.pylint.messages_control]
@@ -69,5 +70,3 @@ enable = [
 [tool.pylint.format]
 max-line-length = 88
 
-[tool.pylint.'MESSAGES CONTROL']
-disable = ["C0114", "C0115", "C0116"]  # Désactivation de certaines règles

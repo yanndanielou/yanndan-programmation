@@ -1,0 +1,46 @@
+{
+    "title": {
+        "en": "Sudoku Solver",
+        "fr": "Résolveur de Sudoku"
+    },
+    "solve_button": {
+        "en": "Solve",
+        "fr": "Résoudre"
+    },
+    "clear_button": {
+        "en": "Clear Highlights",
+        "fr": "Effacer les surlignages"
+    },
+    "invalid_value": {
+        "en": "Value must be between 1 and 9.",
+        "fr": "La valeur doit être comprise entre 1 et 9."
+    },
+    "invalid_move": {
+        "en": "Invalid move: conflicts with Sudoku rules.",
+        "fr": "Coup invalide : en conflit avec les règles du Sudoku."
+    },
+    "keep_value_prompt": {
+        "en": "Do you want to keep this value?",
+        "fr": "Voulez-vous conserver cette valeur ?"
+    },
+    "no_solution": {
+        "en": "No solution exists!",
+        "fr": "Aucune solution n'existe !"
+    },
+    "language_label": {
+        "en": "Language",
+        "fr": "Langue"
+    },
+    "difficulty_label": {
+        "en": "Difficulty",
+        "fr": "Difficulté"
+    },
+    "save_button": {
+        "en": "Save",
+        "fr": "Sauvegarder"
+    },
+    "load_button": {
+        "en": "Load",
+        "fr": "Charger"
+    }
+}

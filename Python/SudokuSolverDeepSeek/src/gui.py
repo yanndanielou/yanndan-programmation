@@ -1,10 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 import logging
-import src.sudoku_solver.solver
-
-# import solver
-# from solver import solve_sudoku
+from solver import solve_sudoku
 
 # Configuration des logs avec le nom du fichier et le numéro de ligne
 logging.basicConfig(
@@ -43,7 +40,7 @@ class SudokuGUI:
                 else:
                     board[i][j] = 0
 
-        if solver.solve_sudoku(board):
+        if solve_sudoku(board):
             for i in range(9):
                 for j in range(9):
                     self.cells[i][j].delete(0, tk.END)
