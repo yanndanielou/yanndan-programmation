@@ -2,9 +2,9 @@ import random
 from typing import List, Optional
 from rule_engine import RuleEngine
 
-# from .logger import get_logger
+from logger import logger_config
 
-# logger = get_logger(__name__)
+logger = logger_config.get_logger(__name__)
 
 
 class Sudoku:
@@ -26,7 +26,7 @@ class Sudoku:
             for col in range(9):
                 if grid[row][col] is None:
                     for num in random.sample(range(1, 10), 9):  # Randomize numbers
-                        if self.rule_engine.is_valid_move(grid, row, col, num):
+                        if RuleEngine.is_valid_move(grid, row, col, num):
                             grid[row][col] = num
                             if self.solve_grid(grid):
                                 return True

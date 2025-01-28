@@ -4,8 +4,9 @@ from typing import List, Optional
 class RuleEngine:
     """Engine to enforce Sudoku rules."""
 
+    @staticmethod
     def is_valid_move(
-        self, grid: List[List[Optional[int]]], row: int, col: int, num: int
+        grid: List[List[Optional[int]]], row: int, col: int, num: int
     ) -> bool:
         """Check if a move is valid according to Sudoku rules."""
         # Check row
