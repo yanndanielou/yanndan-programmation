@@ -1,0 +1,36 @@
+{
+    // Activer Python comme langage principal
+    "python.languageServer": "Pylance",
+    // Activer le linting
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.mypyEnabled": true,
+    "python.linting.lintOnSave": true,
+    // Configurer pylint
+    "python.linting.pylintArgs": [
+        "--rcfile=${workspaceFolder}/pyproject.toml"
+    ],
+    // Configurer mypy
+    "python.linting.mypyArgs": [
+        "--config-file=${workspaceFolder}/pyproject.toml"
+    ],
+    // Activer pytest comme framework de test
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    // Activer l'exécution des tests à la sauvegarde
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+    // Formater automatiquement le code à la sauvegarde
+    "editor.formatOnSave": true,
+    // Activer les snippets Python
+    "editor.snippetSuggestions": "top",
+    // Configurer l'indentation pour Python
+    "[python]": {
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.defaultFormatter": "ms-python.black-formatter" // Configurer Black comme formateur de code
+    },
+    // Activer les recommandations d'extensions
+    "extensions.ignoreRecommendations": false
+}

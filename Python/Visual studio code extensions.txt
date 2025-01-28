@@ -1,3 +1,6 @@
+ms-python.black-formatter
+https://marketplace.visualstudio.com/items?itemName=ms-python.black-formatter
+
 Pylance
 v2024.11.3
 Microsoft

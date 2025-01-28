@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sudoku_solver"
+version = "0.1.0"
+description = "Un résolveur de Sudoku avec interface graphique Tkinter et tests unitaires."
+authors = [
+    { name = "Ton Nom", email = "ton.email@example.com" }
+]
+dependencies = [
+    "pytest>=7.0.0",
+    "mypy>=0.900",
+    "pylint>=2.12.0"
+]
+requires-python = ">=3.8"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+files = ["src/"]
+exclude = ["tests/"]
+disallow_untyped_defs = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_return_any = true
+warn_unreachable = true
+strict_optional = true
+
+[tool.pylint.master]
+ignore = ["tests"]
+enable = "all"
+disable = [
+    "missing-docstring",
+    "too-few-public-methods",
+    "too-many-arguments",
+    "too-many-locals",
+    "too-many-branches",
+    "too-many-statements"
+]
+
+[tool.pylint.messages_control]
+enable = [
+    "unused-import",
+    "unused-variable",
+    "unused-argument",
+    "redefined-outer-name",
+    "redefined-builtin",
+    "bad-continuation",
+    "trailing-whitespace",
+    "line-too-long",
+    "invalid-name",
+    "global-statement",
+    "dangerous-default-value",
+    "duplicate-code"
+]
+
+[tool.pylint.format]
+max-line-length = 88
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = ["C0114", "C0115", "C0116"]  # Désactivation de certaines règles
