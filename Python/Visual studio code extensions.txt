@@ -1,3 +1,7 @@
+https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker-french
+French - Code Spell Checker
+
+
 ms-python.black-formatter
 https://marketplace.visualstudio.com/items?itemName=ms-python.black-formatter
 
