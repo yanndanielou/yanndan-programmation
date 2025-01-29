@@ -25,24 +25,48 @@ class SudokuGUI:
         ) as f:
             self.translations = json.load(f)
 
-    def create_widgets(self):
+    def create_widgets(self) -> None:
+        # Créer un cadre principal pour contenir toutes les régions
+        main_frame = tk.Frame(self.root)
+        main_frame.grid(row=0, column=0, padx=10, pady=10)
+
+        # Créer des cadres pour chaque région 3x3
+        self.region_frames = [[None for _ in range(3)] for _ in range(3)]
+        for i in range(3):
+            for j in range(3):
+                # Créer un cadre pour la région (i, j)
+                self.region_frames[i][j] = tk.Frame(main_frame, bd=2, relief="solid")
+                self.region_frames[i][j].grid(row=i, column=j, padx=2, pady=2)
+
+        # Créer les cellules dans chaque région
         self.cells = [[None for _ in range(9)] for _ in range(9)]
         for i in range(9):
             for j in range(9):
-                self.cells[i][j] = tk.Entry(self.root, width=2, font=("Arial", 18))
-                self.cells[i][j].grid(row=i, column=j)
+                # Calculer la position de la région et de la cellule dans la région
+                region_row, region_col = i // 3, j // 3
+                cell_row, cell_col = i % 3, j % 3
+
+                # Créer la cellule dans le cadre de la région correspondante
+                self.cells[i][j] = tk.Entry(
+                    self.region_frames[region_row][region_col],
+                    width=2,
+                    font=("Arial", 18),
+                    justify="center",
+                )
+                self.cells[i][j].grid(row=cell_row, column=cell_col, padx=2, pady=2)
                 self.cells[i][j].bind("<FocusOut>", self.validate_input)
 
+        # Ajouter les boutons en dessous de la grille
         self.solve_button = tk.Button(self.root, text="Solve", command=self.solve)
-        self.solve_button.grid(row=9, column=0, columnspan=3)
+        self.solve_button.grid(row=1, column=0, columnspan=3, pady=10)
 
         self.generate_button = tk.Button(
             self.root, text="Generate", command=self.generate
         )
-        self.generate_button.grid(row=9, column=3, columnspan=3)
+        self.generate_button.grid(row=1, column=3, columnspan=3, pady=10)
 
         self.reset_button = tk.Button(self.root, text="Reset", command=self.reset)
-        self.reset_button.grid(row=9, column=6, columnspan=3)
+        self.reset_button.grid(row=1, column=6, columnspan=3, pady=10)
 
     def validate_input(self, event):
         # Récupérer la cellule qui a déclenché l'événement
