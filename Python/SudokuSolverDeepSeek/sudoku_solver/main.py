@@ -2,7 +2,7 @@ from gui import SudokuGUI
 import tkinter as tk
 
 
-def main():
+def main() -> None:
     root = tk.Tk()
     app = SudokuGUI(root)
     root.mainloop()
