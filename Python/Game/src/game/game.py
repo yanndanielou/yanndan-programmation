@@ -51,7 +51,9 @@ class GenericGameBoard:
     Abstract class for a generic game board.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, total_width: int, total_height: int) -> None:
+        self._total_width = total_width
+        self._total_height = total_height
         self.game_board_points_by_x_and_y: list[
             list[GenericIntegerGameBoardPoint | None]
         ] = []
@@ -59,7 +61,7 @@ class GenericGameBoard:
             defaultdict(list)
         )
         self.all_game_board_points: list[GenericIntegerGameBoardPoint] = []
-        self.after_constructor()
+        # self.after_constructor()
 
     def after_constructor(self) -> None:
         self.create_initial_game_board_points()
@@ -129,7 +131,7 @@ class GenericGameBoard:
         raise NotImplementedError("Subclasses must implement create_game_board_point.")
 
     def get_total_width(self) -> int:
-        raise NotImplementedError("Subclasses must implement get_total_width.")
+        return self._total_width
 
     def get_total_height(self) -> int:
-        raise NotImplementedError("Subclasses must implement get_total_height.")
+        return self._total_height
