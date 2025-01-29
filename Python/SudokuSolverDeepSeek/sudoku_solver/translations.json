@@ -1,0 +1,30 @@
+{
+    "solve_button": {
+        "en": "Solve",
+        "fr": "Résoudre"
+    },
+    "generate_button": {
+        "en": "Generate",
+        "fr": "Générer"
+    },
+    "reset_button": {
+        "en": "Reset",
+        "fr": "Réinitialiser"
+    },
+    "difficulty_popup_title": {
+        "en": "Select Difficulty",
+        "fr": "Choisir la difficulté"
+    },
+    "easy_button": {
+        "en": "Easy",
+        "fr": "Facile"
+    },
+    "medium_button": {
+        "en": "Medium",
+        "fr": "Moyen"
+    },
+    "hard_button": {
+        "en": "Hard",
+        "fr": "Difficile"
+    }
+}

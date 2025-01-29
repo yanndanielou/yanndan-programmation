@@ -1,9 +1,9 @@
 import unittest
-from sudoku_solver.rules_engine import RulesEngine
+from sudoku_solver.solver import SudokuSolver
 
 
-class TestRulesEngine(unittest.TestCase):
-    def test_validate_move(self):
+class TestSudokuSolver(unittest.TestCase):
+    def test_solve(self):
         board = [
             [5, 3, 0, 0, 7, 0, 0, 0, 0],
             [6, 0, 0, 1, 9, 5, 0, 0, 0],
@@ -15,8 +15,8 @@ class TestRulesEngine(unittest.TestCase):
             [0, 0, 0, 4, 1, 9, 0, 0, 5],
             [0, 0, 0, 0, 8, 0, 0, 7, 9],
         ]
-        rules_engine = RulesEngine()
-        self.assertTrue(rules_engine.validate_move(board, 0, 2, 4))
+        solver = SudokuSolver(board)
+        self.assertTrue(solver.solve())
 
 
 if __name__ == "__main__":

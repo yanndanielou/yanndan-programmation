@@ -1,14 +1,24 @@
 # Sudoku Solver
 
-A Python-based Sudoku solver with a graphical user interface (GUI). The project includes:
+A Python-based Sudoku solver with a graphical user interface (GUI) built using Tkinter.
 
-- A rule engine to validate Sudoku moves.
-- A resizable and user-friendly GUI.
-- Logging to a rotating file.
-- Unit tests and type checking.
+## Features
+
+- Sudoku puzzle solving
+- Puzzle generation with three difficulty levels
+- Input validation and conflict highlighting
+- Internationalization support
+- Logging
 
 ## Installation
-1. Clonez ce dépôt.
-2. Installez les dépendances :
-   ```bash
-   pip install -r requirements.txt
+
+1. Clone the repository.
+2. Install the dependencies using `pip install -r requirements.txt`.
+3. Run the application using `python -m sudoku_solver.main`.
+
+## Testing
+
+Run the unit tests using 
+
+```bash
+python -m unittest discover tests

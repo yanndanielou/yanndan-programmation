@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Sudoku GUI",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "sudoku_solver.gui",
+            "console": "integratedTerminal"
+        }
+    ]
+}

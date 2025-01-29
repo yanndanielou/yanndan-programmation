@@ -1,7 +1,7 @@
 {
     "title": {
-        "en": "Sudoku Solver",
-        "fr": "Résolveur de Sudoku"
+        "en": "Sudoku Solver V0",
+        "fr": "Résolveur de Sudoku V0"
     },
     "solve_button": {
         "en": "Solve",

@@ -32,16 +32,5 @@
         "editor.defaultFormatter": "ms-python.black-formatter" // Configurer Black comme formateur de code
     },
     // Activer les recommandations d'extensions
-    "extensions.ignoreRecommendations": false,
-    "cSpell.words": [
-        "Tkinter"
-    ],
-    "python.testing.unittestEnabled": true,
-    "python.testing.unittestArgs": [
-        "-v",
-        "-s",
-        "./tests",
-        "-p",
-        "test_*.py"
-    ]
+    "extensions.ignoreRecommendations": false
 }
