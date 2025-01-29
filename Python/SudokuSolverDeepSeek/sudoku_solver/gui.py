@@ -1,29 +1,28 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox, simpledialog, ttk
 from solver import SudokuSolver
 from generator import SudokuGenerator
 from rule_engine import RulesEngine
 from logger2 import setup_logger
 import json
 import os
+from typing import List
+from common import multilanguage_management
 
 
 class SudokuGUI:
-    def __init__(self, root):
+    def __init__(self, root: tk.Tk) -> None:
         self.root = root
         self.root.title("Sudoku Solver x")
         self.board = [[0 for _ in range(9)] for _ in range(9)]
         self.generated_board = None
         self.rules_engine = RulesEngine()
         self.logger = setup_logger()
-        self.load_translations()
+        self.multilanguage = multilanguage_management.MultilanguageManagement(
+            os.path.join(os.path.dirname(__file__), "translations.json"), "fr"
+        )
+        # self.load_translations()
         self.create_widgets()
-
-    def load_translations(self):
-        with open(
-            os.path.join(os.path.dirname(__file__), "translations.json"), "r"
-        ) as f:
-            self.translations = json.load(f)
 
     def create_widgets(self) -> None:
         # Créer un cadre principal pour contenir toutes les régions
@@ -73,6 +72,18 @@ class SudokuGUI:
 
         self.reset_button = tk.Button(buttons_frame, text="Reset", command=self.reset)
         self.reset_button.grid(row=0, column=2, padx=10, pady=10)
+
+        # Language selector
+        self.language_var = tk.StringVar(value="en")
+        self.language_label = tk.Label(buttons_frame, text="Language")
+        self.language_label.grid(row=1, column=0, pady=10)
+        language_selector = ttk.Combobox(
+            buttons_frame,
+            textvariable=self.language_var,
+            values=list(self.multilanguage.get_available_languages()),
+        )
+        language_selector.grid(row=1, column=1, pady=10)
+        language_selector.bind("<<ComboboxSelected>>", self.change_language)
 
     def validate_input(self, event):
         # Récupérer la cellule qui a déclenché l'événement
@@ -218,18 +229,38 @@ class SudokuGUI:
 
         return self.selected_difficulty
 
-    def set_difficulty_and_close(self, popup, difficulty):
+    def set_difficulty_and_close(self, popup, difficulty) -> None:
         # Stocker la difficulté sélectionnée et fermer la popup
         self.selected_difficulty = difficulty
         popup.destroy()
 
-    def reset(self):
+    def reset(self) -> None:
         self.board = [[0 for _ in range(9)] for _ in range(9)]
         self.update_board()
 
-    def update_board(self):
+    def update_board(self) -> None:
         for i in range(9):
             for j in range(9):
                 self.cells[i][j].delete(0, tk.END)
                 if self.board[i][j] != 0:
                     self.cells[i][j].insert(0, str(self.board[i][j]))
+
+    def change_language(
+        self, event: tk.Event  # pylint: disable=unused-argument
+    ) -> None:  # pylint: disable=unused-argument
+        """Change the application language."""
+        self.current_language = self.language_var.get()
+        self.multilanguage.switch_to_language(self.current_language)
+        self.update_ui_language()
+
+    def get_available_languages(self) -> List[str]:
+        """Get the list of available languages from the translations file."""
+        if not self.translations:
+            return ["en"]  # Default to English if no translations are loaded
+        # Get the languages from the first key (assuming all keys have the same languages)
+        first_key = next(iter(self.translations))
+        return list(self.translations[first_key].keys())
+
+    def update_ui_language(self) -> None:
+        """Update the UI with the current language."""
+        self.root.title(self.multilanguage.get_current_language_translation("title"))

@@ -1,4 +1,8 @@
 {
+    "title": {
+        "en": "Sudoku Solver (main)",
+        "fr": "Résolveur de Sudoku (main)"
+    },
     "solve_button": {
         "en": "Solve",
         "fr": "Résoudre"
