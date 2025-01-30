@@ -23,4 +23,12 @@
     "cSpell.words": [
         "pylint"
     ],
+    "cSpell.customDictionaries": {
+        "custom-dictionary-workspace": {
+            "name": "custom-dictionary-workspace",
+            "path": "${workspaceFolder:ExampleLibrary}/../.cspell/custom-dictionary.txt",
+            "addWords": true,
+            "scope": "workspace"
+        }
+    },
 }
