@@ -3,12 +3,12 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ExampleLibrary"
+name = "examplelibrary"
 version = "0.0.0"
 description = "A simple Python library for addition and multiplication"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["src/tests"]
 
 [tool.mypy]
 strict = true

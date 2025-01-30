@@ -6,7 +6,7 @@
     "python.linting.lintOnSave": true,
     "python.testing.pytestEnabled": true,
     "python.testing.pytestArgs": [
-        "tests"
+        "src"
     ],
     // Activer l'exécution des tests à la sauvegarde
     "python.testing.autoTestDiscoverOnSaveEnabled": true,
@@ -31,4 +31,5 @@
             "scope": "workspace"
         }
     },
+    "python.testing.unittestEnabled": false,
 }

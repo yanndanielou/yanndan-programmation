@@ -1,4 +1,4 @@
-from example_library.multiplication import multiply_custom
+from examplelibrary.multiplication import multiply_custom
 
 
 def test_multiply_custom() -> None:
