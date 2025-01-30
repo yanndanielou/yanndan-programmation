@@ -57,6 +57,9 @@ enable = [
     "duplicate-code"
 ]
 
+[tool.black]
+line-length = 100
+
 [tool.pylint.format]
 max-line-length = 88
 
