@@ -1,5 +1,26 @@
 {
+    // Activer le linting
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.mypyEnabled": true,
+    "python.linting.lintOnSave": true,
     "python.testing.pytestEnabled": true,
-    "python.testing.pytestArgs": ["tests"],
-    "python.defaultInterpreterPath": "python"
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    // Activer l'exécution des tests à la sauvegarde
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+    "python.defaultInterpreterPath": "python",
+    "editor.formatOnSave": true,
+    // Activer les snippets Python
+    "editor.snippetSuggestions": "top",
+    // Configurer l'indentation pour Python
+    "[python]": {
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.defaultFormatter": "ms-python.black-formatter" // Configurer Black comme formateur de code
+    },
+    "cSpell.words": [
+        "pylint"
+    ],
 }

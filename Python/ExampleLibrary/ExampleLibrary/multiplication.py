@@ -1,4 +1,7 @@
+""" Example module that performs multiplication """
+
 from .addition import add_custom
+
 
 def multiply_custom(a: int, b: int) -> int:
     """Returns the product of two integers using addition."""

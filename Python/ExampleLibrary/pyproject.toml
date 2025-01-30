@@ -4,11 +4,59 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ExampleLibrary"
-version = "0.1.0"
+version = "0.0.0"
 description = "A simple Python library for addition and multiplication"
-authors = [{ name = "Your Name", email = "your.email@example.com" }]
-license = { file = "LICENSE" }
-dependencies = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+files = ["src/"]
+exclude = ["tests/"]
+disallow_untyped_defs = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_return_any = true
+warn_unreachable = true
+strict_optional = true
+
+[tool.pylint.master]
+ignore = ["tests"]
+enable = "all"
+disable = [
+    "missing-docstring",
+    "too-few-public-methods",
+    "too-many-arguments",
+    "too-many-locals",
+    "too-many-branches",
+    "too-many-statements",
+    "logging-fstring-interpolation"
+]
+
+[tool.pylint.messages_control]
+enable = [
+    "unused-import",
+    "unused-variable",
+    "unused-argument",
+    "redefined-outer-name",
+    "redefined-builtin",
+    "bad-continuation",
+    "trailing-whitespace",
+    "line-too-long",
+    "invalid-name",
+    "global-statement",
+    "dangerous-default-value",
+    "duplicate-code"
+]
+
+[tool.pylint.format]
+max-line-length = 88
+
