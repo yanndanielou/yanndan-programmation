@@ -1,4 +1,4 @@
-from exampleapplication.main import add_custom
+from main import add_custom
 
 
 def test_add_custom() -> None:

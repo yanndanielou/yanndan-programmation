@@ -1,8 +1,7 @@
 """ Example module that performs addition """
 
 from logger import logger_config
-from exponentiation import exponentiation_custom
-from tetration import tetration_custom
+from exampleapplication import exponentiation, tetration
 
 
 def main() -> None:
@@ -10,10 +9,10 @@ def main() -> None:
     logger = logger_config.get_logger("exampleapplication")
     logger.info("Start application")
 
-    exponentiation_result = exponentiation_custom(2, 2)
+    exponentiation_result = exponentiation.exponentiation_custom(2, 2)
     logger.info(f"exponentiation_result:{exponentiation_result}")
 
-    tetration_result = tetration_custom(2, 2)
+    tetration_result = tetration.tetration_custom(2, 2)
     logger.info(f"tetration_result:{tetration_result}")
 
     logger.info("End. Nominal end of application")
