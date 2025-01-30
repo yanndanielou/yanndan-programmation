@@ -1,0 +1,6 @@
+# Custom Dictionary Words
+pytest
+testpath
+testpaths
+setuptools
+fstring
