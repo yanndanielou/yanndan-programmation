@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ExampleLibrary"
+version = "0.1.0"
+description = "A simple Python library for addition and multiplication"
+authors = [{ name = "Your Name", email = "your.email@example.com" }]
+license = { file = "LICENSE" }
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
