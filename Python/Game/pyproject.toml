@@ -8,7 +8,7 @@ name = "game-library"
 description = "Game lib"
 
 [tool.black]
-line-length = 88  # Longueur maximale des lignes pour Black
+line-length = 120  # Longueur maximale des lignes pour Black
 
 [tool.mypy]
 # Specify files or directories to analyze
