@@ -70,9 +70,10 @@ class GenericGameBoard:
     def create_initial_game_board_points(self) -> None:
 
         self.game_board_points_by_x_and_y = [
-            [None for _ in range(self.get_total_width())]
-            for _ in range(self.get_total_height())
+            [None for _ in range(self.get_total_height())]
+            for _ in range(self.get_total_width())
         ]
+
         for x in range(self.get_total_width()):
             for y in range(self.get_total_height()):
                 point = self.create_game_board_point(x, y)
