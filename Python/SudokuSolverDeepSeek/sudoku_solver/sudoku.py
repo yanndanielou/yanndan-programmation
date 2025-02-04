@@ -34,7 +34,7 @@ class SudokuRegion:
     def add_cell(self, cell: SudokuCell) -> None:
         self._cells.append(cell)
 
-    def get_all_cells_ordered(self) -> list[SudokuCell]:
+    def get_all_cells_ordered_from_top_left(self) -> list[SudokuCell]:
         return self._cells
 
     @property

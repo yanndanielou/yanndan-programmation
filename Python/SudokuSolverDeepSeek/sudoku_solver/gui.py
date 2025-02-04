@@ -4,7 +4,7 @@ from sudoku_solver.solver import SudokuSolver
 from sudoku_solver.generator import SudokuGenerator
 from sudoku_solver.rule_engine import RulesEngine
 from sudoku_solver.logger2 import setup_logger
-from sudoku_solver.sudoku import SudokuModel, SudokuRegion
+from sudoku_solver.sudoku import SudokuModel, SudokuRegion, SudokuCell
 import json
 import os
 from typing import List, cast
@@ -19,6 +19,16 @@ class SudokuRegionFrame(tk.Frame):
         self._region_model = region_model
 
 
+class SudokuCellUi(tk.Entry):
+    # fmt: off
+    def __init__(self, cell_model:SudokuCell, master) -> None:
+        super().__init__(master, width=2,
+                    font=("Arial", 18),
+                    justify="center")
+        # fmt: on
+        self._cell_model = cell_model
+
+
 class SudokuGUI:
     def __init__(self, root: tk.Tk, sudoku_model: SudokuModel) -> None:
         self.root = root
@@ -28,6 +38,7 @@ class SudokuGUI:
         self.generated_board = None
         self.rules_engine = RulesEngine()
         self.logger = setup_logger()
+        self._all_cells_ordered_from_top_left: list[list[SudokuCellUi]] = []
         self._region_frames_by_x_and_y_from_top_left: list[list[SudokuRegionFrame]] = []
         self._region_frames_ordered_from_top_left: list[SudokuRegionFrame] = []
         self.multilanguage = multilanguage_management.MultilanguageManagement(
@@ -48,7 +59,12 @@ class SudokuGUI:
             [None for _ in range(3)] for _ in range(3)
         ]
 
-        # Créer des cadres pour chaque région 3x3
+        # Créer les cellules dans chaque région
+        self._all_cells_ordered_from_top_left = [
+            [None for _ in range(9)] for _ in range(9)
+        ]
+
+        # Create all regions
         for region_model in self._sudoku_model.get_game_board().get_all_regions():
             region_frame = SudokuRegionFrame(region_model, grid_frame)
             self._region_frames_by_x_and_y_from_top_left[region_model.x_from_left][
@@ -64,35 +80,18 @@ class SudokuGUI:
                 pady=2,
             )
 
-        for i in range(3):
-            for j in range(3):
-                # Créer un cadre pour la région (i, j)
-                self._region_frames_by_x_and_y_from_top_left[i][j] = tk.Frame(
-                    grid_frame, bd=2, relief="solid"
-                )
-                self._region_frames_by_x_and_y_from_top_left[i][j].grid(
-                    row=i, column=j, padx=2, pady=2
-                )
-
-        # Créer les cellules dans chaque région
-        self.cells = [[None for _ in range(9)] for _ in range(9)]
-        for i in range(9):
-            for j in range(9):
-                # Calculer la position de la région et de la cellule dans la région
-                region_row, region_col = i // 3, j // 3
-                cell_row, cell_col = i % 3, j % 3
-
+            # Create all cells per region
+            for cell_model in region_model.get_all_cells_ordered_from_top_left():
                 # Créer la cellule dans le cadre de la région correspondante
-                self.cells[i][j] = tk.Entry(
-                    self._region_frames_by_x_and_y_from_top_left[region_row][
-                        region_col
-                    ],
-                    width=2,
-                    font=("Arial", 18),
-                    justify="center",
+                cell_ui = SudokuCellUi(cell_model, region_frame)
+                self._all_cells_ordered_from_top_left[cell_model.x][
+                    cell_model.y_from_top
+                ] = cell_ui
+
+                cell_ui.grid(
+                    row=cell_model.y_from_top, column=cell_model.x, padx=2, pady=2
                 )
-                self.cells[i][j].grid(row=cell_row, column=cell_col, padx=2, pady=2)
-                self.cells[i][j].bind("<FocusOut>", self.validate_input)
+                cell_ui.bind("<FocusOut>", self.validate_input)
 
         buttons_frame = tk.Frame(main_frame)
         buttons_frame.grid(row=1, column=0, padx=10, pady=10)
@@ -173,7 +172,7 @@ class SudokuGUI:
         """
         for i in range(9):
             for j in range(9):
-                if self.cells[i][j] == cell:
+                if self._all_cells_ordered_from_top_left[i][j] == cell:
                     return i, j
         return None, None
 
@@ -277,9 +276,11 @@ class SudokuGUI:
     def update_board(self) -> None:
         for i in range(9):
             for j in range(9):
-                self.cells[i][j].delete(0, tk.END)
+                self._all_cells_ordered_from_top_left[i][j].delete(0, tk.END)
                 if self.board[i][j] != 0:
-                    self.cells[i][j].insert(0, str(self.board[i][j]))
+                    self._all_cells_ordered_from_top_left[i][j].insert(
+                        0, str(self.board[i][j])
+                    )
 
     def change_language(
         self, event: tk.Event  # pylint: disable=unused-argument
