@@ -10,7 +10,6 @@ import os
 from typing import List, cast
 from common import multilanguage_management
 from idlelib import tooltip
-import math
 
 
 class SudokuRegionFrame(tk.Frame):
@@ -59,19 +58,12 @@ class SudokuGUI:
         grid_frame.grid(row=0, column=0, padx=10, pady=10)
 
         self._region_frames_by_x_and_y_from_top_left = [
-            [
-                None
-                for _ in range(
-                    math.isqrt(self._sudoku_model.get_game_board().dimension_size)
-                )
-            ]
-            for _ in range()
+            [None for _ in range(3)] for _ in range(3)
         ]
 
         # Créer les cellules dans chaque région
         self._all_cells_ordered_from_top_left = [
-            [None for _ in range(self._sudoku_model.get_game_board().dimension_size)]
-            for _ in range(self._sudoku_model.get_game_board().dimension_size)
+            [None for _ in range(9)] for _ in range(9)
         ]
 
         # Create all regions
