@@ -10,6 +10,7 @@ import os
 from typing import List, cast
 from common import multilanguage_management
 from idlelib import tooltip
+import math
 
 
 class SudokuRegionFrame(tk.Frame):
@@ -22,13 +23,13 @@ class SudokuRegionFrame(tk.Frame):
 
 class SudokuCellUi(tk.Entry):
     # fmt: off
-    def __init__(self, cell_model:SudokuCell, master) -> None:
+    def __init__(self, cell_model:SudokuCell, master:tk.Frame) -> None:
         super().__init__(master, width=2,
                     font=("Arial", 18),
                     justify="center")
         # fmt: on
         self._cell_model = cell_model
-        tool_tip = tooltip.Hovertip(self, "xxx")
+        tool_tip = tooltip.Hovertip(self, f"x:{cell_model.x}, y:{cell_model.y_from_top}")
 
 
 class SudokuGUI:
@@ -58,12 +59,19 @@ class SudokuGUI:
         grid_frame.grid(row=0, column=0, padx=10, pady=10)
 
         self._region_frames_by_x_and_y_from_top_left = [
-            [None for _ in range(3)] for _ in range(3)
+            [
+                None
+                for _ in range(
+                    math.isqrt(self._sudoku_model.get_game_board().dimension_size)
+                )
+            ]
+            for _ in range()
         ]
 
         # Créer les cellules dans chaque région
         self._all_cells_ordered_from_top_left = [
-            [None for _ in range(9)] for _ in range(9)
+            [None for _ in range(self._sudoku_model.get_game_board().dimension_size)]
+            for _ in range(self._sudoku_model.get_game_board().dimension_size)
         ]
 
         # Create all regions

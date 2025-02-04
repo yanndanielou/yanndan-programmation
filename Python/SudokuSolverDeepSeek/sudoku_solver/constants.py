@@ -1,1 +1,4 @@
 DIFFICULTY_LEVELS = ["easy", "medium", "hard"]
+
+SUDOKU_BEGINNERS_SIZE = 4
+SUDOKU_NORMAL_SIZE = 9

@@ -3,6 +3,8 @@ import random
 from typing import List, Optional, cast
 from sudoku_solver.rule_engine import RulesEngine
 
+import math
+
 from logger import logger_config
 from game import game
 
@@ -53,13 +55,22 @@ class SudokuRowOrColumn:
 
 
 class SudokuGameBoard(game.GenericGameBoard):
-    def __init__(self, width: int = 9, height: int = 9) -> None:
-        super().__init__(total_height=height, total_width=width)
+    def __init__(self, dimension_size: int) -> None:
+        super().__init__(total_height=dimension_size, total_width=dimension_size)
+        self._dimension_size: int = dimension_size
         self._regions_by_x_and_y: List[List[SudokuRegion]] = []
         self._regions_ordered: List[SudokuRegion] = []
 
         self.after_constructor()
         self.assign_regions()
+
+    @property
+    def dimension_size(self) -> int:
+        return self._dimension_size
+
+    @property
+    def dimension_size(self) -> int:
+        return self._dimension_size
 
     def get_region_by_x_and_y(self, x: int, y: int) -> SudokuRegion:
         return self._regions_by_x_and_y[x][y]
@@ -72,10 +83,11 @@ class SudokuGameBoard(game.GenericGameBoard):
 
     def assign_regions(self) -> None:
         self._regions_by_x_and_y: List[List[SudokuRegion]] = [
-            [SudokuRegion() for _ in range(3)] for _ in range(3)
+            [SudokuRegion() for _ in range(self)]
+            for _ in range(math.isqrt(self._dimension_size))
         ]
-        for i in range(3):
-            for j in range(3):
+        for i in range(math.isqrt(self._dimension_size)):
+            for j in range(math.isqrt(self._dimension_size)):
                 region = self._regions_by_x_and_y[i][j]
                 region._x_from_left = i
                 region._y_from_top = j
@@ -87,8 +99,10 @@ class SudokuGameBoard(game.GenericGameBoard):
             ).get_row_number_from_top()
             cell_column = cast("SudokuCell", cell).x
 
-            cell_region_row = cell_row_number_from_top // 3
-            cell_region_col = cell_column // 3
+            cell_region_row = cell_row_number_from_top // math.isqrt(
+                self._dimension_size
+            )
+            cell_region_col = cell_column // math.isqrt(self._dimension_size)
 
             cell_region: SudokuRegion = self._regions_by_x_and_y[cell_region_col][
                 cell_region_row
@@ -100,35 +114,10 @@ class SudokuGameBoard(game.GenericGameBoard):
 class SudokuModel:
     """Represents a Sudoku puzzle and provides methods to solve it."""
 
-    def __init__(self) -> None:
+    def __init__(self, dimension_size: int) -> None:
 
-        self._game_board: SudokuGameBoard = SudokuGameBoard()
+        self._game_board: SudokuGameBoard = SudokuGameBoard(dimension_size)
         # self.grid = grid if grid else self.generate_empty_grid()
-
-        """self._columns: List[SudokuRowOrColumn] = []
-        for _ in range(3):
-            self._columns.append(SudokuRowOrColumn(_))
-
-        self._rows: List[SudokuRowOrColumn] = []
-        for _ in range(3):
-            self._rows.append(SudokuRowOrColumn(_))"""
-
-        """         # Créer les cellules dans chaque région
-        self._cells_by_row_and_column: List[List[SudokuCell | None]] = [
-            [None for _ in range(9)] for _ in range(9)
-        ]
-        for i in range(9):
-            for j in range(9):
-                # Calculer la position de la région et de la cellule dans la région
-                region_row, region_col = i // 3, j // 3
-                cell_row, cell_col = i % 3, j % 3
-
-                # Créer la cellule dans le cadre de la région correspondante
-                self._cells_by_row_and_column[i][j] = SudokuCell(
-                    _region=self._regions[region_row][region_col],
-                    _column=self._columns[cell_col],
-                    _row=self._rows[cell_row],
-                ) """
 
         self.rule_engine = RulesEngine()
 

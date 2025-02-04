@@ -1,11 +1,12 @@
 from sudoku_solver.gui import SudokuGUI
 from sudoku_solver import sudoku
+from sudoku_solver import constants
 import tkinter as tk
 
 
 def main() -> None:
     root = tk.Tk()
-    model = sudoku.SudokuModel()
+    model = sudoku.SudokuModel(constants.SUDOKU_BEGINNERS_SIZE)
     app = SudokuGUI(root, model)
     root.mainloop()
 
