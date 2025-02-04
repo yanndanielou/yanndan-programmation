@@ -83,7 +83,7 @@ class SudokuGameBoard(game.GenericGameBoard):
 
     def assign_regions(self) -> None:
         self._regions_by_x_and_y: List[List[SudokuRegion]] = [
-            [SudokuRegion() for _ in range(self)]
+            [SudokuRegion() for _ in range(self._dimension_size)]
             for _ in range(math.isqrt(self._dimension_size))
         ]
         for i in range(math.isqrt(self._dimension_size)):

@@ -30,5 +30,85 @@
     "hard_button": {
         "en": "Hard",
         "fr": "Difficile"
+    },
+    "new_game": {
+        "en": "New Game",
+        "fr": "Nouvelle Partie"
+    },
+    "save_game": {
+        "en": "Save Game",
+        "fr": "Sauvegarder la Partie"
+    },
+    "load_game": {
+        "en": "Load Game",
+        "fr": "Charger la Partie"
+    },
+    "reset_game": {
+        "en": "Reset Game",
+        "fr": "Réinitialiser la Partie"
+    },
+    "exit": {
+        "en": "Exit",
+        "fr": "Quitter"
+    },
+    "game": {
+        "en": "Game",
+        "fr": "Jeu"
+    },
+    "options": {
+        "en": "Options",
+        "fr": "Options"
+    },
+    "display_conflicts": {
+        "en": "Display Conflicts",
+        "fr": "Afficher les Conflits"
+    },
+    "language": {
+        "en": "Language",
+        "fr": "Langue"
+    },
+    "select_number": {
+        "en": "Select Number:",
+        "fr": "Sélectionner un Chiffre :"
+    },
+    "choose_difficulty": {
+        "en": "Choose difficulty (blank, easy, medium, hard)",
+        "fr": "Choisissez la difficulté (blank, facile, moyen, difficile)"
+    },
+    "invalid_difficulty": {
+        "en": "Invalid difficulty selected.",
+        "fr": "Difficulté sélectionnée invalide."
+    },
+    "invalid_value": {
+        "en": "Please enter a number between 1 and 9.",
+        "fr": "Veuillez entrer un nombre entre 1 et 9."
+    },
+    "conflict_detail": {
+        "en": "Conflict at cell {cell} violating {rule} rule",
+        "fr": "Conflit à la cellule {cell} violant la règle {rule}"
+    },
+    "conflict_message": {
+        "en": "The move is invalid: {details}",
+        "fr": "Le mouvement est invalide : {details}"
+    },
+    "conflict_title": {
+        "en": "Invalid Move",
+        "fr": "Mouvement Invalide"
+    },
+    "keep_value_prompt": {
+        "en": "Do you want to keep the value anyway?",
+        "fr": "Voulez-vous conserver la valeur malgré le conflit ?"
+    },
+    "game_saved": {
+        "en": "Game saved successfully.",
+        "fr": "Partie sauvegardée avec succès."
+    },
+    "game_loaded": {
+        "en": "Game loaded successfully.",
+        "fr": "Partie chargée avec succès."
+    },
+    "win_message": {
+        "en": "Congratulations! You solved the puzzle!",
+        "fr": "Félicitations ! Vous avez résolu le puzzle !"
     }
 }

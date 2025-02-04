@@ -10,6 +10,7 @@ import os
 from typing import List, cast
 from common import multilanguage_management
 from idlelib import tooltip
+import math
 
 
 class SudokuRegionFrame(tk.Frame):
@@ -36,7 +37,6 @@ class SudokuGUI:
         self.root = root
         self._sudoku_model = sudoku_model
         self.root.title("Sudoku Solver x")
-        self._sudoku = SudokuModel()
         self.generated_board = None
         self.rules_engine = RulesEngine()
         self.logger = setup_logger()
@@ -46,8 +46,70 @@ class SudokuGUI:
         self.multilanguage = multilanguage_management.MultilanguageManagement(
             os.path.join(os.path.dirname(__file__), "translations.json"), "fr"
         )
+        self.conflict_display_enabled = tk.BooleanVar(value=False)
+
         # self.load_translations()
         self.create_widgets()
+        self.create_menu()
+
+    def create_menu(self) -> None:
+        """
+        Create the menu bar with game options.
+        """
+        menubar = tk.Menu(self.root)
+        # Game menu
+        game_menu = tk.Menu(menubar, tearoff=0)
+        game_menu.add_command(
+            label=self.multilanguage.get_current_language_translation("new_game"),
+            command=self.new_game,
+        )
+        game_menu.add_command(
+            label=self.multilanguage.get_current_language_translation("save_game"),
+            command=self.save_game,
+        )
+        game_menu.add_command(
+            label=self.multilanguage.get_current_language_translation("load_game"),
+            command=self.load_game,
+        )
+        game_menu.add_command(
+            label=self.multilanguage.get_current_language_translation("reset_game"),
+            command=self.reset_game,
+        )
+        game_menu.add_separator()
+        game_menu.add_command(
+            label=self.multilanguage.get_current_language_translation("exit"),
+            command=self.root.quit,
+        )
+        menubar.add_cascade(
+            label=self.multilanguage.get_current_language_translation("game"),
+            menu=game_menu,
+        )
+
+        # Options menu
+        options_menu = tk.Menu(menubar, tearoff=0)
+        options_menu.add_checkbutton(
+            label=self.multilanguage.get_current_language_translation(
+                "display_conflicts"
+            ),
+            variable=self.conflict_display_enabled,
+            command=self.redraw_conflicts,
+        )
+        # Language submenu
+        language_menu = tk.Menu(options_menu, tearoff=0)
+        for lang in self.multilanguage.get_available_languages():
+            language_menu.add_command(
+                label=lang, command=lambda l=lang: self.change_language(l)
+            )
+        options_menu.add_cascade(
+            label=self.multilanguage.get_current_language_translation("language"),
+            menu=language_menu,
+        )
+        menubar.add_cascade(
+            label=self.multilanguage.get_current_language_translation("options"),
+            menu=options_menu,
+        )
+
+        self.root.config(menu=menubar)
 
     def create_widgets(self) -> None:
         # Créer un cadre principal pour contenir toutes les régions
@@ -58,12 +120,21 @@ class SudokuGUI:
         grid_frame.grid(row=0, column=0, padx=10, pady=10)
 
         self._region_frames_by_x_and_y_from_top_left = [
-            [None for _ in range(3)] for _ in range(3)
+            [
+                None
+                for _ in range(
+                    math.isqrt(self._sudoku_model.get_game_board().dimension_size)
+                )
+            ]
+            for _ in range(
+                math.isqrt(self._sudoku_model.get_game_board().dimension_size)
+            )
         ]
 
         # Créer les cellules dans chaque région
         self._all_cells_ordered_from_top_left = [
-            [None for _ in range(9)] for _ in range(9)
+            [None for _ in range(self._sudoku_model.get_game_board().dimension_size)]
+            for _ in range(self._sudoku_model.get_game_board().dimension_size)
         ]
 
         # Create all regions
@@ -292,14 +363,100 @@ class SudokuGUI:
         self.multilanguage.switch_to_language(self.current_language)
         self.update_ui_language()
 
-    def get_available_languages(self) -> List[str]:
-        """Get the list of available languages from the translations file."""
-        if not self.translations:
-            return ["en"]  # Default to English if no translations are loaded
-        # Get the languages from the first key (assuming all keys have the same languages)
-        first_key = next(iter(self.translations))
-        return list(self.translations[first_key].keys())
-
     def update_ui_language(self) -> None:
         """Update the UI with the current language."""
         self.root.title(self.multilanguage.get_current_language_translation("title"))
+
+    def redraw_conflicts(self) -> None:
+        """
+        Redraw the conflict highlights if enabled.
+        """
+        # Reset all cell backgrounds for non-fixed cells
+        for row in range(9):
+            for col in range(9):
+                entry = self.cells[row][col]
+                if not self.board.fixed[row][col]:
+                    entry.config(bg="white")
+        if not self.conflict_display_enabled.get():
+            return
+        # Highlight conflicts in different colors based on rule
+        colors = {"row": "#ffcccc", "column": "#ccffcc", "region": "#ccccff"}
+        for row in range(9):
+            for col in range(9):
+                value = self.board.board[row][col]
+                if value == 0:
+                    continue
+                valid, conflicts = check_move(
+                    self.board, row, col, value, ignore_current=True
+                )
+                if not valid:
+                    for conflict in conflicts:
+                        rule = conflict.get("rule")
+                        conflict_row, conflict_col = conflict.get("cell")
+                        self.cells[conflict_row][conflict_col].config(
+                            bg=colors.get(rule, "yellow")
+                        )
+
+    def new_game(self) -> None:
+        """
+        Start a new game, with a popup to choose difficulty.
+        """
+        choice = simpledialog.askstring(
+            self.translations.translate("new_game"),
+            self.translations.translate("choose_difficulty")
+            + " (blank, easy, medium, hard):",
+            parent=self.root,
+        )
+        if choice is None:
+            return
+        choice = choice.lower()
+        if choice == "blank":
+            self.board = SudokuBoard()
+        elif choice in ("easy", "medium", "hard"):
+            self.board = generate_puzzle(choice)
+        else:
+            messagebox.showerror(
+                "Error", self.translations.translate("invalid_difficulty")
+            )
+            return
+        self.draw_board()
+
+    def save_game(self) -> None:
+        """
+        Save the current game state to a file.
+        """
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".json", filetypes=[("JSON files", "*.json")]
+        )
+        if not file_path:
+            return
+        data = {
+            "board": self.board.board,
+            "fixed": self.board.fixed,
+            "language": self.current_language,
+        }
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        messagebox.showinfo("Info", self.translations.translate("game_saved"))
+
+    def load_game(self) -> None:
+        """
+        Load a game state from a file.
+        """
+        file_path = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
+        if not file_path:
+            return
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        self.board = SudokuBoard(data["board"], data["fixed"])
+        self.current_language = data.get("language", "en")
+        self.translations.set_language(self.current_language)
+        self.draw_board()
+        messagebox.showinfo("Info", self.translations.translate("game_loaded"))
+
+    def reset_game(self) -> None:
+        """
+        Reset the game by clearing all user entries.
+        """
+        self.board.clear_user_entries()
+        self.draw_board()
