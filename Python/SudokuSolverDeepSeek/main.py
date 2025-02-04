@@ -6,7 +6,7 @@ import tkinter as tk
 
 def main() -> None:
     root = tk.Tk()
-    model = sudoku.SudokuModel(constants.SUDOKU_BEGINNERS_SIZE)
+    model = sudoku.SudokuModel(constants.SUDOKU_NORMAL_SIZE)
     app = SudokuGUI(root, model)
     root.mainloop()
 

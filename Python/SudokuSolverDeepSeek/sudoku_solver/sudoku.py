@@ -7,14 +7,27 @@ import math
 
 from logger import logger_config
 from game import game
+from abc import ABC, abstractmethod
+
 
 logger = logger_config.get_logger(__name__)
+
+
+class SudokuCellObserver(ABC):
+    """
+    The Observer interface declares the update method, used by subjects.
+    """
+
+    @abstractmethod
+    def on_cell_value_updated(self, new_value: int, cell: "SudokuCell") -> None:
+        pass
 
 
 @dataclass
 class SudokuCell(game.GenericIntegerGameBoardPoint):
     _region: Optional["SudokuRegion"] = None
     _value: Optional[int] = None
+    _observers: List[SudokuCellObserver] = field(default_factory=list)
 
     @property
     def y_from_top(self) -> int:
@@ -25,6 +38,17 @@ class SudokuCell(game.GenericIntegerGameBoardPoint):
 
     def get_column_number_from_left(self) -> int:
         return self.x
+
+    def attach(self, observer: SudokuCellObserver) -> None:
+        print("Subject: Attached an observer.")
+        self._observers.append(observer)
+
+    def detach(self, observer: SudokuCellObserver) -> None:
+        self._observers.remove(observer)
+
+    def notify_value_changed(self) -> None:
+        for observer in self._observers:
+            observer.on_cell_value_updated(new_value=self._value, cell=self)
 
 
 @dataclass

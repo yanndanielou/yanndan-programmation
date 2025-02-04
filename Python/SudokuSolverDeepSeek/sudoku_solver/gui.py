@@ -4,7 +4,12 @@ from sudoku_solver.solver import SudokuSolver
 from sudoku_solver.generator import SudokuGenerator
 from sudoku_solver.rule_engine import RulesEngine
 from sudoku_solver.logger2 import setup_logger
-from sudoku_solver.sudoku import SudokuModel, SudokuRegion, SudokuCell
+from sudoku_solver.sudoku import (
+    SudokuModel,
+    SudokuRegion,
+    SudokuCell,
+    SudokuCellObserver,
+)
 import json
 import os
 from typing import List, cast
@@ -21,15 +26,26 @@ class SudokuRegionFrame(tk.Frame):
         self._region_model = region_model
 
 
-class SudokuCellUi(tk.Entry):
+class SudokuCellUi(SudokuCellObserver):
+
     # fmt: off
     def __init__(self, cell_model:SudokuCell, master:tk.Frame) -> None:
-        super().__init__(master, width=2,
+        self._text_variable = tk.StringVar()
+        self._tk_entry  = tk.Entry(master, width=2,
                     font=("Arial", 18),
-                    justify="center")
+                    justify="center",textvariable=self._text_variable)
         # fmt: on
         self._cell_model = cell_model
-        tool_tip = tooltip.Hovertip(self, f"x:{cell_model.x}, y:{cell_model.y_from_top}")
+        tool_tip = tooltip.Hovertip(self._tk_entry, f"x:{cell_model.x}, y:{cell_model.y_from_top}")
+
+    
+    @property
+    def tk_entry(self) -> tk.Entry:
+        return self._tk_entry
+
+
+    def on_cell_value_updated(self, new_value, cell):
+        self._text_variable.set(f"{new_value}")
 
 
 class SudokuGUI:
@@ -43,52 +59,54 @@ class SudokuGUI:
         self._all_cells_ordered_from_top_left: list[list[SudokuCellUi]] = []
         self._region_frames_by_x_and_y_from_top_left: list[list[SudokuRegionFrame]] = []
         self._region_frames_ordered_from_top_left: list[SudokuRegionFrame] = []
-        self.multilanguage = multilanguage_management.MultilanguageManagement(
+        self._translations = multilanguage_management.MultilanguageManagement(
             os.path.join(os.path.dirname(__file__), "translations.json"), "fr"
         )
         self.conflict_display_enabled = tk.BooleanVar(value=False)
 
         # self.load_translations()
         self.create_widgets()
+
+        self._menubar = tk.Menu(self.root)
         self.create_menu()
 
     def create_menu(self) -> None:
         """
         Create the menu bar with game options.
         """
-        menubar = tk.Menu(self.root)
         # Game menu
-        game_menu = tk.Menu(menubar, tearoff=0)
+        game_menu = tk.Menu(self._menubar, tearoff=0)
+
         game_menu.add_command(
-            label=self.multilanguage.get_current_language_translation("new_game"),
+            label=self._translations.get_current_language_translation("new_game"),
             command=self.new_game,
         )
         game_menu.add_command(
-            label=self.multilanguage.get_current_language_translation("save_game"),
+            label=self._translations.get_current_language_translation("save_game"),
             command=self.save_game,
         )
         game_menu.add_command(
-            label=self.multilanguage.get_current_language_translation("load_game"),
+            label=self._translations.get_current_language_translation("load_game"),
             command=self.load_game,
         )
         game_menu.add_command(
-            label=self.multilanguage.get_current_language_translation("reset_game"),
+            label=self._translations.get_current_language_translation("reset_game"),
             command=self.reset_game,
         )
         game_menu.add_separator()
         game_menu.add_command(
-            label=self.multilanguage.get_current_language_translation("exit"),
+            label=self._translations.get_current_language_translation("exit"),
             command=self.root.quit,
         )
-        menubar.add_cascade(
-            label=self.multilanguage.get_current_language_translation("game"),
+        self._menubar.add_cascade(
+            label=self._translations.get_current_language_translation("game"),
             menu=game_menu,
         )
 
         # Options menu
-        options_menu = tk.Menu(menubar, tearoff=0)
+        options_menu = tk.Menu(self._menubar, tearoff=0)
         options_menu.add_checkbutton(
-            label=self.multilanguage.get_current_language_translation(
+            label=self._translations.get_current_language_translation(
                 "display_conflicts"
             ),
             variable=self.conflict_display_enabled,
@@ -96,20 +114,20 @@ class SudokuGUI:
         )
         # Language submenu
         language_menu = tk.Menu(options_menu, tearoff=0)
-        for lang in self.multilanguage.get_available_languages():
+        for lang in self._translations.get_available_languages():
             language_menu.add_command(
                 label=lang, command=lambda l=lang: self.change_language(l)
             )
         options_menu.add_cascade(
-            label=self.multilanguage.get_current_language_translation("language"),
+            label=self._translations.get_current_language_translation("language"),
             menu=language_menu,
         )
-        menubar.add_cascade(
-            label=self.multilanguage.get_current_language_translation("options"),
+        self._menubar.add_cascade(
+            label=self._translations.get_current_language_translation("options"),
             menu=options_menu,
         )
 
-        self.root.config(menu=menubar)
+        self.root.config(menu=self._menubar)
 
     def create_widgets(self) -> None:
         # Créer un cadre principal pour contenir toutes les régions
@@ -161,10 +179,10 @@ class SudokuGUI:
                     cell_model.y_from_top
                 ] = cell_ui
 
-                cell_ui.grid(
+                cell_ui.tk_entry.grid(
                     row=cell_model.y_from_top, column=cell_model.x, padx=2, pady=2
                 )
-                cell_ui.bind("<FocusOut>", self.validate_input)
+                cell_ui.tk_entry.bind("<FocusOut>", self.validate_input)
 
         buttons_frame = tk.Frame(main_frame)
         buttons_frame.grid(row=1, column=0, padx=10, pady=10)
@@ -188,7 +206,7 @@ class SudokuGUI:
         language_selector = ttk.Combobox(
             buttons_frame,
             textvariable=self.language_var,
-            values=list(self.multilanguage.get_available_languages()),
+            values=list(self._translations.get_available_languages()),
         )
         language_selector.grid(row=1, column=1, pady=10)
         language_selector.bind("<<ComboboxSelected>>", self.change_language)
@@ -360,12 +378,14 @@ class SudokuGUI:
     ) -> None:  # pylint: disable=unused-argument
         """Change the application language."""
         self.current_language = self.language_var.get()
-        self.multilanguage.switch_to_language(self.current_language)
+        self._translations.switch_to_language(self.current_language)
+        self._menubar.delete(0, "end")
         self.update_ui_language()
 
     def update_ui_language(self) -> None:
         """Update the UI with the current language."""
-        self.root.title(self.multilanguage.get_current_language_translation("title"))
+        self.root.title(self._translations.get_current_language_translation("title"))
+        self.create_menu()
 
     def redraw_conflicts(self) -> None:
         """
@@ -402,8 +422,8 @@ class SudokuGUI:
         Start a new game, with a popup to choose difficulty.
         """
         choice = simpledialog.askstring(
-            self.translations.translate("new_game"),
-            self.translations.translate("choose_difficulty")
+            self._translations.translate("new_game"),
+            self._translations.translate("choose_difficulty")
             + " (blank, easy, medium, hard):",
             parent=self.root,
         )
@@ -416,7 +436,7 @@ class SudokuGUI:
             self.board = generate_puzzle(choice)
         else:
             messagebox.showerror(
-                "Error", self.translations.translate("invalid_difficulty")
+                "Error", self._translations.translate("invalid_difficulty")
             )
             return
         self.draw_board()
@@ -437,7 +457,7 @@ class SudokuGUI:
         }
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f)
-        messagebox.showinfo("Info", self.translations.translate("game_saved"))
+        messagebox.showinfo("Info", self._translations.translate("game_saved"))
 
     def load_game(self) -> None:
         """
@@ -450,9 +470,9 @@ class SudokuGUI:
             data = json.load(f)
         self.board = SudokuBoard(data["board"], data["fixed"])
         self.current_language = data.get("language", "en")
-        self.translations.set_language(self.current_language)
+        self._translations.set_language(self.current_language)
         self.draw_board()
-        messagebox.showinfo("Info", self.translations.translate("game_loaded"))
+        messagebox.showinfo("Info", self._translations.translate("game_loaded"))
 
     def reset_game(self) -> None:
         """
