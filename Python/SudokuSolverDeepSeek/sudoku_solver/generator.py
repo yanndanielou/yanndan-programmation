@@ -1,6 +1,6 @@
 import random
 from typing import List
-from solver import SudokuSolver
+from sudoku_solver.solver import SudokuSolver
 
 
 class SudokuGenerator:

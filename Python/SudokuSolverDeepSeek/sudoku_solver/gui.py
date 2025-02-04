@@ -1,9 +1,10 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
-from solver import SudokuSolver
-from generator import SudokuGenerator
-from rule_engine import RulesEngine
-from logger2 import setup_logger
+from sudoku_solver.solver import SudokuSolver
+from sudoku_solver.generator import SudokuGenerator
+from sudoku_solver.rule_engine import RulesEngine
+from sudoku_solver.logger2 import setup_logger
+from sudoku_solver.sudoku import SudokuModel
 import json
 import os
 from typing import List
@@ -11,10 +12,11 @@ from common import multilanguage_management
 
 
 class SudokuGUI:
-    def __init__(self, root: tk.Tk) -> None:
+    def __init__(self, root: tk.Tk, sudoku_model: SudokuModel) -> None:
         self.root = root
+        self._sudoku_model = sudoku_model
         self.root.title("Sudoku Solver x")
-        self.board = [[0 for _ in range(9)] for _ in range(9)]
+        self._sudoku = SudokuModel()
         self.generated_board = None
         self.rules_engine = RulesEngine()
         self.logger = setup_logger()

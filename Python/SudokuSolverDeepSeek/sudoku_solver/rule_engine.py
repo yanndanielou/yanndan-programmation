@@ -1,8 +1,8 @@
 class RulesEngine:
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    def validate_move(self, board, row, col, num):
+    def validate_move(self, board, row: int, col: int, num: int) -> None:
         for i in range(9):
             if board[row][i] == num or board[i][col] == num:
                 return False
