@@ -1,3 +1,5 @@
+from dataclasses import dataclass, field
+
 from typing import List, Dict
 from enum import Enum
 from collections import defaultdict
@@ -18,17 +20,23 @@ class NeighbourGameBoardPointDirection(Enum):
     NORTH_WEST = "NORTH_WEST"
 
 
+@dataclass
 class GenericIntegerGameBoardPoint:
     """
     Represents a point on the game board with integer coordinates.
     """
 
-    def __init__(self, x: int, y: int):
-        self.x = x
-        self.y = y
-        self.neighbours: Dict[
-            NeighbourGameBoardPointDirection, GenericIntegerGameBoardPoint
-        ] = {}
+    _x: int
+    _y: int
+    neighbours: Dict[NeighbourGameBoardPointDirection, "GenericIntegerGameBoardPoint"] = field(default_factory=dict)
+
+    @property
+    def x(self) -> int:
+        return self._x
+
+    @property
+    def y(self) -> int:
+        return self._y
 
     def set_neighbour(
         self,
@@ -54,12 +62,8 @@ class GenericGameBoard:
     def __init__(self, total_width: int, total_height: int) -> None:
         self._total_width = total_width
         self._total_height = total_height
-        self.game_board_points_by_x_and_y: list[
-            list[GenericIntegerGameBoardPoint | None]
-        ] = []
-        self.game_board_points_per_y: Dict[int, List[GenericIntegerGameBoardPoint]] = (
-            defaultdict(list)
-        )
+        self.game_board_points_by_x_and_y: list[list[GenericIntegerGameBoardPoint | None]] = []
+        self.game_board_points_per_y: Dict[int, List[GenericIntegerGameBoardPoint]] = defaultdict(list)
         self.all_game_board_points: list[GenericIntegerGameBoardPoint] = []
         # self.after_constructor()
 
@@ -70,8 +74,7 @@ class GenericGameBoard:
     def create_initial_game_board_points(self) -> None:
 
         self.game_board_points_by_x_and_y = [
-            [None for _ in range(self.get_total_height())]
-            for _ in range(self.get_total_width())
+            [None for _ in range(self.get_total_height())] for _ in range(self.get_total_width())
         ]
 
         for x in range(self.get_total_width()):
