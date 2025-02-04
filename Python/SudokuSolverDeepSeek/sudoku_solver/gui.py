@@ -9,6 +9,7 @@ import json
 import os
 from typing import List, cast
 from common import multilanguage_management
+from idlelib import tooltip
 
 
 class SudokuRegionFrame(tk.Frame):
@@ -27,6 +28,7 @@ class SudokuCellUi(tk.Entry):
                     justify="center")
         # fmt: on
         self._cell_model = cell_model
+        tool_tip = tooltip.Hovertip(self, "xxx")
 
 
 class SudokuGUI:
