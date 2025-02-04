@@ -28,14 +28,22 @@ class SudokuCell(game.GenericIntegerGameBoardPoint):
 @dataclass
 class SudokuRegion:
     _cells: List[SudokuCell] = field(default_factory=list)
-    _x: int = -1
-    _y: int = -1
+    _x_from_left: int = -1
+    _y_from_top: int = -1
 
     def add_cell(self, cell: SudokuCell) -> None:
         self._cells.append(cell)
 
     def get_all_cells_ordered(self) -> list[SudokuCell]:
         return self._cells
+
+    @property
+    def y_from_top(self) -> int:
+        return self._y_from_top
+
+    @property
+    def x_from_left(self) -> int:
+        return self._x_from_left
 
 
 @dataclass
@@ -47,12 +55,17 @@ class SudokuRowOrColumn:
 class SudokuGameBoard(game.GenericGameBoard):
     def __init__(self, width: int = 9, height: int = 9) -> None:
         super().__init__(total_height=height, total_width=width)
-        self._regions_by_x_and_y: List[List[SudokuRegion]]
+        self._regions_by_x_and_y: List[List[SudokuRegion]] = []
+        self._regions_ordered: List[SudokuRegion] = []
+
         self.after_constructor()
         self.assign_regions()
 
     def get_region_by_x_and_y(self, x: int, y: int) -> SudokuRegion:
         return self._regions_by_x_and_y[x][y]
+
+    def get_all_regions(self) -> list[SudokuRegion]:
+        return self._regions_ordered
 
     def create_game_board_point(self, x: int, y: int) -> SudokuCell:
         return SudokuCell(x, y)
@@ -63,8 +76,10 @@ class SudokuGameBoard(game.GenericGameBoard):
         ]
         for i in range(3):
             for j in range(3):
-                self._regions_by_x_and_y[i][j]._x = i
-                self._regions_by_x_and_y[i][j]._y = j
+                region = self._regions_by_x_and_y[i][j]
+                region._x_from_left = i
+                region._y_from_top = j
+                self._regions_ordered.append(region)
 
         for cell in self.get_all_game_board_points_as_ordered_list():
             cell_row_number_from_top = cast(
@@ -87,7 +102,7 @@ class SudokuModel:
 
     def __init__(self) -> None:
 
-        self.game_board: SudokuGameBoard = SudokuGameBoard()
+        self._game_board: SudokuGameBoard = SudokuGameBoard()
         # self.grid = grid if grid else self.generate_empty_grid()
 
         """self._columns: List[SudokuRowOrColumn] = []
@@ -118,7 +133,7 @@ class SudokuModel:
         self.rule_engine = RulesEngine()
 
     def get_game_board(self) -> SudokuGameBoard:
-        return self.game_board
+        return self._game_board
 
     def solve_grid(self, grid: List[List[Optional[int]]]) -> bool:
         """Solve a Sudoku grid using backtracking."""

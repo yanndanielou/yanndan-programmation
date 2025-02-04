@@ -4,11 +4,19 @@ from sudoku_solver.solver import SudokuSolver
 from sudoku_solver.generator import SudokuGenerator
 from sudoku_solver.rule_engine import RulesEngine
 from sudoku_solver.logger2 import setup_logger
-from sudoku_solver.sudoku import SudokuModel
+from sudoku_solver.sudoku import SudokuModel, SudokuRegion
 import json
 import os
-from typing import List
+from typing import List, cast
 from common import multilanguage_management
+
+
+class SudokuRegionFrame(tk.Frame):
+    # fmt: off
+    def __init__(self, region_model:SudokuRegion, master:tk.Frame) -> None:
+        super().__init__(master, bd=2, relief="solid")
+        # fmt: on
+        self._region_model = region_model
 
 
 class SudokuGUI:
@@ -20,6 +28,8 @@ class SudokuGUI:
         self.generated_board = None
         self.rules_engine = RulesEngine()
         self.logger = setup_logger()
+        self._region_frames_by_x_and_y_from_top_left: list[list[SudokuRegionFrame]] = []
+        self._region_frames_ordered_from_top_left: list[SudokuRegionFrame] = []
         self.multilanguage = multilanguage_management.MultilanguageManagement(
             os.path.join(os.path.dirname(__file__), "translations.json"), "fr"
         )
@@ -34,13 +44,35 @@ class SudokuGUI:
         grid_frame = tk.Frame(main_frame)
         grid_frame.grid(row=0, column=0, padx=10, pady=10)
 
+        self._region_frames_by_x_and_y_from_top_left = [
+            [None for _ in range(3)] for _ in range(3)
+        ]
+
         # Créer des cadres pour chaque région 3x3
-        self.region_frames = [[None for _ in range(3)] for _ in range(3)]
+        for region_model in self._sudoku_model.get_game_board().get_all_regions():
+            region_frame = SudokuRegionFrame(region_model, grid_frame)
+            self._region_frames_by_x_and_y_from_top_left[region_model.x_from_left][
+                region_model.y_from_top
+            ] = region_frame
+
+            self._region_frames_ordered_from_top_left.append(region_frame)
+
+            region_frame.grid(
+                row=region_model.x_from_left,
+                column=region_model.y_from_top,
+                padx=2,
+                pady=2,
+            )
+
         for i in range(3):
             for j in range(3):
                 # Créer un cadre pour la région (i, j)
-                self.region_frames[i][j] = tk.Frame(grid_frame, bd=2, relief="solid")
-                self.region_frames[i][j].grid(row=i, column=j, padx=2, pady=2)
+                self._region_frames_by_x_and_y_from_top_left[i][j] = tk.Frame(
+                    grid_frame, bd=2, relief="solid"
+                )
+                self._region_frames_by_x_and_y_from_top_left[i][j].grid(
+                    row=i, column=j, padx=2, pady=2
+                )
 
         # Créer les cellules dans chaque région
         self.cells = [[None for _ in range(9)] for _ in range(9)]
@@ -52,7 +84,9 @@ class SudokuGUI:
 
                 # Créer la cellule dans le cadre de la région correspondante
                 self.cells[i][j] = tk.Entry(
-                    self.region_frames[region_row][region_col],
+                    self._region_frames_by_x_and_y_from_top_left[region_row][
+                        region_col
+                    ],
                     width=2,
                     font=("Arial", 18),
                     justify="center",
