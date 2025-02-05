@@ -19,3 +19,17 @@ class GameSize:
     @property
     def name(self) -> str:
         return self._name  # Retourne _name au lieu de name
+
+
+@dataclass
+class PuzzleDifficulty:
+    _name: str
+    _percentage_revealed_cells: int
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def percentage_revealed_cells(self) -> int:
+        return self._percentage_revealed_cells

@@ -3,19 +3,22 @@ from tkinter import messagebox, simpledialog, ttk
 from sudoku_solver.solver import SudokuSolver
 from sudoku_solver.generator import SudokuGenerator
 from sudoku_solver.rule_engine import RulesEngine
-from sudoku_solver.logger2 import setup_logger
+from sudoku_solver.logger_sudoku import get_logger
 from sudoku_solver.sudoku import (
     SudokuModel,
     SudokuRegion,
     SudokuCell,
     SudokuCellObserver,
 )
+from sudoku_solver.ui.controller import SudokuController
 import json
 import os
 from typing import List, cast
 from common import multilanguage_management
 from idlelib import tooltip
 import math
+
+logger = get_logger(__name__)
 
 
 class SudokuRegionFrame(tk.Frame):
@@ -29,15 +32,23 @@ class SudokuRegionFrame(tk.Frame):
 class SudokuCellUi(SudokuCellObserver):
 
     # fmt: off
-    def __init__(self, cell_model:SudokuCell, master:tk.Frame) -> None:
+    def __init__(self, controller:SudokuController, cell_model:SudokuCell, master:tk.Frame) -> None:
         self._text_variable = tk.StringVar()
         self._tk_entry  = tk.Entry(master, width=2,
                     font=("Arial", 18),
                     justify="center",textvariable=self._text_variable)
+        self._controller = controller
+        
         # fmt: on
         self._cell_model = cell_model
         tool_tip = tooltip.Hovertip(self._tk_entry, f"x:{cell_model.x}, y:{cell_model.y_from_top}")
 
+        self._tk_entry.bind("<KeyRelease>", self.update_cell_content_by_user)              
+        #self._tk_entry.bind("<FocusOut>", self.validate_input)
+ 
+
+    def update_cell_content_by_user(self, event:tk.Event)->None:
+        self._controller.update_cell_content_by_user(self._cell_model, self._tk_entry.get())
     
     @property
     def tk_entry(self) -> tk.Entry:
@@ -55,7 +66,7 @@ class SudokuGUI:
         self.root.title("Sudoku Solver x")
         self.generated_board = None
         self.rules_engine = RulesEngine()
-        self.logger = setup_logger()
+        self._controller: SudokuController = SudokuController(sudoku_model, self)
         self._all_cells_ordered_from_top_left: list[list[SudokuCellUi]] = []
         self._region_frames_by_x_and_y_from_top_left: list[list[SudokuRegionFrame]] = []
         self._region_frames_ordered_from_top_left: list[SudokuRegionFrame] = []
@@ -186,7 +197,7 @@ class SudokuGUI:
             # Create all cells per region
             for cell_model in region_model.get_all_cells_ordered_from_top_left():
                 # Créer la cellule dans le cadre de la région correspondante
-                cell_ui = SudokuCellUi(cell_model, region_frame)
+                cell_ui = SudokuCellUi(self._controller, cell_model, region_frame)
                 self._all_cells_ordered_from_top_left[cell_model.x][
                     cell_model.y_from_top
                 ] = cell_ui
@@ -194,7 +205,6 @@ class SudokuGUI:
                 cell_ui.tk_entry.grid(
                     row=cell_model.y_from_top, column=cell_model.x, padx=2, pady=2
                 )
-                cell_ui.tk_entry.bind("<FocusOut>", self.validate_input)
 
         buttons_frame = tk.Frame(main_frame)
         buttons_frame.grid(row=1, column=0, padx=10, pady=10)

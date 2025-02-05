@@ -1,6 +1,12 @@
-from sudoku_solver.difficulties import GameSize
+from sudoku_solver.difficulties import GameSize, PuzzleDifficulty
 
-DIFFICULTY_LEVELS = ["easy", "medium", "hard"]
+PUZZLE_DIFFICULTY_LEVELS = [
+    PuzzleDifficulty("Very easy", 90),
+    PuzzleDifficulty("easy", 80),
+    PuzzleDifficulty("medium", 50),
+    PuzzleDifficulty("hard", 30),
+    PuzzleDifficulty("Few cells forced", 2),
+]
 
 SUDOKU_BEGINNERS_SIZE: GameSize = GameSize(
     _name="SUDOKU_BEGINNERS_SIZE",

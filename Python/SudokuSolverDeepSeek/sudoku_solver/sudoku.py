@@ -3,6 +3,7 @@ import random
 from typing import List, Optional, cast
 from sudoku_solver.rule_engine import RulesEngine
 from sudoku_solver.difficulties import GameSize
+from sudoku_solver.logger_sudoku import get_logger
 
 import math
 
@@ -11,7 +12,7 @@ from game import game
 from abc import ABC, abstractmethod
 
 
-logger = logger_config.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class SudokuCellObserver(ABC):
@@ -20,19 +21,31 @@ class SudokuCellObserver(ABC):
     """
 
     @abstractmethod
-    def on_cell_value_updated(self, new_value: int, cell: "SudokuCell") -> None:
+    def on_cell_value_updated(self, new_value: str, cell: "SudokuCell") -> None:
         pass
 
 
 @dataclass
 class SudokuCell(game.GenericIntegerGameBoardPoint):
     _region: Optional["SudokuRegion"] = None
-    _value: Optional[int] = None
+    _value: Optional[str] = None
     _observers: List[SudokuCellObserver] = field(default_factory=list)
+    _enforcedValueByPuzzle = False
+    _found_by_software_solver = False
+    _entered_by_user = False
 
     @property
     def y_from_top(self) -> int:
         return self.y
+
+    @property
+    def enforcedValueByPuzzle(self) -> bool:
+        return self._enforcedValueByPuzzle
+
+    def update_cell_content_by_user(self, new_value: str) -> None:
+        self._value = new_value
+        self._entered_by_user = True
+        logger.info(f"update_cell_content_by_user {new_value} at ({self.x}, {self.y})")
 
     def get_row_number_from_top(self) -> int:
         return self.y
