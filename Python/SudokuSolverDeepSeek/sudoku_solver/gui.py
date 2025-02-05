@@ -142,18 +142,29 @@ class SudokuGUI:
             [
                 None
                 for _ in range(
-                    math.isqrt(self._sudoku_model.get_game_board().dimension_size)
+                    math.isqrt(
+                        self._sudoku_model.get_game_board().get_number_of_cells_per_region()
+                    )
                 )
             ]
             for _ in range(
-                math.isqrt(self._sudoku_model.get_game_board().dimension_size)
+                math.isqrt(
+                    self._sudoku_model.get_game_board().get_number_of_cells_per_region()
+                )
             )
         ]
 
         # Créer les cellules dans chaque région
         self._all_cells_ordered_from_top_left = [
-            [None for _ in range(self._sudoku_model.get_game_board().dimension_size)]
-            for _ in range(self._sudoku_model.get_game_board().dimension_size)
+            [
+                None
+                for _ in range(
+                    self._sudoku_model.get_game_board().get_number_of_cells_per_region()
+                )
+            ]
+            for _ in range(
+                self._sudoku_model.get_game_board().get_number_of_cells_per_region()
+            )
         ]
 
         # Create all regions
