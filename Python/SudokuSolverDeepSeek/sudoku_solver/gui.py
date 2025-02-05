@@ -60,7 +60,8 @@ class SudokuGUI:
         self._region_frames_by_x_and_y_from_top_left: list[list[SudokuRegionFrame]] = []
         self._region_frames_ordered_from_top_left: list[SudokuRegionFrame] = []
         self._translations = multilanguage_management.MultilanguageManagement(
-            os.path.join(os.path.dirname(__file__), "translations.json"), "fr"
+            os.path.join(os.path.dirname(__file__), "../resources/translations.json"),
+            "fr",
         )
         self.conflict_display_enabled = tk.BooleanVar(value=False)
 
