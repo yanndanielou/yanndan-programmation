@@ -174,7 +174,7 @@ class PrintInputAndOutput(object):
         logging.debug(f"Arguments passed to {self.f.__name__ } called with: {str(args)} returns: {str(ret)}")
         return ret
 
-def get_logger(name: str, level: int=logging.DEBUG) -> logging.Logger:
+def get_logger(name: str, rotating_file_name_without_extension:str, level: int=logging.DEBUG) -> logging.Logger:
     """Create and configure a logger."""
     logger = logging.getLogger(name)
     logger.setLevel(level)
@@ -185,7 +185,7 @@ def get_logger(name: str, level: int=logging.DEBUG) -> logging.Logger:
 
     # Create a rotating file handler
     handler = RotatingFileHandler(
-        "logs/sudoku.log", maxBytes=1024 * 1024, backupCount=5
+        f"logs/{rotating_file_name_without_extension}.log", maxBytes=1024 * 1024, backupCount=5
     )
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s [%(filename)s:%(lineno)d]"
