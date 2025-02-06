@@ -102,8 +102,17 @@ class SudokuGameBoard(game.GenericGameBoard):
         self._regions_by_x_and_y: List[List[SudokuRegion]] = []
         self._regions_ordered: List[SudokuRegion] = []
 
+        self._columns: List[SudokuRowOrColumn] = []
+        self._rows_from_top: List[SudokuRowOrColumn] = []
+
         self.after_constructor()
         self.assign_regions()
+        self.assign_rows_and_columns()
+
+    def assign_rows_and_columns(self) -> None:
+        for cell in self.get_all_game_board_points_as_ordered_list():
+
+            pass
 
     def get_number_of_cells_per_region(self) -> int:
         return self._game_size.get_number_of_cells_per_region()
