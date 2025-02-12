@@ -297,7 +297,7 @@ class DetailsViewTab(ttk.Frame):
         pass
     
     
-    def _filter_text_updated(self)->None:
+    def _filter_text_updated(self, event:tkinter.Event)->None:
         if self._title_filter_text_content != self._filter_input_text.get():
             self._title_filter_text_content = self._filter_input_text.get()
             self.refresh_m3u_entries()
