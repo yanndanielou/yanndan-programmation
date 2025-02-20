@@ -148,8 +148,13 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
         if not self._whole_words:
             filter_text_words = tokenization_string.tokenize_text_with_nltk_regexp_tokenizer(filter_text)
             for filter_word in filter_text_words:
-                title_contains_exactly_word = TitleContainsExactlyFilter(not ignore_case, self.label + filter_word)
-                if not title_contains_exactly_word.match_m3u(m3u_entry, filter_word, ignore_case, ignore_diacritics):
+                title_contains_exactly_word = TitleContainsExactlyFilter(self.label + filter_word)
+                if not title_contains_exactly_word.match_m3u(
+                    m3u_entry=m3u_entry,
+                    filter_text=filter_word,
+                    ignore_case=ignore_case,
+                    ignore_diacritics=ignore_diacritics,
+                ):
                     return False
 
             return True
@@ -158,7 +163,7 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
             m3u_entry_original_raw_title = (
                 m3u_entry.original_raw_title if not ignore_case else m3u_entry.original_raw_title.lower()
             )
-            if not not ignore_case:
+            if ignore_case:
                 filter_text = filter_text.lower()
 
             self.recompute_filter_text_words_and_language(filter_text)
@@ -170,9 +175,6 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
             return list_utils.are_all_elements_of_list_included_in_list(
                 self._filter_text_words, self._m3u_entry_original_words
             )
-
-    def tdoto(self, tt, ff):
-        return tt + ff
 
 
 if __name__ == "__main__":
