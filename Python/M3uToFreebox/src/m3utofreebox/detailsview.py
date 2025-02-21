@@ -8,7 +8,7 @@
 
 # import logger_config
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import tkinter
 
@@ -42,7 +42,8 @@ if TYPE_CHECKING:
 
 class Action(Enum):
     CREATE_XSPF_FILE = "Create xspf file"
-    DONWLOAD_MOVIE = "Download movie"
+    DOWNLOAD_MOVIE_NOW = "Download movie now"
+    ADD_MOVIE_TO_DOWNLOAD_LIST = "Add to download list"
 
 
 class DetailsViewTab(ttk.Frame):
@@ -81,6 +82,8 @@ class DetailsViewTab(ttk.Frame):
             offvalue=False,
             command=self._on_ignore_case_checkbox_selected,
         )
+
+        self._files_download_popup: Optional[file_download_with_progress_bar.MultipleFilesDownloadPopup] = None
 
         self._create_view()
         self._create_context_menu()
@@ -275,7 +278,21 @@ class DetailsViewTab(ttk.Frame):
             return
 
         match action:
-            case Action.DONWLOAD_MOVIE:
+            case Action.ADD_MOVIE_TO_DOWNLOAD_LIST:
+                url, save_path = self._parent.m3u_to_freebox_application.get_to_be_downloaded_movie_infos_by_id_str(
+                    destination_directory, m3u_entry_id_str
+                )
+                downloads = [(url, save_path)]
+                if self._files_download_popup is None:
+                    popup = tkinter.Toplevel(self)
+
+                    self._files_download_popup = file_download_with_progress_bar.MultipleFilesDownloadPopup(
+                        master=popup, downloads=downloads, parallel=False
+                    )
+                else:
+                    self._files_download_popup.add_download(url, save_path)
+
+            case Action.DOWNLOAD_MOVIE_NOW:
 
                 # self._parent.m3u_to_freebox_application.download_movie_file_by_id_str(
                 #    destination_directory, m3u_entry_id_str
