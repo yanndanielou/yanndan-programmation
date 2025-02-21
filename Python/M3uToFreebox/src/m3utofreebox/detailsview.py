@@ -29,7 +29,7 @@ from tkinter import (
 from enum import Enum
 
 from logger import logger_config
-from common import date_time_formats, custom_iterator
+from common import date_time_formats, custom_iterator, file_download_with_progress_bar
 
 from destinations import DestinationsFolders, DestinationFolder
 
@@ -276,9 +276,16 @@ class DetailsViewTab(ttk.Frame):
 
         match action:
             case Action.DONWLOAD_MOVIE:
-                self._parent.m3u_to_freebox_application.download_movie_file_by_id_str(
+
+                # self._parent.m3u_to_freebox_application.download_movie_file_by_id_str(
+                #    destination_directory, m3u_entry_id_str
+                # )
+
+                url, save_path = self._parent.m3u_to_freebox_application.get_to_be_downloaded_movie_infos_by_id_str(
                     destination_directory, m3u_entry_id_str
                 )
+                popup = tkinter.Toplevel(self)
+                file_download_with_progress_bar.DownloadPopup(popup, url, save_path)
 
             case Action.CREATE_XSPF_FILE:
                 self._parent.m3u_to_freebox_application.create_xspf_file_by_id_str(
