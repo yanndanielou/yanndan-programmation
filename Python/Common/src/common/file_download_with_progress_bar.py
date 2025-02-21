@@ -102,8 +102,18 @@ class MultipleFilesDownloadPopup:
                     )
                     percent = (downloaded / file_size) * 100
                     progress["value"] = percent
+                    readable_size = lambda size: (
+                        f"{size / (1024 * 1024):.2f} MB"
+                        if size > 1024 * 1024
+                        else f"{size / 1024:.2f} KB"
+                    )
+                    eta_formatted = (
+                        time.strftime("%M:%S", time.gmtime(remaining_time))
+                        if remaining_time > 0
+                        else "--"
+                    )
                     progress_label.config(
-                        text=f"{percent:.2f}% ({downloaded / 1024:.2f} KB / {file_size / 1024:.2f} KB, ETA: {remaining_time:.2f}s)"
+                        text=f"{percent:.2f}% ({readable_size(downloaded)} / {readable_size(file_size)}, ETA: {eta_formatted})"
                     )
                     self.master.update_idletasks()
 
