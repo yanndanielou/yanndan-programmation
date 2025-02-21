@@ -285,7 +285,7 @@ class DetailsViewTab(ttk.Frame):
                     destination_directory, m3u_entry_id_str
                 )
                 popup = tkinter.Toplevel(self)
-                file_download_with_progress_bar.DownloadPopup(popup, url, save_path)
+                file_download_with_progress_bar.SingleFileDownloadPopupWithProgressBar(popup, url, save_path)
 
             case Action.CREATE_XSPF_FILE:
                 self._parent.m3u_to_freebox_application.create_xspf_file_by_id_str(
