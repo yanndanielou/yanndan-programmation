@@ -13,13 +13,16 @@ class DownloadPopup:
         self.cancel_download = False
 
         self.master.title("Downloading...")
-        self.master.geometry("300x150")
+        self.master.geometry("300x180")
 
         self.label = tk.Label(master, text="Downloading file...")
         self.label.pack(pady=10)
 
         self.progress = ttk.Progressbar(master, length=250, mode="determinate")
         self.progress.pack(pady=10)
+
+        self.progress_label = tk.Label(master, text="0% (0 KB / 0 KB)")
+        self.progress_label.pack(pady=5)
 
         self.cancel_button = tk.Button(master, text="Cancel", command=self.cancel)
         self.cancel_button.pack(pady=10)
@@ -40,7 +43,11 @@ class DownloadPopup:
                         break
                     file.write(chunk)
                     downloaded += len(chunk)
-                    self.progress["value"] = (downloaded / file_size) * 100
+                    percent = (downloaded / file_size) * 100
+                    self.progress["value"] = percent
+                    self.progress_label.config(
+                        text=f"{percent:.2f}% ({downloaded / 1024:.2f} KB / {file_size / 1024:.2f} KB)"
+                    )
                     self.master.update_idletasks()
 
             if self.cancel_download:
