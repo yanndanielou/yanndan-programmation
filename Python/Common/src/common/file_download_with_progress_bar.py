@@ -27,22 +27,22 @@ class MultipleFilesDownloadPopup:
         self.cancel_downloads = {}
 
         self.master.title("Downloading...")
-        self.master.geometry("400x400")
+        self.master.geometry("500x400")
 
         self.frame_container = ttk.Frame(master)
         self.frame_container.pack(fill="both", expand=True)
 
-        self.manual_add_entry_button = tk.Button(
+        self.add_button = tk.Button(
             master, text="Add Download", command=self.add_download_asking_details
         )
-        self.manual_add_entry_button.pack(pady=5)
+        self.add_button.pack(pady=5)
 
         self.frames = []
         for url, save_path in downloads:
             self._create_download_row(url, save_path)
 
         if self.parallel:
-            for url, save_path, progress, progress_label, _ in self.frames:
+            for url, save_path, progress, progress_label, _, _ in self.frames:
                 threading.Thread(
                     target=self.download_file,
                     args=(url, save_path, progress, progress_label),
@@ -58,18 +58,20 @@ class MultipleFilesDownloadPopup:
         label = tk.Label(frame, text=os.path.basename(save_path))
         label.pack(side="left")
 
-        progress = ttk.Progressbar(frame, length=200, mode="determinate")
+        progress = ttk.Progressbar(frame, length=150, mode="determinate")
         progress.pack(side="left", padx=10)
 
         progress_label = tk.Label(frame, text="0% (0 KB / 0 KB)")
-        progress_label.pack(side="left")
+        progress_label.pack(side="left", padx=5)
 
         cancel_button = tk.Button(
             frame, text="Cancel", command=lambda sp=save_path: self.cancel(sp)
         )
         cancel_button.pack(side="left", padx=5)
 
-        self.frames.append((url, save_path, progress, progress_label, cancel_button))
+        self.frames.append(
+            (url, save_path, progress, progress_label, cancel_button, frame)
+        )
         self.cancel_downloads[save_path] = False
 
         if self.parallel:
@@ -79,17 +81,8 @@ class MultipleFilesDownloadPopup:
                 daemon=True,
             ).start()
 
-    def add_download_asking_details(self):
-        url = tk.simpledialog.askstring("Add Download", "Enter file URL:")
-        save_path = tk.simpledialog.askstring("Add Download", "Enter save path:")
-        if url and save_path:
-            self._create_download_row(url, save_path)
-
-    def add_download(self, url, save_path):
-        self._create_download_row(url, save_path)
-
     def download_sequentially(self):
-        for url, save_path, progress, progress_label, _ in self.frames:
+        for url, save_path, progress, progress_label, _, _ in self.frames:
             self.download_file(url, save_path, progress, progress_label)
 
     def download_file(self, url, save_path, progress, progress_label):
@@ -128,6 +121,15 @@ class MultipleFilesDownloadPopup:
 
     def cancel(self, save_path):
         self.cancel_downloads[save_path] = True
+
+    def add_download_asking_details(self):
+        url = tk.simpledialog.askstring("Add Download", "Enter file URL:")
+        save_path = tk.simpledialog.askstring("Add Download", "Enter save path:")
+        if url and save_path:
+            self._create_download_row(url, save_path)
+
+    def add_download(self, url, save_path):
+        self._create_download_row(url, save_path)
 
 
 class SeveralFilesDownloadPopupWithProgressBar:
