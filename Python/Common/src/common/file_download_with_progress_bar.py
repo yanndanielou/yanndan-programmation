@@ -218,6 +218,6 @@ def _example_usage(root):
 
 def _example_main():
     root = tk.Tk()
-    root.withdraw(root)  # Hide the main window
-    _example_usage()
+    root.withdraw()  # Hide the main window
+    _example_usage(root)
     root.mainloop()
