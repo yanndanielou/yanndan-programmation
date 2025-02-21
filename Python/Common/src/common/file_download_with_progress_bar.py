@@ -76,12 +76,6 @@ class MultipleFilesDownloadPopup:
                 daemon=True,
             ).start()
 
-    def add_download(self):
-        url = simpledialog.askstring("Add Download", "Enter file URL:")
-        save_path = simpledialog.askstring("Add Download", "Enter save path:")
-        if url and save_path:
-            self._create_download_row(url, save_path)
-
     def download_sequentially(self):
         for url, save_path, progress, progress_label, _, _, _ in self.frames:
             self.download_file(url, save_path, progress, progress_label)
@@ -115,19 +109,24 @@ class MultipleFilesDownloadPopup:
 
             if self.cancel_downloads[save_path]:
                 os.remove(save_path)
-                messagebox.showinfo(
+                self.show_message(
                     "Download", f"Download {os.path.basename(save_path)} canceled."
                 )
             else:
-                messagebox.showinfo(
+                self.show_message(
                     "Download",
                     f"Download {os.path.basename(save_path)} completed successfully.",
                 )
         except Exception as e:
-            messagebox.showerror("Error", f"Download failed: {e}")
+            self.show_message("Error", f"Download failed: {e}")
 
     def cancel(self, save_path):
         self.cancel_downloads[save_path] = True
+
+    def show_message(self, title, message):
+        threading.Thread(
+            target=lambda: messagebox.showinfo(title, message), daemon=True
+        ).start()
 
     def add_download_asking_details(self):
         url = tk.simpledialog.askstring("Add Download", "Enter file URL:")
@@ -137,92 +136,6 @@ class MultipleFilesDownloadPopup:
 
     def add_download(self, url, save_path):
         self._create_download_row(url, save_path)
-
-
-class SeveralFilesDownloadPopupWithProgressBar:
-    def __init__(self, master, downloads, parallel=True):
-        self.master = master
-        self.downloads = downloads
-        self.parallel = parallel
-        self.cancel_downloads = {}
-
-        self.master.title("Downloading...")
-        self.master.geometry("400x" + str(50 + len(downloads) * 50))
-
-        self.frames = []
-        for i, (url, save_path) in enumerate(downloads):
-            frame = ttk.Frame(master)
-            frame.pack(fill="x", padx=10, pady=5)
-
-            label = tk.Label(frame, text=os.path.basename(save_path))
-            label.pack(side="left")
-
-            progress = ttk.Progressbar(frame, length=200, mode="determinate")
-            progress.pack(side="left", padx=10)
-
-            progress_label = tk.Label(frame, text="0% (0 KB / 0 KB)")
-            progress_label.pack(side="left")
-
-            cancel_button = tk.Button(
-                frame, text="Cancel", command=lambda sp=save_path: self.cancel(sp)
-            )
-            cancel_button.pack(side="left", padx=5)
-
-            self.frames.append(
-                (url, save_path, progress, progress_label, cancel_button)
-            )
-            self.cancel_downloads[save_path] = False
-
-        if self.parallel:
-            for url, save_path, progress, progress_label, _ in self.frames:
-                threading.Thread(
-                    target=self.download_file,
-                    args=(url, save_path, progress, progress_label),
-                    daemon=True,
-                ).start()
-        else:
-            threading.Thread(target=self.download_sequentially, daemon=True).start()
-
-    def download_sequentially(self):
-        for url, save_path, progress, progress_label, _ in self.frames:
-            self.download_file(url, save_path, progress, progress_label)
-
-    def download_file(self, url, save_path, progress, progress_label):
-        try:
-            response = urllib.request.urlopen(url)
-            file_size = int(response.getheader("Content-Length", 0))
-            chunk_size = 8192
-            downloaded = 0
-
-            with open(save_path, "wb") as file:
-                while not self.cancel_downloads[save_path]:
-                    chunk = response.read(chunk_size)
-                    if not chunk:
-                        break
-                    file.write(chunk)
-                    downloaded += len(chunk)
-                    percent = (downloaded / file_size) * 100
-                    progress["value"] = percent
-                    progress_label.config(
-                        text=f"{percent:.2f}% ({downloaded / 1024:.2f} KB / {file_size / 1024:.2f} KB)"
-                    )
-                    self.master.update_idletasks()
-
-            if self.cancel_downloads[save_path]:
-                os.remove(save_path)
-                messagebox.showinfo(
-                    "Download", f"Download {os.path.basename(save_path)} canceled."
-                )
-            else:
-                messagebox.showinfo(
-                    "Download",
-                    f"Download {os.path.basename(save_path)} completed successfully.",
-                )
-        except Exception as e:
-            messagebox.showerror("Error", f"Download failed: {e}")
-
-    def cancel(self, save_path):
-        self.cancel_downloads[save_path] = True
 
 
 class SingleFileDownloadPopupWithProgressBar:
