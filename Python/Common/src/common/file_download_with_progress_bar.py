@@ -1,22 +1,9 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 import urllib.request
 import threading
 import os
-
-
-import tkinter as tk
-from tkinter import ttk, messagebox
-import urllib.request
-import threading
-import os
-
-
-import tkinter as tk
-from tkinter import ttk, messagebox
-import urllib.request
-import threading
-import os
+import time
 
 
 class MultipleFilesDownloadPopup:
@@ -27,7 +14,7 @@ class MultipleFilesDownloadPopup:
         self.cancel_downloads = {}
 
         self.master.title("Downloading...")
-        self.master.geometry("500x400")
+        self.master.geometry("550x400")
 
         self.frame_container = ttk.Frame(master)
         self.frame_container.pack(fill="both", expand=True)
@@ -42,7 +29,7 @@ class MultipleFilesDownloadPopup:
             self._create_download_row(url, save_path)
 
         if self.parallel:
-            for url, save_path, progress, progress_label, _, _ in self.frames:
+            for url, save_path, progress, progress_label, _, _, _ in self.frames:
                 threading.Thread(
                     target=self.download_file,
                     args=(url, save_path, progress, progress_label),
@@ -61,7 +48,7 @@ class MultipleFilesDownloadPopup:
         progress = ttk.Progressbar(frame, length=150, mode="determinate")
         progress.pack(side="left", padx=10)
 
-        progress_label = tk.Label(frame, text="0% (0 KB / 0 KB)")
+        progress_label = tk.Label(frame, text="0% (0 KB / 0 KB, ETA: --s)")
         progress_label.pack(side="left", padx=5)
 
         cancel_button = tk.Button(
@@ -70,7 +57,15 @@ class MultipleFilesDownloadPopup:
         cancel_button.pack(side="left", padx=5)
 
         self.frames.append(
-            (url, save_path, progress, progress_label, cancel_button, frame)
+            (
+                url,
+                save_path,
+                progress,
+                progress_label,
+                cancel_button,
+                frame,
+                time.time(),
+            )
         )
         self.cancel_downloads[save_path] = False
 
@@ -81,8 +76,14 @@ class MultipleFilesDownloadPopup:
                 daemon=True,
             ).start()
 
+    def add_download(self):
+        url = simpledialog.askstring("Add Download", "Enter file URL:")
+        save_path = simpledialog.askstring("Add Download", "Enter save path:")
+        if url and save_path:
+            self._create_download_row(url, save_path)
+
     def download_sequentially(self):
-        for url, save_path, progress, progress_label, _, _ in self.frames:
+        for url, save_path, progress, progress_label, _, _, _ in self.frames:
             self.download_file(url, save_path, progress, progress_label)
 
     def download_file(self, url, save_path, progress, progress_label):
@@ -91,6 +92,7 @@ class MultipleFilesDownloadPopup:
             file_size = int(response.getheader("Content-Length", 0))
             chunk_size = 8192
             downloaded = 0
+            start_time = time.time()
 
             with open(save_path, "wb") as file:
                 while not self.cancel_downloads[save_path]:
@@ -99,10 +101,15 @@ class MultipleFilesDownloadPopup:
                         break
                     file.write(chunk)
                     downloaded += len(chunk)
+                    elapsed_time = time.time() - start_time
+                    speed = downloaded / elapsed_time if elapsed_time > 0 else 0
+                    remaining_time = (
+                        (file_size - downloaded) / speed if speed > 0 else 0
+                    )
                     percent = (downloaded / file_size) * 100
                     progress["value"] = percent
                     progress_label.config(
-                        text=f"{percent:.2f}% ({downloaded / 1024:.2f} KB / {file_size / 1024:.2f} KB)"
+                        text=f"{percent:.2f}% ({downloaded / 1024:.2f} KB / {file_size / 1024:.2f} KB, ETA: {remaining_time:.2f}s)"
                     )
                     self.master.update_idletasks()
 
