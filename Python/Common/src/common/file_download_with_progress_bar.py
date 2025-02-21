@@ -5,7 +5,7 @@ import threading
 import os
 
 
-class DownloadPopup:
+class SingleFileDownloadPopupWithProgressBar:
     def __init__(self, master, url, save_path):
         self.master = master
         self.url = url
@@ -70,7 +70,7 @@ def _example_usage(root):
     save_path = "largefile.zip"
 
     popup = tk.Toplevel(root)
-    DownloadPopup(popup, url, save_path)
+    SingleFileDownloadPopupWithProgressBar(popup, url, save_path)
 
 
 def _example_main():
