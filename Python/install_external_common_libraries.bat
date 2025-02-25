@@ -1,6 +1,7 @@
 @CALL SET_PYTHON_HOME.bat
 
 
+@call :INSTALL_PYTHON_LIB openpyxl
 @call :INSTALL_PYTHON_LIB pandas
 @call :INSTALL_PYTHON_LIB parameterized
 @call :INSTALL_PYTHON_LIB pytest-cov
