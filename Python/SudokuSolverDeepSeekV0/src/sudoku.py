@@ -17,7 +17,11 @@ class Sudoku:
     def generate_full_grid(self) -> List[List[Optional[int]]]:
         """Generate a fully solved Sudoku grid."""
         grid = [[None for _ in range(9)] for _ in range(9)]
+        print(f"Grid before generate_full_grid: {grid}")
+
         self.solve_grid(grid)
+        print(f"Grid at the end of generate_full_grid: {grid}")
+
         return grid
 
     def solve_grid(self, grid: List[List[Optional[int]]]) -> bool:
@@ -36,6 +40,8 @@ class Sudoku:
 
     def generate_puzzle(self, difficulty: str) -> List[List[Optional[int]]]:
         """Generate a Sudoku puzzle with a given difficulty."""
+        print(f"Grid before generate_puzzle: {grid}")
+
         grid = [row[:] for row in self.grid]  # Copy the solved grid
         empty_cells = 0
 
@@ -51,6 +57,8 @@ class Sudoku:
 
         for row, col in cells[:empty_cells]:
             grid[row][col] = None
+
+        print(f"Grid at the end of generate_puzzle: {grid}")
 
         return grid
 
