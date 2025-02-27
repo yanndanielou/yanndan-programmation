@@ -1,7 +1,7 @@
 # -*-coding:Utf-8 -*
 """ Main """
 from logger import logger_config
-from application import Application
+from shutthebox.application import Application
 
 
 def main()->None:

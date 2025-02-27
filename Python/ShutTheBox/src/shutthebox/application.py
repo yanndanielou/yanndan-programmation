@@ -89,7 +89,7 @@ class Application:
 
         all_possibilities_with_hatches:list[OneGame] = []
 
-        two_dices_all_combinaisons_with_occurences:dict[int,list[Tuple[int, ...]]] = Dices.get_two_dices_all_combinaisons_by_sum()
+        two_dices_all_combinaisons_with_occurences:dict[int,list[Tuple[int, ...]]] = Dices.get_two_dices_all_combinations_by_sum()
 
         for two_dices_sum, two_dices_results in two_dices_all_combinaisons_with_occurences.items():
             all_possibilities_with_hatches += self.play_dices_with_all_combinaisons_with_same_sum(two_dices_sum, two_dices_results, opened_hatches, previous_turns)
