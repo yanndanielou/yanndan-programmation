@@ -11,3 +11,7 @@ def exponentiation_custom(a: int, b: int) -> int:
     for _ in range(abs(b) - 1):
         result = multiplication.multiply_custom(result, a)
     return result
+
+
+def not_typed_return(a: int, b: int):
+    return a + b
