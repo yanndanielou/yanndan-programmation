@@ -1,6 +1,10 @@
 @CALL SET_PYTHON_HOME.bat
 
 
+rem call %PYTHON_HOME%\python.exe  -m pip install --config-settings="--global-option=build_ext" --config-settings="--global-option=-IC:\Program Files\Graphviz\include" --config-settings="--global-option=-LC:\Program Files\Graphviz\lib" pygraphviz
+@call :INSTALL_PYTHON_LIB Graphviz
+rem @call :INSTALL_PYTHON_LIB pygraphviz
+@call :INSTALL_PYTHON_LIB networkx
 @call :INSTALL_PYTHON_LIB openpyxl
 @call :INSTALL_PYTHON_LIB pandas
 @call :INSTALL_PYTHON_LIB parameterized
