@@ -53,8 +53,6 @@ disable = ["C0114", "C0115", "C0116"]  # Désactivation de certaines règles
 max-line-length = 150
 
 [tool.mypy]
-# Specify files or directories to analyze
-files = "src"
 # Disallow functions or methods without type annotations
 disallow_untyped_defs = true
 # Disallow calls to functions or methods without type annotations
@@ -75,3 +73,7 @@ strict_optional = true
 warn_redundant_casts = true
 # Warn about unnecessary "type: ignore" comments
 warn_unused_ignores = true
+
+
+[tool.black]
+line-length = 150
