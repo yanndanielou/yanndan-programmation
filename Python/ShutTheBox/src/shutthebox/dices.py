@@ -27,12 +27,16 @@ class DicesThrownCombinationsOfOneSum:
     def add_combination(self, combination: Tuple[int, ...]) -> None:
         self._combinations.append(list(combination))
 
-    def get_chances(self) -> float:
+    def get_odds(self) -> float:
         return len(self._combinations) / self._total_number_of_combinations_with_all_sums
 
     @property
     def combinations(self) -> list[list[int]]:
         return self._combinations
+
+    @property
+    def sum(self) -> int:
+        return self._sum
 
 
 class DicesThrownCombinationsResults:
