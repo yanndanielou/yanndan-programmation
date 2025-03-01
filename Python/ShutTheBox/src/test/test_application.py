@@ -23,9 +23,10 @@ class TestSimpleSimulations:
         logger_config.print_and_log_info("application start")
         simulation_request = application.SimulationRequest(dices, initial_opened_hatches)
         simulation: application.Simulation = application.Application().run(simulation_request)
-        all_flat_games = simulation.complete_simulation_result.all_flat_games
+        simulation_result = simulation.complete_simulation_result
+        all_flat_games = simulation_result.all_flat_games
         # simulation.complete_simulation_result.dump_in_json_file("TestOne1SidesDiceAnd1Hatches.json")
-
+        assert len(simulation_result.initial_situation.next_turns) == expected_number_of_plays
         assert len(all_flat_games) == expected_number_of_plays
 
     class TestOne1SidesDiceAnd1Hatches:
