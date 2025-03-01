@@ -12,32 +12,39 @@ from common import json_encoders
 
 from shutthebox.dices import Dices, Dice, DicesThrownCombinationsResults
 from shutthebox.combinations_to_reach_sum import CombinationsToReachSum
+from shutthebox import param
 
 # if TYPE_CHECKING:
 #    from shutthebox.dices import DicesThrownCombinationsOfOneSum
 
+import tkinter as tk
+from tkinter import ttk
 
-class SimulationResultEncoder(JSONEncoder):
-    def default(self, o: Any) -> list | Any:
-        if isinstance(o, set):
-            return list(o)
 
-        if hasattr(o, "__dict__"):
-            obj_dict = o.__dict__.copy()
+class TreeViewApp:
+    def __init__(self, root, initial_situation):
+        self.root = root
+        self.root.title("Tree View Representation")
 
-            # Break circular references by replacing objects with simple identifiers
-            if "_previous_turn" in obj_dict and obj_dict["_previous_turn"] is not None:
-                pass  # obj_dict["_previous_turn"] = f"OneTurn(previous_turn_id={id(obj_dict['_previous_turn'])})"
+        self.tree = ttk.Treeview(root)
+        self.tree.pack(expand=True, fill=tk.BOTH)
 
-            if "_next_turns" in obj_dict and obj_dict["_next_turns"]:
-                pass  # obj_dict["_next_turns"] = [f"OneTurn(next_turn_id={id(turn)})" for turn in obj_dict["_next_turns"] if turn]
+        # Adding column
+        self.tree.heading("#0", text="Game Turns")
 
-            if "_turn" in obj_dict and obj_dict["_turn"] is not None:
-                pass  # obj_dict["_turn"] = f"OneTurn(turn_id={id(obj_dict['_turn'])})"
+        # Populate tree
+        self.populate_tree("Initial Situation", initial_situation.next_turns)
 
-            return obj_dict
+    def populate_tree(self, parent_name, turns, parent_id=""):
+        """Recursively add turns to the tree"""
+        parent_node = self.tree.insert(parent_id, "end", text=parent_name)
 
-        return super().default(o)
+        for i, turn in enumerate(turns):
+            turn_name = f"Turn {i + 1}"
+            turn_node = self.tree.insert(parent_node, "end", text=turn_name)
+
+            # Recursively add next turns
+            self.populate_tree(turn_name, turn.next_turns, turn_node)
 
 
 class CompleteSimulationResult:
@@ -131,7 +138,7 @@ class OneFlatGame:
 @dataclass
 class SimulationRequest:
     _dices: list[Dice] = field(default_factory=lambda: [Dice(), Dice()])
-    _initial_opened_hatches: list[int] = field(default_factory=lambda: list(range(1, 10)))
+    _initial_opened_hatches: list[int] = field(default_factory=lambda: param.DEFAULT_INITIAL_OPENED_HATCHES)
 
     @property
     def dices(self) -> list[Dice]:
@@ -222,4 +229,6 @@ class Application:
         simulation = Simulation(simulation_request)
         logger_config.print_and_log_info("Run")
         simulation.start()
+        logger_config.print_and_log_info("Simulation ended")
+
         return simulation
