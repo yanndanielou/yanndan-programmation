@@ -76,4 +76,4 @@ warn_unused_ignores = true
 
 
 [tool.black]
-line-length = 150
+line-length = 200
