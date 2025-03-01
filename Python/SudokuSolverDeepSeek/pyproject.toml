@@ -68,5 +68,9 @@ enable = [
 ]
 
 [tool.pylint.format]
-max-line-length = 88
+max-line-length = 180
+
+
+[tool.black]
+line-length = 180
 
