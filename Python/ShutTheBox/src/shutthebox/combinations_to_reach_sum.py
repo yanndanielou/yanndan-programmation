@@ -6,7 +6,7 @@ class CombinationsToReachSum:
     """Dices"""
 
     @staticmethod
-    def get_all_unique_combinations_to_reach_exactly_sum_using_element_no_more_than_once(elements: list[int], sum_to_attain: int) -> list[list[int]]:
+    def get_all_unique_combinations_to_reach_exactly_sum_using_element_no_more_than_once(elements: list[int], sum_to_reach: int) -> list[list[int]]:
 
         def backtrack(reste: int, index: int, chemin: list) -> None:
             # Si la somme restante est atteinte, ajouter la combinaison
@@ -27,6 +27,6 @@ class CombinationsToReachSum:
 
         results: list[list[int]] = list()
 
-        backtrack(sum_to_attain, 0, [])
+        backtrack(sum_to_reach, 0, [])
 
         return results
