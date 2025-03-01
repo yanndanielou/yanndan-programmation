@@ -23,22 +23,18 @@ class CompleteSimulation:
     def add_flat_games(self, flat_games_to_add: list["OneFlatGame"]) -> None:
         self._all_flat_games = self._all_flat_games + flat_games_to_add
 
+    def add_flat_game(self, flat_game_to_add: "OneFlatGame") -> None:
+        self._all_flat_games.append(flat_game_to_add)
+
     def dump_in_json_file(self, json_file_full_path: str) -> None:
 
         json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(self._all_flat_games, json_file_full_path)
-
-        """  print(
-            f"{len(res_all_possibilities_with_hatches)} possibilities found: \n\n"
-            + "\n\n".join([str(game) for game in res_all_possibilities_with_hatches])
-        ) """
-        # for game in all_possibilities_with_hatches:
-        #    print(f"Game :\n {str(game)}")
 
 
 @dataclass
 class OneStandaloneTurn:
     dices_sum: int
-    dices_sum_chances: int
+    dices_sum_odds: float
     opened_hatches_before_turn: list[int]
     closed_hatches_during_turn: Optional[list[int]]
     previously_already_closed_hatches: list[int] = field(default_factory=list)
@@ -78,86 +74,82 @@ class Application:
 
     def run(self) -> None:
         """Run"""
-        self.compute_all_possibilities_from_beginning()
-
-    def compute_all_possibilities_from_beginning(self) -> list[OneFlatGame]:
-        self._complete_simulation.add_flat_games(self.compute_all_possibilities_with_hatches(self._initial_opened_hatches))
-        return self._complete_simulation.all_flat_games
+        logger_config.print_and_log_info("Run")
+        self.compute_all_possibilities_with_hatches(self._initial_opened_hatches)
 
     def play_dices_with_all_combinations_with_same_sum(
         self,
         dices_sum: int,
-        dices_results: list[Tuple[int, ...]],
+        dices_sum_odds: float,
         opened_hatches: list[int],
         previous_turns: list[OneStandaloneTurn] | None = None,
     ) -> list[OneFlatGame]:
         if previous_turns is None:  # to avoid https://pylint.pycqa.org/en/latest/user_guide/messages/warning/dangerous-default-value.html
             previous_turns = []
 
+        logger_config.print_and_log_info(
+            f"play_dices_with_all_combinations_with_same_sum, dices_sum:{dices_sum}, dices_sum_odds:{dices_sum_odds}, opened_hatches:{opened_hatches}, previous_turns:{previous_turns}"
+        )
+
         all_possibilities_with_hatches: list[OneFlatGame] = []
 
-        for dices_results in dices_results:
+        all_hatches_combinaisons = self.get_all_unique_combinations_to_reach_exaclty_sum_using_element_no_more_than_once(opened_hatches, dices_sum)
 
-            all_hatches_combinaisons = self.get_all_unique_combinaisons_to_reach_exaclty_sum_using_element_no_more_than_once(
-                opened_hatches, dices_sum
+        if not all_hatches_combinaisons:
+
+            logger_config.print_and_log_info(f"No possible hatch combination to reach {dices_sum} from {opened_hatches}")
+
+            current_turn_with_combination = OneStandaloneTurn(
+                dices_sum=dices_sum,
+                dices_sum_odds=dices_sum_odds,
+                closed_hatches_during_turn=None,
+                opened_hatches_before_turn=opened_hatches.copy(),
+            )
+            self.complete_simulation.add_flat_game(
+                OneFlatGame(
+                    final_opened_hatches=opened_hatches.copy(),
+                    turns=previous_turns.copy() + [current_turn_with_combination],
+                )
             )
 
-            if not all_hatches_combinaisons:
+        for hatches_combination in all_hatches_combinaisons:
 
-                current_turn_with_combination = OneStandaloneTurn(
-                    dices_sum=dices_sum,
-                    dices_sum_chances=0,
-                    closed_hatches_during_turn=None,
-                    opened_hatches_before_turn=opened_hatches.copy(),
-                )
-                all_possibilities_with_hatches += [
-                    OneFlatGame(
-                        final_opened_hatches=opened_hatches.copy(),
-                        turns=previous_turns.copy() + [current_turn_with_combination],
-                    )
-                ]
+            new_opened_hatches: list[int] = list(set(opened_hatches) - set(hatches_combination))
+            logger_config.print_and_log_info(f"hatches_combination {hatches_combination}, new_opened_hatches:{new_opened_hatches}")
 
-            for hatches_combination in all_hatches_combinaisons:
+            current_turn_with_combination = OneStandaloneTurn(
+                dices_sum=dices_sum,
+                dices_sum_odds=dices_sum_odds,
+                closed_hatches_during_turn=hatches_combination,
+                opened_hatches_before_turn=opened_hatches.copy(),
+            )
 
-                new_opened_hatches: list[int] = list(set(opened_hatches) - set(hatches_combination))
-                current_turn_with_combination = OneStandaloneTurn(
-                    dices_sum=dices_sum,
-                    dices_sum_chances=0,
-                    closed_hatches_during_turn=hatches_combination,
-                    opened_hatches_before_turn=opened_hatches.copy(),
-                )
-
-                all_possibilities_with_hatches += self.compute_all_possibilities_with_hatches(
+            if len(new_opened_hatches) > 0:
+                self.compute_all_possibilities_with_hatches(
                     new_opened_hatches,
                     previous_turns + [current_turn_with_combination],
                 )
+            else:
+                logger_config.print_and_log_info(f"Game over, no more opened hatches")
 
         return all_possibilities_with_hatches
 
-    def compute_all_possibilities_with_hatches(
-        self, opened_hatches: list[int], previous_turns: list[OneStandaloneTurn] | None = None
-    ) -> list[OneFlatGame]:
+    def compute_all_possibilities_with_hatches(self, opened_hatches: list[int], previous_turns: list[OneStandaloneTurn] | None = None) -> None:
+
+        logger_config.print_and_log_info(f"compute_all_possibilities_with_hatches, opened_hatches:{opened_hatches}")
 
         if previous_turns is None:  # to avoid https://pylint.pycqa.org/en/latest/user_guide/messages/warning/dangerous-default-value.html
             previous_turns = []
 
-        all_possibilities_with_hatches: list[OneFlatGame] = []
-
-        dices_all_possible_thrown_combinations_results: DicesThrownCombinationsResults = Dices.get_dices_all_possible_thrown_combinations_results(
-            self._dices
-        )
+        dices_all_possible_thrown_combinations_results: DicesThrownCombinationsResults = Dices.get_dices_all_possible_thrown_combinations_results(self._dices)
 
         for dices_sum, dices_thrown_combinations_result in dices_all_possible_thrown_combinations_results.all_combinations_by_sum.items():
-            for combination in dices_thrown_combinations_result.combinations:
-                all_possibilities_with_hatches += self.play_dices_with_all_combinations_with_same_sum(
-                    dices_sum, combination, opened_hatches, previous_turns
-                )
+            dices_sum_odds = dices_thrown_combinations_result.get_chances()
+            self.play_dices_with_all_combinations_with_same_sum(dices_sum, dices_sum_odds, opened_hatches, previous_turns)
 
-        return all_possibilities_with_hatches + [OneFlatGame(final_opened_hatches=opened_hatches.copy(), turns=previous_turns.copy())]
+        self._complete_simulation.add_flat_game(OneFlatGame(final_opened_hatches=opened_hatches.copy(), turns=previous_turns.copy()))
 
-    def get_all_unique_combinaisons_to_reach_exaclty_sum_using_element_no_more_than_once(
-        self, elements: list[int], sum_to_attain: int
-    ) -> list[list[int]]:
+    def get_all_unique_combinations_to_reach_exaclty_sum_using_element_no_more_than_once(self, elements: list[int], sum_to_attain: int) -> list[list[int]]:
 
         def backtrack(reste: int, index: int, chemin: list) -> None:
             # Si la somme restante est atteinte, ajouter la combinaison
