@@ -62,6 +62,9 @@ class DicesResultStep:
     _turns: list["OneTurn"] = field(default_factory=list)
     _next_close_hatches_actions: list["CloseHatchesAction"] = field(default_factory=list)
 
+    def add_next_close_hatches_actions(self, next_close_hatches_action: "CloseHatchesAction") -> None:
+        self._next_close_hatches_actions.append(next_close_hatches_action)
+
     @property
     def turns(self) -> list["OneTurn"]:
         return self._turns
@@ -154,6 +157,7 @@ class Simulation:
         opened_hatches_before_step: list[int],
     ) -> OneTurn:
         close_hatch_action = CloseHatchesAction(_dices_result_step=dices_result_step, _opened_hatches_before_turn=opened_hatches_before_step, _closed_hatches_during_turn=closed_hatches_during_turn)
+        dices_result_step.add_next_close_hatches_actions(close_hatch_action)
 
         new_turn = OneTurn(dices_result_step, close_hatch_action, previous_turn)
         previous_turn.add_next_turn(new_turn, dices_result_step)
