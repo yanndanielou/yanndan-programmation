@@ -89,6 +89,14 @@ class OneTurn:
     def next_turns(self) -> List["OneTurn"]:
         return self._next_turns
 
+    @property
+    def dices_result_action(self) -> DicesResultStep:
+        return self._dices_result_action
+
+    @property
+    def close_hatches_action(self) -> CloseHatchesAction:
+        return self._close_hatches_action
+
 
 @dataclass
 class InitialSituation:
