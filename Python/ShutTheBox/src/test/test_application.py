@@ -15,6 +15,20 @@ small_examples_test_data = [([Dice(list(range(1, 2)))], list(range(1, 2)), 1),
 # fmt: on
 
 
+class TestBugTurnsInDouble20250302:
+    def test_bug_turns_in_double(self) -> None:
+        logger_config.configure_logger_with_random_log_file_suffix("shutthebox")
+        simulation_request = application.SimulationRequest([Dice(list(range(1, 5)))], list(range(1, 5)))
+        simulation = application.Application().run(simulation_request)
+        simulation_result = simulation.complete_simulation_result
+        initial_situation = simulation_result.initial_situation
+        first_level_turns = initial_situation.next_turns
+        first_level_turns_size = len(first_level_turns)
+        last_first_level_turn = first_level_turns[first_level_turns_size - 1]
+        before_last_first_level_turn = first_level_turns[first_level_turns_size - 2]
+        pause = 1
+
+
 class TestSimpleSimulations:
 
     @pytest.mark.parametrize("dices, initial_opened_hatches, expected_number_of_plays", small_examples_test_data)
