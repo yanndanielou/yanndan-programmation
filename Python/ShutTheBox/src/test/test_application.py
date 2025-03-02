@@ -25,14 +25,15 @@ class TestBugTurnsInDouble20250302:
         first_level_turns = initial_situation.next_turns
         first_level_turns_size = len(first_level_turns)
 
+        last_first_level_turn = first_level_turns[first_level_turns_size - 1].dices_result_action.dices_sum
+        before_last_first_level_turn = first_level_turns[first_level_turns_size - 2]
+
         # Extract dices_sum from each OneTurn's dices_result_action
         dices_sums = {turn.dices_result_action.dices_sum for turn in first_level_turns}
 
         # Assert that all sums are unique
         assert len(dices_sums) == len(first_level_turns), "Duplicate dices_sum values found in first_level_turns"
 
-        last_first_level_turn = first_level_turns[first_level_turns_size - 1].dices_result_action.dices_sum
-        before_last_first_level_turn = first_level_turns[first_level_turns_size - 2]
         pause = 1
 
 
