@@ -19,7 +19,7 @@ def main() -> None:
         logger_config.configure_logger_with_random_log_file_suffix("CloseTheBox", log_file_extension="log", logger_level=logging.DEBUG)
 
         # simulation_request = SimulationRequest([Dice(list(range(1, 6)))], list(range(1, 7)))
-        simulation_request = SimulationRequest([Dice(list(range(1, 5)))], list(range(1, 5)))
+        simulation_request = SimulationRequest([Dice(list(range(1, 5)))], list(range(1, 4)))
 
         simulation = Application().run(simulation_request)
         # simulation = Application().run()
