@@ -37,10 +37,6 @@ class CompleteSimulationResult:
         if len(self._all_flat_games) % 1000 == 0:
             logger_config.print_and_log_info(f"Games computed so far:{len(self._all_flat_games)}")
 
-    def dump_in_json_file(self, json_file_full_path: str) -> None:
-
-        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(self._all_flat_games, json_file_full_path, SimulationResultEncoder)
-
 
 @dataclass
 class CloseHatchesAction:
@@ -64,6 +60,7 @@ class DicesResultStep:
     _dices_sum: int
     _dices_sum_odds: float
     _turns: list["OneTurn"] = field(default_factory=list)
+    _next_close_hatches_actions: list["CloseHatchesAction"] = field(default_factory=list)
 
     @property
     def turns(self) -> list["OneTurn"]:
@@ -84,10 +81,11 @@ class OneTurn:
     _previous_turn: Optional["OneTurn|InitialSituation"] = None
     _next_turns: List["OneTurn"] = field(default_factory=list)
     _games_using_turn: list["OneFlatGame"] = field(default_factory=list)
+    _next_dices_result_steps: List[DicesResultStep] = field(default_factory=list)
 
-    @property
-    def next_turns(self) -> List["OneTurn"]:
-        return self._next_turns
+    def add_next_turn(self, new_turn: "OneTurn", new_dices_result_step: DicesResultStep) -> None:
+        self._next_dices_result_steps.append(new_dices_result_step)
+        self._next_turns.append(new_turn)
 
     @property
     def dices_result_action(self) -> DicesResultStep:
@@ -97,11 +95,24 @@ class OneTurn:
     def close_hatches_action(self) -> CloseHatchesAction:
         return self._close_hatches_action
 
+    @property
+    def next_turns(self) -> List["OneTurn"]:
+        return self._next_turns
+
 
 @dataclass
 class InitialSituation:
     _initial_opened_hatches: list[int]
     _next_turns: List["OneTurn"] = field(default_factory=list)
+    _next_dices_result_steps: List[DicesResultStep] = field(default_factory=list)
+
+    def add_next_turn(self, new_turn: "OneTurn", new_dices_result_step: DicesResultStep) -> None:
+        self._next_dices_result_steps.append(new_dices_result_step)
+        self._next_turns.append(new_turn)
+
+    @property
+    def next_dices_result_steps(self) -> List[DicesResultStep]:
+        return self._next_dices_result_steps
 
     @property
     def next_turns(self) -> List["OneTurn"]:
@@ -145,7 +156,7 @@ class Simulation:
         close_hatch_action = CloseHatchesAction(_dices_result_step=dices_result_step, _opened_hatches_before_turn=opened_hatches_before_step, _closed_hatches_during_turn=closed_hatches_during_turn)
 
         new_turn = OneTurn(dices_result_step, close_hatch_action, previous_turn)
-        previous_turn.next_turns.append(new_turn)
+        previous_turn.add_next_turn(new_turn, dices_result_step)
         dices_result_step.turns.append(new_turn)
         close_hatch_action.turn = new_turn
         return new_turn
