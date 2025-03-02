@@ -127,7 +127,9 @@ class Simulation:
         self._initial_situation = InitialSituation(simulation_request.initial_opened_hatches)
         self._complete_simulation_result: CompleteSimulationResult = CompleteSimulationResult(self._initial_situation)
 
-    def _create_new_turn(self, dices_result_step: DicesResultStep, close_hatch_action: "CloseHatchesAction", previous_turn: OneTurn | InitialSituation) -> OneTurn:
+    def _create_new_turn(
+        self, dices_result_step: DicesResultStep, close_hatch_action: "CloseHatchesAction", previous_turn: OneTurn | InitialSituation, closed_hatches_during_turn: list[int]
+    ) -> OneTurn:
         new_turn = OneTurn(dices_result_step, close_hatch_action, previous_turn)
         previous_turn.next_turns.append(new_turn)
         dices_result_step.turns.append(new_turn)
@@ -137,6 +139,7 @@ class Simulation:
     def _create_new_game(self, new_turn: OneTurn, opened_hatches_before_step: list[int]) -> OneFlatGame:
         new_game = OneFlatGame(new_turn, opened_hatches_before_step)
         self._complete_simulation_result.add_flat_game(new_game)
+        return new_game
 
     @property
     def simulation_request(self) -> SimulationRequest:
@@ -172,7 +175,7 @@ class Simulation:
 
             # logger_config.print_and_log_info(f"Game is lost, no possible hatch combination to reach {dices_result_step.dices_sum} from {opened_hatches_before_step}")
             close_hatch_action = CloseHatchesAction(_dices_result_step=dices_result_step, _opened_hatches_before_turn=opened_hatches_before_step, _closed_hatches_during_turn=[])
-            new_turn = self._create_new_turn(dices_result_step, close_hatch_action, previous_turn)
+            new_turn = self._create_new_turn(dices_result_step, close_hatch_action, previous_turn, [])
             self._create_new_game(new_turn, opened_hatches_before_step)
 
         for hatches_combination in all_hatches_combinations:
@@ -181,7 +184,7 @@ class Simulation:
             # logger_config.print_and_log_info(f"hatches_combination {hatches_combination}, new_opened_hatches:{new_opened_hatches}")
 
             close_hatch_action = CloseHatchesAction(_dices_result_step=dices_result_step, _opened_hatches_before_turn=opened_hatches_before_step, _closed_hatches_during_turn=hatches_combination)
-            new_turn = self._create_new_turn(dices_result_step, close_hatch_action, previous_turn)
+            new_turn = self._create_new_turn(dices_result_step, close_hatch_action, previous_turn, hatches_combination)
 
             if not new_opened_hatches:
                 # logger_config.print_and_log_info("Game is won, all hatches closed")
