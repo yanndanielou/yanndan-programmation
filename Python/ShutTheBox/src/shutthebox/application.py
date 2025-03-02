@@ -17,35 +17,6 @@ from shutthebox import param
 # if TYPE_CHECKING:
 #    from shutthebox.dices import DicesThrownCombinationsOfOneSum
 
-import tkinter as tk
-from tkinter import ttk
-
-
-class TreeViewApp:
-    def __init__(self, root, initial_situation):
-        self.root = root
-        self.root.title("Tree View Representation")
-
-        self.tree = ttk.Treeview(root)
-        self.tree.pack(expand=True, fill=tk.BOTH)
-
-        # Adding column
-        self.tree.heading("#0", text="Game Turns")
-
-        # Populate tree
-        self.populate_tree("Initial Situation", initial_situation.next_turns)
-
-    def populate_tree(self, parent_name, turns, parent_id=""):
-        """Recursively add turns to the tree"""
-        parent_node = self.tree.insert(parent_id, "end", text=parent_name)
-
-        for i, turn in enumerate(turns):
-            turn_name = f"Turn {i + 1}"
-            turn_node = self.tree.insert(parent_node, "end", text=turn_name)
-
-            # Recursively add next turns
-            self.populate_tree(turn_name, turn.next_turns, turn_node)
-
 
 class CompleteSimulationResult:
 
@@ -61,11 +32,10 @@ class CompleteSimulationResult:
     def initial_situation(self) -> "InitialSituation":
         return self._initial_situation
 
-    def add_flat_games(self, flat_games_to_add: list["OneFlatGame"]) -> None:
-        self._all_flat_games = self._all_flat_games + flat_games_to_add
-
     def add_flat_game(self, flat_game_to_add: "OneFlatGame") -> None:
         self._all_flat_games.append(flat_game_to_add)
+        if len(self._all_flat_games) % 1000 == 0:
+            logger_config.print_and_log_info(f"Games computed so far:{len(self._all_flat_games)}")
 
     def dump_in_json_file(self, json_file_full_path: str) -> None:
 
@@ -113,6 +83,7 @@ class OneTurn:
     _close_hatches_action: CloseHatchesAction
     _previous_turn: Optional["OneTurn|InitialSituation"] = None
     _next_turns: List["OneTurn"] = field(default_factory=list)
+    _games_using_turn: list["OneFlatGame"] = field(default_factory=list)
 
     @property
     def next_turns(self) -> List["OneTurn"]:
@@ -156,6 +127,17 @@ class Simulation:
         self._initial_situation = InitialSituation(simulation_request.initial_opened_hatches)
         self._complete_simulation_result: CompleteSimulationResult = CompleteSimulationResult(self._initial_situation)
 
+    def _create_new_turn(self, dices_result_step: DicesResultStep, close_hatch_action: "CloseHatchesAction", previous_turn: OneTurn | InitialSituation) -> OneTurn:
+        new_turn = OneTurn(dices_result_step, close_hatch_action, previous_turn)
+        previous_turn.next_turns.append(new_turn)
+        dices_result_step.turns.append(new_turn)
+        close_hatch_action.turn = new_turn
+        return new_turn
+
+    def _create_new_game(self, new_turn: OneTurn, opened_hatches_before_step: list[int]) -> OneFlatGame:
+        new_game = OneFlatGame(new_turn, opened_hatches_before_step)
+        self._complete_simulation_result.add_flat_game(new_game)
+
     @property
     def simulation_request(self) -> SimulationRequest:
         return self._simulation_request
@@ -189,15 +171,9 @@ class Simulation:
         if not all_hatches_combinations:
 
             # logger_config.print_and_log_info(f"Game is lost, no possible hatch combination to reach {dices_result_step.dices_sum} from {opened_hatches_before_step}")
-
             close_hatch_action = CloseHatchesAction(_dices_result_step=dices_result_step, _opened_hatches_before_turn=opened_hatches_before_step, _closed_hatches_during_turn=[])
-            new_turn = OneTurn(dices_result_step, close_hatch_action, previous_turn)
-            previous_turn.next_turns.append(new_turn)
-            dices_result_step.turns.append(new_turn)
-            close_hatch_action.turn = new_turn
-
-            flat_game = OneFlatGame(new_turn, opened_hatches_before_step)
-            self._complete_simulation_result.add_flat_game(flat_game)
+            new_turn = self._create_new_turn(dices_result_step, close_hatch_action, previous_turn)
+            self._create_new_game(new_turn, opened_hatches_before_step)
 
         for hatches_combination in all_hatches_combinations:
 
@@ -205,16 +181,12 @@ class Simulation:
             # logger_config.print_and_log_info(f"hatches_combination {hatches_combination}, new_opened_hatches:{new_opened_hatches}")
 
             close_hatch_action = CloseHatchesAction(_dices_result_step=dices_result_step, _opened_hatches_before_turn=opened_hatches_before_step, _closed_hatches_during_turn=hatches_combination)
-            new_turn = OneTurn(dices_result_step, close_hatch_action, previous_turn)
-            previous_turn.next_turns.append(new_turn)
-            dices_result_step.turns.append(new_turn)
-            close_hatch_action.turn = new_turn
+            new_turn = self._create_new_turn(dices_result_step, close_hatch_action, previous_turn)
 
             if not new_opened_hatches:
                 # logger_config.print_and_log_info("Game is won, all hatches closed")
 
-                flat_game = OneFlatGame(new_turn, new_opened_hatches)
-                self._complete_simulation_result.add_flat_game(flat_game)
+                self._create_new_game(new_turn, new_opened_hatches)
 
             else:
                 self.throw_dices(new_opened_hatches, new_turn)
@@ -229,6 +201,6 @@ class Application:
         simulation = Simulation(simulation_request)
         logger_config.print_and_log_info("Run")
         simulation.start()
-        logger_config.print_and_log_info("Simulation ended")
+        logger_config.print_and_log_info(f"Simulation ended. Games computer {len(simulation.complete_simulation_result.all_flat_games)}")
 
         return simulation
