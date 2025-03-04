@@ -47,6 +47,10 @@ class CloseHatchesAction:
     def hatches_closed_during_action(self) -> List[int]:
         return self._hatches_closed_during_action
 
+    @property
+    def next_situations(self) -> List["Situation"]:
+        return self._next_situations
+
 
 @dataclass
 class Situation:

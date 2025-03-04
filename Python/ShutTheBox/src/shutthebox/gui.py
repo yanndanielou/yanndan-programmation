@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, List
 from logger import logger_config
 
 if TYPE_CHECKING:
-    from shutthebox.application import Situation, OneTurn, CompleteSimulationResult, Situation
+    from shutthebox.application import Situation, CompleteSimulationResult, Situation
 
 
 class TreeViewApp:
@@ -33,5 +33,5 @@ class TreeViewApp:
                 action_text = f"CloseHatchesAction: Closing Hatches {close_action.hatches_closed_during_action}"
                 action_id = self.tree.insert(dice_id, "end", text=action_text)
 
-                for next_situation in close_action._next_situations:
+                for next_situation in close_action.next_situations:
                     self.populate_tree(next_situation, action_id)
