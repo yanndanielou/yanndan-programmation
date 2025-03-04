@@ -22,17 +22,15 @@ class TestBugTurnsInDouble20250302:
         simulation = application.Application().run(simulation_request)
         simulation_result = simulation.complete_simulation_result
         initial_situation = simulation_result.initial_situation
-        first_level_turns = initial_situation.next_turns
-        first_level_turns_size = len(first_level_turns)
-
-        last_first_level_turn = first_level_turns[first_level_turns_size - 1].dices_result_action.dices_sum
-        before_last_first_level_turn = first_level_turns[first_level_turns_size - 2]
+        initial_situation_next_dices_result_steps = initial_situation.next_dices_result_steps
+        assert initial_situation_next_dices_result_steps is not None
+        assert len(initial_situation_next_dices_result_steps) > 0
 
         # Extract dices_sum from each OneTurn's dices_result_action
-        dices_sums = {turn.dices_result_action.dices_sum for turn in first_level_turns}
+        dices_sums = {next_dices_result_step.dices_sum for next_dices_result_step in initial_situation.next_dices_result_steps}
 
         # Assert that all sums are unique
-        assert len(dices_sums) == len(first_level_turns), "Duplicate dices_sum values found in first_level_turns"
+        assert len(dices_sums) == len(initial_situation.next_dices_result_steps), "Duplicate dices_sum values found in first_level_turns"
 
         pause = 1
 
@@ -46,9 +44,8 @@ class TestSimpleSimulations:
         simulation_request = application.SimulationRequest(dices, initial_opened_hatches)
         simulation: application.Simulation = application.Application().run(simulation_request)
         simulation_result = simulation.complete_simulation_result
-        all_flat_games = simulation_result.all_flat_games
+        all_flat_games = simulation_result.all_games
         # simulation.complete_simulation_result.dump_in_json_file("TestOne1SidesDiceAnd1Hatches.json")
-        assert len(simulation_result.initial_situation.next_turns) == expected_number_of_plays
         assert len(all_flat_games) == expected_number_of_plays
 
     class TestOne1SidesDiceAnd1Hatches:
@@ -61,7 +58,7 @@ class TestSimpleSimulations:
             logger_config.print_and_log_info("application start")
             simulation_request = application.SimulationRequest(dices, initial_opened_hatches)
             simulation: application.Simulation = application.Application().run(simulation_request)
-            all_flat_games = simulation.complete_simulation_result.all_flat_games
+            all_flat_games = simulation.complete_simulation_result.all_games
             # simulation.complete_simulation_result.dump_in_json_file("TestOne1SidesDiceAnd1Hatches.json")
 
             assert len(all_flat_games) == 1

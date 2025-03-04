@@ -6,33 +6,31 @@ from typing import TYPE_CHECKING, List
 from logger import logger_config
 
 if TYPE_CHECKING:
-    from shutthebox.application import InitialSituation, OneTurn
+    from shutthebox.application import Situation, OneTurn, CompleteSimulationResult, Situation
 
 
 class TreeViewApp:
-    def __init__(self, root: tk.Tk, initial_situation: "InitialSituation") -> None:
+    def __init__(self, root: tk.Tk, simulation_result: CompleteSimulationResult) -> None:
         self.root = root
-        self.root.title("Tree View Representation")
+        self.root.title("Simulation Result Viewer")
 
         self.tree = ttk.Treeview(root)
         self.tree.pack(expand=True, fill=tk.BOTH)
 
-        # Adding column
-        self.tree.heading("#0", text="Game Turns")
+        self.tree.heading("#0", text="Simulation Structure", anchor=tk.W)
 
-        # Populate tree
-        self.populate_tree(f"Initial Situation: Opened Hatches={initial_situation._initial_opened_hatches}", initial_situation.next_turns)
+        self.populate_tree(simulation_result.initial_situation)
 
-    def populate_tree(self, parent_name: str, turns: List["OneTurn"], parent_id: str = "") -> None:
-        """Recursively add turns to the tree"""
-        parent_node = self.tree.insert(parent_id, "end", text=parent_name)
+    def populate_tree(self, situation: "Situation", parent: str = "") -> None:
+        """Recursively populates the tree view"""
+        situation_id = self.tree.insert(parent, "end", text=f"Situation: Opened Hatches {situation.opened_hatches}")
 
-        for i, turn in enumerate(turns):
-            dices_step_text = f"Dices: Sum={turn._dices_result_action.dices_sum}, Odds={turn._dices_result_action._dices_sum_odds * 100:.2f}%"
-            dices_step_node = self.tree.insert(parent_node, "end", text=dices_step_text)
+        for dice_step in situation.next_dices_result_steps:
+            dice_id = self.tree.insert(situation_id, "end", text=f"DicesResultStep: Sum {dice_step.dices_sum}")
 
-            close_hatches_text = f"Close Hatches: Opened={turn._close_hatches_action._opened_hatches_before_turn}, Closed={turn._close_hatches_action._closed_hatches_during_turn}"
-            close_hatches_node = self.tree.insert(dices_step_node, "end", text=close_hatches_text)
+            for close_action in dice_step.next_close_hatches_actions:
+                action_text = f"CloseHatchesAction: Closed Hatches {close_action.hatches_closed_during_action}"
+                action_id = self.tree.insert(dice_id, "end", text=action_text)
 
-            # Recursively add next turns
-            self.populate_tree(close_hatches_text, turn.next_turns, close_hatches_node)
+                for next_situation in close_action._next_situations:
+                    self.populate_tree(next_situation, action_id)
