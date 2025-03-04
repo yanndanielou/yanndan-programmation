@@ -2,13 +2,9 @@
 """ Main """
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Any  # , TYPE_CHECKING
-
-
-from json import JSONEncoder
+from typing import List, Optional  # , TYPE_CHECKING
 
 from logger import logger_config
-from common import json_encoders
 
 from shutthebox.dices import Dices, Dice, DicesThrownCombinationsResults
 from shutthebox.combinations_to_reach_sum import CombinationsToReachSum
@@ -41,7 +37,7 @@ class CompleteSimulationResult:
 @dataclass
 class CloseHatchesAction:
     _dices_result_step: "DicesResultStep"
-    _hatches_closed_during_action: Optional[list[int]]
+    _hatches_closed_during_action: list[int]
     _next_situations: list["Situation"] = field(default_factory=list)
 
     def add_next_situation(self, next_situation: "Situation") -> None:
