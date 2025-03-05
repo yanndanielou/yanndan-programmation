@@ -24,7 +24,7 @@ class TreeViewApp:
 
     def populate_tree(self, situation: "Situation", parent: str = "") -> None:
         """Recursively populates the tree view"""
-        situation_id = self.tree.insert(parent, "end", text=f"Situation: Opened Hatches {situation.opened_hatches}")
+        situation_id = self.tree.insert(parent, "end", text=f"Situation: Opened Hatches {situation.opened_hatches} , final odds to happen {situation.get_odds_to_happen_from_initial_situation()}")
 
         for dice_step in situation.next_dices_result_steps:
             dice_id = self.tree.insert(situation_id, "end", text=f"DicesResultStep: Sum {dice_step.dices_sum}, Odds={dice_step._dices_sum_odds * 100:.2f}%")

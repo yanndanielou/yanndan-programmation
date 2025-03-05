@@ -47,6 +47,14 @@ class TestSimpleSimulations:
         all_flat_games = simulation_result.all_games
         # simulation.complete_simulation_result.dump_in_json_file("TestOne1SidesDiceAnd1Hatches.json")
         assert len(all_flat_games) == expected_number_of_plays
+        initial_situation = simulation_result.initial_situation
+        assert simulation_result.initial_situation.get_odds_to_happen_from_initial_situation() == 1.0
+
+        first_level_dices = initial_situation._next_dices_result_steps
+        fist_level_dices_cumulated_odds = sum(first_level_dice.dices_sum_odds for first_level_dice in first_level_dices)
+
+        final_games_cumulated_odds = sum(game.final_situation.get_odds_to_happen_from_initial_situation() for game in all_flat_games)
+        assert final_games_cumulated_odds == 1.0
 
     class TestOne1SidesDiceAnd1Hatches:
 
@@ -62,3 +70,33 @@ class TestSimpleSimulations:
             # simulation.complete_simulation_result.dump_in_json_file("TestOne1SidesDiceAnd1Hatches.json")
 
             assert len(all_flat_games) == 1
+
+    class TestOne2SidesDiceAnd2Hatches:
+
+        def test_x(self) -> None:
+            dices: list[Dice] = [Dice(list(range(1, 3)))]
+            initial_opened_hatches: list[int] = list(range(1, 3))
+
+            logger_config.configure_logger_with_random_log_file_suffix("shutthebox")
+            logger_config.print_and_log_info("application start")
+            simulation_request = application.SimulationRequest(dices, initial_opened_hatches)
+            simulation: application.Simulation = application.Application().run(simulation_request)
+            simulation_result = simulation.complete_simulation_result
+            all_flat_games = simulation.complete_simulation_result.all_games
+            # simulation.complete_simulation_result.dump_in_json_file("TestOne1SidesDiceAnd1Hatches.json")
+
+            assert len(all_flat_games) == 4
+            initial_situation = simulation_result.initial_situation
+
+            # Extract dices_sum from each OneTurn's dices_result_action
+            dices_sums = {next_dices_result_step.dices_sum for next_dices_result_step in initial_situation.next_dices_result_steps}
+
+            # Assert that all sums are unique
+            assert len(dices_sums) == len(initial_situation.next_dices_result_steps), "Duplicate dices_sum values found in first_level_turns"
+
+            first_level_dices = initial_situation._next_dices_result_steps
+            fist_level_dices_cumulated_odds = sum(first_level_dice.dices_sum_odds for first_level_dice in first_level_dices)
+
+            final_games_cumulated_odds = sum(game.final_situation.get_odds_to_happen_from_initial_situation() for game in all_flat_games)
+            assert final_games_cumulated_odds == 1.0
+            pause = 1

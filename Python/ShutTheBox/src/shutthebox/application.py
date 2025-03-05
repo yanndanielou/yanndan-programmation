@@ -51,6 +51,10 @@ class CloseHatchesAction:
     def next_situations(self) -> List["Situation"]:
         return self._next_situations
 
+    @property
+    def dices_result_step(self) -> "DicesResultStep":
+        return self._dices_result_step
+
 
 @dataclass
 class Situation:
@@ -69,6 +73,30 @@ class Situation:
     def opened_hatches(self) -> List[int]:
         return self._opened_hatches
 
+    def get_dices_odds_to_happen_from_initial_situation(self) -> float:
+        if self._previous_close_hatches_action is None:
+            return 1.0
+        return self.get_dices_odds_to_happen_from_reference_situation(None)
+
+    def get_dices_odds_to_happen_from_reference_situation(self, reference_situation: Optional["Situation"]) -> float:
+
+        previous_action = self._previous_close_hatches_action
+        dice_step = previous_action.dices_result_step
+
+        # Probability of reaching this situation from the previous action
+        probability_to_get_dice_roll = dice_step.dices_sum_odds
+        previous_situation = self._previous_close_hatches_action.dices_result_step.previous_situation
+
+        if previous_situation == reference_situation or (previous_situation._previous_close_hatches_action is None and reference_situation is None):
+            if reference_situation is None:
+                return 1.0
+            else:
+                return self._previous_close_hatches_action.dices_result_step.dices_sum_odds
+
+        probability_to_reach_previous_situation = previous_situation.get_dices_odds_to_happen_from_reference_situation(reference_situation)
+
+        return probability_to_get_dice_roll * probability_to_reach_previous_situation
+
 
 @dataclass
 class DicesResultStep:
@@ -85,6 +113,14 @@ class DicesResultStep:
         return self._dices_sum
 
     @property
+    def dices_sum_odds(self) -> float:
+        return self._dices_sum_odds
+
+    @property
+    def previous_situation(self) -> Situation:
+        return self._previous_situation
+
+    @property
     def next_close_hatches_actions(self) -> list["CloseHatchesAction"]:
         return self._next_close_hatches_actions
 
@@ -92,6 +128,10 @@ class DicesResultStep:
 @dataclass
 class OneGame:
     _final_situation: Situation
+
+    @property
+    def final_situation(self) -> Situation:
+        return self._final_situation
 
 
 @dataclass
