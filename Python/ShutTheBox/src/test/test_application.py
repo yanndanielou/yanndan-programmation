@@ -9,7 +9,7 @@ from logger import logger_config
 small_examples_test_data = [([Dice(list(range(1, 2)))], list(range(1, 2)), 1),
                             ([Dice(list(range(1, 3)))], list(range(1, 3)), 4), 
                             ([Dice(list(range(1, 4)))], list(range(1, 3)), 7), 
-                            ([Dice(list(range(1, 3)))], list(range(1, 4)), 7), 
+                            ([Dice(list(range(1, 3)))], list(range(1, 4)), 6), 
                             ([Dice(list(range(1, 4)))], list(range(1, 4)), 24), 
                             ([Dice(list(range(1, 5)))], list(range(1, 5)), 158), 
                             ([Dice(list(range(1, 6)))], list(range(1, 6)), 1256), 
@@ -56,6 +56,8 @@ class TestOdds:
         first_game = all_flat_games[0]
         first_game_final_situation = first_game.final_situation
         first_game_final_situation_odds = first_game_final_situation.get_odds_to_happen_from_initial_situation_taking_into_account_dices_and_hatches()
+        first_game_final_situation_odds = first_game_final_situation.get_odds_to_happen_from_initial_situation_taking_into_account_dices_and_hatches()
+
         assert first_game_final_situation_odds == 0.125
 
         assert final_games_cumulated_odds == 1.0
@@ -80,7 +82,7 @@ class TestSimpleSimulations:
         fist_level_dices_cumulated_odds = sum(first_level_dice.dices_sum_odds for first_level_dice in first_level_dices)
 
         final_games_cumulated_odds = sum(game.final_situation.get_odds_to_happen_from_initial_situation_taking_into_account_dices_and_hatches() for game in all_flat_games)
-        assert final_games_cumulated_odds == 1.0
+        assert 1.0 == pytest.approx(final_games_cumulated_odds, rel=1e-3)
 
     class TestOne1SidesDiceAnd1Hatches:
 

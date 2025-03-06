@@ -89,57 +89,28 @@ class Situation:
             return self
         return previous_situation.get_initial_situation()
 
-    def get_dices_odds_to_happen_from_initial_situation(self) -> float:
-        initial_situation = self.get_initial_situation()
-        if initial_situation == self:
-            return 1.0
-        return self.get_dices_odds_to_happen_from_reference_situation(self.get_initial_situation())
-
-    def get_dices_odds_to_happen_from_reference_situation(self, reference_situation: Optional["Situation"]) -> float:
-
-        previous_action = self._previous_close_hatches_action
-        dice_step = previous_action.dices_result_step
-
-        # Probability of reaching this situation from the previous action
-        probability_to_get_dice_roll = dice_step.dices_sum_odds
-        previous_situation = self._previous_close_hatches_action.dices_result_step.previous_situation
-
-        if previous_situation == reference_situation:
-            if reference_situation is None:
-                return 1.0
-            else:
-                return self._previous_close_hatches_action.dices_result_step.dices_sum_odds
-
-        probability_to_reach_previous_situation = previous_situation.get_dices_odds_to_happen_from_reference_situation(reference_situation)
-
-        return probability_to_get_dice_roll * probability_to_reach_previous_situation
-
     def get_odds_to_happen_from_initial_situation_taking_into_account_dices_and_hatches(self) -> float:
         initial_situation = self.get_initial_situation()
         if initial_situation == self:
             return 1.0
         return self.get_odds_to_happen_from_reference_situation_taking_into_account_dices_and_hatches(initial_situation)
 
-    def get_odds_to_happen_from_reference_situation_taking_into_account_dices_and_hatches(self, reference_situation: Optional["Situation"]) -> float:
+    def get_odds_to_happen_from_reference_situation_taking_into_account_dices_and_hatches(self, reference_situation: "Situation") -> float:
 
         previous_action = self._previous_close_hatches_action
 
-        previous_action_ration_among_alternatives = previous_action.get_ratio_among_all_alternatives()
-        dice_step = previous_action.dices_result_step
+        previous_action_ratio_among_alternatives = previous_action.get_ratio_among_all_alternatives()
 
         # Probability of reaching this situation from the previous action
-        probability_to_get_dice_roll = dice_step.dices_sum_odds
+        probability_to_get_dice_roll = previous_action.dices_result_step.dices_sum_odds
         previous_situation = self._previous_close_hatches_action.dices_result_step.previous_situation
 
         if previous_situation == reference_situation:
-            if reference_situation is None:
-                return 1.0 * previous_action_ration_among_alternatives
-            else:
-                return self._previous_close_hatches_action.dices_result_step.dices_sum_odds * previous_action_ration_among_alternatives
+            return probability_to_get_dice_roll * previous_action_ratio_among_alternatives
 
-        probability_to_reach_previous_situation = previous_situation.get_dices_odds_to_happen_from_reference_situation(reference_situation)
+        probability_to_reach_previous_situation = previous_situation.get_odds_to_happen_from_reference_situation_taking_into_account_dices_and_hatches(reference_situation)
 
-        return probability_to_get_dice_roll * probability_to_reach_previous_situation
+        return probability_to_get_dice_roll * previous_action_ratio_among_alternatives * probability_to_reach_previous_situation
 
 
 @dataclass
