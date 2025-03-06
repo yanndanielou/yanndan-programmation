@@ -8,6 +8,8 @@ from logger import logger_config
 # fmt: off
 small_examples_test_data = [([Dice(list(range(1, 2)))], list(range(1, 2)), 1),
                             ([Dice(list(range(1, 3)))], list(range(1, 3)), 4), 
+                            ([Dice(list(range(1, 4)))], list(range(1, 3)), 7), 
+                            ([Dice(list(range(1, 3)))], list(range(1, 4)), 7), 
                             ([Dice(list(range(1, 4)))], list(range(1, 4)), 24), 
                             ([Dice(list(range(1, 5)))], list(range(1, 5)), 158), 
                             ([Dice(list(range(1, 6)))], list(range(1, 6)), 1256), 
@@ -35,6 +37,30 @@ class TestBugTurnsInDouble20250302:
         pause = 1
 
 
+class TestOdds:
+    def tests_final_odds_sum_is_one(self) -> None:
+        logger_config.configure_logger_with_random_log_file_suffix("shutthebox")
+        logger_config.print_and_log_info("application start")
+        simulation = application.Application().run(application.SimulationRequest([Dice(range(1, 3))], [1, 1, 2]))
+        simulation_result = simulation.complete_simulation_result
+        all_flat_games = simulation_result.all_games
+        all_flat_games_odds = [game.final_situation.get_odds_to_happen_from_initial_situation_taking_into_account_dices_and_hatches() for game in all_flat_games]
+        logger_config.print_and_log_info(str(all_flat_games_odds))
+
+        all_flat_games_odds_str = [f"{game.final_situation.get_odds_to_happen_from_initial_situation_taking_into_account_dices_and_hatches()*100:.1f}" for game in all_flat_games]
+        logger_config.print_and_log_info(str(all_flat_games_odds_str))
+
+        final_games_cumulated_odds = sum(game.final_situation.get_odds_to_happen_from_initial_situation_taking_into_account_dices_and_hatches() for game in all_flat_games)
+        logger_config.print_and_log_info(str(final_games_cumulated_odds))
+
+        first_game = all_flat_games[0]
+        first_game_final_situation = first_game.final_situation
+        first_game_final_situation_odds = first_game_final_situation.get_odds_to_happen_from_initial_situation_taking_into_account_dices_and_hatches()
+        assert first_game_final_situation_odds == 0.125
+
+        assert final_games_cumulated_odds == 1.0
+
+
 class TestSimpleSimulations:
 
     @pytest.mark.parametrize("dices, initial_opened_hatches, expected_number_of_plays", small_examples_test_data)
@@ -48,12 +74,12 @@ class TestSimpleSimulations:
         # simulation.complete_simulation_result.dump_in_json_file("TestOne1SidesDiceAnd1Hatches.json")
         assert len(all_flat_games) == expected_number_of_plays
         initial_situation = simulation_result.initial_situation
-        assert simulation_result.initial_situation.get_odds_to_happen_from_initial_situation() == 1.0
+        assert simulation_result.initial_situation.get_odds_to_happen_from_initial_situation_taking_into_account_dices_and_hatches() == 1.0
 
         first_level_dices = initial_situation._next_dices_result_steps
         fist_level_dices_cumulated_odds = sum(first_level_dice.dices_sum_odds for first_level_dice in first_level_dices)
 
-        final_games_cumulated_odds = sum(game.final_situation.get_odds_to_happen_from_initial_situation() for game in all_flat_games)
+        final_games_cumulated_odds = sum(game.final_situation.get_odds_to_happen_from_initial_situation_taking_into_account_dices_and_hatches() for game in all_flat_games)
         assert final_games_cumulated_odds == 1.0
 
     class TestOne1SidesDiceAnd1Hatches:
@@ -97,6 +123,6 @@ class TestSimpleSimulations:
             first_level_dices = initial_situation._next_dices_result_steps
             fist_level_dices_cumulated_odds = sum(first_level_dice.dices_sum_odds for first_level_dice in first_level_dices)
 
-            final_games_cumulated_odds = sum(game.final_situation.get_odds_to_happen_from_initial_situation() for game in all_flat_games)
+            final_games_cumulated_odds = sum(game.final_situation.get_odds_to_happen_from_initial_situation_taking_into_account_dices_and_hatches() for game in all_flat_games)
             assert final_games_cumulated_odds == 1.0
             pause = 1
