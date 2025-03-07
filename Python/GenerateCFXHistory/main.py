@@ -14,7 +14,7 @@ def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary, output_excel_file
     for month in months:
         state_counts = defaultdict(int)
 
-        for entry in cfx_library._all_cfx:
+        for entry in cfx_library.get_all_cfx():
             state = entry.get_state_at_date(month)
             if state != cfx.State.NotCreatedYet:
                 state_counts[state] += 1
@@ -53,7 +53,7 @@ def plot_cfx_states_over_time_cumulated_eras(cfx_library: cfx.ChampFXLibrary, ou
     # Gather state counts for each month
     for month in months:
         state_counts = defaultdict(int)
-        for entry in cfx_library._all_cfx:
+        for entry in cfx_library.get_all_cfx():
             state = entry.get_state_at_date(month)
             if state != cfx.State.NotCreatedYet:
                 state_counts[state] += 1
@@ -96,7 +96,7 @@ def main() -> None:
     with logger_config.stopwatch_with_label("Application duration"):
         logger_config.print_and_log_info("Application start")
 
-        champfx_library = cfx.ChampFXLibrary("extract_cfx.xlsx")
+        champfx_library = cfx.ChampFXLibrary("extract_cfx_details.xlsx", "extract_cfx_change_state.xlsx")
 
         # Plot in the first window
         plot_cfx_states_over_time(cfx_library=champfx_library, output_excel_file="all_standard.xlsx")
