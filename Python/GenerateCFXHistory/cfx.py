@@ -27,21 +27,21 @@ class State(Enum):
 class ChampFXLibrary:
 
     def __init__(self, champfx_extract_excel_file_full_path: str):
-        logger_config.print_and_log_info(f"Open excel file {champfx_extract_excel_file_full_path}")
-        df = pd.read_excel(champfx_extract_excel_file_full_path)
 
-        with logger_config.stopwatch_with_label(f"Create ChampFXEntry objects"):
-            self._champ_fx: list["ChampFXEntry"] = [ChampFXEntry(row) for _, row in df.iterrows()]
-            logger_config.print_and_log_info(f"{len(self._champ_fx)} ChampFXEntry objects created")
+        with logger_config.stopwatch_with_label(f"ChampFXLibrary creation and initialisation"):
 
-        logger_config.print_and_log_info(f"ChampFXLibrary process_current_owner_role")
-        with logger_config.stopwatch_with_label("ChampFXLibrary process_current_owner_role"):
-            list(map(lambda champ_fx: champ_fx.process_current_owner_role(), self._champ_fx))
+            with logger_config.stopwatch_with_label(f"Open excel file {champfx_extract_excel_file_full_path}"):
+                df = pd.read_excel(champfx_extract_excel_file_full_path)
 
-        with logger_config.stopwatch_with_label(f"ChampFXLibrary process_subsystem_from_fixed_implemented_in"):
-            list(map(lambda champ_fx: champ_fx.process_subsystem_from_fixed_implemented_in(), self._champ_fx))
+            with logger_config.stopwatch_with_label(f"Create ChampFXEntry objects"):
+                self._champ_fx: list["ChampFXEntry"] = [ChampFXEntry(row) for _, row in df.iterrows()]
+                logger_config.print_and_log_info(f"{len(self._champ_fx)} ChampFXEntry objects created")
 
-        logger_config.print_and_log_info(f"ChampFXLibrary completed")
+            with logger_config.stopwatch_with_label("ChampFXLibrary process_current_owner_role"):
+                list(map(lambda champ_fx: champ_fx.process_current_owner_role(), self._champ_fx))
+
+            with logger_config.stopwatch_with_label(f"ChampFXLibrary process_subsystem_from_fixed_implemented_in"):
+                list(map(lambda champ_fx: champ_fx.process_subsystem_from_fixed_implemented_in(), self._champ_fx))
 
     def get_earliest_submit_date(self) -> datetime:
         earliest_date = min(entry._submit_date for entry in self._champ_fx)
