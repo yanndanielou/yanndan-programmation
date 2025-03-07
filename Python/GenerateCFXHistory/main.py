@@ -37,12 +37,18 @@ def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary, output_excel_file
                 state_counts[state] += 1
         state_counts_per_month.append(state_counts)
 
-    states = [state for state in cfx.State]
+    # Determine the states that are present in the data
+    present_states_set = set()
+    for state_counts in state_counts_per_month:
+        present_states_set.update(state_counts.keys())
+
+    present_states_list = list(present_states_set)
+    present_states_ordered_list = sorted(list(present_states_set))
 
     # Prepare cumulative counts for stacked area plot and Excel output
-    cumulative_counts = {state: [] for state in states}
+    cumulative_counts = {state: [] for state in present_states_ordered_list}
     for state_counts in state_counts_per_month:
-        for state in states:
+        for state in present_states_ordered_list:
             cumulative_counts[state].append(state_counts[state])
 
     # Convert data to DataFrame for Excel output
@@ -61,7 +67,7 @@ def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary, output_excel_file
     if use_cumulative:
         # Plot cumulative areas
         bottom = [0] * len(months)
-        for state in states:
+        for state in present_states_ordered_list:
             color = state_colors.get(state, None)
             upper = [bottom[i] + cumulative_counts[state][i] for i in range(len(months))]
             line = ax.fill_between(months, bottom, upper, label=state.name, color=color)
@@ -70,7 +76,7 @@ def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary, output_excel_file
             tooltips.append(tooltip)
 
     else:
-        for state in states:
+        for state in present_states_ordered_list:
             color = state_colors.get(state, None)
             counts = [state_counts[state] for state_counts in state_counts_per_month]
             (line,) = ax.plot(months, counts, label=state.name, color=color)
