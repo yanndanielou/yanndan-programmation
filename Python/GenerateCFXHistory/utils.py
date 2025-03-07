@@ -8,7 +8,7 @@ from datetime import datetime
 import pytz
 
 
-def convert_champfx_extract_date(raw_champfx_date: str | float):  # -> Optional(datetime):
+def convert_champfx_extract_date(raw_champfx_date: str | float) -> Optional[datetime]:
 
     if type(raw_champfx_date) is not str:
 
