@@ -2,13 +2,28 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from collections import defaultdict
 import mpld3
+from mpld3 import plugins
+
 
 from logger import logger_config
 
 import cfx
 
+state_colors = {
+    cfx.State.Submitted: "red",
+    cfx.State.Analysed: "orange",
+    cfx.State.Assigned: "blue",
+    cfx.State.Resolved: "brown",
+    cfx.State.Postponed: "grey",
+    cfx.State.Rejected: "black",
+    cfx.State.Verified: "yellow",
+    cfx.State.Validated: "darkgreen",
+    cfx.State.Closed: "green",
+    # Add additional states and their respective colors
+}
 
-def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary, output_excel_file: str, use_cumulative: bool) -> None:
+
+def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary, output_excel_file: str, use_cumulative: bool, output_html_file: str) -> None:
     # Retrieve months to process
     months = cfx_library.get_months_since_earliest_submit_date()
     state_counts_per_month = []
@@ -40,18 +55,27 @@ def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary, output_excel_file
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
+    tooltips = []
+
     # Plot
     if use_cumulative:
         # Plot cumulative areas
         bottom = [0] * len(months)
         for state in states:
-            ax.fill_between(months, bottom, [bottom[i] + cumulative_counts[state][i] for i in range(len(months))], label=state.name)
-            bottom = [bottom[i] + cumulative_counts[state][i] for i in range(len(months))]
+            color = state_colors.get(state, None)
+            upper = [bottom[i] + cumulative_counts[state][i] for i in range(len(months))]
+            line = ax.fill_between(months, bottom, upper, label=state.name, color=color)
+            bottom = upper
+            tooltip = plugins.LineLabelTooltip(line, label=state.name)
+            tooltips.append(tooltip)
 
     else:
         for state in states:
+            color = state_colors.get(state, None)
             counts = [state_counts[state] for state_counts in state_counts_per_month]
-            ax.plot(months, counts, label=state.name)
+            (line,) = ax.plot(months, counts, label=state.name, color=color)
+            tooltip = plugins.LineLabelTooltip(line, label=state.name)
+            tooltips.append(tooltip)
 
     ax.set_xlabel("Month")
     ax.set_ylabel("Number of CFX Entries")
@@ -59,6 +83,15 @@ def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary, output_excel_file
     ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
+
+    # Add tooltips
+    plugins.connect(fig, *tooltips)
+
+    # Save the plot to an HTML file
+    html_content = mpld3.fig_to_html(fig)
+
+    with open(output_html_file, "w") as html_file:
+        html_file.write(html_content)
 
 
 def old_plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary, output_excel_file: str) -> None:
@@ -152,9 +185,9 @@ def main() -> None:
         champfx_library = cfx.ChampFXLibrary("extract_cfx_details.xlsx", "extract_cfx_change_state.xlsx")
 
         # Plot in the first window
-        plot_cfx_states_over_time(cfx_library=champfx_library, output_excel_file="all_standard.xlsx", use_cumulative=False)
+        plot_cfx_states_over_time(cfx_library=champfx_library, output_excel_file="all_standard.xlsx", use_cumulative=False, output_html_file="all_standard.html")
         # Plot in the second window
-        plot_cfx_states_over_time(cfx_library=champfx_library, output_excel_file="all_cumulated_eras.xlsx", use_cumulative=True)
+        plot_cfx_states_over_time(cfx_library=champfx_library, output_excel_file="all_cumulated_eras.xlsx", use_cumulative=True, output_html_file="all_cumulated_eras.html")
 
         # Use plt.show() here to block execution and keep all windows open
         plt.show()
