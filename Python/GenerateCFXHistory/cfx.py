@@ -1,3 +1,4 @@
+import pandas as pd
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 from typing import Optional, List
@@ -23,9 +24,24 @@ class State(Enum):
     Closed = auto()
 
 
-@dataclass
 class ChampFXLibrary:
-    _champ_fx: list["ChampFXEntry"]
+
+    def __init__(self, champfx_extract_excel_file_full_path: str):
+        logger_config.print_and_log_info(f"Open excel file {champfx_extract_excel_file_full_path}")
+        df = pd.read_excel(champfx_extract_excel_file_full_path)
+
+        with logger_config.stopwatch_with_label(f"Create ChampFXEntry objects"):
+            self._champ_fx: list["ChampFXEntry"] = [ChampFXEntry(row) for _, row in df.iterrows()]
+            logger_config.print_and_log_info(f"{len(self._champ_fx)} ChampFXEntry objects created")
+
+        logger_config.print_and_log_info(f"ChampFXLibrary process_current_owner_role")
+        with logger_config.stopwatch_with_label("ChampFXLibrary process_current_owner_role"):
+            list(map(lambda champ_fx: champ_fx.process_current_owner_role(), self._champ_fx))
+
+        with logger_config.stopwatch_with_label(f"ChampFXLibrary process_subsystem_from_fixed_implemented_in"):
+            list(map(lambda champ_fx: champ_fx.process_subsystem_from_fixed_implemented_in(), self._champ_fx))
+
+        logger_config.print_and_log_info(f"ChampFXLibrary completed")
 
     def get_earliest_submit_date(self) -> datetime:
         earliest_date = min(entry._submit_date for entry in self._champ_fx)
@@ -63,11 +79,25 @@ class ChampFXEntry:
         self._verification_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.VerificationDate"])
         self._validation_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.ValidationDate"])
         self._closing_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.ClosingDate"])
-        self.fixed_implemented_in: str = row["FixedImplementedIn"]
+        self._fixed_implemented_in: str = row["FixedImplementedIn"]
         self._current_owner: str = row["CurrentOwner.FullName"]
-        self._current_owner_role: role.SubSystem = role.get_subsystem_from_cfx_current_owner(self._current_owner)
+        self._current_owner_role: role.SubSystem = None
+        self._subsystem_from_fixed_implemented_in: role.SubSystem = None
         # self._submit_year: datetime = self._submit_date.year
         # self._submit_month: datetime = self._submit_date.month
+
+    def process_current_owner_role(self) -> role.SubSystem:
+        self._current_owner_role: role.SubSystem = role.get_subsystem_from_cfx_current_owner(self._current_owner)
+        return self._current_owner_role
+
+    def process_subsystem_from_fixed_implemented_in(self) -> Optional[role.SubSystem]:
+        if self._fixed_implemented_in:
+            self._subsystem_from_fixed_implemented_in = role.get_subsystem_from_champfx_fixed_implemented_in(self._fixed_implemented_in)
+            return self._subsystem_from_fixed_implemented_in
+        return None
+
+    def get_sub_system(self) -> role.SubSystem:
+        return self._subsystem_from_fixed_implemented_in if self._subsystem_from_fixed_implemented_in else self._current_owner_role
 
     def get_state_at_date(self, reference_date: datetime) -> State:
 
