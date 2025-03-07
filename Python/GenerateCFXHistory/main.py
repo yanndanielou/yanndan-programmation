@@ -1,3 +1,4 @@
+import pandas as pd
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
@@ -6,7 +7,7 @@ from logger import logger_config
 import cfx
 
 
-def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary) -> None:
+def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary, output_excel_file: str) -> None:
     months = cfx_library.get_months_since_earliest_submit_date()
     state_counts_per_month = []
 
@@ -15,7 +16,8 @@ def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary) -> None:
 
         for entry in cfx_library._champ_fx:
             state = entry.get_state_at_date(month)
-            state_counts[state] += 1
+            if state != cfx.State.NotCreatedYet:
+                state_counts[state] += 1
 
         state_counts_per_month.append(state_counts)
 
@@ -34,8 +36,16 @@ def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary) -> None:
     plt.xticks(rotation=45)
     plt.tight_layout()
 
+    # Convert data to DataFrame for Excel output
+    data_for_excel = pd.DataFrame(state_counts, index=months)
+    data_for_excel.index.name = "Month"
 
-def plot_cfx_states_over_time_cumulated_eras(cfx_library: cfx.ChampFXLibrary) -> None:
+    # Save DataFrame to Excel
+    with pd.ExcelWriter(output_excel_file) as writer:
+        data_for_excel.to_excel(writer, sheet_name="CFX State Counts")
+
+
+def plot_cfx_states_over_time_cumulated_eras(cfx_library: cfx.ChampFXLibrary, output_excel_file: str) -> None:
     # Retrieve months to process
     months = cfx_library.get_months_since_earliest_submit_date()
     state_counts_per_month = []
@@ -45,15 +55,24 @@ def plot_cfx_states_over_time_cumulated_eras(cfx_library: cfx.ChampFXLibrary) ->
         state_counts = defaultdict(int)
         for entry in cfx_library._champ_fx:
             state = entry.get_state_at_date(month)
-            state_counts[state] += 1
+            if state != cfx.State.NotCreatedYet:
+                state_counts[state] += 1
         state_counts_per_month.append(state_counts)
 
-    # Prepare cumulative counts for stacked area plot
+    # Prepare cumulative counts for stacked area plot and Excel output
     states = [state for state in cfx.State]
     cumulative_counts = {state: [] for state in states}
     for state_counts in state_counts_per_month:
         for state in states:
             cumulative_counts[state].append(state_counts[state])
+
+    # Convert data to DataFrame for Excel output
+    data_for_excel = pd.DataFrame(cumulative_counts, index=months)
+    data_for_excel.index.name = "Month"
+
+    # Save DataFrame to Excel
+    with pd.ExcelWriter(output_excel_file) as writer:
+        data_for_excel.to_excel(writer, sheet_name="CFX State Counts")
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -71,9 +90,6 @@ def plot_cfx_states_over_time_cumulated_eras(cfx_library: cfx.ChampFXLibrary) ->
     plt.tight_layout()
 
 
-# Initialize CFX library from file
-
-
 def main() -> None:
     """Main function"""
 
@@ -82,9 +98,9 @@ def main() -> None:
 
         champfx_library = cfx.ChampFXLibrary("extract_cfx.xlsx")
         # Plot in the first window
-        plot_cfx_states_over_time(cfx_library=champfx_library)
+        plot_cfx_states_over_time(cfx_library=champfx_library, output_excel_file="all_standard.xlsx")
         # Plot in the second window
-        plot_cfx_states_over_time_cumulated_eras(cfx_library=champfx_library)
+        plot_cfx_states_over_time_cumulated_eras(cfx_library=champfx_library, output_excel_file="all_cumulated_eras.xlsx")
 
         # Use plt.show() here to block execution and keep all windows open
         plt.show()
