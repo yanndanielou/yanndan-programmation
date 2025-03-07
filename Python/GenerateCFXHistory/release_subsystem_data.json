@@ -1,0 +1,30 @@
+{
+    "SW": [
+        "Component PAE",
+        "S003_Component TCR3",
+        "Component PAS"
+    ],
+    "SUBSYS": [
+        "CDB"
+    ],
+    "ATS": [
+        "S001_System ATSP",
+        "Foxtrot",
+        "S003_Component Master",
+        "S003_Component Package AD"
+    ],
+    "ATS_Eviden": [
+        "S004_Module Package AD",
+        "COEUR CK"
+    ],
+    "COC_DE": [
+        "S002_Subsystem Invariants",
+        "Invariants"
+    ],
+    "TCM_TC": [
+        "SIMECH"
+    ],
+    "Radio": [
+        "RADIO"
+    ]
+}
