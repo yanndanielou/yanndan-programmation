@@ -5,21 +5,10 @@ from typing import Optional, List
 from logger import logger_config
 
 import utils
+import role
 
 from enum import Enum, auto
 
-
-class SubSystem(Enum):
-    No_Bug   = auto()
-    Submitted = auto()
-    Analysed = auto()
-    Assigned = auto()
-    Resolved = auto()
-    Rejected = auto()
-    Postponed = auto()
-    Verified = auto()
-    Validated = auto()
-    Closed = auto()
 
 class State(Enum):
     NotCreatedYet = auto()
@@ -74,8 +63,9 @@ class ChampFXEntry:
         self._verification_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.VerificationDate"])
         self._validation_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.ValidationDate"])
         self._closing_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.ClosingDate"])
-        self.fixed_implemented_in = row["FixedImplementedIn"]
-        self.current_owner = row["CurrentOwner.FullName"s]
+        self.fixed_implemented_in: str = row["FixedImplementedIn"]
+        self._current_owner: str = row["CurrentOwner.FullName"]
+        self._current_owner_role: role.SubSystem = role.get_subsystem_from_cfx_current_owner(self._current_owner)
         # self._submit_year: datetime = self._submit_date.year
         # self._submit_month: datetime = self._submit_date.month
 
