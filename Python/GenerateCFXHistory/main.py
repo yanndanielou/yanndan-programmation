@@ -98,8 +98,6 @@ def main() -> None:
 
         champfx_library = cfx.ChampFXLibrary("extract_cfx.xlsx")
 
-        champfx_library.get_cfx_with_errors_in_closed_status()
-
         # Plot in the first window
         plot_cfx_states_over_time(cfx_library=champfx_library, output_excel_file="all_standard.xlsx")
         # Plot in the second window
