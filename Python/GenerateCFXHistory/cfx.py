@@ -10,7 +10,7 @@ from logger import logger_config
 import utils
 import role
 
-from enum import Enum, auto
+from enum import Enum, auto, IntEnum
 
 
 class Action(Enum):
@@ -27,7 +27,7 @@ class Action(Enum):
     Close = auto()
 
 
-class State(Enum):
+class State(IntEnum):
     NotCreatedYet = auto()
     no_value = auto()
     Submitted = auto()
