@@ -4,4 +4,5 @@
 *.xls*
 /.mypy_cache/
 test*.json
+role_data.py
 *.html
