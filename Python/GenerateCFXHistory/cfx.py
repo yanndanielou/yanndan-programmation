@@ -24,6 +24,11 @@ class State(Enum):
     Closed = auto()
 
 
+class ChangeStateAction:
+    def __init__(self):
+        pass
+
+
 class ChampFXLibrary:
 
     def __init__(self, champfx_extract_excel_file_full_path: str):
