@@ -9,6 +9,18 @@ import utils
 from enum import Enum, auto
 
 
+class SubSystem(Enum):
+    No_Bug   = auto()
+    Submitted = auto()
+    Analysed = auto()
+    Assigned = auto()
+    Resolved = auto()
+    Rejected = auto()
+    Postponed = auto()
+    Verified = auto()
+    Validated = auto()
+    Closed = auto()
+
 class State(Enum):
     NotCreatedYet = auto()
     Submitted = auto()
@@ -62,8 +74,10 @@ class ChampFXEntry:
         self._verification_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.VerificationDate"])
         self._validation_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.ValidationDate"])
         self._closing_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.ClosingDate"])
-        self._submit_year: datetime = self._submit_date.year
-        self._submit_month: datetime = self._submit_date.month
+        self.fixed_implemented_in = row["FixedImplementedIn"]
+        self.current_owner = row["CurrentOwner.FullName"s]
+        # self._submit_year: datetime = self._submit_date.year
+        # self._submit_month: datetime = self._submit_date.month
 
     def get_state_at_date(self, reference_date: datetime) -> State:
 
