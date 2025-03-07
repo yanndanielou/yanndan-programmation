@@ -18,6 +18,8 @@ class TestStatus:
         cfx_closed_by_status_but_not_by_date = list(set(cfx_closed_status) - set(cfx_closed_status_according_to_date_today))
         cfx_closed_by_date_but_not_by_status = list(set(cfx_closed_status_according_to_date_today) - set(cfx_closed_status))
 
+        print(cfx_closed_by_date_but_not_by_status)
+
         print(len(cfx_closed_status_according_to_date_today))
         print(len(cfx_closed_status))
 
