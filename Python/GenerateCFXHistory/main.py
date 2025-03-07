@@ -37,9 +37,5 @@ def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary) -> None:
     plt.show()
 
 
-# Charger les données depuis le fichier Excel
-df = pd.read_excel("extract_cfx.xlsx")
-
-champfx_entries = [cfx.ChampFXEntry(row) for _, row in df.iterrows()]
-champfx_library = cfx.ChampFXLibrary(_champ_fx=champfx_entries)
+champfx_library = cfx.ChampFXLibrary("extract_cfx.xlsx")
 plot_cfx_states_over_time(cfx_library=champfx_library)
