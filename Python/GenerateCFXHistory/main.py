@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from collections import defaultdict
+import mpld3
 
 from logger import logger_config
 
