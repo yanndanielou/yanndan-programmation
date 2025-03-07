@@ -13,10 +13,10 @@ state_colors = {
     cfx.State.Submitted: "red",
     cfx.State.Analysed: "orange",
     cfx.State.Assigned: "blue",
-    cfx.State.Resolved: "brown",
+    cfx.State.Resolved: "yellow",
     cfx.State.Postponed: "grey",
     cfx.State.Rejected: "black",
-    cfx.State.Verified: "yellow",
+    cfx.State.Verified: "lightgreen",
     cfx.State.Validated: "darkgreen",
     cfx.State.Closed: "green",
     # Add additional states and their respective colors
