@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime, timedelta
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from logger import logger_config
 
@@ -34,17 +34,42 @@ class ChampFXLibrary:
                 df = pd.read_excel(champfx_extract_excel_file_full_path)
 
             with logger_config.stopwatch_with_label(f"Create ChampFXEntry objects"):
-                self._champ_fx: list["ChampFXEntry"] = [ChampFXEntry(row) for _, row in df.iterrows()]
-                logger_config.print_and_log_info(f"{len(self._champ_fx)} ChampFXEntry objects created")
+                self._all_cfx: list["ChampFXEntry"] = [ChampFXEntry(row) for _, row in df.iterrows()]
+                logger_config.print_and_log_info(f"{len(self._all_cfx)} ChampFXEntry objects created")
 
             with logger_config.stopwatch_with_label("ChampFXLibrary process_current_owner_role"):
-                list(map(lambda champ_fx: champ_fx.process_current_owner_role(), self._champ_fx))
+                list(map(lambda champ_fx: champ_fx.process_current_owner_role(), self._all_cfx))
 
             with logger_config.stopwatch_with_label(f"ChampFXLibrary process_subsystem_from_fixed_implemented_in"):
-                list(map(lambda champ_fx: champ_fx.process_subsystem_from_fixed_implemented_in(), self._champ_fx))
+                list(map(lambda champ_fx: champ_fx.process_subsystem_from_fixed_implemented_in(), self._all_cfx))
+
+    @property
+    def all_cfx(self) -> List["ChampFXEntry"]:
+        return self._all_cfx
+
+    def get_cfx_with_errors_in_closed_status(self) -> list["ChampFXEntry"]:
+        cfx_with_errors_in_closed_status: list["ChampFXEntry"] = []
+
+        cfx_closed_status_according_to_date_today = self.get_cfx_by_state_at_date(reference_date=datetime.now().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None))[State.Closed]
+        cfx_closed_status = list(filter(lambda champfx: champfx._raw_state == State.Closed, self._all_cfx))
+
+        logger_config.print_and_log_info(len(cfx_closed_status_according_to_date_today))
+        logger_config.print_and_log_info(len(cfx_closed_status))
+
+        pass
+
+    def get_cfx_by_state_at_date(self, reference_date: datetime) -> Dict[State, list["ChampFXEntry"]]:
+        result: Dict[State, List[ChampFXEntry]] = {}
+        for cfx_entry in self._all_cfx:
+            state = cfx_entry.get_state_at_date(reference_date)
+            if state not in result:
+                result[state] = []
+            result[state].append(cfx_entry)
+
+        return result
 
     def get_earliest_submit_date(self) -> datetime:
-        earliest_date = min(entry._submit_date for entry in self._champ_fx)
+        earliest_date = min(entry._submit_date for entry in self._all_cfx)
         return earliest_date
 
     def get_months_since_earliest_submit_date(self) -> List[datetime]:
@@ -72,7 +97,7 @@ class ChampFXLibrary:
 class ChampFXEntry:
     def __init__(self, row):
         self.cfx_id = row["CFXID"]
-        self.state: State = State[(row["State"])]
+        self._raw_state: State = State[(row["State"])]
         self._submit_date: datetime = utils.convert_champfx_extract_date(row["SubmitDate"])
         self._analysis_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.AnalysisDate"])
         self._solution_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.SolutionDate"])
@@ -85,6 +110,10 @@ class ChampFXEntry:
         self._subsystem_from_fixed_implemented_in: role.SubSystem = None
         # self._submit_year: datetime = self._submit_date.year
         # self._submit_month: datetime = self._submit_date.month
+
+    @property
+    def raw_state(self) -> State:
+        return self._raw_state
 
     def process_current_owner_role(self) -> role.SubSystem:
         self._current_owner_role: role.SubSystem = role.get_subsystem_from_cfx_current_owner(self._current_owner)
