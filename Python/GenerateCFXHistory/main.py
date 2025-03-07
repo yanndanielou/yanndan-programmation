@@ -8,41 +8,40 @@ import cfx
 
 
 def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary, output_excel_file: str) -> None:
+    # Retrieve months to process
     months = cfx_library.get_months_since_earliest_submit_date()
-    state_counts_per_month = []
 
+    # Gather state counts for each month
+    state_counts_per_month = []
     for month in months:
         state_counts = defaultdict(int)
-
         for entry in cfx_library.get_all_cfx():
             state = entry.get_state_at_date(month)
             if state != cfx.State.NotCreatedYet:
                 state_counts[state] += 1
-
         state_counts_per_month.append(state_counts)
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    # Convert data to DataFrame for Excel output
+    data_for_excel = pd.DataFrame(state_counts_per_month, index=months)
+    data_for_excel.index.name = "Month"
 
+    # Save DataFrame to Excel
+    with pd.ExcelWriter(output_excel_file) as writer:
+        data_for_excel.to_excel(writer, sheet_name="CFX State Counts")
+
+    # Plot states per month
+    fig, ax = plt.subplots(figsize=(10, 6))
     states = [state for state in cfx.State]
-    # Prepare lists for plotting
     for state in states:
         counts = [state_counts[state] for state_counts in state_counts_per_month]
         ax.plot(months, counts, label=state.name)
 
     ax.set_xlabel("Month")
     ax.set_ylabel("Number of CFX Entries")
-    ax.set_title("CFX States Over Time")
+    ax.set_title("CFX States Per Month")
     ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
-
-    # Convert data to DataFrame for Excel output
-    data_for_excel = pd.DataFrame(state_counts, index=months)
-    data_for_excel.index.name = "Month"
-
-    # Save DataFrame to Excel
-    with pd.ExcelWriter(output_excel_file) as writer:
-        data_for_excel.to_excel(writer, sheet_name="CFX State Counts")
 
 
 def plot_cfx_states_over_time_cumulated_eras(cfx_library: cfx.ChampFXLibrary, output_excel_file: str) -> None:

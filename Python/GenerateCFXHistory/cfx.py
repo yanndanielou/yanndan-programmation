@@ -1,5 +1,7 @@
 import pandas as pd
 from datetime import datetime, timedelta
+from dateutil import relativedelta
+
 from dataclasses import dataclass
 from typing import Optional, List, Dict
 
@@ -149,23 +151,23 @@ class ChampFXLibrary:
         return earliest_date
 
     def get_months_since_earliest_submit_date(self) -> List[datetime]:
-        earliest_date = self.get_earliest_submit_date()
-        if earliest_date is None:
-            return []  # Return an empty list if no entries are present
+        earliest_cfx_date = self.get_earliest_submit_date()
 
-        # Ensure 'today' is naive datetime
-        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        earliest_date_considered = earliest_cfx_date.replace(day=1)
+
+        # Ensure 'beginning_of_next_month' is naive datetime
+        beginning_of_next_month = (datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
         months = []
 
         # Ensure 'current_date' is naive datetime
-        current_date = earliest_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
-        while current_date <= today:
-            months.append(current_date)
+        current_date_iter = earliest_date_considered.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        while current_date_iter <= beginning_of_next_month:
+            months.append(current_date_iter)
             # Move to the first day of the next month
-            if current_date.month == 12:
-                current_date = current_date.replace(year=current_date.year + 1, month=1)
+            if current_date_iter.month == 12:
+                current_date_iter = current_date_iter.replace(year=current_date_iter.year + 1, month=1)
             else:
-                current_date = current_date.replace(month=current_date.month + 1)
+                current_date_iter = current_date_iter.replace(month=current_date_iter.month + 1)
 
         return months
 
