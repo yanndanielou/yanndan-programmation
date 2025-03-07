@@ -1,8 +1,7 @@
-import pandas as pd
 import matplotlib.pyplot as plt
-import datetime
 from collections import defaultdict
 
+from logger import logger_config
 
 import cfx
 
@@ -34,8 +33,65 @@ def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary) -> None:
     ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.show()
 
 
-champfx_library = cfx.ChampFXLibrary("extract_cfx.xlsx")
-plot_cfx_states_over_time(cfx_library=champfx_library)
+def plot_cfx_states_over_time_cumulated_eras(cfx_library: cfx.ChampFXLibrary) -> None:
+    # Retrieve months to process
+    months = cfx_library.get_months_since_earliest_submit_date()
+    state_counts_per_month = []
+
+    # Gather state counts for each month
+    for month in months:
+        state_counts = defaultdict(int)
+        for entry in cfx_library._champ_fx:
+            state = entry.get_state_at_date(month)
+            state_counts[state] += 1
+        state_counts_per_month.append(state_counts)
+
+    # Prepare cumulative counts for stacked area plot
+    states = [state for state in cfx.State]
+    cumulative_counts = {state: [] for state in states}
+    for state_counts in state_counts_per_month:
+        for state in states:
+            cumulative_counts[state].append(state_counts[state])
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Plot cumulative areas
+    bottom = [0] * len(months)
+    for state in states:
+        ax.fill_between(months, bottom, [bottom[i] + cumulative_counts[state][i] for i in range(len(months))], label=state.name)
+        bottom = [bottom[i] + cumulative_counts[state][i] for i in range(len(months))]
+
+    ax.set_xlabel("Month")
+    ax.set_ylabel("Number of CFX Entries")
+    ax.set_title("CFX States Over Time")
+    ax.legend()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+
+
+# Initialize CFX library from file
+
+
+def main() -> None:
+    """Main function"""
+
+    with logger_config.stopwatch_with_label("Application duration"):
+        logger_config.print_and_log_info("Application start")
+
+        champfx_library = cfx.ChampFXLibrary("extract_cfx.xlsx")
+        # Plot in the first window
+        plot_cfx_states_over_time(cfx_library=champfx_library)
+        # Plot in the second window
+        plot_cfx_states_over_time_cumulated_eras(cfx_library=champfx_library)
+
+        # Use plt.show() here to block execution and keep all windows open
+        plt.show()
+
+        logger_config.print_and_log_info("Application end")
+
+
+if __name__ == "__main__":
+    # sys.argv[1:]
+    main()
