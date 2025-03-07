@@ -8,7 +8,7 @@ from datetime import datetime
 import pytz
 
 
-def convert_champfx_extract_date(raw_champfx_date: str | float):
+def convert_champfx_extract_date(raw_champfx_date: str | float):  # -> Optional(datetime):
 
     if type(raw_champfx_date) is not str:
 
@@ -53,7 +53,7 @@ def convert_champfx_extract_date(raw_champfx_date: str | float):
         timezone = pytz.FixedOffset(utc_offset * 60)
         dt_aware = dt_naif.replace(tzinfo=timezone)
 
-        return dt_aware
+        return dt_naif
     except:
         logger_config.print_and_log_error(f"Could not parse date {raw_champfx_date}.")
         raise ValueError()

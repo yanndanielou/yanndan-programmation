@@ -1,42 +1,45 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
+from collections import defaultdict
+
 
 import cfx
+
+
+def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary) -> None:
+    months = cfx_library.get_months_since_earliest_submit_date()
+    state_counts_per_month = []
+
+    for month in months:
+        state_counts = defaultdict(int)
+
+        for entry in cfx_library._champ_fx:
+            state = entry.get_state_at_date(month)
+            state_counts[state] += 1
+
+        state_counts_per_month.append(state_counts)
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    states = [state for state in cfx.State]
+    # Prepare lists for plotting
+    for state in states:
+        counts = [state_counts[state] for state_counts in state_counts_per_month]
+        ax.plot(months, counts, label=state.name)
+
+    ax.set_xlabel("Month")
+    ax.set_ylabel("Number of CFX Entries")
+    ax.set_title("CFX States Over Time")
+    ax.legend()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
 
 
 # Charger les données depuis le fichier Excel
 df = pd.read_excel("extract_cfx.xlsx")
 
-entries = [cfx.ChampFXEntry(row) for _, row in df.iterrows()]
-
-
-# Créer le tableau croisé dynamique
-state_mapping = {
-    "Submitted": "Submitted",
-    "Analysed": "Analysed",
-    "Assigned": "Resolved",
-    "Resolved": "Resolved",
-    "Rejected": "Resolved",
-    "Postponed": "Resolved",
-    "Verified": "Verified",
-    "Validated": "Validated",
-    "Closed": "Closed",
-}
-pivot_table = pd.DataFrame([entry.__dict__ for entry in entries])
-pivot_table["State"] = pivot_table["state"].map(state_mapping)
-pivot_table = pivot_table.pivot_table(index=["State", "year", "month"], aggfunc="size", fill_value=0)
-
-# Tracer le graphique
-fig, ax = plt.subplots(figsize=(12, 6))
-
-for state in ["Submitted", "Analysed", "Resolved", "Verified", "Validated", "Closed"]:
-    data = pivot_table.loc[state].unstack(fill_value=0)
-    data.plot(kind="area", ax=ax, label=state)
-
-ax.set_xlabel("Mois")
-ax.set_ylabel("Nombre de CFX")
-ax.set_title("Évolution du cycle de vie des CFX")
-ax.legend()
-plt.xticks(rotation=45)
-plt.show()
+champfx_entries = [cfx.ChampFXEntry(row) for _, row in df.iterrows()]
+champfx_library = cfx.ChampFXLibrary(_champ_fx=champfx_entries)
+plot_cfx_states_over_time(cfx_library=champfx_library)
