@@ -47,17 +47,6 @@ class ChampFXLibrary:
     def all_cfx(self) -> List["ChampFXEntry"]:
         return self._all_cfx
 
-    def get_cfx_with_errors_in_closed_status(self) -> list["ChampFXEntry"]:
-        cfx_with_errors_in_closed_status: list["ChampFXEntry"] = []
-
-        cfx_closed_status_according_to_date_today = self.get_cfx_by_state_at_date(reference_date=datetime.now().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None))[State.Closed]
-        cfx_closed_status = list(filter(lambda champfx: champfx._raw_state == State.Closed, self._all_cfx))
-
-        logger_config.print_and_log_info(len(cfx_closed_status_according_to_date_today))
-        logger_config.print_and_log_info(len(cfx_closed_status))
-
-        pass
-
     def get_cfx_by_state_at_date(self, reference_date: datetime) -> Dict[State, list["ChampFXEntry"]]:
         result: Dict[State, List[ChampFXEntry]] = {}
         for cfx_entry in self._all_cfx:
