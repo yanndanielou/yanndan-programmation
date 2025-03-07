@@ -1,0 +1,8 @@
+*.7z
+*.zip
+*.txt
+*.xls*
+/.mypy_cache/
+Dependencies/
+all_possibilities.json
+test*.json
