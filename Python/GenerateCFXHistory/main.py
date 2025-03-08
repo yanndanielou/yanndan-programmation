@@ -8,6 +8,7 @@ from mpld3 import plugins
 from logger import logger_config
 
 import cfx
+import role
 
 state_colors = {
     cfx.State.Submitted: "red",
@@ -24,7 +25,7 @@ state_colors = {
 
 
 def produce_results_and_displays(
-    cfx_library: cfx.ChampFXLibrary, output_excel_file: str, display_without_cumulative_eras: bool, display_with_cumulative_eras: bool, output_html_file_prefix: str
+    cfx_library: cfx.ChampFXLibrary, output_excel_file: str, display_without_cumulative_eras: bool, display_with_cumulative_eras: bool, output_html_file_prefix: str, filter_only_subsystem=None
 ) -> None:
     # Retrieve months to process
     months = cfx_library.get_months_since_earliest_submit_date()
@@ -35,8 +36,11 @@ def produce_results_and_displays(
         state_counts = defaultdict(int)
         for entry in cfx_library.get_all_cfx():
             state = entry.get_state_at_date(month)
-            if state != cfx.State.NotCreatedYet:
-                state_counts[state] += 1
+
+            if filter_only_subsystem is None or filter_only_subsystem == entry.get_sub_system():
+
+                if state != cfx.State.NotCreatedYet:
+                    state_counts[state] += 1
         state_counts_per_month.append(state_counts)
 
     # Determine the states that are present in the data
@@ -53,26 +57,32 @@ def produce_results_and_displays(
         for state in present_states_ordered_list:
             cumulative_counts[state].append(state_counts[state])
 
-    produce_excel_output_file(output_excel_file=output_excel_file, state_counts_per_month=state_counts_per_month, months=months)
+    if output_excel_file:
+        with logger_config.stopwatch_with_label(f"produce_excel_output_file, filter {filter_only_subsystem}"):
+            produce_excel_output_file(output_excel_file=output_excel_file, state_counts_per_month=state_counts_per_month, months=months)
 
     if display_with_cumulative_eras:
-        produce_displays(
-            use_cumulative=True,
-            months=months,
-            present_states_ordered_list=present_states_ordered_list,
-            cumulative_counts=cumulative_counts,
-            state_counts_per_month=state_counts_per_month,
-            output_html_file_prefix=output_html_file_prefix + "_cumulative_eras_" + ".html",
-        )
+        with logger_config.stopwatch_with_label(f"produce_displays cumulative, filter {filter_only_subsystem}"):
+            produce_displays(
+                use_cumulative=True,
+                months=months,
+                present_states_ordered_list=present_states_ordered_list,
+                cumulative_counts=cumulative_counts,
+                state_counts_per_month=state_counts_per_month,
+                output_html_file_prefix=output_html_file_prefix + "_cumulative_eras_" + ".html",
+                filter_only_subsystem=filter_only_subsystem,
+            )
     if display_without_cumulative_eras:
-        produce_displays(
-            use_cumulative=False,
-            months=months,
-            present_states_ordered_list=present_states_ordered_list,
-            cumulative_counts=cumulative_counts,
-            state_counts_per_month=state_counts_per_month,
-            output_html_file_prefix=output_html_file_prefix + "_values_" + ".html",
-        )
+        with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {filter_only_subsystem}"):
+            produce_displays(
+                use_cumulative=False,
+                months=months,
+                present_states_ordered_list=present_states_ordered_list,
+                cumulative_counts=cumulative_counts,
+                state_counts_per_month=state_counts_per_month,
+                output_html_file_prefix=output_html_file_prefix + "_values_" + ".html",
+                filter_only_subsystem=filter_only_subsystem,
+            )
 
 
 def produce_excel_output_file(output_excel_file: str, state_counts_per_month, months) -> None:
@@ -85,7 +95,7 @@ def produce_excel_output_file(output_excel_file: str, state_counts_per_month, mo
         data_for_excel.to_excel(writer, sheet_name="CFX State Counts")
 
 
-def produce_displays(use_cumulative, months, present_states_ordered_list, cumulative_counts, state_counts_per_month, output_html_file_prefix) -> None:
+def produce_displays(use_cumulative, months, present_states_ordered_list, cumulative_counts, state_counts_per_month, output_html_file_prefix, filter_only_subsystem) -> None:
     fig, ax = plt.subplots(figsize=(10, 6))
 
     tooltips = []
@@ -112,7 +122,7 @@ def produce_displays(use_cumulative, months, present_states_ordered_list, cumula
 
     ax.set_xlabel("Month")
     ax.set_ylabel("Number of CFX Entries")
-    ax.set_title("CFX States Over Time")
+    ax.set_title("All CFX States Over Time" if filter_only_subsystem is None else f"Subsytem {filter_only_subsystem} CFX States Over Time")
     ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
@@ -124,8 +134,9 @@ def produce_displays(use_cumulative, months, present_states_ordered_list, cumula
     html_content = mpld3.fig_to_html(fig)
     output_html_file = output_html_file_prefix + ".html"
 
-    with open(output_html_file, "w") as html_file:
-        html_file.write(html_content)
+    with logger_config.stopwatch_with_label(f"html {output_html_file} creation"):
+        with open(output_html_file, "w") as html_file:
+            html_file.write(html_content)
 
 
 def plot_cfx_states_over_time(cfx_library: cfx.ChampFXLibrary, output_excel_file: str, use_cumulative: bool, output_html_file: str) -> None:
@@ -214,10 +225,25 @@ def main() -> None:
         champfx_library = cfx.ChampFXLibrary("extract_cfx_details.xlsx", "extract_cfx_change_state.xlsx")
 
         produce_results_and_displays(
-            cfx_library=champfx_library, output_excel_file="all_standard.xlsx", display_without_cumulative_eras=True, display_with_cumulative_eras=True, output_html_file_prefix="all_standard"
+            cfx_library=champfx_library,
+            output_excel_file=f"all_cfx.xlsx",
+            display_without_cumulative_eras=True,
+            display_with_cumulative_eras=True,
+            output_html_file_prefix=f"all_cfx_",
+            filter_only_subsystem=None,
         )
 
-        # plot_cfx_states_over_time(cfx_library=champfx_library, output_excel_file="all_cumulated_eras.xlsx", use_cumulative=True, output_html_file="all_cumulated_eras.html")
+        for subsystem in role.SubSystem:
+            with logger_config.stopwatch_with_label(f"produce_results_and_displays for {subsystem.name}"):
+                produce_results_and_displays(
+                    cfx_library=champfx_library,
+                    # output_excel_file=f"subsystem_{subsystem.name}.xlsx",
+                    output_excel_file=None,
+                    display_without_cumulative_eras=False,
+                    display_with_cumulative_eras=True,
+                    output_html_file_prefix=f"subsystem_{subsystem.name}",
+                    filter_only_subsystem=subsystem,
+                )
 
         # Use plt.show() here to block execution and keep all windows open
         plt.show()
