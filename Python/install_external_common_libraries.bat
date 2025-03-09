@@ -1,5 +1,6 @@
 @CALL SET_PYTHON_HOME.bat
 
+@call :INSTALL_PYTHON_LIB mplcursors
 @call :INSTALL_PYTHON_LIB mpld3
 rem call %PYTHON_HOME%\python.exe  -m pip install --config-settings="--global-option=build_ext" --config-settings="--global-option=-IC:\Program Files\Graphviz\include" --config-settings="--global-option=-LC:\Program Files\Graphviz\lib" pygraphviz
 @call :INSTALL_PYTHON_LIB Graphviz
