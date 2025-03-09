@@ -19,14 +19,27 @@ driver_service = Service(chrome_driver_path)
 driver = webdriver.Chrome(service=driver_service, options=chrome_options)
 
 try:
+
+    page_html_content_depending = dict()
+
     driver.get(url)
-    time.sleep(5)  # Wait for the page to load completely
+
+    max_delay = 50
+
+    for i in range(1, max_delay):
+        time.sleep(1)  # Wait for the page to load completely
+        print(i)
+        page_html = driver.page_source
+        page_html_content_depending[i] = page_html
+
+        with open(f"text_dump_file_{i}.txt", "w", encoding="utf-8") as text_dump_file:
+            text_dump_file.write(page_html)
+
+    # print(page_html)
 
     # Locate the "History" tab using its unique attributes and click it
     history_tab = driver.find_element(By.XPATH, "//span[@data-dojo-attach-point='containerNode,focusNode' and text()='History']")
     history_tab.click()
-
-    page_html = driver.page_source
 
     extended_history_div = driver.find_element(By.XPATH, "//div[@id='cq_widget_CqReadonlyTextArea_4']")
     extended_history_text = extended_history_div.text
