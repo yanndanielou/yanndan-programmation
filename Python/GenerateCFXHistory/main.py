@@ -12,7 +12,6 @@ from logger import logger_config
 import cfx
 import role
 
-
 state_colors = {
     cfx.State.Submitted: "red",
     cfx.State.Analysed: "orange",
@@ -74,6 +73,7 @@ def produce_results_and_displays(
                 state_counts_per_month=state_counts_per_month,
                 output_html_file_prefix=output_html_file_prefix + "_cumulative_eras_",
                 filter_only_subsystem=filter_only_subsystem,
+                window_title=f"Filter {filter_only_subsystem}, CFX States Over Time (Cumulative)",
             )
     if display_without_cumulative_eras:
         with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {filter_only_subsystem}"):
@@ -85,6 +85,7 @@ def produce_results_and_displays(
                 state_counts_per_month=state_counts_per_month,
                 output_html_file_prefix=output_html_file_prefix + "_values_",
                 filter_only_subsystem=filter_only_subsystem,
+                window_title=f"Filter {filter_only_subsystem}, CFX States Over Time (Values)",
             )
 
 
@@ -98,11 +99,11 @@ def produce_excel_output_file(output_excel_file: str, state_counts_per_month, mo
         data_for_excel.to_excel(writer, sheet_name="CFX State Counts")
 
 
-def produce_displays(use_cumulative, months, present_states_ordered_list, cumulative_counts, state_counts_per_month, output_html_file_prefix, filter_only_subsystem) -> None:
+def produce_displays(use_cumulative, months, present_states_ordered_list, cumulative_counts, state_counts_per_month, output_html_file_prefix, filter_only_subsystem, window_title) -> None:
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    # fig.
-    fig.set_label("Custom")
+    # Set the window title
+    fig.canvas.manager.set_window_title(window_title)
 
     tooltips = []
 
