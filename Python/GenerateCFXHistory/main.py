@@ -4,6 +4,8 @@ from collections import defaultdict
 import mpld3
 from mpld3 import plugins
 
+import mplcursors
+
 import os
 
 
@@ -116,16 +118,16 @@ def produce_displays(use_cumulative, months, present_states_ordered_list, cumula
             upper = [bottom[i] + cumulative_counts[state][i] for i in range(len(months))]
             line = ax.fill_between(months, bottom, upper, label=state.name, color=color)
             bottom = upper
-            tooltip = plugins.LineLabelTooltip(line, label=state.name)
-            tooltips.append(tooltip)
+            # tooltip = plugins.LineLabelTooltip(line, label=state.name)
+            # tooltips.append(tooltip)
 
     else:
         for state in present_states_ordered_list:
             color = state_colors.get(state, None)
             counts = [state_counts[state] for state_counts in state_counts_per_month]
             (line,) = ax.plot(months, counts, label=state.name, color=color)
-            tooltip = plugins.LineLabelTooltip(line, label=state.name)
-            tooltips.append(tooltip)
+            # tooltip = plugins.LineLabelTooltip(line, label=state.name)
+            # tooltips.append(tooltip)
 
     ax.set_xlabel("Month")
     ax.set_ylabel("Number of CFX Entries")
@@ -135,7 +137,13 @@ def produce_displays(use_cumulative, months, present_states_ordered_list, cumula
     plt.tight_layout()
 
     # Add tooltips
-    plugins.connect(fig, *tooltips)
+    # plugins.connect(fig, *tooltips)
+    # Add mplcursors for tooltip functionality
+    # mplcursors.cursor(ax, hover=True).connect("add", lambda sel: sel.annotation.set_text(f"State: {present_states_ordered_list[sel.index].name}"))
+    # Add mplcursors for tooltip functionality
+    # mplcursors.cursor(ax, hover=True).connect("add", lambda sel: sel.annotation.set_text(f"State: {present_states_ordered_list[int(sel.index)].name}"))
+
+    mplcursors.cursor(ax, hover=True)  # .connect("add", lambda sel: print(f"State: {sel.index}"))
 
     # Save the plot to an HTML file
     html_content = mpld3.fig_to_html(fig)
@@ -166,6 +174,9 @@ def main() -> None:
             output_html_file_prefix=f"{output_directory_name}/all_cfx_",
             filter_only_subsystem=None,
         )
+
+        plt.show()
+        exit()
 
         for subsystem in role.SubSystem:
             with logger_config.stopwatch_with_label(f"produce_results_and_displays for {subsystem.name}"):
