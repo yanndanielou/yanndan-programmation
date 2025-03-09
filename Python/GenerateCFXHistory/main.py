@@ -5,6 +5,7 @@ import mpld3
 from mpld3 import plugins
 
 import mplcursors
+from mplcursors._mplcursors import HoverMode
 
 import os
 
@@ -117,6 +118,7 @@ def produce_displays(use_cumulative, months, present_states_ordered_list, cumula
             color = state_colors.get(state, None)
             upper = [bottom[i] + cumulative_counts[state][i] for i in range(len(months))]
             line = ax.fill_between(months, bottom, upper, label=state.name, color=color)
+            mplcursors.cursor(line, hover=True)
             bottom = upper
             # tooltip = plugins.LineLabelTooltip(line, label=state.name)
             # tooltips.append(tooltip)
@@ -126,6 +128,7 @@ def produce_displays(use_cumulative, months, present_states_ordered_list, cumula
             color = state_colors.get(state, None)
             counts = [state_counts[state] for state_counts in state_counts_per_month]
             (line,) = ax.plot(months, counts, label=state.name, color=color)
+            mplcursors.cursor(line, hover=HoverMode.Transient)
             # tooltip = plugins.LineLabelTooltip(line, label=state.name)
             # tooltips.append(tooltip)
 
@@ -143,7 +146,10 @@ def produce_displays(use_cumulative, months, present_states_ordered_list, cumula
     # Add mplcursors for tooltip functionality
     # mplcursors.cursor(ax, hover=True).connect("add", lambda sel: sel.annotation.set_text(f"State: {present_states_ordered_list[int(sel.index)].name}"))
 
-    mplcursors.cursor(ax, hover=True)  # .connect("add", lambda sel: print(f"State: {sel.index}"))
+    # cursor = mplcursors.cursor(line, hover=True)
+    # cursor.connect("add", lambda sel: sel.annotation.set_text(f"State: {present_states_ordered_list[int(sel.index)].name}"))
+
+    # mplcursors.cursor(ax, hover=True)  # .connect("add", lambda sel: print(f"State: {sel.index}"))
 
     # Save the plot to an HTML file
     html_content = mpld3.fig_to_html(fig)
