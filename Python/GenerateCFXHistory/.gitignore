@@ -6,3 +6,4 @@
 test*.json
 role_data.py
 *.html
+output_save_cfx_webpage/
