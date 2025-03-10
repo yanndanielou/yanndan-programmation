@@ -164,6 +164,7 @@ def main() -> None:
     """Main function"""
 
     with logger_config.stopwatch_with_label("Application duration"):
+        logger_config.configure_logger_with_random_log_file_suffix("GenerateCFXHistory")
         logger_config.print_and_log_info("Application start")
 
         output_directory_name = "output"
