@@ -154,7 +154,7 @@ def main() -> None:
                 with logger_config.stopwatch_with_label(f"parse_extended_history_text method"):
 
                     try:
-                        parsed_extended_history = cfx_extended_history.parse_extended_history_text(extended_history_text)
+                        parsed_extended_history = cfx_extended_history.parse_history(extended_history_text)
                     except:
                         parsed_extended_history = "Could not parse extended_history_text"
 
@@ -163,7 +163,7 @@ def main() -> None:
 
                 # print(history_entries)
                 with logger_config.stopwatch_with_label(f"Create {output_directory_name}/{cfx_id}_parsed_extended_history.txt"):
-                    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(parsed_extended_history, f"{output_directory_name}/{cfx_id}_parsed_extended_history.txt")
+                    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(parsed_extended_history, f"{output_directory_name}/{cfx_id}_parsed_extended_history.json")
 
             # Create a history object
             # history = {"entries": history_entries}
