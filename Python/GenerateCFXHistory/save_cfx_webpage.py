@@ -31,6 +31,7 @@ def create_webdriver_chrome() -> webdriver.Chrome:
 
     # Set up the Chrome options
     chrome_options = Options()
+    chrome_options.headless = True
 
     # Create a new instance of the Chrome driver
     driver_service = Service(chrome_driver_path)
@@ -145,11 +146,14 @@ def main() -> None:
         with logger_config.stopwatch_with_label(f"Open cfx details excel file {champfx_details_excel_file_full_path}"):
             cfx_details_data_frame = pandas.read_excel(champfx_details_excel_file_full_path)
 
-            all_cfx_id = set([row["CFXID"] for index, row in cfx_details_data_frame.iterrows()])
+            raw_cfx_ids = [row["CFXID"] for index, row in cfx_details_data_frame.iterrows()]
+            raw_cfx_ids_as_set = set(raw_cfx_ids)
+            raw_cfx_ids_as_unique_list = list(raw_cfx_ids_as_set)
+            all_cfx_id_unique_ordered_list = sorted(list(set([row["CFXID"] for index, row in cfx_details_data_frame.iterrows()])))
 
-        logger_config.print_and_log_info(f"{len(all_cfx_id)} cfx to parse")
+        logger_config.print_and_log_info(f"{len(all_cfx_id_unique_ordered_list)} cfx to parse")
 
-        for cfx_id in all_cfx_id:
+        for cfx_id in all_cfx_id_unique_ordered_list:
 
             with logger_config.stopwatch_with_label(f"open_cfx_url {cfx_id}"):
                 open_cfx_url(cfx_id=cfx_id, driver=driver)
