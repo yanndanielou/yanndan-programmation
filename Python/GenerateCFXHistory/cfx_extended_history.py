@@ -1,55 +1,63 @@
-from datetime import datetime, timezone
-
-from common import json_encoders
-
-
-import pandas
-
-from logger import logger_config
-
-import time
+from typing import List
 import re
 
-import os
+
+class CFXHistoryField:
+    def __init__(self, field_id: str, secondary_label: str, old_state: str, new_state: str):
+        self.field_id = field_id.strip()
+        self.secondary_label = secondary_label.strip()
+        self.old_state = old_state.strip()
+        self.new_state = new_state.strip()
+
+    def __repr__(self) -> str:
+        return f"<CFXHistoryField field_id={self.field_id} secondary_label={self.secondary_label}>"
 
 
-def parse_section(section):
-    section_data = {}
-    lines = section.strip().split("\n")
-    for line in lines:
-        if ":" in line:
-            key, value = line.split(":", 1)
-            key = key.strip()
-            value = value.strip()
-            if key == "Time":
-                try:
-                    section_data[key] = datetime.strptime(value, "%Y-%m-%d %H:%M:%S %z")
-                except ValueError:
-                    section_data[key] = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
-            elif key == "Schema Rev":
-                section_data[key] = int(value)
-            else:
-                section_data[key] = value
+class CFXHistoryElement:
+    def __init__(self, time: str, schema_rev: str, user_name: str, user_login: str, user_groups: str, action: str, state: str):
+        self.time = time.strip()
+        self.schema_rev = schema_rev.strip()
+        self.user_name = user_name.strip()
+        self.user_login = user_login.strip()
+        self.user_groups = user_groups.strip()
+        self.action = action.strip()
+        self.state = state.strip()
+        self.fields: List[CFXHistoryField] = []
 
-    fields_start = lines.index("==Fields==") + 1
-    fields_end = lines.index("", fields_start)
-    fields = lines[fields_start:fields_end]
+    def add_field(self, field: CFXHistoryField) -> None:
+        self.fields.append(field)
 
-    field_data = {}
-    for field in fields:
-        field_name = field.split("(")[0].strip()
-        field_values = field.split("(")[1][:-1].split(":")
-        field_data[field_name] = {"Old": field_values[0].strip(), "New": field_values[1].strip()}
-
-    section_data["Fields"] = field_data
-    return section_data
+    def __repr__(self) -> str:
+        return f"<CFXHistoryElement time={self.time} action={self.action} state={self.state} fields={len(self.fields)}>"
 
 
-def parse_extended_history_text(text):
+def parse_history(text: str) -> List[CFXHistoryElement]:
+    history_elements: List[CFXHistoryElement] = []
+    history_blocks = text.split("====START====")[1:]
 
-    data = []
-    sections = text.split("====START====")
-    for section in sections[1:]:
-        data.append(parse_section(section=section))
+    for block in history_blocks:
+        block = block.strip()
+        if not block:
+            continue
 
-    return data
+        # Define regular expressions for extracting elements and fields
+        element_regex = r"Time\s*:\s*(.*?)\nSchema Rev\s*:\s*(.*?)\nUser Name\s*:\s*(.*?)\nUser Login\s*:\s*(.*?)\nUser Groups\s*:\s*(.*?)\nAction\s*:\s*(.*?)\nState\s*:\s*(.*?)\n==Fields=="
+        field_regex = r"(.+?)\s*\((\d+:\d+)\)\s*Old\s*:\s*(.*?)\s*New\s*:(.*?)(?=(\n.+?\s*\(\d+:\d+\)|\n====END====|\Z))"
+
+        # Parse history element details
+        element_match = re.search(element_regex, block, re.DOTALL)
+        if element_match:
+            time, schema_rev, user_name, user_login, user_groups, action, state = element_match.groups()
+            element = CFXHistoryElement(time, schema_rev, user_name, user_login, user_groups, action, state)
+
+            # Identify and parse fields within the block
+            fields_section = block.split("==Fields==")[1].strip()
+            field_matches = re.finditer(field_regex, fields_section, re.DOTALL)
+            for field_match in field_matches:
+                field_id, secondary_label, old_state, new_state = field_match.groups()[:4]
+                field = CFXHistoryField(field_id, secondary_label, old_state, new_state)
+                element.add_field(field)
+
+            history_elements.append(element)
+
+    return history_elements
