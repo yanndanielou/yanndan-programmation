@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 
 from common import json_encoders
 
+import connexion_param
+
 
 import pandas
 
@@ -43,7 +45,7 @@ def create_webdriver_chrome() -> webdriver.Chrome:
 
 
 def login_champfx(driver) -> None:
-    login_url = "https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX?format=HTML&loginId=AD001%5Cfr232487&password=Zzeerrttyy9."
+    login_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX?format=HTML&loginId={connexion_param.champfx_login}&password={connexion_param.champfx_password}"
 
     with logger_config.stopwatch_with_label(f"Driver get login url {login_url}"):
         driver.get(login_url)
@@ -66,7 +68,7 @@ def login_champfx(driver) -> None:
 
 def open_cfx_url(cfx_id, driver):
     # URL of the web page you want to save
-    cfx_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/RECORD/{cfx_id}?format=HTML&loginId=AD001%5Cfr232487&password=Zzeerrttyy9.&noframes=true"
+    cfx_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/RECORD/{cfx_id}?format=HTML&loginId={connexion_param.champfx_login}&password={connexion_param.champfx_password}&noframes=true"
 
     with logger_config.stopwatch_with_label(f"Driver get url {cfx_url}"):
         driver.get(cfx_url)
