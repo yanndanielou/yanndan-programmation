@@ -5,6 +5,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
+import logging
 
 import cfx_extended_history
 
@@ -118,63 +119,55 @@ def main() -> None:
         logger_config.print_and_log_info(f"{len(all_cfx_id_unique_ordered_list)} cfx to parse")
 
         for cfx_id in all_cfx_id_unique_ordered_list:
+            try:
 
-            with logger_config.stopwatch_with_label(f"open_cfx_url {cfx_id}"):
-                open_cfx_url(cfx_id=cfx_id, driver=driver)
+                with logger_config.stopwatch_with_label(f"open_cfx_url {cfx_id}"):
+                    open_cfx_url(cfx_id=cfx_id, driver=driver)
 
-            """  max_delay = 50
+                # print(page_html)
 
-            for i in range(1, max_delay):
-                time.sleep(1)  # Wait for the page to load completely
-                print(i)
-                page_html = driver.page_source
-                page_url = driver.current_url
-                logger_config.print_and_log_info(f"Delay {print} url {page_url}")
+                # Locate the "History" tab using its unique attributes and click it
+                history_tab = driver.find_element(By.XPATH, "//span[@data-dojo-attach-point='containerNode,focusNode' and text()='History']")
+                history_tab.click()
 
-                page_html_content_depending[i] = page_html
+                extended_history_div = driver.find_element(By.XPATH, "//div[@id='cq_widget_CqReadonlyTextArea_4']")
+                extended_history_text = extended_history_div.text
 
-                with open(f"{output_directory_name}/text_dump_file_{i}.txt", "w", encoding="utf-8") as text_dump_file:
-                    text_dump_file.write(page_html) """
+                with open(f"{output_directory_name}/{cfx_id}_cq_widget_CqReadonlyTextArea_4.txt", "w", encoding="utf-8") as text_dump_file:
+                    text_dump_file.write(extended_history_text)
 
-            # print(page_html)
+                # with logger_config.stopwatch_with_label("serialize_list_objects_in_json extended_history_text"):
+                #    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(extended_history_text.split("====START===="), f"{output_directory_name}/{cfx_id}_raw_sections.json")
 
-            # Locate the "History" tab using its unique attributes and click it
-            history_tab = driver.find_element(By.XPATH, "//span[@data-dojo-attach-point='containerNode,focusNode' and text()='History']")
-            history_tab.click()
+                with logger_config.stopwatch_with_label("Parse and save extended_history_text"):
 
-            extended_history_div = driver.find_element(By.XPATH, "//div[@id='cq_widget_CqReadonlyTextArea_4']")
-            extended_history_text = extended_history_div.text
+                    with logger_config.stopwatch_with_label(f"parse_extended_history_text method"):
 
-            with open(f"{output_directory_name}/{cfx_id}_cq_widget_CqReadonlyTextArea_4.txt", "w", encoding="utf-8") as text_dump_file:
-                text_dump_file.write(extended_history_text)
+                        try:
+                            parsed_extended_history = cfx_extended_history.parse_history(extended_history_text)
+                        except:
+                            parsed_extended_history = "Could not parse extended_history_text"
 
-            with logger_config.stopwatch_with_label("serialize_list_objects_in_json extended_history_text"):
-                json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(extended_history_text.split("====START===="), f"{output_directory_name}/{cfx_id}_raw_sections.json")
+                    # Use re.findall to extract all matching content
+                    # history_entries = re.findall(one_history_start_and_end_pattern, extended_history_text, re.DOTALL)
 
-            with logger_config.stopwatch_with_label("Parse and save extended_history_text"):
+                    # print(history_entries)
+                    with logger_config.stopwatch_with_label(f"Create {output_directory_name}/{cfx_id}_parsed_extended_history.txt"):
+                        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(parsed_extended_history, f"{output_directory_name}/{cfx_id}_parsed_extended_history.json")
 
-                with logger_config.stopwatch_with_label(f"parse_extended_history_text method"):
+                # Create a history object
+                # history = {"entries": history_entries}
 
-                    try:
-                        parsed_extended_history = cfx_extended_history.parse_history(extended_history_text)
-                    except:
-                        parsed_extended_history = "Could not parse extended_history_text"
+                # Simulate Ctrl+S to open "Save As" dialog
+                # driver.execute_script("window.print();")  # Print invokes the Save Page As dialog in some configurations
 
-                # Use re.findall to extract all matching content
-                # history_entries = re.findall(one_history_start_and_end_pattern, extended_history_text, re.DOTALL)
+                # Pause for a realistic delay if needed to manually complete the save, if auto-save not configured
+            except Exception as e:
+                logger_config.print_and_log_error(f"{cfx_id} Exception raised:{str(e)}")
+                logging.exception(e)
 
-                # print(history_entries)
-                with logger_config.stopwatch_with_label(f"Create {output_directory_name}/{cfx_id}_parsed_extended_history.txt"):
-                    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(parsed_extended_history, f"{output_directory_name}/{cfx_id}_parsed_extended_history.json")
-
-            # Create a history object
-            # history = {"entries": history_entries}
-
-            # Simulate Ctrl+S to open "Save As" dialog
-            # driver.execute_script("window.print();")  # Print invokes the Save Page As dialog in some configurations
-
-            # Pause for a realistic delay if needed to manually complete the save, if auto-save not configured
-            time.sleep(1)
+                driver = create_webdriver_chrome()
+                login_champfx(driver=driver)
 
 
 if __name__ == "__main__":
