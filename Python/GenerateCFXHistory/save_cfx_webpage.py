@@ -6,6 +6,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
+import cfx_extended_history
+
 from datetime import datetime, timezone
 
 from common import json_encoders
@@ -86,46 +88,6 @@ def open_cfx_url(cfx_id, driver):
     # welcome_msg_element = WebDriverWait(driver, 100).until(expected_conditions.text_to_be_present_in_element((By.ID, "welcomeMsg"), "AD001\\fr232487"))
 
 
-def parse_section(section):
-    section_data = {}
-    lines = section.strip().split("\n")
-    for line in lines:
-        if ":" in line:
-            key, value = line.split(":", 1)
-            key = key.strip()
-            value = value.strip()
-            if key == "Time":
-                try:
-                    section_data[key] = datetime.strptime(value, "%Y-%m-%d %H:%M:%S %z")
-                except ValueError:
-                    section_data[key] = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
-            elif key == "Schema Rev":
-                section_data[key] = int(value)
-            else:
-                section_data[key] = value
-
-    fields_start = lines.index("==Fields==") + 1
-    fields_end = lines.index("", fields_start)
-    fields = lines[fields_start:fields_end]
-
-    field_data = {}
-    for field in fields:
-        field_name = field.split("(")[0].strip()
-        field_values = field.split("(")[1][:-1].split(":")
-        field_data[field_name] = {"Old": field_values[0].strip(), "New": field_values[1].strip()}
-
-    section_data["Fields"] = field_data
-    return section_data
-
-
-def parse_extended_history_text(text):
-
-    data = []
-    sections = text.split("====START====")
-    for section in sections[1:]:
-        data.append(parse_section(section=section))
-
-
 def main() -> None:
     """Main function"""
 
@@ -184,18 +146,24 @@ def main() -> None:
             with open(f"{output_directory_name}/{cfx_id}_cq_widget_CqReadonlyTextArea_4.txt", "w", encoding="utf-8") as text_dump_file:
                 text_dump_file.write(extended_history_text)
 
-            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(extended_history_text.split("====START===="), f"{output_directory_name}/{cfx_id}_raw_sections.json")
+            with logger_config.stopwatch_with_label("serialize_list_objects_in_json extended_history_text"):
+                json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(extended_history_text.split("====START===="), f"{output_directory_name}/{cfx_id}_raw_sections.json")
 
-            try:
-                parsed_extended_history = parse_extended_history_text(extended_history_text)
-            except:
-                parsed_extended_history = "Could not parse extended_history_text"
+            with logger_config.stopwatch_with_label("Parse and save extended_history_text"):
 
-            # Use re.findall to extract all matching content
-            # history_entries = re.findall(one_history_start_and_end_pattern, extended_history_text, re.DOTALL)
+                with logger_config.stopwatch_with_label(f"parse_extended_history_text method"):
 
-            # print(history_entries)
-            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(parsed_extended_history, f"{output_directory_name}/{cfx_id}_parsed_extended_history.txt")
+                    try:
+                        parsed_extended_history = cfx_extended_history.parse_extended_history_text(extended_history_text)
+                    except:
+                        parsed_extended_history = "Could not parse extended_history_text"
+
+                # Use re.findall to extract all matching content
+                # history_entries = re.findall(one_history_start_and_end_pattern, extended_history_text, re.DOTALL)
+
+                # print(history_entries)
+                with logger_config.stopwatch_with_label(f"Create {output_directory_name}/{cfx_id}_parsed_extended_history.txt"):
+                    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(parsed_extended_history, f"{output_directory_name}/{cfx_id}_parsed_extended_history.txt")
 
             # Create a history object
             # history = {"entries": history_entries}
@@ -204,7 +172,7 @@ def main() -> None:
             # driver.execute_script("window.print();")  # Print invokes the Save Page As dialog in some configurations
 
             # Pause for a realistic delay if needed to manually complete the save, if auto-save not configured
-            time.sleep(5)
+            time.sleep(1)
 
 
 if __name__ == "__main__":
