@@ -1,5 +1,6 @@
-from typing import List
+from typing import List, Optional
 import re
+from datetime import datetime
 
 
 class CFXHistoryField:
@@ -15,7 +16,8 @@ class CFXHistoryField:
 
 class CFXHistoryElement:
     def __init__(self, time: str, schema_rev: str, user_name: str, user_login: str, user_groups: str, action: str, state: str):
-        self.time = time.strip()
+        self.raw_time: str = time.strip()
+        self.decoded_time: Optional[datetime] = self.decode_time(time)
         self.schema_rev = schema_rev.strip()
         self.user_name = user_name.strip()
         self.user_login = user_login.strip()
@@ -24,11 +26,19 @@ class CFXHistoryElement:
         self.state = state.strip()
         self.fields: List[CFXHistoryField] = []
 
+    def decode_time(self, time: str) -> Optional[datetime]:
+        try:
+            # Assume the time format is "YYYY-MM-DD HH:MM:SS ±HH:MM"
+            return datetime.strptime(time.strip(), "%Y-%m-%d %H:%M:%S %z")
+        except ValueError:
+            print(f"Warning: Unable to decode time '{time}'")
+            return None
+
     def add_field(self, field: CFXHistoryField) -> None:
         self.fields.append(field)
 
     def __repr__(self) -> str:
-        return f"<CFXHistoryElement time={self.time} action={self.action} state={self.state} fields={len(self.fields)}>"
+        return f"<CFXHistoryElement time={self.decoded_time} action={self.action} state={self.state} fields={len(self.fields)}>"
 
 
 def parse_history(text: str) -> List[CFXHistoryElement]:
