@@ -81,6 +81,11 @@ def print_and_log_warning(to_print_and_log: str) -> None:
     logging.warning(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
 
+def print_and_log_exception(exc: Exception) -> None:
+    print_and_log_error(f"Exception raised:{str(exc)}")
+    logging.exception(exc)
+
+
 def print_and_log_error(to_print_and_log: str) -> None:
     """Print in standard output and log in file as error level"""
     log_timestamp = time.asctime(time.localtime(time.time()))
