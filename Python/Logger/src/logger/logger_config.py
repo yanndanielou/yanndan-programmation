@@ -9,6 +9,8 @@ import time
 
 import random
 
+from typing import Optional
+
 # from warnings import deprecated
 from logging.handlers import RotatingFileHandler
 
@@ -81,9 +83,13 @@ def print_and_log_warning(to_print_and_log: str) -> None:
     logging.warning(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
 
-def print_and_log_exception(exc: Exception) -> None:
-    print_and_log_error(f"Exception raised:{str(exc)}")
-    logging.exception(exc)
+def print_and_log_exception(additional_text: Optional[str], exception_to_print: Exception) -> None:
+    if additional_text:
+        print_and_log_error(f"Exception raised:{str(exception_to_print)}")
+
+    print_and_log_error(f"{additional_text}. Exception raised:{additional_text} ")
+
+    logging.exception(exception_to_print)
 
 
 def print_and_log_error(to_print_and_log: str) -> None:
