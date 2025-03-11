@@ -57,8 +57,8 @@ def create_webdriver_chrome() -> ChromiumDriver:
 
 
 def create_webdriver_and_login() -> ChromiumDriver:
-    # driver = create_webdriver_chrome()
-    driver = create_webdriver_firefox()
+    driver = create_webdriver_chrome()
+    # driver = create_webdriver_firefox()
     login_champfx(driver)
     return driver
 
