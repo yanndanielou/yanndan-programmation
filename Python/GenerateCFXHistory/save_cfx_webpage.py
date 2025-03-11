@@ -1,3 +1,5 @@
+import argparse
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -6,6 +8,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
+
+from typing import Optional
+
 import logging
 
 import cfx_extended_history
@@ -181,6 +186,19 @@ def get_all_cfx_id_unique_ordered_list() -> list[str]:
     return all_cfx_id_unique_ordered_list
 
 
+def run_application(first_cfx_index: Optional[int], last_cfx_index: Optional[int]) -> None:
+    driver: ChromiumDriver = create_webdriver_and_login()
+
+    output_directory_name = "output_save_cfx_webpage"
+    if not os.path.exists(output_directory_name):
+        os.mkdir(output_directory_name)
+
+    all_cfx_id_unique_ordered_list = get_all_cfx_id_unique_ordered_list()
+
+    for cfx_id in all_cfx_id_unique_ordered_list[first_cfx_index:last_cfx_index]:
+        driver = safe_handle_cfx(output_directory_name=output_directory_name, cfx_id=cfx_id, driver=driver)
+
+
 def main() -> None:
     """Main function"""
 
@@ -189,16 +207,16 @@ def main() -> None:
 
         logger_config.print_and_log_info("Application start")
 
-        driver: ChromiumDriver = create_webdriver_and_login()
+        parser = argparse.ArgumentParser(description="Your application description here.")
+        parser.add_argument("--first_cfx_index", type=int, help="An integer parameter for your application.", default=0)
+        parser.add_argument("--last_cfx_index", type=str, help="A string parameter for your application.", default=None)
 
-        output_directory_name = "output_save_cfx_webpage"
-        if not os.path.exists(output_directory_name):
-            os.mkdir(output_directory_name)
+        args = parser.parse_args()
 
-        all_cfx_id_unique_ordered_list = get_all_cfx_id_unique_ordered_list()
+        first_cfx_index = args.first_cfx_index
+        last_cfx_index = args.last_cfx_index
 
-        for cfx_id in all_cfx_id_unique_ordered_list:
-            driver = safe_handle_cfx(output_directory_name=output_directory_name, cfx_id=cfx_id, driver=driver)
+        run_application(first_cfx_index, last_cfx_index)
 
 
 if __name__ == "__main__":
