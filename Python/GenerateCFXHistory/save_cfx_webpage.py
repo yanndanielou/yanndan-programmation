@@ -5,6 +5,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chromium.webdriver import ChromiumDriver
 import logging
 
 import cfx_extended_history
@@ -30,7 +31,8 @@ import os
 one_history_start_and_end_pattern = r"====START====(.*?)====END===="
 
 
-def create_webdriver_chrome() -> webdriver.Chrome:
+def create_webdriver_chrome() -> ChromiumDriver:
+    logger_config.print_and_log_info("create_webdriver_chromes")
     # Path to the ChromeDriver
     chrome_driver_path = "C:\\Users\\fr232487\\Downloads\\chromedriver-win64\\chromedriver.exe"
 
@@ -45,7 +47,21 @@ def create_webdriver_chrome() -> webdriver.Chrome:
     return driver
 
 
-def login_champfx(driver) -> None:
+def create_webdriver_and_login() -> ChromiumDriver:
+    driver = create_webdriver_chrome()
+    login_champfx(driver)
+    return driver
+
+
+def reset_driver(driver: ChromiumDriver) -> ChromiumDriver:
+    driver.quit()
+    driver = create_webdriver_and_login()
+    return driver
+
+
+def login_champfx(driver: ChromiumDriver) -> None:
+    logger_config.print_and_log_info("login_champfx")
+
     login_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX?format=HTML&loginId={connexion_param.champfx_login}&password={connexion_param.champfx_password}"
 
     with logger_config.stopwatch_with_label(f"Driver get login url {login_url}"):
@@ -67,7 +83,7 @@ def login_champfx(driver) -> None:
             logger_config.print_and_log_error(str(e))
 
 
-def open_cfx_url(cfx_id, driver):
+def open_cfx_url(cfx_id: str, driver: ChromiumDriver) -> None:
     # URL of the web page you want to save
     cfx_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/RECORD/{cfx_id}?format=HTML&loginId={connexion_param.champfx_login}&password={connexion_param.champfx_password}&noframes=true"
 
@@ -91,6 +107,80 @@ def open_cfx_url(cfx_id, driver):
     # welcome_msg_element = WebDriverWait(driver, 100).until(expected_conditions.text_to_be_present_in_element((By.ID, "welcomeMsg"), "AD001\\fr232487"))
 
 
+# Locate the "History" tab using its unique attributes and click it
+def locate_hitory_tab_and_click_it(cfx_id: str, driver: ChromiumDriver) -> None:
+    history_tab = driver.find_element(By.XPATH, "//span[@data-dojo-attach-point='containerNode,focusNode' and text()='History']")
+    history_tab.click()
+
+
+def get_extended_history_text(driver: ChromiumDriver) -> str:
+
+    extended_history_div = driver.find_element(By.XPATH, "//div[@id='cq_widget_CqReadonlyTextArea_4']")
+    extended_history_text = extended_history_div.text
+    return extended_history_text
+
+
+def save_extended_history(output_directory_name: str, cfx_id: str, extended_history_text: str) -> None:
+
+    with open(f"{output_directory_name}/{cfx_id}_cq_widget_CqReadonlyTextArea_4.txt", "w", encoding="utf-8") as text_dump_file:
+        text_dump_file.write(extended_history_text)
+
+    # with logger_config.stopwatch_with_label("serialize_list_objects_in_json extended_history_text"):
+    #    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(extended_history_text.split("====START===="), f"{output_directory_name}/{cfx_id}_raw_sections.json")
+
+    with logger_config.stopwatch_with_label("Parse and save extended_history_text"):
+
+        with logger_config.stopwatch_with_label(f"parse_extended_history_text method"):
+
+            try:
+                parsed_extended_history = cfx_extended_history.parse_history(extended_history_text)
+            except:
+                parsed_extended_history = "Could not parse extended_history_text"
+
+        # Use re.findall to extract all matching content
+        # history_entries = re.findall(one_history_start_and_end_pattern, extended_history_text, re.DOTALL)
+
+        # print(history_entries)
+        with logger_config.stopwatch_with_label(f"Create {output_directory_name}/{cfx_id}_parsed_extended_history.txt"):
+            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(parsed_extended_history, f"{output_directory_name}/{cfx_id}_parsed_extended_history.json")
+
+
+def safe_handle_cfx(output_directory_name: str, cfx_id: str, driver: ChromiumDriver) -> ChromiumDriver:
+    try:
+        handle_cfx(output_directory_name=output_directory_name, cfx_id=cfx_id, driver=driver)
+
+    except Exception as e:
+        logger_config.print_and_log_exception(cfx_id, e)
+        driver = reset_driver(driver)
+        handle_cfx(output_directory_name=output_directory_name, cfx_id=cfx_id, driver=driver)
+
+    return driver
+
+
+def handle_cfx(output_directory_name: str, cfx_id: str, driver: ChromiumDriver) -> ChromiumDriver:
+
+    with logger_config.stopwatch_with_label(f"open_cfx_url {cfx_id}"):
+        open_cfx_url(cfx_id=cfx_id, driver=driver)
+
+    # print(page_html)
+
+    locate_hitory_tab_and_click_it(cfx_id=cfx_id, driver=driver)
+
+    extended_history_text = get_extended_history_text(driver=driver)
+
+    save_extended_history(output_directory_name, cfx_id, extended_history_text)
+
+
+def get_all_cfx_id_unique_ordered_list() -> list[str]:
+    champfx_details_excel_file_full_path = "extract_cfx_details.xlsx"
+    with logger_config.stopwatch_with_label(f"Open cfx details excel file {champfx_details_excel_file_full_path}"):
+        cfx_details_data_frame = pandas.read_excel(champfx_details_excel_file_full_path)
+        all_cfx_id_unique_ordered_list = sorted(list(set([row["CFXID"] for index, row in cfx_details_data_frame.iterrows()])))
+
+    logger_config.print_and_log_info(f"{len(all_cfx_id_unique_ordered_list)} cfx to parse")
+    return all_cfx_id_unique_ordered_list
+
+
 def main() -> None:
     """Main function"""
 
@@ -99,75 +189,16 @@ def main() -> None:
 
         logger_config.print_and_log_info("Application start")
 
-        driver = create_webdriver_chrome()
-
-        login_champfx(driver=driver)
+        driver: ChromiumDriver = create_webdriver_and_login()
 
         output_directory_name = "output_save_cfx_webpage"
         if not os.path.exists(output_directory_name):
             os.mkdir(output_directory_name)
 
-        champfx_details_excel_file_full_path = "extract_cfx_details.xlsx"
-        with logger_config.stopwatch_with_label(f"Open cfx details excel file {champfx_details_excel_file_full_path}"):
-            cfx_details_data_frame = pandas.read_excel(champfx_details_excel_file_full_path)
-
-            raw_cfx_ids = [row["CFXID"] for index, row in cfx_details_data_frame.iterrows()]
-            raw_cfx_ids_as_set = set(raw_cfx_ids)
-            raw_cfx_ids_as_unique_list = list(raw_cfx_ids_as_set)
-            all_cfx_id_unique_ordered_list = sorted(list(set([row["CFXID"] for index, row in cfx_details_data_frame.iterrows()])))
-
-        logger_config.print_and_log_info(f"{len(all_cfx_id_unique_ordered_list)} cfx to parse")
+        all_cfx_id_unique_ordered_list = get_all_cfx_id_unique_ordered_list()
 
         for cfx_id in all_cfx_id_unique_ordered_list:
-            try:
-
-                with logger_config.stopwatch_with_label(f"open_cfx_url {cfx_id}"):
-                    open_cfx_url(cfx_id=cfx_id, driver=driver)
-
-                # print(page_html)
-
-                # Locate the "History" tab using its unique attributes and click it
-                history_tab = driver.find_element(By.XPATH, "//span[@data-dojo-attach-point='containerNode,focusNode' and text()='History']")
-                history_tab.click()
-
-                extended_history_div = driver.find_element(By.XPATH, "//div[@id='cq_widget_CqReadonlyTextArea_4']")
-                extended_history_text = extended_history_div.text
-
-                with open(f"{output_directory_name}/{cfx_id}_cq_widget_CqReadonlyTextArea_4.txt", "w", encoding="utf-8") as text_dump_file:
-                    text_dump_file.write(extended_history_text)
-
-                # with logger_config.stopwatch_with_label("serialize_list_objects_in_json extended_history_text"):
-                #    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(extended_history_text.split("====START===="), f"{output_directory_name}/{cfx_id}_raw_sections.json")
-
-                with logger_config.stopwatch_with_label("Parse and save extended_history_text"):
-
-                    with logger_config.stopwatch_with_label(f"parse_extended_history_text method"):
-
-                        try:
-                            parsed_extended_history = cfx_extended_history.parse_history(extended_history_text)
-                        except:
-                            parsed_extended_history = "Could not parse extended_history_text"
-
-                    # Use re.findall to extract all matching content
-                    # history_entries = re.findall(one_history_start_and_end_pattern, extended_history_text, re.DOTALL)
-
-                    # print(history_entries)
-                    with logger_config.stopwatch_with_label(f"Create {output_directory_name}/{cfx_id}_parsed_extended_history.txt"):
-                        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(parsed_extended_history, f"{output_directory_name}/{cfx_id}_parsed_extended_history.json")
-
-                # Create a history object
-                # history = {"entries": history_entries}
-
-                # Simulate Ctrl+S to open "Save As" dialog
-                # driver.execute_script("window.print();")  # Print invokes the Save Page As dialog in some configurations
-
-                # Pause for a realistic delay if needed to manually complete the save, if auto-save not configured
-            except Exception as e:
-                logger_config.print_and_log_error(f"{cfx_id} Exception raised:{str(e)}")
-                logging.exception(e)
-
-                driver = create_webdriver_chrome()
-                login_champfx(driver=driver)
+            driver = safe_handle_cfx(output_directory_name=output_directory_name, cfx_id=cfx_id, driver=driver)
 
 
 if __name__ == "__main__":
