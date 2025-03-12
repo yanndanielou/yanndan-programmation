@@ -3,8 +3,12 @@ import re
 from datetime import datetime
 
 
+CURRENT_OWNER_FIELD_MODIFICATION_ID = "CurrentOwner"
+
+
 class CFXHistoryField:
-    def __init__(self, field_id: str, secondary_label: str, old_state: str, new_state: str):
+    def __init__(self, cfx_id: str, field_id: str, secondary_label: str, old_state: str, new_state: str):
+        self.cfx_id = cfx_id
         self.field_id = field_id.strip()
         self.secondary_label = secondary_label.strip()
         self.old_state = old_state.strip()
@@ -15,16 +19,25 @@ class CFXHistoryField:
 
 
 class CFXHistoryElement:
-    def __init__(self, time: str, schema_rev: str, user_name: str, user_login: str, user_groups: str, action: str, state: str):
-        self.raw_time: str = time.strip()
-        self.decoded_time: Optional[datetime] = self.decode_time(time)
-        self.schema_rev = schema_rev.strip()
-        self.user_name = user_name.strip()
-        self.user_login = user_login.strip()
-        self.user_groups = user_groups.strip()
-        self.action = action.strip()
-        self.state = state.strip()
-        self.fields: List[CFXHistoryField] = []
+    def __init__(self, cfx_id: str, time: str, schema_rev: str, user_name: str, user_login: str, user_groups: str, action: str, state: str):
+        self._cfx_id = cfx_id
+        self._raw_time: str = time.strip()
+        self._decoded_time: Optional[datetime] = self.decode_time(time)
+        self._schema_rev = schema_rev.strip()
+        self._user_name = user_name.strip()
+        self._user_login = user_login.strip()
+        self._user_groups = user_groups.strip()
+        self._action = action.strip()
+        self._state = state.strip()
+        self._fields: List[CFXHistoryField] = []
+
+    def get_all_current_owner_field_modification(self) -> List[CFXHistoryField]:
+        all_current_owner_field_modification = [field for field in self._fields if field.field_id == CURRENT_OWNER_FIELD_MODIFICATION_ID]
+        return all_current_owner_field_modification
+
+    @property
+    def fields(self) -> List[CFXHistoryField]:
+        return self._fields
 
     def decode_time(self, time: str) -> Optional[datetime]:
         try:
@@ -35,15 +48,29 @@ class CFXHistoryElement:
             return None
 
     def add_field(self, field: CFXHistoryField) -> None:
-        self.fields.append(field)
+        self._fields.append(field)
 
     def __repr__(self) -> str:
-        return f"<CFXHistoryElement time={self.decoded_time} action={self.action} state={self.state} fields={len(self.fields)}>"
+        return f"<CFXHistoryElement time={self._decoded_time} action={self._action} state={self._state} fields={len(self._fields)}>"
 
 
-def parse_history(text: str) -> List[CFXHistoryElement]:
-    history_elements: List[CFXHistoryElement] = []
-    history_blocks = text.split("====START====")[1:]
+class CFXCompleteHistory:
+    def __init__(self, cfx_id: str):
+        self.cfx_id = cfx_id
+        self._history_elements: List[CFXHistoryElement] = []
+
+    def add_field_history_element(self, field: CFXHistoryElement) -> None:
+        self._history_elements.append(field)
+
+    def get_all_current_owner_field_modifications(self) -> List[CFXHistoryField]:
+        all_current_owner_field_modification = [field for history_element in self._history_elements for field in history_element.get_all_current_owner_field_modification()]
+        return all_current_owner_field_modification
+
+
+def parse_history(cfx_id: str, extended_history_text: str) -> CFXCompleteHistory:
+
+    cfx_complete_history = CFXCompleteHistory(cfx_id=cfx_id)
+    history_blocks = extended_history_text.split("====START====")[1:]
 
     for block in history_blocks:
         block = block.strip()
@@ -58,16 +85,16 @@ def parse_history(text: str) -> List[CFXHistoryElement]:
         element_match = re.search(element_regex, block, re.DOTALL)
         if element_match:
             time, schema_rev, user_name, user_login, user_groups, action, state = element_match.groups()
-            element = CFXHistoryElement(time, schema_rev, user_name, user_login, user_groups, action, state)
+            element = CFXHistoryElement(cfx_id, time, schema_rev, user_name, user_login, user_groups, action, state)
 
             # Identify and parse fields within the block
             fields_section = block.split("==Fields==")[1].strip()
             field_matches = re.finditer(field_regex, fields_section, re.DOTALL)
             for field_match in field_matches:
                 field_id, secondary_label, old_state, new_state = field_match.groups()[:4]
-                field = CFXHistoryField(field_id, secondary_label, old_state, new_state)
+                field = CFXHistoryField(cfx_id, field_id, secondary_label, old_state, new_state)
                 element.add_field(field)
 
-            history_elements.append(element)
+            cfx_complete_history.add_field_history_element(element)
 
-    return history_elements
+    return cfx_complete_history
