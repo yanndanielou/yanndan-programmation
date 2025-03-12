@@ -29,8 +29,8 @@ DEFAULT_CALL_STACK_FRAME_VALUE = 2
 
 
 def __get_calling_file_name_and_line_number(
-    call_stack_context: Optional[int] = DEFAULT_CALL_STACK_CONTEXT_VALUE,
-    call_stack_frame: Optional[int] = DEFAULT_CALL_STACK_FRAME_VALUE,
+    call_stack_context: int = DEFAULT_CALL_STACK_CONTEXT_VALUE,
+    call_stack_frame: int = DEFAULT_CALL_STACK_FRAME_VALUE,
 ) -> str:
     previous_stack = inspect.stack(call_stack_context)[call_stack_frame]
     file_name = previous_stack.filename
