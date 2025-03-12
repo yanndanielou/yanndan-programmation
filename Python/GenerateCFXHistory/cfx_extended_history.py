@@ -31,7 +31,7 @@ class CFXHistoryElement:
         self._state = state.strip()
         self._fields: List[CFXHistoryField] = []
 
-    def get_all_current_owner_field_modification(self) -> List[CFXHistoryField]:
+    def get_all_current_owner_field_modifications(self) -> List[CFXHistoryField]:
         all_current_owner_field_modification = [field for field in self._fields if field.field_id == CURRENT_OWNER_FIELD_MODIFICATION_ID]
         return all_current_owner_field_modification
 
@@ -63,7 +63,7 @@ class CFXCompleteHistory:
         self._history_elements.append(field)
 
     def get_all_current_owner_field_modifications(self) -> List[CFXHistoryField]:
-        all_current_owner_field_modification = [field for history_element in self._history_elements for field in history_element.get_all_current_owner_field_modification()]
+        all_current_owner_field_modification = [field for history_element in self._history_elements for field in history_element.get_all_current_owner_field_modifications()]
         return all_current_owner_field_modification
 
 
