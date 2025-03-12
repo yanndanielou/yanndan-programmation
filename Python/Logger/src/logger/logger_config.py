@@ -83,7 +83,7 @@ def print_and_log_warning(to_print_and_log: str) -> None:
     logging.warning(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
 
-def print_and_log_exception(additional_text: Optional[str], exception_to_print: Exception) -> None:
+def print_and_log_exception(exception_to_print: Exception, additional_text: Optional[str] = None) -> None:
     if additional_text:
         print_and_log_error(f"Exception raised:{str(exception_to_print)}")
 
