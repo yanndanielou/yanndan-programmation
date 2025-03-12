@@ -24,9 +24,15 @@ import inspect
 # pylint: enable=logging-not-lazy
 # pylint: disable=logging-fstring-interpolation
 
+DEFAULT_CALL_STACK_CONTEXT_VALUE = 1
+DEFAULT_CALL_STACK_FRAME_VALUE = 2
 
-def __get_calling_file_name_and_line_number() -> str:
-    previous_stack = inspect.stack(1)[2]
+
+def __get_calling_file_name_and_line_number(
+    call_stack_context: Optional[int] = DEFAULT_CALL_STACK_CONTEXT_VALUE,
+    call_stack_frame: Optional[int] = DEFAULT_CALL_STACK_FRAME_VALUE,
+) -> str:
+    previous_stack = inspect.stack(call_stack_context)[call_stack_frame]
     file_name = previous_stack.filename
     line_number = previous_stack.lineno
     return file_name + ", line " + str(line_number)
@@ -85,19 +91,41 @@ def print_and_log_warning(to_print_and_log: str) -> None:
 
 def print_and_log_exception(exception_to_print: Exception, additional_text: Optional[str] = None) -> None:
     if additional_text:
-        print_and_log_error(f"Exception raised:{str(exception_to_print)}")
+        to_print_and_log = f"Exception raised:{additional_text} "
 
-    print_and_log_error(f"{additional_text}. Exception raised:{additional_text} ")
+    print_and_log_error(to_print_and_log=f"Exception raised, content:{str(exception_to_print)}", call_stack_frame=3)
+    print_and_log_error(
+        to_print_and_log=f"Exception raised, type:{exception_to_print.__class__.__name__}", call_stack_frame=3
+    )
+
+    log_timestamp = time.asctime(time.localtime(time.time()))
+    print(log_timestamp + "\t" + __get_calling_file_name_and_line_number(call_stack_context=0) + "\t" + "!!ERROR!!")
+    print(
+        log_timestamp + "\t" + __get_calling_file_name_and_line_number(call_stack_context=0) + "\t !!EXCEPTION THROWN!!"
+    )
 
     logging.exception(exception_to_print)
 
 
-def print_and_log_error(to_print_and_log: str) -> None:
+def print_and_log_error(
+    to_print_and_log: str,
+    call_stack_context: Optional[int] = DEFAULT_CALL_STACK_CONTEXT_VALUE,
+    call_stack_frame: Optional[int] = DEFAULT_CALL_STACK_FRAME_VALUE,
+) -> None:
     """Print in standard output and log in file as error level"""
     log_timestamp = time.asctime(time.localtime(time.time()))
     print(log_timestamp + "\t" + "!!ERROR!!")
     # pylint: disable=line-too-long
-    print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + str() + to_print_and_log)
+    print(
+        log_timestamp
+        + "\t"
+        + __get_calling_file_name_and_line_number(
+            call_stack_context=call_stack_context, call_stack_frame=call_stack_frame
+        )
+        + "\t"
+        + str()
+        + to_print_and_log
+    )
     logging.error(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
 
@@ -220,7 +248,8 @@ def get_logger(name: str, rotating_file_name_without_extension: str, level: int 
 
 @contextmanager
 def stopwatch_with_label(label: str) -> Generator[float, None, None]:
-    """écorateur de contexte pour mesurer le temps d'exécution d'une fonction : https://www.docstring.fr/glossaire/with/"""
+    """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
+    https://www.docstring.fr/glossaire/with/"""
     debut = time.perf_counter()
     yield time.perf_counter() - debut
     fin = time.perf_counter()
@@ -235,5 +264,5 @@ def stopwatch_with_label(label: str) -> Generator[float, None, None]:
     calling_file_name_and_line_number = file_name + ", line " + str(line_number)
 
     # pylint: disable=line-too-long
-    print("a," + log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
+    print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
     logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
