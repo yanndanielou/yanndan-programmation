@@ -29,8 +29,9 @@ time.sleep(30)
 with open("D:\\temp\\before_arrow_to_acces_export_click.txt", "w", encoding="utf-8") as text_dump_file:
     text_dump_file.write(driver.page_source)
 
-
+# this works: export as txt
 exporter_combobutton = driver.find_element(By.ID, "dijit_form_ComboButton_1_button")
+exporter_combobutton.click()
 
 arrow_to_acces_export = driver.find_element(By.ID, "dijit_form_ComboButton_1_arrow")
 arrow_to_acces_export.click()
