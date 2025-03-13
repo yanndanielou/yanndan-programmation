@@ -20,8 +20,10 @@
 @SET PYTHON_HOME=%1
 @ECHO Python Home found! %1
 ) else (
-@ECHO Python not found there
+@ECHO Python not found there %1
 
 )
+
+rem @EXIT /B 0
 
 :END_OF_FILE
