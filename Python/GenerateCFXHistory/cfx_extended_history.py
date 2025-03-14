@@ -6,6 +6,15 @@ from datetime import datetime
 CURRENT_OWNER_FIELD_MODIFICATION_ID = "CurrentOwner"
 
 
+def decode_time(self, time: str) -> Optional[datetime]:
+    try:
+        # Assume the time format is "YYYY-MM-DD HH:MM:SS ±HH:MM"
+        return datetime.strptime(time.strip(), "%Y-%m-%d %H:%M:%S %z")
+    except ValueError:
+        print(f"Warning: Unable to decode time '{time}'")
+        return None
+
+
 class CFXHistoryField:
     def __init__(self, cfx_id: str, field_id: str, secondary_label: str, old_state: str, new_state: str):
         self.cfx_id = cfx_id
@@ -19,10 +28,10 @@ class CFXHistoryField:
 
 
 class CFXHistoryElement:
-    def __init__(self, cfx_id: str, time: str, schema_rev: str, user_name: str, user_login: str, user_groups: str, action: str, state: str):
+    def __init__(self, cfx_id: str, time: str, decoded_time: Optional[datetime], schema_rev: str, user_name: str, user_login: str, user_groups: str, action: str, state: str):
         self._cfx_id = cfx_id
         self._raw_time: str = time.strip()
-        self._decoded_time: Optional[datetime] = self.decode_time(time)
+        self._decoded_time: Optional[datetime] = decoded_time
         self._schema_rev = schema_rev.strip()
         self._user_name = user_name.strip()
         self._user_login = user_login.strip()
@@ -38,14 +47,6 @@ class CFXHistoryElement:
     @property
     def fields(self) -> List[CFXHistoryField]:
         return self._fields
-
-    def decode_time(self, time: str) -> Optional[datetime]:
-        try:
-            # Assume the time format is "YYYY-MM-DD HH:MM:SS ±HH:MM"
-            return datetime.strptime(time.strip(), "%Y-%m-%d %H:%M:%S %z")
-        except ValueError:
-            print(f"Warning: Unable to decode time '{time}'")
-            return None
 
     def add_field(self, field: CFXHistoryField) -> None:
         self._fields.append(field)
@@ -85,7 +86,7 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXCompleteHistory
         element_match = re.search(element_regex, block, re.DOTALL)
         if element_match:
             time, schema_rev, user_name, user_login, user_groups, action, state = element_match.groups()
-            element = CFXHistoryElement(cfx_id, time, schema_rev, user_name, user_login, user_groups, action, state)
+            element = CFXHistoryElement(cfx_id, time, decode_time(time), schema_rev, user_name, user_login, user_groups, action, state)
 
             # Identify and parse fields within the block
             fields_section = block.split("==Fields==")[1].strip()
