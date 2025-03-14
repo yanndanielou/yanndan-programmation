@@ -1,5 +1,7 @@
 import argparse
 
+import pickle
+
 from dataclasses import dataclass, field
 
 from selenium import webdriver
@@ -45,6 +47,8 @@ class SaveCfxWebpageApplication:
 
     extended_history_raw_text_sub_output_directory_name = "extended_history_raw_text"
     parsed_extended_history_sub_output_directory_name = "parsed_extended_history"
+    parsed_current_owner_changes_output_directory_name = "parsed_current_owner_changes"
+
     errors_output_sub_directory_name = "errors"
 
     def run(self):
@@ -56,6 +60,7 @@ class SaveCfxWebpageApplication:
             f"{self.output_parent_directory_name}/{self.extended_history_raw_text_sub_output_directory_name}",
             f"{self.output_parent_directory_name}/{self.parsed_extended_history_sub_output_directory_name}",
             f"{self.output_parent_directory_name}/{self.errors_output_sub_directory_name}",
+            f"{self.output_parent_directory_name}/{self.parsed_current_owner_changes_output_directory_name}",
         ]:
             if not os.path.exists(directory_path):
                 logger_config.print_and_log_info(f"Create folder {directory_path}")
@@ -71,16 +76,27 @@ class SaveCfxWebpageApplication:
         for cfx_id in all_cfx_id_to_handle_unique_ordered_list:
             self.safe_handle_cfx(cfx_id=cfx_id)
 
-        all_current_owner_modifications_file_full_path = f"{self.output_parent_directory_name}/all_current_owner_modifications.json"
-        all_current_owner_modifications_per_cfx_file_full_path = f"{self.output_parent_directory_name}/all_current_owner_modifications_per_cfx.json"
+        all_current_owner_modifications_json_file_full_path = f"{self.output_parent_directory_name}/all_current_owner_modifications.json"
+        all_current_owner_modifications_pickel_file_full_path = f"{self.output_parent_directory_name}/all_current_owner_modifications.pkl"
 
-        with logger_config.stopwatch_with_label(f"Create {all_current_owner_modifications_file_full_path}"):
-            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(list_objects=self.all_current_owner_modifications, json_file_full_path=all_current_owner_modifications_file_full_path)
+        all_current_owner_modifications_per_cfx_json_file_full_path = f"{self.output_parent_directory_name}/all_current_owner_modifications_per_cfx.json"
+        all_current_owner_modifications_per_cfx_picke_filel_full_path = f"{self.output_parent_directory_name}/all_current_owner_modifications_per_cfx.pkl"
 
-        with logger_config.stopwatch_with_label(f"Create {all_current_owner_modifications_per_cfx_file_full_path}"):
+        with logger_config.stopwatch_with_label(f"Create {all_current_owner_modifications_json_file_full_path}"):
+            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(list_objects=self.all_current_owner_modifications, json_file_full_path=all_current_owner_modifications_json_file_full_path)
+
+        with logger_config.stopwatch_with_label(f"Create {all_current_owner_modifications_per_cfx_json_file_full_path}"):
             json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
-                list_objects=self.all_current_owner_modifications_per_cfx, json_file_full_path=all_current_owner_modifications_per_cfx_file_full_path
+                list_objects=self.all_current_owner_modifications_per_cfx, json_file_full_path=all_current_owner_modifications_per_cfx_json_file_full_path
             )
+
+        with logger_config.stopwatch_with_label(f"Create {all_current_owner_modifications_pickel_file_full_path}"):
+            with open(all_current_owner_modifications_pickel_file_full_path, "wb") as file:
+                pickle.dump(self.all_current_owner_modifications, file)
+
+        with logger_config.stopwatch_with_label(f"Create {all_current_owner_modifications_per_cfx_picke_filel_full_path}"):
+            with open(all_current_owner_modifications_per_cfx_picke_filel_full_path, "wb") as file:
+                pickle.dump(self.all_current_owner_modifications_per_cfx, file)
 
     def create_webdriver_firefox(self):
         logger_config.print_and_log_info("create_webdriver_firefox")
@@ -174,8 +190,11 @@ class SaveCfxWebpageApplication:
 
                 parsed_extended_history_file_name = f"{cfx_id}_parsed_extended_history.json"
                 parsed_extended_history_file_full_path = f"{self.output_parent_directory_name}/{self.parsed_extended_history_sub_output_directory_name}/{parsed_extended_history_file_name}"
-                change_current_owner_only_fields_modification_fill_full_path = (
-                    f"{self.output_parent_directory_name}/{self.parsed_extended_history_sub_output_directory_name}/{cfx_id}_change_current_owner_only_fields_modification_fill.json"
+                change_current_owner_only_fields_modification_json_file_full_path = (
+                    f"{self.output_parent_directory_name}/{self.parsed_current_owner_changes_output_directory_name}/{cfx_id}_change_current_owner_only_fields_modifications.json"
+                )
+                change_current_owner_only_fields_modification_picke_file_full_path = (
+                    f"{self.output_parent_directory_name}/{self.parsed_current_owner_changes_output_directory_name}/{cfx_id}_change_current_owner_only_fields_modifications.pkl"
                 )
                 try:
                     parsed_extended_history = cfx_extended_history.parse_history(cfx_id=cfx_id, extended_history_text=extended_history_text)
@@ -184,10 +203,14 @@ class SaveCfxWebpageApplication:
                         json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(parsed_extended_history, parsed_extended_history_file_full_path)
 
                     parsed_extended_history_all_current_owner_field_modifications = parsed_extended_history.get_all_current_owner_field_modifications()
-                    with logger_config.stopwatch_with_label(f"Create {change_current_owner_only_fields_modification_fill_full_path}"):
+                    with logger_config.stopwatch_with_label(f"Create {change_current_owner_only_fields_modification_json_file_full_path}"):
                         json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
-                            parsed_extended_history_all_current_owner_field_modifications, change_current_owner_only_fields_modification_fill_full_path
+                            parsed_extended_history_all_current_owner_field_modifications, change_current_owner_only_fields_modification_json_file_full_path
                         )
+                    with logger_config.stopwatch_with_label(f"Create {change_current_owner_only_fields_modification_picke_file_full_path}"):
+                        with open(change_current_owner_only_fields_modification_picke_file_full_path, "wb") as file:
+                            pickle.dump(parsed_extended_history_all_current_owner_field_modifications, file)
+
                     self.all_current_owner_modifications.extend(parsed_extended_history_all_current_owner_field_modifications)
                     self.all_current_owner_modifications_per_cfx[cfx_id] = parsed_extended_history_all_current_owner_field_modifications
 
@@ -196,7 +219,7 @@ class SaveCfxWebpageApplication:
                     json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
                         str(e), f"{self.output_parent_directory_name}/{self.errors_output_sub_directory_name}/{parsed_extended_history_file_name}"
                     )
-                    with open(change_current_owner_only_fields_modification_fill_full_path, "w", encoding="utf-8") as text_dump_file:
+                    with open(change_current_owner_only_fields_modification_json_file_full_path, "w", encoding="utf-8") as text_dump_file:
                         text_dump_file.write(str(e))
 
     def safe_handle_cfx(self, cfx_id: str):
@@ -238,8 +261,8 @@ def main() -> None:
         logger_config.print_and_log_info("Application start")
 
         parser = argparse.ArgumentParser(description="Your application description here.")
-        parser.add_argument("--first_cfx_index", type=int, help="An integer parameter for your application.", default=10)
-        parser.add_argument("--last_cfx_index", type=int, help="A string parameter for your application.", default=15)
+        parser.add_argument("--first_cfx_index", type=int, help="An integer parameter for your application.", default=None)
+        parser.add_argument("--last_cfx_index", type=int, help="A string parameter for your application.", default=None)
 
         args = parser.parse_args()
 
