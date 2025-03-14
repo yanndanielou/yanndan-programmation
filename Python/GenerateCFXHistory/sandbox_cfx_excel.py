@@ -22,18 +22,29 @@ login_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX?format=HTM
 # https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX?format=HTML&loginId=AD001%5Cfr232487&password=Zzeerrttyy9."
 driver.get(login_url)
 time.sleep(50)
+
+# WebDriverWait(driver, 100).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
+
+# WebDriverWait(driver, 40).until(lambda driver: driver.execute_script("return document.readyState") == "complete")
+
 ccb_nexteo_query_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/QUERY/Personal%20Queries/NEXTEO/ATS%2B%20%26%20NExTEO%20pour%20CMC?format=HTML&loginId={connexion_param_champfx_login}&password={connexion_param_champfx_password}&noframes=true"
 driver.get(ccb_nexteo_query_url)
 time.sleep(30)
 
+wait = WebDriverWait(driver, 100)
+export_button = wait.until(expected_conditions.element_to_be_clickable((By.ID, "dijit_form_ComboButton_1_button")))
+
+arrow_to_acces_export = wait.until(expected_conditions.element_to_be_clickable((By.ID, "dijit_form_ComboButton_1_arrow")))
+
+
 with open("D:\\temp\\before_arrow_to_acces_export_click.txt", "w", encoding="utf-8") as text_dump_file:
     text_dump_file.write(driver.page_source)
+
 
 # this works: export as txt
 exporter_combobutton = driver.find_element(By.ID, "dijit_form_ComboButton_1_button")
 exporter_combobutton.click()
 
-arrow_to_acces_export = driver.find_element(By.ID, "dijit_form_ComboButton_1_arrow")
 arrow_to_acces_export.click()
 
 with open("D:\\temp\\after_arrow_to_acces_export_click.txt", "w", encoding="utf-8") as text_dump_file:
