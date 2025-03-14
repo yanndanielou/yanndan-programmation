@@ -6,7 +6,7 @@ from datetime import datetime
 CURRENT_OWNER_FIELD_MODIFICATION_ID = "CurrentOwner"
 
 
-def decode_time(self, time: str) -> Optional[datetime]:
+def decode_time(time: str) -> Optional[datetime]:
     try:
         # Assume the time format is "YYYY-MM-DD HH:MM:SS ±HH:MM"
         return datetime.strptime(time.strip(), "%Y-%m-%d %H:%M:%S %z")
