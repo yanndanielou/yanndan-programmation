@@ -16,12 +16,13 @@ def decode_time(time: str) -> Optional[datetime]:
 
 
 class CFXHistoryField:
-    def __init__(self, cfx_id: str, field_id: str, secondary_label: str, old_state: str, new_state: str):
+    def __init__(self, cfx_id: str, field_id: str, secondary_label: str, old_state: str, new_state: str, change_timestamp: datetime):
         self.cfx_id = cfx_id
         self.field_id = field_id.strip()
         self.secondary_label = secondary_label.strip()
         self.old_state = old_state.strip()
         self.new_state = new_state.strip()
+        self.change_timestamp: change_timestamp
 
     def __repr__(self) -> str:
         return f"<CFXHistoryField field_id={self.field_id} secondary_label={self.secondary_label}>"
@@ -93,7 +94,7 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXCompleteHistory
             field_matches = re.finditer(field_regex, fields_section, re.DOTALL)
             for field_match in field_matches:
                 field_id, secondary_label, old_state, new_state = field_match.groups()[:4]
-                field = CFXHistoryField(cfx_id, field_id, secondary_label, old_state, new_state)
+                field = CFXHistoryField(cfx_id=cfx_id, field_id=field_id, secondary_label=secondary_label, old_state=old_state, new_state=new_state, change_timestamp=element._decoded_time)
                 element.add_field(field)
 
             cfx_complete_history.add_field_history_element(element)
