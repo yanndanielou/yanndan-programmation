@@ -1,3 +1,5 @@
+import pickle
+
 import pandas as pd
 from datetime import datetime, timedelta
 from dateutil import relativedelta
@@ -5,12 +7,13 @@ from dateutil import relativedelta
 from dataclasses import dataclass
 from typing import Optional, List, Dict
 
+from enum import Enum, auto, IntEnum
+
 from logger import logger_config
 
 import utils
 import role
-
-from enum import Enum, auto, IntEnum
+import cfx_extended_history
 
 
 class Action(Enum):
@@ -72,8 +75,16 @@ class ChangeStateAction:
 
 class ChampFXLibrary:
 
-    def __init__(self, champfx_details_excel_file_full_path: str, champfx_states_changes_excel_file_full_path: str):
+    def __init__(
+        self,
+        champfx_details_excel_file_full_path: str,
+        champfx_states_changes_excel_file_full_path: str,
+        all_current_owner_modifications_pickle_file_full_path: set,
+        all_current_owner_modifications_per_cfx_pickle_file_full_path: set,
+    ):
 
+        self._all_current_owner_modifications_pickle_file_full_path = all_current_owner_modifications_pickle_file_full_path
+        self._all_current_owner_modifications_per_cfx_pickle_file_full_path = all_current_owner_modifications_per_cfx_pickle_file_full_path
         self._champfx_entry_by_id: Dict[str, ChampFXEntry] = dict()
 
         with logger_config.stopwatch_with_label(f"ChampFXLibrary creation and initialisation"):
@@ -94,6 +105,9 @@ class ChampFXLibrary:
 
             with logger_config.stopwatch_with_label("ChampFXLibrary process_current_owner_role"):
                 list(map(lambda champ_fx: champ_fx.process_current_owner_role(), self.get_all_cfx()))
+
+            with logger_config.stopwatch_with_label(f"create current owner modifications"):
+                self.create_current_owner_modifications()
 
             with logger_config.stopwatch_with_label(f"ChampFXLibrary process_subsystem_from_fixed_implemented_in"):
                 list(map(lambda champ_fx: champ_fx.process_subsystem_from_fixed_implemented_in(), self.get_all_cfx()))
@@ -129,6 +143,16 @@ class ChampFXLibrary:
             cfx_request.add_change_state_action(change_state_action)
 
         return change_state_actions_created
+
+    def create_current_owner_modifications(self):
+        with open(self._all_current_owner_modifications_per_cfx_pickle_file_full_path, "rb") as file:
+            all_current_owner_modifications_per_cfx: Dict[str, List[cfx_extended_history.CFXHistoryField]] = pickle.load(file)
+
+            for cfx_id, cfx_history_elements in all_current_owner_modifications_per_cfx.items():
+                cfx_entry = self.get_cfx_by_id(cfx_id)
+                for cfx_history_element in cfx_history_elements:
+                    # cfx_history_element.
+                    pass
 
     def get_all_cfx(self) -> List["ChampFXEntry"]:
         return self._champfx_entry_by_id.values()
