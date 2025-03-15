@@ -254,6 +254,8 @@ class SaveCfxWebpageApplication:
         extended_history_text = self.get_extended_history_text()
         self.save_extended_history(cfx_id, extended_history_text)
 
+        return extended_history_text
+
     def handle_cfx(self, cfx_id: str):
 
         if DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS:
