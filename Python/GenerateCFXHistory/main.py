@@ -171,7 +171,12 @@ def main() -> None:
         if not os.path.exists(output_directory_name):
             os.mkdir(output_directory_name)
 
-        champfx_library = cfx.ChampFXLibrary("extract_cfx_details.xlsx", "extract_cfx_change_state.xlsx")
+        champfx_library = cfx.ChampFXLibrary(
+            champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
+            champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
+            all_current_owner_modifications_per_cfx_pickle_file_full_path="Input/all_current_owner_modifications_per_cfx.pkl",
+            all_current_owner_modifications_pickle_file_full_path="Input/all_current_owner_modifications.pkl",
+        )
 
         produce_results_and_displays(
             cfx_library=champfx_library,
