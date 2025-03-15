@@ -36,6 +36,10 @@ import os
 OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_webpage"
 
 
+DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = False
+DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = True
+
+
 @dataclass
 class SaveCfxWebpageApplication:
     first_cfx_index: Optional[int]
@@ -53,7 +57,8 @@ class SaveCfxWebpageApplication:
 
     def run(self):
 
-        self.create_webdriver_and_login()
+        if not DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS:
+            self.create_webdriver_and_login()
 
         for directory_path in [
             self.output_parent_directory_name,
@@ -176,13 +181,21 @@ class SaveCfxWebpageApplication:
         extended_history_text = extended_history_div.text
         return extended_history_text
 
-    def save_extended_history(self, cfx_id: str, extended_history_text: str) -> None:
-
+    def get_extended_history_raw_text_output_file_name(self, cfx_id: str) -> str:
         extended_history_raw_text_output_file_name = f"{cfx_id}_cq_widget_CqReadonlyTextArea_4.txt"
         extended_history_raw_text_output_file_full_path = f"{self.output_parent_directory_name}/{self.extended_history_raw_text_sub_output_directory_name}/{extended_history_raw_text_output_file_name}"
+        return extended_history_raw_text_output_file_full_path
 
-        with open(extended_history_raw_text_output_file_full_path, "w", encoding="utf-8") as text_dump_file:
-            text_dump_file.write(extended_history_text)
+    def load_extended_history_from_file(self, cfx_id: str) -> None:
+        with open(self.get_extended_history_raw_text_output_file_name(cfx_id=cfx_id), "r", encoding="utf-8") as text_raw_extended_history_file:
+            raw_extended_history = text_raw_extended_history_file.read()
+            return raw_extended_history
+
+    def save_extended_history(self, cfx_id: str, extended_history_text: str) -> str:
+        with open(self.get_extended_history_raw_text_output_file_name(cfx_id=cfx_id), "w", encoding="utf-8") as text_raw_extended_history_file:
+            text_raw_extended_history_file.write(extended_history_text)
+
+    def process_extended_history(self, cfx_id: str, extended_history_text: str) -> None:
 
         with logger_config.stopwatch_with_label("Parse and save extended_history_text"):
 
@@ -233,17 +246,22 @@ class SaveCfxWebpageApplication:
 
     def handle_cfx(self, cfx_id: str):
 
-        with logger_config.stopwatch_with_label(f"open_cfx_url {cfx_id}"):
-            self.open_cfx_url(cfx_id=cfx_id)
+        if not DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS:
+            with logger_config.stopwatch_with_label(f"open_cfx_url {cfx_id}"):
+                self.open_cfx_url(cfx_id=cfx_id)
 
-        self.locate_hitory_tab_and_click_it(cfx_id=cfx_id)
+            self.locate_hitory_tab_and_click_it(cfx_id=cfx_id)
 
-        extended_history_text = self.get_extended_history_text()
+            extended_history_text = self.get_extended_history_text()
+            self.save_extended_history(cfx_id, extended_history_text)
 
-        self.save_extended_history(cfx_id, extended_history_text)
+        else:
+            extended_history_text = self.load_extended_history_from_file(cfx_id=cfx_id)
+
+        self.process_extended_history(cfx_id, extended_history_text)
 
     def get_all_cfx_id_unique_ordered_list(self) -> list[str]:
-        champfx_details_excel_file_full_path = "extract_cfx_details.xlsx"
+        champfx_details_excel_file_full_path = "Input/extract_cfx_details.xlsx"
         with logger_config.stopwatch_with_label(f"Open cfx details excel file {champfx_details_excel_file_full_path}"):
             cfx_details_data_frame = pandas.read_excel(champfx_details_excel_file_full_path)
             all_cfx_id_unique_ordered_list = sorted(list(set([row["CFXID"] for index, row in cfx_details_data_frame.iterrows()])))
