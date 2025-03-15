@@ -45,6 +45,15 @@ class State(IntEnum):
 
 
 @dataclass
+class ChangeCurrentOwnerAction:
+    _cfx_request: "ChampFXEntry"
+    _old_current_owner: str
+    _new_current_owner: str
+    _timestamp: datetime
+    _action: Action
+
+
+@dataclass
 class ChangeStateAction:
     _cfx_request: "ChampFXEntry"
     _old_state: State
@@ -86,6 +95,9 @@ class ChampFXLibrary:
         self._all_current_owner_modifications_pickle_file_full_path = all_current_owner_modifications_pickle_file_full_path
         self._all_current_owner_modifications_per_cfx_pickle_file_full_path = all_current_owner_modifications_per_cfx_pickle_file_full_path
         self._champfx_entry_by_id: Dict[str, ChampFXEntry] = dict()
+
+        with logger_config.stopwatch_with_label(f"Load CfxUserLibrary"):
+            self._cfx_users_library: role.CfxUserLibrary = role.CfxUserLibrary()
 
         with logger_config.stopwatch_with_label(f"ChampFXLibrary creation and initialisation"):
 
