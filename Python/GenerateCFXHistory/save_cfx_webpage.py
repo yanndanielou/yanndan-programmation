@@ -37,7 +37,7 @@ OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_webpage"
 
 
 DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = False
-DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = True
+# DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = True
 
 
 @dataclass
@@ -79,7 +79,7 @@ class SaveCfxWebpageApplication:
         logger_config.print_and_log_info(f"Number of cfx to treat: {len(all_cfx_id_to_handle_unique_ordered_list)}")
 
         for cfx_id in all_cfx_id_to_handle_unique_ordered_list:
-            self.safe_handle_cfx(cfx_id=cfx_id)
+            self.handle_cfx(cfx_id=cfx_id)
 
         all_current_owner_modifications_json_file_full_path = f"{self.output_parent_directory_name}/all_current_owner_modifications.json"
         all_current_owner_modifications_pickel_file_full_path = f"{self.output_parent_directory_name}/all_current_owner_modifications.pkl"
@@ -235,25 +235,29 @@ class SaveCfxWebpageApplication:
                     with open(change_current_owner_only_fields_modification_json_file_full_path, "w", encoding="utf-8") as text_dump_file:
                         text_dump_file.write(str(e))
 
-    def safe_handle_cfx(self, cfx_id: str):
+    def safe_extract_extended_history_text_from_website(self, cfx_id: str) -> str:
+
         try:
-            self.handle_cfx(cfx_id=cfx_id)
+            return self.extract_extended_history_text_from_website(cfx_id=cfx_id)
 
         except Exception as e:
             logger_config.print_and_log_exception(additional_text=cfx_id, exception_to_print=e)
             self.reset_driver()
-            self.handle_cfx(cfx_id=cfx_id)
+            return self.extract_extended_history_text_from_website(cfx_id=cfx_id)
+
+    def extract_extended_history_text_from_website(self, cfx_id: str) -> str:
+        with logger_config.stopwatch_with_label(f"open_cfx_url {cfx_id}"):
+            self.open_cfx_url(cfx_id=cfx_id)
+
+        self.locate_hitory_tab_and_click_it(cfx_id=cfx_id)
+
+        extended_history_text = self.get_extended_history_text()
+        self.save_extended_history(cfx_id, extended_history_text)
 
     def handle_cfx(self, cfx_id: str):
 
         if not DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS:
-            with logger_config.stopwatch_with_label(f"open_cfx_url {cfx_id}"):
-                self.open_cfx_url(cfx_id=cfx_id)
-
-            self.locate_hitory_tab_and_click_it(cfx_id=cfx_id)
-
-            extended_history_text = self.get_extended_history_text()
-            self.save_extended_history(cfx_id, extended_history_text)
+            extended_history_text = self.safe_extract_extended_history_text_from_website(cfx_id=cfx_id)
 
         else:
             extended_history_text = self.load_extended_history_from_file(cfx_id=cfx_id)
