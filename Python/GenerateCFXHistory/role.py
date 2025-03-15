@@ -2,6 +2,10 @@ from enum import Enum, auto
 
 from logger import logger_config
 
+from typing import Dict
+
+from dataclasses import dataclass, field
+
 import role_data
 
 
@@ -45,6 +49,41 @@ class SubSystem(Enum):
     SW_Tests_secu = auto()
     V3 = auto()
     TCR3 = auto()
+
+
+class CfxUser:
+    def __init__(self, full_name: str, raw_full_name: str, subsystem: SubSystem):
+        self._raw_full_name = raw_full_name
+        self._full_name = full_name
+        self._subsystem: SubSystem = subsystem
+
+
+class CfxUserLibrary:
+
+    def __init__(self):
+        self._cfx_user_by_full_name: Dict[str, CfxUser] = dict()
+        self._cfx_user_by_full_name_lower: Dict[str, CfxUser] = dict()
+
+        # Split the data into lines
+        lines = role_data.ressource_subsystem_data.strip().split("\n")
+
+        # Iterate over each line
+        for line in lines:
+            # Split the name and the associated value
+            raw_full_name_unstripped, raw_subsystem = line.split("\t")
+
+            subsystem = SubSystem[raw_subsystem]
+
+            raw_full_name = raw_full_name_unstripped.strip()
+            raw_full_name_lower = raw_full_name.lower()
+
+            cfx_user = CfxUser(raw_full_name=raw_full_name, full_name=raw_full_name_lower, subsystem=subsystem)
+
+            self._cfx_user_by_full_name_lower[raw_full_name_lower] = cfx_user
+            self._cfx_user_by_full_name[raw_full_name] = cfx_user
+
+    def get_cfx_user_by_full_name(self, full_name: str) -> CfxUser:
+        return self._cfx_user_by_full_name[full_name]
 
 
 def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in: str) -> SubSystem:
@@ -94,21 +133,3 @@ def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in
 def get_subsystem_from_cfx_current_owner(cfx_current_owner: str) -> SubSystem:
     raw_subystem_of_ressource = get_raw_subystem_of_ressource(cfx_current_owner)
     return SubSystem[raw_subystem_of_ressource]
-
-
-def get_raw_subystem_of_ressource(ressource_name: str) -> str:
-    # Split the data into lines
-    lines = role_data.ressource_subsystem_data.strip().split("\n")
-
-    # Iterate over each line
-    for line in lines:
-        # Split the name and the associated value
-        first_col, second_col = line.split("\t")
-
-        # Check if the first column matches the given name
-        if first_col.strip().lower() == ressource_name.lower():
-            return second_col.strip()
-
-    # Return an error message if the name is not found
-    logger_config.print_and_log_error(f"Could not get subsystem of {ressource_name}")
-    return "Name not found"
