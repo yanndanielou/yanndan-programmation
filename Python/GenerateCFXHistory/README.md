@@ -16,6 +16,18 @@ https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/REPORT/Personal%20Querie
 Requête CCB:
 https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/QUERY/Personal%20Queries/NEXTEO/ATS%2B%20%26%20NExTEO%20pour%20CMC?format=HTML&loginId={{loginid}}&password={{password}}&noframes=true
 
+Changements états
+https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/QUERY/Personal%20Queries/NExTEO_ATS_Courbes/NExteo_ATSp_changements_etats?format=HTML&loginId={{loginid}}&password={{password}}&noframes=true
+
+Changements Owner
+https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/QUERY/Personal%20Queries/NExTEO_ATS_Courbes/NExteo_ATSp_changements_owner?format=HTML&loginId={{loginid}}&password={{password}}&noframes=true
+
+Etats
+https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/QUERY/Personal%20Queries/NExTEO_ATS_Courbes/NExteo_ATSp_details?format=HTML&loginId={{loginid}}&password={{password}}&noframes=true
+
+
+
+
 ## Running Tests
 
 
