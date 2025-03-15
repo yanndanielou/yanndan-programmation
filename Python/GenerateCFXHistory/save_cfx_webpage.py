@@ -256,11 +256,11 @@ class SaveCfxWebpageApplication:
 
     def handle_cfx(self, cfx_id: str):
 
-        if not DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS:
-            extended_history_text = self.safe_extract_extended_history_text_from_website(cfx_id=cfx_id)
+        if DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS:
+            extended_history_text = self.load_extended_history_from_file(cfx_id=cfx_id)
 
         else:
-            extended_history_text = self.load_extended_history_from_file(cfx_id=cfx_id)
+            extended_history_text = self.safe_extract_extended_history_text_from_website(cfx_id=cfx_id)
 
         self.process_extended_history(cfx_id, extended_history_text)
 
