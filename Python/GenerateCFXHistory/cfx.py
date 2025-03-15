@@ -45,29 +45,30 @@ class State(IntEnum):
 
 
 @dataclass
-class ChangeCurrentOwnerAction:
+class Action:
     _cfx_request: "ChampFXEntry"
-    _old_current_owner: str
-    _new_current_owner: str
     _timestamp: datetime
-    _action: Action
-
-
-@dataclass
-class ChangeStateAction:
-    _cfx_request: "ChampFXEntry"
-    _old_state: State
-    _new_state: State
-    _timestamp: datetime
-    _action: Action
 
     @property
     def timestamp(self) -> datetime:
         return self._timestamp
 
     @property
-    def cfx_request(self) -> State:
+    def cfx_request(self) -> "ChampFXEntry":
         return self._cfx_request
+
+
+@dataclass
+class ChangeCurrentOwnerAction(Action):
+    _previous_owner: role.CfxUser
+    _new_owner: role.CfxUser
+
+
+@dataclass
+class ChangeStateAction(Action):
+    _old_state: State
+    _new_state: State
+    _action: Action
 
     @property
     def new_state(self) -> State:
@@ -157,6 +158,9 @@ class ChampFXLibrary:
         return change_state_actions_created
 
     def create_current_owner_modifications(self):
+
+        change_current_owner_actions_created: List[ChangeCurrentOwnerAction] = []
+
         with open(self._all_current_owner_modifications_per_cfx_pickle_file_full_path, "rb") as file:
             all_current_owner_modifications_per_cfx: Dict[str, List[cfx_extended_history.CFXHistoryField]] = pickle.load(file)
 
@@ -164,7 +168,19 @@ class ChampFXLibrary:
                 cfx_entry = self.get_cfx_by_id(cfx_id)
                 for cfx_history_element in cfx_history_elements:
                     # cfx_history_element.
+
+                    previous_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(cfx_history_element.old_state)
+
+                    new_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(cfx_history_element.new_state)
+
+                    change_current_owner_action: ChangeCurrentOwnerAction = ChangeCurrentOwnerAction(
+                        _cfx_request=cfx_entry, _previous_owner=previous_owner, _new_owner=new_owner, _timestamp=cfx_history_element.change_timestamp
+                    )
+                    change_current_owner_actions_created.append(change_current_owner_action)
+                    cfx_entry.add_change_current_owner_action(change_current_owner_action)
                     pass
+
+        return change_current_owner_actions_created
 
     def get_all_cfx(self) -> List["ChampFXEntry"]:
         return self._champfx_entry_by_id.values()
@@ -213,6 +229,9 @@ class ChampFXEntry:
         self._change_state_actions: list[ChangeStateAction] = []
         self._change_state_actions_by_date: Dict[datetime, ChangeStateAction] = dict()
 
+        self._change_current_owner_actions: list[ChangeCurrentOwnerAction] = []
+        self._change_current_owner_actions_by_date: Dict[datetime, ChangeCurrentOwnerAction] = dict()
+
         self.cfx_id = row["CFXID"]
         self._raw_state: State = State[(row["State"])]
         # self._submit_date: datetime = utils.convert_champfx_extract_date(row["SubmitDate"])
@@ -241,6 +260,10 @@ class ChampFXEntry:
     def add_change_state_action(self, change_state_action: ChangeStateAction) -> None:
         self._change_state_actions.append(change_state_action)
         self._change_state_actions_by_date[change_state_action.timestamp] = change_state_action
+
+    def add_change_current_owner_action(self, change_current_owner_action: ChangeCurrentOwnerAction) -> None:
+        self._change_current_owner_actions.append(change_current_owner_action)
+        self._change_current_owner_actions_by_date[change_current_owner_action.timestamp] = change_current_owner_action
 
     @property
     def raw_state(self) -> State:
