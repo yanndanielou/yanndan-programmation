@@ -154,7 +154,8 @@ class HandlingCfxThread(threading.Thread):
 
     def run(self):
         if not DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS:
-            self.create_webdriver_and_login()
+            with logger_config.stopwatch_with_label("create_webdriver_and_login"):
+                self.create_webdriver_and_login()
 
         while True:
             cfx_id = self.task_queue.get()  # Get a task from the queue
@@ -201,17 +202,13 @@ class HandlingCfxThread(threading.Thread):
         with logger_config.stopwatch_with_label(f"Driver get login url {login_url}"):
             self.driver.get(login_url)
 
-        with logger_config.stopwatch_with_label(label="Waited Title is now good", also_print=False):
+        with logger_config.stopwatch_with_label(label="Waited page is loaded", enable_print=False):
             WebDriverWait(self.driver, 100).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
-
-        with logger_config.stopwatch_with_label("Wait for the page to be fully loaded (JavaScript):: document.readyState now good"):
             WebDriverWait(self.driver, 40).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
-
-        with logger_config.stopwatch_with_label("Waited for welcome message"):
             try:
                 WebDriverWait(self.driver, 100).until(expected_conditions.text_to_be_present_in_element((By.ID, "welcomeMsg"), "AD001\\fr232487"))
             except TimeoutException as e:
-                logger_config.print_and_log_error(str(e))
+                logger_config.print_and_log_exception(e)
 
     def open_cfx_url(self, cfx_id: str) -> None:
         # URL of the web page you want to save
@@ -219,17 +216,19 @@ class HandlingCfxThread(threading.Thread):
             f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/RECORD/{cfx_id}?format=HTML&loginId={connexion_param.champfx_login}&password={connexion_param.champfx_password}&noframes=true"
         )
 
-        with logger_config.stopwatch_with_label(f"Driver get url {cfx_url}"):
+        with logger_config.stopwatch_with_label(f"Driver get url {cfx_url}", enabled=False):
             self.driver.get(cfx_url)
 
-        with logger_config.stopwatch_with_label(label="Waited Title is now good", also_print=False):
-            WebDriverWait(self.driver, 10).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
+        with logger_config.stopwatch_with_label(label="Waited page to be loaded", enabled=False):
 
-        with logger_config.stopwatch_with_label(label="Wait for the page to be fully loaded (JavaScript):: document.readyState now good", also_print=False):
-            WebDriverWait(self.driver, 10).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
+            with logger_config.stopwatch_with_label(label="Waited Title is now good", enabled=False):
+                WebDriverWait(self.driver, 10).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
 
-        with logger_config.stopwatch_with_label(label="Waited for history tab available", also_print=False):
-            WebDriverWait(self.driver, 10).until(expected_conditions.text_to_be_present_in_element((By.ID, "dijit_layout_TabContainer_1_tablist_dijit_layout_ContentPane_14"), "History"))
+            with logger_config.stopwatch_with_label(label="Wait for the page to be fully loaded (JavaScript):: document.readyState now good", enabled=False):
+                WebDriverWait(self.driver, 10).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
+
+            with logger_config.stopwatch_with_label(label="Waited for history tab available", enabled=False):
+                WebDriverWait(self.driver, 10).until(expected_conditions.text_to_be_present_in_element((By.ID, "dijit_layout_TabContainer_1_tablist_dijit_layout_ContentPane_14"), "History"))
 
     # Locate the "History" tab using its unique attributes and click it
     def locate_hitory_tab_and_click_it(self) -> None:
@@ -260,43 +259,45 @@ class HandlingCfxThread(threading.Thread):
 
     def process_extended_history(self, cfx_id: str, extended_history_text: str) -> None:
 
-        with logger_config.stopwatch_with_label("Parse and save extended_history_text"):
+        with logger_config.stopwatch_with_label("Process extended_history_text"):
 
-            with logger_config.stopwatch_with_label("parse_extended_history_text method"):
+            parsed_extended_history_file_name = f"{cfx_id}_parsed_extended_history.json"
+            parsed_extended_history_file_full_path = (
+                f"{self._application.output_parent_directory_name}/{self._application.parsed_extended_history_sub_output_directory_name}/{parsed_extended_history_file_name}"
+            )
+            change_current_owner_only_fields_modification_json_file_full_path = (
+                f"{self._application.output_parent_directory_name}/{self._application.parsed_current_owner_changes_output_directory_name}/{cfx_id}_change_current_owner_only_fields_modifications.json"
+            )
+            change_current_owner_only_fields_modification_picke_file_full_path = (
+                f"{self._application.output_parent_directory_name}/{self._application.parsed_current_owner_changes_output_directory_name}/{cfx_id}_change_current_owner_only_fields_modifications.pkl"
+            )
+            try:
+                parsed_extended_history = cfx_extended_history.parse_history(cfx_id=cfx_id, extended_history_text=extended_history_text)
 
-                parsed_extended_history_file_name = f"{cfx_id}_parsed_extended_history.json"
-                parsed_extended_history_file_full_path = (
-                    f"{self._application.output_parent_directory_name}/{self._application.parsed_extended_history_sub_output_directory_name}/{parsed_extended_history_file_name}"
+                if CREATE_PARSED_EXTENDED_HISTORY_FILES:
+                    with logger_config.stopwatch_with_label(f"Create {parsed_extended_history_file_full_path}"):
+                        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(parsed_extended_history, parsed_extended_history_file_full_path)
+
+                parsed_extended_history_all_current_owner_field_modifications = parsed_extended_history.get_all_current_owner_field_modifications()
+
+                if CREATE_PARSED_CURRENT_OWNNER_MODIFICATIONS_JSON_FILES:
+                    with logger_config.stopwatch_with_label(f"Create {change_current_owner_only_fields_modification_json_file_full_path}"):
+                        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
+                            parsed_extended_history_all_current_owner_field_modifications, change_current_owner_only_fields_modification_json_file_full_path
+                        )
+                with logger_config.stopwatch_with_label(f"Create {change_current_owner_only_fields_modification_picke_file_full_path}", enabled=False):
+                    with open(change_current_owner_only_fields_modification_picke_file_full_path, "wb") as file:
+                        pickle.dump(parsed_extended_history_all_current_owner_field_modifications, file)
+
+                self._application.add_all_current_owner_modification(cfx_id=cfx_id, current_owner_field_modifications=parsed_extended_history_all_current_owner_field_modifications)
+
+            except Exception as e:
+                logger_config.print_and_log_exception(exception_to_print=e)
+                json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
+                    str(e), f"{self._application.output_parent_directory_name}/{self._application.errors_output_sub_directory_name}/{parsed_extended_history_file_name}"
                 )
-                change_current_owner_only_fields_modification_json_file_full_path = f"{self._application.output_parent_directory_name}/{self._application.parsed_current_owner_changes_output_directory_name}/{cfx_id}_change_current_owner_only_fields_modifications.json"
-                change_current_owner_only_fields_modification_picke_file_full_path = f"{self._application.output_parent_directory_name}/{self._application.parsed_current_owner_changes_output_directory_name}/{cfx_id}_change_current_owner_only_fields_modifications.pkl"
-                try:
-                    parsed_extended_history = cfx_extended_history.parse_history(cfx_id=cfx_id, extended_history_text=extended_history_text)
-
-                    if CREATE_PARSED_EXTENDED_HISTORY_FILES:
-                        with logger_config.stopwatch_with_label(f"Create {parsed_extended_history_file_full_path}"):
-                            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(parsed_extended_history, parsed_extended_history_file_full_path)
-
-                    parsed_extended_history_all_current_owner_field_modifications = parsed_extended_history.get_all_current_owner_field_modifications()
-
-                    if CREATE_PARSED_CURRENT_OWNNER_MODIFICATIONS_JSON_FILES:
-                        with logger_config.stopwatch_with_label(f"Create {change_current_owner_only_fields_modification_json_file_full_path}"):
-                            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
-                                parsed_extended_history_all_current_owner_field_modifications, change_current_owner_only_fields_modification_json_file_full_path
-                            )
-                    with logger_config.stopwatch_with_label(f"Create {change_current_owner_only_fields_modification_picke_file_full_path}"):
-                        with open(change_current_owner_only_fields_modification_picke_file_full_path, "wb") as file:
-                            pickle.dump(parsed_extended_history_all_current_owner_field_modifications, file)
-
-                    self._application.add_all_current_owner_modification(cfx_id=cfx_id, current_owner_field_modifications=parsed_extended_history_all_current_owner_field_modifications)
-
-                except Exception as e:
-                    logger_config.print_and_log_exception(exception_to_print=e)
-                    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
-                        str(e), f"{self._application.output_parent_directory_name}/{self._application.errors_output_sub_directory_name}/{parsed_extended_history_file_name}"
-                    )
-                    with open(change_current_owner_only_fields_modification_json_file_full_path, "w", encoding="utf-8") as text_dump_file:
-                        text_dump_file.write(str(e))
+                with open(change_current_owner_only_fields_modification_json_file_full_path, "w", encoding="utf-8") as text_dump_file:
+                    text_dump_file.write(str(e))
 
     def safe_extract_extended_history_text_from_website(self, cfx_id: str) -> str:
 

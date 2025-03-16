@@ -248,24 +248,31 @@ def get_logger(name: str, rotating_file_name_without_extension: str, level: int 
 
 
 @contextmanager
-def stopwatch_with_label(label: str, also_print: bool = True) -> Generator[float, None, None]:
+def stopwatch_with_label(
+    label: str, enable_print: bool = True, enable_log: bool = True, enabled: bool = True
+) -> Generator[float, None, None]:
     """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
     https://www.docstring.fr/glossaire/with/"""
-    debut = time.perf_counter()
-    yield time.perf_counter() - debut
-    fin = time.perf_counter()
-    duree = fin - debut
-    to_print_and_log = f"{label} Elapsed: {duree:.2f} seconds"
+    if enabled:
+        debut = time.perf_counter()
+        yield time.perf_counter() - debut
+        fin = time.perf_counter()
+        duree = fin - debut
+        to_print_and_log = f"{label} Elapsed: {duree:.2f} seconds"
 
-    log_timestamp = time.asctime(time.localtime(time.time()))
+        log_timestamp = time.asctime(time.localtime(time.time()))
 
-    previous_stack = inspect.stack(0)[2]
-    file_name = previous_stack.filename
-    line_number = previous_stack.lineno
-    calling_file_name_and_line_number = file_name + ", line " + str(line_number)
+        previous_stack = inspect.stack(0)[2]
+        file_name = previous_stack.filename
+        line_number = previous_stack.lineno
+        calling_file_name_and_line_number = file_name + ", line " + str(line_number)
 
-    # pylint: disable=line-too-long
-    if also_print:
-        print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
+        # pylint: disable=line-too-long
+        if enable_print:
+            print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
 
-    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
+        if enable_log:
+            logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
+
+    else:
+        yield 0.0
