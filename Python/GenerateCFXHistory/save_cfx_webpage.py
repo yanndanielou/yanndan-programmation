@@ -41,8 +41,8 @@ CREATE_PARSED_EXTENDED_HISTORY_FILES = False
 
 CREATE_PARSED_CURRENT_OWNNER_MODIFICATIONS_JSON_FILES = False
 
-DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = False
-# DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = True
+DEFAULT_DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = False
+DEFAULT_DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = True
 
 DEFAULT_NUMBER_OF_THREADS = 2
 
@@ -52,6 +52,8 @@ class SaveCfxWebpageApplication:
     first_cfx_index: Optional[int]
     last_cfx_index: Optional[int]
     _number_of_threads: int
+    do_not_open_website_and_treat_previous_results: bool
+
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
     all_current_owner_modifications: List[cfx_extended_history.CFXHistoryField] = field(default_factory=list)
     all_current_owner_modifications_per_cfx: Dict[str, cfx_extended_history.CFXHistoryField] = field(default_factory=dict)
@@ -94,7 +96,7 @@ class SaveCfxWebpageApplication:
         with logger_config.stopwatch_with_label("Create Threads"):
             threads = []
             for _ in range(self._number_of_threads):
-                thread = HandlingCfxThread(task_queue=task_queue, application=self)
+                thread = HandlingCfxThread(task_queue=task_queue, application=self, do_not_open_website_and_treat_previous_results=self.do_not_open_website_and_treat_previous_results)
                 thread.start()
                 threads.append(thread)
 
@@ -144,16 +146,17 @@ class SaveCfxWebpageApplication:
 
 class HandlingCfxThread(threading.Thread):
 
-    def __init__(self, task_queue: queue.Queue, application: SaveCfxWebpageApplication):
+    def __init__(self, task_queue: queue.Queue, application: SaveCfxWebpageApplication, do_not_open_website_and_treat_previous_results: bool):
         threading.Thread.__init__(self)
         self._application = application
 
+        self.do_not_open_website_and_treat_previous_results = do_not_open_website_and_treat_previous_results
         self.task_queue = task_queue
 
         self.driver: ChromiumDriver = None
 
     def run(self):
-        if not DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS:
+        if not self.do_not_open_website_and_treat_previous_results:
             with logger_config.stopwatch_with_label("create_webdriver_and_login"):
                 self.create_webdriver_and_login()
 
@@ -322,7 +325,7 @@ class HandlingCfxThread(threading.Thread):
 
     def handle_cfx(self, cfx_id: str):
 
-        if DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS:
+        if self.do_not_open_website_and_treat_previous_results:
             extended_history_text = self.load_extended_history_from_file(cfx_id=cfx_id)
 
         else:
@@ -344,11 +347,14 @@ def main() -> None:
         parser.add_argument("--last_cfx_index", type=int, help="last_cfx_index.", default=None)
         parser.add_argument("--number_of_threads", type=int, help="Number of threads.", default=DEFAULT_NUMBER_OF_THREADS)
 
+        parser.add_argument("--do_not_open_website_and_treat_previous_results", action=argparse.BooleanOptionalAction)
+
         args = parser.parse_args()
 
         first_cfx_index = args.first_cfx_index
         last_cfx_index = args.last_cfx_index
         number_of_threads = args.number_of_threads
+        do_not_open_website_and_treat_previous_results = args.do_not_open_website_and_treat_previous_results
 
         output_parent_directory_name = (
             OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME if (first_cfx_index is None and last_cfx_index is None) else f"{OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME}_{first_cfx_index}_{last_cfx_index}"
@@ -363,9 +369,15 @@ def main() -> None:
         logger_config.print_and_log_info(f"last_cfx_index: {last_cfx_index}")
         logger_config.print_and_log_info(f"output_parent_directory_name: {output_parent_directory_name}")
         logger_config.print_and_log_info(f"number_of_threads: {number_of_threads}")
+        logger_config.print_and_log_info(f"do_not_open_website_and_treat_previous_results_str: {do_not_open_website_and_treat_previous_results_str}")
+        logger_config.print_and_log_info(f"do_not_open_website_and_treat_previous_results: {do_not_open_website_and_treat_previous_results}")
 
         application: SaveCfxWebpageApplication = SaveCfxWebpageApplication(
-            first_cfx_index=first_cfx_index, last_cfx_index=last_cfx_index, output_parent_directory_name=output_parent_directory_name, _number_of_threads=number_of_threads
+            first_cfx_index=first_cfx_index,
+            last_cfx_index=last_cfx_index,
+            output_parent_directory_name=output_parent_directory_name,
+            _number_of_threads=number_of_threads,
+            do_not_open_website_and_treat_previous_results=do_not_open_website_and_treat_previous_results,
         )
         application.run()
 
