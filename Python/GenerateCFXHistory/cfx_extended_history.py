@@ -22,7 +22,7 @@ class CFXHistoryField:
         self.secondary_label = secondary_label.strip()
         self.old_state = old_state.strip()
         self.new_state = new_state.strip()
-        self.change_timestamp: change_timestamp
+        self.change_timestamp = change_timestamp
 
     def __repr__(self) -> str:
         return f"<CFXHistoryField field_id={self.field_id} secondary_label={self.secondary_label}>"
