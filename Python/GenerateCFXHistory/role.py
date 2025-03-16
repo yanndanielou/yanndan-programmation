@@ -85,7 +85,7 @@ class CfxUserLibrary:
             self._cfx_user_by_full_name[raw_full_name] = cfx_user
 
     def get_cfx_user_by_full_name(self, full_name: str) -> CfxUser:
-        return self._cfx_user_by_full_name[full_name]
+        return self._cfx_user_by_full_name_lower[full_name.lower()]
 
 
 def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in: str) -> SubSystem:
@@ -130,8 +130,3 @@ def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in
                 return subsystem
 
     return None
-
-
-def get_subsystem_from_cfx_current_owner(cfx_current_owner: str) -> SubSystem:
-    raw_subystem_of_ressource = get_raw_subystem_of_ressource(cfx_current_owner)
-    return SubSystem[raw_subystem_of_ressource]
