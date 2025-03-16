@@ -44,13 +44,14 @@ CREATE_PARSED_CURRENT_OWNNER_MODIFICATIONS_JSON_FILES = False
 DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = False
 # DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = True
 
-NUMBER_OF_THREADS = 2
+DEFAULT_NUMBER_OF_THREADS = 2
 
 
 @dataclass
 class SaveCfxWebpageApplication:
     first_cfx_index: Optional[int]
     last_cfx_index: Optional[int]
+    _number_of_threads: int
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
     all_current_owner_modifications: List[cfx_extended_history.CFXHistoryField] = field(default_factory=list)
     all_current_owner_modifications_per_cfx: Dict[str, cfx_extended_history.CFXHistoryField] = field(default_factory=dict)
@@ -91,7 +92,7 @@ class SaveCfxWebpageApplication:
         task_queue = queue.Queue()
 
         threads = []
-        for _ in range(NUMBER_OF_THREADS):
+        for _ in range(self._number_of_threads):
             thread = HandlingCfxThread(task_queue=task_queue, application=self)
             thread.start()
             threads.append(thread)
@@ -336,17 +337,21 @@ def main() -> None:
         logger_config.print_and_log_info("Application start")
 
         parser = argparse.ArgumentParser(description="Your application description here.")
-        parser.add_argument("--first_cfx_index", type=int, help="An integer parameter for your application.", default=None)
-        parser.add_argument("--last_cfx_index", type=int, help="A string parameter for your application.", default=None)
+        parser.add_argument("--first_cfx_index", type=int, help="first_cfx_index.", default=None)
+        parser.add_argument("--last_cfx_index", type=int, help="last_cfx_index.", default=None)
+        parser.add_argument("--number_of_threads", type=int, help="Number of threads.", default=DEFAULT_NUMBER_OF_THREADS)
 
         args = parser.parse_args()
 
         first_cfx_index = args.first_cfx_index
         last_cfx_index = args.last_cfx_index
+        number_of_threads = args.number_of_threads
 
         output_parent_directory_name = (
             OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME if (first_cfx_index is None and last_cfx_index is None) else f"{OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME}_{first_cfx_index}_{last_cfx_index}"
         )
+
+        output_parent_directory_name = output_parent_directory_name + "_{number_of_threads}_Threads"
 
         # first_cfx_index = 10
         # last_cfx_index = 100
@@ -354,8 +359,11 @@ def main() -> None:
         logger_config.print_and_log_info(f"first_cfx_index:{first_cfx_index}")
         logger_config.print_and_log_info(f"last_cfx_index: {last_cfx_index}")
         logger_config.print_and_log_info(f"output_parent_directory_name: {output_parent_directory_name}")
+        logger_config.print_and_log_info(f"number_of_threads: {number_of_threads}")
 
-        application: SaveCfxWebpageApplication = SaveCfxWebpageApplication(first_cfx_index=first_cfx_index, last_cfx_index=last_cfx_index, output_parent_directory_name=output_parent_directory_name)
+        application: SaveCfxWebpageApplication = SaveCfxWebpageApplication(
+            first_cfx_index=first_cfx_index, last_cfx_index=last_cfx_index, output_parent_directory_name=output_parent_directory_name, _number_of_threads=number_of_threads
+        )
         application.run()
 
 
