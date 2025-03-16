@@ -156,7 +156,7 @@ def produce_displays(use_cumulative, months, present_states_ordered_list, cumula
     output_html_file = output_html_file_prefix + ".html"
 
     with logger_config.stopwatch_with_label(f"html {output_html_file} creation"):
-        with open(output_html_file, "w") as html_file:
+        with open(output_html_file, "w", encoding="utf8") as html_file:
             html_file.write(html_content)
 
 
