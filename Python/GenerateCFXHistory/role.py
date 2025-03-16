@@ -72,7 +72,9 @@ class CfxUserLibrary:
             # Split the name and the associated value
             raw_full_name_unstripped, raw_subsystem = line.split("\t")
 
-            subsystem = SubSystem[raw_subsystem]
+            formated_subsystem_text = raw_subsystem.replace(" ", "_")
+
+            subsystem = SubSystem[formated_subsystem_text]
 
             raw_full_name = raw_full_name_unstripped.strip()
             raw_full_name_lower = raw_full_name.lower()
