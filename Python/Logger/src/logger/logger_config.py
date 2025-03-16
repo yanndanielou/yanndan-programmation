@@ -247,7 +247,7 @@ def get_logger(name: str, rotating_file_name_without_extension: str, level: int 
 
 
 @contextmanager
-def stopwatch_with_label(label: str) -> Generator[float, None, None]:
+def stopwatch_with_label(label: str, also_print: bool = True) -> Generator[float, None, None]:
     """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
     https://www.docstring.fr/glossaire/with/"""
     debut = time.perf_counter()
@@ -264,5 +264,7 @@ def stopwatch_with_label(label: str) -> Generator[float, None, None]:
     calling_file_name_and_line_number = file_name + ", line " + str(line_number)
 
     # pylint: disable=line-too-long
-    print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
+    if also_print:
+        print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
+
     logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
