@@ -91,24 +91,25 @@ class SaveCfxWebpageApplication:
 
         task_queue = queue.Queue()
 
-        threads = []
-        for _ in range(self._number_of_threads):
-            thread = HandlingCfxThread(task_queue=task_queue, application=self)
-            thread.start()
-            threads.append(thread)
+        with logger_config.stopwatch_with_label("Create Threads"):
+            threads = []
+            for _ in range(self._number_of_threads):
+                thread = HandlingCfxThread(task_queue=task_queue, application=self)
+                thread.start()
+                threads.append(thread)
 
-        # Add tasks to the queue
-        for cfx_id_to_handle in all_cfx_id_to_handle_unique_ordered_list:
-            task_queue.put(cfx_id_to_handle)
+        with logger_config.stopwatch_with_label("Add tasks to the queue"):
+            for cfx_id_to_handle in all_cfx_id_to_handle_unique_ordered_list:
+                task_queue.put(cfx_id_to_handle)
 
-        # Block until all tasks are done
-        task_queue.join()
+        with logger_config.stopwatch_with_label("Block until all tasks are done"):
+            task_queue.join()
 
-        # Stop the threads by adding a sentinel object (None)
-        for _ in threads:
-            task_queue.put(None)
-        for thread in threads:
-            thread.join()
+        with logger_config.stopwatch_with_label("Stop the threads by adding a sentinel object (None)"):
+            for _ in threads:
+                task_queue.put(None)
+            for thread in threads:
+                thread.join()
 
         # for cfx_id in all_cfx_id_to_handle_unique_ordered_list:
         #    self.handle_cfx(cfx_id=cfx_id)
@@ -150,10 +151,11 @@ class HandlingCfxThread(threading.Thread):
         self.task_queue = task_queue
 
         self.driver: ChromiumDriver = None
+
+    def run(self):
         if not DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS:
             self.create_webdriver_and_login()
 
-    def run(self):
         while True:
             cfx_id = self.task_queue.get()  # Get a task from the queue
             if cfx_id is None:  # None is a signal to stop the thread
@@ -351,7 +353,7 @@ def main() -> None:
             OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME if (first_cfx_index is None and last_cfx_index is None) else f"{OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME}_{first_cfx_index}_{last_cfx_index}"
         )
 
-        output_parent_directory_name = output_parent_directory_name + "_{number_of_threads}_Threads"
+        output_parent_directory_name = output_parent_directory_name + f"_{number_of_threads}_Threads"
 
         # first_cfx_index = 10
         # last_cfx_index = 100
