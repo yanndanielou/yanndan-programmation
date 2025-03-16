@@ -178,7 +178,7 @@ class ChampFXLibrary:
                         logger_config.print_and_log_error(f"Could not find\t{cfx_history_element.old_state}\t for {cfx_id}")
 
                     new_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(self.convert_cfx_history_element_to_valid_full_name(cfx_history_element.new_state))
-                    if previous_owner is None:
+                    if new_owner is None:
                         logger_config.print_and_log_error(f"Could not find\t{cfx_history_element.new_state}\t for {cfx_id}")
 
                     if previous_owner is not None and new_owner is not None:
