@@ -16,7 +16,7 @@ import role
 import cfx_extended_history
 
 
-class Action(Enum):
+class ActionType(Enum):
     Import = auto()
     ReSubmit = auto()
     Submit = auto()
@@ -45,7 +45,7 @@ class State(IntEnum):
 
 
 @dataclass
-class Action:
+class BaseAction:
     _cfx_request: "ChampFXEntry"
     _timestamp: datetime
 
@@ -59,16 +59,16 @@ class Action:
 
 
 @dataclass
-class ChangeCurrentOwnerAction(Action):
+class ChangeCurrentOwnerAction(BaseAction):
     _previous_owner: role.CfxUser
     _new_owner: role.CfxUser
 
 
 @dataclass
-class ChangeStateAction(Action):
+class ChangeStateAction(BaseAction):
     _old_state: State
     _new_state: State
-    _action: Action
+    _action: ActionType
 
     @property
     def new_state(self) -> State:
@@ -79,7 +79,7 @@ class ChangeStateAction(Action):
         return self._old_state
 
     @property
-    def action(self) -> Action:
+    def action(self) -> ActionType:
         return self._action
 
 
@@ -148,7 +148,7 @@ class ChampFXLibrary:
             history_raw_action_timestamp_str = row["history.action_timestamp"]
             action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
             history_raw_action_name = row["history.action_name"]
-            history_action = Action[history_raw_action_name]
+            history_action = ActionType[history_raw_action_name]
             change_state_actions_created.append(history_action)
 
             change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)

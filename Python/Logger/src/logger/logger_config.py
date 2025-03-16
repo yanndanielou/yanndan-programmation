@@ -92,6 +92,7 @@ def print_and_log_warning(to_print_and_log: str) -> None:
 def print_and_log_exception(exception_to_print: Exception, additional_text: Optional[str] = None) -> None:
     if additional_text:
         to_print_and_log = f"Exception raised:{additional_text} "
+        print_and_log_error(to_print_and_log, call_stack_frame=3)
 
     print_and_log_error(to_print_and_log=f"Exception raised, content:{str(exception_to_print)}", call_stack_frame=3)
     print_and_log_error(
@@ -109,8 +110,8 @@ def print_and_log_exception(exception_to_print: Exception, additional_text: Opti
 
 def print_and_log_error(
     to_print_and_log: str,
-    call_stack_context: Optional[int] = DEFAULT_CALL_STACK_CONTEXT_VALUE,
-    call_stack_frame: Optional[int] = DEFAULT_CALL_STACK_FRAME_VALUE,
+    call_stack_context: int = DEFAULT_CALL_STACK_CONTEXT_VALUE,
+    call_stack_frame: int = DEFAULT_CALL_STACK_FRAME_VALUE,
 ) -> None:
     """Print in standard output and log in file as error level"""
     log_timestamp = time.asctime(time.localtime(time.time()))
