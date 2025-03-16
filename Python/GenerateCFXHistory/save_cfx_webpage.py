@@ -42,7 +42,7 @@ CREATE_PARSED_EXTENDED_HISTORY_FILES = False
 CREATE_PARSED_CURRENT_OWNNER_MODIFICATIONS_JSON_FILES = False
 
 DEFAULT_DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = False
-DEFAULT_DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = True
+# DEFAULT_DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = True
 
 DEFAULT_NUMBER_OF_THREADS = 2
 
@@ -369,7 +369,6 @@ def main() -> None:
         logger_config.print_and_log_info(f"last_cfx_index: {last_cfx_index}")
         logger_config.print_and_log_info(f"output_parent_directory_name: {output_parent_directory_name}")
         logger_config.print_and_log_info(f"number_of_threads: {number_of_threads}")
-        logger_config.print_and_log_info(f"do_not_open_website_and_treat_previous_results_str: {do_not_open_website_and_treat_previous_results_str}")
         logger_config.print_and_log_info(f"do_not_open_website_and_treat_previous_results: {do_not_open_website_and_treat_previous_results}")
 
         application: SaveCfxWebpageApplication = SaveCfxWebpageApplication(
