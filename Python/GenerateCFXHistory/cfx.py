@@ -117,7 +117,7 @@ class ChampFXLibrary:
                 logger_config.print_and_log_info(f"{len(change_state_actions_created)} ChangeStateAction objects created")
 
             with logger_config.stopwatch_with_label("ChampFXLibrary process_current_owner_role"):
-                list(map(lambda champ_fx: champ_fx.process_current_owner_role(), self.get_all_cfx()))
+                list(map(lambda champ_fx: champ_fx.process_current_owner_role(self), self.get_all_cfx()))
 
             with logger_config.stopwatch_with_label(f"create current owner modifications"):
                 self.create_current_owner_modifications()
@@ -130,6 +130,7 @@ class ChampFXLibrary:
             cfx_id = row["CFXID"]
             if cfx_id in self._champfx_entry_by_id:
                 cfx = self._champfx_entry_by_id[cfx_id]
+                cfx._current_owner
             else:
                 cfx = ChampFXEntry(row)
                 self._champfx_entry_by_id[cfx_id] = cfx
@@ -157,6 +158,9 @@ class ChampFXLibrary:
 
         return change_state_actions_created
 
+    def convert_cfx_history_element_to_valid_full_name(self, cfx_history_element_state: str) -> str:
+        return cfx_history_element_state.split("(")[0].strip()
+
     def create_current_owner_modifications(self):
 
         change_current_owner_actions_created: List[ChangeCurrentOwnerAction] = []
@@ -169,9 +173,9 @@ class ChampFXLibrary:
                 for cfx_history_element in cfx_history_elements:
                     # cfx_history_element.
 
-                    previous_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(cfx_history_element.old_state)
+                    previous_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(self.convert_cfx_history_element_to_valid_full_name(cfx_history_element.old_state))
 
-                    new_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(cfx_history_element.new_state)
+                    new_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(self.convert_cfx_history_element_to_valid_full_name(cfx_history_element.new_state))
 
                     change_current_owner_action: ChangeCurrentOwnerAction = ChangeCurrentOwnerAction(
                         _cfx_request=cfx_entry, _previous_owner=previous_owner, _new_owner=new_owner, _timestamp=cfx_history_element.change_timestamp
@@ -241,7 +245,8 @@ class ChampFXEntry:
         # self._validation_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.ValidationDate"])
         # self._closing_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.ClosingDate"])
         self._fixed_implemented_in: str = row["FixedImplementedIn"]
-        self._current_owner: str = row["CurrentOwner.FullName"]
+        self._current_owner_raw: str = row["CurrentOwner.FullName"]
+        self._current_owner: role.CfxUser = None
         self._current_owner_role: role.SubSystem = None
         self._subsystem_from_fixed_implemented_in: role.SubSystem = None
         # self._submit_year: datetime = self._submit_date.year
@@ -269,8 +274,9 @@ class ChampFXEntry:
     def raw_state(self) -> State:
         return self._raw_state
 
-    def process_current_owner_role(self) -> role.SubSystem:
-        self._current_owner_role: role.SubSystem = role.get_subsystem_from_cfx_current_owner(self._current_owner)
+    def process_current_owner_role(self, cfx_library: ChampFXLibrary) -> role.SubSystem:
+        self._current_owner = cfx_library._cfx_users_library.get_cfx_user_by_full_name(self._current_owner_raw)
+        self._current_owner_role: role.SubSystem = self._current_owner._subsystem
         return self._current_owner_role
 
     def process_subsystem_from_fixed_implemented_in(self) -> Optional[role.SubSystem]:
