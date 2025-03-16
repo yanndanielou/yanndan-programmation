@@ -180,7 +180,7 @@ class SaveCfxWebpageApplication:
         return extended_history_text
 
     def get_extended_history_raw_text_output_file_name(self, cfx_id: str) -> str:
-        extended_history_raw_text_output_file_name = f"{cfx_id}_cq_widget_CqReadonlyTextArea_4.txt"
+        extended_history_raw_text_output_file_name = f"{cfx_id}_raw_extended_history.txt"
         extended_history_raw_text_output_file_full_path = f"{self.output_parent_directory_name}/{self.extended_history_raw_text_sub_output_directory_name}/{extended_history_raw_text_output_file_name}"
         return extended_history_raw_text_output_file_full_path
 
