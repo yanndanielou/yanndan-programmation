@@ -26,8 +26,8 @@ def main() -> None:
         # simulation = Application().run(SimulationRequest([Dice()], list(range(1, 7))))
 
         # simulation = Application().run(SimulationRequest([Dice(range(1, 3))], list(range(1, 4))))
-        simulation = Application().run(SimulationRequest([Dice(range(1, 3))], [1, 1, 2]))
-        # simulation = Application().run()
+        # simulation = Application().run(SimulationRequest([Dice(range(1, 3))], [1, 1, 2]))
+        simulation = Application().run()
         simulation_result = simulation.complete_simulation_result
         all_flat_games = simulation_result.all_games
         all_flat_games_odds = [game.final_situation.get_odds_to_happen_from_initial_situation_taking_into_account_dices_and_hatches() for game in all_flat_games]
