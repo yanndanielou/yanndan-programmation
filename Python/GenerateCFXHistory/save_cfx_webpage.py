@@ -140,7 +140,7 @@ class SaveCfxWebpageApplication:
         with logger_config.stopwatch_with_label(f"Driver get login url {login_url}"):
             self.driver.get(login_url)
 
-        with logger_config.stopwatch_with_label("Waited Title is now good"):
+        with logger_config.stopwatch_with_label(label="Waited Title is now good", also_print=False):
             WebDriverWait(self.driver, 100).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
 
         with logger_config.stopwatch_with_label("Wait for the page to be fully loaded (JavaScript):: document.readyState now good"):
@@ -161,13 +161,13 @@ class SaveCfxWebpageApplication:
         with logger_config.stopwatch_with_label(f"Driver get url {cfx_url}"):
             self.driver.get(cfx_url)
 
-        with logger_config.stopwatch_with_label("Waited Title is now good"):
+        with logger_config.stopwatch_with_label(label="Waited Title is now good", also_print=False):
             WebDriverWait(self.driver, 10).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
 
-        with logger_config.stopwatch_with_label("Wait for the page to be fully loaded (JavaScript):: document.readyState now good"):
+        with logger_config.stopwatch_with_label(label="Wait for the page to be fully loaded (JavaScript):: document.readyState now good", also_print=False):
             WebDriverWait(self.driver, 10).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
 
-        with logger_config.stopwatch_with_label("Waited for history tab available"):
+        with logger_config.stopwatch_with_label(label="Waited for history tab available", also_print=False):
             WebDriverWait(self.driver, 10).until(expected_conditions.text_to_be_present_in_element((By.ID, "dijit_layout_TabContainer_1_tablist_dijit_layout_ContentPane_14"), "History"))
 
     # Locate the "History" tab using its unique attributes and click it
