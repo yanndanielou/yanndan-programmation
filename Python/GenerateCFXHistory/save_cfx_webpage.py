@@ -36,7 +36,9 @@ import os
 OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_webpage"
 
 
-CREATE_PARSED_EXTENDED_HISTORY_FILES = True
+CREATE_PARSED_EXTENDED_HISTORY_FILES = False
+
+CREATE_PARSED_CURRENT_OWNNER_MODIFICATIONS_JSON_FILES = False
 
 DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = False
 DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = True
@@ -215,10 +217,12 @@ class SaveCfxWebpageApplication:
                             json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(parsed_extended_history, parsed_extended_history_file_full_path)
 
                     parsed_extended_history_all_current_owner_field_modifications = parsed_extended_history.get_all_current_owner_field_modifications()
-                    with logger_config.stopwatch_with_label(f"Create {change_current_owner_only_fields_modification_json_file_full_path}"):
-                        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
-                            parsed_extended_history_all_current_owner_field_modifications, change_current_owner_only_fields_modification_json_file_full_path
-                        )
+
+                    if CREATE_PARSED_CURRENT_OWNNER_MODIFICATIONS_JSON_FILES:
+                        with logger_config.stopwatch_with_label(f"Create {change_current_owner_only_fields_modification_json_file_full_path}"):
+                            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
+                                parsed_extended_history_all_current_owner_field_modifications, change_current_owner_only_fields_modification_json_file_full_path
+                            )
                     with logger_config.stopwatch_with_label(f"Create {change_current_owner_only_fields_modification_picke_file_full_path}"):
                         with open(change_current_owner_only_fields_modification_picke_file_full_path, "wb") as file:
                             pickle.dump(parsed_extended_history_all_current_owner_field_modifications, file)
