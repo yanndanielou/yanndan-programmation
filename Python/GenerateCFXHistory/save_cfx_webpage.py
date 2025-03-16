@@ -36,8 +36,10 @@ import os
 OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_webpage"
 
 
+CREATE_PARSED_EXTENDED_HISTORY_FILES = True
+
 DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = False
-# DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = True
+DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = True
 
 
 @dataclass
@@ -87,19 +89,15 @@ class SaveCfxWebpageApplication:
         all_current_owner_modifications_per_cfx_json_file_full_path = f"{self.output_parent_directory_name}/all_current_owner_modifications_per_cfx.json"
         all_current_owner_modifications_per_cfx_picke_filel_full_path = f"{self.output_parent_directory_name}/all_current_owner_modifications_per_cfx.pkl"
 
-        with logger_config.stopwatch_with_label(f"Create {all_current_owner_modifications_json_file_full_path}"):
+        with logger_config.stopwatch_with_label("Create current owner modification json files"):
             json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(list_objects=self.all_current_owner_modifications, json_file_full_path=all_current_owner_modifications_json_file_full_path)
-
-        with logger_config.stopwatch_with_label(f"Create {all_current_owner_modifications_per_cfx_json_file_full_path}"):
             json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
                 list_objects=self.all_current_owner_modifications_per_cfx, json_file_full_path=all_current_owner_modifications_per_cfx_json_file_full_path
             )
 
-        with logger_config.stopwatch_with_label(f"Create {all_current_owner_modifications_pickel_file_full_path}"):
+        with logger_config.stopwatch_with_label("Create current owner modification pickle files"):
             with open(all_current_owner_modifications_pickel_file_full_path, "wb") as file:
                 pickle.dump(self.all_current_owner_modifications, file)
-
-        with logger_config.stopwatch_with_label(f"Create {all_current_owner_modifications_per_cfx_picke_filel_full_path}"):
             with open(all_current_owner_modifications_per_cfx_picke_filel_full_path, "wb") as file:
                 pickle.dump(self.all_current_owner_modifications_per_cfx, file)
 
@@ -212,8 +210,9 @@ class SaveCfxWebpageApplication:
                 try:
                     parsed_extended_history = cfx_extended_history.parse_history(cfx_id=cfx_id, extended_history_text=extended_history_text)
 
-                    with logger_config.stopwatch_with_label(f"Create {parsed_extended_history_file_full_path}"):
-                        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(parsed_extended_history, parsed_extended_history_file_full_path)
+                    if CREATE_PARSED_EXTENDED_HISTORY_FILES:
+                        with logger_config.stopwatch_with_label(f"Create {parsed_extended_history_file_full_path}"):
+                            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(parsed_extended_history, parsed_extended_history_file_full_path)
 
                     parsed_extended_history_all_current_owner_field_modifications = parsed_extended_history.get_all_current_owner_field_modifications()
                     with logger_config.stopwatch_with_label(f"Create {change_current_owner_only_fields_modification_json_file_full_path}"):
