@@ -28,7 +28,8 @@ rem CALL :LAUNCH_CHUNK START 3001 10000
 :LAUNCH_IN_ONCE_MULTITHREADS_TOP_200
 @SET number_of_threads=%1
 @echo LAUNCH_IN_ONCE_MULTITHREADS with %number_of_threads% threads
-@CALL %PYTHON_HOME%\python.exe save_cfx_webpage.py --number_of_threads %number_of_threads% --last_cfx_index 100
+@rem @CALL %PYTHON_HOME%\python.exe save_cfx_webpage.py --number_of_threads %number_of_threads% --last_cfx_index 100
+@CALL %PYTHON_HOME%\python.exe save_cfx_webpage.py --number_of_threads %number_of_threads% --last_cfx_index 100 --do_not_open_website_and_treat_previous_results True
 @EXIT /B 0
 
 :LAUNCH_IN_ONCE_MULTITHREADS
