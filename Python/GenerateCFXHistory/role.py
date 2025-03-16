@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 
 import role_data
 
+from common import string_utils
 
 sous_lot_data = """
 . Pallavee	SW
@@ -72,7 +73,13 @@ class CfxUserLibrary:
             # Split the name and the associated value
             raw_full_name_unstripped, raw_subsystem = line.split("\t")
 
+            # formated_subsystem_text = string_utils._diacritics(raw_subsystem.replace(" ", "_").replace("-", "_").replace("(", "").replace(")", ""))
             formated_subsystem_text = raw_subsystem.replace(" ", "_")
+            formated_subsystem_text = formated_subsystem_text.replace("-", "_")
+            formated_subsystem_text = formated_subsystem_text.replace("(", "")
+            formated_subsystem_text = formated_subsystem_text.replace(")", "")
+            formated_subsystem_text = formated_subsystem_text.replace("é", "e")
+            formated_subsystem_text = formated_subsystem_text.replace("è", "e")
 
             subsystem = SubSystem[formated_subsystem_text]
 
@@ -85,7 +92,12 @@ class CfxUserLibrary:
             self._cfx_user_by_full_name[raw_full_name] = cfx_user
 
     def get_cfx_user_by_full_name(self, full_name: str) -> CfxUser:
-        return self._cfx_user_by_full_name_lower[full_name.lower()]
+        full_name_to_consider = full_name.lower()
+        if not full_name_to_consider in self._cfx_user_by_full_name_lower.keys():
+            logger_config.print_and_log_error(f"\t {full_name}\t not found!!")
+            return None
+        else:
+            return self._cfx_user_by_full_name_lower[full_name_to_consider]
 
 
 def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in: str) -> SubSystem:
