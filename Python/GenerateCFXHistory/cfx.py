@@ -174,15 +174,20 @@ class ChampFXLibrary:
                     # cfx_history_element.
 
                     previous_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(self.convert_cfx_history_element_to_valid_full_name(cfx_history_element.old_state))
+                    if previous_owner is None:
+                        logger_config.print_and_log_error(f"Could not find\t{cfx_history_element.old_state}\t for {cfx_id}")
 
                     new_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(self.convert_cfx_history_element_to_valid_full_name(cfx_history_element.new_state))
+                    if previous_owner is None:
+                        logger_config.print_and_log_error(f"Could not find\t{cfx_history_element.new_state}\t for {cfx_id}")
 
-                    change_current_owner_action: ChangeCurrentOwnerAction = ChangeCurrentOwnerAction(
-                        _cfx_request=cfx_entry, _previous_owner=previous_owner, _new_owner=new_owner, _timestamp=cfx_history_element.change_timestamp
-                    )
-                    change_current_owner_actions_created.append(change_current_owner_action)
-                    cfx_entry.add_change_current_owner_action(change_current_owner_action)
-                    pass
+                    if previous_owner is not None and new_owner is not None:
+                        change_current_owner_action: ChangeCurrentOwnerAction = ChangeCurrentOwnerAction(
+                            _cfx_request=cfx_entry, _previous_owner=previous_owner, _new_owner=new_owner, _timestamp=cfx_history_element.change_timestamp
+                        )
+                        change_current_owner_actions_created.append(change_current_owner_action)
+                        cfx_entry.add_change_current_owner_action(change_current_owner_action)
+                        pass
 
         return change_current_owner_actions_created
 
