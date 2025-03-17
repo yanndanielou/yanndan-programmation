@@ -74,14 +74,14 @@ class CfxUserLibrary:
             raw_full_name_unstripped, raw_subsystem = line.split("\t")
 
             # formated_subsystem_text = string_utils._diacritics(raw_subsystem.replace(" ", "_").replace("-", "_").replace("(", "").replace(")", ""))
-            formated_subsystem_text = raw_subsystem.replace(" ", "_")
-            formated_subsystem_text = formated_subsystem_text.replace("-", "_")
-            formated_subsystem_text = formated_subsystem_text.replace("(", "")
-            formated_subsystem_text = formated_subsystem_text.replace(")", "")
-            formated_subsystem_text = formated_subsystem_text.replace("é", "e")
-            formated_subsystem_text = formated_subsystem_text.replace("è", "e")
+            formatted_subsystem_text = raw_subsystem.replace(" ", "_")
+            formatted_subsystem_text = formatted_subsystem_text.replace("-", "_")
+            formatted_subsystem_text = formatted_subsystem_text.replace("(", "")
+            formatted_subsystem_text = formatted_subsystem_text.replace(")", "")
+            formatted_subsystem_text = formatted_subsystem_text.replace("é", "e")
+            formatted_subsystem_text = formatted_subsystem_text.replace("è", "e")
 
-            subsystem = SubSystem[formated_subsystem_text]
+            subsystem = SubSystem[formatted_subsystem_text]
 
             raw_full_name = raw_full_name_unstripped.strip()
             raw_full_name_lower = raw_full_name.lower()
