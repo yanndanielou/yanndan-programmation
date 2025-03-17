@@ -173,21 +173,23 @@ class ChampFXLibrary:
                 for cfx_history_element in cfx_history_elements:
                     # cfx_history_element.
 
-                    previous_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(self.convert_cfx_history_element_to_valid_full_name(cfx_history_element.old_state))
-                    if previous_owner is None:
-                        logger_config.print_and_log_error(f"Could not find\t{cfx_history_element.old_state}\t for {cfx_id}")
+                    # Ignore invalid entries
 
-                    new_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(self.convert_cfx_history_element_to_valid_full_name(cfx_history_element.new_state))
-                    if new_owner is None:
-                        logger_config.print_and_log_error(f"Could not find\t{cfx_history_element.new_state}\t for {cfx_id}")
+                    previous_current_owner_name = self.convert_cfx_history_element_to_valid_full_name(cfx_history_element.old_state)
+                    new_current_owner_name = self.convert_cfx_history_element_to_valid_full_name(cfx_history_element.new_state)
 
-                    if previous_owner is not None and new_owner is not None:
+                    if not previous_current_owner_name or new_current_owner_name:
+                        logger_config.print_and_log_error(f"Invalid current owner change history for {cfx_id}, from {previous_current_owner_name} to {new_current_owner_name}. {cfx_history_element}")
+
+                    else:
+                        previous_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(previous_current_owner_name)
+                        new_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(new_current_owner_name)
+
                         change_current_owner_action: ChangeCurrentOwnerAction = ChangeCurrentOwnerAction(
                             _cfx_request=cfx_entry, _previous_owner=previous_owner, _new_owner=new_owner, _timestamp=cfx_history_element.change_timestamp
                         )
                         change_current_owner_actions_created.append(change_current_owner_action)
                         cfx_entry.add_change_current_owner_action(change_current_owner_action)
-                        pass
 
         return change_current_owner_actions_created
 
