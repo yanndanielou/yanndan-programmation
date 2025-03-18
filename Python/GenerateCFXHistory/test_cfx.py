@@ -86,16 +86,20 @@ class TestStatus:
         champfx_library = create_light_champfx_library
 
         # Opened 08/04/2019 09:23:09
-        day_before_opening = datetime(int(2019), int(4), int(7))
-        day_after_opening = datetime(int(2019), int(4), int(9))
+        day_before_first_opening = datetime(int(2019), int(4), int(7))
+        day_after_first_analyzis = datetime(int(2019), int(4), int(9))
+        day_before_second_opening_first_resubmit = datetime(int(2020), int(6), int(25))
+        day_after_second_opening_first_resubmit = datetime(int(2020), int(6), int(27))
         day_before_verification = datetime(year=int(2022), month=int(3), day=int(21))
         day_after_verification = datetime(year=int(2022), month=int(3), day=int(23))
         day_before_validation = datetime(year=int(2022), month=int(8), day=int(15))
         day_after_validation = datetime(year=int(2022), month=int(8), day=int(17))
 
         cfx_entry = champfx_library.get_cfx_by_id("CFX00427036")
-        assert cfx_entry.get_state_at_date(day_before_opening) == cfx.State.NotCreatedYet
-        assert cfx_entry.get_state_at_date(day_after_opening) == cfx.State.Submitted
+        assert cfx_entry.get_state_at_date(day_before_first_opening) == cfx.State.NotCreatedYet
+        assert cfx_entry.get_state_at_date(day_after_first_analyzis) == cfx.State.Analysed
+        assert cfx_entry.get_state_at_date(day_before_second_opening_first_resubmit) == cfx.State.Resolved
+        assert cfx_entry.get_state_at_date(day_after_second_opening_first_resubmit) == cfx.State.Submitted
         assert cfx_entry.get_state_at_date(day_before_verification) == cfx.State.Resolved
         assert cfx_entry.get_state_at_date(day_after_verification) == cfx.State.Verified
         assert cfx_entry.get_state_at_date(day_before_validation) == cfx.State.Verified
