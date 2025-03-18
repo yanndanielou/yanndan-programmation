@@ -63,6 +63,10 @@ class ChangeCurrentOwnerAction(BaseAction):
     _previous_owner: role.CfxUser
     _new_owner: role.CfxUser
 
+    @property
+    def new_owner(self) -> role.CfxUser:
+        return self._new_owner
+
 
 @dataclass
 class ChangeStateAction(BaseAction):
@@ -185,7 +189,7 @@ class ChampFXLibrary:
                     new_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(new_current_owner_name) if new_current_owner_name else self._cfx_users_library.unknown_user
 
                     change_current_owner_action: ChangeCurrentOwnerAction = ChangeCurrentOwnerAction(
-                        _cfx_request=cfx_entry, _previous_owner=previous_owner, _new_owner=new_owner, _timestamp=cfx_history_element.change_timestamp
+                        _cfx_request=cfx_entry, _previous_owner=previous_owner, _new_owner=new_owner, _timestamp=cfx_history_element.change_timestamp.replace(tzinfo=None)
                     )
                     change_current_owner_actions_created.append(change_current_owner_action)
                     cfx_entry.add_change_current_owner_action(change_current_owner_action)
@@ -257,11 +261,18 @@ class ChampFXEntry:
         # return sorted(self._change_state_actions_by_date.items())
         return [action for _, action in sorted(self._change_state_actions_by_date.items())]
 
+    def get_all_current_owner_modifications_sorted_chronologically(self) -> list[ChangeCurrentOwnerAction]:
+        # return sorted(self._change_state_actions_by_date.items())
+        return [action for _, action in sorted(self._change_current_owner_actions_by_date.items())]
+
     def get_oldest_change_action_by_new_state(self, new_state: State) -> ChangeStateAction:
         return next((action for action in self.get_all_actions_sorted_chronologically() if action.new_state == new_state), None)
 
     def get_newest_change_action_that_is_before_date(self, reference_date: datetime) -> ChangeStateAction:
         return next((action for action in reversed(self.get_all_actions_sorted_chronologically()) if action.timestamp < reference_date), None)
+
+    def get_newest_current_owner_modification_that_is_before_date(self, reference_date: datetime) -> ChangeCurrentOwnerAction:
+        return next((action for action in reversed(self.get_all_current_owner_modifications_sorted_chronologically()) if action.timestamp < reference_date), None)
 
     def add_change_state_action(self, change_state_action: ChangeStateAction) -> None:
         self._change_state_actions.append(change_state_action)
@@ -288,6 +299,12 @@ class ChampFXEntry:
 
     def get_sub_system(self) -> role.SubSystem:
         return self._subsystem_from_fixed_implemented_in if self._subsystem_from_fixed_implemented_in else self._current_owner_role
+
+    def get_current_owner_at_date(self, reference_date: datetime) -> role.CfxUser:
+        newest_current_owner_modification_action_that_is_before_date = self.get_newest_current_owner_modification_that_is_before_date(reference_date)
+        if newest_current_owner_modification_action_that_is_before_date is not None:
+            return newest_current_owner_modification_action_that_is_before_date.new_owner
+        return self._current_owner
 
     def get_state_at_date(self, reference_date: datetime) -> State:
 
