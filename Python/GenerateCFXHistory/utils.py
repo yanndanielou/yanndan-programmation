@@ -10,6 +10,7 @@ import pytz
 
 def convert_champfx_extract_date(raw_champfx_date: str | float) -> Optional[datetime]:
 
+    #    if not isinstance(raw_champfx_date, str):
     if type(raw_champfx_date) is not str:
 
         if math.isnan(raw_champfx_date):
