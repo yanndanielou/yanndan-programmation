@@ -3,7 +3,6 @@
 *.txt
 *.xls*
 /.mypy_cache/
-/__pycache__/
 test*.json
 role_data.py
 *.html
