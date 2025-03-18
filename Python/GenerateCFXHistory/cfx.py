@@ -87,10 +87,10 @@ class ChampFXLibrary:
 
     def __init__(
         self,
-        champfx_details_excel_file_full_path: str,
-        champfx_states_changes_excel_file_full_path: str,
-        all_current_owner_modifications_pickle_file_full_path: set,
-        all_current_owner_modifications_per_cfx_pickle_file_full_path: set,
+        champfx_details_excel_file_full_path: str = "Input/extract_cfx_details.xlsx",
+        champfx_states_changes_excel_file_full_path: str = "Input/extract_cfx_change_state.xlsx",
+        all_current_owner_modifications_pickle_file_full_path: str = "Input/all_current_owner_modifications.pkl",
+        all_current_owner_modifications_per_cfx_pickle_file_full_path: str = "Input/all_current_owner_modifications_per_cfx.pkl",
     ):
 
         self._all_current_owner_modifications_pickle_file_full_path = all_current_owner_modifications_pickle_file_full_path
@@ -244,19 +244,14 @@ class ChampFXEntry:
 
         self.cfx_id = row["CFXID"]
         self._raw_state: State = State[(row["State"])]
-        # self._submit_date: datetime = utils.convert_champfx_extract_date(row["SubmitDate"])
-        # self._analysis_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.AnalysisDate"])
-        # self._solution_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.SolutionDate"])
-        # self._verification_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.VerificationDate"])
-        # self._validation_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.ValidationDate"])
-        # self._closing_date: datetime = utils.convert_champfx_extract_date(row["HistoryOfLastAction.ClosingDate"])
         self._fixed_implemented_in: str = row["FixedImplementedIn"]
         self._current_owner_raw: str = row["CurrentOwner.FullName"]
         self._current_owner: role.CfxUser = None
         self._current_owner_role: role.SubSystem = None
         self._subsystem_from_fixed_implemented_in: role.SubSystem = None
-        # self._submit_year: datetime = self._submit_date.year
-        # self._submit_month: datetime = self._submit_date.month
+
+    def __repr__(self) -> str:
+        return f"<ChampFXEntry cfx_id={self.cfx_id} _raw_state={self._raw_state} _current_owner_raw={self._current_owner_raw}>"
 
     def get_all_actions_sorted_chronologically(self) -> list[ChangeStateAction]:
         # return sorted(self._change_state_actions_by_date.items())
