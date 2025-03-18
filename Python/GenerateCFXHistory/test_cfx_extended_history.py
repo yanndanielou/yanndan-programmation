@@ -20,7 +20,7 @@ State            (9:6)
     New :    Closed
 
 ====END===="""
-        assert cfx_extended_history.parse_history(extended_history_raw_text)
+        assert cfx_extended_history.parse_history(cfx_id="CFX00123", extended_history_text=extended_history_raw_text)
 
     def test_simple_case2(self):
         extended_history_raw_text = """====START====
@@ -37,7 +37,10 @@ State            (9:6)
     New :    Closed
 
 ====END===="""
-        parsed_history_parsed = cfx_extended_history.parse_history(extended_history_raw_text)
+
+        cfx_complete_history = cfx_extended_history.parse_history(cfx_id="CFX00123", extended_history_text=extended_history_raw_text)
+
+        parsed_history_parsed = cfx_complete_history._history_elements
         assert len(parsed_history_parsed) == 1
         cfx_history_element = parsed_history_parsed[0]
         assert cfx_history_element.action == "Close"
