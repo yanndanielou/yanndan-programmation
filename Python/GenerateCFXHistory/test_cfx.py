@@ -6,14 +6,24 @@ import cfx
 
 class TestConstruction:
     def test_no_error_at_init(self):
-        champfx_library = cfx.ChampFXLibrary("extract_cfx_details.xlsx", "extract_cfx_change_state.xlsx")
+        champfx_library = cfx.ChampFXLibrary(
+            champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
+            champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
+            all_current_owner_modifications_per_cfx_pickle_file_full_path="Input/all_current_owner_modifications_per_cfx.pkl",
+            all_current_owner_modifications_pickle_file_full_path="Input/all_current_owner_modifications.pkl",
+        )
 
         assert len(champfx_library.get_all_cfx()) > 0
 
 
 class TestStatus:
     def test_errors_related_to_closed_status(self):
-        champfx_library = cfx.ChampFXLibrary("extract_cfx_details.xlsx", "extract_cfx_change_state.xlsx")
+        champfx_library = cfx.ChampFXLibrary(
+            champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
+            champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
+            all_current_owner_modifications_per_cfx_pickle_file_full_path="Input/all_current_owner_modifications_per_cfx.pkl",
+            all_current_owner_modifications_pickle_file_full_path="Input/all_current_owner_modifications.pkl",
+        )
 
         assert len(champfx_library.get_all_cfx()) > 0
 
