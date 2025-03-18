@@ -382,4 +382,6 @@ class TestFixedImplementedInToSubsystemConversion:
 
 class TestRoleConversion:
     def test_random(self) -> None:
-        assert role.get_raw_subystem_of_ressource("Zehoub Khaled") == "ATS"
+        cfx_user_library = role.CfxUserLibrary()
+        user = cfx_user_library.get_cfx_user_by_full_name("Zehoub Khaled")
+        assert user.subsystem== role.SubSystem.ATS
