@@ -7,8 +7,6 @@ import threading
 import queue
 import os
 
-import time
-
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 
@@ -101,7 +99,6 @@ class SaveCfxWebpageApplication:
                 thread = HandlingCfxThread(task_queue=task_queue, application=self, do_not_open_website_and_treat_previous_results=self.do_not_open_website_and_treat_previous_results)
                 thread.start()
                 threads.append(thread)
-                time.sleep(30)
 
         with logger_config.stopwatch_with_label("Add tasks to the queue"):
             for cfx_id_to_handle in all_cfx_id_to_handle_unique_ordered_list:
