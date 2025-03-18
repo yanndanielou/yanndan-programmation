@@ -102,11 +102,7 @@ class CfxUserLibrary:
 
     def get_cfx_user_by_full_name(self, full_name: str) -> CfxUser:
         full_name_to_consider = full_name.lower()
-        if not full_name_to_consider in self._cfx_user_by_full_name_lower.keys():
-            logger_config.print_and_log_error(f"\t {full_name}\t not found!!")
-            return None
-        else:
-            return self._cfx_user_by_full_name_lower[full_name_to_consider]
+        return self._cfx_user_by_full_name_lower[full_name_to_consider]
 
 
 def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in: str) -> SubSystem:
