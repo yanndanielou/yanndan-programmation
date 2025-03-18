@@ -40,7 +40,7 @@ State            (9:6)
 
         cfx_complete_history = cfx_extended_history.parse_history(cfx_id="CFX00123", extended_history_text=extended_history_raw_text)
 
-        parsed_history_parsed = cfx_complete_history._history_elements
+        parsed_history_parsed = cfx_complete_history.history_elements
         assert len(parsed_history_parsed) == 1
         cfx_history_element = parsed_history_parsed[0]
         assert cfx_history_element.action == "Close"
