@@ -85,11 +85,20 @@ class CfxUserLibrary:
 
             raw_full_name = raw_full_name_unstripped.strip()
             raw_full_name_lower = raw_full_name.lower()
+            self._add_user(subsystem=subsystem, raw_full_name_lower=raw_full_name_lower, raw_full_name=raw_full_name)
 
-            cfx_user = CfxUser(raw_full_name=raw_full_name, full_name=raw_full_name_lower, subsystem=subsystem)
+        # add unknown user
+        self._unknown_user: CfxUser = self._add_user(subsystem=SubSystem.TbD, raw_full_name_lower="Unknown", raw_full_name="Unknown")
 
-            self._cfx_user_by_full_name_lower[raw_full_name_lower] = cfx_user
-            self._cfx_user_by_full_name[raw_full_name] = cfx_user
+    @property
+    def unknown_user(self) -> CfxUser:
+        return self._unknown_user
+
+    def _add_user(self, subsystem: SubSystem, raw_full_name_lower: str, raw_full_name: str) -> CfxUser:
+        cfx_user = CfxUser(raw_full_name=raw_full_name, full_name=raw_full_name_lower, subsystem=subsystem)
+        self._cfx_user_by_full_name_lower[raw_full_name_lower] = cfx_user
+        self._cfx_user_by_full_name[raw_full_name] = cfx_user
+        return cfx_user
 
     def get_cfx_user_by_full_name(self, full_name: str) -> CfxUser:
         full_name_to_consider = full_name.lower()
