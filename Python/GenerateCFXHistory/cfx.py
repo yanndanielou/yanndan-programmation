@@ -178,7 +178,7 @@ class ChampFXLibrary:
                     previous_current_owner_name = self.convert_cfx_history_element_to_valid_full_name(cfx_history_element.old_state)
                     new_current_owner_name = self.convert_cfx_history_element_to_valid_full_name(cfx_history_element.new_state)
 
-                    if not previous_current_owner_name or new_current_owner_name:
+                    if not previous_current_owner_name or not new_current_owner_name:
                         logger_config.print_and_log_error(f"Invalid current owner change history for {cfx_id}, from {previous_current_owner_name} to {new_current_owner_name}. {cfx_history_element}")
 
                     else:
