@@ -1,10 +1,12 @@
-*.7z
 *.zip
 *.txt
 *.xls*
 /.mypy_cache/
+/Input_for_Tests/*.json
+/Input_for_Tests/*.xlsx
 test*.json
-role_data.py
+test*.xlsx
+role_data.*
 *.html
 output_save_cfx_webpage*/
 connexion_param.py
