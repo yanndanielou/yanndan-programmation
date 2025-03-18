@@ -58,6 +58,10 @@ class CfxUser:
         self._full_name = full_name
         self._subsystem: SubSystem = subsystem
 
+    @property
+    def subsystem(self) -> SubSystem:
+        return self._subsystem
+
 
 class CfxUserLibrary:
 
