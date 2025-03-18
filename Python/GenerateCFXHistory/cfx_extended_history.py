@@ -47,7 +47,7 @@ class CFXHistoryElement:
 
     @property
     def action(self) -> str:
-        return self._actionowner_field_modification
+        return self._action
 
     @property
     def state(self) -> str:
@@ -75,6 +75,10 @@ class CFXCompleteHistory:
     def get_all_current_owner_field_modifications(self) -> List[CFXHistoryField]:
         all_current_owner_field_modification = [field for history_element in self._history_elements for field in history_element.get_all_current_owner_field_modifications()]
         return all_current_owner_field_modification
+
+    @property
+    def history_elements(self) -> List[CFXHistoryElement]:
+        return self._history_elements
 
 
 def parse_history(cfx_id: str, extended_history_text: str) -> CFXCompleteHistory:
