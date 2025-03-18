@@ -7,6 +7,8 @@ import threading
 import queue
 import os
 
+import time
+
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 
@@ -20,8 +22,6 @@ import selenium.webdriver.firefox.options
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
-
-import pandas
 
 
 # Other libraries
@@ -87,8 +87,10 @@ class SaveCfxWebpageApplication:
             else:
                 logger_config.print_and_log_info(f"Folder {directory_path} already exists")
 
-        all_cfx_id_unique_ordered_list: list[str] = self.get_all_cfx_id_unique_ordered_list()
-        all_cfx_id_to_handle_unique_ordered_list = all_cfx_id_unique_ordered_list[self.first_cfx_index : self.last_cfx_index]
+        with logger_config.stopwatch_with_label("get_all_cfx_id_unique_ordered_list"):
+            all_cfx_id_unique_ordered_list: list[str] = self.get_all_cfx_id_unique_ordered_list()
+            all_cfx_id_to_handle_unique_ordered_list = all_cfx_id_unique_ordered_list[self.first_cfx_index : self.last_cfx_index]
+
         logger_config.print_and_log_info(f"Number of cfx to treat: {len(all_cfx_id_to_handle_unique_ordered_list)}")
 
         task_queue = queue.Queue()
@@ -99,6 +101,7 @@ class SaveCfxWebpageApplication:
                 thread = HandlingCfxThread(task_queue=task_queue, application=self, do_not_open_website_and_treat_previous_results=self.do_not_open_website_and_treat_previous_results)
                 thread.start()
                 threads.append(thread)
+                time.sleep(30)
 
         with logger_config.stopwatch_with_label("Add tasks to the queue"):
             for cfx_id_to_handle in all_cfx_id_to_handle_unique_ordered_list:
@@ -136,9 +139,21 @@ class SaveCfxWebpageApplication:
 
     def get_all_cfx_id_unique_ordered_list(self) -> list[str]:
         champfx_details_excel_file_full_path = "Input/extract_cfx_details.xlsx"
+        all_cfx_id_unique_ordered_list: list[str] = []
         with logger_config.stopwatch_with_label(f"Open cfx details excel file {champfx_details_excel_file_full_path}"):
-            cfx_details_data_frame = pandas.read_excel(champfx_details_excel_file_full_path)
-            all_cfx_id_unique_ordered_list = sorted(list(set([row["CFXID"] for index, row in cfx_details_data_frame.iterrows()])))
+            # Import panda fails when no-gil (python3.13t.exe)
+            WITH_PANDA = False
+            if WITH_PANDA:
+                import pandas
+
+                cfx_details_data_frame = pandas.read_excel(champfx_details_excel_file_full_path)
+                all_cfx_id_unique_ordered_list = sorted(list(set([row["CFXID"] for index, row in cfx_details_data_frame.iterrows()])))
+            else:
+                from openpyxl import load_workbook
+
+                workbook = load_workbook(champfx_details_excel_file_full_path)
+                worksheet = workbook.active
+                all_cfx_id_unique_ordered_list = sorted([cell[0].value for cell in worksheet.iter_rows(min_col=1, max_col=2)])
 
         logger_config.print_and_log_info(f"{len(all_cfx_id_unique_ordered_list)} cfx found")
         return all_cfx_id_unique_ordered_list
