@@ -46,6 +46,14 @@ class CFXHistoryElement:
         return all_current_owner_field_modification
 
     @property
+    def action(self) -> str:
+        return self._actionowner_field_modification
+
+    @property
+    def state(self) -> str:
+        return self._state
+
+    @property
     def fields(self) -> List[CFXHistoryField]:
         return self._fields
 
