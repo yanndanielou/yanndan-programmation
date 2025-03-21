@@ -115,8 +115,16 @@ class TestCurrentOwner:
         assert cfx_entry.get_current_owner_at_date(datetime.now()) == cfx_entry._current_owner
         assert "herve" in cfx_entry.get_current_owner_at_date(datetime.now())._raw_full_name.lower()
 
-    def test_CFX00778656_that_has_never_changed(self, create_light_champfx_library: cfx.ChampFXLibrary):
-        champfx_library = create_light_champfx_library
-        cfx_entry = champfx_library.get_cfx_by_id("CFX00778656")
-        assert cfx_entry.get_current_owner_at_date(datetime.now()) == cfx_entry._current_owner
-        assert "Renaud".lower() in cfx_entry.get_current_owner_at_date(datetime.now())._raw_full_name.lower()
+    class TestCFX00778656:
+
+        def test_CFX00778656_that_has_never_changed(self, create_light_champfx_library: cfx.ChampFXLibrary):
+            """05/01/2024 18:05:35"""
+            champfx_library = create_light_champfx_library
+            cfx_entry = champfx_library.get_cfx_by_id("CFX00778656")
+            assert cfx_entry.get_current_owner_at_date(datetime.now()) == cfx_entry._current_owner
+            assert "Renaud".lower() in cfx_entry.get_current_owner_at_date(datetime.now())._raw_full_name.lower()
+
+            day_before_first_opening = datetime(int(2024), int(1), int(4))
+            day_after_first_analyzis = datetime(int(2024), int(1), int(6))
+            assert cfx_entry.get_current_owner_at_date(day_before_first_opening) is None
+            assert "Renaud".lower() in cfx_entry.get_current_owner_at_date(day_after_first_analyzis)._raw_full_name.lower()
