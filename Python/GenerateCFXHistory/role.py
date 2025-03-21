@@ -62,6 +62,10 @@ class CfxUser:
     def subsystem(self) -> SubSystem:
         return self._subsystem
 
+    @property
+    def raw_full_name(self) -> str:
+        return self._raw_full_name
+
 
 class CfxUserLibrary:
 
