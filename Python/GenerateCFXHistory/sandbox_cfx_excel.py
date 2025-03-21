@@ -62,6 +62,10 @@ excel_export_button_by_id.click()
 
 export_button_by_text = driver.find_element(By.XPATH, "//td[contains(text(),'Exporter')]")
 
+
+exporter_button_according_copilot = wait.until(expected_conditions.element_to_be_clickable((By.XPATH, "//button[text()='Exporter']")))
+
+
 page_html = driver.page_source
 with open("D:\\temp\\text_dump_file.txt", "w", encoding="utf-8") as text_dump_file:
     text_dump_file.write(page_html)
