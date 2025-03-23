@@ -148,7 +148,7 @@ class ChampFXLibrary:
                 cfx = self._champfx_entry_by_id[cfx_id]
                 cfx._current_owner
             else:
-                cfx = ChampFXEntry(row)
+                cfx = ChampFXEntryBuilder.build_with_row(row, self._cfx_known_by_cstmr_ids)
                 self._champfx_entry_by_id[cfx_id] = cfx
 
     def create_states_changes_with_dataframe(self, cfx_states_changes_data_frame: pd.DataFrame) -> List[ChangeStateAction]:
@@ -250,18 +250,32 @@ class ChampFXLibrary:
         return months
 
 
+class ChampFXEntryBuilder:
+
+    @staticmethod
+    def build_with_row(row, cfx_known_by_cstmr_ids: set[str]) -> "ChampFXEntry":
+        cfx_id = row["CFXID"]
+        _raw_state: State = State[(row["State"])]
+        _fixed_implemented_in: str = row["FixedImplementedIn"]
+        _current_owner_raw: str = row["CurrentOwner.FullName"]
+        known_by_cstmr = cfx_id in cfx_known_by_cstmr_ids
+        champfx_entry = ChampFXEntry(cfx_id=cfx_id, raw_state=_raw_state, fixed_implemented_in=_fixed_implemented_in, current_owner_raw=_current_owner_raw, known_by_cstmr=known_by_cstmr)
+        return champfx_entry
+
+
 class ChampFXEntry:
-    def __init__(self, row):
+    def __init__(self, cfx_id: str, raw_state: State, fixed_implemented_in: str, current_owner_raw: str, known_by_cstmr: bool):
         self._change_state_actions: list[ChangeStateAction] = []
         self._change_state_actions_by_date: Dict[datetime, ChangeStateAction] = dict()
 
         self._change_current_owner_actions: list[ChangeCurrentOwnerAction] = []
         self._change_current_owner_actions_by_date: Dict[datetime, ChangeCurrentOwnerAction] = dict()
 
-        self.cfx_id = row["CFXID"]
-        self._raw_state: State = State[(row["State"])]
-        self._fixed_implemented_in: str = row["FixedImplementedIn"]
-        self._current_owner_raw: str = row["CurrentOwner.FullName"]
+        self.cfx_id = cfx_id
+        self._raw_state: State = raw_state
+        self._fixed_implemented_in: str = fixed_implemented_in
+        self._current_owner_raw: str = current_owner_raw
+        self._known_by_cstmr = known_by_cstmr
         self._current_owner: role.CfxUser = None
         self._current_owner_role: role.SubSystem = None
         self._subsystem_from_fixed_implemented_in: role.SubSystem = None
