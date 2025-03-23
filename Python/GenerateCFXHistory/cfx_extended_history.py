@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Dict, Optional
 import re
 from datetime import datetime
 
@@ -13,7 +13,7 @@ def decode_time(time: str) -> Optional[datetime]:
         # Assume the time format is "YYYY-MM-DD HH:MM:SS ±HH:MM"
         return datetime.strptime(time.strip(), "%Y-%m-%d %H:%M:%S %z")
     except ValueError:
-        print(f"Warning: Unable to decode time '{time}'")
+        logger_config.print_and_log_error(f"Warning: Unable to decode time '{time}'")
         return None
 
 
@@ -22,18 +22,31 @@ class AllCFXCompleteHistoryExport:
     def parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path: str) -> List["CFXEntryCompleteHistory"]:
         all_cfx_complete_history: List[CFXEntryCompleteHistory] = list()
 
-        with open(all_cfx_complete_extended_histories_text_file_path, "r", encoding="utf-8") as all_cfx_extended_history_text_file:
-            all_cfx_extended_history_text_file_content = all_cfx_extended_history_text_file.read()
+        complete_history_by_cfx: Dict[str, int] = dict()
+        with logger_config.stopwatch_with_label(f"Read {all_cfx_complete_extended_histories_text_file_path}"):
+            with open(all_cfx_complete_extended_histories_text_file_path, "r", encoding="utf-8") as all_cfx_extended_history_text_file:
+                all_cfx_extended_history_text_file_content = all_cfx_extended_history_text_file.read()
 
-            without_first_line = all_cfx_extended_history_text_file_content.split("CFXID|at_field_history.audit_trail_text|\n")[1]
+        without_first_line = all_cfx_extended_history_text_file_content.split("CFXID|at_field_history.audit_trail_text|\n")[1]
 
-            split_by_end = without_first_line.split("====END====\n\n|\n")
+        cfx_extended_histories_raw_text_list = without_first_line.split("====END====\n\n|\n")
+        logger_config.print_and_log_info(f"cfx_extended_histories_raw_text_list:{len(cfx_extended_histories_raw_text_list)}")
 
-            for all_cfx_extended_history_split_by_end in split_by_end:
-                cfx_id = all_cfx_extended_history_split_by_end.split("|====START====\n")[0]
+        cfx_extended_histories_raw_text_unique_only = set(cfx_extended_histories_raw_text_list)
+        logger_config.print_and_log_info(f"cfx_extended_histories_raw_text_unique_only:{len(cfx_extended_histories_raw_text_unique_only)}")
 
-                cfx_complete_history = parse_history(cfx_id=cfx_id, extended_history_text=all_cfx_extended_history_split_by_end)
-                all_cfx_complete_history.append(cfx_complete_history)
+        for all_cfx_extended_history_split_by_end in cfx_extended_histories_raw_text_unique_only:
+            cfx_id = all_cfx_extended_history_split_by_end.split("|====START====\n")[0]
+            complete_history_by_cfx[cfx_id] = len(all_cfx_extended_history_split_by_end)
+
+        biggest_history_cfxs = dict(reversed(sorted(complete_history_by_cfx.items(), key=lambda item: item[1])))
+        logger_config.print_and_log_info(f"biggest_history_cfxs:{biggest_history_cfxs}")
+
+        for all_cfx_extended_history_split_by_end in cfx_extended_histories_raw_text_unique_only:
+            cfx_id = all_cfx_extended_history_split_by_end.split("|====START====\n")[0]
+
+            # cfx_complete_history = parse_history(cfx_id=cfx_id, extended_history_text=all_cfx_extended_history_split_by_end)
+            # all_cfx_complete_history.append(cfx_complete_history)
 
         logger_config.print_and_log_info(f"cfx_extended_history_text_file_content_split_by_cfx:{len(all_cfx_complete_history)}")
 
@@ -124,7 +137,10 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHi
         element_match = re.search(element_regex, block, re.DOTALL)
         if element_match:
             time, schema_rev, user_name, user_login, user_groups, action, state = element_match.groups()
-            element = CFXHistoryElement(cfx_id, time, decode_time(time), schema_rev, user_name, user_login, user_groups, action, state)
+            decoded_time = decode_time(time)
+            if not decoded_time:
+                logger_config.print_and_log_error(f"Could not decode time {time} for {cfx_id}")
+            element = CFXHistoryElement(cfx_id, time, decoded_time, schema_rev, user_name, user_login, user_groups, action, state)
 
             # Identify and parse fields within the block
             fields_section = block.split("==Fields==")[1].strip()
@@ -137,3 +153,16 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHi
             cfx_complete_history.add_field_history_element(element)
 
     return cfx_complete_history
+
+
+def profile_load_full():
+    all_history: List["CFXEntryCompleteHistory"] = AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file("Input/cfx_extended_history.txt")
+    pass
+
+
+if __name__ == "__main__":
+    # import cProfile
+    # import re
+
+    # cProfile.run("profile_load_full()")
+    profile_load_full()
