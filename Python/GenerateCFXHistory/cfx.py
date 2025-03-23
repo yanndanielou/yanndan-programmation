@@ -101,10 +101,22 @@ class ChampFXLibrary:
         self._all_current_owner_modifications_per_cfx_pickle_file_full_path = all_current_owner_modifications_per_cfx_pickle_file_full_path
         self._champfx_entry_by_id: Dict[str, ChampFXEntry] = dict()
 
-        with logger_config.stopwatch_with_label(f"Load CfxUserLibrary"):
+        cfx_known_by_cstmr_text_file_path = "Input/CFX_kown_by_customer.txt"
+        self._cfx_known_by_cstmr_ids: set[str] = set()
+        with logger_config.stopwatch_with_label(f"Load CfxUserLibrary {cfx_known_by_cstmr_text_file_path}"):
+            with open(cfx_known_by_cstmr_text_file_path, "r", encoding="utf-8") as cfx_known_by_cstmr_text_file:
+                self._cfx_known_by_cstmr_ids = [line.strip() for line in cfx_known_by_cstmr_text_file.readlines()]
+        logger_config.print_and_log_info(f"Number of cfx_known_by_cstmr_ids:{len(self._cfx_known_by_cstmr_ids)}")
+
+        all_cfx_complete_extended_histories_text_file_path = "Input/cfx_extended_history.txt"
+        with logger_config.stopwatch_with_label(f"Load cfx_extended_history {all_cfx_complete_extended_histories_text_file_path}"):
+
+            all_cfx_complete_extended_histories = cfx_extended_history.AllCFXCompleteHistoryExport(all_cfx_complete_extended_histories_text_file_path)
+
+        with logger_config.stopwatch_with_label("Load CfxUserLibrary"):
             self._cfx_users_library: role.CfxUserLibrary = role.CfxUserLibrary()
 
-        with logger_config.stopwatch_with_label(f"ChampFXLibrary creation and initialisation"):
+        with logger_config.stopwatch_with_label("ChampFXLibrary creation and initialisation"):
 
             with logger_config.stopwatch_with_label(f"Open cfx details excel file {champfx_details_excel_file_full_path}"):
                 cfx_details_data_frame = pd.read_excel(champfx_details_excel_file_full_path)
@@ -123,8 +135,8 @@ class ChampFXLibrary:
             with logger_config.stopwatch_with_label("ChampFXLibrary process_current_owner_role"):
                 list(map(lambda champ_fx: champ_fx.process_current_owner_role(self), self.get_all_cfx()))
 
-            with logger_config.stopwatch_with_label(f"create current owner modifications"):
-                self.create_current_owner_modifications()
+            # with logger_config.stopwatch_with_label(f"create current owner modifications"):
+            #    self.create_current_owner_modifications()
 
             with logger_config.stopwatch_with_label(f"ChampFXLibrary process_subsystem_from_fixed_implemented_in"):
                 list(map(lambda champ_fx: champ_fx.process_subsystem_from_fixed_implemented_in(), self.get_all_cfx()))
