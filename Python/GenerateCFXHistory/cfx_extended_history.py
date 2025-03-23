@@ -2,6 +2,8 @@ from typing import List, Optional
 import re
 from datetime import datetime
 
+from logger import logger_config
+
 
 CURRENT_OWNER_FIELD_MODIFICATION_ID = "CurrentOwner"
 
@@ -13,6 +15,29 @@ def decode_time(time: str) -> Optional[datetime]:
     except ValueError:
         print(f"Warning: Unable to decode time '{time}'")
         return None
+
+
+class AllCFXCompleteHistoryExport:
+    @staticmethod
+    def parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path: str) -> List["CFXEntryCompleteHistory"]:
+        all_cfx_complete_history: List[CFXEntryCompleteHistory] = list()
+
+        with open(all_cfx_complete_extended_histories_text_file_path, "r", encoding="utf-8") as all_cfx_extended_history_text_file:
+            all_cfx_extended_history_text_file_content = all_cfx_extended_history_text_file.read()
+
+            without_first_line = all_cfx_extended_history_text_file_content.split("CFXID|at_field_history.audit_trail_text|\n")[1]
+
+            split_by_end = without_first_line.split("====END====\n\n|\n")
+
+            for all_cfx_extended_history_split_by_end in split_by_end:
+                cfx_id = all_cfx_extended_history_split_by_end.split("|====START====\n")[0]
+
+                cfx_complete_history = parse_history(cfx_id=cfx_id, extended_history_text=all_cfx_extended_history_split_by_end)
+                all_cfx_complete_history.append(cfx_complete_history)
+
+        logger_config.print_and_log_info(f"cfx_extended_history_text_file_content_split_by_cfx:{len(all_cfx_complete_history)}")
+
+        return all_cfx_complete_history
 
 
 class CFXHistoryField:
@@ -64,7 +89,7 @@ class CFXHistoryElement:
         return f"<CFXHistoryElement time={self._decoded_time} action={self._action} state={self._state} fields={len(self._fields)}>"
 
 
-class CFXCompleteHistory:
+class CFXEntryCompleteHistory:
     def __init__(self, cfx_id: str):
         self.cfx_id = cfx_id
         self._history_elements: List[CFXHistoryElement] = []
@@ -81,9 +106,9 @@ class CFXCompleteHistory:
         return self._history_elements
 
 
-def parse_history(cfx_id: str, extended_history_text: str) -> CFXCompleteHistory:
+def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHistory:
 
-    cfx_complete_history = CFXCompleteHistory(cfx_id=cfx_id)
+    cfx_complete_history = CFXEntryCompleteHistory(cfx_id=cfx_id)
     history_blocks = extended_history_text.split("====START====")[1:]
 
     for block in history_blocks:
