@@ -30,7 +30,13 @@ state_colors = {
 
 
 def produce_results_and_displays(
-    cfx_library: cfx.ChampFXLibrary, output_excel_file: str, display_without_cumulative_eras: bool, display_with_cumulative_eras: bool, output_html_file_prefix: str, filter_only_subsystem=None
+    cfx_library: cfx.ChampFXLibrary,
+    output_excel_file: str,
+    display_without_cumulative_eras: bool,
+    display_with_cumulative_eras: bool,
+    output_html_file_prefix: str,
+    filter_only_subsystem=None,
+    filter_only_known_by_cstr=False,
 ) -> None:
     # Retrieve months to process
     months = cfx_library.get_months_since_earliest_submit_date()
@@ -44,8 +50,13 @@ def produce_results_and_displays(
 
             if filter_only_subsystem is None or filter_only_subsystem == entry.get_sub_system():
 
-                if state != cfx.State.NotCreatedYet:
-                    state_counts[state] += 1
+                entry_cfx_id = entry.cfx_id
+                cfx_id_known = entry.cfx_id in cfx_library._cfx_known_by_cstmr_ids
+
+                if not filter_only_known_by_cstr or entry.cfx_id in cfx_library._cfx_known_by_cstmr_ids:
+
+                    if state != cfx.State.NotCreatedYet:
+                        state_counts[state] += 1
         state_counts_per_month.append(state_counts)
 
     # Determine the states that are present in the data
@@ -185,6 +196,7 @@ def main() -> None:
             display_with_cumulative_eras=True,
             output_html_file_prefix=f"{output_directory_name}/all_cfx_",
             filter_only_subsystem=None,
+            filter_only_known_by_cstr=True,
         )
 
         plt.show()
@@ -200,6 +212,7 @@ def main() -> None:
                     display_with_cumulative_eras=True,
                     output_html_file_prefix=f"{output_directory_name}/subsystem_{subsystem.name}",
                     filter_only_subsystem=subsystem,
+                    filter_only_known_by_cstr=False,
                 )
 
         # Use plt.show() here to block execution and keep all windows open
