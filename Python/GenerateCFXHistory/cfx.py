@@ -110,8 +110,9 @@ class ChampFXLibrary:
 
         all_cfx_complete_extended_histories_text_file_path = "Input/cfx_extended_history.txt"
         with logger_config.stopwatch_with_label(f"Load cfx_extended_history {all_cfx_complete_extended_histories_text_file_path}"):
-
-            all_cfx_complete_extended_histories = cfx_extended_history.AllCFXCompleteHistoryExport(all_cfx_complete_extended_histories_text_file_path)
+            self._all_cfx_complete_extended_histories: List[cfx_extended_history.CFXEntryCompleteHistory] = (
+                cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path)
+            )
 
         with logger_config.stopwatch_with_label("Load CfxUserLibrary"):
             self._cfx_users_library: role.CfxUserLibrary = role.CfxUserLibrary()
