@@ -22,7 +22,7 @@ def decode_time(time: str) -> Optional[datetime]:
 @dataclass
 class CFXRawCompleteHistoryExport:
     cfx_id: str
-    history_lines: List[str]
+    # history_lines: List[str]
     history_full_text: str
 
 
@@ -32,50 +32,29 @@ class AllCFXCompleteHistoryExport:
     def parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path: str) -> List["CFXEntryCompleteHistory"]:
         all_cfx_complete_history: List[CFXEntryCompleteHistory] = list()
 
-        all_extended_histories_raw_text_by_cfx: Dict[str, str] = dict()
         complete_history_len_by_cfx: Dict[str, int] = dict()
         raw_history_by_cfx: Dict[str, CFXRawCompleteHistoryExport] = dict()
 
-        current_parsed_extended_history_lines = []
-        current_parsed_extended_history_text = ""
-        current_parsed_cfx_id: str = ""
         with open(all_cfx_complete_extended_histories_text_file_path, "r", encoding="utf-8") as all_cfx_extended_history_text_file:
-            header_found = False
+            all_cfx_extended_history_text_file_content = all_cfx_extended_history_text_file.read()
+            without_first_line = all_cfx_extended_history_text_file_content.split("CFXID|at_field_history.audit_trail_text|\n")[1]
+            split_by_end = without_first_line.split("====END====\n\n|\n")
+            for one_cfx_history_description_raw in split_by_end:
 
-            line_number = 0
+                cfx_id = one_cfx_history_description_raw.split("|")[0]
 
-            for line in all_cfx_extended_history_text_file:
-                line_number += 1
-
-                if line_number > 1:
-
-                    if "|====START====" in line:
-                        current_parsed_cfx_id = line.split("|====START====\n")[0]
-
-                        current_parsed_extended_history_lines = [line.split("|====START====\n")[1]]
-                        current_parsed_extended_history_text = (line.split("|====START====\n")[1]) + "\n"
-
-                    elif current_parsed_extended_history_text.endswith("====END====\n\n|"):
-                        # if "|====START====" in line:
-                        if len(current_parsed_extended_history_lines) > 0:
-                            all_extended_histories_raw_text_by_cfx[current_parsed_cfx_id] = current_parsed_extended_history_text
-
-                            raw_history_by_cfx[current_parsed_cfx_id] = CFXRawCompleteHistoryExport(
-                                cfx_id=current_parsed_cfx_id, history_full_text=current_parsed_extended_history_text, history_lines=current_parsed_extended_history_lines
-                            )
-
-                    else:
-                        current_parsed_extended_history_lines.append(line)
-                        current_parsed_extended_history_text += line + "\n"
+                full_text = one_cfx_history_description_raw
+                raw_history = CFXRawCompleteHistoryExport(cfx_id=cfx_id, history_full_text=full_text)
+                raw_history_by_cfx[cfx_id] = raw_history
+                complete_history_len_by_cfx[cfx_id] = len(one_cfx_history_description_raw)
 
         sorted_cfxs = sorted(complete_history_len_by_cfx.items(), key=lambda item: item[1], reverse=True)
-        top_15_biggest_history_cfxs = dict(sorted_cfxs[:15])
-        logger_config.print_and_log_info(f"biggest_history_cfxs:{top_15_biggest_history_cfxs}")
+        top_10_biggest_history_cfxs = dict(sorted_cfxs[:10])
+        logger_config.print_and_log_info(f"biggest_history_cfxs:{top_10_biggest_history_cfxs}")
 
-        for cfx_id, extended_history_text in complete_history_len_by_cfx.items():
-            pass
-            # cfx_complete_history = parse_history(cfx_id=cfx_id, extended_history_text=all_cfx_extended_history_split_by_end)
-            # all_cfx_complete_history.append(cfx_complete_history)
+        for cfx_id, raw_complete_history_export in raw_history_by_cfx.items():
+            cfx_complete_history = parse_history(cfx_id=cfx_id, extended_history_text=raw_complete_history_export.history_full_text)
+            all_cfx_complete_history.append(cfx_complete_history)
 
         logger_config.print_and_log_info(f"cfx_extended_history_text_file_content_split_by_cfx:{len(all_cfx_complete_history)}")
 
