@@ -3,6 +3,12 @@ import pytest
 import cfx_extended_history
 
 
+class TestAllCFXCompleteHistoryExport:
+
+    def test_full_file():
+        cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file
+
+
 class TestParseExtendedHistory:
 
     def test_simple_case1(self):
