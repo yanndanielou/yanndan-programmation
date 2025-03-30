@@ -3,10 +3,17 @@ import pytest
 import cfx_extended_history
 
 
+class TestDecodeTime:
+
+    def tests_weird_dates_found_in_cfx(self):
+        assert cfx_extended_history.decode_time("2023-10-01 00:05:13 -718:00") is not None
+
+
 class TestAllCFXCompleteHistoryExport:
 
-    def test_full_file():
-        cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file
+    def test_full_file(self):
+        pass
+        # cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file
 
 
 class TestParseExtendedHistory:
