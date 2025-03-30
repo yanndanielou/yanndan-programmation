@@ -10,13 +10,20 @@ from logger import logger_config
 CURRENT_OWNER_FIELD_MODIFICATION_ID = "CurrentOwner"
 
 
-def decode_time(time: str) -> Optional[datetime]:
+def decode_time(full_raw_time: str) -> Optional[datetime]:
+    stipped_full_raw_time = full_raw_time.strip()
     try:
         # Assume the time format is "YYYY-MM-DD HH:MM:SS ±HH:MM"
-        return datetime.strptime(time.strip(), "%Y-%m-%d %H:%M:%S %z")
+        return datetime.strptime(stipped_full_raw_time, "%Y-%m-%d %H:%M:%S %z")
     except ValueError:
-        logger_config.print_and_log_error(f"Warning: Unable to decode time '{time}'")
-        return None
+        logger_config.print_and_log_warning(f"Unable to decode time '{full_raw_time}'. Will try without timezone")
+        try:
+            time_until_secnds = stipped_full_raw_time[:19]
+            return datetime.strptime(time_until_secnds, "%Y-%m-%d %H:%M:%S")
+
+        except ValueError:
+            logger_config.print_and_log_error(f"Warning: Unable to decode time '{full_raw_time}'")
+            return None
 
 
 @dataclass
