@@ -1,12 +1,10 @@
 *.zip
-*.txt
 *.xls*
 /.mypy_cache/
 /Input/
 /Input/*.txt
 Input/CFX_kown_by_customer.txt
 /Input_for_Tests/*.json
-/Input_for_Tests/*.txt
 /Input_for_Tests/*.xlsx
 test*.json
 test*.xlsx
@@ -15,3 +13,5 @@ role_data.*
 output_save_cfx_webpage*/
 connexion_param.py
 *.pkl
+cfx_extended_history.txt
+output*.txt
