@@ -187,6 +187,7 @@ def main() -> None:
             champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
             all_current_owner_modifications_per_cfx_pickle_file_full_path="Input/all_current_owner_modifications_per_cfx.pkl",
             all_current_owner_modifications_pickle_file_full_path="Input/all_current_owner_modifications.pkl",
+            cfx_to_treat_whitelist_text_file_full_path="Input/CFX_kown_by_customer.txt",
         )
 
         produce_results_and_displays(
