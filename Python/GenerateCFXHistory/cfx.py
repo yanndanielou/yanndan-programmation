@@ -95,18 +95,19 @@ class ChampFXLibrary:
         champfx_states_changes_excel_file_full_path: str = "Input/extract_cfx_change_state.xlsx",
         all_current_owner_modifications_pickle_file_full_path: str = "Input/all_current_owner_modifications.pkl",
         all_current_owner_modifications_per_cfx_pickle_file_full_path: str = "Input/all_current_owner_modifications_per_cfx.pkl",
+        cfx_to_treat_whitelist_text_file_full_path: Optional[str] = None,
     ):
 
         self._all_current_owner_modifications_pickle_file_full_path = all_current_owner_modifications_pickle_file_full_path
         self._all_current_owner_modifications_per_cfx_pickle_file_full_path = all_current_owner_modifications_per_cfx_pickle_file_full_path
         self._champfx_entry_by_id: Dict[str, ChampFXEntry] = dict()
 
-        cfx_known_by_cstmr_text_file_path = "Input/CFX_kown_by_customer.txt"
         self._cfx_known_by_cstmr_ids: set[str] = set()
-        with logger_config.stopwatch_with_label(f"Load CfxUserLibrary {cfx_known_by_cstmr_text_file_path}"):
-            with open(cfx_known_by_cstmr_text_file_path, "r", encoding="utf-8") as cfx_known_by_cstmr_text_file:
-                self._cfx_known_by_cstmr_ids = [line.strip() for line in cfx_known_by_cstmr_text_file.readlines()]
-        logger_config.print_and_log_info(f"Number of cfx_known_by_cstmr_ids:{len(self._cfx_known_by_cstmr_ids)}")
+        if cfx_to_treat_whitelist_text_file_full_path is not None:
+            with logger_config.stopwatch_with_label(f"Load CfxUserLibrary {cfx_to_treat_whitelist_text_file_full_path}"):
+                with open(cfx_to_treat_whitelist_text_file_full_path, "r", encoding="utf-8") as cfx_known_by_cstmr_text_file:
+                    self._cfx_known_by_cstmr_ids = [line.strip() for line in cfx_known_by_cstmr_text_file.readlines()]
+            logger_config.print_and_log_info(f"Number of cfx_known_by_cstmr_ids:{len(self._cfx_known_by_cstmr_ids)}")
 
         all_cfx_complete_extended_histories_text_file_path = "Input/cfx_extended_history.txt"
         with logger_config.stopwatch_with_label(f"Load cfx_extended_history {all_cfx_complete_extended_histories_text_file_path}"):
