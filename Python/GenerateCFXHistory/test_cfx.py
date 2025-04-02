@@ -141,3 +141,15 @@ class TestCurrentOwner:
             day_after_first_analyzis = datetime(int(2024), int(1), int(6))
             assert cfx_entry.get_current_owner_at_date(day_before_first_opening) is None
             assert "Renaud".lower() in cfx_entry.get_current_owner_at_date(day_after_first_analyzis)._raw_full_name.lower()
+
+    class TestChampFxFilter:
+        def test_field_filter(self):
+            nexteo_only_champfx_library = cfx.ChampFXLibrary(
+                champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
+                champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
+                champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_cfx_project", field_value=cfx.CfxProject.FR_NEXTEO.name)),
+            )
+
+            assert len(nexteo_only_champfx_library.get_all_cfx()) > 0
+            for cfx_entry in nexteo_only_champfx_library.get_all_cfx():
+                assert cfx_entry._cfx_project == nexteo_only_champfx_library._champfx_filter._field_filter.field_name
