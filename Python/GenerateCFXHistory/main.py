@@ -181,6 +181,7 @@ def main() -> None:
         if not os.path.exists(output_directory_name):
             os.mkdir(output_directory_name)
 
+        """
         usine_site_champfx_library = cfx.ChampFXLibrary(
             champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
             champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
@@ -196,11 +197,11 @@ def main() -> None:
             library_label="Usine & site",
             filter_only_subsystem=None,
         )
-
+        """
         security_relevant_only_champfx_library = cfx.ChampFXLibrary(
             champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
             champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
-            champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_security_relevant", field_value=True)),
+            champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.Yes, cfx.SecurityRelevant.Mitigated])),
         )
         produce_results_and_displays(
             cfx_library=security_relevant_only_champfx_library,
@@ -247,7 +248,7 @@ def main() -> None:
         for subsystem in role.SubSystem:
             with logger_config.stopwatch_with_label(f"produce_results_and_displays for {subsystem.name}"):
                 produce_results_and_displays(
-                    cfx_library=usine_site_champfx_library,
+                    cfx_library=security_relevant_only_champfx_library,
                     # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
                     output_excel_file=None,
                     display_without_cumulative_eras=False,

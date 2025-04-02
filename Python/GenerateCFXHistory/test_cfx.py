@@ -147,7 +147,7 @@ class TestCurrentOwner:
             nexteo_only_champfx_library = cfx.ChampFXLibrary(
                 champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
                 champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
-                champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_cfx_project", field_value=cfx.CfxProject.FR_NEXTEO)),
+                champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.FR_NEXTEO])),
             )
 
             assert len(nexteo_only_champfx_library.get_all_cfx()) > 0
@@ -158,7 +158,9 @@ class TestCurrentOwner:
             security_relevant_only_champfx_library = cfx.ChampFXLibrary(
                 champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
                 champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
-                champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_security_relevant", field_value=True)),
+                champfx_filter=cfx.ChampFxFilter(
+                    field_filter=cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.Yes, cfx.SecurityRelevant.Mitigated])
+                ),
             )
 
             assert len(security_relevant_only_champfx_library.get_all_cfx()) > 0

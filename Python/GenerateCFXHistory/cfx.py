@@ -1,5 +1,7 @@
 import pickle
 
+import math
+
 import pandas as pd
 from datetime import datetime, timedelta
 from dateutil import relativedelta
@@ -19,6 +21,13 @@ import cfx_extended_history
 class CfxProject(Enum):
     FR_NEXTEO = auto()
     ATSP = auto()
+
+
+class SecurityRelevant(Enum):
+    Yes = auto()
+    No = auto()
+    Mitigated = auto()
+    Undefined = auto()
 
 
 class ActionType(Enum):
@@ -265,6 +274,11 @@ class ChampFXLibrary:
 class ChampFXEntryBuilder:
 
     @staticmethod
+    def convert_champfx_security_relevant(raw_security_relevant: str) -> SecurityRelevant:
+        security_relevant: SecurityRelevant = SecurityRelevant.Undefined if type(raw_security_relevant) is not str and math.isnan(raw_security_relevant) else SecurityRelevant[raw_security_relevant]
+        return security_relevant
+
+    @staticmethod
     def to_optional_boolean(raw_value: str) -> Optional[bool]:
         if raw_value == "Yes":
             return True
@@ -285,7 +299,7 @@ class ChampFXEntryBuilder:
         safety_relevant: Optional[bool] = ChampFXEntryBuilder.to_optional_boolean(raw_safety_relevant)
 
         raw_security_relevant: str = row["SecurityRelevant"]
-        security_relevant: Optional[bool] = ChampFXEntryBuilder.to_optional_boolean(raw_security_relevant)
+        security_relevant: str = ChampFXEntryBuilder.convert_champfx_security_relevant(raw_security_relevant)
 
         champfx_entry = ChampFXEntry(
             cfx_id=cfx_id,
@@ -310,7 +324,7 @@ class ChampFXEntry:
         submit_date_raw: str,
         cfx_project: CfxProject,
         safety_relevant: Optional[bool],
-        security_relevant: Optional[bool],
+        security_relevant: SecurityRelevant,
     ):
         self._change_state_actions: list[ChangeStateAction] = []
         self._change_state_actions_by_date: Dict[datetime, ChangeStateAction] = dict()
@@ -402,11 +416,11 @@ class ChampFXEntry:
 @dataclass
 class ChampFXFieldFilter:
     field_name: str
-    field_value: any
+    field_accepted_values: List[any]
 
     def match_cfx_entry(self, cfx_entry: ChampFXEntry) -> bool:
         attribute_entry = getattr(cfx_entry, self.field_name)
-        return attribute_entry == self.field_value
+        return attribute_entry in self.field_accepted_values
 
 
 class ChampFxFilter:
