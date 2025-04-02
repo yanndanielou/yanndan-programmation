@@ -16,6 +16,11 @@ import role
 import cfx_extended_history
 
 
+class CfxProject(Enum):
+    FR_NEXTEO = auto()
+    ATSP = auto()
+
+
 class ActionType(Enum):
     Import = auto()
     ReSubmit = auto()
@@ -264,18 +269,53 @@ class ChampFXLibrary:
 class ChampFXEntryBuilder:
 
     @staticmethod
+    def to_optional_boolean(raw_value: str) -> Optional[bool]:
+        if raw_value == "Yes":
+            return True
+        elif raw_value == "No":
+            return False
+        return None
+
+    @staticmethod
     def build_with_row(row) -> "ChampFXEntry":
         cfx_id = row["CFXID"]
         raw_state: State = State[(row["State"])]
         fixed_implemented_in: str = row["FixedImplementedIn"]
         current_owner_raw: str = row["CurrentOwner.FullName"]
         submit_date_raw: str = row["SubmitDate"]
-        champfx_entry = ChampFXEntry(cfx_id=cfx_id, raw_state=raw_state, fixed_implemented_in=fixed_implemented_in, current_owner_raw=current_owner_raw, submit_date_raw=submit_date_raw)
+        raw_project: str = row["Project"]
+        cfx_project = CfxProject[raw_project]
+        raw_safety_relevant: str = row["SafetyRelevant"]
+        safety_relevant: Optional[bool] = ChampFXEntryBuilder.to_optional_boolean(raw_safety_relevant)
+
+        raw_security_relevant: str = row["SecurityRelevant"]
+        security_relevant: Optional[bool] = ChampFXEntryBuilder.to_optional_boolean(raw_security_relevant)
+
+        champfx_entry = ChampFXEntry(
+            cfx_id=cfx_id,
+            raw_state=raw_state,
+            fixed_implemented_in=fixed_implemented_in,
+            current_owner_raw=current_owner_raw,
+            submit_date_raw=submit_date_raw,
+            cfx_project=project,
+            safety_relevant=safety_relevant,
+            security_relevant=security_relevant,
+        )
         return champfx_entry
 
 
 class ChampFXEntry:
-    def __init__(self, cfx_id: str, raw_state: State, fixed_implemented_in: str, current_owner_raw: str, submit_date_raw: str):
+    def __init__(
+        self,
+        cfx_id: str,
+        raw_state: State,
+        fixed_implemented_in: str,
+        current_owner_raw: str,
+        submit_date_raw: str,
+        cfx_project: CfxProject,
+        safety_relevant: Optional[bool],
+        security_relevant: Optional[bool],
+    ):
         self._change_state_actions: list[ChangeStateAction] = []
         self._change_state_actions_by_date: Dict[datetime, ChangeStateAction] = dict()
 
@@ -290,6 +330,10 @@ class ChampFXEntry:
         self._current_owner_role: role.SubSystem = None
         self._subsystem_from_fixed_implemented_in: role.SubSystem = None
         self._submit_date = utils.convert_champfx_extract_date(submit_date_raw)
+
+        self._cfx_project = cfx_project
+        self._safety_relevant = safety_relevant
+        self._security_relevant = security_relevant
 
     def __repr__(self) -> str:
         return f"<ChampFXEntry cfx_id={self.cfx_id} _raw_state={self._raw_state} _current_owner_raw={self._current_owner_raw}>"
