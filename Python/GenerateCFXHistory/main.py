@@ -59,7 +59,10 @@ def produce_results_and_displays(
     for state_counts in state_counts_per_month:
         present_states_set.update(state_counts.keys())
 
-    present_states_list = list(present_states_set)
+    if len(present_states_set) == 0:
+        logger_config.print_and_log_info(f"No data for library {library_label} filters {filter_only_subsystem}")
+        return
+
     present_states_ordered_list = sorted(list(present_states_set))
 
     # Prepare cumulative counts for stacked area plot and Excel output
@@ -201,7 +204,7 @@ def main() -> None:
         security_relevant_only_champfx_library = cfx.ChampFXLibrary(
             champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
             champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
-            champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.Yes, cfx.SecurityRelevant.Mitigated])),
+            champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.Yes])),
         )
         produce_results_and_displays(
             cfx_library=security_relevant_only_champfx_library,
