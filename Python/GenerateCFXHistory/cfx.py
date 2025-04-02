@@ -337,6 +337,10 @@ class ChampFXEntry:
     def get_sub_system(self) -> role.SubSystem:
         return self._subsystem_from_fixed_implemented_in if self._subsystem_from_fixed_implemented_in else self._current_owner_role
 
+    def get_current_role_at_date(self, reference_date: datetime) -> Optional[role.SubSystem]:
+        current_owner = self.get_current_owner_at_date(reference_date)
+        return None if current_owner is None else current_owner.subsystem
+
     def get_current_owner_at_date(self, reference_date: datetime) -> role.CfxUser:
         if reference_date < self._submit_date:
             return None
