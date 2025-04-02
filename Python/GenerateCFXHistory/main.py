@@ -200,7 +200,7 @@ def main() -> None:
         nexteo_only_champfx_library = cfx.ChampFXLibrary(
             champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
             champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
-            champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_cfx_project", field_value=cfx.CfxProject.FR_NEXTEO.name)),
+            champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_cfx_project", field_value=cfx.CfxProject.FR_NEXTEO)),
         )
 
         produce_results_and_displays(

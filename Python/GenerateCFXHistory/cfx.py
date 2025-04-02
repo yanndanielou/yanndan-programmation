@@ -405,7 +405,8 @@ class ChampFXFieldFilter:
     field_value: any
 
     def match_cfx_entry(self, cfx_entry: ChampFXEntry) -> bool:
-        return getattr(cfx_entry, self.field_name) == self.field_value
+        attribute_entry = getattr(cfx_entry, self.field_name)
+        return attribute_entry == self.field_value
 
 
 class ChampFxFilter:
