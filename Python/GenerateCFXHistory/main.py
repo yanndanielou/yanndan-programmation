@@ -36,7 +36,6 @@ def produce_results_and_displays(
     display_with_cumulative_eras: bool,
     output_html_file_prefix: str,
     filter_only_subsystem=None,
-    filter_only_known_by_cstr=False,
 ) -> None:
     # Retrieve months to process
     months = cfx_library.get_months_since_earliest_submit_date()
@@ -53,10 +52,8 @@ def produce_results_and_displays(
                 entry_cfx_id = entry.cfx_id
                 cfx_id_known = entry.cfx_id in cfx_library._cfx_to_treat_whitelist_ids
 
-                if not filter_only_known_by_cstr or entry.cfx_id in cfx_library._cfx_to_treat_whitelist_ids:
-
-                    if state != cfx.State.NotCreatedYet:
-                        state_counts[state] += 1
+                if state != cfx.State.NotCreatedYet:
+                    state_counts[state] += 1
         state_counts_per_month.append(state_counts)
 
     # Determine the states that are present in the data
@@ -182,22 +179,34 @@ def main() -> None:
         if not os.path.exists(output_directory_name):
             os.mkdir(output_directory_name)
 
-        champfx_library = cfx.ChampFXLibrary(
+        usine_site_champfx_library = cfx.ChampFXLibrary(
             champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
             champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
-            all_current_owner_modifications_per_cfx_pickle_file_full_path="Input/all_current_owner_modifications_per_cfx.pkl",
-            all_current_owner_modifications_pickle_file_full_path="Input/all_current_owner_modifications.pkl",
-            cfx_to_treat_whitelist_text_file_full_path="Input/CFX_kown_by_customer.txt",
+            cfx_to_treat_whitelist_text_file_full_path="Input/CFX_usine_site.txt",
+        )
+
+        all_champfx_library = cfx.ChampFXLibrary(
+            champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
+            champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
+            cfx_to_treat_whitelist_text_file_full_path="Input/CFX_usine_site.txt",
         )
 
         produce_results_and_displays(
-            cfx_library=champfx_library,
+            cfx_library=usine_site_champfx_library,
             output_excel_file=f"{output_directory_name}/all_cfx.xlsx",
             display_without_cumulative_eras=True,
             display_with_cumulative_eras=True,
             output_html_file_prefix=f"{output_directory_name}/all_cfx_",
             filter_only_subsystem=None,
-            filter_only_known_by_cstr=True,
+        )
+
+        produce_results_and_displays(
+            cfx_library=usine_site_champfx_library,
+            output_excel_file=f"{output_directory_name}/all_cfx.xlsx",
+            display_without_cumulative_eras=True,
+            display_with_cumulative_eras=True,
+            output_html_file_prefix=f"{output_directory_name}/all_cfx_",
+            filter_only_subsystem=None,
         )
 
         plt.show()
@@ -206,14 +215,13 @@ def main() -> None:
         for subsystem in role.SubSystem:
             with logger_config.stopwatch_with_label(f"produce_results_and_displays for {subsystem.name}"):
                 produce_results_and_displays(
-                    cfx_library=champfx_library,
+                    cfx_library=usine_site_champfx_library,
                     # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
                     output_excel_file=None,
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     output_html_file_prefix=f"{output_directory_name}/subsystem_{subsystem.name}",
                     filter_only_subsystem=subsystem,
-                    filter_only_known_by_cstr=False,
                 )
 
         # Use plt.show() here to block execution and keep all windows open
