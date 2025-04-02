@@ -10,14 +10,6 @@ import role_data
 
 from common import string_utils
 
-sous_lot_data = """
-. Pallavee	SW
-Nguyen Charles	ATS
-Legendart Raphael	ATS
-Ettedgui Jonathan	TCM TC
-Fan Zhengqing	SW
-"""
-
 
 class SubSystem(Enum):
     SW = auto()
@@ -93,19 +85,22 @@ class CfxUserLibrary:
 
             raw_full_name = raw_full_name_unstripped.strip()
             raw_full_name_lower = raw_full_name.lower()
-            self._add_user(subsystem=subsystem, raw_full_name_lower=raw_full_name_lower, raw_full_name=raw_full_name)
+            self._add_user_with_raw_data(subsystem=subsystem, raw_full_name_lower=raw_full_name_lower, raw_full_name=raw_full_name)
 
         # add unknown user
-        self._unknown_user: CfxUser = self._add_user(subsystem=SubSystem.TbD, raw_full_name_lower="Unknown", raw_full_name="Unknown")
+        self._unknown_user: CfxUser = self._add_user_with_user(UNKNOWN_USER)
 
     @property
     def unknown_user(self) -> CfxUser:
         return self._unknown_user
 
-    def _add_user(self, subsystem: SubSystem, raw_full_name_lower: str, raw_full_name: str) -> CfxUser:
+    def _add_user_with_raw_data(self, subsystem: SubSystem, raw_full_name_lower: str, raw_full_name: str) -> CfxUser:
         cfx_user = CfxUser(raw_full_name=raw_full_name, full_name=raw_full_name_lower, subsystem=subsystem)
-        self._cfx_user_by_full_name_lower[raw_full_name_lower] = cfx_user
-        self._cfx_user_by_full_name[raw_full_name] = cfx_user
+        return self._add_user_with_user(cfx_user)
+
+    def _add_user_with_user(self, cfx_user: CfxUser) -> CfxUser:
+        self._cfx_user_by_full_name_lower[cfx_user._full_name] = cfx_user
+        self._cfx_user_by_full_name[cfx_user.raw_full_name] = cfx_user
         return cfx_user
 
     def get_cfx_user_by_full_name(self, full_name: str) -> CfxUser:
@@ -155,3 +150,6 @@ def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in
                 return subsystem
 
     return None
+
+
+UNKNOWN_USER: CfxUser = CfxUser(raw_full_name="Unknown", full_name="Unknown", subsystem=SubSystem.TbD)

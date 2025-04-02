@@ -51,9 +51,9 @@ def produce_results_and_displays(
             if filter_only_subsystem is None or filter_only_subsystem == entry.get_sub_system():
 
                 entry_cfx_id = entry.cfx_id
-                cfx_id_known = entry.cfx_id in cfx_library._cfx_known_by_cstmr_ids
+                cfx_id_known = entry.cfx_id in cfx_library._cfx_to_treat_whitelist_ids
 
-                if not filter_only_known_by_cstr or entry.cfx_id in cfx_library._cfx_known_by_cstmr_ids:
+                if not filter_only_known_by_cstr or entry.cfx_id in cfx_library._cfx_to_treat_whitelist_ids:
 
                     if state != cfx.State.NotCreatedYet:
                         state_counts[state] += 1

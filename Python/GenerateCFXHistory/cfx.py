@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from dateutil import relativedelta
 
 from dataclasses import dataclass
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Set
 
 from enum import Enum, auto, IntEnum
 
@@ -93,26 +93,27 @@ class ChampFXLibrary:
         self,
         champfx_details_excel_file_full_path: str = "Input/extract_cfx_details.xlsx",
         champfx_states_changes_excel_file_full_path: str = "Input/extract_cfx_change_state.xlsx",
-        all_current_owner_modifications_pickle_file_full_path: str = "Input/all_current_owner_modifications.pkl",
-        all_current_owner_modifications_per_cfx_pickle_file_full_path: str = "Input/all_current_owner_modifications_per_cfx.pkl",
+        # all_current_owner_modifications_pickle_file_full_path: str = "Input/all_current_owner_modifications.pkl",
+        # all_current_owner_modifications_per_cfx_pickle_file_full_path: str = "Input/all_current_owner_modifications_per_cfx.pkl",
         cfx_to_treat_whitelist_text_file_full_path: Optional[str] = None,
     ):
 
-        self._all_current_owner_modifications_pickle_file_full_path = all_current_owner_modifications_pickle_file_full_path
-        self._all_current_owner_modifications_per_cfx_pickle_file_full_path = all_current_owner_modifications_per_cfx_pickle_file_full_path
+        # self._all_current_owner_modifications_pickle_file_full_path = all_current_owner_modifications_pickle_file_full_path
+        # self._all_current_owner_modifications_per_cfx_pickle_file_full_path = all_current_owner_modifications_per_cfx_pickle_file_full_path
         self._champfx_entry_by_id: Dict[str, ChampFXEntry] = dict()
 
-        self._cfx_known_by_cstmr_ids: set[str] = set()
+        self._cfx_to_treat_whitelist_ids: Optional[Set[str]] = None
         if cfx_to_treat_whitelist_text_file_full_path is not None:
+            cfx_to_treat_whitelist_ids = set()
             with logger_config.stopwatch_with_label(f"Load CfxUserLibrary {cfx_to_treat_whitelist_text_file_full_path}"):
                 with open(cfx_to_treat_whitelist_text_file_full_path, "r", encoding="utf-8") as cfx_known_by_cstmr_text_file:
-                    self._cfx_known_by_cstmr_ids = [line.strip() for line in cfx_known_by_cstmr_text_file.readlines()]
-            logger_config.print_and_log_info(f"Number of cfx_known_by_cstmr_ids:{len(self._cfx_known_by_cstmr_ids)}")
+                    self._cfx_to_treat_whitelist_ids = [line.strip() for line in cfx_known_by_cstmr_text_file.readlines()]
+            logger_config.print_and_log_info(f"Number of cfx_known_by_cstmr_ids:{len(self._cfx_to_treat_whitelist_ids)}")
 
         all_cfx_complete_extended_histories_text_file_path = "Input/cfx_extended_history.txt"
         with logger_config.stopwatch_with_label(f"Load cfx_extended_history {all_cfx_complete_extended_histories_text_file_path}"):
             self._all_cfx_complete_extended_histories: List[cfx_extended_history.CFXEntryCompleteHistory] = (
-                cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path)
+                cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path, cfx_to_treat_whitelist_ids)
             )
 
         with logger_config.stopwatch_with_label("Load CfxUserLibrary"):
@@ -137,8 +138,8 @@ class ChampFXLibrary:
             with logger_config.stopwatch_with_label("ChampFXLibrary process_current_owner_role"):
                 list(map(lambda champ_fx: champ_fx.process_current_owner_role(self), self.get_all_cfx()))
 
-            # with logger_config.stopwatch_with_label(f"create current owner modifications"):
-            #    self.create_current_owner_modifications()
+            with logger_config.stopwatch_with_label(f"create current owner modifications"):
+                self.create_current_owner_modifications()
 
             with logger_config.stopwatch_with_label(f"ChampFXLibrary process_subsystem_from_fixed_implemented_in"):
                 list(map(lambda champ_fx: champ_fx.process_subsystem_from_fixed_implemented_in(), self.get_all_cfx()))
@@ -150,7 +151,7 @@ class ChampFXLibrary:
                 cfx = self._champfx_entry_by_id[cfx_id]
                 cfx._current_owner
             else:
-                cfx = ChampFXEntryBuilder.build_with_row(row, self._cfx_known_by_cstmr_ids)
+                cfx = ChampFXEntryBuilder.build_with_row(row, self._cfx_to_treat_whitelist_ids)
                 self._champfx_entry_by_id[cfx_id] = cfx
 
     def create_states_changes_with_dataframe(self, cfx_states_changes_data_frame: pd.DataFrame) -> List[ChangeStateAction]:
@@ -183,30 +184,34 @@ class ChampFXLibrary:
 
         change_current_owner_actions_created: List[ChangeCurrentOwnerAction] = []
 
-        with open(self._all_current_owner_modifications_per_cfx_pickle_file_full_path, "rb") as file:
-            all_current_owner_modifications_per_cfx: Dict[str, List[cfx_extended_history.CFXHistoryField]] = pickle.load(file)
+        for cfx_entry_complete_history in self._all_cfx_complete_extended_histories:
 
-            for cfx_id, cfx_history_elements in all_current_owner_modifications_per_cfx.items():
+            cfx_id = cfx_entry_complete_history.cfx_id
+
+            if self._cfx_to_treat_whitelist_ids is None or cfx_id in self._cfx_to_treat_whitelist_ids:
+
                 cfx_entry = self.get_cfx_by_id(cfx_id)
-                for cfx_history_element in cfx_history_elements:
+                for cfx_history_element in cfx_entry_complete_history.history_elements:
                     # cfx_history_element.
 
                     # Ignore invalid entries
 
-                    previous_current_owner_name = self.convert_cfx_history_element_to_valid_full_name(cfx_history_element.old_state)
-                    new_current_owner_name = self.convert_cfx_history_element_to_valid_full_name(cfx_history_element.new_state)
+                    for cfx_history_field in cfx_history_element.get_all_current_owner_field_modifications():
 
-                    if not previous_current_owner_name or not new_current_owner_name:
-                        logger_config.print_and_log_error(f"Invalid current owner change history for {cfx_id}, from {previous_current_owner_name} to {new_current_owner_name}. {cfx_history_element}")
+                        previous_current_owner_name = self.convert_cfx_history_element_to_valid_full_name(cfx_history_field.old_state)
+                        new_current_owner_name = self.convert_cfx_history_element_to_valid_full_name(cfx_history_field.new_state)
 
-                    previous_owner = self._cfx_users_library.get_cfx_user_by_full_name(previous_current_owner_name) if previous_current_owner_name else self._cfx_users_library.unknown_user
-                    new_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(new_current_owner_name) if new_current_owner_name else self._cfx_users_library.unknown_user
+                        if not previous_current_owner_name or not new_current_owner_name:
+                            logger_config.print_and_log_error(f"Invalid current owner change history for {cfx_id}, from {previous_current_owner_name} to {new_current_owner_name}. {cfx_history_field}")
 
-                    change_current_owner_action: ChangeCurrentOwnerAction = ChangeCurrentOwnerAction(
-                        _cfx_request=cfx_entry, _previous_owner=previous_owner, _new_owner=new_owner, _timestamp=cfx_history_element.change_timestamp.replace(tzinfo=None)
-                    )
-                    change_current_owner_actions_created.append(change_current_owner_action)
-                    cfx_entry.add_change_current_owner_action(change_current_owner_action)
+                        previous_owner = self._cfx_users_library.get_cfx_user_by_full_name(previous_current_owner_name) if previous_current_owner_name else self._cfx_users_library.unknown_user
+                        new_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(new_current_owner_name) if new_current_owner_name else self._cfx_users_library.unknown_user
+
+                        change_current_owner_action: ChangeCurrentOwnerAction = ChangeCurrentOwnerAction(
+                            _cfx_request=cfx_entry, _previous_owner=previous_owner, _new_owner=new_owner, _timestamp=cfx_history_field.change_timestamp.replace(tzinfo=None)
+                        )
+                        change_current_owner_actions_created.append(change_current_owner_action)
+                        cfx_entry.add_change_current_owner_action(change_current_owner_action)
 
         return change_current_owner_actions_created
 

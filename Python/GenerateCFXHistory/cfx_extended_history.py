@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Set
 import re
 from datetime import datetime
 
@@ -36,7 +36,7 @@ class CFXRawCompleteHistoryExport:
 class AllCFXCompleteHistoryExport:
 
     @staticmethod
-    def parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path: str) -> List["CFXEntryCompleteHistory"]:
+    def parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path: str, cfx_to_treat_whitelist_ids: Optional[Set[str]]) -> List["CFXEntryCompleteHistory"]:
         all_cfx_complete_history: List[CFXEntryCompleteHistory] = list()
 
         complete_history_len_by_cfx: Dict[str, int] = dict()
@@ -60,8 +60,9 @@ class AllCFXCompleteHistoryExport:
         logger_config.print_and_log_info(f"biggest_history_cfxs:{top_10_biggest_history_cfxs}")
 
         for cfx_id, raw_complete_history_export in raw_history_by_cfx.items():
-            cfx_complete_history = parse_history(cfx_id=cfx_id, extended_history_text=raw_complete_history_export.history_full_text)
-            all_cfx_complete_history.append(cfx_complete_history)
+            if cfx_to_treat_whitelist_ids is None or cfx_id in cfx_to_treat_whitelist_ids:
+                cfx_complete_history = parse_history(cfx_id=cfx_id, extended_history_text=raw_complete_history_export.history_full_text)
+                all_cfx_complete_history.append(cfx_complete_history)
 
         logger_config.print_and_log_info(f"cfx_extended_history_text_file_content_split_by_cfx:{len(all_cfx_complete_history)}")
 
@@ -76,6 +77,10 @@ class CFXHistoryField:
         self.old_state = old_state.strip()
         self.new_state = new_state.strip()
         self.change_timestamp = change_timestamp
+        self.change_timestamp_without_timezone = change_timestamp.replace(tzinfo=None)
+
+    def __post_init__(self):
+        pass
 
     def __repr__(self) -> str:
         return f"<CFXHistoryField field_id={self.field_id} secondary_label={self.secondary_label}>"
@@ -97,6 +102,10 @@ class CFXHistoryElement:
     def get_all_current_owner_field_modifications(self) -> List[CFXHistoryField]:
         all_current_owner_field_modification = [field for field in self._fields if field.field_id == CURRENT_OWNER_FIELD_MODIFICATION_ID]
         return all_current_owner_field_modification
+
+    @property
+    def decoded_time(self) -> Optional[datetime]:
+        return self._decoded_time
 
     @property
     def action(self) -> str:
@@ -162,7 +171,7 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHi
             field_matches = re.finditer(field_regex, fields_section, re.DOTALL)
             for field_match in field_matches:
                 field_id, secondary_label, old_state, new_state = field_match.groups()[:4]
-                field = CFXHistoryField(cfx_id=cfx_id, field_id=field_id, secondary_label=secondary_label, old_state=old_state, new_state=new_state, change_timestamp=element._decoded_time)
+                field = CFXHistoryField(cfx_id=cfx_id, field_id=field_id, secondary_label=secondary_label, old_state=old_state, new_state=new_state, change_timestamp=element.decoded_time)
                 element.add_field(field)
 
             cfx_complete_history.add_field_history_element(element)
@@ -171,7 +180,7 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHi
 
 
 def profile_load_full():
-    all_history: List["CFXEntryCompleteHistory"] = AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file("Input/cfx_extended_history.txt")
+    all_history: List["CFXEntryCompleteHistory"] = AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file("Input/cfx_extended_history.txt", set())
     pass
 
 
