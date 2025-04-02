@@ -143,7 +143,7 @@ class TestCurrentOwner:
             assert "Renaud".lower() in cfx_entry.get_current_owner_at_date(day_after_first_analyzis)._raw_full_name.lower()
 
     class TestChampFxFilter:
-        def test_field_filter(self):
+        def test_next_project_field_filter(self):
             nexteo_only_champfx_library = cfx.ChampFXLibrary(
                 champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
                 champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
@@ -153,3 +153,14 @@ class TestCurrentOwner:
             assert len(nexteo_only_champfx_library.get_all_cfx()) > 0
             for cfx_entry in nexteo_only_champfx_library.get_all_cfx():
                 assert cfx_entry._cfx_project == nexteo_only_champfx_library._champfx_filter._field_filter.field_name
+
+        def test_security_relevant_only_field_filter(self):
+            security_relevant_only_champfx_library = cfx.ChampFXLibrary(
+                champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
+                champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
+                champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_security_relevant", field_value=True)),
+            )
+
+            assert len(security_relevant_only_champfx_library.get_all_cfx()) > 0
+            for cfx_entry in security_relevant_only_champfx_library.get_all_cfx():
+                assert cfx_entry._security_relevant
