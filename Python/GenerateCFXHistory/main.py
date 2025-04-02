@@ -197,6 +197,21 @@ def main() -> None:
             filter_only_subsystem=None,
         )
 
+        security_relevant_only_champfx_library = cfx.ChampFXLibrary(
+            champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
+            champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
+            champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_security_relevant", field_value=True)),
+        )
+        produce_results_and_displays(
+            cfx_library=security_relevant_only_champfx_library,
+            output_excel_file=f"{output_directory_name}/Security_cyber.xlsx",
+            display_without_cumulative_eras=True,
+            display_with_cumulative_eras=True,
+            output_html_file_prefix=f"{output_directory_name}/Security_cyber_",
+            library_label="Security (cyber)",
+            filter_only_subsystem=None,
+        )
+        """
         nexteo_only_champfx_library = cfx.ChampFXLibrary(
             champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
             champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
@@ -212,6 +227,7 @@ def main() -> None:
             library_label="All",
             filter_only_subsystem=None,
         )
+        """
 
         """         nexteo_only_champfx_library = cfx.ChampFXLibrary(
             champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
