@@ -123,6 +123,11 @@ class TestCurrentOwner:
             day_before_first_opening = datetime(int(2000), int(1), int(4))
             assert cfx_entry.get_current_owner_at_date(day_before_first_opening) is None
 
+    def test_all_cfx_have_current_owner_which_is_same_as_history(self, create_light_champfx_library: cfx.ChampFXLibrary):
+        champfx_library = create_light_champfx_library
+        for cfx_entry in champfx_library.get_all_cfx():
+            assert cfx_entry._current_owner == cfx_entry.get_current_owner_at_date(datetime.now())
+
     class TestCFX00778656:
 
         def test_00778656_tCFXhat_has_never_changed(self, create_light_champfx_library: cfx.ChampFXLibrary):
