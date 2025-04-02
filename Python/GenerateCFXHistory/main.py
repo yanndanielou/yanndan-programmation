@@ -35,6 +35,7 @@ def produce_results_and_displays(
     display_without_cumulative_eras: bool,
     display_with_cumulative_eras: bool,
     output_html_file_prefix: str,
+    library_label: str,
     filter_only_subsystem=None,
 ) -> None:
     # Retrieve months to process
@@ -48,9 +49,6 @@ def produce_results_and_displays(
             state = entry.get_state_at_date(month)
 
             if filter_only_subsystem is None or filter_only_subsystem == entry.get_sub_system():
-
-                entry_cfx_id = entry.cfx_id
-                cfx_id_known = entry.cfx_id in cfx_library._cfx_to_treat_whitelist_ids
 
                 if state != cfx.State.NotCreatedYet:
                     state_counts[state] += 1
@@ -71,11 +69,11 @@ def produce_results_and_displays(
             cumulative_counts[state].append(state_counts[state])
 
     if output_excel_file:
-        with logger_config.stopwatch_with_label(f"produce_excel_output_file, filter {filter_only_subsystem}"):
+        with logger_config.stopwatch_with_label(f"produce_excel_output_file, filter {filter_only_subsystem} library {library_label}"):
             produce_excel_output_file(output_excel_file=output_excel_file, state_counts_per_month=state_counts_per_month, months=months)
 
     if display_with_cumulative_eras:
-        with logger_config.stopwatch_with_label(f"produce_displays cumulative, filter {filter_only_subsystem}"):
+        with logger_config.stopwatch_with_label(f"produce_displays cumulative, filter {filter_only_subsystem} library {library_label}"):
             produce_displays(
                 use_cumulative=True,
                 months=months,
@@ -84,10 +82,11 @@ def produce_results_and_displays(
                 state_counts_per_month=state_counts_per_month,
                 output_html_file_prefix=output_html_file_prefix + "_cumulative_eras_",
                 filter_only_subsystem=filter_only_subsystem,
-                window_title=f"Filter {filter_only_subsystem}, CFX States Over Time (Cumulative)",
+                window_title=f"{library_label} Filter {filter_only_subsystem}, CFX States Over Time (Cumulative)",
+                library_label=library_label,
             )
     if display_without_cumulative_eras:
-        with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {filter_only_subsystem}"):
+        with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {filter_only_subsystem} library {library_label}"):
             produce_displays(
                 use_cumulative=False,
                 months=months,
@@ -96,7 +95,8 @@ def produce_results_and_displays(
                 state_counts_per_month=state_counts_per_month,
                 output_html_file_prefix=output_html_file_prefix + "_values_",
                 filter_only_subsystem=filter_only_subsystem,
-                window_title=f"Filter {filter_only_subsystem}, CFX States Over Time (Values)",
+                window_title=f"{library_label} Filter {filter_only_subsystem}, CFX States Over Time (Values)",
+                library_label=library_label,
             )
 
 
@@ -110,7 +110,9 @@ def produce_excel_output_file(output_excel_file: str, state_counts_per_month, mo
         data_for_excel.to_excel(writer, sheet_name="CFX State Counts")
 
 
-def produce_displays(use_cumulative, months, present_states_ordered_list, cumulative_counts, state_counts_per_month, output_html_file_prefix, filter_only_subsystem, window_title) -> None:
+def produce_displays(
+    use_cumulative, months, present_states_ordered_list, cumulative_counts, state_counts_per_month, output_html_file_prefix: str, filter_only_subsystem: bool, window_title: str, library_label: str
+) -> None:
     fig, ax = plt.subplots(figsize=(10, 6))
 
     # Set the window title
@@ -142,7 +144,7 @@ def produce_displays(use_cumulative, months, present_states_ordered_list, cumula
 
     ax.set_xlabel("Month")
     ax.set_ylabel("Number of CFX Entries")
-    ax.set_title("All CFX States Over Time" if filter_only_subsystem is None else f"Subsytem {filter_only_subsystem} CFX States Over Time")
+    ax.set_title(f"{library_label} All CFX States Over Time" if filter_only_subsystem is None else f"{library_label} Subsytem {filter_only_subsystem} CFX States Over Time")
     ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
@@ -182,35 +184,49 @@ def main() -> None:
         usine_site_champfx_library = cfx.ChampFXLibrary(
             champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
             champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
-            cfx_to_treat_whitelist_text_file_full_path="Input/CFX_usine_site.txt",
+            champfx_filter=cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input/CFX_usine_site.txt"),
         )
 
-        all_champfx_library = cfx.ChampFXLibrary(
+        produce_results_and_displays(
+            cfx_library=usine_site_champfx_library,
+            output_excel_file=f"{output_directory_name}/usine_site_all_cfx.xlsx",
+            display_without_cumulative_eras=True,
+            display_with_cumulative_eras=True,
+            output_html_file_prefix=f"{output_directory_name}/usine_site_all_cfx_",
+            library_label="Usine & site",
+            filter_only_subsystem=None,
+        )
+
+        nexteo_only_champfx_library = cfx.ChampFXLibrary(
             champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
             champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
-            cfx_to_treat_whitelist_text_file_full_path="Input/CFX_usine_site.txt",
+            champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_cfx_project", field_value=cfx.CfxProject.FR_NEXTEO.name)),
         )
 
         produce_results_and_displays(
-            cfx_library=usine_site_champfx_library,
+            cfx_library=nexteo_only_champfx_library,
             output_excel_file=f"{output_directory_name}/all_cfx.xlsx",
             display_without_cumulative_eras=True,
             display_with_cumulative_eras=True,
             output_html_file_prefix=f"{output_directory_name}/all_cfx_",
+            library_label="All",
             filter_only_subsystem=None,
         )
 
+        """         nexteo_only_champfx_library = cfx.ChampFXLibrary(
+            champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
+            champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
+        )
+
         produce_results_and_displays(
-            cfx_library=usine_site_champfx_library,
+            cfx_library=nexteo_only_champfx_library,
             output_excel_file=f"{output_directory_name}/all_cfx.xlsx",
             display_without_cumulative_eras=True,
             display_with_cumulative_eras=True,
             output_html_file_prefix=f"{output_directory_name}/all_cfx_",
+            library_label="All",
             filter_only_subsystem=None,
-        )
-
-        plt.show()
-        exit()
+        ) """
 
         for subsystem in role.SubSystem:
             with logger_config.stopwatch_with_label(f"produce_results_and_displays for {subsystem.name}"):
@@ -221,6 +237,7 @@ def main() -> None:
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     output_html_file_prefix=f"{output_directory_name}/subsystem_{subsystem.name}",
+                    library_label="",
                     filter_only_subsystem=subsystem,
                 )
 

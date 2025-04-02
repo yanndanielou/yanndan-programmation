@@ -100,26 +100,13 @@ class ChampFXLibrary:
         champfx_states_changes_excel_file_full_path: str = "Input/extract_cfx_change_state.xlsx",
         # all_current_owner_modifications_pickle_file_full_path: str = "Input/all_current_owner_modifications.pkl",
         # all_current_owner_modifications_per_cfx_pickle_file_full_path: str = "Input/all_current_owner_modifications_per_cfx.pkl",
-        cfx_to_treat_whitelist_text_file_full_path: Optional[str] = None,
+        champfx_filter: "ChampFxFilter" = None,
     ):
 
+        self._champfx_filter: ChampFxFilter = champfx_filter
         # self._all_current_owner_modifications_pickle_file_full_path = all_current_owner_modifications_pickle_file_full_path
         # self._all_current_owner_modifications_per_cfx_pickle_file_full_path = all_current_owner_modifications_per_cfx_pickle_file_full_path
         self._champfx_entry_by_id: Dict[str, ChampFXEntry] = dict()
-
-        self._cfx_to_treat_whitelist_ids: Optional[Set[str]] = None
-        if cfx_to_treat_whitelist_text_file_full_path is not None:
-            cfx_to_treat_whitelist_ids = set()
-            with logger_config.stopwatch_with_label(f"Load CfxUserLibrary {cfx_to_treat_whitelist_text_file_full_path}"):
-                with open(cfx_to_treat_whitelist_text_file_full_path, "r", encoding="utf-8") as cfx_known_by_cstmr_text_file:
-                    self._cfx_to_treat_whitelist_ids = [line.strip() for line in cfx_known_by_cstmr_text_file.readlines()]
-            logger_config.print_and_log_info(f"Number of cfx_known_by_cstmr_ids:{len(self._cfx_to_treat_whitelist_ids)}")
-
-        all_cfx_complete_extended_histories_text_file_path = "Input/cfx_extended_history.txt"
-        with logger_config.stopwatch_with_label(f"Load cfx_extended_history {all_cfx_complete_extended_histories_text_file_path}"):
-            self._all_cfx_complete_extended_histories: List[cfx_extended_history.CFXEntryCompleteHistory] = (
-                cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path, cfx_to_treat_whitelist_ids)
-            )
 
         with logger_config.stopwatch_with_label("Load CfxUserLibrary"):
             self._cfx_users_library: role.CfxUserLibrary = role.CfxUserLibrary()
@@ -135,6 +122,12 @@ class ChampFXLibrary:
             with logger_config.stopwatch_with_label(f"Create ChampFXEntry objects"):
                 self.create_or_fill_champfx_entry_with_dataframe(cfx_details_data_frame)
                 logger_config.print_and_log_info(f"{len(self.get_all_cfx())} ChampFXEntry objects created")
+
+            all_cfx_complete_extended_histories_text_file_path = "Input/cfx_extended_history.txt"
+            with logger_config.stopwatch_with_label(f"Load cfx_extended_history {all_cfx_complete_extended_histories_text_file_path}"):
+                self._all_cfx_complete_extended_histories: List[cfx_extended_history.CFXEntryCompleteHistory] = (
+                    cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path, self.get_all_cfx_ids())
+                )
 
             with logger_config.stopwatch_with_label(f"Create state changes objects"):
                 change_state_actions_created = self.create_states_changes_with_dataframe(cfx_states_changes_data_frame)
@@ -153,13 +146,13 @@ class ChampFXLibrary:
         for _, row in cfx_details_data_frame.iterrows():
             cfx_id = row["CFXID"]
 
-            if self._cfx_to_treat_whitelist_ids is None or cfx_id in self._cfx_to_treat_whitelist_ids:
-                if cfx_id in self._champfx_entry_by_id:
-                    cfx = self._champfx_entry_by_id[cfx_id]
-                    cfx._current_owner
-                else:
-                    cfx = ChampFXEntryBuilder.build_with_row(row)
-                    self._champfx_entry_by_id[cfx_id] = cfx
+            if cfx_id in self._champfx_entry_by_id:
+                cfx_entry = self._champfx_entry_by_id[cfx_id]
+                cfx_entry._current_owner
+            else:
+                cfx_entry = ChampFXEntryBuilder.build_with_row(row)
+                if self._champfx_filter is None or self._champfx_filter.match_cfx_entry(cfx_entry):
+                    self._champfx_entry_by_id[cfx_id] = cfx_entry
 
     def create_states_changes_with_dataframe(self, cfx_states_changes_data_frame: pd.DataFrame) -> List[ChangeStateAction]:
         change_state_actions_created: List[ChangeStateAction] = []
@@ -167,7 +160,7 @@ class ChampFXLibrary:
         for _, row in cfx_states_changes_data_frame.iterrows():
             cfx_id = row["CFXID"]
 
-            if self._cfx_to_treat_whitelist_ids is None or cfx_id in self._cfx_to_treat_whitelist_ids:
+            if cfx_id in self.get_all_cfx_ids():
 
                 cfx_request = self.get_cfx_by_id(cfx_id)
                 history_raw_old_state = row["history.old_state"]
@@ -197,7 +190,7 @@ class ChampFXLibrary:
 
             cfx_id = cfx_entry_complete_history.cfx_id
 
-            if self._cfx_to_treat_whitelist_ids is None or cfx_id in self._cfx_to_treat_whitelist_ids:
+            if cfx_id in self.get_all_cfx_ids():
 
                 cfx_entry = self.get_cfx_by_id(cfx_id)
                 for cfx_history_element in cfx_entry_complete_history.history_elements:
@@ -226,6 +219,9 @@ class ChampFXLibrary:
 
     def get_all_cfx(self) -> List["ChampFXEntry"]:
         return self._champfx_entry_by_id.values()
+
+    def get_all_cfx_ids(self) -> List[str]:
+        return self._champfx_entry_by_id.keys()
 
     def get_cfx_by_id(self, cfx_id: str) -> "ChampFXEntry":
         return self._champfx_entry_by_id[cfx_id]
@@ -297,7 +293,7 @@ class ChampFXEntryBuilder:
             fixed_implemented_in=fixed_implemented_in,
             current_owner_raw=current_owner_raw,
             submit_date_raw=submit_date_raw,
-            cfx_project=project,
+            cfx_project=cfx_project,
             safety_relevant=safety_relevant,
             security_relevant=security_relevant,
         )
@@ -401,3 +397,37 @@ class ChampFXEntry:
             return State.NotCreatedYet
         else:
             return newest_change_action_that_is_before_date.new_state
+
+
+@dataclass
+class ChampFXFieldFilter:
+    field_name: str
+    field_value: any
+
+    def match_cfx_entry(self, cfx_entry: ChampFXEntry) -> bool:
+        return getattr(cfx_entry, self.field_name) == self.field_value
+
+
+class ChampFxFilter:
+
+    def __init__(self, field_filter: Optional[ChampFXFieldFilter] = None, cfx_to_treat_whitelist_text_file_full_path: Optional[str] = None):
+        self._field_filter: Optional[ChampFXFieldFilter] = field_filter
+        self._cfx_to_treat_whitelist_text_file_full_path: Optional[str] = cfx_to_treat_whitelist_text_file_full_path
+        self._cfx_to_treat_whitelist_ids = None
+
+        if cfx_to_treat_whitelist_text_file_full_path is not None:
+            self._cfx_to_treat_whitelist_ids = set()
+            with logger_config.stopwatch_with_label(f"Load CfxUserLibrary {cfx_to_treat_whitelist_text_file_full_path}"):
+                with open(cfx_to_treat_whitelist_text_file_full_path, "r", encoding="utf-8") as cfx_known_by_cstmr_text_file:
+                    self._cfx_to_treat_whitelist_ids = [line.strip() for line in cfx_known_by_cstmr_text_file.readlines()]
+            logger_config.print_and_log_info(f"Number of cfx_known_by_cstmr_ids:{len(self._cfx_to_treat_whitelist_ids)}")
+
+    def match_cfx_entry(self, cfx_entry: ChampFXEntry) -> bool:
+
+        if self._cfx_to_treat_whitelist_ids is not None and cfx_entry.cfx_id not in self._cfx_to_treat_whitelist_ids:
+            return False
+
+        if self._field_filter is not None and not self._field_filter.match_cfx_entry(cfx_entry=cfx_entry):
+            return False
+
+        return True
