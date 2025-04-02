@@ -147,12 +147,14 @@ class ChampFXLibrary:
     def create_or_fill_champfx_entry_with_dataframe(self, cfx_details_data_frame: pd.DataFrame) -> None:
         for _, row in cfx_details_data_frame.iterrows():
             cfx_id = row["CFXID"]
-            if cfx_id in self._champfx_entry_by_id:
-                cfx = self._champfx_entry_by_id[cfx_id]
-                cfx._current_owner
-            else:
-                cfx = ChampFXEntryBuilder.build_with_row(row, self._cfx_to_treat_whitelist_ids)
-                self._champfx_entry_by_id[cfx_id] = cfx
+
+            if self._cfx_to_treat_whitelist_ids is None or cfx_id in self._cfx_to_treat_whitelist_ids:
+                if cfx_id in self._champfx_entry_by_id:
+                    cfx = self._champfx_entry_by_id[cfx_id]
+                    cfx._current_owner
+                else:
+                    cfx = ChampFXEntryBuilder.build_with_row(row)
+                    self._champfx_entry_by_id[cfx_id] = cfx
 
     def create_states_changes_with_dataframe(self, cfx_states_changes_data_frame: pd.DataFrame) -> List[ChangeStateAction]:
         change_state_actions_created: List[ChangeStateAction] = []
@@ -160,20 +162,22 @@ class ChampFXLibrary:
         for _, row in cfx_states_changes_data_frame.iterrows():
             cfx_id = row["CFXID"]
 
-            cfx_request = self.get_cfx_by_id(cfx_id)
-            history_raw_old_state = row["history.old_state"]
-            old_state: State = State[history_raw_old_state]
-            history_raw_new_state = row["history.new_state"]
-            new_state: State = State[history_raw_new_state]
-            history_raw_action_timestamp_str = row["history.action_timestamp"]
-            action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
-            history_raw_action_name = row["history.action_name"]
-            history_action = ActionType[history_raw_action_name]
-            change_state_actions_created.append(history_action)
+            if self._cfx_to_treat_whitelist_ids is None or cfx_id in self._cfx_to_treat_whitelist_ids:
 
-            change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
+                cfx_request = self.get_cfx_by_id(cfx_id)
+                history_raw_old_state = row["history.old_state"]
+                old_state: State = State[history_raw_old_state]
+                history_raw_new_state = row["history.new_state"]
+                new_state: State = State[history_raw_new_state]
+                history_raw_action_timestamp_str = row["history.action_timestamp"]
+                action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
+                history_raw_action_name = row["history.action_name"]
+                history_action = ActionType[history_raw_action_name]
+                change_state_actions_created.append(history_action)
 
-            cfx_request.add_change_state_action(change_state_action)
+                change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
+
+                cfx_request.add_change_state_action(change_state_action)
 
         return change_state_actions_created
 
@@ -260,18 +264,18 @@ class ChampFXLibrary:
 class ChampFXEntryBuilder:
 
     @staticmethod
-    def build_with_row(row, cfx_known_by_cstmr_ids: set[str]) -> "ChampFXEntry":
+    def build_with_row(row) -> "ChampFXEntry":
         cfx_id = row["CFXID"]
-        _raw_state: State = State[(row["State"])]
-        _fixed_implemented_in: str = row["FixedImplementedIn"]
-        _current_owner_raw: str = row["CurrentOwner.FullName"]
-        known_by_cstmr = cfx_id in cfx_known_by_cstmr_ids
-        champfx_entry = ChampFXEntry(cfx_id=cfx_id, raw_state=_raw_state, fixed_implemented_in=_fixed_implemented_in, current_owner_raw=_current_owner_raw, known_by_cstmr=known_by_cstmr)
+        raw_state: State = State[(row["State"])]
+        fixed_implemented_in: str = row["FixedImplementedIn"]
+        current_owner_raw: str = row["CurrentOwner.FullName"]
+        submit_date_raw: str = row["SubmitDate"]
+        champfx_entry = ChampFXEntry(cfx_id=cfx_id, raw_state=raw_state, fixed_implemented_in=fixed_implemented_in, current_owner_raw=current_owner_raw, submit_date_raw=submit_date_raw)
         return champfx_entry
 
 
 class ChampFXEntry:
-    def __init__(self, cfx_id: str, raw_state: State, fixed_implemented_in: str, current_owner_raw: str, known_by_cstmr: bool):
+    def __init__(self, cfx_id: str, raw_state: State, fixed_implemented_in: str, current_owner_raw: str, submit_date_raw: str):
         self._change_state_actions: list[ChangeStateAction] = []
         self._change_state_actions_by_date: Dict[datetime, ChangeStateAction] = dict()
 
@@ -282,10 +286,10 @@ class ChampFXEntry:
         self._raw_state: State = raw_state
         self._fixed_implemented_in: str = fixed_implemented_in
         self._current_owner_raw: str = current_owner_raw
-        self._known_by_cstmr = known_by_cstmr
         self._current_owner: role.CfxUser = None
         self._current_owner_role: role.SubSystem = None
         self._subsystem_from_fixed_implemented_in: role.SubSystem = None
+        self._submit_date = utils.convert_champfx_extract_date(submit_date_raw)
 
     def __repr__(self) -> str:
         return f"<ChampFXEntry cfx_id={self.cfx_id} _raw_state={self._raw_state} _current_owner_raw={self._current_owner_raw}>"
@@ -334,6 +338,9 @@ class ChampFXEntry:
         return self._subsystem_from_fixed_implemented_in if self._subsystem_from_fixed_implemented_in else self._current_owner_role
 
     def get_current_owner_at_date(self, reference_date: datetime) -> role.CfxUser:
+        if reference_date < self._submit_date:
+            return None
+
         newest_current_owner_modification_action_that_is_before_date = self.get_newest_current_owner_modification_that_is_before_date(reference_date)
         if newest_current_owner_modification_action_that_is_before_date is not None:
             return newest_current_owner_modification_action_that_is_before_date.new_owner
