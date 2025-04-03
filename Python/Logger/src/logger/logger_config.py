@@ -315,6 +315,7 @@ def stopwatch_alert_if_exceeds_duration(
     duration_threshold_to_alert_info_in_s: float,
     duration_threshold_to_alert_warning_in_s: Optional[float] = None,
     duration_threshold_to_alert_error_in_s: Optional[float] = None,
+    duration_threshold_to_alert_critical_in_s: Optional[float] = None,
     enable_print: bool = True,
     enable_log: bool = True,
     enabled: bool = True,
@@ -341,18 +342,25 @@ def stopwatch_alert_if_exceeds_duration(
             if enable_print:
 
                 severity_prefix = (
-                    "!!! Error !!\t"
+                    "!!! Critical !!\t"
                     if (
-                        duration_threshold_to_alert_error_in_s is not None
-                        and elapsed_time_conds > duration_threshold_to_alert_error_in_s
+                        duration_threshold_to_alert_critical_in_s is not None
+                        and elapsed_time_conds > duration_threshold_to_alert_critical_in_s
                     )
                     else (
-                        "! Warning !\t"
+                        "!!! Error !!\t"
                         if (
-                            duration_threshold_to_alert_warning_in_s is not None
-                            and elapsed_time_conds > duration_threshold_to_alert_warning_in_s
+                            duration_threshold_to_alert_error_in_s is not None
+                            and elapsed_time_conds > duration_threshold_to_alert_error_in_s
                         )
-                        else ""
+                        else (
+                            "! Warning !\t"
+                            if (
+                                duration_threshold_to_alert_warning_in_s is not None
+                                and elapsed_time_conds > duration_threshold_to_alert_warning_in_s
+                            )
+                            else ""
+                        )
                     )
                 )
                 print(
@@ -361,18 +369,25 @@ def stopwatch_alert_if_exceeds_duration(
 
             if enable_log:
                 log_level = (
-                    logging.ERROR
+                    logging.CRITICAL
                     if (
-                        duration_threshold_to_alert_error_in_s is not None
-                        and elapsed_time_conds > duration_threshold_to_alert_error_in_s
+                        duration_threshold_to_alert_critical_in_s is not None
+                        and elapsed_time_conds > duration_threshold_to_alert_critical_in_s
                     )
                     else (
-                        logging.WARNING
+                        logging.ERROR
                         if (
-                            duration_threshold_to_alert_warning_in_s is not None
-                            and elapsed_time_conds > duration_threshold_to_alert_warning_in_s
+                            duration_threshold_to_alert_error_in_s is not None
+                            and elapsed_time_conds > duration_threshold_to_alert_error_in_s
                         )
-                        else logging.INFO
+                        else (
+                            logging.WARNING
+                            if (
+                                duration_threshold_to_alert_warning_in_s is not None
+                                and elapsed_time_conds > duration_threshold_to_alert_warning_in_s
+                            )
+                            else logging.INFO
+                        )
                     )
                 )
                 logging.log(log_level, f"{calling_file_name_and_line_number} \t {to_print_and_log}")
