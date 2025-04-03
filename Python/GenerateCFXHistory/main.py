@@ -174,6 +174,34 @@ def produce_displays(
             html_file.write(html_content)
 
 
+def produce_results_and_displays_for_libary(cfx_library, output_directory_name, library_label, for_global: bool, for_each_subsystem: bool):
+
+    if for_global:
+        produce_results_and_displays(
+            cfx_library=cfx_library,
+            output_excel_file=f"{output_directory_name}/{library_label}_global.xlsx",
+            display_without_cumulative_eras=True,
+            display_with_cumulative_eras=True,
+            output_html_file_prefix=f"{output_directory_name}/{library_label}_global",
+            library_label=library_label,
+            filter_only_subsystem=None,
+        )
+
+    if for_each_subsystem:
+        for subsystem in role.SubSystem:
+            with logger_config.stopwatch_with_label(f"{library_label} produce_results_and_displays for {subsystem.name}"):
+                produce_results_and_displays(
+                    cfx_library=cfx_library,
+                    # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
+                    output_excel_file=None,
+                    display_without_cumulative_eras=False,
+                    display_with_cumulative_eras=True,
+                    output_html_file_prefix=f"{output_directory_name}/{library_label}_subsystem_{subsystem.name}",
+                    library_label=library_label,
+                    filter_only_subsystem=subsystem,
+                )
+
+
 def main() -> None:
     """Main function"""
 
@@ -207,67 +235,14 @@ def main() -> None:
             champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
             champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
         )
-        return
 
-        produce_results_and_displays(
-            cfx_library=usine_site_champfx_library,
-            output_excel_file=f"{output_directory_name}/usine_site_all_cfx.xlsx",
-            display_without_cumulative_eras=True,
-            display_with_cumulative_eras=True,
-            output_html_file_prefix=f"{output_directory_name}/usine_site_all_cfx_",
-            library_label="Usine & site",
-            filter_only_subsystem=None,
+        produce_results_and_displays_for_libary(
+            cfx_library=security_relevant_only_champfx_library, output_directory_name=output_directory_name, library_label="security(cyber)", for_global=True, for_each_subsystem=True
         )
-
-        produce_results_and_displays(
-            cfx_library=security_relevant_only_champfx_library,
-            output_excel_file=f"{output_directory_name}/Security_cyber.xlsx",
-            display_without_cumulative_eras=True,
-            display_with_cumulative_eras=True,
-            output_html_file_prefix=f"{output_directory_name}/Security_cyber_",
-            library_label="Security (cyber)",
-            filter_only_subsystem=None,
+        produce_results_and_displays_for_libary(cfx_library=all_champfx_library, output_directory_name=output_directory_name, library_label="all", for_global=True, for_each_subsystem=True)
+        produce_results_and_displays_for_libary(
+            cfx_library=usine_site_champfx_library, output_directory_name=output_directory_name, library_label="Usine&site", for_global=True, for_each_subsystem=True
         )
-        """
-
-        produce_results_and_displays(
-            cfx_library=nexteo_only_champfx_library,
-            output_excel_file=f"{output_directory_name}/all_cfx.xlsx",
-            display_without_cumulative_eras=True,
-            display_with_cumulative_eras=True,
-            output_html_file_prefix=f"{output_directory_name}/all_cfx_",
-            library_label="All",
-            filter_only_subsystem=None,
-        )
-        """
-
-        """         nexteo_only_champfx_library = cfx.ChampFXLibrary(
-            champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
-            champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
-        )
-
-        produce_results_and_displays(
-            cfx_library=nexteo_only_champfx_library,
-            output_excel_file=f"{output_directory_name}/all_cfx.xlsx",
-            display_without_cumulative_eras=True,
-            display_with_cumulative_eras=True,
-            output_html_file_prefix=f"{output_directory_name}/all_cfx_",
-            library_label="All",
-            filter_only_subsystem=None,
-        ) """
-
-        for subsystem in role.SubSystem:
-            with logger_config.stopwatch_with_label(f"produce_results_and_displays for {subsystem.name}"):
-                produce_results_and_displays(
-                    cfx_library=security_relevant_only_champfx_library,
-                    # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
-                    output_excel_file=None,
-                    display_without_cumulative_eras=False,
-                    display_with_cumulative_eras=True,
-                    output_html_file_prefix=f"{output_directory_name}/subsystem_{subsystem.name}",
-                    library_label="",
-                    filter_only_subsystem=subsystem,
-                )
 
         # Use plt.show() here to block execution and keep all windows open
         plt.show()
