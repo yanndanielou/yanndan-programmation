@@ -312,7 +312,9 @@ def stopwatch_with_label(
 @contextmanager
 def stopwatch_alert_if_exceeds_duration(
     label: str,
-    duration_threshold_to_alert_in_s: float,
+    duration_threshold_to_alert_info_in_s: float,
+    duration_threshold_to_alert_warning_in_s: Optional[float] = None,
+    duration_threshold_to_alert_error_in_s: Optional[float] = None,
     enable_print: bool = True,
     enable_log: bool = True,
     enabled: bool = True,
@@ -325,7 +327,7 @@ def stopwatch_alert_if_exceeds_duration(
         end_time = time.perf_counter()
         elapsed_time_conds = end_time - start_time
 
-        if elapsed_time_conds >= duration_threshold_to_alert_in_s:
+        if elapsed_time_conds >= duration_threshold_to_alert_info_in_s:
             to_print_and_log = f"{label} took: {elapsed_time_conds:.2f} seconds"
 
             log_timestamp = time.asctime(time.localtime(time.time()))
@@ -337,10 +339,43 @@ def stopwatch_alert_if_exceeds_duration(
 
             # pylint: disable=line-too-long
             if enable_print:
-                print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
+
+                severity_prefix = (
+                    "!!! Error !!\t"
+                    if (
+                        duration_threshold_to_alert_error_in_s is not None
+                        and elapsed_time_conds > duration_threshold_to_alert_error_in_s
+                    )
+                    else (
+                        "! Warning !\t"
+                        if (
+                            duration_threshold_to_alert_warning_in_s is not None
+                            and elapsed_time_conds > duration_threshold_to_alert_warning_in_s
+                        )
+                        else ""
+                    )
+                )
+                print(
+                    log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + severity_prefix + to_print_and_log
+                )
 
             if enable_log:
-                logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
+                log_level = (
+                    logging.ERROR
+                    if (
+                        duration_threshold_to_alert_error_in_s is not None
+                        and elapsed_time_conds > duration_threshold_to_alert_error_in_s
+                    )
+                    else (
+                        logging.WARNING
+                        if (
+                            duration_threshold_to_alert_warning_in_s is not None
+                            and elapsed_time_conds > duration_threshold_to_alert_warning_in_s
+                        )
+                        else logging.INFO
+                    )
+                )
+                logging.log(log_level, f"{calling_file_name_and_line_number} \t {to_print_and_log}")
 
     else:
         yield 0.0
