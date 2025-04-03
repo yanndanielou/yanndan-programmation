@@ -39,7 +39,8 @@ def produce_results_and_displays(
     filter_only_subsystem=None,
 ) -> None:
     # Retrieve months to process
-    months = cfx_library.get_months_since_earliest_submit_date()
+    # months = cfx_library.get_months_since_earliest_submit_date()
+    months = cfx_library.get_tenth_days_since_earliest_submit_date()
     state_counts_per_month = []
 
     # Gather state counts for each month
@@ -184,12 +185,29 @@ def main() -> None:
         if not os.path.exists(output_directory_name):
             os.mkdir(output_directory_name)
 
-        """
         usine_site_champfx_library = cfx.ChampFXLibrary(
             champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
             champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
             champfx_filter=cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input/CFX_usine_site.txt"),
         )
+
+        security_relevant_only_champfx_library = cfx.ChampFXLibrary(
+            champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
+            champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
+            champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.Yes])),
+        )
+
+        nexteo_only_champfx_library = cfx.ChampFXLibrary(
+            champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
+            champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
+            champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.FR_NEXTEO])),
+        )
+
+        all_champfx_library = cfx.ChampFXLibrary(
+            champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
+            champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
+        )
+        return
 
         produce_results_and_displays(
             cfx_library=usine_site_champfx_library,
@@ -200,12 +218,7 @@ def main() -> None:
             library_label="Usine & site",
             filter_only_subsystem=None,
         )
-        """
-        security_relevant_only_champfx_library = cfx.ChampFXLibrary(
-            champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
-            champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
-            champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.Yes])),
-        )
+
         produce_results_and_displays(
             cfx_library=security_relevant_only_champfx_library,
             output_excel_file=f"{output_directory_name}/Security_cyber.xlsx",
@@ -216,11 +229,6 @@ def main() -> None:
             filter_only_subsystem=None,
         )
         """
-        nexteo_only_champfx_library = cfx.ChampFXLibrary(
-            champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
-            champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
-            champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_cfx_project", field_value=cfx.CfxProject.FR_NEXTEO)),
-        )
 
         produce_results_and_displays(
             cfx_library=nexteo_only_champfx_library,
