@@ -42,8 +42,11 @@ class AllCFXCompleteHistoryExport:
         complete_history_len_by_cfx: Dict[str, int] = dict()
         raw_history_by_cfx: Dict[str, CFXRawCompleteHistoryExport] = dict()
 
-        with open(all_cfx_complete_extended_histories_text_file_path, "r", encoding="utf-8") as all_cfx_extended_history_text_file:
-            all_cfx_extended_history_text_file_content = all_cfx_extended_history_text_file.read()
+        with logger_config.stopwatch_with_label(f"Opene and read {all_cfx_complete_extended_histories_text_file_path}"):
+            with open(all_cfx_complete_extended_histories_text_file_path, "r", encoding="utf-8") as all_cfx_extended_history_text_file:
+                all_cfx_extended_history_text_file_content = all_cfx_extended_history_text_file.read()
+
+        with logger_config.stopwatch_with_label(f"Split file {all_cfx_complete_extended_histories_text_file_path} by CFX"):
             without_first_line = all_cfx_extended_history_text_file_content.split("CFXID|at_field_history.audit_trail_text|\n")[1]
             split_by_end = without_first_line.split("====END====\n\n|\n")
             for one_cfx_history_description_raw in split_by_end:
@@ -62,7 +65,11 @@ class AllCFXCompleteHistoryExport:
         cfx_processed: Set[str] = set()
         for cfx_id, raw_complete_history_export in raw_history_by_cfx.items():
             with logger_config.stopwatch_alert_if_exceeds_duration(
-                label=f"Processing complete history of {cfx_id}", duration_threshold_to_alert_info_in_s=0.2, duration_threshold_to_alert_warning_in_s=0.5, duration_threshold_to_alert_error_in_s=1
+                label=f"Processing complete history of {cfx_id}",
+                duration_threshold_to_alert_info_in_s=0.2,
+                duration_threshold_to_alert_warning_in_s=0.5,
+                duration_threshold_to_alert_error_in_s=1,
+                duration_threshold_to_alert_critical_in_s=5,
             ):
 
                 if cfx_to_treat_whitelist_ids is None or cfx_id in cfx_to_treat_whitelist_ids:
@@ -193,9 +200,30 @@ def profile_load_full():
     pass
 
 
+def test_cfx(cfx_id: str):
+    all_cfx_complete_extended_histories_text_file_path = "Input/cfx_extended_history.txt"
+    all_cfx_complete_history: List[CFXEntryCompleteHistory] = AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(
+        all_cfx_complete_extended_histories_text_file_path=all_cfx_complete_extended_histories_text_file_path, cfx_to_treat_whitelist_ids=[cfx_id]
+    )
+    assert len(all_cfx_complete_history) == 1
+    complete_history__CFX00543992 = all_cfx_complete_history[0]
+    pass
+
+
 if __name__ == "__main__":
     # import cProfile
     # import re
+
+    all_cfx_complete_extended_histories_text_file_path = "Input/cfx_extended_history.txt"
+    test_cfx("CFX00790540")
+    exit
+    test_cfx("CFX00543992")
+    all_cfx_complete_history: List[CFXEntryCompleteHistory] = AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(
+        all_cfx_complete_extended_histories_text_file_path=all_cfx_complete_extended_histories_text_file_path, cfx_to_treat_whitelist_ids=["CFX00543992"]
+    )
+    assert len(all_cfx_complete_history) == 1
+    complete_history__CFX00543992 = all_cfx_complete_history[0]
+    pass
 
     # cProfile.run("profile_load_full()")
     profile_load_full()
