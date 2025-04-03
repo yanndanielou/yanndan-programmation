@@ -128,7 +128,7 @@ class ChampFXLibrary:
             with logger_config.stopwatch_with_label(f"Open cfx state changes excel file {champfx_states_changes_excel_file_full_path}"):
                 cfx_states_changes_data_frame = pd.read_excel(champfx_states_changes_excel_file_full_path)
 
-            with logger_config.stopwatch_with_label(f"Create ChampFXEntry objects"):
+            with logger_config.stopwatch_with_label("Create ChampFXEntry objects"):
                 self.create_or_fill_champfx_entry_with_dataframe(cfx_details_data_frame)
                 logger_config.print_and_log_info(f"{len(self.get_all_cfx())} ChampFXEntry objects created")
 
@@ -138,7 +138,7 @@ class ChampFXLibrary:
                     cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path, self.get_all_cfx_ids())
                 )
 
-            with logger_config.stopwatch_with_label(f"Create state changes objects"):
+            with logger_config.stopwatch_with_label("Create state changes objects"):
                 change_state_actions_created = self.create_states_changes_with_dataframe(cfx_states_changes_data_frame)
                 logger_config.print_and_log_info(f"{len(change_state_actions_created)} ChangeStateAction objects created")
 
@@ -148,7 +148,7 @@ class ChampFXLibrary:
             with logger_config.stopwatch_with_label(f"create current owner modifications"):
                 self.create_current_owner_modifications()
 
-            with logger_config.stopwatch_with_label(f"ChampFXLibrary process_subsystem_from_fixed_implemented_in"):
+            with logger_config.stopwatch_with_label("ChampFXLibrary process_subsystem_from_fixed_implemented_in"):
                 list(map(lambda champ_fx: champ_fx.process_subsystem_from_fixed_implemented_in(), self.get_all_cfx()))
 
     def create_or_fill_champfx_entry_with_dataframe(self, cfx_details_data_frame: pd.DataFrame) -> None:
@@ -248,6 +248,23 @@ class ChampFXLibrary:
     def get_earliest_submit_date(self) -> datetime:
         earliest_date = min(entry.get_oldest_change_action_by_new_state(State.Submitted).timestamp for entry in self.get_all_cfx())
         return earliest_date
+
+    def get_tenth_days_since_earliest_submit_date(self) -> List[datetime]:
+        earliest_cfx_date = self.get_earliest_submit_date()
+
+        earliest_date_considered = earliest_cfx_date.replace(day=1)
+
+        # Ensure 'beginning_of_next_month' is naive datetime
+        beginning_of_next_month = (datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        dates = []
+
+        # Ensure 'current_date' is naive datetime
+        current_date_iter = earliest_date_considered.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        while current_date_iter <= beginning_of_next_month:
+            dates.append(current_date_iter)
+            current_date_iter = current_date_iter + timedelta(days=10)
+
+        return dates
 
     def get_months_since_earliest_submit_date(self) -> List[datetime]:
         earliest_cfx_date = self.get_earliest_submit_date()
