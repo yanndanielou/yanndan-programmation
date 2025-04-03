@@ -159,6 +159,11 @@ class CFXEntryCompleteHistory:
         return self._history_elements
 
 
+def get_one_line_field_when_cfx_submit_regex(field_name: str) -> str:
+    one_line_field_when_cfx_submit_regex = r"(?P<field>" + field_name + ")\s*\(?P<secondary_label>\d+\)\n\s*(?P<value>.*)\n"
+    return one_line_field_when_cfx_submit_regex
+
+
 def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHistory:
 
     cfx_complete_history = CFXEntryCompleteHistory(cfx_id=cfx_id)
@@ -171,7 +176,10 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHi
 
         # Define regular expressions for extracting elements and fields
         element_regex = r"Time\s*:\s*(.*?)\nSchema Rev\s*:\s*(.*?)\nUser Name\s*:\s*(.*?)\nUser Login\s*:\s*(.*?)\nUser Groups\s*:\s*(.*?)\nAction\s*:\s*(.*?)\nState\s*:\s*(.*?)\n==Fields=="
-        field_regex = r"(.+?)\s*\((\d+:\d+)\)\s*Old\s*:\s*(.*?)\s*New\s*:(.*?)(?=(\n.+?\s*\(\d+:\d+\)|\n====END====|\Z))"
+        field_update_regex = r"(.+?)\s*\((\d+:\d+)\)\s*Old\s*:\s*(.*?)\s*New\s*:(.*?)(?=(\n.+?\s*\(\d+:\d+\)|\n====END====|\Z))"
+        field_submit_regex_not_working = r"(.+?)\s*\((\d+:\d+)\)\s*\s*:(.*?)(?=(\n.+?\s*\(\d+:\d+\)|\n====END====|\Z))"
+        field_submit_regex_try1 = r"(?P<field>[A-Za-z]+):\s+(?P<value>[\w\s\(\)/\.]+)"
+        field_submit_regex_try2 = r"(?P<field>[A-Za-z]+)\s*\(\d+\)\n\s*(?P<value>[\w\s\(\)/\.]+)"
 
         # Parse history element details
         element_match = re.search(element_regex, block, re.DOTALL)
@@ -180,16 +188,71 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHi
             decoded_time = decode_time(time)
             if not decoded_time:
                 logger_config.print_and_log_error(f"Could not decode time {time} for {cfx_id}")
+
+            logger_config.print_and_log_info(f"Create CFXHistoryElement {cfx_id, time, action, state}")
             element = CFXHistoryElement(cfx_id, time, decoded_time, schema_rev, user_name, user_login, user_groups, action, state)
 
             # Identify and parse fields within the block
             fields_section = block.split("==Fields==")[1].strip()
-            field_matches = re.finditer(field_regex, fields_section, re.DOTALL)
-            for field_match in field_matches:
-                field_id, secondary_label, old_state, new_state = field_match.groups()[:4]
-                field = CFXHistoryField(cfx_id=cfx_id, field_id=field_id, secondary_label=secondary_label, old_state=old_state, new_state=new_state, change_timestamp=element.decoded_time)
-                element.add_field(field)
+            logger_config.print_and_log_info(f"Split fields CFXHistoryElement {cfx_id, action, state}")
 
+            fields_created: list[CFXHistoryField] = []
+            if action == "Submit":
+                ONE_LINE_FIELDS_TO_RETRIVE_ON_CFX_SUBMIT = [
+                    "Category",
+                    "CauseType",
+                    "CurrentOwner",
+                    "Description",
+                    "DetectedInPhase",
+                    "DocumentationFixedID",
+                    "DocumentationFixedVersion",
+                    "DocumentationID",
+                    "DocumentationVersion",
+                    "EnvironmentType",
+                    "Headline",
+                    "OriginatedInPhase",
+                    "Priority",
+                    "Project",
+                    "RequestOwner",
+                    "RequestType",
+                    "SafetyRelevant",
+                    "SecurityContext",
+                    "SecurityContextExtended",
+                    "State",
+                    "SystemStructure",
+                ]
+
+                for one_line_field_to_retrieve in ONE_LINE_FIELDS_TO_RETRIVE_ON_CFX_SUBMIT:
+                    field_pattern = get_one_line_field_when_cfx_submit_regex(one_line_field_to_retrieve)
+                    field_submit_match = re.match(field_pattern, fields_section)
+                    if field_submit_match:
+                        field_id, secondary_label, new_state = field_submit_match.groups()[:3]
+                        field = CFXHistoryField(cfx_id=cfx_id, field_id=field_id, secondary_label=secondary_label, old_state=None, new_state=new_state, change_timestamp=element.decoded_time)
+                        element.add_field(field)
+                        fields_created.append(field)
+                        pass
+
+                    """
+                    field_submit_matches = re.finditer(field_submit_regex_try2, fields_section, re.DOTALL)
+                    logger_config.print_and_log_info(f"Has computed fields submit CFXHistoryElement {cfx_id, action}")
+
+                    for field_match in field_submit_matches:
+                        field_id, secondary_label, new_state = field_match.groups()[:3]
+                        field = CFXHistoryField(cfx_id=cfx_id, field_id=field_id, secondary_label=secondary_label, old_state=None, new_state=new_state, change_timestamp=element.decoded_time)
+                        element.add_field(field)
+                        fields_created.append(field)
+                    """
+            else:
+                field_update_matches = re.finditer(field_update_regex, fields_section, re.DOTALL)
+                logger_config.print_and_log_info(f"Has computed field_update_matches CFXHistoryElement {cfx_id, action}")
+
+                for field_match in field_update_matches:
+                    field_id, secondary_label, old_state, new_state = field_match.groups()[:4]
+                    field = CFXHistoryField(cfx_id=cfx_id, field_id=field_id, secondary_label=secondary_label, old_state=old_state, new_state=new_state, change_timestamp=element.decoded_time)
+                    element.add_field(field)
+                    fields_created.append(field)
+
+            logger_config.print_and_log_info(f"Has just created {len(fields_created)} fields CFXHistoryElement {cfx_id, action}")
             cfx_complete_history.add_field_history_element(element)
 
     return cfx_complete_history
@@ -200,23 +263,36 @@ def profile_load_full():
     pass
 
 
+def test_CFX00790540():
+    test_cfx("CFX00790540")
+
+
 def test_cfx(cfx_id: str):
     all_cfx_complete_extended_histories_text_file_path = "Input/cfx_extended_history.txt"
     all_cfx_complete_history: List[CFXEntryCompleteHistory] = AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(
         all_cfx_complete_extended_histories_text_file_path=all_cfx_complete_extended_histories_text_file_path, cfx_to_treat_whitelist_ids=[cfx_id]
     )
     assert len(all_cfx_complete_history) == 1
-    complete_history__CFX00543992 = all_cfx_complete_history[0]
+    complete_history__cfx = all_cfx_complete_history[0]
+    history_elements = complete_history__cfx.history_elements
+    assert len(history_elements) == 4
+    last_history_elements = history_elements[3]
     pass
 
 
 if __name__ == "__main__":
-    # import cProfile
-    # import re
 
     all_cfx_complete_extended_histories_text_file_path = "Input/cfx_extended_history.txt"
+
     test_cfx("CFX00790540")
-    exit
+
+    """
+    import cProfile
+    import re
+
+    cProfile.run("test_CFX00790540()")
+    """
+    """
     test_cfx("CFX00543992")
     all_cfx_complete_history: List[CFXEntryCompleteHistory] = AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(
         all_cfx_complete_extended_histories_text_file_path=all_cfx_complete_extended_histories_text_file_path, cfx_to_treat_whitelist_ids=["CFX00543992"]
@@ -227,3 +303,4 @@ if __name__ == "__main__":
 
     # cProfile.run("profile_load_full()")
     profile_load_full()
+    """
