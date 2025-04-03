@@ -59,10 +59,19 @@ class AllCFXCompleteHistoryExport:
         top_10_biggest_history_cfxs = dict(sorted_cfxs[:10])
         logger_config.print_and_log_info(f"biggest_history_cfxs:{top_10_biggest_history_cfxs}")
 
+        cfx_processed: Set[str] = set()
         for cfx_id, raw_complete_history_export in raw_history_by_cfx.items():
-            if cfx_to_treat_whitelist_ids is None or cfx_id in cfx_to_treat_whitelist_ids:
-                cfx_complete_history = parse_history(cfx_id=cfx_id, extended_history_text=raw_complete_history_export.history_full_text)
-                all_cfx_complete_history.append(cfx_complete_history)
+            with logger_config.stopwatch_alert_if_exceeds_duration(
+                label=f"Processing complete history of {cfx_id}", duration_threshold_to_alert_info_in_s=0.2, duration_threshold_to_alert_warning_in_s=0.5, duration_threshold_to_alert_error_in_s=1
+            ):
+
+                if cfx_to_treat_whitelist_ids is None or cfx_id in cfx_to_treat_whitelist_ids:
+                    cfx_complete_history = parse_history(cfx_id=cfx_id, extended_history_text=raw_complete_history_export.history_full_text)
+                    all_cfx_complete_history.append(cfx_complete_history)
+                    cfx_processed.add(cfx_id)
+
+                    if len(cfx_processed) % 100 == 0:
+                        logger_config.print_and_log_info(f"Number of CFX processed:{len(cfx_processed)}. Just processed {cfx_id}")
 
         logger_config.print_and_log_info(f"cfx_extended_history_text_file_content_split_by_cfx:{len(all_cfx_complete_history)}")
 
