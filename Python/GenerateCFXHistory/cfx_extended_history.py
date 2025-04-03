@@ -160,7 +160,7 @@ class CFXEntryCompleteHistory:
 
 
 def get_one_line_field_when_cfx_submit_regex(field_name: str) -> str:
-    one_line_field_when_cfx_submit_regex = r"(?P<field>" + field_name + ")\s*\(?P<secondary_label>\d+\)\n\s*(?P<value>.*)\n"
+    one_line_field_when_cfx_submit_regex = r"(?P<field>" + field_name + ")\s*\(\d+\)\n\s*(?P<value>.*)\n"
     return one_line_field_when_cfx_submit_regex
 
 
@@ -226,11 +226,11 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHi
                     field_pattern = get_one_line_field_when_cfx_submit_regex(one_line_field_to_retrieve)
                     field_submit_match = re.match(field_pattern, fields_section)
                     if field_submit_match:
-                        field_id, secondary_label, new_state = field_submit_match.groups()[:3]
-                        field = CFXHistoryField(cfx_id=cfx_id, field_id=field_id, secondary_label=secondary_label, old_state=None, new_state=new_state, change_timestamp=element.decoded_time)
+                        field_id, new_state = field_submit_match.groups()[:2]
+                        field = CFXHistoryField(cfx_id=cfx_id, field_id=field_id, secondary_label="", old_state="", new_state=new_state, change_timestamp=element.decoded_time)
                         element.add_field(field)
                         fields_created.append(field)
-                        pass
+                        logger_config.print_and_log_info(f"Found field {field_id} with value {new_state} for {cfx_id}")
 
                     """
                     field_submit_matches = re.finditer(field_submit_regex_try2, fields_section, re.DOTALL)
