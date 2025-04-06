@@ -6,6 +6,7 @@ import os
 import sys
 
 import time
+import datetime
 
 import random
 
@@ -394,3 +395,7 @@ def stopwatch_alert_if_exceeds_duration(
 
     else:
         yield 0.0
+
+
+def datetime_convenient_log_format(datetime_to_log: datetime.datetime, number_of_caracters_to_keep: int = 22) -> str:
+    return str(datetime_to_log)[:number_of_caracters_to_keep]
