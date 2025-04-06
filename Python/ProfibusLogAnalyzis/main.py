@@ -93,6 +93,7 @@ def read_log_file(file_path: str, cab_log: CabLogs) -> List[ProfibusLogSession]:
             profibus_log_line = ProfibusLogLine(timestamp=timestamp, log_value=log_value, file_name=file_name, file_line_number=file_line_number, log_session=log_session)
             if log_session is None:
                 log_session = ProfibusLogSession()
+                logger_config.print_and_log_info(f"New log session, {file_name}, line {file_line_number}. Timestamp {timestamp}")
                 log_sessions.append(log_session)
             log_session.log_lines.append(profibus_log_line)
         except ValueError:
@@ -178,6 +179,7 @@ def main() -> None:
                 ),
             ]
         )
+        logger_config.print_and_log_info(f"{len(log_sessions) } log sessions")
 
         all_going_back_to_past_events: List[GoingBackToPast] = [event for session in log_sessions for event in session.going_back_to_past_events]
         all_missing_logs_events: List[MissingLogs] = [event for session in log_sessions for event in session.missing_logs_events]
