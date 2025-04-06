@@ -121,22 +121,24 @@ def detect_missing_logs(all_log_sessions: List[ProfibusLogSession]):
 
             if previous_line:
                 if log_line.timestamp < previous_line.timestamp:
-                    logger_config.print_and_log_info(f"Going back to past logs detected between {previous_line.timestamp} and {log_line.timestamp}")
+                    # logger_config.print_and_log_info(f"Going back to past logs detected between {previous_line.timestamp} and {log_line.timestamp}")
                     log_session.going_back_to_past_events.append(GoingBackToPast(before_going_back_to_past_log_line=previous_line, after_going_back_to_past_log_line=log_line))
 
                 if log_line.timestamp - previous_line.timestamp > param.PERIOD_TO_DETECT_LACK_OF_LOGS:
-                    logger_config.print_and_log_info(f"Missing logs detected between {previous_line.timestamp} and {log_line.timestamp}")
+                    # logger_config.print_and_log_info(f"Missing logs detected between {previous_line.timestamp} and {log_line.timestamp}")
                     log_session.missing_logs_events.append(MissingLogs(previous_log_line=previous_line, next_log_line=log_line, missing_log_period=log_line.timestamp - previous_line.timestamp))
             previous_line = log_line
 
 
-def process_all_cabs_logs(cabs_logs: List[CabLogs]):
+def process_all_cabs_logs(cabs_logs: List[CabLogs]) -> List[ProfibusLogSession]:
+    all_log_sessions: List[ProfibusLogSession] = []
     for cab_logs in cabs_logs:
         logger_config.print_and_log_info(f"Process cabs logs {cab_logs.label}")
-        process_all_logs(cab_logs)
+        all_log_sessions.extend(process_all_logs(cab_logs))
+    return all_log_sessions
 
 
-def process_all_logs(cab_log: CabLogs) -> None:
+def process_all_logs(cab_log: CabLogs) -> List[ProfibusLogSession]:
     all_log_sessions: List[ProfibusLogSession] = []
 
     log_folder = cab_log.log_files_directory_path
@@ -149,6 +151,8 @@ def process_all_logs(cab_log: CabLogs) -> None:
 
     detect_missing_logs(all_log_sessions)
 
+    return all_log_sessions
+
 
 def main() -> None:
     """Main function"""
@@ -158,7 +162,7 @@ def main() -> None:
 
         # Example usage
 
-        process_all_cabs_logs(
+        log_sessions: List[ProfibusLogSession] = process_all_cabs_logs(
             cabs_logs=[
                 CabLogs(
                     log_files_directory_path=r"D:\GitHub\yanndanielou-programmation\Python\ProfibusLogAnalyzis\Input\ppn_250210\ppn\cab 1A", log_files_prefix="cab", label="cab 1A", encoding="ANSI"
@@ -174,6 +178,11 @@ def main() -> None:
                 ),
             ]
         )
+
+        all_going_back_to_past_events: List[GoingBackToPast] = [event for session in log_sessions for event in session.going_back_to_past_events]
+        all_missing_logs_events: List[MissingLogs] = [event for session in log_sessions for event in session.missing_logs_events]
+
+        logger_config.print_and_log_info(f"{len(all_going_back_to_past_events) } GoingBackToPast events and {len(all_missing_logs_events)} MissingLogs")
 
         # log_files_directory_path=r"C:\Users\fr232487\Downloads\2025-04-05 passerelle profibus\plateforme_bord\log_ppn_cab2_A\log", log_files_prefix="debug.log", label="Bord log_ppn_cab2_A"
 
