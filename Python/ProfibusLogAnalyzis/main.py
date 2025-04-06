@@ -31,6 +31,7 @@ class CabLogs:
     log_files_prefix: str
     label: str = ""
     encoding: str = "utf-8"
+    log_unsupported_lines = False
 
 
 @dataclass
@@ -41,6 +42,21 @@ class ProfibusLogFile:
 @dataclass
 class ProfibusLogSession:
     log_lines: list["ProfibusLogLine"] = field(default_factory=list)
+    going_back_to_past_events: List["GoingBackToPast"] = field(default_factory=list)
+    missing_logs_events: List["MissingLogs"] = field(default_factory=list)
+
+
+@dataclass
+class GoingBackToPast:
+    before_going_back_to_past_log_line: "ProfibusLogLine"
+    after_going_back_to_past_log_line: "ProfibusLogLine"
+
+
+@dataclass
+class MissingLogs:
+    previous_log_line: "ProfibusLogLine"
+    next_log_line: "ProfibusLogLine"
+    missing_log_period: datetime.timedelta
 
 
 @dataclass
@@ -52,7 +68,7 @@ class ProfibusLogLine:
     log_session: ProfibusLogSession
 
 
-def read_log_file(file_path: str, encoding: str) -> List[ProfibusLogSession]:
+def read_log_file(file_path: str, cab_log: CabLogs) -> List[ProfibusLogSession]:
     log_sessions: List[ProfibusLogSession] = []
     log_session: Optional[ProfibusLogSession] = None
     logger_config.print_and_log_info(f"read_log_file: {file_path}")
@@ -60,7 +76,7 @@ def read_log_file(file_path: str, encoding: str) -> List[ProfibusLogSession]:
         with gzip.open(file_path, "rt") as f:
             lines = f.readlines()
     else:
-        with open(file_path, "r", encoding=encoding) as f:
+        with open(file_path, "r", encoding=cab_log.encoding) as f:
             lines = f.readlines()
 
     logger_config.print_and_log_info(f"{len(lines)} lines to process in {file_path}")
@@ -69,7 +85,8 @@ def read_log_file(file_path: str, encoding: str) -> List[ProfibusLogSession]:
         file_name = os.path.basename(file_path)
 
         if line.startswith("\x00"):
-            logger_config.print_and_log_error(f"Null characters found at beginning of {file_name} : {file_line_number}. Line: {line}")
+            if cab_log.log_unsupported_lines:
+                logger_config.print_and_log_error(f"Null characters found at beginning of {file_name} : {file_line_number}. Line: {line}")
             line = line.lstrip("\x00")
 
         parts = line.split(" ", 3)
@@ -85,7 +102,8 @@ def read_log_file(file_path: str, encoding: str) -> List[ProfibusLogSession]:
                 log_sessions.append(log_session)
             log_session.log_lines.append(profibus_log_line)
         except ValueError:
-            logger_config.print_and_log_error(f"Skipping line with invalid timestamp: {line.strip()}")
+            if cab_log.log_unsupported_lines:
+                logger_config.print_and_log_error(f"Skipping line {file_line_number} in file {file_path} with invalid timestamp: {line.strip()}")
             log_session = None
 
     return log_sessions
@@ -103,12 +121,19 @@ def detect_missing_logs(all_log_sessions: List[ProfibusLogSession]):
             logger_config.print_and_log_error("No log lines found.")
             break
 
-        previous_time = log_session.log_lines[0].timestamp
+        previous_line = None
 
         for log_line in log_session.log_lines:
-            if log_line.timestamp - previous_time > param.PERIOD_TO_DETECT_LACK_OF_LOGS:
-                logger_config.print_and_log_info(f"Missing logs detected between {previous_time} and {log_line.timestamp}")
-            previous_time = log_line.timestamp
+
+            if previous_line:
+                if log_line.timestamp < previous_line.timestamp:
+                    logger_config.print_and_log_info(f"Going back to past logs detected between {previous_line.timestamp} and {log_line.timestamp}")
+                    log_session.going_back_to_past_events.append(GoingBackToPast(before_going_back_to_past_log_line=previous_line, after_going_back_to_past_log_line=log_line))
+
+                if log_line.timestamp - previous_line.timestamp > param.PERIOD_TO_DETECT_LACK_OF_LOGS:
+                    logger_config.print_and_log_info(f"Missing logs detected between {previous_line.timestamp} and {log_line.timestamp}")
+                    log_session.missing_logs_events.append(MissingLogs(previous_log_line=previous_line, next_log_line=log_line, missing_log_period=log_line.timestamp - previous_line.timestamp))
+            previous_line = log_line
 
 
 def process_all_cabs_logs(cabs_logs: List[CabLogs]):
@@ -126,7 +151,7 @@ def process_all_logs(cab_log: CabLogs) -> None:
         for file in files:
             if file.startswith(cab_log.log_files_prefix):
                 file_path = os.path.join(root, file)
-                all_log_sessions.extend(read_log_file(file_path, cab_log.encoding))
+                all_log_sessions.extend(read_log_file(file_path, cab_log))
 
     detect_missing_logs(all_log_sessions)
 
