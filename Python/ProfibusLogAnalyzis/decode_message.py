@@ -84,7 +84,7 @@ def parse_record(record, hex_string, current_bit_index=0):
                 decoded_fields[field_name] = field_value
 
             # Debugging print statement
-            print(f"Decoded {field_name} ({field_type}): {field_value}")
+            # print(f"Decoded {field_name} ({field_type}): {field_value}")
             # Save the decoded field
             decoded_fields[field_name] = field_value
 
@@ -104,26 +104,36 @@ def decode_message(hexadecimal_content: str, message_id: int) -> dict:
         return {}
 
     # Debugging print statement
-    print(f"XML parsed: Root tag - {root.tag}")
+    # print(f"XML parsed: Root tag - {root.tag}")
 
     # Traverse the root record and decode
     decoded_fields, _ = parse_record(root, hexadecimal_content)
 
     # Final debug statement
-    print(f"Decoded fields: {decoded_fields}")
+    # print(f"Decoded fields: {decoded_fields}")
 
     return decoded_fields
 
 
+def decode_hlf_hexa(hlf_content_hexa: str) -> datetime.datetime:
+    hlf_message_id = 85
+    decoded_hexa_content_with_xml = decode_message(hlf_content_hexa, hlf_message_id)
+    # print(decoded_hexa_content_with_xml)
+    decoded_hlf = decode_hlf(
+        time_field_value=decoded_hexa_content_with_xml["Time"],
+        time_offset_value=decoded_hexa_content_with_xml["TimeOffset"],
+        decade_field_value=decoded_hexa_content_with_xml["Decade"],
+        day_on_decade_field_value=decoded_hexa_content_with_xml["DayOnDecade"],
+    )
+    print(f"{hlf_content_hexa} is {decoded_hlf}")
+
+
 # Example usage
-hex_content = "00 0d 23 f2 00 00 8c a0 27 4a"
-hlf_message_id = 85
-decoded_hexa_content_with_xml = decode_message(hex_content, hlf_message_id)
-print(decoded_hexa_content_with_xml)
-decoded_hlf = decode_hlf(
-    time_field_value=decoded_hexa_content_with_xml["Time"],
-    time_offset_value=decoded_hexa_content_with_xml["TimeOffset"],
-    decade_field_value=decoded_hexa_content_with_xml["Decade"],
-    day_on_decade_field_value=decoded_hexa_content_with_xml["DayOnDecade"],
-)
-print(decoded_hlf)
+
+
+decode_hlf_hexa("00 0d 23 f2 00 00 8c a0 27 4a")
+decode_hlf_hexa("00 0d 24 88 00 00 8c a0 27 4a")
+decode_hlf_hexa("00 0d 25 1e 00 00 8c a0 27 4a")
+decode_hlf_hexa("00 0d 25 b4 00 00 8c a0 27 4a")
+
+# print(decode_hlf(time_field_value=322730, time_offset_value=1, decade_field_value=2, day_on_decade_field_value=1428))
