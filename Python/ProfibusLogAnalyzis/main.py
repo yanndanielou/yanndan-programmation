@@ -12,12 +12,6 @@ from logger import logger_config
 import logging
 import param
 
-from shutthebox.application import Application, SimulationRequest
-from shutthebox.dices import Dice
-from shutthebox.gui import TreeViewApp
-
-import numpy
-
 
 import os
 import gzip
