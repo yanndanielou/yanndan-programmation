@@ -10,6 +10,7 @@ from typing import List, Optional
 from logger import logger_config
 
 import logging
+import param
 
 from shutthebox.application import Application, SimulationRequest
 from shutthebox.dices import Dice
@@ -22,6 +23,14 @@ import os
 import gzip
 import datetime
 from typing import List
+
+
+@dataclass
+class CabLogs:
+    log_files_directory_path: str
+    log_files_prefix: str
+    label: str = ""
+    encoding: str = "utf-8"
 
 
 @dataclass
@@ -43,7 +52,7 @@ class ProfibusLogLine:
     log_session: ProfibusLogSession
 
 
-def read_log_file(file_path: str) -> List[ProfibusLogSession]:
+def read_log_file(file_path: str, encoding: str) -> List[ProfibusLogSession]:
     log_sessions: List[ProfibusLogSession] = []
     log_session: Optional[ProfibusLogSession] = None
     logger_config.print_and_log_info(f"read_log_file: {file_path}")
@@ -51,7 +60,7 @@ def read_log_file(file_path: str) -> List[ProfibusLogSession]:
         with gzip.open(file_path, "rt") as f:
             lines = f.readlines()
     else:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, "r", encoding=encoding) as f:
             lines = f.readlines()
 
     logger_config.print_and_log_info(f"{len(lines)} lines to process in {file_path}")
@@ -82,7 +91,7 @@ def read_log_file(file_path: str) -> List[ProfibusLogSession]:
     return log_sessions
 
 
-def detect_missing_logs(all_log_sessions: List[ProfibusLogSession], period_to_detect_missing_logs: datetime.timedelta):
+def detect_missing_logs(all_log_sessions: List[ProfibusLogSession]):
     if not all_log_sessions:
         logger_config.print_and_log_error("No log session found.")
         return
@@ -97,21 +106,29 @@ def detect_missing_logs(all_log_sessions: List[ProfibusLogSession], period_to_de
         previous_time = log_session.log_lines[0].timestamp
 
         for log_line in log_session.log_lines:
-            if log_line.timestamp - previous_time > period_to_detect_missing_logs:
+            if log_line.timestamp - previous_time > param.PERIOD_TO_DETECT_LACK_OF_LOGS:
                 logger_config.print_and_log_info(f"Missing logs detected between {previous_time} and {log_line.timestamp}")
             previous_time = log_line.timestamp
 
 
-def process_all_logs(log_folder: str, period_to_detect_missing_logs: datetime.timedelta):
+def process_all_cabs_logs(cabs_logs: List[CabLogs]):
+    for cab_logs in cabs_logs:
+        logger_config.print_and_log_info(f"Process cabs logs {cab_logs.label}")
+        process_all_logs(cab_logs)
+
+
+def process_all_logs(cab_log: CabLogs) -> None:
     all_log_sessions: List[ProfibusLogSession] = []
+
+    log_folder = cab_log.log_files_directory_path
 
     for root, _, files in os.walk(log_folder):
         for file in files:
-            if file.startswith("debug.log"):
+            if file.startswith(cab_log.log_files_prefix):
                 file_path = os.path.join(root, file)
-                all_log_sessions.extend(read_log_file(file_path))
+                all_log_sessions.extend(read_log_file(file_path, cab_log.encoding))
 
-    detect_missing_logs(all_log_sessions, period_to_detect_missing_logs)
+    detect_missing_logs(all_log_sessions)
 
 
 def main() -> None:
@@ -121,9 +138,25 @@ def main() -> None:
         logger_config.configure_logger_with_random_log_file_suffix("ProfibusLogAnalyzis", log_file_extension="log", logger_level=logging.DEBUG)
 
         # Example usage
-        log_folder = r"C:\Users\fr232487\Downloads\2025-04-05 passerelle profibus\plateforme_bord\log_ppn_cab2_A\log"
-        period_to_detect = datetime.timedelta(seconds=3)  # Example period to detect missing logs
-        process_all_logs(log_folder, period_to_detect)
+
+        process_all_cabs_logs(
+            cabs_logs=[
+                CabLogs(
+                    log_files_directory_path=r"D:\GitHub\yanndanielou-programmation\Python\ProfibusLogAnalyzis\Input\ppn_250210\ppn\cab 1A", log_files_prefix="cab", label="cab 1A", encoding="ANSI"
+                ),
+                CabLogs(
+                    log_files_directory_path=r"D:\GitHub\yanndanielou-programmation\Python\ProfibusLogAnalyzis\Input\ppn_250210\ppn\cab 1B", log_files_prefix="cab", label="cab 1B", encoding="ANSI"
+                ),
+                CabLogs(
+                    log_files_directory_path=r"D:\GitHub\yanndanielou-programmation\Python\ProfibusLogAnalyzis\Input\ppn_250210\ppn\cab 2A", log_files_prefix="cab", label="cab 2A", encoding="ANSI"
+                ),
+                CabLogs(
+                    log_files_directory_path=r"D:\GitHub\yanndanielou-programmation\Python\ProfibusLogAnalyzis\Input\ppn_250210\ppn\cab 2B", log_files_prefix="cab", label="cab 2B", encoding="ANSI"
+                ),
+            ]
+        )
+
+        # log_files_directory_path=r"C:\Users\fr232487\Downloads\2025-04-05 passerelle profibus\plateforme_bord\log_ppn_cab2_A\log", log_files_prefix="debug.log", label="Bord log_ppn_cab2_A"
 
         logger_config.print_and_log_info("End. Nominal end of application")
 
