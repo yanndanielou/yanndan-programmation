@@ -1,4 +1,42 @@
+import datetime
 import xml.etree.ElementTree as ET
+import datetime
+
+
+def decode_hlf(time_field_value: int, time_offset_value: int, decade_field_value: int, day_on_decade_field_value: int) -> datetime.datetime:
+    """
+    Decodes the given fields into a datetime object.
+
+    Parameters:
+        time_field_value (int): Number of tenths of a second into the day [0..864000].
+        time_offset_value (int): Time offset in tenths of an hour [0..86400].
+        decade_field_value (int): Decade within the century [0..9].
+        day_on_decade_field_value (int): Day within the decade [0..3652].
+
+    Returns:
+        datetime.datetime: The decoded date and time.
+    """
+
+    # Calculate the start year of the decade
+    start_year = 2000 + (decade_field_value * 10)
+
+    # Calculate the date by adding the day on decade to start of the decade
+    decade_date = datetime.datetime(start_year, 1, 1) + datetime.timedelta(days=day_on_decade_field_value)
+
+    # Calculate time in hours, minutes, and seconds from time_field_value
+    total_seconds = time_field_value / 10  # tenths of a second to seconds
+    hours = int(total_seconds // 3600)
+    minutes = int((total_seconds % 3600) // 60)
+    seconds = total_seconds % 60
+
+    # Calculate the time offset:
+    offset_hours = time_offset_value // 36000
+    offset_minutes = (time_offset_value % 36000) // 600
+
+    # Apply the offset for local time
+    local_time = decade_date + datetime.timedelta(hours=hours - offset_hours, minutes=minutes - offset_minutes, seconds=seconds)
+
+    return local_time
 
 
 def hex_to_int(hex_string):
@@ -79,6 +117,13 @@ def decode_message(hexadecimal_content: str, message_id: int) -> dict:
 
 # Example usage
 hex_content = "00 0d 23 f2 00 00 8c a0 27 4a"
-message_id = 85
-decoded = decode_message(hex_content, message_id)
-print(decoded)
+hlf_message_id = 85
+decoded_hexa_content_with_xml = decode_message(hex_content, hlf_message_id)
+print(decoded_hexa_content_with_xml)
+decoded_hlf = decode_hlf(
+    time_field_value=decoded_hexa_content_with_xml["Time"],
+    time_offset_value=decoded_hexa_content_with_xml["TimeOffset"],
+    decade_field_value=decoded_hexa_content_with_xml["Decade"],
+    day_on_decade_field_value=decoded_hexa_content_with_xml["DayOnDecade"],
+)
+print(decoded_hlf)
