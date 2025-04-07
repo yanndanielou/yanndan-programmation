@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 import datetime
 
 
-def decode_hlf(time_field_value: int, time_offset_value: int, decade_field_value: int, day_on_decade_field_value: int) -> datetime.datetime:
+def decode_hlf_fields_to_datetime(time_field_value: int, time_offset_value: int, decade_field_value: int, day_on_decade_field_value: int) -> datetime.datetime:
     """
     Decodes the given fields into a datetime object.
 
@@ -119,7 +119,7 @@ def decode_hlf_hexa(hlf_content_hexa: str) -> datetime.datetime:
     hlf_message_id = 85
     decoded_hexa_content_with_xml = decode_message(hlf_content_hexa, hlf_message_id)
     # print(decoded_hexa_content_with_xml)
-    decoded_hlf = decode_hlf(
+    decoded_hlf = decode_hlf_fields_to_datetime(
         time_field_value=decoded_hexa_content_with_xml["Time"],
         time_offset_value=decoded_hexa_content_with_xml["TimeOffset"],
         decade_field_value=decoded_hexa_content_with_xml["Decade"],
@@ -130,10 +130,10 @@ def decode_hlf_hexa(hlf_content_hexa: str) -> datetime.datetime:
 
 # Example usage
 
-
+"""
 decode_hlf_hexa("00 0d 23 f2 00 00 8c a0 27 4a")
 decode_hlf_hexa("00 0d 24 88 00 00 8c a0 27 4a")
 decode_hlf_hexa("00 0d 25 1e 00 00 8c a0 27 4a")
 decode_hlf_hexa("00 0d 25 b4 00 00 8c a0 27 4a")
-
+"""
 # print(decode_hlf(time_field_value=322730, time_offset_value=1, decade_field_value=2, day_on_decade_field_value=1428))
