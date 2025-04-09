@@ -4,10 +4,12 @@ from collections import defaultdict
 import mpld3
 from mpld3 import plugins
 
+from typing import List
+
 import mplcursors
 from mplcursors._mplcursors import HoverMode
 
-import os
+import datetime
 
 
 from logger import logger_config
@@ -41,7 +43,10 @@ def produce_results_and_displays(
     # Retrieve months to process
     # months = cfx_library.get_months_since_earliest_submit_date()
     months = cfx_library.get_tenth_days_since_earliest_submit_date()
+    months_containing_data_with_filter: List[datetime] = []
     state_counts_per_month = []
+
+    at_least_one_cfx_matching_filter_has_been_found = False
 
     # Gather state counts for each month
     for month in months:
@@ -53,7 +58,11 @@ def produce_results_and_displays(
 
                 if state != cfx.State.NotCreatedYet:
                     state_counts[state] += 1
-        state_counts_per_month.append(state_counts)
+                    at_least_one_cfx_matching_filter_has_been_found = True
+
+        if at_least_one_cfx_matching_filter_has_been_found:
+            state_counts_per_month.append(state_counts)
+            months_containing_data_with_filter.append(month)
 
     # Determine the states that are present in the data
     present_states_set = set()
@@ -74,13 +83,13 @@ def produce_results_and_displays(
 
     if output_excel_file:
         with logger_config.stopwatch_with_label(f"produce_excel_output_file, filter {filter_only_subsystem} library {library_label}"):
-            produce_excel_output_file(output_excel_file=output_excel_file, state_counts_per_month=state_counts_per_month, months=months)
+            produce_excel_output_file(output_excel_file=output_excel_file, state_counts_per_month=state_counts_per_month, months=months_containing_data_with_filter)
 
     if display_with_cumulative_eras:
         with logger_config.stopwatch_with_label(f"produce_displays cumulative, filter {filter_only_subsystem} library {library_label}"):
             produce_displays(
                 use_cumulative=True,
-                months=months,
+                months=months_containing_data_with_filter,
                 present_states_ordered_list=present_states_ordered_list,
                 cumulative_counts=cumulative_counts,
                 state_counts_per_month=state_counts_per_month,
@@ -93,7 +102,7 @@ def produce_results_and_displays(
         with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {filter_only_subsystem} library {library_label}"):
             produce_displays(
                 use_cumulative=False,
-                months=months,
+                months=months_containing_data_with_filter,
                 present_states_ordered_list=present_states_ordered_list,
                 cumulative_counts=cumulative_counts,
                 state_counts_per_month=state_counts_per_month,
@@ -148,7 +157,7 @@ def produce_displays(
 
     ax.set_xlabel("Month")
     ax.set_ylabel("Number of CFX Entries")
-    ax.set_title(f"{library_label} All CFX States Over Time" if filter_only_subsystem is None else f"{library_label} d{filter_only_subsystem} CFX States Over Time")
+    ax.set_title(f"{library_label} All CFX States Over Time" if filter_only_subsystem is None else f"{library_label} {filter_only_subsystem} CFX States Over Time")
     ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
