@@ -55,6 +55,7 @@ def main() -> None:
             output_html_file_prefix=f"{output_directory_name}/subsystem_{subsystem.name}",
             library_label="All",
             filter_only_subsystem=subsystem,
+            cfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_security_relevant", field_forbidden_values=[cfx.SecurityRelevant.Yes])),
         )
         ui_and_results_generation.block_execution_and_keep_all_windows_open()
         logger_config.print_and_log_info("Application end")
