@@ -433,11 +433,15 @@ class ChampFXEntry:
 @dataclass
 class ChampFXFieldFilter:
     field_name: str
-    field_accepted_values: List[any]
+    field_accepted_values: Optional[List[any]] = None
+    field_forbidden_values: Optional[List[any]] = None
 
     def match_cfx_entry(self, cfx_entry: ChampFXEntry) -> bool:
         attribute_entry = getattr(cfx_entry, self.field_name)
-        return attribute_entry in self.field_accepted_values
+        if self.field_accepted_values is not None:
+            return attribute_entry in self.field_accepted_values
+        else:
+            return not (attribute_entry in self.field_forbidden_values)
 
 
 class ChampFxFilter:
