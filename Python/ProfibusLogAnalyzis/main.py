@@ -22,6 +22,7 @@ from typing import List
 @dataclass
 class CabLogs:
     log_files_directory_path: str
+    log_files_names: List[str]
     log_files_prefix: str
     label: str = ""
     encoding: str = "utf-8"
@@ -201,11 +202,16 @@ def process_all_logs(cab_log: CabLogs) -> List[ProfibusLogSession]:
 
     log_folder = cab_log.log_files_directory_path
 
-    for root, _, files in os.walk(log_folder):
-        for file in files:
-            if file.startswith(cab_log.log_files_prefix):
-                file_path = os.path.join(root, file)
-                all_log_sessions.extend(read_log_file(file_path, cab_log))
+    if cab_log.log_files_prefix is not None:
+        for root, _, files in os.walk(log_folder):
+            for file in files:
+                if file.startswith(cab_log.log_files_prefix):
+                    file_path = os.path.join(root, file)
+                    all_log_sessions.extend(read_log_file(file_path, cab_log))
+
+    else:
+        for log_files_name in cab_log.log_files_names:
+            all_log_sessions.extend(read_log_file(log_folder + "/" + log_files_name, cab_log))
 
     detect_missing_logs(all_log_sessions)
 
@@ -219,23 +225,28 @@ def main() -> None:
         logger_config.configure_logger_with_random_log_file_suffix("ProfibusLogAnalyzis", log_file_extension="log", logger_level=logging.DEBUG)
 
         # Example usage
+        cabs_logs = [
+            CabLogs(
+                log_files_directory_path=r"D:\GitHub\yanndanielou-programmation\Python\ProfibusLogAnalyzis\Input\ppn_250210\ppn\cab 1A\opt\centralp\log",
+                log_files_names=["ethernet.log"],
+                log_files_prefix=None,
+                label="cab 1A",
+                encoding="ANSI",
+            )
+        ]
 
-        log_sessions: List[ProfibusLogSession] = process_all_cabs_logs(
-            cabs_logs=[
-                CabLogs(
-                    log_files_directory_path=r"D:\GitHub\yanndanielou-programmation\Python\ProfibusLogAnalyzis\Input\ppn_250210\ppn\cab 1A", log_files_prefix="cab", label="cab 1A", encoding="ANSI"
-                ),
-                """CabLogs(
-                    log_files_directory_path=r"D:\GitHub\yanndanielou-programmation\Python\ProfibusLogAnalyzis\Input\ppn_250210\ppn\cab 1B", log_files_prefix="cab", label="cab 1B", encoding="ANSI"
-                ),
-                CabLogs(
-                    log_files_directory_path=r"D:\GitHub\yanndanielou-programmation\Python\ProfibusLogAnalyzis\Input\ppn_250210\ppn\cab 2A", log_files_prefix="cab", label="cab 2A", encoding="ANSI"
-                ),
-                CabLogs(
-                    log_files_directory_path=r"D:\GitHub\yanndanielou-programmation\Python\ProfibusLogAnalyzis\Input\ppn_250210\ppn\cab 2B", log_files_prefix="cab", label="cab 2B", encoding="ANSI"
-                ),""",
-            ]
-        )
+        log_sessions: List[ProfibusLogSession] = process_all_cabs_logs(cabs_logs=cabs_logs)
+
+        """CabLogs(
+            log_files_directory_path=r"D:\GitHub\yanndanielou-programmation\Python\ProfibusLogAnalyzis\Input\ppn_250210\ppn\cab 1B", log_files_prefix="cab", label="cab 1B", encoding="ANSI"
+        ),
+        CabLogs(
+            log_files_directory_path=r"D:\GitHub\yanndanielou-programmation\Python\ProfibusLogAnalyzis\Input\ppn_250210\ppn\cab 2A", log_files_prefix="cab", label="cab 2A", encoding="ANSI"
+        ),
+        CabLogs(
+            log_files_directory_path=r"D:\GitHub\yanndanielou-programmation\Python\ProfibusLogAnalyzis\Input\ppn_250210\ppn\cab 2B", log_files_prefix="cab", label="cab 2B", encoding="ANSI"
+        ),""",
+
         logger_config.print_and_log_info(f"{len(log_sessions) } log sessions")
 
         all_going_back_to_past_groups: List[GoingBackToPastGroup] = [event for session in log_sessions for event in session.going_back_to_past_groups]
