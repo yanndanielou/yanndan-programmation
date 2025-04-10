@@ -4,7 +4,7 @@ from collections import defaultdict
 import mpld3
 from mpld3 import plugins
 
-from typing import List
+from typing import List, Optional
 
 import mplcursors
 from mplcursors._mplcursors import HoverMode
@@ -39,6 +39,7 @@ def produce_results_and_displays(
     output_html_file_prefix: str,
     library_label: str,
     filter_only_subsystem=None,
+    cfx_filter: Optional[cfx.ChampFxFilter] = None,
 ) -> None:
     # Retrieve months to process
     # months = cfx_library.get_months_since_earliest_submit_date()
@@ -54,11 +55,13 @@ def produce_results_and_displays(
         for entry in cfx_library.get_all_cfx():
             state = entry.get_state_at_date(month)
 
-            if filter_only_subsystem is None or filter_only_subsystem == entry.get_sub_system():
+            if cfx_filter is None or cfx_filter.match_cfx_entry(entry):
 
-                if state != cfx.State.NotCreatedYet:
-                    state_counts[state] += 1
-                    at_least_one_cfx_matching_filter_has_been_found = True
+                if filter_only_subsystem is None or filter_only_subsystem == entry.get_sub_system():
+
+                    if state != cfx.State.NotCreatedYet:
+                        state_counts[state] += 1
+                        at_least_one_cfx_matching_filter_has_been_found = True
 
         if at_least_one_cfx_matching_filter_has_been_found:
             state_counts_per_month.append(state_counts)
