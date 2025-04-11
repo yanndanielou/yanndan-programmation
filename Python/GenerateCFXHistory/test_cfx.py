@@ -154,6 +154,9 @@ class TestCurrentOwner:
             for cfx_entry in nexteo_only_champfx_library.get_all_cfx():
                 assert cfx_entry._cfx_project == nexteo_only_champfx_library._champfx_filter._field_filter.field_name
 
+        def test_get_sub_system_method_for_filter(self):
+            pass
+
         def test_security_relevant_only_field_filter(self):
             security_relevant_only_champfx_library = cfx.ChampFXLibrary(
                 champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
