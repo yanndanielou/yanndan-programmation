@@ -56,18 +56,6 @@ def main() -> None:
                     cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[subsystem]),
                 ],
             ),"""
-        subsystem = role.SubSystem.ADONEM
-        ui_and_results_generation.produce_results_and_displays(
-            cfx_library=all_champfx_library,
-            # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
-            output_excel_file="Security.xlsx",
-            display_without_cumulative_eras=True,
-            display_with_cumulative_eras=True,
-            output_html_file_prefix=f"{output_directory_name}/subsystem_{subsystem.name}",
-            library_label="All",
-        )
-        ui_and_results_generation.block_execution_and_keep_all_windows_open()
-        logger_config.print_and_log_info("Application end")
 
 
 if __name__ == "__main__":

@@ -55,6 +55,17 @@ class AllResultsToDisplay:
         self.timestamp_results: List[OneTimestampResult] = []
         self.present_states: Set[cfx.State] = set()
 
+        self.cumulative_counts: Dict[cfx.State, List[int]] = dict()
+
+    def present_states_ordered(self) -> List[cfx.State]:
+        return sorted(self.present_states)
+
+    def compute_cumulative_counts(self) -> None:
+        self.cumulative_counts = {state: [] for state in self.present_states_ordered()}
+        for one_timestamp in self.timestamp_results:
+            for state in self.present_states_ordered():
+                self.cumulative_counts[state].append(one_timestamp.count_by_state[state])
+
 
 def produce_results_and_displays(
     cfx_library: cfx.ChampFXLibrary,
@@ -99,14 +110,14 @@ def produce_results_and_displays(
         if at_least_one_cfx_matching_filter_has_been_found:
             counts_by_state_per_month.append(count_by_state)
             timestamps_to_display_data_containing_data_with_filter.append(timestamp_to_display_data)
+            all_results_to_display.timestamp_results.append(timestamp_results)
 
         timestamp_results.consolidate()
 
-        if not timestamp_results.is_empty():
-            all_results_to_display.timestamp_results.append(timestamp_results)
+    all_results_to_display.compute_cumulative_counts()
 
     # Determine the states that are present in the data
-    present_states_set: Set[cfx.State] = set()
+    """present_states_set: Set[cfx.State] = set()
     for count_by_state in counts_by_state_per_month:
         present_states_set.update(count_by_state.keys())
 
@@ -117,10 +128,11 @@ def produce_results_and_displays(
     present_states_ordered_list: List[cfx.State] = sorted(list(present_states_set))
 
     # Prepare cumulative counts for stacked area plot and Excel output
+
     cumulative_counts: Dict[cfx.State, List[int]] = {state: [] for state in present_states_ordered_list}
     for count_by_state in counts_by_state_per_month:
         for state in present_states_ordered_list:
-            cumulative_counts[state].append(count_by_state[state])
+            cumulative_counts[state].append(count_by_state[state])"""
 
     if output_excel_file:
         with logger_config.stopwatch_with_label(f"produce_excel_output_file, filter {filter_enforced_label} library {library_label}"):
@@ -131,8 +143,7 @@ def produce_results_and_displays(
             produce_displays(
                 use_cumulative=True,
                 months=timestamps_to_display_data_containing_data_with_filter,
-                present_states_ordered_list=present_states_ordered_list,
-                cumulative_counts=cumulative_counts,
+                all_results_to_display=all_results_to_display,
                 state_counts_per_month=counts_by_state_per_month,
                 output_html_file_prefix=output_html_file_prefix + "_cumulative_eras_",
                 window_title=f"{library_label} Filter {filter_enforced_label}, CFX States Over Time (Cumulative)",
@@ -144,8 +155,7 @@ def produce_results_and_displays(
             produce_displays(
                 use_cumulative=False,
                 months=timestamps_to_display_data_containing_data_with_filter,
-                present_states_ordered_list=present_states_ordered_list,
-                cumulative_counts=cumulative_counts,
+                all_results_to_display=all_results_to_display,
                 state_counts_per_month=counts_by_state_per_month,
                 output_html_file_prefix=output_html_file_prefix + "_values_",
                 window_title=f"{library_label} Filter {filter_enforced_label}, CFX States Over Time (Values)",
@@ -167,8 +177,7 @@ def produce_excel_output_file(output_excel_file: str, state_counts_per_month: Li
 def produce_displays(
     use_cumulative: bool,
     months: list[datetime.datetime],
-    present_states_ordered_list: set[cfx.State],
-    cumulative_counts: Dict[cfx.State, List[int]],
+    all_results_to_display: AllResultsToDisplay,
     state_counts_per_month: List[dict[cfx.State, int]],
     output_html_file_prefix: str,
     window_title: str,
@@ -184,15 +193,15 @@ def produce_displays(
     if use_cumulative:
         # Plot cumulative areas
         bottom = [0] * len(months)
-        for state in present_states_ordered_list:
+        for state in all_results_to_display.present_states_ordered():
             color = state_colors.get(state, None)
-            upper = [bottom[i] + cumulative_counts[state][i] for i in range(len(months))]
+            upper = [bottom[i] + all_results_to_display.cumulative_counts[state][i] for i in range(len(months))]
             line = ax.fill_between(months, bottom, upper, label=state.name, color=color)
             mplcursors.cursor(line, hover=True)
             bottom = upper
 
     else:
-        for state in present_states_ordered_list:
+        for state in all_results_to_display.present_states_ordered():
             color = state_colors.get(state, None)
             counts = [state_counts[state] for state_counts in state_counts_per_month]
             (line,) = ax.plot(months, counts, label=state.name, color=color)
