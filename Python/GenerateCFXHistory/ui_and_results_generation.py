@@ -9,6 +9,8 @@ from typing import List, Optional, Any, Dict, Set
 import mplcursors
 from mplcursors._mplcursors import HoverMode
 
+from common import json_encoders, string_utils
+
 import datetime
 
 
@@ -76,10 +78,11 @@ class AllResultsToDisplay:
 
 def produce_results_and_displays(
     cfx_library: cfx.ChampFXLibrary,
-    output_excel_file: Optional[str],
+    output_directory_name: str,
+    create_excel_file: bool,
     display_without_cumulative_eras: bool,
     display_with_cumulative_eras: bool,
-    output_html_file_prefix: str,
+    create_html_file: bool,
     library_label: str,
     cfx_filter: Optional[cfx.ChampFxFilter] = None,
     filter_enforced_label: Optional[str] = None,
@@ -97,6 +100,8 @@ def produce_results_and_displays(
         else:
             filter_enforced_label = "All"
 
+    all_cfx_ids_that_have_matched: set[str] = set()
+
     # Gather state counts for each month
     for timestamp_to_display_data in timestamps_to_display_data:
         timestamp_results = OneTimestampResult(timestamp=timestamp_to_display_data, all_results_to_display=all_results_to_display)
@@ -105,6 +110,7 @@ def produce_results_and_displays(
             state = entry.get_state_at_date(timestamp_to_display_data)
 
             if cfx_filter is None or cfx_filter.match_cfx_entry(entry):
+                all_cfx_ids_that_have_matched.add(entry.cfx_id)
 
                 if state != cfx.State.NotCreatedYet:
                     count_by_state[state] += 1
@@ -117,6 +123,10 @@ def produce_results_and_displays(
         timestamp_results.consolidate()
 
     all_results_to_display.compute_cumulative_counts()
+
+    filter_enforced_label_for_valid_file_name = string_utils.format_filename(filter_enforced_label)
+    generic_output_files_path_without_suffix_and_extension = f"{output_directory_name}/{library_label} {filter_enforced_label_for_valid_file_name}"
+    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(list_objects=all_cfx_ids_that_have_matched, json_file_full_path=f"{generic_output_files_path_without_suffix_and_extension}.json")
 
     if not at_least_one_cfx_matching_filter_has_been_found:
         logger_config.print_and_log_info(f"No data for library {library_label} filters {filter_enforced_label}")
@@ -138,26 +148,27 @@ def produce_results_and_displays(
         for state in present_states_ordered_list:
             cumulative_counts[state].append(count_by_state[state])"""
 
-    if output_excel_file:
+    if create_excel_file:
+
         with logger_config.stopwatch_with_label(f"produce_excel_output_file, filter {filter_enforced_label} library {library_label}"):
-            produce_excel_output_file(output_excel_file=output_excel_file, all_results_to_display=all_results_to_display)
+            produce_excel_output_file(output_excel_file=f"{generic_output_files_path_without_suffix_and_extension}.xlsx", all_results_to_display=all_results_to_display)
 
     if display_with_cumulative_eras:
         with logger_config.stopwatch_with_label(f"produce_displays cumulative, filter {filter_enforced_label} library {library_label}"):
-            produce_displays(
+            produce_displays_and_create_html(
                 use_cumulative=True,
                 all_results_to_display=all_results_to_display,
-                output_html_file_prefix=output_html_file_prefix + "_cumulative_eras_",
+                output_html_file_prefix=f"{generic_output_files_path_without_suffix_and_extension}_cumulative_eras_" if create_html_file else None,
                 window_title=f"{library_label} Filter {filter_enforced_label}, CFX States Over Time (Cumulative)",
                 library_label=library_label,
                 filter_enforced_label=filter_enforced_label,
             )
     if display_without_cumulative_eras:
         with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {filter_enforced_label} library {library_label}"):
-            produce_displays(
+            produce_displays_and_create_html(
                 use_cumulative=False,
                 all_results_to_display=all_results_to_display,
-                output_html_file_prefix=output_html_file_prefix + "_values_",
+                output_html_file_prefix=f"{generic_output_files_path_without_suffix_and_extension}_values_" if create_html_file else None,
                 window_title=f"{library_label} Filter {filter_enforced_label}, CFX States Over Time (Values)",
                 library_label=library_label,
                 filter_enforced_label=filter_enforced_label,
@@ -175,7 +186,7 @@ def produce_excel_output_file(output_excel_file: str, all_results_to_display: Al
         data_for_excel.to_excel(writer, sheet_name="CFX State Counts")
 
 
-def produce_displays(
+def produce_displays_and_create_html(
     use_cumulative: bool,
     all_results_to_display: AllResultsToDisplay,
     output_html_file_prefix: str,
@@ -229,10 +240,11 @@ def produce_results_and_displays_for_libary(cfx_library: cfx.ChampFXLibrary, out
     if for_global:
         produce_results_and_displays(
             cfx_library=cfx_library,
-            output_excel_file=f"{output_directory_name}/{library_label}_global.xlsx",
+            output_directory_name=output_directory_name,
+            create_excel_file=True,
             display_without_cumulative_eras=True,
             display_with_cumulative_eras=True,
-            output_html_file_prefix=f"{output_directory_name}/{library_label}_global",
+            create_html_file=True,
             library_label=library_label,
             filter_enforced_label="All",
         )
@@ -242,11 +254,12 @@ def produce_results_and_displays_for_libary(cfx_library: cfx.ChampFXLibrary, out
             with logger_config.stopwatch_with_label(f"{library_label} produce_results_and_displays for {subsystem.name}"):
                 produce_results_and_displays(
                     cfx_library=cfx_library,
+                    output_directory_name=output_directory_name,
                     # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
-                    output_excel_file=None,
+                    create_excel_file=False,
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
-                    output_html_file_prefix=f"{output_directory_name}/{library_label}_subsystem_{subsystem.name}",
+                    create_html_file=True,
                     library_label=library_label,
                     cfx_filter=cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[subsystem])]),
                 )
