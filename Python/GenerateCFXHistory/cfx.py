@@ -228,7 +228,7 @@ class ChampFXLibrary:
 
         return change_current_owner_actions_created
 
-    def get_all_cfx_by_id(self) -> Dict[str, "ChampFXEntry"]:
+    def get_all_cfx_by_id_dict(self) -> Dict[str, "ChampFXEntry"]:
         return self._champfx_entry_by_id
 
     def get_all_cfx(self) -> List["ChampFXEntry"]:

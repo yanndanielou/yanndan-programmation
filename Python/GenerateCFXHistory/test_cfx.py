@@ -169,8 +169,8 @@ class TestCurrentOwner:
                 champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.FR_NEXTEO])),
             )
 
-            assert len(nexteo_only_champfx_library.get_all_cfx_by_id()) > 0
-            for cfx_entry in nexteo_only_champfx_library.get_all_cfx_by_id():
+            assert len(nexteo_only_champfx_library.get_all_cfx()) > 0
+            for cfx_entry in nexteo_only_champfx_library.get_all_cfx():
                 assert cfx_entry._cfx_project == nexteo_only_champfx_library._champfx_filter._field_filter.field_name
 
         def test_get_sub_system_method_for_filter(self) -> None:

@@ -264,16 +264,16 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHi
     return cfx_complete_history
 
 
-def profile_load_full():
+def profile_load_full() -> None:
     all_history: List["CFXEntryCompleteHistory"] = AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file("Input/cfx_extended_history.txt", set())
     pass
 
 
-def test_CFX00790540():
+def test_CFX00790540() -> None:
     test_cfx("CFX00790540")
 
 
-def test_cfx(cfx_id: str):
+def test_cfx(cfx_id: str) -> None:
     all_cfx_complete_extended_histories_text_file_path = "Input/cfx_extended_history - Copie.txt"
     all_cfx_complete_history: List[CFXEntryCompleteHistory] = AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(
         all_cfx_complete_extended_histories_text_file_path=all_cfx_complete_extended_histories_text_file_path, cfx_to_treat_whitelist_ids=[cfx_id]
