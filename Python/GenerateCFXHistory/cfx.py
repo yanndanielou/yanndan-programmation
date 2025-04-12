@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from dateutil import relativedelta
 
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Set
+from typing import Optional, List, Dict, Set, Any
 
 from enum import Enum, auto, IntEnum
 
@@ -151,6 +151,9 @@ class ChampFXLibrary:
 
             with logger_config.stopwatch_with_label("ChampFXLibrary process_subsystem_from_fixed_implemented_in"):
                 list(map(lambda champ_fx: champ_fx.process_subsystem_from_fixed_implemented_in(), self.get_all_cfx()))
+
+            with logger_config.stopwatch_with_label("ChampFXLibrary process_subsystem"):
+                list(map(lambda champ_fx: champ_fx.process_subsystem(), self.get_all_cfx()))
 
     def create_or_fill_champfx_entry_with_dataframe(self, cfx_details_data_frame: pd.DataFrame) -> None:
         for _, row in cfx_details_data_frame.iterrows():
@@ -364,7 +367,7 @@ class ChampFXEntry:
         self._subsystem: role.SubSystem.TbD
 
         self._subsystem_from_fixed_implemented_in: role.SubSystem = role.SubSystem.TbD
-        self._submit_date = utils.convert_champfx_extract_date(submit_date_raw)
+        self._submit_date: datetime = utils.convert_champfx_extract_date(submit_date_raw)
 
         self._cfx_project = cfx_project
         self._safety_relevant = safety_relevant
@@ -406,9 +409,10 @@ class ChampFXEntry:
         self._current_owner = cfx_library._cfx_users_library.get_cfx_user_by_full_name(self._current_owner_raw)
         self._current_owner_role: role.SubSystem = self._current_owner._subsystem
 
-        self._subsystem: role.SubSystem = self._subsystem_from_fixed_implemented_in if self._subsystem_from_fixed_implemented_in else self._current_owner_role
-
         return self._current_owner_role
+
+    def process_subsystem(self) -> Optional[role.SubSystem]:
+        self._subsystem = self._subsystem_from_fixed_implemented_in if self._subsystem_from_fixed_implemented_in else self._current_owner_role
 
     def process_subsystem_from_fixed_implemented_in(self) -> Optional[role.SubSystem]:
         if self._fixed_implemented_in:
@@ -420,7 +424,7 @@ class ChampFXEntry:
         current_owner = self.get_current_owner_at_date(reference_date)
         return None if current_owner is None else current_owner.subsystem
 
-    def get_current_owner_at_date(self, reference_date: datetime) -> role.CfxUser:
+    def get_current_owner_at_date(self, reference_date: datetime) -> Optional[role.CfxUser]:
         if reference_date < self._submit_date:
             return None
 
@@ -441,8 +445,8 @@ class ChampFXEntry:
 @dataclass
 class ChampFXFieldFilter:
     field_name: str
-    field_accepted_values: Optional[List[any]] = None
-    field_forbidden_values: Optional[List[any]] = None
+    field_accepted_values: Optional[List[Any]] = None
+    field_forbidden_values: Optional[List[Any]] = None
 
     def match_cfx_entry(self, cfx_entry: ChampFXEntry) -> bool:
         attribute_entry = getattr(cfx_entry, self.field_name)

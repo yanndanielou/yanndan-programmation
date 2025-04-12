@@ -166,12 +166,35 @@ class TestCurrentOwner:
             nexteo_only_champfx_library = cfx.ChampFXLibrary(
                 champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
                 champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
-                champfx_filter=cfx.ChampFxFilter(field_filters=cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.FR_NEXTEO])),
+                champfx_filter=cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.FR_NEXTEO])]),
             )
 
             assert len(nexteo_only_champfx_library.get_all_cfx()) > 0
             for cfx_entry in nexteo_only_champfx_library.get_all_cfx():
                 assert cfx_entry._cfx_project == cfx.CfxProject.FR_NEXTEO
+
+        def test_two_field_filters(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
+            security_and_ats = cfx.ChampFxFilter
+            champfx_library = create_light_champfx_library
+
+            ats_non_security_filter = cfx.ChampFxFilter(
+                field_filters=[
+                    cfx.ChampFXFieldFilter(field_name="_security_relevant", field_forbidden_values=[cfx.SecurityRelevant.Yes, cfx.SecurityRelevant.Mitigated]),
+                    cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[role.SubSystem.ATS]),
+                ],
+            )
+            ats_security_filter = cfx.ChampFxFilter(
+                field_filters=[
+                    cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.Yes, cfx.SecurityRelevant.Mitigated]),
+                    cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[role.SubSystem.ATS]),
+                ],
+            )
+
+            assert ats_non_security_filter.match_cfx_entry(champfx_library.get_cfx_by_id("CFX00427369"))
+            assert not ats_non_security_filter.match_cfx_entry(champfx_library.get_cfx_by_id("CFX00831682"))
+
+            assert not ats_security_filter.match_cfx_entry(champfx_library.get_cfx_by_id("CFX00427369"))
+            assert ats_security_filter.match_cfx_entry(champfx_library.get_cfx_by_id("CFX00831682"))
 
         def test_get_sub_system_method_for_filter(self) -> None:
             pass
