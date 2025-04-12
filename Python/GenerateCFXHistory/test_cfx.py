@@ -171,7 +171,7 @@ class TestCurrentOwner:
 
             assert len(nexteo_only_champfx_library.get_all_cfx()) > 0
             for cfx_entry in nexteo_only_champfx_library.get_all_cfx():
-                assert cfx_entry._cfx_project == nexteo_only_champfx_library._champfx_filter._field_filter.field_name
+                assert cfx_entry._cfx_project == cfx.CfxProject.FR_NEXTEO
 
         def test_get_sub_system_method_for_filter(self) -> None:
             pass
