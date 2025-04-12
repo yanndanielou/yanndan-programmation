@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from dateutil import relativedelta
 
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Set, Any
+from typing import Optional, List, Dict, Set, Any, cast
 
 from enum import Enum, auto, IntEnum
 
@@ -480,6 +480,11 @@ class ChampFXRoleAtSpecificDateFilter:
 @dataclass
 class ChampFXRoleDependingOnDateFilter:
     roles_at_date_allowed: List[role.SubSystem]
+    label: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        label: str = f"{self.roles_at_date_allowed}"
+        self.label = label
 
     def match_cfx_entry(self, cfx_entry: ChampFXEntry, timestamp: datetime) -> bool:
         return ChampFXRoleAtSpecificDateFilter(roles_at_date_allowed=self.roles_at_date_allowed, timestamp=timestamp).match_cfx_entry(cfx_entry=cfx_entry)
@@ -497,21 +502,9 @@ class ChampFxFilter:
         if field_filters is None:
             field_filters = []
 
-        if label is None:
-            label = ""
-
         self.role_depending_on_date_filter: Optional[ChampFXRoleDependingOnDateFilter] = role_depending_on_date_filter
-        if role_depending_on_date_filter:
-            label = f"{label} role {role_depending_on_date_filter.roles_at_date_allowed} on date"
-
         self._field_filters: List[ChampFXFieldFilter] = field_filters
-        if len(self._field_filters) > 0:
-            label = f"{label} fields {[field_filter.label for field_filter in field_filters]}"
-
         self._cfx_to_treat_whitelist_text_file_full_path: Optional[str] = cfx_to_treat_whitelist_text_file_full_path
-        if cfx_to_treat_whitelist_text_file_full_path:
-            label = f"{label} only cfx among {cfx_to_treat_whitelist_text_file_full_path}"
-
         self._cfx_to_treat_whitelist_ids: Optional[Set[str]] = None
         self.label = label
 
@@ -522,13 +515,37 @@ class ChampFxFilter:
                     self._cfx_to_treat_whitelist_ids = [line.strip() for line in cfx_known_by_cstmr_text_file.readlines()]
             logger_config.print_and_log_info(f"Number of cfx_known_by_cstmr_ids:{len(self._cfx_to_treat_whitelist_ids)}")
 
-    def match_cfx_entry(self, cfx_entry: ChampFXEntry) -> bool:
+        self._compute_label()
+
+    def _compute_label(self) -> None:
+
+        label = self.label
+
+        if label is None:
+            label = ""
+
+        if self.role_depending_on_date_filter:
+            label = f"{label} role {self.role_depending_on_date_filter.roles_at_date_allowed} on date"
+
+        if len(self._field_filters) > 0:
+            label = f"{label} fields {[field_filter.label for field_filter in self._field_filters]}"
+
+        if self._cfx_to_treat_whitelist_text_file_full_path:
+            label = f"{label} only cfx among {self._cfx_to_treat_whitelist_text_file_full_path}"
+
+        self.label = label
+
+    def match_cfx_entry(self, cfx_entry: ChampFXEntry, timestamp: Optional[datetime] = None) -> bool:
 
         if self._cfx_to_treat_whitelist_ids is not None and cfx_entry.cfx_id not in self._cfx_to_treat_whitelist_ids:
             return False
 
         for field_filter in self._field_filters:
             if not field_filter.match_cfx_entry(cfx_entry=cfx_entry):
+                return False
+
+        if self.role_depending_on_date_filter:
+            if not self.role_depending_on_date_filter.match_cfx_entry(cfx_entry=cfx_entry, timestamp=cast(datetime, timestamp)):
                 return False
 
         return True

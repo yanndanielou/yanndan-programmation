@@ -109,7 +109,7 @@ def produce_results_and_displays(
         for entry in cfx_library.get_all_cfx():
             state = entry.get_state_at_date(timestamp_to_display_data)
 
-            if cfx_filter is None or cfx_filter.match_cfx_entry(entry):
+            if cfx_filter is None or cfx_filter.match_cfx_entry(entry, timestamp_to_display_data):
                 all_cfx_ids_that_have_matched.add(entry.cfx_id)
 
                 if state != cfx.State.NotCreatedYet:
@@ -235,7 +235,9 @@ def produce_displays_and_create_html(
             html_file.write(html_content)
 
 
-def produce_results_and_displays_for_libary(cfx_library: cfx.ChampFXLibrary, output_directory_name: str, library_label: str, for_global: bool, for_each_subsystem: bool) -> None:
+def produce_results_and_displays_for_libary(
+    cfx_library: cfx.ChampFXLibrary, output_directory_name: str, library_label: str, for_global: bool, for_each_subsystem: bool, for_each_current_owner_per_date: bool
+) -> None:
 
     if for_global:
         produce_results_and_displays(
@@ -248,6 +250,21 @@ def produce_results_and_displays_for_libary(cfx_library: cfx.ChampFXLibrary, out
             library_label=library_label,
             filter_enforced_label="All",
         )
+
+    if for_each_current_owner_per_date:
+        for subsystem in role.SubSystem:
+            with logger_config.stopwatch_with_label(f"{library_label} produce_results_and_displays for {subsystem.name}"):
+                produce_results_and_displays(
+                    cfx_library=cfx_library,
+                    output_directory_name=output_directory_name,
+                    # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
+                    create_excel_file=False,
+                    display_without_cumulative_eras=False,
+                    display_with_cumulative_eras=True,
+                    create_html_file=True,
+                    library_label=library_label,
+                    cfx_filter=cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem])),
+                )
 
     if for_each_subsystem:
         for subsystem in role.SubSystem:
