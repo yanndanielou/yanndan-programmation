@@ -62,7 +62,9 @@ class CFXRawCompleteHistoryExport:
 class AllCFXCompleteHistoryExport:
 
     @staticmethod
-    def parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path: str, cfx_to_treat_whitelist_ids: Optional[Set[str]]) -> List["CFXEntryCompleteHistory"]:
+    def parse_full_complete_extended_histories_text_file(
+        all_cfx_complete_extended_histories_text_file_path: str, cfx_to_treat_whitelist_ids: Optional[Set | List[str]]
+    ) -> List["CFXEntryCompleteHistory"]:
         all_cfx_complete_history: List[CFXEntryCompleteHistory] = list()
 
         complete_history_len_by_cfx: Dict[str, int] = dict()

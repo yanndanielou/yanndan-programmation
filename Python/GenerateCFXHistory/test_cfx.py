@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import List
 
 import cfx
+import role
 
 
 @pytest.fixture(scope="session")
@@ -14,7 +15,7 @@ def create_light_champfx_library() -> cfx.ChampFXLibrary:
         champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
         # all_current_owner_modifications_pickle_file_full_path="Input/all_current_owner_modifications.pkl",
         # all_current_owner_modifications_per_cfx_pickle_file_full_path="Input/all_current_owner_modifications_per_cfx.pkl",
-        cfx_to_treat_whitelist_text_file_full_path="Input_for_Tests/sample_cfx_ids.txt",
+        champfx_filter=cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input_for_Tests/sample_cfx_ids.txt"),
     )
     return champfx_library
 
@@ -25,26 +26,28 @@ def get_cfx_closed_status_according_to_date_today(create_light_champfx_library: 
 
 
 class TestConstruction:
-    def test_no_error_at_init(self, create_light_champfx_library: cfx.ChampFXLibrary):
+    def test_no_error_at_init(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library
-        assert len(champfx_library.get_all_cfx()) > 0
+        assert len(champfx_library.get_all_cfx_by_id()) > 0
 
 
 class TestStatus:
-    def test_library_is_not_empty(self, create_light_champfx_library: cfx.ChampFXLibrary):
+    def test_library_is_not_empty(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library
-        assert len(champfx_library.get_all_cfx()) > 0
+        assert len(champfx_library.get_all_cfx_by_id()) > 0
 
-    def test_there_are_cfx_current_status_closed(self, create_light_champfx_library: cfx.ChampFXLibrary):
+    def test_there_are_cfx_current_status_closed(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library
         cfx_closed_status = list(filter(lambda champfx: champfx.raw_state == cfx.State.Closed, champfx_library.get_all_cfx()))
         assert len(cfx_closed_status) > 0
 
-    def test_there_are_cfx_closed_by_date(self, get_cfx_closed_status_according_to_date_today: List[cfx.ChampFXEntry]):
+    def test_there_are_cfx_closed_by_date(self, get_cfx_closed_status_according_to_date_today: List[cfx.ChampFXEntry]) -> None:
         cfx_closed_status_according_to_date_today = get_cfx_closed_status_according_to_date_today
         assert len(cfx_closed_status_according_to_date_today) > 0
 
-    def test_all_cfx_current_status_closed_are_also_closed_by_date(self, create_light_champfx_library: cfx.ChampFXLibrary, get_cfx_closed_status_according_to_date_today: List[cfx.ChampFXEntry]):
+    def test_all_cfx_current_status_closed_are_also_closed_by_date(
+        self, create_light_champfx_library: cfx.ChampFXLibrary, get_cfx_closed_status_according_to_date_today: List[cfx.ChampFXEntry]
+    ) -> None:
         champfx_library = create_light_champfx_library
         cfx_closed_status_according_to_date_today = get_cfx_closed_status_according_to_date_today
 
@@ -53,7 +56,7 @@ class TestStatus:
         cfx_closed_by_status_but_not_by_date = list(set(cfx_closed_status) - set(cfx_closed_status_according_to_date_today))
         assert len(cfx_closed_by_status_but_not_by_date) == 0
 
-    def test_errors_related_to_closed_status(self, create_light_champfx_library: cfx.ChampFXLibrary, get_cfx_closed_status_according_to_date_today: List[cfx.ChampFXEntry]):
+    def test_errors_related_to_closed_status(self, create_light_champfx_library: cfx.ChampFXLibrary, get_cfx_closed_status_according_to_date_today: List[cfx.ChampFXEntry]) -> None:
         champfx_library = create_light_champfx_library
 
         cfx_closed_status_according_to_date_today = get_cfx_closed_status_according_to_date_today
@@ -64,7 +67,7 @@ class TestStatus:
         cfx_closed_by_date_but_not_by_status = list(set(cfx_closed_status_according_to_date_today) - set(cfx_closed_status))
         assert len(cfx_closed_by_date_but_not_by_status) == 0, f"cfx_closed_by_date_but_not_by_status found: {cfx_closed_by_date_but_not_by_status}"
 
-    def test_CFX00427036_states_by_date(self, create_light_champfx_library: cfx.ChampFXLibrary):
+    def test_CFX00427036_states_by_date(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
         """
         CFX00427036	no_value	Submitted	8 avril 2019 à 09:23:12 UTC+2	Submit
         CFX00427036	Submitted	Analysed	8 avril 2019 à 09:38:13 UTC+2	Analyse
@@ -108,29 +111,45 @@ class TestStatus:
         assert cfx_entry.get_state_at_date(datetime.now()) == cfx.State.Closed
 
 
+class TestFirstCurrentOwner:
+
+    def test_CFX00778656_first_current_owner(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_light_champfx_library
+        cfx_entry = champfx_library.get_cfx_by_id("CFX00778656")
+        first_current_owner = cfx_entry.get_current_owner_at_date(datetime(int(2024), int(1), int(6)))
+        assert "enaud" in first_current_owner.raw_full_name
+        assert first_current_owner.subsystem == role.SubSystem.ATS
+
+
 class TestCurrentOwner:
 
-    def test_CFX00427036_currenet_owner_by_date(self, create_light_champfx_library: cfx.ChampFXLibrary):
+    def test_CFX00427036_currenet_owner_by_date(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library
         cfx_entry = champfx_library.get_cfx_by_id("CFX00427036")
         assert cfx_entry.get_current_owner_at_date(datetime.now()) == cfx_entry._current_owner
         assert "herve" in cfx_entry.get_current_owner_at_date(datetime.now())._raw_full_name.lower()
 
-    def test_all_cfx_have_none_current_owner_before_creation(self, create_light_champfx_library: cfx.ChampFXLibrary):
+    def test_all_cfx_have_none_current_owner_before_creation(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library
-        for cfx_entry in champfx_library.get_all_cfx():
+        for cfx_entry in champfx_library.get_all_cfx_by_id():
 
             day_before_first_opening = datetime(int(2000), int(1), int(4))
             assert cfx_entry.get_current_owner_at_date(day_before_first_opening) is None
 
-    def test_all_cfx_have_current_owner_which_is_same_as_history(self, create_light_champfx_library: cfx.ChampFXLibrary):
+    def test_all_cfx_have_current_owner_which_is_same_as_history(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library
-        for cfx_entry in champfx_library.get_all_cfx():
+        for cfx_entry in champfx_library.get_all_cfx_by_id():
             assert cfx_entry._current_owner == cfx_entry.get_current_owner_at_date(datetime.now())
+
+    def test_before_cfx_creation(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_light_champfx_library
+        cfx_entry = champfx_library.get_cfx_by_id("CFX00778656")
+        first_current_owner = cfx_entry.get_current_owner_at_date(datetime(int(2000), int(1), int(6)))
+        assert first_current_owner is None
 
     class TestCFX00778656:
 
-        def test_00778656_tCFXhat_has_never_changed(self, create_light_champfx_library: cfx.ChampFXLibrary):
+        def test_CFX00778656_that_has_never_changed(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
             """05/01/2024 18:05:35"""
             champfx_library = create_light_champfx_library
             cfx_entry = champfx_library.get_cfx_by_id("CFX00778656")
@@ -143,21 +162,21 @@ class TestCurrentOwner:
             assert "Renaud".lower() in cfx_entry.get_current_owner_at_date(day_after_first_analyzis)._raw_full_name.lower()
 
     class TestChampFxFilter:
-        def test_next_project_field_filter(self):
+        def test_next_project_field_filter(self) -> None:
             nexteo_only_champfx_library = cfx.ChampFXLibrary(
                 champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
                 champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
                 champfx_filter=cfx.ChampFxFilter(field_filter=cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.FR_NEXTEO])),
             )
 
-            assert len(nexteo_only_champfx_library.get_all_cfx()) > 0
-            for cfx_entry in nexteo_only_champfx_library.get_all_cfx():
+            assert len(nexteo_only_champfx_library.get_all_cfx_by_id()) > 0
+            for cfx_entry in nexteo_only_champfx_library.get_all_cfx_by_id():
                 assert cfx_entry._cfx_project == nexteo_only_champfx_library._champfx_filter._field_filter.field_name
 
-        def test_get_sub_system_method_for_filter(self):
+        def test_get_sub_system_method_for_filter(self) -> None:
             pass
 
-        def test_security_relevant_only_field_filter(self):
+        def test_security_relevant_only_field_filter(self) -> None:
             security_relevant_only_champfx_library = cfx.ChampFXLibrary(
                 champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
                 champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
@@ -166,6 +185,6 @@ class TestCurrentOwner:
                 ),
             )
 
-            assert len(security_relevant_only_champfx_library.get_all_cfx()) > 0
-            for cfx_entry in security_relevant_only_champfx_library.get_all_cfx():
+            assert len(security_relevant_only_champfx_library.get_all_cfx_by_id()) > 0
+            for cfx_entry in security_relevant_only_champfx_library.get_all_cfx_by_id():
                 assert cfx_entry._security_relevant

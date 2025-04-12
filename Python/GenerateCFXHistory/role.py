@@ -61,7 +61,7 @@ class CfxUser:
 
 class CfxUserLibrary:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._cfx_user_by_full_name: Dict[str, CfxUser] = dict()
         self._cfx_user_by_full_name_lower: Dict[str, CfxUser] = dict()
 

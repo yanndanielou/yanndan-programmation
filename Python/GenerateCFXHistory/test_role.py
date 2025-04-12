@@ -3,7 +3,7 @@ import pytest
 import role
 
 # fmt: off
-"""
+
 champfx_fixed_implemented_in_data = ["S003_Component TCR3 CBTC_SFE_PAS -",
     "S001_System TCR3 CBTC -",
     "S001_System Système NExTEO ATC V1A",
@@ -370,11 +370,11 @@ champfx_fixed_implemented_in_data = ["S003_Component TCR3 CBTC_SFE_PAS -",
     "S001_System ATSP NExT_Golf B2_4.4",
     "S002_Subsystem SIMEV SIFOR NExT_Golf B2_4.2"]
 # fmt: off
-"""
+
 
 
 class TestFixedImplementedInToSubsystemConversion:
-    #@pytest.mark.parametrize("champfx_fixed_implemented_in", champfx_fixed_implemented_in_data)
+    @pytest.mark.parametrize("champfx_fixed_implemented_in", champfx_fixed_implemented_in_data)
     def test_all_champfx_fixed_implemented_can_be_converted(self, champfx_fixed_implemented_in: str) -> None:
         assert role.get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in)
 

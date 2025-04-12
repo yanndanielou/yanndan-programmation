@@ -52,7 +52,7 @@ def produce_results_and_displays(
     # Gather state counts for each month
     for month in months:
         state_counts = defaultdict(int)
-        for entry in cfx_library.get_all_cfx():
+        for entry in cfx_library.get_all_cfx_by_id():
             state = entry.get_state_at_date(month)
 
             if cfx_filter is None or cfx_filter.match_cfx_entry(entry):

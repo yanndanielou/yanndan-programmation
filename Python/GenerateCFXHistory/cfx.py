@@ -109,13 +109,14 @@ class ChampFXLibrary:
         champfx_states_changes_excel_file_full_path: str = "Input/extract_cfx_change_state.xlsx",
         # all_current_owner_modifications_pickle_file_full_path: str = "Input/all_current_owner_modifications.pkl",
         # all_current_owner_modifications_per_cfx_pickle_file_full_path: str = "Input/all_current_owner_modifications_per_cfx.pkl",
-        champfx_filter: "ChampFxFilter" = None,
+        champfx_filter: Optional["ChampFxFilter"] = None,
     ):
 
-        self._champfx_filter: ChampFxFilter = champfx_filter
+        self._champfx_filter: Optional["ChampFxFilter"] = champfx_filter
         # self._all_current_owner_modifications_pickle_file_full_path = all_current_owner_modifications_pickle_file_full_path
         # self._all_current_owner_modifications_per_cfx_pickle_file_full_path = all_current_owner_modifications_per_cfx_pickle_file_full_path
         self._champfx_entry_by_id: Dict[str, ChampFXEntry] = dict()
+        self._champfx_entries: List[ChampFXEntry] = []
 
         with logger_config.stopwatch_with_label("Load CfxUserLibrary"):
             self._cfx_users_library: role.CfxUserLibrary = role.CfxUserLibrary()
@@ -162,6 +163,7 @@ class ChampFXLibrary:
                 cfx_entry = ChampFXEntryBuilder.build_with_row(row)
                 if self._champfx_filter is None or self._champfx_filter.match_cfx_entry(cfx_entry):
                     self._champfx_entry_by_id[cfx_id] = cfx_entry
+                    self._champfx_entries.append(cfx_entry)
 
     def create_states_changes_with_dataframe(self, cfx_states_changes_data_frame: pd.DataFrame) -> List[ChangeStateAction]:
         change_state_actions_created: List[ChangeStateAction] = []
@@ -191,7 +193,7 @@ class ChampFXLibrary:
     def convert_cfx_history_element_to_valid_full_name(self, cfx_history_element_state: str) -> str:
         return cfx_history_element_state.split("(")[0].strip()
 
-    def create_current_owner_modifications(self):
+    def create_current_owner_modifications(self) -> List[ChangeCurrentOwnerAction]:
 
         change_current_owner_actions_created: List[ChangeCurrentOwnerAction] = []
 
@@ -226,11 +228,14 @@ class ChampFXLibrary:
 
         return change_current_owner_actions_created
 
+    def get_all_cfx_by_id(self) -> Dict[str, "ChampFXEntry"]:
+        return self._champfx_entry_by_id
+
     def get_all_cfx(self) -> List["ChampFXEntry"]:
-        return self._champfx_entry_by_id.values()
+        return self._champfx_entries
 
     def get_all_cfx_ids(self) -> List[str]:
-        return self._champfx_entry_by_id.keys()
+        return list(self._champfx_entry_by_id.keys())
 
     def get_cfx_by_id(self, cfx_id: str) -> "ChampFXEntry":
         return self._champfx_entry_by_id[cfx_id]
@@ -304,7 +309,7 @@ class ChampFXEntryBuilder:
         return None
 
     @staticmethod
-    def build_with_row(row) -> "ChampFXEntry":
+    def build_with_row(row: pd.Series) -> "ChampFXEntry":
         cfx_id = row["CFXID"]
         raw_state: State = State[(row["State"])]
         fixed_implemented_in: str = row["FixedImplementedIn"]
@@ -316,7 +321,7 @@ class ChampFXEntryBuilder:
         safety_relevant: Optional[bool] = ChampFXEntryBuilder.to_optional_boolean(raw_safety_relevant)
 
         raw_security_relevant: str = row["SecurityRelevant"]
-        security_relevant: str = ChampFXEntryBuilder.convert_champfx_security_relevant(raw_security_relevant)
+        security_relevant: SecurityRelevant = ChampFXEntryBuilder.convert_champfx_security_relevant(raw_security_relevant)
 
         champfx_entry = ChampFXEntry(
             cfx_id=cfx_id,
