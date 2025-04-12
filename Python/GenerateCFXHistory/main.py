@@ -24,7 +24,7 @@ def main() -> None:
             champfx_filter=cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input/CFX_usine_site.txt"),
         )
         ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=usine_site_champfx_library, output_directory_name=output_directory_name, library_label="Usine&site", for_global=True, for_each_subsystem=False
+            cfx_library=usine_site_champfx_library, output_directory_name=output_directory_name, library_label="Usine&site", for_global=True, for_each_subsystem=True
         )
 
         ui_and_results_generation.block_execution_and_keep_all_windows_open()

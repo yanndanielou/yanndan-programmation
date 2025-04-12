@@ -110,8 +110,16 @@ class CfxUserLibrary:
 
 def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in: str) -> SubSystem:
     subsystem_mapping = {
-        SubSystem.TCR3: ["Component PAE", "S003_Component TCR3", "Component PAS", "Component MES", "TCR3"],
-        SubSystem.SW: ["Component PAE", "S003_Component TCR3", "Component PAS", "Applicatif PAS", "S002_Subsystem Automatic Train Control", "Module Application PAS", "Module Application PAL"],
+        SubSystem.TCR3: ["S003_Component TCR3", "TCR3"],
+        SubSystem.SW: [
+            "Component MES",
+            "Component PAE",
+            "Component PAS",
+            "Applicatif PAS",
+            "S002_Subsystem Automatic Train Control",
+            "Module Application PAS",
+            "Module Application PAL",
+        ],
         SubSystem.SUBSYS: ["CDB", "MDT", "Eurobalise", "Tiroir Calculateur", "Transition par balise", "Odotachy", "EVC/DMI/JRU", "Logiciel de service", "Compte à rebour"],
         SubSystem.TRACY: ["Cyclos"],
         SubSystem.ATS: [

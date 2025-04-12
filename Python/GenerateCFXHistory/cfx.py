@@ -6,7 +6,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from dateutil import relativedelta
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Set, Any
 
 from enum import Enum, auto, IntEnum
@@ -411,7 +411,7 @@ class ChampFXEntry:
 
         return self._current_owner_role
 
-    def process_subsystem(self) -> Optional[role.SubSystem]:
+    def process_subsystem(self) -> None:
         self._subsystem = self._subsystem_from_fixed_implemented_in if self._subsystem_from_fixed_implemented_in else self._current_owner_role
 
     def process_subsystem_from_fixed_implemented_in(self) -> Optional[role.SubSystem]:
@@ -448,6 +448,17 @@ class ChampFXFieldFilter:
     field_accepted_values: Optional[List[Any]] = None
     field_forbidden_values: Optional[List[Any]] = None
 
+    label: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        label: str = f"{self.field_name}"
+
+        if self.field_accepted_values:
+            label = f"{label} among {self.field_accepted_values}"
+        else:
+            label = f"{label} without {self.field_forbidden_values}"
+        self.label = label
+
     def match_cfx_entry(self, cfx_entry: ChampFXEntry) -> bool:
         attribute_entry = getattr(cfx_entry, self.field_name)
         if self.field_accepted_values is not None:
@@ -479,13 +490,28 @@ class ChampFxFilter:
     def __init__(
         self,
         role_depending_on_date_filter: Optional[ChampFXRoleDependingOnDateFilter] = None,
-        field_filters: List[ChampFXFieldFilter] = [],
+        field_filters: Optional[List[ChampFXFieldFilter]] = None,
         cfx_to_treat_whitelist_text_file_full_path: Optional[str] = None,
-        label: str = "",
+        label: Optional[str] = None,
     ):
+        if field_filters is None:
+            field_filters = []
+
+        if label is None:
+            label = ""
+
         self.role_depending_on_date_filter: Optional[ChampFXRoleDependingOnDateFilter] = role_depending_on_date_filter
+        if role_depending_on_date_filter:
+            label = f"{label} role {role_depending_on_date_filter.roles_at_date_allowed} on date"
+
         self._field_filters: List[ChampFXFieldFilter] = field_filters
+        if len(self._field_filters) > 0:
+            label = f"{label} fields {[field_filter.label for field_filter in field_filters]}"
+
         self._cfx_to_treat_whitelist_text_file_full_path: Optional[str] = cfx_to_treat_whitelist_text_file_full_path
+        if cfx_to_treat_whitelist_text_file_full_path:
+            label = f"{label} only cfx among {cfx_to_treat_whitelist_text_file_full_path}"
+
         self._cfx_to_treat_whitelist_ids: Optional[Set[str]] = None
         self.label = label
 
