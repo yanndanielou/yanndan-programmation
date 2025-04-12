@@ -49,9 +49,6 @@ class OneTimestampResult:
         all_states_found_sorted = sorted(all_states_found)
         # self.compute_cumulated_count()
 
-    def get_cumulated_count(self) -> dict[cfx.State, int]:
-        pass
-
 
 class AllResultsToDisplay:
     def __init__(self) -> None:
@@ -157,7 +154,7 @@ def produce_results_and_displays(
             )
 
 
-def produce_excel_output_file(output_excel_file: str, state_counts_per_month, months) -> None:
+def produce_excel_output_file(output_excel_file: str, state_counts_per_month: List[dict[cfx.State, int]], months: List[datetime.datetime]) -> None:
     # Convert data to DataFrame for Excel output
     data_for_excel = pd.DataFrame(state_counts_per_month, index=months)
     data_for_excel.index.name = "Month"
