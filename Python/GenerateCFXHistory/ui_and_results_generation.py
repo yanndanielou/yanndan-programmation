@@ -4,7 +4,7 @@ from collections import defaultdict
 import mpld3
 from mpld3 import plugins
 
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 
 import mplcursors
 from mplcursors._mplcursors import HoverMode
@@ -33,13 +33,13 @@ state_colors = {
 
 def produce_results_and_displays(
     cfx_library: cfx.ChampFXLibrary,
-    output_excel_file: str,
+    output_excel_file: Optional[str],
     display_without_cumulative_eras: bool,
     display_with_cumulative_eras: bool,
     output_html_file_prefix: str,
     library_label: str,
-    filter_only_subsystem=None,
     cfx_filter: Optional[cfx.ChampFxFilter] = None,
+    filter_enforced_label: Optional[str] = None,
 ) -> None:
     # Retrieve months to process
     # months = cfx_library.get_months_since_earliest_submit_date()
@@ -49,6 +49,12 @@ def produce_results_and_displays(
 
     at_least_one_cfx_matching_filter_has_been_found = False
 
+    if filter_enforced_label is None:
+        if cfx_filter:
+            filter_enforced_label = cfx_filter.label
+        else:
+            filter_enforced_label = "All"
+
     # Gather state counts for each month
     for month in months:
         state_counts = defaultdict(int)
@@ -57,11 +63,9 @@ def produce_results_and_displays(
 
             if cfx_filter is None or cfx_filter.match_cfx_entry(entry):
 
-                if filter_only_subsystem is None or filter_only_subsystem == entry.get_sub_system():
-
-                    if state != cfx.State.NotCreatedYet:
-                        state_counts[state] += 1
-                        at_least_one_cfx_matching_filter_has_been_found = True
+                if state != cfx.State.NotCreatedYet:
+                    state_counts[state] += 1
+                    at_least_one_cfx_matching_filter_has_been_found = True
 
         if at_least_one_cfx_matching_filter_has_been_found:
             state_counts_per_month.append(state_counts)
@@ -73,23 +77,23 @@ def produce_results_and_displays(
         present_states_set.update(state_counts.keys())
 
     if len(present_states_set) == 0:
-        logger_config.print_and_log_info(f"No data for library {library_label} filters {filter_only_subsystem}")
+        logger_config.print_and_log_info(f"No data for library {library_label} filters {filter_enforced_label}")
         return
 
     present_states_ordered_list = sorted(list(present_states_set))
 
     # Prepare cumulative counts for stacked area plot and Excel output
-    cumulative_counts = {state: [] for state in present_states_ordered_list}
+    cumulative_counts: Dict[Any, List[int]] = {state: [] for state in present_states_ordered_list}
     for state_counts in state_counts_per_month:
         for state in present_states_ordered_list:
             cumulative_counts[state].append(state_counts[state])
 
     if output_excel_file:
-        with logger_config.stopwatch_with_label(f"produce_excel_output_file, filter {filter_only_subsystem} library {library_label}"):
+        with logger_config.stopwatch_with_label(f"produce_excel_output_file, filter {filter_enforced_label} library {library_label}"):
             produce_excel_output_file(output_excel_file=output_excel_file, state_counts_per_month=state_counts_per_month, months=months_containing_data_with_filter)
 
     if display_with_cumulative_eras:
-        with logger_config.stopwatch_with_label(f"produce_displays cumulative, filter {filter_only_subsystem} library {library_label}"):
+        with logger_config.stopwatch_with_label(f"produce_displays cumulative, filter {filter_enforced_label} library {library_label}"):
             produce_displays(
                 use_cumulative=True,
                 months=months_containing_data_with_filter,
@@ -186,7 +190,7 @@ def produce_displays(
             html_file.write(html_content)
 
 
-def produce_results_and_displays_for_libary(cfx_library: cfx.ChampFXLibrary, output_directory_name: str, library_label: str, for_global: bool, for_each_subsystem: bool):
+def produce_results_and_displays_for_libary(cfx_library: cfx.ChampFXLibrary, output_directory_name: str, library_label: str, for_global: bool, for_each_subsystem: bool) -> None:
 
     if for_global:
         produce_results_and_displays(
@@ -196,7 +200,6 @@ def produce_results_and_displays_for_libary(cfx_library: cfx.ChampFXLibrary, out
             display_with_cumulative_eras=True,
             output_html_file_prefix=f"{output_directory_name}/{library_label}_global",
             library_label=library_label,
-            filter_only_subsystem=None,
         )
 
     if for_each_subsystem:
@@ -210,10 +213,10 @@ def produce_results_and_displays_for_libary(cfx_library: cfx.ChampFXLibrary, out
                     display_with_cumulative_eras=True,
                     output_html_file_prefix=f"{output_directory_name}/{library_label}_subsystem_{subsystem.name}",
                     library_label=library_label,
-                    filter_only_subsystem=subsystem,
+                    cfx_filter=cfx.ChampFxFilter(field_filters=cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[subsystem])),
                 )
 
 
-def block_execution_and_keep_all_windows_open():
+def block_execution_and_keep_all_windows_open() -> None:
     """Use plt.show() here to block execution and keep all windows open"""
     plt.show()

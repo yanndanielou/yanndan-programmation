@@ -358,9 +358,12 @@ class ChampFXEntry:
         self._raw_state: State = raw_state
         self._fixed_implemented_in: str = fixed_implemented_in
         self._current_owner_raw: str = current_owner_raw
-        self._current_owner: role.CfxUser = None
-        self._current_owner_role: role.SubSystem = None
-        self._subsystem_from_fixed_implemented_in: role.SubSystem = None
+        self._current_owner: role.CfxUser = role.UNKNOWN_USER
+        self._current_owner_role: role.SubSystem = role.UNKNOWN_USER.subsystem
+
+        self._subsystem: role.SubSystem.TbD
+
+        self._subsystem_from_fixed_implemented_in: role.SubSystem = role.SubSystem.TbD
         self._submit_date = utils.convert_champfx_extract_date(submit_date_raw)
 
         self._cfx_project = cfx_project
@@ -402,6 +405,9 @@ class ChampFXEntry:
     def process_current_owner_role(self, cfx_library: ChampFXLibrary) -> role.SubSystem:
         self._current_owner = cfx_library._cfx_users_library.get_cfx_user_by_full_name(self._current_owner_raw)
         self._current_owner_role: role.SubSystem = self._current_owner._subsystem
+
+        self._subsystem: role.SubSystem = self._subsystem_from_fixed_implemented_in if self._subsystem_from_fixed_implemented_in else self._current_owner_role
+
         return self._current_owner_role
 
     def process_subsystem_from_fixed_implemented_in(self) -> Optional[role.SubSystem]:
@@ -409,9 +415,6 @@ class ChampFXEntry:
             self._subsystem_from_fixed_implemented_in = role.get_subsystem_from_champfx_fixed_implemented_in(self._fixed_implemented_in)
             return self._subsystem_from_fixed_implemented_in
         return None
-
-    def get_sub_system(self) -> role.SubSystem:
-        return self._subsystem_from_fixed_implemented_in if self._subsystem_from_fixed_implemented_in else self._current_owner_role
 
     def get_current_role_at_date(self, reference_date: datetime) -> Optional[role.SubSystem]:
         current_owner = self.get_current_owner_at_date(reference_date)
@@ -446,15 +449,41 @@ class ChampFXFieldFilter:
         if self.field_accepted_values is not None:
             return attribute_entry in self.field_accepted_values
         else:
-            return not (attribute_entry in self.field_forbidden_values)
+            return attribute_entry not in self.field_forbidden_values
+
+
+@dataclass
+class ChampFXRoleAtSpecificDateFilter:
+    timestamp: datetime
+    roles_at_date_allowed: List[role.SubSystem]
+
+    def match_cfx_entry(self, cfx_entry: ChampFXEntry) -> bool:
+        role_at_date = cfx_entry.get_current_role_at_date(self.timestamp)
+        return role_at_date in self.roles_at_date_allowed
+
+
+@dataclass
+class ChampFXRoleDependingOnDateFilter:
+    roles_at_date_allowed: List[role.SubSystem]
+
+    def match_cfx_entry(self, cfx_entry: ChampFXEntry, timestamp: datetime) -> bool:
+        return ChampFXRoleAtSpecificDateFilter(roles_at_date_allowed=self.roles_at_date_allowed, timestamp=timestamp).match_cfx_entry(cfx_entry=cfx_entry)
 
 
 class ChampFxFilter:
 
-    def __init__(self, field_filter: Optional[ChampFXFieldFilter] = None, cfx_to_treat_whitelist_text_file_full_path: Optional[str] = None):
-        self._field_filter: Optional[ChampFXFieldFilter] = field_filter
+    def __init__(
+        self,
+        role_depending_on_date_filter: Optional[ChampFXRoleDependingOnDateFilter] = None,
+        field_filters: List[ChampFXFieldFilter] = [],
+        cfx_to_treat_whitelist_text_file_full_path: Optional[str] = None,
+        label: str = "",
+    ):
+        self.role_depending_on_date_filter: Optional[ChampFXRoleDependingOnDateFilter] = role_depending_on_date_filter
+        self._field_filters: List[ChampFXFieldFilter] = field_filters
         self._cfx_to_treat_whitelist_text_file_full_path: Optional[str] = cfx_to_treat_whitelist_text_file_full_path
-        self._cfx_to_treat_whitelist_ids = None
+        self._cfx_to_treat_whitelist_ids: Optional[Set[str]] = None
+        self.label = label
 
         if cfx_to_treat_whitelist_text_file_full_path is not None:
             self._cfx_to_treat_whitelist_ids = set()
@@ -468,7 +497,8 @@ class ChampFxFilter:
         if self._cfx_to_treat_whitelist_ids is not None and cfx_entry.cfx_id not in self._cfx_to_treat_whitelist_ids:
             return False
 
-        if self._field_filter is not None and not self._field_filter.match_cfx_entry(cfx_entry=cfx_entry):
-            return False
+        for field_filter in self._field_filters:
+            if not field_filter.match_cfx_entry(cfx_entry=cfx_entry):
+                return False
 
         return True
