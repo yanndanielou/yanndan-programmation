@@ -28,13 +28,13 @@ def get_cfx_closed_status_according_to_date_today(create_light_champfx_library: 
 class TestConstruction:
     def test_no_error_at_init(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library
-        assert len(champfx_library.get_all_cfx_by_id()) > 0
+        assert len(champfx_library.get_all_cfx()) > 0
 
 
 class TestStatus:
     def test_library_is_not_empty(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library
-        assert len(champfx_library.get_all_cfx_by_id()) > 0
+        assert len(champfx_library.get_all_cfx()) > 0
 
     def test_there_are_cfx_current_status_closed(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library
@@ -131,14 +131,14 @@ class TestCurrentOwner:
 
     def test_all_cfx_have_none_current_owner_before_creation(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library
-        for cfx_entry in champfx_library.get_all_cfx_by_id():
+        for cfx_entry in champfx_library.get_all_cfx():
 
             day_before_first_opening = datetime(int(2000), int(1), int(4))
             assert cfx_entry.get_current_owner_at_date(day_before_first_opening) is None
 
     def test_all_cfx_have_current_owner_which_is_same_as_history(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library
-        for cfx_entry in champfx_library.get_all_cfx_by_id():
+        for cfx_entry in champfx_library.get_all_cfx():
             assert cfx_entry._current_owner == cfx_entry.get_current_owner_at_date(datetime.now())
 
     def test_before_cfx_creation(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
@@ -185,6 +185,6 @@ class TestCurrentOwner:
                 ),
             )
 
-            assert len(security_relevant_only_champfx_library.get_all_cfx_by_id()) > 0
-            for cfx_entry in security_relevant_only_champfx_library.get_all_cfx_by_id():
+            assert len(security_relevant_only_champfx_library.get_all_cfx()) > 0
+            for cfx_entry in security_relevant_only_champfx_library.get_all_cfx():
                 assert cfx_entry._security_relevant
