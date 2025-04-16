@@ -43,6 +43,9 @@ class SubSystem(Enum):
     V3 = auto()
     TCR3 = auto()
 
+    def __repr__(self) -> str:
+        return self.name
+
 
 class CfxUser:
     def __init__(self, full_name: str, raw_full_name: str, subsystem: SubSystem):
