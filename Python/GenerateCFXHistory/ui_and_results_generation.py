@@ -83,9 +83,7 @@ def produce_results_and_displays(
     display_without_cumulative_eras: bool,
     display_with_cumulative_eras: bool,
     create_html_file: bool,
-    library_label: str,
     cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
-    filter_enforced_label: Optional[str] = None,
 ) -> None:
 
     if cfx_filters is None:
@@ -97,11 +95,11 @@ def produce_results_and_displays(
 
     at_least_one_cfx_matching_filter_has_been_found = False
 
-    if filter_enforced_label is None:
-        if len(cfx_filters) > 0:
-            filter_enforced_label = "".join([filter.label for filter in cfx_filters])
-        else:
-            filter_enforced_label = "All"
+    filter_enforced_label = cfx_library.label
+    if len(cfx_filters) > 0:
+        filter_enforced_label += "".join([filter.label for filter in cfx_filters])
+    else:
+        filter_enforced_label += "All"
 
     all_cfx_ids_that_have_matched: set[str] = set()
 
@@ -129,36 +127,36 @@ def produce_results_and_displays(
     all_results_to_display.compute_cumulative_counts()
 
     filter_enforced_label_for_valid_file_name = string_utils.format_filename(filter_enforced_label)
-    generic_output_files_path_without_suffix_and_extension = f"{output_directory_name}/{library_label} {filter_enforced_label_for_valid_file_name}"
+    generic_output_files_path_without_suffix_and_extension = f"{output_directory_name}/{cfx_library.label} {filter_enforced_label_for_valid_file_name}"
     json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(list_objects=all_cfx_ids_that_have_matched, json_file_full_path=f"{generic_output_files_path_without_suffix_and_extension}.json")
 
     if not at_least_one_cfx_matching_filter_has_been_found:
-        logger_config.print_and_log_info(f"No data for library {library_label} filters {filter_enforced_label}")
+        logger_config.print_and_log_info(f"No data for library {cfx_library.label} filters {filter_enforced_label}")
         return
 
     if create_excel_file:
 
-        with logger_config.stopwatch_with_label(f"produce_excel_output_file, filter {filter_enforced_label} library {library_label}"):
+        with logger_config.stopwatch_with_label(f"produce_excel_output_file, filter {filter_enforced_label} library {cfx_library.label}"):
             produce_excel_output_file(output_excel_file=f"{generic_output_files_path_without_suffix_and_extension}.xlsx", all_results_to_display=all_results_to_display)
 
     if display_with_cumulative_eras:
-        with logger_config.stopwatch_with_label(f"produce_displays cumulative, filter {filter_enforced_label} library {library_label}"):
+        with logger_config.stopwatch_with_label(f"produce_displays cumulative, filter {filter_enforced_label} library {cfx_library.label}"):
             produce_displays_and_create_html(
+                cfx_library=cfx_library,
                 use_cumulative=True,
                 all_results_to_display=all_results_to_display,
-                output_html_file_prefix=f"{generic_output_files_path_without_suffix_and_extension}_cumulative_eras_" if create_html_file else None,
-                window_title=f"{library_label} Filter {filter_enforced_label}, CFX States Over Time (Cumulative)",
-                library_label=library_label,
+                output_html_file_prefix=f"{generic_output_files_path_without_suffix_and_extension}_cumulative_eras" if create_html_file else None,
+                window_title=f"{cfx_library.label} Filter {filter_enforced_label}, CFX States Over Time (Cumulative)",
                 filter_enforced_label=filter_enforced_label,
             )
     if display_without_cumulative_eras:
-        with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {filter_enforced_label} library {library_label}"):
+        with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {filter_enforced_label} library {cfx_library.label}"):
             produce_displays_and_create_html(
+                cfx_library=cfx_library,
                 use_cumulative=False,
                 all_results_to_display=all_results_to_display,
-                output_html_file_prefix=f"{generic_output_files_path_without_suffix_and_extension}_values_" if create_html_file else None,
-                window_title=f"{library_label} Filter {filter_enforced_label}, CFX States Over Time (Values)",
-                library_label=library_label,
+                output_html_file_prefix=f"{generic_output_files_path_without_suffix_and_extension}_values" if create_html_file else None,
+                window_title=f"{cfx_library.label} Filter {filter_enforced_label}, CFX States Over Time (Values)",
                 filter_enforced_label=filter_enforced_label,
             )
 
@@ -175,11 +173,11 @@ def produce_excel_output_file(output_excel_file: str, all_results_to_display: Al
 
 
 def produce_displays_and_create_html(
+    cfx_library: cfx.ChampFXLibrary,
     use_cumulative: bool,
     all_results_to_display: AllResultsToDisplay,
     output_html_file_prefix: str,
     window_title: str,
-    library_label: str,
     filter_enforced_label: str,
 ) -> None:
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -209,7 +207,7 @@ def produce_displays_and_create_html(
 
     ax.set_xlabel("Month")
     ax.set_ylabel("Number of CFX Entries")
-    ax.set_title(f"{library_label} All CFX States Over Time" if filter_enforced_label is None else f"{library_label} {filter_enforced_label} CFX States Over Time")
+    ax.set_title(f"{cfx_library.label} All CFX States Over Time" if filter_enforced_label is None else f"{cfx_library.label} {filter_enforced_label} CFX States Over Time")
     ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
@@ -226,7 +224,6 @@ def produce_displays_and_create_html(
 def produce_results_and_displays_for_libary(
     cfx_library: cfx.ChampFXLibrary,
     output_directory_name: str,
-    library_label: str,
     for_global: bool,
     for_each_subsystem: bool,
     for_each_current_owner_per_date: bool,
@@ -244,14 +241,12 @@ def produce_results_and_displays_for_libary(
             display_without_cumulative_eras=True,
             display_with_cumulative_eras=True,
             create_html_file=True,
-            library_label=library_label,
             cfx_filters=cfx_filters,
-            filter_enforced_label="All",
         )
 
     if for_each_current_owner_per_date:
         for subsystem in role.SubSystem:
-            with logger_config.stopwatch_with_label(f"{library_label} produce_results_and_displays for {subsystem.name}"):
+            with logger_config.stopwatch_with_label(f"{cfx_library.label} produce_results_and_displays for {subsystem.name}"):
                 produce_results_and_displays(
                     cfx_library=cfx_library,
                     output_directory_name=output_directory_name,
@@ -260,13 +255,12 @@ def produce_results_and_displays_for_libary(
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     create_html_file=True,
-                    library_label=library_label,
                     cfx_filters=cfx_filters + [cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))],
                 )
 
     if for_each_subsystem:
         for subsystem in role.SubSystem:
-            with logger_config.stopwatch_with_label(f"{library_label} produce_results_and_displays for {subsystem.name}"):
+            with logger_config.stopwatch_with_label(f"{cfx_library.label} produce_results_and_displays for {subsystem.name}"):
 
                 produce_results_and_displays(
                     cfx_library=cfx_library,
@@ -276,7 +270,6 @@ def produce_results_and_displays_for_libary(
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     create_html_file=True,
-                    library_label=library_label,
                     cfx_filters=cfx_filters + [cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[subsystem])])],
                 )
 
