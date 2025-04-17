@@ -1,4 +1,6 @@
-from enum import Enum, auto
+from enum import auto
+from common import enums_utils
+
 
 from logger import logger_config
 
@@ -11,7 +13,7 @@ import role_data
 from common import string_utils
 
 
-class SubSystem(Enum):
+class SubSystem(enums_utils.NameBasedReprEnum):
     SW = auto()
     ATS = auto()
     SSI = auto()
@@ -42,9 +44,6 @@ class SubSystem(Enum):
     SW_Tests_secu = auto()
     V3 = auto()
     TCR3 = auto()
-
-    def __repr__(self) -> str:
-        return self.name
 
 
 class CfxUser:
