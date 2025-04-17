@@ -577,7 +577,7 @@ class ChampFxFilter:
             label = f"{label} fields {[field_filter.label for field_filter in self._field_filters]}"
 
         if self._white_list_filter:
-            label = f"{label} list {self._white_list_filter.label}"
+            label = f"{label} {self._white_list_filter.label}"
 
         self.label = label
 
