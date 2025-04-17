@@ -1,5 +1,3 @@
-import pickle
-
 import math
 
 import pandas as pd
@@ -154,7 +152,7 @@ class ChampFXLibrary:
             with logger_config.stopwatch_with_label("ChampFXLibrary process_current_owner_role"):
                 list(map(lambda champ_fx: champ_fx.process_current_owner_role(self), self.get_all_cfx()))
 
-            with logger_config.stopwatch_with_label(f"create current owner modifications"):
+            with logger_config.stopwatch_with_label("create current owner modifications"):
                 self.create_current_owner_modifications()
 
             with logger_config.stopwatch_with_label("ChampFXLibrary process_subsystem_from_fixed_implemented_in"):
@@ -185,13 +183,13 @@ class ChampFXLibrary:
             if cfx_id in self.get_all_cfx_ids():
 
                 cfx_request = self.get_cfx_by_id(cfx_id)
-                history_raw_old_state = row["history.old_state"]
+                history_raw_old_state: str = row["history.old_state"]
                 old_state: State = State[history_raw_old_state]
-                history_raw_new_state = row["history.new_state"]
+                history_raw_new_state: str = row["history.new_state"]
                 new_state: State = State[history_raw_new_state]
                 history_raw_action_timestamp_str = row["history.action_timestamp"]
                 action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
-                history_raw_action_name = row["history.action_name"]
+                history_raw_action_name: str = row["history.action_name"]
                 history_action = ActionType[history_raw_action_name]
                 change_state_actions_created.append(history_action)
 
@@ -392,13 +390,13 @@ class ChampFXEntry:
         # return sorted(self._change_state_actions_by_date.items())
         return [action for _, action in sorted(self._change_current_owner_actions_by_date.items())]
 
-    def get_oldest_change_action_by_new_state(self, new_state: State) -> ChangeStateAction:
+    def get_oldest_change_action_by_new_state(self, new_state: State) -> Optional[ChangeStateAction]:
         return next((action for action in self.get_all_actions_sorted_chronologically() if action.new_state == new_state), None)
 
-    def get_newest_change_action_that_is_before_date(self, reference_date: datetime) -> ChangeStateAction:
+    def get_newest_change_action_that_is_before_date(self, reference_date: datetime) -> Optional[ChangeStateAction]:
         return next((action for action in reversed(self.get_all_actions_sorted_chronologically()) if action.timestamp < reference_date), None)
 
-    def get_newest_current_owner_modification_that_is_before_date(self, reference_date: datetime) -> ChangeCurrentOwnerAction:
+    def get_newest_current_owner_modification_that_is_before_date(self, reference_date: datetime) -> Optional[ChangeCurrentOwnerAction]:
         return next((action for action in reversed(self.get_all_current_owner_modifications_sorted_chronologically()) if action.timestamp < reference_date), None)
 
     def add_change_state_action(self, change_state_action: ChangeStateAction) -> None:
@@ -450,15 +448,58 @@ class ChampFXEntry:
             return newest_change_action_that_is_before_date.new_state
 
 
-@dataclass
-class ChampFXFieldFilter:
-    field_name: str
-    field_accepted_values: Optional[List[Any]] = None
-    field_forbidden_values: Optional[List[Any]] = None
+class ChampFXtSaticCriteriaFilter:
+    def __init__(self) -> None:
+        self._cache_result_by_cfx: dict[ChampFXEntry, bool] = dict()
+        self._number_of_results_obtained_by_cache_usage = 0
 
-    label: str = field(init=False)
+    def match_cfx_entry_without_cache(self, cfx_entry: ChampFXEntry) -> bool:
+        return NotImplemented
 
-    def __post_init__(self) -> None:
+    def match_cfx_entry_with_cache(self, cfx_entry: ChampFXEntry) -> bool:
+        if cfx_entry in self._cache_result_by_cfx:
+            self._number_of_results_obtained_by_cache_usage += 1
+            return self._cache_result_by_cfx[cfx_entry]
+
+        new_result_computed = self.match_cfx_entry_without_cache(cfx_entry)
+        self._cache_result_by_cfx[cfx_entry] = new_result_computed
+        return new_result_computed
+
+
+class ChampFXWhitelistFilter(ChampFXtSaticCriteriaFilter):
+    def __init__(
+        self,
+        cfx_to_treat_whitelist_text_file_full_path: Optional[str] = None,
+        cfx_to_treat_ids: Optional[Set[str]] = None,
+    ):
+        super().__init__()
+        self._cfx_to_treat_whitelist_text_file_full_path: Optional[str] = cfx_to_treat_whitelist_text_file_full_path
+        self._cfx_to_treat_whitelist_ids: Set[str] = set()
+
+        if self._cfx_to_treat_whitelist_text_file_full_path is not None:
+            self.label: str = f"list {self._cfx_to_treat_whitelist_text_file_full_path.replace("/", " ").replace("\\", " ")}"
+            self._cfx_to_treat_whitelist_ids = set()
+            with logger_config.stopwatch_with_label(f"Load CfxUserLibrary {cfx_to_treat_whitelist_text_file_full_path}"):
+                with open(self._cfx_to_treat_whitelist_text_file_full_path, "r", encoding="utf-8") as cfx_known_by_cstmr_text_file:
+                    self._cfx_to_treat_whitelist_ids = [line.strip() for line in cfx_known_by_cstmr_text_file.readlines()]
+            logger_config.print_and_log_info(f"Number of cfx_to_treat_whitelist_ids:{len(self._cfx_to_treat_whitelist_ids)}")
+
+        elif cfx_to_treat_ids:
+            self.label: str = f"list {len(cfx_to_treat_ids)} white listed"  # type: ignore[no-redef]
+            self._cfx_to_treat_whitelist_ids = cfx_to_treat_ids
+
+    def match_cfx_entry_without_cache(self, cfx_entry: ChampFXEntry) -> bool:
+        return cfx_entry.cfx_id in self._cfx_to_treat_whitelist_ids
+
+
+class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter):
+
+    def __init__(self, field_name: str, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
+        super().__init__()
+        self.field_name = field_name
+        self.field_accepted_values = field_accepted_values
+        self.field_forbidden_values = field_forbidden_values
+
         label: str = f"{self.field_name}"
 
         if self.field_accepted_values:
@@ -467,12 +508,12 @@ class ChampFXFieldFilter:
             label = f"{label} without {self.field_forbidden_values}"
         self.label = label
 
-    def match_cfx_entry(self, cfx_entry: ChampFXEntry) -> bool:
+    def match_cfx_entry_without_cache(self, cfx_entry: ChampFXEntry) -> bool:
         attribute_entry = getattr(cfx_entry, self.field_name)
         if self.field_accepted_values is not None:
             return attribute_entry in self.field_accepted_values
         else:
-            return attribute_entry not in self.field_forbidden_values
+            return attribute_entry not in cast(List[Any], self.field_forbidden_values)
 
 
 @dataclass
@@ -514,14 +555,11 @@ class ChampFxFilter:
         self._field_filters: List[ChampFXFieldFilter] = field_filters
         self._cfx_to_treat_whitelist_text_file_full_path: Optional[str] = cfx_to_treat_whitelist_text_file_full_path
         self._cfx_to_treat_whitelist_ids: Optional[Set[str]] = None
-        self.label: str = label
+        self.label: str = label if label is not None else ""
 
-        if cfx_to_treat_whitelist_text_file_full_path is not None:
-            self._cfx_to_treat_whitelist_ids = set()
-            with logger_config.stopwatch_with_label(f"Load CfxUserLibrary {cfx_to_treat_whitelist_text_file_full_path}"):
-                with open(cfx_to_treat_whitelist_text_file_full_path, "r", encoding="utf-8") as cfx_known_by_cstmr_text_file:
-                    self._cfx_to_treat_whitelist_ids = [line.strip() for line in cfx_known_by_cstmr_text_file.readlines()]
-            logger_config.print_and_log_info(f"Number of cfx_to_treat_whitelist_ids:{len(self._cfx_to_treat_whitelist_ids)}")
+        self._white_list_filter: Optional[ChampFXWhitelistFilter] = (
+            ChampFXWhitelistFilter(cfx_to_treat_whitelist_text_file_full_path) if cfx_to_treat_whitelist_text_file_full_path is not None else None
+        )
 
         self._compute_label()
 
@@ -538,18 +576,19 @@ class ChampFxFilter:
         if len(self._field_filters) > 0:
             label = f"{label} fields {[field_filter.label for field_filter in self._field_filters]}"
 
-        if self._cfx_to_treat_whitelist_text_file_full_path:
-            label = f"{label} list {self._cfx_to_treat_whitelist_text_file_full_path.replace("/", " ").replace("\\", " ")}"
+        if self._white_list_filter:
+            label = f"{label} list {self._white_list_filter.label}"
 
         self.label = label
 
     def match_cfx_entry(self, cfx_entry: ChampFXEntry, timestamp: Optional[datetime] = None) -> bool:
 
-        if self._cfx_to_treat_whitelist_ids is not None and cfx_entry.cfx_id not in self._cfx_to_treat_whitelist_ids:
-            return False
+        if self._white_list_filter is not None:
+            if not self._white_list_filter.match_cfx_entry_with_cache(cfx_entry=cfx_entry):
+                return False
 
         for field_filter in self._field_filters:
-            if not field_filter.match_cfx_entry(cfx_entry=cfx_entry):
+            if not field_filter.match_cfx_entry_with_cache(cfx_entry=cfx_entry):
                 return False
 
         if self.role_depending_on_date_filter:
