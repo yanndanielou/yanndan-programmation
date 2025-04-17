@@ -19,19 +19,19 @@ import role
 import cfx_extended_history
 
 
-class CfxProject(enums_utils.NameBasedReprEnum):
+class CfxProject(enums_utils.NameBasedEnum):
     FR_NEXTEO = auto()
     ATSP = auto()
 
 
-class SecurityRelevant(enums_utils.NameBasedReprEnum):
+class SecurityRelevant(enums_utils.NameBasedEnum):
     Yes = auto()
     No = auto()
     Mitigated = auto()
     Undefined = auto()
 
 
-class ActionType(enums_utils.NameBasedReprEnum):
+class ActionType(enums_utils.NameBasedEnum):
     Import = auto()
     ReSubmit = auto()
     Submit = auto()
@@ -45,7 +45,7 @@ class ActionType(enums_utils.NameBasedReprEnum):
     Close = auto()
 
 
-class State(enums_utils.NameBasedReprIntEnum):
+class State(enums_utils.NameBasedIntEnum):
     NotCreatedYet = auto()
     no_value = auto()
     Submitted = auto()
@@ -514,7 +514,7 @@ class ChampFxFilter:
             with logger_config.stopwatch_with_label(f"Load CfxUserLibrary {cfx_to_treat_whitelist_text_file_full_path}"):
                 with open(cfx_to_treat_whitelist_text_file_full_path, "r", encoding="utf-8") as cfx_known_by_cstmr_text_file:
                     self._cfx_to_treat_whitelist_ids = [line.strip() for line in cfx_known_by_cstmr_text_file.readlines()]
-            logger_config.print_and_log_info(f"Number of cfx_known_by_cstmr_ids:{len(self._cfx_to_treat_whitelist_ids)}")
+            logger_config.print_and_log_info(f"Number of cfx_to_treat_whitelist_ids:{len(self._cfx_to_treat_whitelist_ids)}")
 
         self._compute_label()
 

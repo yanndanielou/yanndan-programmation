@@ -13,7 +13,7 @@ import role_data
 from common import string_utils
 
 
-class SubSystem(enums_utils.NameBasedReprEnum):
+class SubSystem(enums_utils.NameBasedEnum):
     SW = auto()
     ATS = auto()
     SSI = auto()
