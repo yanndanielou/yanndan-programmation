@@ -5,24 +5,21 @@ import pytest
 from common import file_name_utils
 
 
+file_extension_test_data = [
+    ("http://vevoxtv.top:2103/movie/412910643GRB/dn5QFp3/24950.mp4", ".mp4"),
+    ("http://vevoxtv.top:2103/series/412910643GRB/dn5QFp3/57996.mkv", ".mkv"),
+    ("http://vevoxtv.top:2103/412910643GRB/dn5QFp3/37744", None),
+]
+
+
 class TestFileExtension:
 
-    def test_full_path(self) -> None:
+    @pytest.mark.parametrize(
+        "full_path, expected_extension",
+        file_extension_test_data,
+    )
+    def test_full_path(self, full_path: str, expected_extension: str) -> None:
         assert (
-            file_name_utils.file_extension_from_full_path(
-                "http://vevoxtv.top:2103/movie/412910643GRB/dn5QFp3/24950.mp4"
-            )
-            == ".mp4"
-        )
-        assert (
-            file_name_utils.file_extension_from_full_path(
-                "http://vevoxtv.top:2103/series/412910643GRB/dn5QFp3/57996.mkv"
-            )
-            == ".mkv"
-        )
-        assert (
-            file_name_utils.file_extension_from_full_path(
-                "http://vevoxtv.top:2103/412910643GRB/dn5QFp3/37744"
-            )
-            is not None
+            file_name_utils.file_extension_from_full_path(full_path)
+            == expected_extension
         )
