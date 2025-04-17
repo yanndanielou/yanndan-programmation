@@ -115,7 +115,10 @@ class ChampFXLibrary:
         # all_current_owner_modifications_pickle_file_full_path: str = "Input/all_current_owner_modifications.pkl",
         # all_current_owner_modifications_per_cfx_pickle_file_full_path: str = "Input/all_current_owner_modifications_per_cfx.pkl",
         champfx_filter: Optional["ChampFxFilter"] = None,
+        label: Optional[str] = None,
     ):
+
+        self.label = label if label is not None else "" if label is None and champfx_filter is None else champfx_filter.label
 
         self._champfx_filter: Optional["ChampFxFilter"] = champfx_filter
         # self._all_current_owner_modifications_pickle_file_full_path = all_current_owner_modifications_pickle_file_full_path
@@ -536,7 +539,7 @@ class ChampFxFilter:
             label = f"{label} fields {[field_filter.label for field_filter in self._field_filters]}"
 
         if self._cfx_to_treat_whitelist_text_file_full_path:
-            label = f"{label} list {self._cfx_to_treat_whitelist_text_file_full_path}"
+            label = f"{label} list {self._cfx_to_treat_whitelist_text_file_full_path.replace("/", " ").replace("\\", " ")}"
 
         self.label = label
 
