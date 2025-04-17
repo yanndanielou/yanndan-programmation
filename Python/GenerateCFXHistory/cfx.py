@@ -9,8 +9,9 @@ from dateutil import relativedelta
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Set, Any, cast
 
-from enum import Enum, auto, IntEnum
+from enum import auto
 
+from common import enums_utils
 from logger import logger_config
 
 import utils
@@ -18,19 +19,19 @@ import role
 import cfx_extended_history
 
 
-class CfxProject(Enum):
+class CfxProject(enums_utils.NameBasedReprEnum):
     FR_NEXTEO = auto()
     ATSP = auto()
 
 
-class SecurityRelevant(Enum):
+class SecurityRelevant(enums_utils.NameBasedReprEnum):
     Yes = auto()
     No = auto()
     Mitigated = auto()
     Undefined = auto()
 
 
-class ActionType(Enum):
+class ActionType(enums_utils.NameBasedReprEnum):
     Import = auto()
     ReSubmit = auto()
     Submit = auto()
@@ -44,7 +45,7 @@ class ActionType(Enum):
     Close = auto()
 
 
-class State(IntEnum):
+class State(enums_utils.NameBasedReprIntEnum):
     NotCreatedYet = auto()
     no_value = auto()
     Submitted = auto()
@@ -506,7 +507,7 @@ class ChampFxFilter:
         self._field_filters: List[ChampFXFieldFilter] = field_filters
         self._cfx_to_treat_whitelist_text_file_full_path: Optional[str] = cfx_to_treat_whitelist_text_file_full_path
         self._cfx_to_treat_whitelist_ids: Optional[Set[str]] = None
-        self.label = label
+        self.label: str = label
 
         if cfx_to_treat_whitelist_text_file_full_path is not None:
             self._cfx_to_treat_whitelist_ids = set()
@@ -531,7 +532,7 @@ class ChampFxFilter:
             label = f"{label} fields {[field_filter.label for field_filter in self._field_filters]}"
 
         if self._cfx_to_treat_whitelist_text_file_full_path:
-            label = f"{label} only cfx among {self._cfx_to_treat_whitelist_text_file_full_path}"
+            label = f"{label} list {self._cfx_to_treat_whitelist_text_file_full_path}"
 
         self.label = label
 
