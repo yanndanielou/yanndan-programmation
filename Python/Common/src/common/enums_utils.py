@@ -1,6 +1,11 @@
-from enum import Enum
+from enum import Enum, IntEnum
 
 
-class EnumWithRepr(Enum):
+class NameBasedReprEnum(Enum):
+    def __repr__(self) -> str:
+        return self.name
+
+
+class NameBasedReprIntEnum(IntEnum):
     def __repr__(self) -> str:
         return self.name
