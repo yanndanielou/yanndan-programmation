@@ -11,10 +11,6 @@ import role
 @pytest.fixture(scope="session")
 def create_light_champfx_library() -> cfx.ChampFXLibrary:
     champfx_library = cfx.ChampFXLibrary(
-        champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
-        champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
-        # all_current_owner_modifications_pickle_file_full_path="Input/all_current_owner_modifications.pkl",
-        # all_current_owner_modifications_per_cfx_pickle_file_full_path="Input/all_current_owner_modifications_per_cfx.pkl",
         champfx_filter=cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input_for_Tests/sample_cfx_ids.txt"),
     )
     return champfx_library
@@ -164,8 +160,6 @@ class TestCurrentOwner:
     class TestChampFxFilter:
         def test_next_project_field_filter(self) -> None:
             nexteo_only_champfx_library = cfx.ChampFXLibrary(
-                champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
-                champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
                 champfx_filter=cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.FR_NEXTEO])]),
             )
 
@@ -201,8 +195,6 @@ class TestCurrentOwner:
 
         def test_security_relevant_only_field_filter(self) -> None:
             security_relevant_only_champfx_library = cfx.ChampFXLibrary(
-                champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
-                champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
                 champfx_filter=cfx.ChampFxFilter(
                     field_filters=cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.Yes, cfx.SecurityRelevant.Mitigated])
                 ),
