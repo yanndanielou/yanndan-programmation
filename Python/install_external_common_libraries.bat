@@ -1,5 +1,6 @@
 @CALL SET_PYTHON_HOME.bat
 
+@call :INSTALL_PYTHON_LIB stubs
 @call :INSTALL_PYTHON_LIB selenium
 @call :INSTALL_PYTHON_LIB bs4
 @call :INSTALL_PYTHON_LIB mplcursors
