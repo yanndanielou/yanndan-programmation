@@ -196,7 +196,7 @@ class TestCurrentOwner:
         def test_security_relevant_only_field_filter(self) -> None:
             security_relevant_only_champfx_library = cfx.ChampFXLibrary(
                 champfx_filter=cfx.ChampFxFilter(
-                    field_filters=cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.Yes, cfx.SecurityRelevant.Mitigated])
+                    field_filters=[cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.Yes, cfx.SecurityRelevant.Mitigated])]
                 ),
             )
 
