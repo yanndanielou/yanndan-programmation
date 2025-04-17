@@ -84,9 +84,12 @@ def produce_results_and_displays(
     display_with_cumulative_eras: bool,
     create_html_file: bool,
     library_label: str,
-    cfx_filter: Optional[cfx.ChampFxFilter] = None,
+    cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
     filter_enforced_label: Optional[str] = None,
 ) -> None:
+
+    if cfx_filters is None:
+        cfx_filters = []
 
     timestamps_to_display_data: List[datetime.datetime] = cfx_library.get_tenth_days_since_earliest_submit_date()
 
@@ -95,8 +98,8 @@ def produce_results_and_displays(
     at_least_one_cfx_matching_filter_has_been_found = False
 
     if filter_enforced_label is None:
-        if cfx_filter:
-            filter_enforced_label = cfx_filter.label
+        if len(cfx_filters) > 0:
+            filter_enforced_label = "".join([filter.label for filter in cfx_filters])
         else:
             filter_enforced_label = "All"
 
@@ -109,7 +112,8 @@ def produce_results_and_displays(
         for entry in cfx_library.get_all_cfx():
             state = entry.get_state_at_date(timestamp_to_display_data)
 
-            if cfx_filter is None or cfx_filter.match_cfx_entry(entry, timestamp_to_display_data):
+            match_all_filters = True if cfx_filters is None else all(cfx_filter.match_cfx_entry(entry, timestamp_to_display_data) for cfx_filter in cfx_filters)
+            if match_all_filters:
                 all_cfx_ids_that_have_matched.add(entry.cfx_id)
 
                 if state != cfx.State.NotCreatedYet:
@@ -131,22 +135,6 @@ def produce_results_and_displays(
     if not at_least_one_cfx_matching_filter_has_been_found:
         logger_config.print_and_log_info(f"No data for library {library_label} filters {filter_enforced_label}")
         return
-
-    # Determine the states that are present in the data
-    """present_states_set: Set[cfx.State] = set()
-    for count_by_state in counts_by_state_per_month:
-        present_states_set.update(count_by_state.keys())
-
-
-
-    present_states_ordered_list: List[cfx.State] = sorted(list(present_states_set))
-
-    # Prepare cumulative counts for stacked area plot and Excel output
-
-    cumulative_counts: Dict[cfx.State, List[int]] = {state: [] for state in present_states_ordered_list}
-    for count_by_state in counts_by_state_per_month:
-        for state in present_states_ordered_list:
-            cumulative_counts[state].append(count_by_state[state])"""
 
     if create_excel_file:
 
@@ -236,8 +224,17 @@ def produce_displays_and_create_html(
 
 
 def produce_results_and_displays_for_libary(
-    cfx_library: cfx.ChampFXLibrary, output_directory_name: str, library_label: str, for_global: bool, for_each_subsystem: bool, for_each_current_owner_per_date: bool
+    cfx_library: cfx.ChampFXLibrary,
+    output_directory_name: str,
+    library_label: str,
+    for_global: bool,
+    for_each_subsystem: bool,
+    for_each_current_owner_per_date: bool,
+    cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
 ) -> None:
+
+    if cfx_filters is None:
+        cfx_filters = []
 
     if for_global:
         produce_results_and_displays(
@@ -248,6 +245,7 @@ def produce_results_and_displays_for_libary(
             display_with_cumulative_eras=True,
             create_html_file=True,
             library_label=library_label,
+            cfx_filters=cfx_filters,
             filter_enforced_label="All",
         )
 
@@ -263,12 +261,13 @@ def produce_results_and_displays_for_libary(
                     display_with_cumulative_eras=True,
                     create_html_file=True,
                     library_label=library_label,
-                    cfx_filter=cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem])),
+                    cfx_filters=cfx_filters + [cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))],
                 )
 
     if for_each_subsystem:
         for subsystem in role.SubSystem:
             with logger_config.stopwatch_with_label(f"{library_label} produce_results_and_displays for {subsystem.name}"):
+
                 produce_results_and_displays(
                     cfx_library=cfx_library,
                     output_directory_name=output_directory_name,
@@ -278,7 +277,7 @@ def produce_results_and_displays_for_libary(
                     display_with_cumulative_eras=True,
                     create_html_file=True,
                     library_label=library_label,
-                    cfx_filter=cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[subsystem])]),
+                    cfx_filters=cfx_filters + [cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[subsystem])])],
                 )
 
 
