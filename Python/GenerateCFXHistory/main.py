@@ -35,6 +35,8 @@ def main() -> None:
                 cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[role.SubSystem.ADONEM])]),
                 cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_security_relevant", field_forbidden_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])]),
             ],
+            create_excel_file=True,
+            create_html_file=True,
         )
         """
         ui_and_results_generation.produce_results_and_displays_for_libary(
