@@ -35,9 +35,9 @@ state_colors = {
 }
 
 
-class ActionType(enums_utils.NameBasedEnum):
+class RepresentationType(enums_utils.NameBasedEnum):
     VALUE = auto()
-    VALUE = auto()
+    CUMULATIVE_ERAS = auto()
 
 
 class OneTimestampResult:
@@ -152,7 +152,7 @@ def produce_results_and_displays(
                 cfx_library=cfx_library,
                 use_cumulative=True,
                 all_results_to_display=all_results_to_display,
-                output_html_file_prefix=f"{generic_output_files_path_without_suffix_and_extension}_cumulative_eras" if create_html_file else None,
+                create_html_file=create_html_file,
                 window_title=f"Filter {generation_label}, CFX States Over Time (Cumulative)",
                 generation_label=generation_label,
                 generation_label_for_valid_file_name=generation_label_for_valid_file_name,
@@ -163,7 +163,7 @@ def produce_results_and_displays(
                 cfx_library=cfx_library,
                 use_cumulative=False,
                 all_results_to_display=all_results_to_display,
-                output_html_file_prefix=f"{generic_output_files_path_without_suffix_and_extension}_values" if create_html_file else None,
+                create_html_file=create_html_file,
                 window_title=f"Filter {generation_label}, CFX States Over Time (Values)",
                 generation_label=generation_label,
                 generation_label_for_valid_file_name=generation_label_for_valid_file_name,
@@ -185,7 +185,7 @@ def produce_displays_and_create_html(
     cfx_library: cfx.ChampFXLibrary,
     use_cumulative: bool,
     all_results_to_display: AllResultsToDisplay,
-    output_html_file_prefix: str,
+    create_html_file: bool,
     window_title: str,
     generation_label: str,
     generation_label_for_valid_file_name: str,
@@ -217,18 +217,19 @@ def produce_displays_and_create_html(
 
     ax.set_xlabel("Month")
     ax.set_ylabel("Number of CFX Entries")
-    ax.set_title(f"{cfx_library.label} All CFX States Over Time" if generation_label is None else f"{cfx_library.label} {generation_label} CFX States Over Time")
+    ax.set_title(f"{generation_label} CFX States Over Time")
     ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
 
-    # Save the plot to an HTML file
-    html_content = mpld3.fig_to_html(fig)
-    output_html_file = generation_label_for_valid_file_name + ".html"
+    if create_html_file:
+        # Save the plot to an HTML file
+        html_content = mpld3.fig_to_html(fig)
+        output_html_file = generation_label_for_valid_file_name + ".html"
 
-    with logger_config.stopwatch_with_label(f"html {output_html_file} creation"):
-        with open(output_html_file, "w", encoding="utf8") as html_file:
-            html_file.write(html_content)
+        with logger_config.stopwatch_with_label(f"html {output_html_file} creation"):
+            with open(output_html_file, "w", encoding="utf8") as html_file:
+                html_file.write(html_content)
 
 
 def produce_results_and_displays_for_libary(
@@ -238,6 +239,8 @@ def produce_results_and_displays_for_libary(
     for_each_subsystem: bool,
     for_each_current_owner_per_date: bool,
     cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
+    create_html_file: bool = True,
+    create_excel_file: bool = True,
 ) -> None:
 
     if cfx_filters is None:
@@ -247,10 +250,10 @@ def produce_results_and_displays_for_libary(
         produce_results_and_displays(
             cfx_library=cfx_library,
             output_directory_name=output_directory_name,
-            create_excel_file=True,
+            create_excel_file=create_excel_file,
             display_without_cumulative_eras=True,
             display_with_cumulative_eras=True,
-            create_html_file=True,
+            create_html_file=create_html_file,
             cfx_filters=cfx_filters,
         )
 
@@ -261,10 +264,10 @@ def produce_results_and_displays_for_libary(
                     cfx_library=cfx_library,
                     output_directory_name=output_directory_name,
                     # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
-                    create_excel_file=False,
+                    create_excel_file=create_excel_file,
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
-                    create_html_file=True,
+                    create_html_file=create_html_file,
                     cfx_filters=cfx_filters + [cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))],
                 )
 
@@ -276,10 +279,10 @@ def produce_results_and_displays_for_libary(
                     cfx_library=cfx_library,
                     output_directory_name=output_directory_name,
                     # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
-                    create_excel_file=False,
+                    create_excel_file=create_excel_file,
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
-                    create_html_file=True,
+                    create_html_file=create_html_file,
                     cfx_filters=cfx_filters + [cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[subsystem])])],
                 )
 
