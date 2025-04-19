@@ -573,7 +573,7 @@ class ChampFxFilter:
             label = ""
 
         if self.role_depending_on_date_filter:
-            label = f"{label} role {self.role_depending_on_date_filter.roles_at_date_allowed} on date"
+            label = f"{label} role {self.role_depending_on_date_filter.roles_at_date_allowed} per date"
 
         if len(self._field_filters) > 0:
             label = f"{label} fields {[field_filter.label for field_filter in self._field_filters]}"

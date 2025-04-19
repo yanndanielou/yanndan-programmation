@@ -55,8 +55,6 @@ class OneTimestampResult:
     def consolidate(self) -> None:
         all_states_found = list(self.count_by_state.keys())
         self.all_results_to_display.present_states.update(all_states_found)
-        all_states_found_sorted = sorted(all_states_found)
-        # self.compute_cumulated_count()
 
 
 class AllResultsToDisplay:
@@ -110,28 +108,30 @@ def produce_results_and_displays(
 
     all_cfx_ids_that_have_matched: set[str] = set()
 
-    # Gather state counts for each month
-    for timestamp_to_display_data in timestamps_to_display_data:
-        timestamp_results = OneTimestampResult(timestamp=timestamp_to_display_data, all_results_to_display=all_results_to_display)
-        count_by_state: dict[cfx.State, int] = defaultdict(int)
-        for entry in cfx_library.get_all_cfx():
-            state = entry.get_state_at_date(timestamp_to_display_data)
+    with logger_config.stopwatch_with_label(f"{generation_label} Gather state counts for each month"):
+        for timestamp_to_display_data in timestamps_to_display_data:
+            timestamp_results = OneTimestampResult(timestamp=timestamp_to_display_data, all_results_to_display=all_results_to_display)
+            count_by_state: dict[cfx.State, int] = defaultdict(int)
+            for entry in cfx_library.get_all_cfx():
+                state = entry.get_state_at_date(timestamp_to_display_data)
 
-            match_all_filters = True if cfx_filters is None else all(cfx_filter.match_cfx_entry(entry, timestamp_to_display_data) for cfx_filter in cfx_filters)
-            if match_all_filters:
-                all_cfx_ids_that_have_matched.add(entry.cfx_id)
+                match_all_filters = True if cfx_filters is None else all(cfx_filter.match_cfx_entry(entry, timestamp_to_display_data) for cfx_filter in cfx_filters)
+                if match_all_filters:
+                    all_cfx_ids_that_have_matched.add(entry.cfx_id)
 
-                if state != cfx.State.NOT_CREATED_YET:
-                    count_by_state[state] += 1
-                    timestamp_results.add_one_result_for_state(state=state)
-                    at_least_one_cfx_matching_filter_has_been_found = True
+                    if state != cfx.State.NOT_CREATED_YET:
+                        count_by_state[state] += 1
+                        timestamp_results.add_one_result_for_state(state=state)
+                        at_least_one_cfx_matching_filter_has_been_found = True
 
-        if at_least_one_cfx_matching_filter_has_been_found:
-            all_results_to_display.timestamp_results.append(timestamp_results)
+            if at_least_one_cfx_matching_filter_has_been_found:
+                all_results_to_display.timestamp_results.append(timestamp_results)
 
-        timestamp_results.consolidate()
+            with logger_config.stopwatch_alert_if_exceeds_duration("consolidate", duration_threshold_to_alert_info_in_s=0.1):
+                timestamp_results.consolidate()
 
-    all_results_to_display.compute_cumulative_counts()
+    with logger_config.stopwatch_alert_if_exceeds_duration("compute_cumulative_counts", duration_threshold_to_alert_info_in_s=0.1):
+        all_results_to_display.compute_cumulative_counts()
 
     generation_label_for_valid_file_name = string_utils.format_filename(generation_label)
     generic_output_files_path_without_suffix_and_extension = f"{output_directory_name}/{generation_label_for_valid_file_name}"
@@ -149,6 +149,7 @@ def produce_results_and_displays(
     if display_with_cumulative_eras:
         with logger_config.stopwatch_with_label(f"produce_displays cumulative,  {generation_label}"):
             produce_displays_and_create_html(
+                output_directory_name=output_directory_name,
                 cfx_library=cfx_library,
                 use_cumulative=True,
                 all_results_to_display=all_results_to_display,
@@ -160,6 +161,7 @@ def produce_results_and_displays(
     if display_without_cumulative_eras:
         with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {generation_label} library {cfx_library.label}"):
             produce_displays_and_create_html(
+                output_directory_name=output_directory_name,
                 cfx_library=cfx_library,
                 use_cumulative=False,
                 all_results_to_display=all_results_to_display,
@@ -189,6 +191,7 @@ def produce_displays_and_create_html(
     window_title: str,
     generation_label: str,
     generation_label_for_valid_file_name: str,
+    output_directory_name: str,
 ) -> None:
     fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -221,11 +224,12 @@ def produce_displays_and_create_html(
     ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
+    plt.show(block=False)
 
     if create_html_file:
         # Save the plot to an HTML file
         html_content = mpld3.fig_to_html(fig)
-        output_html_file = generation_label_for_valid_file_name + ".html"
+        output_html_file = output_directory_name + "/" + generation_label_for_valid_file_name + ".html"
 
         with logger_config.stopwatch_with_label(f"html {output_html_file} creation"):
             with open(output_html_file, "w", encoding="utf8") as html_file:
