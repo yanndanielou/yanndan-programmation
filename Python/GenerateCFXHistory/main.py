@@ -20,7 +20,7 @@ def main() -> None:
         if not os.path.exists(output_directory_name):
             os.mkdir(output_directory_name)
 
-        all_champfx_library = cfx.ChampFXLibrary()
+        # all_champfx_library = cfx.ChampFXLibrary()
         next_usine_and_site_champfx_library = cfx.ChampFXLibrary(
             champfx_filter=cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input/CFX_usine_site.txt"),
         )
@@ -33,9 +33,10 @@ def main() -> None:
             for_each_current_owner_per_date=False,
             cfx_filters=[
                 cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[role.SubSystem.ADONEM])]),
-                cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_security_relevant", field_forbidden_values=[cfx.SecurityRelevant.Yes, cfx.SecurityRelevant.Mitigated])]),
+                cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_security_relevant", field_forbidden_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])]),
             ],
         )
+        """
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=next_usine_and_site_champfx_library,
             output_directory_name=output_directory_name,
@@ -67,7 +68,7 @@ def main() -> None:
             cfx_filters=[
                 cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[role.SubSystem.ADONEM])]),
             ],
-        )
+        )"""
 
         """
         ui_and_results_generation.produce_results_and_displays_for_libary(
