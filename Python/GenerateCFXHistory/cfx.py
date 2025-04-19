@@ -27,38 +27,38 @@ class CfxProject(enums_utils.NameBasedEnum):
 
 
 class SecurityRelevant(enums_utils.NameBasedEnum):
-    Yes = auto()
-    No = auto()
-    Mitigated = auto()
-    Undefined = auto()
+    YES = auto()
+    NO = auto()
+    MITIGATED = auto()
+    UNDEFINED = auto()
 
 
 class ActionType(enums_utils.NameBasedEnum):
-    Import = auto()
-    ReSubmit = auto()
-    Submit = auto()
-    Assign = auto()
-    Analyse = auto()
-    Postpone = auto()
-    Reject = auto()
-    Resolve = auto()
-    Verify = auto()
-    Validate = auto()
-    Close = auto()
+    IMPORT = auto()
+    RESUBMIT = auto()
+    SUBMIT = auto()
+    ASSIGN = auto()
+    ANALYSE = auto()
+    POSTPONE = auto()
+    REJECT = auto()
+    RESOLVE = auto()
+    VERIFY = auto()
+    VALIDATE = auto()
+    CLOSE = auto()
 
 
 class State(enums_utils.NameBasedIntEnum):
-    NotCreatedYet = auto()
-    no_value = auto()
-    Submitted = auto()
-    Analysed = auto()
-    Assigned = auto()
-    Resolved = auto()
-    Rejected = auto()
-    Postponed = auto()
-    Verified = auto()
-    Validated = auto()
-    Closed = auto()
+    NOT_CREATED_YET = auto()
+    NO_VALUE = auto()
+    SUBMITTED = auto()
+    ANALYSED = auto()
+    ASSIGNED = auto()
+    RESOLVED = auto()
+    REJECTED = auto()
+    POSTPONED = auto()
+    VERIFIED = auto()
+    VALIDATED = auto()
+    CLOSED = auto()
 
 
 @dataclass
@@ -184,13 +184,13 @@ class ChampFXLibrary:
 
                 cfx_request = self.get_cfx_by_id(cfx_id)
                 history_raw_old_state: str = row["history.old_state"]
-                old_state: State = State[history_raw_old_state]
+                old_state: State = State[history_raw_old_state.upper()]
                 history_raw_new_state: str = row["history.new_state"]
-                new_state: State = State[history_raw_new_state]
+                new_state: State = State[history_raw_new_state.upper()]
                 history_raw_action_timestamp_str = row["history.action_timestamp"]
                 action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
                 history_raw_action_name: str = row["history.action_name"]
-                history_action = ActionType[history_raw_action_name]
+                history_action = ActionType[history_raw_action_name.upper()]
                 change_state_actions_created.append(history_action)
 
                 change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
@@ -260,7 +260,7 @@ class ChampFXLibrary:
         return result
 
     def get_earliest_submit_date(self) -> datetime:
-        earliest_date = min(entry.get_oldest_change_action_by_new_state(State.Submitted).timestamp for entry in self.get_all_cfx())
+        earliest_date = min(entry.get_oldest_change_action_by_new_state(State.SUBMITTED).timestamp for entry in self.get_all_cfx())
         return earliest_date
 
     def get_tenth_days_since_earliest_submit_date(self) -> List[datetime]:
@@ -306,7 +306,9 @@ class ChampFXEntryBuilder:
 
     @staticmethod
     def convert_champfx_security_relevant(raw_security_relevant: str) -> SecurityRelevant:
-        security_relevant: SecurityRelevant = SecurityRelevant.Undefined if type(raw_security_relevant) is not str and math.isnan(raw_security_relevant) else SecurityRelevant[raw_security_relevant]
+        security_relevant: SecurityRelevant = (
+            SecurityRelevant.UNDEFINED if type(raw_security_relevant) is not str and math.isnan(raw_security_relevant) else SecurityRelevant[raw_security_relevant.uper()]
+        )
         return security_relevant
 
     @staticmethod
@@ -320,11 +322,11 @@ class ChampFXEntryBuilder:
     @staticmethod
     def build_with_row(row: pd.Series) -> "ChampFXEntry":
         cfx_id = row["CFXID"]
-        raw_state: State = State[(row["State"])]
+        raw_state: State = State[(row["State"].upper())]
         fixed_implemented_in: str = row["FixedImplementedIn"]
         current_owner_raw: str = row["CurrentOwner.FullName"]
         submit_date_raw: str = row["SubmitDate"]
-        raw_project: str = row["Project"]
+        raw_project: str = cast(str, row["Project"])
         cfx_project = CfxProject[raw_project]
         raw_safety_relevant: str = row["SafetyRelevant"]
         safety_relevant: Optional[bool] = ChampFXEntryBuilder.to_optional_boolean(raw_safety_relevant)
@@ -443,7 +445,7 @@ class ChampFXEntry:
 
         newest_change_action_that_is_before_date = self.get_newest_change_action_that_is_before_date(reference_date)
         if newest_change_action_that_is_before_date is None:
-            return State.NotCreatedYet
+            return State.NOT_CREATED_YET
         else:
             return newest_change_action_that_is_before_date.new_state
 
