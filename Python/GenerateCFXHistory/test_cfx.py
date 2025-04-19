@@ -18,7 +18,7 @@ def create_light_champfx_library() -> cfx.ChampFXLibrary:
 
 @pytest.fixture(scope="session")
 def get_cfx_closed_status_according_to_date_today(create_light_champfx_library: cfx.ChampFXLibrary) -> List[cfx.ChampFXEntry]:
-    return create_light_champfx_library.get_cfx_by_state_at_date(reference_date=datetime.now().replace(hour=23, minute=59, second=59, microsecond=0, tzinfo=None))[cfx.State.Closed]
+    return create_light_champfx_library.get_cfx_by_state_at_date(reference_date=datetime.now().replace(hour=23, minute=59, second=59, microsecond=0, tzinfo=None))[cfx.State.CLOSED]
 
 
 class TestConstruction:
@@ -34,7 +34,7 @@ class TestStatus:
 
     def test_there_are_cfx_current_status_closed(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library
-        cfx_closed_status = list(filter(lambda champfx: champfx.raw_state == cfx.State.Closed, champfx_library.get_all_cfx()))
+        cfx_closed_status = list(filter(lambda champfx: champfx.raw_state == cfx.State.CLOSED, champfx_library.get_all_cfx()))
         assert len(cfx_closed_status) > 0
 
     def test_there_are_cfx_closed_by_date(self, get_cfx_closed_status_according_to_date_today: List[cfx.ChampFXEntry]) -> None:
@@ -47,7 +47,7 @@ class TestStatus:
         champfx_library = create_light_champfx_library
         cfx_closed_status_according_to_date_today = get_cfx_closed_status_according_to_date_today
 
-        cfx_closed_status = list(filter(lambda champfx: champfx.raw_state == cfx.State.Closed, champfx_library.get_all_cfx()))
+        cfx_closed_status = list(filter(lambda champfx: champfx.raw_state == cfx.State.CLOSED, champfx_library.get_all_cfx()))
 
         cfx_closed_by_status_but_not_by_date = list(set(cfx_closed_status) - set(cfx_closed_status_according_to_date_today))
         assert len(cfx_closed_by_status_but_not_by_date) == 0
@@ -58,7 +58,7 @@ class TestStatus:
         cfx_closed_status_according_to_date_today = get_cfx_closed_status_according_to_date_today
         assert len(cfx_closed_status_according_to_date_today) > 0
 
-        cfx_closed_status = list(filter(lambda champfx: champfx.raw_state == cfx.State.Closed, champfx_library.get_all_cfx()))
+        cfx_closed_status = list(filter(lambda champfx: champfx.raw_state == cfx.State.CLOSED, champfx_library.get_all_cfx()))
 
         cfx_closed_by_date_but_not_by_status = list(set(cfx_closed_status_according_to_date_today) - set(cfx_closed_status))
         assert len(cfx_closed_by_date_but_not_by_status) == 0, f"cfx_closed_by_date_but_not_by_status found: {cfx_closed_by_date_but_not_by_status}"
@@ -96,15 +96,15 @@ class TestStatus:
         day_after_validation = datetime(year=int(2022), month=int(8), day=int(17))
 
         cfx_entry = champfx_library.get_cfx_by_id("CFX00427036")
-        assert cfx_entry.get_state_at_date(day_before_first_opening) == cfx.State.NotCreatedYet
-        assert cfx_entry.get_state_at_date(day_after_first_analyzis) == cfx.State.Analysed
-        assert cfx_entry.get_state_at_date(day_before_second_opening_first_resubmit) == cfx.State.Resolved
-        assert cfx_entry.get_state_at_date(day_after_second_opening_first_resubmit) == cfx.State.Submitted
-        assert cfx_entry.get_state_at_date(day_before_verification) == cfx.State.Resolved
-        assert cfx_entry.get_state_at_date(day_after_verification) == cfx.State.Verified
-        assert cfx_entry.get_state_at_date(day_before_validation) == cfx.State.Verified
-        assert cfx_entry.get_state_at_date(day_after_validation) == cfx.State.Validated
-        assert cfx_entry.get_state_at_date(datetime.now()) == cfx.State.Closed
+        assert cfx_entry.get_state_at_date(day_before_first_opening) == cfx.State.NOT_CREATED_YET
+        assert cfx_entry.get_state_at_date(day_after_first_analyzis) == cfx.State.ANALYSED
+        assert cfx_entry.get_state_at_date(day_before_second_opening_first_resubmit) == cfx.State.RESOLVED
+        assert cfx_entry.get_state_at_date(day_after_second_opening_first_resubmit) == cfx.State.SUBMITTED
+        assert cfx_entry.get_state_at_date(day_before_verification) == cfx.State.RESOLVED
+        assert cfx_entry.get_state_at_date(day_after_verification) == cfx.State.VERIFIED
+        assert cfx_entry.get_state_at_date(day_before_validation) == cfx.State.VERIFIED
+        assert cfx_entry.get_state_at_date(day_after_validation) == cfx.State.VALIDATED
+        assert cfx_entry.get_state_at_date(datetime.now()) == cfx.State.CLOSED
 
 
 class TestFirstCurrentOwner:
@@ -173,13 +173,13 @@ class TestCurrentOwner:
 
             ats_non_security_filter = cfx.ChampFxFilter(
                 field_filters=[
-                    cfx.ChampFXFieldFilter(field_name="_security_relevant", field_forbidden_values=[cfx.SecurityRelevant.Yes, cfx.SecurityRelevant.Mitigated]),
+                    cfx.ChampFXFieldFilter(field_name="_security_relevant", field_forbidden_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED]),
                     cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[role.SubSystem.ATS]),
                 ],
             )
             ats_security_filter = cfx.ChampFxFilter(
                 field_filters=[
-                    cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.Yes, cfx.SecurityRelevant.Mitigated]),
+                    cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED]),
                     cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[role.SubSystem.ATS]),
                 ],
             )
@@ -196,7 +196,7 @@ class TestCurrentOwner:
         def test_security_relevant_only_field_filter(self) -> None:
             security_relevant_only_champfx_library = cfx.ChampFXLibrary(
                 champfx_filter=cfx.ChampFxFilter(
-                    field_filters=[cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.Yes, cfx.SecurityRelevant.Mitigated])]
+                    field_filters=[cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])]
                 ),
             )
 
