@@ -1,36 +1,43 @@
+from typing import List, Optional, Any, Dict, Set
+from collections import defaultdict
+from enum import auto
+import datetime
+
 import pandas as pd
 import matplotlib.pyplot as plt
-from collections import defaultdict
 import mpld3
 from mpld3 import plugins
-
-from typing import List, Optional, Any, Dict, Set
 
 import mplcursors
 from mplcursors._mplcursors import HoverMode
 
 from common import json_encoders, string_utils
 
-import datetime
-
-
 from logger import logger_config
 
 import cfx
 import role
 
+from common import enums_utils
+
+
 state_colors = {
-    cfx.State.Submitted: "red",
-    cfx.State.Analysed: "orange",
-    cfx.State.Assigned: "blue",
-    cfx.State.Resolved: "yellow",
-    cfx.State.Postponed: "grey",
-    cfx.State.Rejected: "black",
-    cfx.State.Verified: "lightgreen",
-    cfx.State.Validated: "green",
-    cfx.State.Closed: "darkgreen",
+    cfx.State.SUBMITTED: "red",
+    cfx.State.ANALYSED: "orange",
+    cfx.State.ASSIGNED: "blue",
+    cfx.State.RESOLVED: "yellow",
+    cfx.State.POSTPONED: "grey",
+    cfx.State.REJECTED: "black",
+    cfx.State.VERIFIED: "lightgreen",
+    cfx.State.VALIDATED: "green",
+    cfx.State.CLOSED: "darkgreen",
     # Add additional states and their respective colors
 }
+
+
+class ActionType(enums_utils.NameBasedEnum):
+    VALUE = auto()
+    VALUE = auto()
 
 
 class OneTimestampResult:
@@ -95,11 +102,11 @@ def produce_results_and_displays(
 
     at_least_one_cfx_matching_filter_has_been_found = False
 
-    filter_enforced_label = cfx_library.label
+    generation_label = cfx_library.label
     if len(cfx_filters) > 0:
-        filter_enforced_label += "".join([filter.label for filter in cfx_filters])
+        generation_label += "".join([filter.label for filter in cfx_filters])
     else:
-        filter_enforced_label += "All"
+        generation_label += "All"
 
     all_cfx_ids_that_have_matched: set[str] = set()
 
@@ -114,7 +121,7 @@ def produce_results_and_displays(
             if match_all_filters:
                 all_cfx_ids_that_have_matched.add(entry.cfx_id)
 
-                if state != cfx.State.NotCreatedYet:
+                if state != cfx.State.NOT_CREATED_YET:
                     count_by_state[state] += 1
                     timestamp_results.add_one_result_for_state(state=state)
                     at_least_one_cfx_matching_filter_has_been_found = True
@@ -126,38 +133,40 @@ def produce_results_and_displays(
 
     all_results_to_display.compute_cumulative_counts()
 
-    filter_enforced_label_for_valid_file_name = string_utils.format_filename(filter_enforced_label)
-    generic_output_files_path_without_suffix_and_extension = f"{output_directory_name}/{cfx_library.label} {filter_enforced_label_for_valid_file_name}"
+    generation_label_for_valid_file_name = string_utils.format_filename(generation_label)
+    generic_output_files_path_without_suffix_and_extension = f"{output_directory_name}/{generation_label_for_valid_file_name}"
     json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(list_objects=all_cfx_ids_that_have_matched, json_file_full_path=f"{generic_output_files_path_without_suffix_and_extension}.json")
 
     if not at_least_one_cfx_matching_filter_has_been_found:
-        logger_config.print_and_log_info(f"No data for library {cfx_library.label} filters {filter_enforced_label}")
+        logger_config.print_and_log_info(f"No data for {generation_label}")
         return
 
     if create_excel_file:
 
-        with logger_config.stopwatch_with_label(f"produce_excel_output_file, filter {filter_enforced_label} library {cfx_library.label}"):
+        with logger_config.stopwatch_with_label(f"produce_excel_output_file,  {generation_label}"):
             produce_excel_output_file(output_excel_file=f"{generic_output_files_path_without_suffix_and_extension}.xlsx", all_results_to_display=all_results_to_display)
 
     if display_with_cumulative_eras:
-        with logger_config.stopwatch_with_label(f"produce_displays cumulative, filter {filter_enforced_label} library {cfx_library.label}"):
+        with logger_config.stopwatch_with_label(f"produce_displays cumulative,  {generation_label}"):
             produce_displays_and_create_html(
                 cfx_library=cfx_library,
                 use_cumulative=True,
                 all_results_to_display=all_results_to_display,
                 output_html_file_prefix=f"{generic_output_files_path_without_suffix_and_extension}_cumulative_eras" if create_html_file else None,
-                window_title=f"{cfx_library.label} Filter {filter_enforced_label}, CFX States Over Time (Cumulative)",
-                filter_enforced_label=filter_enforced_label,
+                window_title=f"Filter {generation_label}, CFX States Over Time (Cumulative)",
+                generation_label=generation_label,
+                generation_label_for_valid_file_name=generation_label_for_valid_file_name,
             )
     if display_without_cumulative_eras:
-        with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {filter_enforced_label} library {cfx_library.label}"):
+        with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {generation_label} library {cfx_library.label}"):
             produce_displays_and_create_html(
                 cfx_library=cfx_library,
                 use_cumulative=False,
                 all_results_to_display=all_results_to_display,
                 output_html_file_prefix=f"{generic_output_files_path_without_suffix_and_extension}_values" if create_html_file else None,
-                window_title=f"{cfx_library.label} Filter {filter_enforced_label}, CFX States Over Time (Values)",
-                filter_enforced_label=filter_enforced_label,
+                window_title=f"Filter {generation_label}, CFX States Over Time (Values)",
+                generation_label=generation_label,
+                generation_label_for_valid_file_name=generation_label_for_valid_file_name,
             )
 
 
@@ -178,7 +187,8 @@ def produce_displays_and_create_html(
     all_results_to_display: AllResultsToDisplay,
     output_html_file_prefix: str,
     window_title: str,
-    filter_enforced_label: str,
+    generation_label: str,
+    generation_label_for_valid_file_name: str,
 ) -> None:
     fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -207,14 +217,14 @@ def produce_displays_and_create_html(
 
     ax.set_xlabel("Month")
     ax.set_ylabel("Number of CFX Entries")
-    ax.set_title(f"{cfx_library.label} All CFX States Over Time" if filter_enforced_label is None else f"{cfx_library.label} {filter_enforced_label} CFX States Over Time")
+    ax.set_title(f"{cfx_library.label} All CFX States Over Time" if generation_label is None else f"{cfx_library.label} {generation_label} CFX States Over Time")
     ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
 
     # Save the plot to an HTML file
     html_content = mpld3.fig_to_html(fig)
-    output_html_file = output_html_file_prefix + ".html"
+    output_html_file = generation_label_for_valid_file_name + ".html"
 
     with logger_config.stopwatch_with_label(f"html {output_html_file} creation"):
         with open(output_html_file, "w", encoding="utf8") as html_file:
