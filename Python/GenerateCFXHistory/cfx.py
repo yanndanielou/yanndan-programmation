@@ -307,7 +307,7 @@ class ChampFXEntryBuilder:
     @staticmethod
     def convert_champfx_security_relevant(raw_security_relevant: str) -> SecurityRelevant:
         security_relevant: SecurityRelevant = (
-            SecurityRelevant.UNDEFINED if type(raw_security_relevant) is not str and math.isnan(raw_security_relevant) else SecurityRelevant[raw_security_relevant.uper()]
+            SecurityRelevant.UNDEFINED if type(raw_security_relevant) is not str and math.isnan(raw_security_relevant) else SecurityRelevant[raw_security_relevant.upper()]
         )
         return security_relevant
 
