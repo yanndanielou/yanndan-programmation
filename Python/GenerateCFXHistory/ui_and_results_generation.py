@@ -63,6 +63,8 @@ class AllResultsToDisplay:
         self.present_states: Set[cfx.State] = set()
 
         self.cumulative_counts: Dict[cfx.State, List[int]] = dict()
+        self.all_cfx_ids_that_have_matched: set[str] = set()
+        self.at_least_one_cfx_matching_filter_has_been_found = False
 
     def get_all_timestamps(self) -> List[datetime.datetime]:
         all_timestamps = [results._timestamp for results in self.timestamp_results]
@@ -81,6 +83,35 @@ class AllResultsToDisplay:
                 self.cumulative_counts[state].append(one_timestamp.count_by_state[state])
 
 
+def gather_state_counts_for_each_date(cfx_library: cfx.ChampFXLibrary, cfx_filters: Optional[List[cfx.ChampFxFilter]] = None) -> AllResultsToDisplay:
+
+    all_results_to_display: AllResultsToDisplay = AllResultsToDisplay()
+    timestamps_to_display_data: List[datetime.datetime] = cfx_library.get_tenth_days_since_earliest_submit_date()
+
+    for timestamp_to_display_data in timestamps_to_display_data:
+        timestamp_results = OneTimestampResult(timestamp=timestamp_to_display_data, all_results_to_display=all_results_to_display)
+        count_by_state: dict[cfx.State, int] = defaultdict(int)
+        for entry in cfx_library.get_all_cfx():
+            state = entry.get_state_at_date(timestamp_to_display_data)
+
+            match_all_filters = True if cfx_filters is None else all(cfx_filter.match_cfx_entry(entry, timestamp_to_display_data) for cfx_filter in cfx_filters)
+            if match_all_filters:
+                all_results_to_display.all_cfx_ids_that_have_matched.add(entry.cfx_id)
+
+                if state != cfx.State.NOT_CREATED_YET:
+                    count_by_state[state] += 1
+                    timestamp_results.add_one_result_for_state(state=state)
+                    all_results_to_display.at_least_one_cfx_matching_filter_has_been_found = True
+
+        if all_results_to_display.at_least_one_cfx_matching_filter_has_been_found:
+            all_results_to_display.timestamp_results.append(timestamp_results)
+
+        with logger_config.stopwatch_alert_if_exceeds_duration("consolidate", duration_threshold_to_alert_info_in_s=0.1):
+            timestamp_results.consolidate()
+
+    return all_results_to_display
+
+
 def produce_results_and_displays(
     cfx_library: cfx.ChampFXLibrary,
     output_directory_name: str,
@@ -94,50 +125,25 @@ def produce_results_and_displays(
     if cfx_filters is None:
         cfx_filters = []
 
-    timestamps_to_display_data: List[datetime.datetime] = cfx_library.get_tenth_days_since_earliest_submit_date()
-
-    all_results_to_display: AllResultsToDisplay = AllResultsToDisplay()
-
-    at_least_one_cfx_matching_filter_has_been_found = False
-
     generation_label = cfx_library.label
     if len(cfx_filters) > 0:
         generation_label += "".join([filter.label for filter in cfx_filters])
     else:
         generation_label += "All"
 
-    all_cfx_ids_that_have_matched: set[str] = set()
-
-    with logger_config.stopwatch_with_label(f"{generation_label} Gather state counts for each month"):
-        for timestamp_to_display_data in timestamps_to_display_data:
-            timestamp_results = OneTimestampResult(timestamp=timestamp_to_display_data, all_results_to_display=all_results_to_display)
-            count_by_state: dict[cfx.State, int] = defaultdict(int)
-            for entry in cfx_library.get_all_cfx():
-                state = entry.get_state_at_date(timestamp_to_display_data)
-
-                match_all_filters = True if cfx_filters is None else all(cfx_filter.match_cfx_entry(entry, timestamp_to_display_data) for cfx_filter in cfx_filters)
-                if match_all_filters:
-                    all_cfx_ids_that_have_matched.add(entry.cfx_id)
-
-                    if state != cfx.State.NOT_CREATED_YET:
-                        count_by_state[state] += 1
-                        timestamp_results.add_one_result_for_state(state=state)
-                        at_least_one_cfx_matching_filter_has_been_found = True
-
-            if at_least_one_cfx_matching_filter_has_been_found:
-                all_results_to_display.timestamp_results.append(timestamp_results)
-
-            with logger_config.stopwatch_alert_if_exceeds_duration("consolidate", duration_threshold_to_alert_info_in_s=0.1):
-                timestamp_results.consolidate()
+    with logger_config.stopwatch_with_label(f"{generation_label} Gather state counts for each date"):
+        all_results_to_display: AllResultsToDisplay = gather_state_counts_for_each_date(cfx_library, cfx_filters)
 
     with logger_config.stopwatch_alert_if_exceeds_duration("compute_cumulative_counts", duration_threshold_to_alert_info_in_s=0.1):
         all_results_to_display.compute_cumulative_counts()
 
     generation_label_for_valid_file_name = string_utils.format_filename(generation_label)
     generic_output_files_path_without_suffix_and_extension = f"{output_directory_name}/{generation_label_for_valid_file_name}"
-    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(list_objects=all_cfx_ids_that_have_matched, json_file_full_path=f"{generic_output_files_path_without_suffix_and_extension}.json")
+    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
+        list_objects=all_results_to_display.all_cfx_ids_that_have_matched, json_file_full_path=f"{generic_output_files_path_without_suffix_and_extension}.json"
+    )
 
-    if not at_least_one_cfx_matching_filter_has_been_found:
+    if not all_results_to_display.at_least_one_cfx_matching_filter_has_been_found:
         logger_config.print_and_log_info(f"No data for {generation_label}")
         return
 

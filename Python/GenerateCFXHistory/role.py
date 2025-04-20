@@ -22,26 +22,26 @@ class SubSystem(enums_utils.NameBasedEnum):
     TCM_TC = auto()
     SUBSYS = auto()
     TRACY = auto()
-    Qualite = auto()
-    Systeme = auto()
+    QUALITE = auto()
+    SYSTEME = auto()
     RIVS = auto()
-    ATS_Eviden = auto()
-    Radio = auto()
-    Installation = auto()
+    ATS_EVIDEN = auto()
+    RADIO = auto()
+    INSTALLATION = auto()
     TCM_TM1 = auto()
     ADONEM = auto()
     TCM_TM2 = auto()
     SW_VAL = auto()
-    Projet = auto()
-    SW_Analyses_secu = auto()
+    PROJET = auto()
+    SW_ANALYSES_SECU = auto()
     CS = auto()
-    ATC_Manager = auto()
-    Reseau = auto()
+    ATC_MANAGER = auto()
+    RESEAU = auto()
     SCFT = auto()
     ITF_MR = auto()
-    TbD = auto()
-    Gumps = auto()
-    SW_Tests_secu = auto()
+    TBD = auto()
+    GUMPS = auto()
+    SW_TESTS_SECU = auto()
     V3 = auto()
     TCR3 = auto()
 
@@ -82,6 +82,8 @@ class CfxUserLibrary:
             formatted_subsystem_text = formatted_subsystem_text.replace(")", "")
             formatted_subsystem_text = formatted_subsystem_text.replace("é", "e")
             formatted_subsystem_text = formatted_subsystem_text.replace("è", "e")
+            formatted_subsystem_text = formatted_subsystem_text.replace("-", "_")
+            formatted_subsystem_text = formatted_subsystem_text.upper()
 
             subsystem = SubSystem[formatted_subsystem_text]
 
@@ -140,18 +142,18 @@ def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in
         ],
         SubSystem.COC_DE: ["S002_Subsystem Invariants", "Invariants", "Paramètres"],
         SubSystem.TCM_TC: ["SIMECH", "Gumps", "Outils", "XT_OT"],
-        SubSystem.Radio: ["RADIO", "Baie Centrale Radio"],
-        SubSystem.ATS_Eviden: ["COEUR CK", "FGPT", "MES SIL2"],
-        SubSystem.Reseau: ["Réseau", "Commutateur", "pare-feu"],
+        SubSystem.RADIO: ["RADIO", "Baie Centrale Radio"],
+        SubSystem.ATS_EVIDEN: ["COEUR CK", "FGPT", "MES SIL2"],
+        SubSystem.RESEAU: ["Réseau", "Commutateur", "pare-feu"],
         SubSystem.ADONEM: ["ADONEM"],
         SubSystem.TCM_TM1: ["Plateforme", "Usine"],
         SubSystem.TCM_TM2: ["Site"],
-        SubSystem.Systeme: ["S001_System Système NExTEO ATC", "S001_System Système NExTEO", "Performances du système", "Interfaces Signalisation", "Interfaces Voie"],
+        SubSystem.SYSTEME: ["S001_System Système NExTEO ATC", "S001_System Système NExTEO", "Performances du système", "Interfaces Signalisation", "Interfaces Voie"],
         SubSystem.ITF_MR: ["S001_System Système NExTEO ATC", "S002_Subsystem Interfaces_NEXTEO"],
-        SubSystem.Projet: ["Management du projet"],
-        SubSystem.ATC_Manager: ["Matériels complémentaires"],
+        SubSystem.PROJET: ["Management du projet"],
+        SubSystem.ATC_MANAGER: ["Matériels complémentaires"],
         SubSystem.SAF: ["Fiabilité"],
-        SubSystem.Installation: ["SBL"],
+        SubSystem.INSTALLATION: ["SBL"],
     }
 
     for subsystem, keywords in subsystem_mapping.items():
@@ -162,4 +164,4 @@ def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in
     return None
 
 
-UNKNOWN_USER: CfxUser = CfxUser(raw_full_name="Unknown", full_name="Unknown", subsystem=SubSystem.TbD)
+UNKNOWN_USER: CfxUser = CfxUser(raw_full_name="Unknown", full_name="Unknown", subsystem=SubSystem.TBD)

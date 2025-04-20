@@ -1,20 +1,17 @@
-import math
-
 import pandas as pd
-from datetime import datetime, timedelta
-from dateutil import relativedelta
-
+import math
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Set, Any, cast
-
+from datetime import datetime, timedelta
 from enum import auto
+from typing import Any, Dict, List, Optional, Set, cast
 
 from common import enums_utils
+from dateutil import relativedelta
 from logger import logger_config
 
-import utils
-import role
 import cfx_extended_history
+import role
+import utils
 
 DEFAULT_CHAMPFX_DETAILS_EXCEL_FILE_FULL_PATH: str = "Input/extract_cfx_details.xlsx"
 DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH: str = "Input/extract_cfx_change_state.xlsx"
@@ -372,9 +369,9 @@ class ChampFXEntry:
         self._current_owner: role.CfxUser = role.UNKNOWN_USER
         self._current_owner_role: role.SubSystem = role.UNKNOWN_USER.subsystem
 
-        self._subsystem: role.SubSystem.TbD
+        self._subsystem: role.SubSystem.TBD
 
-        self._subsystem_from_fixed_implemented_in: role.SubSystem = role.SubSystem.TbD
+        self._subsystem_from_fixed_implemented_in: role.SubSystem = role.SubSystem.TBD
         self._submit_date: datetime = utils.convert_champfx_extract_date(submit_date_raw)
 
         self._cfx_project = cfx_project
