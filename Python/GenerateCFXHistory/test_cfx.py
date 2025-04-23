@@ -1,6 +1,7 @@
 import pytest
 
 from datetime import datetime
+from dateutil import relativedelta
 
 from typing import List
 
@@ -13,6 +14,12 @@ def create_light_champfx_library() -> cfx.ChampFXLibrary:
     champfx_library = cfx.ChampFXLibrary(
         champfx_filters=[cfx.ChampFXWhitelistFilter(cfx_to_treat_whitelist_text_file_full_path="Input_for_Tests/sample_cfx_ids.txt")],
     )
+    return champfx_library
+
+
+@pytest.fixture(scope="session")
+def create_full_champfx_library() -> cfx.ChampFXLibrary:
+    champfx_library = cfx.ChampFXLibrary()
     return champfx_library
 
 
@@ -199,3 +206,19 @@ class TestCurrentOwner:
             assert len(security_relevant_only_champfx_library.get_all_cfx()) > 0
             for cfx_entry in security_relevant_only_champfx_library.get_all_cfx():
                 assert cfx_entry._security_relevant
+
+
+class TestStatisticsPreparation:
+    @pytest.mark.timeout(60)
+    def test_gather_state_counts_for_each_date_whithout_filter(self, create_full_champfx_library: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_full_champfx_library
+        champfx_library.gather_state_counts_for_each_date(relativedelta.relativedelta(days=10))
+
+    @pytest.mark.timeout(60)
+    def test_gather_state_counts_for_each_date_whith_filter(self, create_full_champfx_library: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_full_champfx_library
+        champfx_library.gather_state_counts_for_each_date(relativedelta.relativedelta(days=10))
+        champfx_library.gather_state_counts_for_each_date(
+            relativedelta.relativedelta(days=10),
+            cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.ATS]))],
+        )
