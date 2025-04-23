@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from enum import auto
 from typing import Any, Dict, List, Optional, Set, cast
 
-from common import enums_utils
+from common import enums_utils, string_utils
 from dateutil import relativedelta
 from logger import logger_config
 
@@ -497,7 +497,9 @@ class ChampFXWhitelistFilter(ChampFXtSaticCriteriaFilter):
         self._cfx_to_treat_whitelist_ids: Set[str] = set()
 
         if self._cfx_to_treat_whitelist_text_file_full_path is not None:
-            self.label: str = f"list {self._cfx_to_treat_whitelist_text_file_full_path.replace("/", " ").replace("\\", " ")}"
+            self.label: str = self._cfx_to_treat_whitelist_text_file_full_path
+            self.label = string_utils.right_part_after_last_occurence(self.label, "/")
+            self.label = string_utils.right_part_after_last_occurence(self.label, "\\")
             self._cfx_to_treat_whitelist_ids = set()
             with logger_config.stopwatch_with_label(f"Load CfxUserLibrary {cfx_to_treat_whitelist_text_file_full_path}"):
                 with open(self._cfx_to_treat_whitelist_text_file_full_path, "r", encoding="utf-8") as cfx_known_by_cstmr_text_file:
@@ -526,6 +528,8 @@ class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter):
             label = f"{label} among {self.field_accepted_values}"
         else:
             label = f"{label} without {self.field_forbidden_values}"
+
+        label = label.translate({ord(i): None for i in "'[]"})
         self.label = label
 
     def match_cfx_entry_without_cache(self, cfx_entry: ChampFXEntry) -> bool:
@@ -594,10 +598,12 @@ class ChampFxFilter:
             label = f"{label} role {self.role_depending_on_date_filter.roles_at_date_allowed} per date"
 
         if len(self._field_filters) > 0:
-            label = f"{label} fields {[field_filter.label for field_filter in self._field_filters]}"
+            label = f"{label} {[field_filter.label for field_filter in self._field_filters]}"
 
         if self._white_list_filter:
             label = f"{label} {self._white_list_filter.label}"
+
+        label = label.translate({ord(i): None for i in "'[]"})
 
         self.label = label
 

@@ -118,7 +118,7 @@ def produce_results_and_displays(
     create_html_file: bool,
     time_delta: relativedelta,
     cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
-    dump_all_cfx_ids_in_json: bool = False,
+    dump_all_cfx_ids_in_json: bool = True,
 ) -> None:
 
     if cfx_filters is None:
