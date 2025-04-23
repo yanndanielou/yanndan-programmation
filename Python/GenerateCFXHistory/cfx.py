@@ -1,13 +1,20 @@
-import pandas as pd
+import datetime
 import math
+from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import auto
 from typing import Any, Dict, List, Optional, Set, cast
 
-from common import enums_utils, string_utils
+import matplotlib.pyplot as plt
+import mplcursors
+import mpld3
+import pandas as pd
+from common import enums_utils, json_encoders, string_utils
 from dateutil import relativedelta
 from logger import logger_config
+from mplcursors._mplcursors import HoverMode
+from mpld3 import plugins
 
 import cfx_extended_history
 import role
@@ -56,6 +63,49 @@ class State(enums_utils.NameBasedIntEnum):
     VERIFIED = auto()
     VALIDATED = auto()
     CLOSED = auto()
+
+
+class OneTimestampResult:
+    def __init__(self, all_results_to_display: "AllResultsPerDates", timestamp: datetime):
+        self._timestamp = timestamp
+        self.count_by_state: dict[State, int] = defaultdict(int)
+        self.all_results_to_display = all_results_to_display
+
+    def add_one_result_for_state(self, state: State) -> None:
+        self.count_by_state[state] += 1
+
+    def is_empty(self) -> bool:
+        return len(self.count_by_state) > 0
+
+    def consolidate(self) -> None:
+        all_states_found = list(self.count_by_state.keys())
+        self.all_results_to_display.present_states.update(all_states_found)
+
+
+class AllResultsPerDates:
+    def __init__(self) -> None:
+        self.timestamp_results: List[OneTimestampResult] = []
+        self.present_states: Set[State] = set()
+
+        self.cumulative_counts: Dict[State, List[int]] = dict()
+        self.all_cfx_ids_that_have_matched: set[str] = set()
+        self.at_least_one_cfx_matching_filter_has_been_found = False
+
+    def get_all_timestamps(self) -> List[datetime]:
+        all_timestamps = [results._timestamp for results in self.timestamp_results]
+        return all_timestamps
+
+    def present_states_ordered(self) -> List[State]:
+        return sorted(self.present_states)
+
+    def get_state_counts_per_timestamp(self) -> List[dict[State, int]]:
+        return [results.count_by_state for results in self.timestamp_results]
+
+    def compute_cumulative_counts(self) -> None:
+        self.cumulative_counts = {state: [] for state in self.present_states_ordered()}
+        for one_timestamp in self.timestamp_results:
+            for state in self.present_states_ordered():
+                self.cumulative_counts[state].append(one_timestamp.count_by_state[state])
 
 
 @dataclass
@@ -317,6 +367,34 @@ class ChampFXLibrary:
                 current_date_iter = current_date_iter.replace(month=current_date_iter.month + 1)
 
         return months
+
+    def gather_state_counts_for_each_date(self, time_delta: relativedelta, cfx_filters: Optional[List["ChampFxFilter"]] = None) -> AllResultsPerDates:
+
+        all_results_to_display: AllResultsPerDates = AllResultsPerDates()
+        timestamps_to_display_data: List[datetime] = self.get_dates_since_earliest_submit_date(time_delta)
+
+        for timestamp_to_display_data in timestamps_to_display_data:
+            timestamp_results = OneTimestampResult(timestamp=timestamp_to_display_data, all_results_to_display=all_results_to_display)
+            count_by_state: dict[State, int] = defaultdict(int)
+            for entry in self.get_all_cfx():
+                state = entry.get_state_at_date(timestamp_to_display_data)
+
+                match_all_filters = True if cfx_filters is None else all(cfx_filter.match_cfx_entry(entry, timestamp_to_display_data) for cfx_filter in cfx_filters)
+                if match_all_filters:
+                    all_results_to_display.all_cfx_ids_that_have_matched.add(entry.cfx_id)
+
+                    if state != State.NOT_CREATED_YET:
+                        count_by_state[state] += 1
+                        timestamp_results.add_one_result_for_state(state=state)
+                        all_results_to_display.at_least_one_cfx_matching_filter_has_been_found = True
+
+            if all_results_to_display.at_least_one_cfx_matching_filter_has_been_found:
+                all_results_to_display.timestamp_results.append(timestamp_results)
+
+            with logger_config.stopwatch_alert_if_exceeds_duration("consolidate", duration_threshold_to_alert_info_in_s=0.1):
+                timestamp_results.consolidate()
+
+        return all_results_to_display
 
 
 class ChampFXEntryBuilder:

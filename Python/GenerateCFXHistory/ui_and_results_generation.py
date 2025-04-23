@@ -9,11 +9,10 @@ import mplcursors
 import mpld3
 import pandas as pd
 from common import enums_utils, json_encoders, string_utils
+from dateutil import relativedelta
 from logger import logger_config
 from mplcursors._mplcursors import HoverMode
 from mpld3 import plugins
-from dateutil import relativedelta
-
 
 import cfx
 import role
@@ -37,78 +36,6 @@ class RepresentationType(enums_utils.NameBasedEnum):
     CUMULATIVE_ERAS = auto()
 
 
-class OneTimestampResult:
-    def __init__(self, all_results_to_display: "AllResultsToDisplay", timestamp: datetime):
-        self._timestamp = timestamp
-        self.count_by_state: dict[cfx.State, int] = defaultdict(int)
-        self.all_results_to_display = all_results_to_display
-
-    def add_one_result_for_state(self, state: cfx.State) -> None:
-        self.count_by_state[state] += 1
-
-    def is_empty(self) -> bool:
-        return len(self.count_by_state) > 0
-
-    def consolidate(self) -> None:
-        all_states_found = list(self.count_by_state.keys())
-        self.all_results_to_display.present_states.update(all_states_found)
-
-
-class AllResultsToDisplay:
-    def __init__(self) -> None:
-        self.timestamp_results: List[OneTimestampResult] = []
-        self.present_states: Set[cfx.State] = set()
-
-        self.cumulative_counts: Dict[cfx.State, List[int]] = dict()
-        self.all_cfx_ids_that_have_matched: set[str] = set()
-        self.at_least_one_cfx_matching_filter_has_been_found = False
-
-    def get_all_timestamps(self) -> List[datetime]:
-        all_timestamps = [results._timestamp for results in self.timestamp_results]
-        return all_timestamps
-
-    def present_states_ordered(self) -> List[cfx.State]:
-        return sorted(self.present_states)
-
-    def get_state_counts_per_timestamp(self) -> List[dict[cfx.State, int]]:
-        return [results.count_by_state for results in self.timestamp_results]
-
-    def compute_cumulative_counts(self) -> None:
-        self.cumulative_counts = {state: [] for state in self.present_states_ordered()}
-        for one_timestamp in self.timestamp_results:
-            for state in self.present_states_ordered():
-                self.cumulative_counts[state].append(one_timestamp.count_by_state[state])
-
-
-def gather_state_counts_for_each_date(cfx_library: cfx.ChampFXLibrary, time_delta: relativedelta, cfx_filters: Optional[List[cfx.ChampFxFilter]] = None) -> AllResultsToDisplay:
-
-    all_results_to_display: AllResultsToDisplay = AllResultsToDisplay()
-    timestamps_to_display_data: List[datetime] = cfx_library.get_dates_since_earliest_submit_date(time_delta)
-
-    for timestamp_to_display_data in timestamps_to_display_data:
-        timestamp_results = OneTimestampResult(timestamp=timestamp_to_display_data, all_results_to_display=all_results_to_display)
-        count_by_state: dict[cfx.State, int] = defaultdict(int)
-        for entry in cfx_library.get_all_cfx():
-            state = entry.get_state_at_date(timestamp_to_display_data)
-
-            match_all_filters = True if cfx_filters is None else all(cfx_filter.match_cfx_entry(entry, timestamp_to_display_data) for cfx_filter in cfx_filters)
-            if match_all_filters:
-                all_results_to_display.all_cfx_ids_that_have_matched.add(entry.cfx_id)
-
-                if state != cfx.State.NOT_CREATED_YET:
-                    count_by_state[state] += 1
-                    timestamp_results.add_one_result_for_state(state=state)
-                    all_results_to_display.at_least_one_cfx_matching_filter_has_been_found = True
-
-        if all_results_to_display.at_least_one_cfx_matching_filter_has_been_found:
-            all_results_to_display.timestamp_results.append(timestamp_results)
-
-        with logger_config.stopwatch_alert_if_exceeds_duration("consolidate", duration_threshold_to_alert_info_in_s=0.1):
-            timestamp_results.consolidate()
-
-    return all_results_to_display
-
-
 def produce_results_and_displays(
     cfx_library: cfx.ChampFXLibrary,
     output_directory_name: str,
@@ -118,7 +45,7 @@ def produce_results_and_displays(
     create_html_file: bool,
     time_delta: relativedelta,
     cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
-    dump_all_cfx_ids_in_json: bool = True,
+    dump_all_cfx_ids_in_json: bool = False,
 ) -> None:
 
     if cfx_filters is None:
@@ -131,7 +58,7 @@ def produce_results_and_displays(
         generation_label += "All"
 
     with logger_config.stopwatch_with_label(f"{generation_label} Gather state counts for each date"):
-        all_results_to_display: AllResultsToDisplay = gather_state_counts_for_each_date(cfx_library=cfx_library, time_delta=time_delta, cfx_filters=cfx_filters)
+        all_results_to_display: cfx.AllResultsPerDates = cfx_library.gather_state_counts_for_each_date(time_delta=time_delta, cfx_filters=cfx_filters)
 
     with logger_config.stopwatch_alert_if_exceeds_duration("compute_cumulative_counts", duration_threshold_to_alert_info_in_s=0.1):
         all_results_to_display.compute_cumulative_counts()
@@ -149,7 +76,6 @@ def produce_results_and_displays(
         return
 
     if create_excel_file:
-
         with logger_config.stopwatch_with_label(f"produce_excel_output_file,  {generation_label}"):
             produce_excel_output_file(output_excel_file=f"{generic_output_files_path_without_suffix_and_extension}.xlsx", all_results_to_display=all_results_to_display)
 
@@ -179,7 +105,7 @@ def produce_results_and_displays(
             )
 
 
-def produce_excel_output_file(output_excel_file: str, all_results_to_display: AllResultsToDisplay) -> None:
+def produce_excel_output_file(output_excel_file: str, all_results_to_display: cfx.AllResultsPerDates) -> None:
     # Convert data to DataFrame for Excel output
 
     data_for_excel = pd.DataFrame(all_results_to_display.get_state_counts_per_timestamp(), index=all_results_to_display.get_all_timestamps())
@@ -193,7 +119,7 @@ def produce_excel_output_file(output_excel_file: str, all_results_to_display: Al
 def produce_displays_and_create_html(
     cfx_library: cfx.ChampFXLibrary,
     use_cumulative: bool,
-    all_results_to_display: AllResultsToDisplay,
+    all_results_to_display: cfx.AllResultsPerDates,
     create_html_file: bool,
     window_title: str,
     generation_label: str,

@@ -11,7 +11,7 @@ import role
 @pytest.fixture(scope="session")
 def create_light_champfx_library() -> cfx.ChampFXLibrary:
     champfx_library = cfx.ChampFXLibrary(
-        champfx_filter=cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input_for_Tests/sample_cfx_ids.txt"),
+        champfx_filters=[cfx.ChampFXWhitelistFilter(cfx_to_treat_whitelist_text_file_full_path="Input_for_Tests/sample_cfx_ids.txt")],
     )
     return champfx_library
 
@@ -159,9 +159,7 @@ class TestCurrentOwner:
 
     class TestChampFxFilter:
         def test_next_project_field_filter(self) -> None:
-            nexteo_only_champfx_library = cfx.ChampFXLibrary(
-                champfx_filter=cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.FR_NEXTEO])]),
-            )
+            nexteo_only_champfx_library = cfx.ChampFXLibrary(champfx_filters=[cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.FR_NEXTEO])])
 
             assert len(nexteo_only_champfx_library.get_all_cfx()) > 0
             for cfx_entry in nexteo_only_champfx_library.get_all_cfx():
@@ -195,9 +193,7 @@ class TestCurrentOwner:
 
         def test_security_relevant_only_field_filter(self) -> None:
             security_relevant_only_champfx_library = cfx.ChampFXLibrary(
-                champfx_filter=cfx.ChampFxFilter(
-                    field_filters=[cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])]
-                ),
+                champfx_filters=[cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])]
             )
 
             assert len(security_relevant_only_champfx_library.get_all_cfx()) > 0
