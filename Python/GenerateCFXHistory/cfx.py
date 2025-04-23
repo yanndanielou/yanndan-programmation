@@ -109,13 +109,16 @@ class ChampFXLibrary:
         champfx_states_changes_excel_file_full_path: str = DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH,
         # all_current_owner_modifications_pickle_file_full_path: str = "Input/all_current_owner_modifications.pkl",
         # all_current_owner_modifications_per_cfx_pickle_file_full_path: str = "Input/all_current_owner_modifications_per_cfx.pkl",
-        champfx_filter: Optional["ChampFxFilter"] = None,
+        champfx_filters: Optional[List["ChampFXtSaticCriteriaFilter"]] = None,
         label: Optional[str] = None,
     ):
 
-        self.label = label if label is not None else "" if label is None and champfx_filter is None else champfx_filter.label
+        if champfx_filters is None:
+            champfx_filters = []
 
-        self._champfx_filter: Optional["ChampFxFilter"] = champfx_filter
+        self._champfx_filters = champfx_filters
+        self.label = label if label is not None else " ".join([field_filter.label for field_filter in self._champfx_filters])
+
         # self._all_current_owner_modifications_pickle_file_full_path = all_current_owner_modifications_pickle_file_full_path
         # self._all_current_owner_modifications_per_cfx_pickle_file_full_path = all_current_owner_modifications_per_cfx_pickle_file_full_path
         self._champfx_entry_by_id: Dict[str, ChampFXEntry] = dict()
@@ -167,7 +170,7 @@ class ChampFXLibrary:
                 cfx_entry._current_owner
             else:
                 cfx_entry = ChampFXEntryBuilder.build_with_row(row)
-                if self._champfx_filter is None or self._champfx_filter.match_cfx_entry(cfx_entry):
+                if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
                     self._champfx_entry_by_id[cfx_id] = cfx_entry
                     self._champfx_entries.append(cfx_entry)
 
@@ -259,6 +262,23 @@ class ChampFXLibrary:
     def get_earliest_submit_date(self) -> datetime:
         earliest_date = min(entry.get_oldest_change_action_by_new_state(State.SUBMITTED).timestamp for entry in self.get_all_cfx())
         return earliest_date
+
+    def get_dates_since_earliest_submit_date(self, time_delta: relativedelta) -> List[datetime]:
+        earliest_cfx_date = self.get_earliest_submit_date()
+
+        earliest_date_considered = earliest_cfx_date.replace(day=1)
+
+        # Ensure 'beginning_of_next_month' is naive datetime
+        beginning_of_next_month = (datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        dates = []
+
+        # Ensure 'current_date' is naive datetime
+        current_date_iter = earliest_date_considered.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        while current_date_iter <= beginning_of_next_month:
+            dates.append(current_date_iter)
+            current_date_iter = current_date_iter + time_delta
+
+        return dates
 
     def get_tenth_days_since_earliest_submit_date(self) -> List[datetime]:
         earliest_cfx_date = self.get_earliest_submit_date()
@@ -451,6 +471,7 @@ class ChampFXtSaticCriteriaFilter:
     def __init__(self) -> None:
         self._cache_result_by_cfx: dict[ChampFXEntry, bool] = dict()
         self._number_of_results_obtained_by_cache_usage = 0
+        self.label = ""
 
     def match_cfx_entry_without_cache(self, cfx_entry: ChampFXEntry) -> bool:
         return NotImplemented

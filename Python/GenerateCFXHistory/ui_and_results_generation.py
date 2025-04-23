@@ -1,25 +1,22 @@
-from typing import List, Optional, Any, Dict, Set
-from collections import defaultdict
-from enum import auto
 import datetime
+from collections import defaultdict
+from datetime import datetime, timedelta
+from enum import auto
+from typing import Any, Dict, List, Optional, Set
 
-import pandas as pd
 import matplotlib.pyplot as plt
-import mpld3
-from mpld3 import plugins
-
 import mplcursors
-from mplcursors._mplcursors import HoverMode
-
-from common import json_encoders, string_utils
-
+import mpld3
+import pandas as pd
+from common import enums_utils, json_encoders, string_utils
 from logger import logger_config
+from mplcursors._mplcursors import HoverMode
+from mpld3 import plugins
+from dateutil import relativedelta
+
 
 import cfx
 import role
-
-from common import enums_utils
-
 
 state_colors = {
     cfx.State.SUBMITTED: "red",
@@ -41,7 +38,7 @@ class RepresentationType(enums_utils.NameBasedEnum):
 
 
 class OneTimestampResult:
-    def __init__(self, all_results_to_display: "AllResultsToDisplay", timestamp: datetime.datetime):
+    def __init__(self, all_results_to_display: "AllResultsToDisplay", timestamp: datetime):
         self._timestamp = timestamp
         self.count_by_state: dict[cfx.State, int] = defaultdict(int)
         self.all_results_to_display = all_results_to_display
@@ -66,7 +63,7 @@ class AllResultsToDisplay:
         self.all_cfx_ids_that_have_matched: set[str] = set()
         self.at_least_one_cfx_matching_filter_has_been_found = False
 
-    def get_all_timestamps(self) -> List[datetime.datetime]:
+    def get_all_timestamps(self) -> List[datetime]:
         all_timestamps = [results._timestamp for results in self.timestamp_results]
         return all_timestamps
 
@@ -83,10 +80,10 @@ class AllResultsToDisplay:
                 self.cumulative_counts[state].append(one_timestamp.count_by_state[state])
 
 
-def gather_state_counts_for_each_date(cfx_library: cfx.ChampFXLibrary, cfx_filters: Optional[List[cfx.ChampFxFilter]] = None) -> AllResultsToDisplay:
+def gather_state_counts_for_each_date(cfx_library: cfx.ChampFXLibrary, time_delta: relativedelta, cfx_filters: Optional[List[cfx.ChampFxFilter]] = None) -> AllResultsToDisplay:
 
     all_results_to_display: AllResultsToDisplay = AllResultsToDisplay()
-    timestamps_to_display_data: List[datetime.datetime] = cfx_library.get_tenth_days_since_earliest_submit_date()
+    timestamps_to_display_data: List[datetime] = cfx_library.get_dates_since_earliest_submit_date(time_delta)
 
     for timestamp_to_display_data in timestamps_to_display_data:
         timestamp_results = OneTimestampResult(timestamp=timestamp_to_display_data, all_results_to_display=all_results_to_display)
@@ -119,7 +116,9 @@ def produce_results_and_displays(
     display_without_cumulative_eras: bool,
     display_with_cumulative_eras: bool,
     create_html_file: bool,
+    time_delta: relativedelta,
     cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
+    dump_all_cfx_ids_in_json: bool = False,
 ) -> None:
 
     if cfx_filters is None:
@@ -132,16 +131,18 @@ def produce_results_and_displays(
         generation_label += "All"
 
     with logger_config.stopwatch_with_label(f"{generation_label} Gather state counts for each date"):
-        all_results_to_display: AllResultsToDisplay = gather_state_counts_for_each_date(cfx_library, cfx_filters)
+        all_results_to_display: AllResultsToDisplay = gather_state_counts_for_each_date(cfx_library=cfx_library, time_delta=time_delta, cfx_filters=cfx_filters)
 
     with logger_config.stopwatch_alert_if_exceeds_duration("compute_cumulative_counts", duration_threshold_to_alert_info_in_s=0.1):
         all_results_to_display.compute_cumulative_counts()
 
     generation_label_for_valid_file_name = string_utils.format_filename(generation_label)
     generic_output_files_path_without_suffix_and_extension = f"{output_directory_name}/{generation_label_for_valid_file_name}"
-    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
-        list_objects=all_results_to_display.all_cfx_ids_that_have_matched, json_file_full_path=f"{generic_output_files_path_without_suffix_and_extension}.json"
-    )
+
+    if dump_all_cfx_ids_in_json:
+        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
+            list_objects=all_results_to_display.all_cfx_ids_that_have_matched, json_file_full_path=f"{generic_output_files_path_without_suffix_and_extension}.json"
+        )
 
     if not all_results_to_display.at_least_one_cfx_matching_filter_has_been_found:
         logger_config.print_and_log_info(f"No data for {generation_label}")
@@ -248,6 +249,7 @@ def produce_results_and_displays_for_libary(
     for_global: bool,
     for_each_subsystem: bool,
     for_each_current_owner_per_date: bool,
+    time_delta: relativedelta = relativedelta.relativedelta(days=10),
     cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
     create_html_file: bool = True,
     create_excel_file: bool = True,
@@ -261,6 +263,7 @@ def produce_results_and_displays_for_libary(
             cfx_library=cfx_library,
             output_directory_name=output_directory_name,
             create_excel_file=create_excel_file,
+            time_delta=time_delta,
             display_without_cumulative_eras=True,
             display_with_cumulative_eras=True,
             create_html_file=create_html_file,
@@ -275,6 +278,7 @@ def produce_results_and_displays_for_libary(
                     output_directory_name=output_directory_name,
                     # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
                     create_excel_file=create_excel_file,
+                    time_delta=time_delta,
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     create_html_file=create_html_file,
@@ -290,6 +294,7 @@ def produce_results_and_displays_for_libary(
                     output_directory_name=output_directory_name,
                     # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
                     create_excel_file=create_excel_file,
+                    time_delta=time_delta,
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     create_html_file=create_html_file,
