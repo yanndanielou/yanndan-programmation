@@ -6,15 +6,10 @@ from datetime import datetime, timedelta
 from enum import auto
 from typing import Any, Dict, List, Optional, Set, cast
 
-import matplotlib.pyplot as plt
-import mplcursors
-import mpld3
 import pandas as pd
-from common import enums_utils, json_encoders, string_utils
+from common import enums_utils, string_utils
 from dateutil import relativedelta
 from logger import logger_config
-from mplcursors._mplcursors import HoverMode
-from mpld3 import plugins
 
 import cfx_extended_history
 import role
@@ -246,6 +241,7 @@ class ChampFXLibrary:
                 change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
 
                 cfx_request.add_change_state_action(change_state_action)
+                cfx_request.compute_all_actions_sorted_chronologically()
 
         return change_state_actions_created
 
@@ -373,15 +369,26 @@ class ChampFXLibrary:
         all_results_to_display: AllResultsPerDates = AllResultsPerDates()
         timestamps_to_display_data: List[datetime] = self.get_dates_since_earliest_submit_date(time_delta)
 
+        # First, filter CFX that will never match the filter
+        all_cfx_to_consider: List[ChampFXEntry] = []
+        if cfx_filters is None:
+            all_cfx_to_consider = self.get_all_cfx()
+        else:
+            for cfx_entry in self.get_all_cfx():
+                if all(cfx_filter.static_criteria_match_cfx_entry(cfx_entry) for cfx_filter in cfx_filters):
+                    all_cfx_to_consider.append(cfx_entry)
+
+        logger_config.print_and_log_info(f"Number of CFX to consider:{len(all_cfx_to_consider)}")
+
         for timestamp_to_display_data in timestamps_to_display_data:
             timestamp_results = OneTimestampResult(timestamp=timestamp_to_display_data, all_results_to_display=all_results_to_display)
             count_by_state: dict[State, int] = defaultdict(int)
-            for entry in self.get_all_cfx():
-                state = entry.get_state_at_date(timestamp_to_display_data)
+            for cfx_entry in all_cfx_to_consider:
+                state = cfx_entry.get_state_at_date(timestamp_to_display_data)
 
-                match_all_filters = True if cfx_filters is None else all(cfx_filter.match_cfx_entry(entry, timestamp_to_display_data) for cfx_filter in cfx_filters)
+                match_all_filters = True if cfx_filters is None else all(cfx_filter.match_cfx_entry(cfx_entry, timestamp_to_display_data) for cfx_filter in cfx_filters)
                 if match_all_filters:
-                    all_results_to_display.all_cfx_ids_that_have_matched.add(entry.cfx_id)
+                    all_results_to_display.all_cfx_ids_that_have_matched.add(cfx_entry.cfx_id)
 
                     if state != State.NOT_CREATED_YET:
                         count_by_state[state] += 1
@@ -475,26 +482,45 @@ class ChampFXEntry:
         self._cfx_project = cfx_project
         self._safety_relevant = safety_relevant
         self._security_relevant = security_relevant
+        self._all_change_state_actions_sorted_chronologically: List[ChangeStateAction] = []
+        self._all_change_state_actions_sorted_reversed_chronologically: List[ChangeStateAction] = []
+
+        self._all_current_owner_modifications_sorted_chronologically: list[ChangeCurrentOwnerAction] = []
+        self._all_current_owner_modifications_sorted_reversed_chronologically: list[ChangeCurrentOwnerAction] = []
 
     def __repr__(self) -> str:
         return f"<ChampFXEntry cfx_id={self.cfx_id} _raw_state={self._raw_state} _current_owner_raw={self._current_owner_raw}>"
 
-    def get_all_actions_sorted_chronologically(self) -> list[ChangeStateAction]:
+    def compute_all_actions_sorted_chronologically(self) -> list[ChangeStateAction]:
+        self._all_change_state_actions_sorted_chronologically = [action for _, action in sorted(self._change_state_actions_by_date.items())]
+        self._all_change_state_actions_sorted_reversed_chronologically = list(reversed(self._all_change_state_actions_sorted_chronologically))
+        return self._all_change_state_actions_sorted_chronologically
+
+    def get_all_change_state_actions_sorted_chronologically(self) -> list[ChangeStateAction]:
         # return sorted(self._change_state_actions_by_date.items())
-        return [action for _, action in sorted(self._change_state_actions_by_date.items())]
+        return self._all_change_state_actions_sorted_chronologically
+
+    def get_all_change_state_actions_sorted_reversed_chronologically(self) -> list[ChangeStateAction]:
+        # return sorted(self._change_state_actions_by_date.items())
+        return self._all_change_state_actions_sorted_reversed_chronologically
 
     def get_all_current_owner_modifications_sorted_chronologically(self) -> list[ChangeCurrentOwnerAction]:
         # return sorted(self._change_state_actions_by_date.items())
+        return self._all_current_owner_modifications_sorted_chronologically
         return [action for _, action in sorted(self._change_current_owner_actions_by_date.items())]
 
+    def get_all_current_owner_modifications_sorted_reversed_chronologically(self) -> list[ChangeCurrentOwnerAction]:
+        # return sorted(self._change_state_actions_by_date.items())
+        return self._all_current_owner_modifications_sorted_reversed_chronologically
+
     def get_oldest_change_action_by_new_state(self, new_state: State) -> Optional[ChangeStateAction]:
-        return next((action for action in self.get_all_actions_sorted_chronologically() if action.new_state == new_state), None)
+        return next((action for action in self.get_all_change_state_actions_sorted_chronologically() if action.new_state == new_state), None)
 
     def get_newest_change_action_that_is_before_date(self, reference_date: datetime) -> Optional[ChangeStateAction]:
-        return next((action for action in reversed(self.get_all_actions_sorted_chronologically()) if action.timestamp < reference_date), None)
+        return next((action for action in self.get_all_change_state_actions_sorted_reversed_chronologically() if action.timestamp < reference_date), None)
 
     def get_newest_current_owner_modification_that_is_before_date(self, reference_date: datetime) -> Optional[ChangeCurrentOwnerAction]:
-        return next((action for action in reversed(self.get_all_current_owner_modifications_sorted_chronologically()) if action.timestamp < reference_date), None)
+        return next((action for action in self.get_all_current_owner_modifications_sorted_reversed_chronologically() if action.timestamp < reference_date), None)
 
     def add_change_state_action(self, change_state_action: ChangeStateAction) -> None:
         self._change_state_actions.append(change_state_action)
@@ -503,6 +529,10 @@ class ChampFXEntry:
     def add_change_current_owner_action(self, change_current_owner_action: ChangeCurrentOwnerAction) -> None:
         self._change_current_owner_actions.append(change_current_owner_action)
         self._change_current_owner_actions_by_date[change_current_owner_action.timestamp] = change_current_owner_action
+
+    def get_all_current_owner_modifications_sorted_chronologically(self) -> list[ChangeCurrentOwnerAction]:
+        # return sorted(self._change_state_actions_by_date.items())
+        return [action for _, action in sorted(self._change_current_owner_actions_by_date.items())]
 
     @property
     def raw_state(self) -> State:
@@ -659,9 +689,13 @@ class ChampFxFilter:
         self._cfx_to_treat_whitelist_ids: Optional[Set[str]] = None
         self.label: str = label if label is not None else ""
 
+        self._static_criteria_filters: List[ChampFXtSaticCriteriaFilter] = [] + self._field_filters
+
         self._white_list_filter: Optional[ChampFXWhitelistFilter] = (
             ChampFXWhitelistFilter(cfx_to_treat_whitelist_text_file_full_path) if cfx_to_treat_whitelist_text_file_full_path is not None else None
         )
+        if self._white_list_filter is not None:
+            self._static_criteria_filters.append(self._white_list_filter)
 
         self._compute_label()
 
@@ -685,7 +719,7 @@ class ChampFxFilter:
 
         self.label = label
 
-    def match_cfx_entry(self, cfx_entry: ChampFXEntry, timestamp: Optional[datetime] = None) -> bool:
+    def static_criteria_match_cfx_entry(self, cfx_entry: ChampFXEntry) -> bool:
 
         if self._white_list_filter is not None:
             if not self._white_list_filter.match_cfx_entry_with_cache(cfx_entry=cfx_entry):
@@ -694,6 +728,13 @@ class ChampFxFilter:
         for field_filter in self._field_filters:
             if not field_filter.match_cfx_entry_with_cache(cfx_entry=cfx_entry):
                 return False
+
+        return True
+
+    def match_cfx_entry(self, cfx_entry: ChampFXEntry, timestamp: Optional[datetime] = None) -> bool:
+
+        if not self.static_criteria_match_cfx_entry(cfx_entry):
+            return False
 
         if self.role_depending_on_date_filter:
             if not self.role_depending_on_date_filter.match_cfx_entry(cfx_entry=cfx_entry, timestamp=cast(datetime, timestamp)):
