@@ -281,6 +281,8 @@ class ChampFXLibrary:
                         change_current_owner_actions_created.append(change_current_owner_action)
                         cfx_entry.add_change_current_owner_action(change_current_owner_action)
 
+                    cfx_entry.compute_all_current_owner_modifications_chronogically()
+
         return change_current_owner_actions_created
 
     def get_all_cfx_by_id_dict(self) -> Dict[str, "ChampFXEntry"]:
@@ -384,12 +386,12 @@ class ChampFXLibrary:
             timestamp_results = OneTimestampResult(timestamp=timestamp_to_display_data, all_results_to_display=all_results_to_display)
             count_by_state: dict[State, int] = defaultdict(int)
             for cfx_entry in all_cfx_to_consider:
-                state = cfx_entry.get_state_at_date(timestamp_to_display_data)
 
                 match_all_filters = True if cfx_filters is None else all(cfx_filter.match_cfx_entry(cfx_entry, timestamp_to_display_data) for cfx_filter in cfx_filters)
                 if match_all_filters:
                     all_results_to_display.all_cfx_ids_that_have_matched.add(cfx_entry.cfx_id)
 
+                    state = cfx_entry.get_state_at_date(timestamp_to_display_data)
                     if state != State.NOT_CREATED_YET:
                         count_by_state[state] += 1
                         timestamp_results.add_one_result_for_state(state=state)
@@ -504,6 +506,10 @@ class ChampFXEntry:
         # return sorted(self._change_state_actions_by_date.items())
         return self._all_change_state_actions_sorted_reversed_chronologically
 
+    def compute_all_current_owner_modifications_chronogically(self) -> None:
+        self._all_current_owner_modifications_sorted_chronologically = [action for _, action in sorted(self._change_current_owner_actions_by_date.items())]
+        self._all_current_owner_modifications_sorted_reversed_chronologicallyshronologically = list(reversed(self._all_current_owner_modifications_sorted_chronologically))
+
     def get_all_current_owner_modifications_sorted_chronologically(self) -> list[ChangeCurrentOwnerAction]:
         # return sorted(self._change_state_actions_by_date.items())
         return self._all_current_owner_modifications_sorted_chronologically
@@ -512,6 +518,7 @@ class ChampFXEntry:
     def get_all_current_owner_modifications_sorted_reversed_chronologically(self) -> list[ChangeCurrentOwnerAction]:
         # return sorted(self._change_state_actions_by_date.items())
         return self._all_current_owner_modifications_sorted_reversed_chronologically
+        return [action for _, action in sorted(self._change_current_owner_actions_by_date.items())]
 
     def get_oldest_change_action_by_new_state(self, new_state: State) -> Optional[ChangeStateAction]:
         return next((action for action in self.get_all_change_state_actions_sorted_chronologically() if action.new_state == new_state), None)
