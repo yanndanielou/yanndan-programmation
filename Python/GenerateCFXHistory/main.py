@@ -21,6 +21,7 @@ def main() -> None:
 
         all_champfx_library = cfx.ChampFXLibrary()
 
+        """
         for i in range(1, 10):
             with logger_config.stopwatch_with_label("gather_state_counts_for_each_date no filter"):
                 all_champfx_library.gather_state_counts_for_each_date(relativedelta.relativedelta(days=10))
@@ -68,6 +69,16 @@ def main() -> None:
                     cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.QUALITE]))],
                 )
         """
+
+        ui_and_results_generation.produce_results_and_displays_for_libary(
+            cfx_library=all_champfx_library,
+            output_directory_name=output_directory_name,
+            for_global=True,
+            for_each_subsystem=True,
+            for_each_current_owner_per_date=True,
+            create_excel_file=True,
+            create_html_file=True,
+        )
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=all_champfx_library,
             output_directory_name=output_directory_name,
@@ -81,7 +92,6 @@ def main() -> None:
             create_html_file=True,
         )
 
-        
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=all_champfx_library,
             output_directory_name=output_directory_name,
@@ -106,9 +116,9 @@ def main() -> None:
             ],
             create_excel_file=True,
             create_html_file=True,
-        )"""
+        )
 
-        # ui_and_results_generation.block_execution_and_keep_all_windows_open()
+        ui_and_results_generation.block_execution_and_keep_all_windows_open()
 
 
 if __name__ == "__main__":
