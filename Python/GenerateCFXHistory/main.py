@@ -26,13 +26,47 @@ def main() -> None:
                 all_champfx_library.gather_state_counts_for_each_date(relativedelta.relativedelta(days=10))
 
         for i in range(1, 10):
+            with logger_config.stopwatch_with_label("gather_state_counts_for_each_date filter nexteo"):
+                all_champfx_library.gather_state_counts_for_each_date(
+                    relativedelta.relativedelta(days=10),
+                    cfx_filters=[cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.FR_NEXTEO])])],
+                )
+
+        for i in range(1, 10):
+            with logger_config.stopwatch_with_label("gather_state_counts_for_each_date filter ats+"):
+                all_champfx_library.gather_state_counts_for_each_date(
+                    relativedelta.relativedelta(days=10),
+                    cfx_filters=[cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.ATSP])])],
+                )
+
+        for i in range(1, 10):
+            with logger_config.stopwatch_with_label("gather_state_counts_for_each_date security relevant"):
+                all_champfx_library.gather_state_counts_for_each_date(
+                    relativedelta.relativedelta(days=10),
+                    cfx_filters=[
+                        cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])])
+                    ],
+                )
+
+        for i in range(1, 10):
             with logger_config.stopwatch_with_label("gather_state_counts_for_each_date ChampFXRoleDependingOnDateFilter([role.SubSystem.ATS]"):
-                all_champfx_library.gather_state_counts_for_each_date(relativedelta.relativedelta(days=10), cfx_filters=[cfx.ChampFXRoleDependingOnDateFilter([role.SubSystem.ATS])])
+                all_champfx_library.gather_state_counts_for_each_date(
+                    relativedelta.relativedelta(days=10),
+                    cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.ATS]))],
+                )
 
         for i in range(1, 10):
             with logger_config.stopwatch_with_label("gather_state_counts_for_each_date ChampFXRoleDependingOnDateFilter([role.SubSystem.SW]"):
-                all_champfx_library.gather_state_counts_for_each_date(relativedelta.relativedelta(days=10), cfx_filters=[cfx.ChampFXRoleDependingOnDateFilter([role.SubSystem.SW])])
-
+                all_champfx_library.gather_state_counts_for_each_date(
+                    relativedelta.relativedelta(days=10),
+                    cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.SW]))],
+                )
+        for i in range(1, 10):
+            with logger_config.stopwatch_with_label("gather_state_counts_for_each_date ChampFXRoleDependingOnDateFilter([role.SubSystem.QUALITE]"):
+                all_champfx_library.gather_state_counts_for_each_date(
+                    relativedelta.relativedelta(days=10),
+                    cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.QUALITE]))],
+                )
         """
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=all_champfx_library,
