@@ -738,6 +738,13 @@ class ChampFxFilter:
 
         return True
 
+    def match_role_depending_on_date_filter_if_filter_exists(self, cfx_entry: ChampFXEntry, timestamp: Optional[datetime] = None) -> bool:
+        if self.role_depending_on_date_filter:
+            if not self.role_depending_on_date_filter.match_cfx_entry(cfx_entry=cfx_entry, timestamp=cast(datetime, timestamp)):
+                return False
+
+        return True
+
     def match_cfx_entry(self, cfx_entry: ChampFXEntry, timestamp: Optional[datetime] = None) -> bool:
 
         if not self.static_criteria_match_cfx_entry(cfx_entry):
