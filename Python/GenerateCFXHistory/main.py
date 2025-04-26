@@ -21,7 +21,6 @@ def main() -> None:
 
         all_champfx_library = cfx.ChampFXLibrary()
 
-        """
         for i in range(1, 10):
             with logger_config.stopwatch_with_label("gather_state_counts_for_each_date no filter"):
                 all_champfx_library.gather_state_counts_for_each_date(relativedelta.relativedelta(days=10))
@@ -68,7 +67,6 @@ def main() -> None:
                     relativedelta.relativedelta(days=10),
                     cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.QUALITE]))],
                 )
-        """
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=all_champfx_library,
