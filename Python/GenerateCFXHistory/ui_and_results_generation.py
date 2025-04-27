@@ -109,7 +109,7 @@ def produce_excel_output_file(output_excel_file: str, all_results_to_display: cf
     # Convert data to DataFrame for Excel output
 
     data_for_excel = pd.DataFrame(all_results_to_display.get_state_counts_per_timestamp(), index=all_results_to_display.get_all_timestamps())
-    data_for_excel.index.name = "Month"
+    data_for_excel.index.name = "Date"
 
     # Save DataFrame to Excel
     with pd.ExcelWriter(output_excel_file) as writer:
