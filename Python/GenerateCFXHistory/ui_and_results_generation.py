@@ -1,6 +1,6 @@
 import datetime
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import timedelta
 from enum import auto
 from typing import Any, Dict, List, Optional, Set
 
@@ -43,7 +43,7 @@ def produce_results_and_displays(
     display_without_cumulative_eras: bool,
     display_with_cumulative_eras: bool,
     create_html_file: bool,
-    time_delta: relativedelta,
+    time_delta: relativedelta.relativedelta,
     cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
     dump_all_cfx_ids_in_json: bool = False,
 ) -> None:
@@ -109,7 +109,7 @@ def produce_excel_output_file(output_excel_file: str, all_results_to_display: cf
     # Convert data to DataFrame for Excel output
 
     state_counts_per_timestamp: List[dict[cfx.State, int]] = all_results_to_display.get_state_counts_per_timestamp()
-    all_timestamps: List[datetime] = all_results_to_display.get_all_timestamps()
+    all_timestamps: List[datetime.datetime] = all_results_to_display.get_all_timestamps()
 
     # Convert state enumerations to their names for DataFrame columns
     converted_data = [{state.name: count for state, count in state_dict.items()} for state_dict in state_counts_per_timestamp]
@@ -180,7 +180,7 @@ def produce_results_and_displays_for_libary(
     for_global: bool,
     for_each_subsystem: bool,
     for_each_current_owner_per_date: bool,
-    time_delta: relativedelta = relativedelta.relativedelta(days=10),
+    time_delta: relativedelta.relativedelta = relativedelta.relativedelta(days=10),
     cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
     create_html_file: bool = True,
     create_excel_file: bool = True,

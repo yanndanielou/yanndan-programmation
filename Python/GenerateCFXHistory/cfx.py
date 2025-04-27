@@ -2,7 +2,7 @@ import datetime
 import math
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import timedelta
 from enum import auto
 from typing import Any, Dict, List, Optional, Set, cast
 
@@ -61,7 +61,7 @@ class State(enums_utils.NameBasedIntEnum):
 
 
 class OneTimestampResult:
-    def __init__(self, all_results_to_display: "AllResultsPerDates", timestamp: datetime):
+    def __init__(self, all_results_to_display: "AllResultsPerDates", timestamp: datetime.datetime):
         self._timestamp = timestamp
         self.count_by_state: dict[State, int] = defaultdict(int)
         self.all_results_to_display = all_results_to_display
@@ -86,7 +86,7 @@ class AllResultsPerDates:
         self.all_cfx_ids_that_have_matched: set[str] = set()
         self.at_least_one_cfx_matching_filter_has_been_found = False
 
-    def get_all_timestamps(self) -> List[datetime]:
+    def get_all_timestamps(self) -> List[datetime.datetime]:
         all_timestamps = [results._timestamp for results in self.timestamp_results]
         return all_timestamps
 
@@ -103,13 +103,18 @@ class AllResultsPerDates:
                 self.cumulative_counts[state].append(one_timestamp.count_by_state[state])
 
 
+class DatesGenerator:
+    def __init__(self, constant_interval: Optional[relativedelta.relativedelta]) -> None:
+        pass
+
+
 @dataclass
 class BaseAction:
     _cfx_request: "ChampFXEntry"
-    _timestamp: datetime
+    _timestamp: datetime.datetime
 
     @property
-    def timestamp(self) -> datetime:
+    def timestamp(self) -> datetime.datetime:
         return self._timestamp
 
     @property
@@ -297,7 +302,7 @@ class ChampFXLibrary:
     def get_cfx_by_id(self, cfx_id: str) -> "ChampFXEntry":
         return self._champfx_entry_by_id[cfx_id]
 
-    def get_cfx_by_state_at_date(self, reference_date: datetime) -> Dict[State, list["ChampFXEntry"]]:
+    def get_cfx_by_state_at_date(self, reference_date: datetime.datetime) -> Dict[State, list["ChampFXEntry"]]:
         result: Dict[State, List[ChampFXEntry]] = {}
         for cfx_entry in self.get_all_cfx():
             state = cfx_entry.get_state_at_date(reference_date)
@@ -307,20 +312,20 @@ class ChampFXLibrary:
 
         return result
 
-    def get_earliest_submit_date(self) -> datetime:
+    def get_earliest_submit_date(self) -> datetime.datetime:
         earliest_date = min(entry.get_oldest_change_action_by_new_state(State.SUBMITTED).timestamp for entry in self.get_all_cfx())
         return earliest_date
 
-    def get_dates_since_earliest_submit_date(self, time_delta: relativedelta) -> List[datetime]:
+    def get_dates_since_earliest_submit_date(self, time_delta: relativedelta.relativedelta) -> List[datetime.datetime]:
         earliest_cfx_date = self.get_earliest_submit_date()
 
         earliest_date_considered = earliest_cfx_date.replace(day=1)
 
-        # Ensure 'beginning_of_next_month' is naive datetime
-        beginning_of_next_month = (datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        # Ensure 'beginning_of_next_month' is naive datetime.datetime
+        beginning_of_next_month = (datetime.datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
         dates = []
 
-        # Ensure 'current_date' is naive datetime
+        # Ensure 'current_date' is naive datetime.datetime
         current_date_iter = earliest_date_considered.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
         while current_date_iter <= beginning_of_next_month:
             dates.append(current_date_iter)
@@ -328,16 +333,16 @@ class ChampFXLibrary:
 
         return dates
 
-    def get_tenth_days_since_earliest_submit_date(self) -> List[datetime]:
+    def get_tenth_days_since_earliest_submit_date(self) -> List[datetime.datetime]:
         earliest_cfx_date = self.get_earliest_submit_date()
 
         earliest_date_considered = earliest_cfx_date.replace(day=1)
 
-        # Ensure 'beginning_of_next_month' is naive datetime
-        beginning_of_next_month = (datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        # Ensure 'beginning_of_next_month' is naive datetime.datetime
+        beginning_of_next_month = (datetime.datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
         dates = []
 
-        # Ensure 'current_date' is naive datetime
+        # Ensure 'current_date' is naive datetime.datetime
         current_date_iter = earliest_date_considered.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
         while current_date_iter <= beginning_of_next_month:
             dates.append(current_date_iter)
@@ -345,16 +350,16 @@ class ChampFXLibrary:
 
         return dates
 
-    def get_months_since_earliest_submit_date(self) -> List[datetime]:
+    def get_months_since_earliest_submit_date(self) -> List[datetime.datetime]:
         earliest_cfx_date = self.get_earliest_submit_date()
 
         earliest_date_considered = earliest_cfx_date.replace(day=1)
 
-        # Ensure 'beginning_of_next_month' is naive datetime
-        beginning_of_next_month = (datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        # Ensure 'beginning_of_next_month' is naive datetime.datetime
+        beginning_of_next_month = (datetime.datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
         months = []
 
-        # Ensure 'current_date' is naive datetime
+        # Ensure 'current_date' is naive datetime.datetime
         current_date_iter = earliest_date_considered.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
         while current_date_iter <= beginning_of_next_month:
             months.append(current_date_iter)
@@ -366,10 +371,10 @@ class ChampFXLibrary:
 
         return months
 
-    def gather_state_counts_for_each_date(self, time_delta: relativedelta, cfx_filters: Optional[List["ChampFxFilter"]] = None) -> AllResultsPerDates:
+    def gather_state_counts_for_each_date(self, time_delta: relativedelta.relativedelta, cfx_filters: Optional[List["ChampFxFilter"]] = None) -> AllResultsPerDates:
 
         all_results_to_display: AllResultsPerDates = AllResultsPerDates()
-        timestamps_to_display_data: List[datetime] = self.get_dates_since_earliest_submit_date(time_delta)
+        timestamps_to_display_data: List[datetime.datetime] = self.get_dates_since_earliest_submit_date(time_delta)
 
         # First, filter CFX that will never match the filter
         all_cfx_to_consider: List[ChampFXEntry] = []
@@ -466,10 +471,10 @@ class ChampFXEntry:
         security_relevant: SecurityRelevant,
     ):
         self._change_state_actions: list[ChangeStateAction] = []
-        self._change_state_actions_by_date: Dict[datetime, ChangeStateAction] = dict()
+        self._change_state_actions_by_date: Dict[datetime.datetime, ChangeStateAction] = dict()
 
         self._change_current_owner_actions: list[ChangeCurrentOwnerAction] = []
-        self._change_current_owner_actions_by_date: Dict[datetime, ChangeCurrentOwnerAction] = dict()
+        self._change_current_owner_actions_by_date: Dict[datetime.datetime, ChangeCurrentOwnerAction] = dict()
 
         self.cfx_id = cfx_id
         self._raw_state: State = raw_state
@@ -481,7 +486,7 @@ class ChampFXEntry:
         self._subsystem: role.SubSystem.TBD
 
         self._subsystem_from_fixed_implemented_in: role.SubSystem = role.SubSystem.TBD
-        self._submit_date: datetime = utils.convert_champfx_extract_date(submit_date_raw)
+        self._submit_date: datetime.datetime = utils.convert_champfx_extract_date(submit_date_raw)
 
         self._cfx_project = cfx_project
         self._safety_relevant = safety_relevant
@@ -525,10 +530,10 @@ class ChampFXEntry:
     def get_oldest_change_action_by_new_state(self, new_state: State) -> Optional[ChangeStateAction]:
         return next((action for action in self.get_all_change_state_actions_sorted_chronologically() if action.new_state == new_state), None)
 
-    def get_newest_change_action_that_is_before_date(self, reference_date: datetime) -> Optional[ChangeStateAction]:
+    def get_newest_change_action_that_is_before_date(self, reference_date: datetime.datetime) -> Optional[ChangeStateAction]:
         return next((action for action in self.get_all_change_state_actions_sorted_reversed_chronologically() if action.timestamp < reference_date), None)
 
-    def get_newest_current_owner_modification_that_is_before_date(self, reference_date: datetime) -> Optional[ChangeCurrentOwnerAction]:
+    def get_newest_current_owner_modification_that_is_before_date(self, reference_date: datetime.datetime) -> Optional[ChangeCurrentOwnerAction]:
         return next((action for action in self.get_all_current_owner_modifications_sorted_reversed_chronologically() if action.timestamp < reference_date), None)
 
     def add_change_state_action(self, change_state_action: ChangeStateAction) -> None:
@@ -562,11 +567,11 @@ class ChampFXEntry:
             return self._subsystem_from_fixed_implemented_in
         return None
 
-    def get_current_role_at_date(self, reference_date: datetime) -> Optional[role.SubSystem]:
+    def get_current_role_at_date(self, reference_date: datetime.datetime) -> Optional[role.SubSystem]:
         current_owner = self.get_current_owner_at_date(reference_date)
         return None if current_owner is None else current_owner.subsystem
 
-    def get_current_owner_at_date(self, reference_date: datetime) -> Optional[role.CfxUser]:
+    def get_current_owner_at_date(self, reference_date: datetime.datetime) -> Optional[role.CfxUser]:
         if reference_date < self._submit_date:
             return None
 
@@ -575,7 +580,7 @@ class ChampFXEntry:
             return newest_current_owner_modification_action_that_is_before_date.new_owner
         return self._current_owner
 
-    def get_state_at_date(self, reference_date: datetime) -> State:
+    def get_state_at_date(self, reference_date: datetime.datetime) -> State:
 
         newest_change_action_that_is_before_date = self.get_newest_change_action_that_is_before_date(reference_date)
         if newest_change_action_that_is_before_date is None:
@@ -642,7 +647,7 @@ class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter):
         label: str = f"{self.field_name}"
 
         if self.field_accepted_values:
-            label = f"{label} among {self.field_accepted_values}" if len(self.field_accepted_values) > 1 else "{label}  {self.field_accepted_values}"
+            label = f"{label} among {self.field_accepted_values}" if len(self.field_accepted_values) > 1 else f"{label}  {self.field_accepted_values}"
         else:
             label = f"{label} without {self.field_forbidden_values}"
 
@@ -659,7 +664,7 @@ class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter):
 
 @dataclass
 class ChampFXRoleAtSpecificDateFilter:
-    timestamp: datetime
+    timestamp: datetime.datetime
     roles_at_date_allowed: List[role.SubSystem]
 
     def match_cfx_entry(self, cfx_entry: ChampFXEntry) -> bool:
@@ -676,7 +681,7 @@ class ChampFXRoleDependingOnDateFilter:
         label: str = f"{self.roles_at_date_allowed}"
         self.label = label
 
-    def match_cfx_entry(self, cfx_entry: ChampFXEntry, timestamp: datetime) -> bool:
+    def match_cfx_entry(self, cfx_entry: ChampFXEntry, timestamp: datetime.datetime) -> bool:
         return ChampFXRoleAtSpecificDateFilter(roles_at_date_allowed=self.roles_at_date_allowed, timestamp=timestamp).match_cfx_entry(cfx_entry=cfx_entry)
 
 
@@ -740,19 +745,19 @@ class ChampFxFilter:
 
         return True
 
-    def match_role_depending_on_date_filter_if_filter_exists(self, cfx_entry: ChampFXEntry, timestamp: Optional[datetime] = None) -> bool:
+    def match_role_depending_on_date_filter_if_filter_exists(self, cfx_entry: ChampFXEntry, timestamp: Optional[datetime.datetime] = None) -> bool:
         if self.role_depending_on_date_filter:
-            if not self.role_depending_on_date_filter.match_cfx_entry(cfx_entry=cfx_entry, timestamp=cast(datetime, timestamp)):
+            if not self.role_depending_on_date_filter.match_cfx_entry(cfx_entry=cfx_entry, timestamp=cast(datetime.datetime, timestamp)):
                 return False
 
         return True
 
-    def match_cfx_entry(self, cfx_entry: ChampFXEntry, timestamp: Optional[datetime] = None) -> bool:
+    def match_cfx_entry(self, cfx_entry: ChampFXEntry, timestamp: Optional[datetime.datetime] = None) -> bool:
 
         if not self.static_criteria_match_cfx_entry(cfx_entry):
             return False
 
-        if not self.match_role_depending_on_date_filter_if_filter_exists(cfx_entry=cfx_entry, timestamp=cast(datetime, timestamp)):
+        if not self.match_role_depending_on_date_filter_if_filter_exists(cfx_entry=cfx_entry, timestamp=cast(datetime.datetime, timestamp)):
             return False
 
         return True
