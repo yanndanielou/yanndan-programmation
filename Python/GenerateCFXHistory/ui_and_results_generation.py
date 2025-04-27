@@ -108,7 +108,12 @@ def produce_results_and_displays(
 def produce_excel_output_file(output_excel_file: str, all_results_to_display: cfx.AllResultsPerDates) -> None:
     # Convert data to DataFrame for Excel output
 
-    data_for_excel = pd.DataFrame(all_results_to_display.get_state_counts_per_timestamp(), index=all_results_to_display.get_all_timestamps())
+    state_counts_per_timestamp: List[dict[cfx.State, int]] = all_results_to_display.get_state_counts_per_timestamp()
+    all_timestamps: List[datetime] = all_results_to_display.get_all_timestamps()
+
+    # Convert state enumerations to their names for DataFrame columns
+    converted_data = [{state.name: count for state, count in state_dict.items()} for state_dict in state_counts_per_timestamp]
+    data_for_excel = pd.DataFrame(converted_data, index=all_timestamps)
     data_for_excel.index.name = "Date"
 
     # Save DataFrame to Excel
