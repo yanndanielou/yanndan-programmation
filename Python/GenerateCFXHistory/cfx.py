@@ -387,7 +387,9 @@ class ChampFXLibrary:
             count_by_state: dict[State, int] = defaultdict(int)
             for cfx_entry in all_cfx_to_consider:
 
-                match_all_filters = True if cfx_filters is None else all(cfx_filter.match_cfx_entry(cfx_entry, timestamp_to_display_data) for cfx_filter in cfx_filters)
+                match_all_filters = (
+                    True if cfx_filters is None else all(cfx_filter.match_role_depending_on_date_filter_if_filter_exists(cfx_entry, timestamp_to_display_data) for cfx_filter in cfx_filters)
+                )
                 if match_all_filters:
                     all_results_to_display.all_cfx_ids_that_have_matched.add(cfx_entry.cfx_id)
 
@@ -640,7 +642,7 @@ class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter):
         label: str = f"{self.field_name}"
 
         if self.field_accepted_values:
-            label = f"{label} among {self.field_accepted_values}"
+            label = f"{label} among {self.field_accepted_values}" if len(self.field_accepted_values) > 1 else "{label}  {self.field_accepted_values}"
         else:
             label = f"{label} without {self.field_forbidden_values}"
 
@@ -750,8 +752,7 @@ class ChampFxFilter:
         if not self.static_criteria_match_cfx_entry(cfx_entry):
             return False
 
-        if self.role_depending_on_date_filter:
-            if not self.role_depending_on_date_filter.match_cfx_entry(cfx_entry=cfx_entry, timestamp=cast(datetime, timestamp)):
-                return False
+        if not self.match_role_depending_on_date_filter_if_filter_exists(cfx_entry=cfx_entry, timestamp=cast(datetime, timestamp)):
+            return False
 
         return True
