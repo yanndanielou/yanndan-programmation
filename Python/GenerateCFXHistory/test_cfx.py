@@ -124,6 +124,18 @@ class TestFirstCurrentOwner:
         assert first_current_owner.subsystem == role.SubSystem.ATS
 
 
+class TestSubsystem:
+    def test_CFX00688257_that_has_been_rejected_and_closed(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_light_champfx_library
+        cfx_entry = champfx_library.get_cfx_by_id("CFX00688257")
+        assert cfx_entry._subsystem == role.SubSystem.ADONEM
+
+    def test_CFX00822357_that_has_been_fixed_and_closed(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_light_champfx_library
+        cfx_entry = champfx_library.get_cfx_by_id("CFX00822357")
+        assert cfx_entry._subsystem == role.SubSystem.ADONEM
+
+
 class TestCurrentOwner:
 
     def test_CFX00427036_currenet_owner_by_date(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
