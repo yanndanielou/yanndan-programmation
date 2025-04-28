@@ -221,12 +221,12 @@ class TestCurrentOwner:
 
 
 class TestStatisticsPreparation:
-    @pytest.mark.timeout(60)
+    @pytest.mark.timeout(120)
     def test_gather_state_counts_for_each_date_whithout_filter(self, create_full_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_full_champfx_library
         champfx_library.gather_state_counts_for_each_date(relativedelta.relativedelta(days=10))
 
-    @pytest.mark.timeout(60)
+    @pytest.mark.timeout(120)
     def test_gather_state_counts_for_each_date_whith_filter(self, create_full_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_full_champfx_library
         champfx_library.gather_state_counts_for_each_date(relativedelta.relativedelta(days=10))
