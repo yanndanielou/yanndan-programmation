@@ -20,6 +20,16 @@ DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH: str = "Input/extract_cfx_ch
 DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH: str = "Input/cfx_extended_history.txt"
 
 
+class RejectionCause(enums_utils.NameBasedEnum):
+    NONE = auto()
+    NO_FIX_CHANGE = auto()
+    DUPLICATE = auto()
+    NOT_A_BUG = auto()
+    NOT_PART_OF_CONTRACT = auto()
+    FORWARDED_TO_SAP_CS = auto()
+    NOT_REPRODUCIBLE = auto()
+
+
 class CfxProject(enums_utils.NameBasedEnum):
     FR_NEXTEO = auto()
     ATSP = auto()
@@ -423,6 +433,13 @@ class ChampFXEntryBuilder:
         return security_relevant
 
     @staticmethod
+    def convert_champfx_rejection_cause(raw_rejection_cause: str) -> RejectionCause:
+        rejection_cause: RejectionCause = (
+            RejectionCause.NONE if type(raw_rejection_cause) is not str and math.isnan(raw_rejection_cause) else RejectionCause[raw_rejection_cause.replace("/", "_").replace(" ", "_").upper()]
+        )
+        return rejection_cause
+
+    @staticmethod
     def to_optional_boolean(raw_value: str) -> Optional[bool]:
         if raw_value == "Yes":
             return True
@@ -445,6 +462,9 @@ class ChampFXEntryBuilder:
         raw_security_relevant: str = row["SecurityRelevant"]
         security_relevant: SecurityRelevant = ChampFXEntryBuilder.convert_champfx_security_relevant(raw_security_relevant)
 
+        raw_rejection_cause: str = row["RejectionCause"]
+        rejection_cause: RejectionCause = ChampFXEntryBuilder.convert_champfx_rejection_cause(raw_rejection_cause)
+
         champfx_entry = ChampFXEntry(
             cfx_id=cfx_id,
             raw_state=raw_state,
@@ -454,6 +474,7 @@ class ChampFXEntryBuilder:
             cfx_project=cfx_project,
             safety_relevant=safety_relevant,
             security_relevant=security_relevant,
+            rejection_cause=rejection_cause,
         )
         return champfx_entry
 
@@ -469,6 +490,7 @@ class ChampFXEntry:
         cfx_project: CfxProject,
         safety_relevant: Optional[bool],
         security_relevant: SecurityRelevant,
+        rejection_cause: RejectionCause,
     ):
         self._change_state_actions: list[ChangeStateAction] = []
         self._change_state_actions_by_date: Dict[datetime.datetime, ChangeStateAction] = dict()
@@ -482,6 +504,8 @@ class ChampFXEntry:
         self._current_owner_raw: str = current_owner_raw
         self._current_owner: role.CfxUser = role.UNKNOWN_USER
         self._current_owner_role: role.SubSystem = role.UNKNOWN_USER.subsystem
+
+        self._rejection_cause = rejection_cause
 
         self._subsystem: role.SubSystem.TBD
 
@@ -622,10 +646,11 @@ class ChampFXWhitelistFilter(ChampFXtSaticCriteriaFilter):
             self.label: str = self._cfx_to_treat_whitelist_text_file_full_path
             self.label = string_utils.right_part_after_last_occurence(self.label, "/")
             self.label = string_utils.right_part_after_last_occurence(self.label, "\\")
+            self.label += " "
             self._cfx_to_treat_whitelist_ids = set()
             with logger_config.stopwatch_with_label(f"Load CfxUserLibrary {cfx_to_treat_whitelist_text_file_full_path}"):
                 with open(self._cfx_to_treat_whitelist_text_file_full_path, "r", encoding="utf-8") as cfx_known_by_cstmr_text_file:
-                    self._cfx_to_treat_whitelist_ids = [line.strip() for line in cfx_known_by_cstmr_text_file.readlines()]
+                    self._cfx_to_treat_whitelist_ids.update([line.strip() for line in cfx_known_by_cstmr_text_file.readlines()])
             logger_config.print_and_log_info(f"Number of cfx_to_treat_whitelist_ids:{len(self._cfx_to_treat_whitelist_ids)}")
 
         elif cfx_to_treat_ids:
