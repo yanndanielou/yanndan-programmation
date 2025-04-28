@@ -215,8 +215,8 @@ class ChampFXLibrary:
             with logger_config.stopwatch_with_label("create current owner modifications"):
                 self.create_current_owner_modifications()
 
-            with logger_config.stopwatch_with_label("ChampFXLibrary process_subsystem_from_fixed_implemented_in"):
-                list(map(lambda champ_fx: champ_fx.process_subsystem_from_fixed_implemented_in(), self.get_all_cfx()))
+            with logger_config.stopwatch_with_label("ChampFXLibrary process_subsystems"):
+                list(map(lambda champ_fx: champ_fx.process_all_subsystems(), self.get_all_cfx()))
 
             with logger_config.stopwatch_with_label("ChampFXLibrary process_subsystem"):
                 list(map(lambda champ_fx: champ_fx.process_subsystem(), self.get_all_cfx()))
@@ -451,7 +451,8 @@ class ChampFXEntryBuilder:
     def build_with_row(row: pd.Series) -> "ChampFXEntry":
         cfx_id = row["CFXID"]
         raw_state: State = State[(row["State"].upper())]
-        fixed_implemented_in: str = row["FixedImplementedIn"]
+        fixed_implemented_in_raw: str = row["FixedImplementedIn"]
+        system_structure_raw: str = row["SystemStructure"]
         current_owner_raw: str = row["CurrentOwner.FullName"]
         submit_date_raw: str = row["SubmitDate"]
         raw_project: str = cast(str, row["Project"])
@@ -468,7 +469,8 @@ class ChampFXEntryBuilder:
         champfx_entry = ChampFXEntry(
             cfx_id=cfx_id,
             raw_state=raw_state,
-            fixed_implemented_in=fixed_implemented_in,
+            fixed_implemented_in_raw=fixed_implemented_in_raw,
+            system_structure_raw=system_structure_raw,
             current_owner_raw=current_owner_raw,
             submit_date_raw=submit_date_raw,
             cfx_project=cfx_project,
@@ -484,7 +486,8 @@ class ChampFXEntry:
         self,
         cfx_id: str,
         raw_state: State,
-        fixed_implemented_in: str,
+        fixed_implemented_in_raw: str,
+        system_structure_raw: str,
         current_owner_raw: str,
         submit_date_raw: str,
         cfx_project: CfxProject,
@@ -500,7 +503,8 @@ class ChampFXEntry:
 
         self.cfx_id = cfx_id
         self._raw_state: State = raw_state
-        self._fixed_implemented_in: str = fixed_implemented_in
+        self._fixed_implemented_in_raw: str = fixed_implemented_in_raw
+        self._system_structure_raw: str = system_structure_raw
         self._current_owner_raw: str = current_owner_raw
         self._current_owner: role.CfxUser = role.UNKNOWN_USER
         self._current_owner_role: role.SubSystem = role.UNKNOWN_USER.subsystem
@@ -509,7 +513,8 @@ class ChampFXEntry:
 
         self._subsystem: role.SubSystem.TBD
 
-        self._subsystem_from_fixed_implemented_in: role.SubSystem = role.SubSystem.TBD
+        self._subsystem_from_fixed_implemented_in: Optional[role.SubSystem] = role.SubSystem.TBD
+        self._system_structure: Optional[role.SubSystem] = role.SubSystem.TBD
         self._submit_date: datetime.datetime = utils.convert_champfx_extract_date(submit_date_raw)
 
         self._cfx_project = cfx_project
@@ -583,13 +588,17 @@ class ChampFXEntry:
         return self._current_owner_role
 
     def process_subsystem(self) -> None:
-        self._subsystem = self._subsystem_from_fixed_implemented_in if self._subsystem_from_fixed_implemented_in else self._current_owner_role
+        if self._rejection_cause != RejectionCause.NONE:
+            self._subsystem = self._system_structure
+        else:
+            self._subsystem = self._subsystem_from_fixed_implemented_in if self._subsystem_from_fixed_implemented_in else self._current_owner_role
 
-    def process_subsystem_from_fixed_implemented_in(self) -> Optional[role.SubSystem]:
-        if self._fixed_implemented_in:
-            self._subsystem_from_fixed_implemented_in = role.get_subsystem_from_champfx_fixed_implemented_in(self._fixed_implemented_in)
-            return self._subsystem_from_fixed_implemented_in
-        return None
+    def process_all_subsystems(self) -> None:
+        if self._fixed_implemented_in_raw:
+            self._subsystem_from_fixed_implemented_in = role.get_subsystem_from_champfx_fixed_implemented_in(self._fixed_implemented_in_raw)
+
+        if self._system_structure_raw:
+            self._system_structure = role.get_subsystem_from_champfx_fixed_implemented_in(self._system_structure_raw)
 
     def get_current_role_at_date(self, reference_date: datetime.datetime) -> Optional[role.SubSystem]:
         current_owner = self.get_current_owner_at_date(reference_date)
