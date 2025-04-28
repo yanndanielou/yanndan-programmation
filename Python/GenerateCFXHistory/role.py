@@ -4,7 +4,7 @@ from common import enums_utils
 
 from logger import logger_config
 
-from typing import Dict
+from typing import Dict, Optional
 
 from dataclasses import dataclass, field
 
@@ -112,7 +112,7 @@ class CfxUserLibrary:
         return self._cfx_user_by_full_name_lower[full_name_to_consider]
 
 
-def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in: str) -> SubSystem:
+def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in: str) -> Optional[SubSystem]:
     subsystem_mapping = {
         SubSystem.TCR3: ["S003_Component TCR3", "TCR3"],
         SubSystem.SW: [
