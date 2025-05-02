@@ -58,7 +58,9 @@ def produce_results_and_displays(
         generation_label += "All"
 
     with logger_config.stopwatch_with_label(f"{generation_label} Gather state counts for each date"):
-        all_results_to_display: cfx.AllResultsPerDates = cfx_library.gather_state_counts_for_each_date(time_delta=time_delta, cfx_filters=cfx_filters)
+        all_results_to_display: cfx.AllResultsPerDates = cfx_library.gather_state_counts_for_each_date(
+            cfx_filters=cfx_filters, dates_generator=cfx.ConstantIntervalDatesGenerator(time_delta=time_delta)
+        )
 
     with logger_config.stopwatch_alert_if_exceeds_duration("compute_cumulative_counts", duration_threshold_to_alert_info_in_s=0.1):
         all_results_to_display.compute_cumulative_counts()

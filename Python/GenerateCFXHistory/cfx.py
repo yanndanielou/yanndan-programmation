@@ -114,8 +114,65 @@ class AllResultsPerDates:
 
 
 class DatesGenerator:
-    def __init__(self, constant_interval: Optional[relativedelta.relativedelta]) -> None:
+    def __init__(self) -> None:
         pass
+
+    def get_dates_since(self, start_date: datetime.datetime) -> List[datetime.datetime]:
+        all_dates = self._compute_dates_since(start_date=start_date)
+        logger_config.print_and_log_info(f"Number of dates since:{start_date}: {len(all_dates)}")
+        return all_dates
+
+    def _compute_dates_since(self, start_date: datetime.datetime) -> List[datetime.datetime]:
+        return NotImplemented
+
+
+class ConstantIntervalDatesGenerator(DatesGenerator):
+    def __init__(self, time_delta: relativedelta.relativedelta) -> None:
+        self._time_delta = time_delta
+
+    def _compute_dates_since(self, start_date: datetime.datetime) -> List[datetime.datetime]:
+
+        # Ensure 'beginning_of_next_month' is naive datetime.datetime
+        beginning_of_next_month = (datetime.datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        dates = []
+
+        # Ensure 'current_date' is naive datetime.datetime
+        current_date_iter = start_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        while current_date_iter <= beginning_of_next_month:
+            dates.append(current_date_iter)
+            current_date_iter = current_date_iter + self._time_delta
+
+        return dates
+
+
+class DecreasingIntervalDatesGenerator(DatesGenerator):
+    def __init__(self) -> None:
+        pass
+
+    def _compute_dates_since(self, start_date: datetime.datetime) -> List[datetime.datetime]:
+
+        # Ensure 'beginning_of_next_month' is naive datetime.datetime
+        beginning_of_next_month = (datetime.datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        dates = []
+
+        # Ensure 'current_date' is naive datetime.datetime
+        current_date_iter = start_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        while current_date_iter <= beginning_of_next_month:
+            dates.append(current_date_iter)
+
+            current_date_delta_with_now = relativedelta.relativedelta(seconds=(current_date_iter - current_date_iter).total_seconds())
+            if current_date_delta_with_now > relativedelta.relativedelta(year=1):
+                time_delta = relativedelta.relativedelta(month=current_date_delta_with_now.years)
+
+            elif current_date_delta_with_now > relativedelta.relativedelta(month=6):
+                time_delta = relativedelta.relativedelta(weeks=2)
+
+            else:
+                time_delta = relativedelta.relativedelta(weeks=1)
+
+            current_date_iter = current_date_iter + time_delta
+
+        return dates
 
 
 @dataclass
@@ -326,65 +383,10 @@ class ChampFXLibrary:
         earliest_date = min(entry.get_oldest_change_action_by_new_state(State.SUBMITTED).timestamp for entry in self.get_all_cfx())
         return earliest_date
 
-    def get_dates_since_earliest_submit_date(self, time_delta: relativedelta.relativedelta) -> List[datetime.datetime]:
-        earliest_cfx_date = self.get_earliest_submit_date()
-
-        earliest_date_considered = earliest_cfx_date.replace(day=1)
-
-        # Ensure 'beginning_of_next_month' is naive datetime.datetime
-        beginning_of_next_month = (datetime.datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
-        dates = []
-
-        # Ensure 'current_date' is naive datetime.datetime
-        current_date_iter = earliest_date_considered.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
-        while current_date_iter <= beginning_of_next_month:
-            dates.append(current_date_iter)
-            current_date_iter = current_date_iter + time_delta
-
-        return dates
-
-    def get_tenth_days_since_earliest_submit_date(self) -> List[datetime.datetime]:
-        earliest_cfx_date = self.get_earliest_submit_date()
-
-        earliest_date_considered = earliest_cfx_date.replace(day=1)
-
-        # Ensure 'beginning_of_next_month' is naive datetime.datetime
-        beginning_of_next_month = (datetime.datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
-        dates = []
-
-        # Ensure 'current_date' is naive datetime.datetime
-        current_date_iter = earliest_date_considered.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
-        while current_date_iter <= beginning_of_next_month:
-            dates.append(current_date_iter)
-            current_date_iter = current_date_iter + timedelta(days=10)
-
-        return dates
-
-    def get_months_since_earliest_submit_date(self) -> List[datetime.datetime]:
-        earliest_cfx_date = self.get_earliest_submit_date()
-
-        earliest_date_considered = earliest_cfx_date.replace(day=1)
-
-        # Ensure 'beginning_of_next_month' is naive datetime.datetime
-        beginning_of_next_month = (datetime.datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
-        months = []
-
-        # Ensure 'current_date' is naive datetime.datetime
-        current_date_iter = earliest_date_considered.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
-        while current_date_iter <= beginning_of_next_month:
-            months.append(current_date_iter)
-            # Move to the first day of the next month
-            if current_date_iter.month == 12:
-                current_date_iter = current_date_iter.replace(year=current_date_iter.year + 1, month=1)
-            else:
-                current_date_iter = current_date_iter.replace(month=current_date_iter.month + 1)
-
-        return months
-
-    def gather_state_counts_for_each_date(self, time_delta: relativedelta.relativedelta, cfx_filters: Optional[List["ChampFxFilter"]] = None) -> AllResultsPerDates:
+    def gather_state_counts_for_each_date(self, dates_generator: DatesGenerator, cfx_filters: Optional[List["ChampFxFilter"]] = None) -> AllResultsPerDates:
 
         all_results_to_display: AllResultsPerDates = AllResultsPerDates()
-        timestamps_to_display_data: List[datetime.datetime] = self.get_dates_since_earliest_submit_date(time_delta)
+        timestamps_to_display_data: List[datetime.datetime] = dates_generator.get_dates_since(start_date=self.get_earliest_submit_date().replace(day=1))
 
         # First, filter CFX that will never match the filter
         all_cfx_to_consider: List[ChampFXEntry] = []

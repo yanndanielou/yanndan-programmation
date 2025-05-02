@@ -224,13 +224,13 @@ class TestStatisticsPreparation:
     @pytest.mark.timeout(120)
     def test_gather_state_counts_for_each_date_whithout_filter(self, create_full_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_full_champfx_library
-        champfx_library.gather_state_counts_for_each_date(relativedelta.relativedelta(days=10))
+        champfx_library.gather_state_counts_for_each_date(cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)))
 
     @pytest.mark.timeout(120)
     def test_gather_state_counts_for_each_date_whith_filter(self, create_full_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_full_champfx_library
-        champfx_library.gather_state_counts_for_each_date(relativedelta.relativedelta(days=10))
+        champfx_library.gather_state_counts_for_each_date(cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)))
         champfx_library.gather_state_counts_for_each_date(
-            relativedelta.relativedelta(days=10),
+            cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.ATS]))],
         )
