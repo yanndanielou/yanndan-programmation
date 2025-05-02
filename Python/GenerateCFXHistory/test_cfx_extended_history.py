@@ -7,13 +7,13 @@ from typing import List
 
 class TestDecodeTime:
 
-    def tests_weird_dates_found_in_cfx(self):
+    def tests_weird_dates_found_in_cfx(self) -> None:
         assert cfx_extended_history.decode_time("2023-10-01 00:05:13 -718:00") is not None
 
 
 class TestAllCFXCompleteHistoryExport:
 
-    def test_very_slow_to_process_CFX00543992(self):
+    def test_very_slow_to_process_CFX00543992(self) -> None:
         all_cfx_complete_extended_histories_text_file_path = "Input/cfx_extended_history.txt"
         all_cfx_complete_history: List[cfx_extended_history.CFXEntryCompleteHistory] = cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(
             all_cfx_complete_extended_histories_text_file_path=all_cfx_complete_extended_histories_text_file_path, cfx_to_treat_whitelist_ids=["CFX00543992"]
@@ -25,7 +25,7 @@ class TestAllCFXCompleteHistoryExport:
 
 class TestParseExtendedHistory:
 
-    def test_simple_case1(self):
+    def test_simple_case1(self) -> None:
         extended_history_raw_text = """====START====
 Time           :    2021-04-14 11:13:19 +02:00
 Schema Rev     :    105
@@ -42,7 +42,7 @@ State            (9:6)
 ====END===="""
         assert cfx_extended_history.parse_history(cfx_id="CFX00123", extended_history_text=extended_history_raw_text)
 
-    def test_simple_case2(self):
+    def test_simple_case2(self) -> None:
         extended_history_raw_text = """====START====
 Time           :    2021-04-14 11:13:19 +02:00
 Schema Rev     :    105
