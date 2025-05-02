@@ -89,7 +89,7 @@ def main() -> None:
         # produce_results_and_displays_for_adonem_known_cstmr()
         # ui_and_results_generation.block_execution_and_keep_all_windows_open()
 
-        all_champfx_library = cfx.ChampFXLibrary(champfx_filters=[cfx.ChampFXWhitelistFilter(cfx_to_treat_whitelist_text_file_full_path="Input_for_Tests/sample_cfx_ids.txt")])
+        all_champfx_library = cfx.ChampFXLibrary()
         print_gathering_time(champfx_library=all_champfx_library, number_iterations=2)
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
