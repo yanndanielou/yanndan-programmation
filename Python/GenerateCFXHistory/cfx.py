@@ -157,20 +157,30 @@ class DecreasingIntervalDatesGenerator(DatesGenerator):
 
         # Ensure 'current_date' is naive datetime.datetime
         current_date_iter = start_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+
         while current_date_iter <= beginning_of_next_month:
             dates.append(current_date_iter)
 
-            current_date_delta_with_now = relativedelta.relativedelta(seconds=(current_date_iter - current_date_iter).total_seconds())
-            if current_date_delta_with_now > relativedelta.relativedelta(year=1):
-                time_delta = relativedelta.relativedelta(month=current_date_delta_with_now.years)
+            current_date_delta_with_now = datetime.datetime.now() - current_date_iter
+            days_diff = current_date_delta_with_now.days
 
-            elif current_date_delta_with_now > relativedelta.relativedelta(month=6):
+            # Compare using days to determine the time delta
+            if days_diff > 365 * 2:
+                time_delta = relativedelta.relativedelta(months=2)
+
+            elif days_diff > 365:
+                time_delta = relativedelta.relativedelta(months=1)
+
+            elif days_diff > 180:
                 time_delta = relativedelta.relativedelta(weeks=2)
 
-            else:
+            elif days_diff > 30:
                 time_delta = relativedelta.relativedelta(weeks=1)
 
-            current_date_iter = current_date_iter + time_delta
+            else:
+                time_delta = relativedelta.relativedelta(days=3)
+
+            current_date_iter += time_delta
 
         return dates
 

@@ -90,7 +90,7 @@ def main() -> None:
         # ui_and_results_generation.block_execution_and_keep_all_windows_open()
 
         all_champfx_library = cfx.ChampFXLibrary()
-        print_gathering_time(champfx_library=all_champfx_library, number_iterations=2)
+        # print_gathering_time(champfx_library=all_champfx_library, number_iterations=2)
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=all_champfx_library,

@@ -234,3 +234,9 @@ class TestStatisticsPreparation:
             cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.ATS]))],
         )
+
+
+class TestDecreasingIntervalDatesGenerator:
+
+    def test_few_values(self) -> None:
+        assert len(cfx.DecreasingIntervalDatesGenerator().get_dates_since(datetime(int(2000), int(1), int(4)))) > 100
