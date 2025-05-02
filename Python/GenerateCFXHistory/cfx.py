@@ -7,7 +7,7 @@ from enum import auto
 from typing import Any, Dict, List, Optional, Set, cast
 
 import pandas as pd
-from common import enums_utils, string_utils
+from common import enums_utils, string_utils, list_utils
 from dateutil import relativedelta
 from logger import logger_config
 
@@ -165,6 +165,9 @@ class DecreasingIntervalDatesGenerator(DatesGenerator):
             days_diff = current_date_delta_with_now.days
 
             # Compare using days to determine the time delta
+            if days_diff > 365 * 3:
+                time_delta = relativedelta.relativedelta(months=3)
+
             if days_diff > 365 * 2:
                 time_delta = relativedelta.relativedelta(months=2)
 
@@ -403,9 +406,18 @@ class ChampFXLibrary:
         if cfx_filters is None:
             all_cfx_to_consider = self.get_all_cfx()
         else:
+
+            all_roles_searched_in_filers = sum(
+                [cfx_filter.role_depending_on_date_filter.roles_at_date_allowed if cfx_filter.role_depending_on_date_filter is not None else [] for cfx_filter in cfx_filters], []
+            )
+
             for cfx_entry in self.get_all_cfx():
-                if all(cfx_filter.static_criteria_match_cfx_entry(cfx_entry) for cfx_filter in cfx_filters):
-                    all_cfx_to_consider.append(cfx_entry)
+                if len(all_roles_searched_in_filers) == 0 or list_utils.are_all_elements_of_list_included_in_list(all_roles_searched_in_filers, list(cfx_entry._all_history_current_owner_roles)):
+
+                    if all(cfx_filter.static_criteria_match_cfx_entry(cfx_entry) for cfx_filter in cfx_filters):
+                        all_cfx_to_consider.append(cfx_entry)
+                else:
+                    pass
 
         logger_config.print_and_log_info(f"Number of CFX to consider:{len(all_cfx_to_consider)}")
 
@@ -535,6 +547,7 @@ class ChampFXEntry:
         self._all_change_state_actions_sorted_chronologically: List[ChangeStateAction] = []
         self._all_change_state_actions_sorted_reversed_chronologically: List[ChangeStateAction] = []
 
+        self._all_history_current_owner_roles: set[role.SubSystem] = set()
         self._all_current_owner_modifications_sorted_chronologically: list[ChangeCurrentOwnerAction] = []
         self._all_current_owner_modifications_sorted_reversed_chronologically: list[ChangeCurrentOwnerAction] = []
 
@@ -557,6 +570,7 @@ class ChampFXEntry:
     def compute_all_current_owner_modifications_chronogically(self) -> None:
         self._all_current_owner_modifications_sorted_chronologically = [action for _, action in sorted(self._change_current_owner_actions_by_date.items())]
         self._all_current_owner_modifications_sorted_reversed_chronologicallyshronologically = list(reversed(self._all_current_owner_modifications_sorted_chronologically))
+        self._all_history_current_owner_roles.update([action.new_owner.subsystem for action in self._change_current_owner_actions])
 
     def get_all_current_owner_modifications_sorted_chronologically(self) -> list[ChangeCurrentOwnerAction]:
         # return sorted(self._change_state_actions_by_date.items())
