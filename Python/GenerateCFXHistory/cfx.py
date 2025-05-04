@@ -581,7 +581,7 @@ class ChampFXEntry:
 
     def compute_all_current_owner_modifications_chronogically(self) -> None:
         self._all_current_owner_modifications_sorted_chronologically = [action for _, action in sorted(self._change_current_owner_actions_by_date.items())]
-        self._all_current_owner_modifications_sorted_reversed_chronologicallyshronologically = list(reversed(self._all_current_owner_modifications_sorted_chronologically))
+        self._all_current_owner_modifications_sorted_reversed_chronologically = list(reversed(self._all_current_owner_modifications_sorted_chronologically))
 
     def get_all_current_owner_modifications_sorted_chronologically(self) -> list[ChangeCurrentOwnerAction]:
         # return sorted(self._change_state_actions_by_date.items())
@@ -759,6 +759,7 @@ class ChampFxFilter:
         role_depending_on_date_filter: Optional[ChampFXRoleDependingOnDateFilter] = None,
         field_filters: Optional[List[ChampFXFieldFilter]] = None,
         cfx_to_treat_whitelist_text_file_full_path: Optional[str] = None,
+        whitelist_filter: Optional[ChampFXWhitelistFilter] = None,
         label: Optional[str] = None,
     ):
         if field_filters is None:
@@ -773,7 +774,7 @@ class ChampFxFilter:
         self._static_criteria_filters: List[ChampFXtSaticCriteriaFilter] = [] + self._field_filters
 
         self._white_list_filter: Optional[ChampFXWhitelistFilter] = (
-            ChampFXWhitelistFilter(cfx_to_treat_whitelist_text_file_full_path) if cfx_to_treat_whitelist_text_file_full_path is not None else None
+            ChampFXWhitelistFilter(cfx_to_treat_whitelist_text_file_full_path) if cfx_to_treat_whitelist_text_file_full_path is not None else whitelist_filter
         )
         if self._white_list_filter is not None:
             self._static_criteria_filters.append(self._white_list_filter)
