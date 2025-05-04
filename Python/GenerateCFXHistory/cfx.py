@@ -392,14 +392,14 @@ class ChampFXLibrary:
 
         return result
 
-    def get_earliest_submit_date(self) -> datetime.datetime:
-        earliest_date = min(entry.get_oldest_change_action_by_new_state(State.SUBMITTED).timestamp for entry in self.get_all_cfx())
+    def get_earliest_submit_date(self, cfx_list: List["ChampFXEntry"]) -> datetime.datetime:
+        earliest_date = min(entry.get_oldest_change_action_by_new_state(State.SUBMITTED).timestamp for entry in cfx_list)
+        logger_config.print_and_log_info(f"Earliest submit date among {len(cfx_list)} CFX: {earliest_date}")
         return earliest_date
 
     def gather_state_counts_for_each_date(self, dates_generator: DatesGenerator, cfx_filters: Optional[List["ChampFxFilter"]] = None) -> AllResultsPerDates:
 
         all_results_to_display: AllResultsPerDates = AllResultsPerDates()
-        timestamps_to_display_data: List[datetime.datetime] = dates_generator.get_dates_since(start_date=self.get_earliest_submit_date().replace(day=1))
 
         # First, filter CFX that will never match the filter
         all_cfx_to_consider: List[ChampFXEntry] = []
@@ -420,6 +420,11 @@ class ChampFXLibrary:
                     pass
 
         logger_config.print_and_log_info(f"Number of CFX to consider:{len(all_cfx_to_consider)}")
+        if len(all_cfx_to_consider) == 0:
+            logger_config.print_and_log_info(f"No data")
+            return all_results_to_display
+
+        timestamps_to_display_data: List[datetime.datetime] = dates_generator.get_dates_since(start_date=self.get_earliest_submit_date(all_cfx_to_consider).replace(day=1))
 
         for timestamp_to_display_data in timestamps_to_display_data:
             timestamp_results = OneTimestampResult(timestamp=timestamp_to_display_data, all_results_to_display=all_results_to_display)
