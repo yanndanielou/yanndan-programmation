@@ -142,6 +142,16 @@ class TestSubsystem:
         assert cfx_entry._subsystem == role.SubSystem.ADONEM
 
 
+class TestRoleOnDate:
+    def test_role_ats_CFX00862371(self) -> None:
+        champfx_library = cfx.ChampFXLibrary(champfx_filters=[cfx.ChampFXWhitelistFilter(cfx_to_treat_ids=["CFX00862371"])])
+        cfx_entry = champfx_library.get_cfx_by_id("CFX00862371")
+        assert cfx_entry.get_current_role_at_date(datetime(int(2025), int(3), int(22))) == role.SubSystem.ATS
+        assert cfx_entry.get_current_role_at_date(datetime(int(2025), int(3), int(25))) == role.SubSystem.ATS
+        assert cfx_entry.get_current_role_at_date(datetime(int(2025), int(3), int(30))) == role.SubSystem.ATS
+        assert cfx_entry.get_current_role_at_date(datetime.now()) == role.SubSystem.PROJET
+
+
 class TestCurrentOwner:
 
     def test_CFX00427036_currenet_owner_by_date(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
@@ -243,12 +253,18 @@ class TestStatisticsPreparation:
 
 
 class TestStatisticsPreparationRoleDependingOnDate:
+    """['CFX00398968', 'CFX00401911', 'CFX00466137', 'CFX00494052', 'CFX00551164', 'CFX00551910', 'CFX00584295', 'CFX00587132', 'CFX00618804', 'CFX00623862', 'CFX00623864', 'CFX00623870', 'CFX00623879', 'CFX00623898', 'CFX00623899', 'CFX00624544', 'CFX00639805', 'CFX00674321', 'CFX00687787', 'CFX00690605', 'CFX00690624', 'CFX00695357', 'CFX00695358', 'CFX00701981', 'CFX00716682', 'CFX00716724', 'CFX00720447', 'CFX00723144', 'CFX00723481', 'CFX00734937', 'CFX00742602', 'CFX00749341', 'CFX00786363', 'CFX00786374', 'CFX00789495', 'CFX00806369', 'CFX00812751', 'CFX00817953', 'CFX00831083', 'CFX00842156', 'CFX00842390', 'CFX00848518', 'CFX00849529', 'CFX00849547', 'CFX00849556', 'CFX00849571', 'CFX00849576']"""
 
     def test_role_sw_constant_interval(self, create_champfx_library_only_cfx_closed_by_yda_in_whitelist: cfx.ChampFXLibrary) -> None:
         champfx_library = create_champfx_library_only_cfx_closed_by_yda_in_whitelist
         all_results_per_date = champfx_library.gather_state_counts_for_each_date(
             cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
-            cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.SW]))],
+            cfx_filters=[
+                cfx.ChampFxFilter(
+                    role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.SW]),
+                    whitelist_filter=cfx.ChampFXWhitelistFilter(cfx_to_treat_ids=set(["CFX00398968"])),
+                )
+            ],
         )
         assert not all_results_per_date.is_empty()
 
@@ -257,6 +273,14 @@ class TestStatisticsPreparationRoleDependingOnDate:
         all_results_per_date = champfx_library.gather_state_counts_for_each_date(
             cfx.DecreasingIntervalDatesGenerator(),
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.SW]))],
+        )
+        assert not all_results_per_date.is_empty()
+
+    def test_role_ats_CFX00862371(self) -> None:
+        champfx_library = cfx.ChampFXLibrary(champfx_filters=[cfx.ChampFXWhitelistFilter(cfx_to_treat_ids=["CFX00862371"])])
+        all_results_per_date = champfx_library.gather_state_counts_for_each_date(
+            cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=2)),
+            cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.ATS]))],
         )
         assert not all_results_per_date.is_empty()
 
