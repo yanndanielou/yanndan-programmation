@@ -10,6 +10,12 @@ import role
 
 
 @pytest.fixture(scope="session")
+def create_champfx_library_only_cfx_closed_by_yda_in_whitelist() -> cfx.ChampFXLibrary:
+    champfx_library = cfx.ChampFXLibrary(champfx_filters=[cfx.ChampFXWhitelistFilter("Input/CFX_list_ids_closed_yda.txt")])
+    return champfx_library
+
+
+@pytest.fixture(scope="session")
 def create_light_champfx_library() -> cfx.ChampFXLibrary:
     champfx_library = cfx.ChampFXLibrary(
         champfx_filters=[cfx.ChampFXWhitelistFilter(cfx_to_treat_whitelist_text_file_full_path="Input_for_Tests/sample_cfx_ids.txt")],
@@ -234,6 +240,25 @@ class TestStatisticsPreparation:
             cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.ATS]))],
         )
+
+
+class TestStatisticsPreparationRoleDependingOnDate:
+
+    def test_role_sw_constant_interval(self, create_champfx_library_only_cfx_closed_by_yda_in_whitelist: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_champfx_library_only_cfx_closed_by_yda_in_whitelist
+        all_results_per_date = champfx_library.gather_state_counts_for_each_date(
+            cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
+            cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.SW]))],
+        )
+        assert not all_results_per_date.is_empty()
+
+    def test_role_sw_decreasing_interval(self, create_champfx_library_only_cfx_closed_by_yda_in_whitelist: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_champfx_library_only_cfx_closed_by_yda_in_whitelist
+        all_results_per_date = champfx_library.gather_state_counts_for_each_date(
+            cfx.DecreasingIntervalDatesGenerator(),
+            cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.SW]))],
+        )
+        assert not all_results_per_date.is_empty()
 
 
 class TestDecreasingIntervalDatesGenerator:
