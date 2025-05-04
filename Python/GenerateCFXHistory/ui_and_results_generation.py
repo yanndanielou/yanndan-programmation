@@ -166,10 +166,10 @@ def produce_displays_and_create_html(
 
     if create_html_file:
         # Save the plot to an HTML file
-        html_content = mpld3.fig_to_html(fig)
         output_html_file = output_directory_name + "/" + generation_label_for_valid_file_name + " cumulative " + str(use_cumulative) + ".html"
 
         with logger_config.stopwatch_with_label(f"html {output_html_file} creation"):
+            html_content = mpld3.fig_to_html(fig)
             with open(output_html_file, "w", encoding="utf8") as html_file:
                 html_file.write(html_content)
 
