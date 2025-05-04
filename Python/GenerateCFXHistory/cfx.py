@@ -96,6 +96,9 @@ class AllResultsPerDates:
         self.all_cfx_ids_that_have_matched: set[str] = set()
         self.at_least_one_cfx_matching_filter_has_been_found = False
 
+    def is_empty(self) -> bool:
+        return not self.all_cfx_ids_that_have_matched
+
     def get_all_timestamps(self) -> List[datetime.datetime]:
         all_timestamps = [results._timestamp for results in self.timestamp_results]
         return all_timestamps
