@@ -211,6 +211,10 @@ class ChangeCurrentOwnerAction(BaseAction):
     def new_owner(self) -> role.CfxUser:
         return self._new_owner
 
+    @property
+    def previous_owner(self) -> role.CfxUser:
+        return self._previous_owner
+
 
 @dataclass
 class ChangeStateAction(BaseAction):
@@ -575,17 +579,14 @@ class ChampFXEntry:
     def compute_all_current_owner_modifications_chronogically(self) -> None:
         self._all_current_owner_modifications_sorted_chronologically = [action for _, action in sorted(self._change_current_owner_actions_by_date.items())]
         self._all_current_owner_modifications_sorted_reversed_chronologicallyshronologically = list(reversed(self._all_current_owner_modifications_sorted_chronologically))
-        self._all_history_current_owner_roles.update([action.new_owner.subsystem for action in self._change_current_owner_actions])
 
     def get_all_current_owner_modifications_sorted_chronologically(self) -> list[ChangeCurrentOwnerAction]:
         # return sorted(self._change_state_actions_by_date.items())
         return self._all_current_owner_modifications_sorted_chronologically
-        return [action for _, action in sorted(self._change_current_owner_actions_by_date.items())]
 
     def get_all_current_owner_modifications_sorted_reversed_chronologically(self) -> list[ChangeCurrentOwnerAction]:
         # return sorted(self._change_state_actions_by_date.items())
         return self._all_current_owner_modifications_sorted_reversed_chronologically
-        return [action for _, action in sorted(self._change_current_owner_actions_by_date.items())]
 
     def get_oldest_change_action_by_new_state(self, new_state: State) -> Optional[ChangeStateAction]:
         return next((action for action in self.get_all_change_state_actions_sorted_chronologically() if action.new_state == new_state), None)
@@ -603,10 +604,8 @@ class ChampFXEntry:
     def add_change_current_owner_action(self, change_current_owner_action: ChangeCurrentOwnerAction) -> None:
         self._change_current_owner_actions.append(change_current_owner_action)
         self._change_current_owner_actions_by_date[change_current_owner_action.timestamp] = change_current_owner_action
-
-    def get_all_current_owner_modifications_sorted_chronologically(self) -> list[ChangeCurrentOwnerAction]:
-        # return sorted(self._change_state_actions_by_date.items())
-        return [action for _, action in sorted(self._change_current_owner_actions_by_date.items())]
+        self._all_history_current_owner_roles.add(change_current_owner_action._previous_owner.subsystem)
+        self._all_history_current_owner_roles.add(change_current_owner_action._new_owner.subsystem)
 
     @property
     def raw_state(self) -> State:
