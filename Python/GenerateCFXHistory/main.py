@@ -90,6 +90,7 @@ def main() -> None:
         # ui_and_results_generation.block_execution_and_keep_all_windows_open()
 
         all_champfx_library = cfx.ChampFXLibrary()
+        # all_champfx_library = cfx.ChampFXLibrary(champfx_filters=[cfx.ChampFXWhitelistFilter("Input/CFX_adonem_connus_client.txt")])
         # print_gathering_time(champfx_library=all_champfx_library, number_iterations=2)
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
@@ -100,7 +101,9 @@ def main() -> None:
             for_each_current_owner_per_date=True,
             create_excel_file=True,
             create_html_file=True,
+            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
         )
+
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=all_champfx_library,
             output_directory_name=OUTPUT_DIRECTORY_NAME,
@@ -138,6 +141,7 @@ def main() -> None:
             ],
             create_excel_file=True,
             create_html_file=True,
+            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
         )
 
         ui_and_results_generation.block_execution_and_keep_all_windows_open()
