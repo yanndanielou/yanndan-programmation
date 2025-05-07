@@ -287,5 +287,10 @@ class TestStatisticsPreparationRoleDependingOnDate:
 
 class TestDecreasingIntervalDatesGenerator:
 
+    def test_now(self) -> None:
+
+        list_dates: List[datetime] = cfx.DecreasingIntervalDatesGenerator().get_dates_since(datetime.now())
+        assert len(list_dates) > 1
+
     def test_few_values(self) -> None:
         assert len(cfx.DecreasingIntervalDatesGenerator().get_dates_since(datetime(int(2000), int(1), int(4)))) > 100
