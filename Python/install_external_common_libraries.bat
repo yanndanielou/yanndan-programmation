@@ -1,5 +1,7 @@
 @CALL SET_PYTHON_HOME.bat
 
+@call :INSTALL_PYTHON_LIB pyxtream[REST_API]
+@call :INSTALL_PYTHON_LIB pyxtream
 @call :INSTALL_PYTHON_LIB pytest-timeout
 @call :INSTALL_PYTHON_LIB stubs
 @call :INSTALL_PYTHON_LIB selenium
