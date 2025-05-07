@@ -1,18 +1,14 @@
 import datetime
-from collections import defaultdict
-from datetime import timedelta
-from enum import auto
-from typing import Any, Dict, List, Optional, Set
+from enum import auto, Enum
+from typing import Any, List, Optional
 
 import matplotlib.pyplot as plt
 import mplcursors
 import mpld3
 import pandas as pd
 from common import enums_utils, json_encoders, string_utils
-from dateutil import relativedelta
 from logger import logger_config
 from mplcursors._mplcursors import HoverMode
-from mpld3 import plugins
 
 import cfx
 import role
@@ -31,6 +27,13 @@ state_colors = {
 }
 
 
+class GenerateByProjectInstruction(Enum):
+    ONLY_ATP = auto()
+    ONLY_NEXTEO = auto()
+    GLOBAL_ALL_PROJECTS = auto()
+    BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS = auto()
+
+
 class RepresentationType(enums_utils.NameBasedEnum):
     VALUE = auto()
     CUMULATIVE_ERAS = auto()
@@ -43,13 +46,60 @@ def produce_results_and_displays(
     display_without_cumulative_eras: bool,
     display_with_cumulative_eras: bool,
     create_html_file: bool,
-    time_delta: relativedelta.relativedelta,
     cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
     dump_all_cfx_ids_in_json: bool = True,
+    generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
 ) -> None:
 
     if cfx_filters is None:
         cfx_filters = []
+    else:
+        cfx_filters = cfx_filters.copy()
+
+    match generate_by_project_instruction:
+        case GenerateByProjectInstruction.ONLY_ATP:
+            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.ATSP])]))
+        case GenerateByProjectInstruction.ONLY_NEXTEO:
+            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.FR_NEXTEO])]))
+        case GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS:
+            pass
+        case GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS:
+            produce_results_and_displays(
+                cfx_library=cfx_library,
+                output_directory_name=output_directory_name,
+                create_excel_file=create_excel_file,
+                display_without_cumulative_eras=display_without_cumulative_eras,
+                display_with_cumulative_eras=display_with_cumulative_eras,
+                create_html_file=create_html_file,
+                cfx_filters=cfx_filters,
+                dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
+                generate_by_project_instruction=GenerateByProjectInstruction.ONLY_ATP,
+            )
+
+            produce_results_and_displays(
+                cfx_library=cfx_library,
+                output_directory_name=output_directory_name,
+                create_excel_file=create_excel_file,
+                display_without_cumulative_eras=display_without_cumulative_eras,
+                display_with_cumulative_eras=display_with_cumulative_eras,
+                create_html_file=create_html_file,
+                cfx_filters=cfx_filters,
+                dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
+                generate_by_project_instruction=GenerateByProjectInstruction.ONLY_NEXTEO,
+            )
+
+            produce_results_and_displays(
+                cfx_library=cfx_library,
+                output_directory_name=output_directory_name,
+                create_excel_file=create_excel_file,
+                display_without_cumulative_eras=display_without_cumulative_eras,
+                display_with_cumulative_eras=display_with_cumulative_eras,
+                create_html_file=create_html_file,
+                cfx_filters=cfx_filters,
+                dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
+                generate_by_project_instruction=GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
+            )
+            return
 
     generation_label = cfx_library.label
     if len(cfx_filters) > 0:
@@ -180,7 +230,7 @@ def produce_results_and_displays_for_libary(
     for_global: bool,
     for_each_subsystem: bool,
     for_each_current_owner_per_date: bool,
-    time_delta: relativedelta.relativedelta = relativedelta.relativedelta(days=10),
+    generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
     cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
     create_html_file: bool = True,
     create_excel_file: bool = True,
@@ -194,11 +244,11 @@ def produce_results_and_displays_for_libary(
             cfx_library=cfx_library,
             output_directory_name=output_directory_name,
             create_excel_file=create_excel_file,
-            time_delta=time_delta,
             display_without_cumulative_eras=True,
             display_with_cumulative_eras=True,
             create_html_file=create_html_file,
             cfx_filters=cfx_filters,
+            generate_by_project_instruction=generate_by_project_instruction,
         )
 
     if for_each_current_owner_per_date:
@@ -209,11 +259,11 @@ def produce_results_and_displays_for_libary(
                     output_directory_name=output_directory_name,
                     # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
                     create_excel_file=create_excel_file,
-                    time_delta=time_delta,
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     create_html_file=create_html_file,
                     cfx_filters=cfx_filters + [cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))],
+                    generate_by_project_instruction=generate_by_project_instruction,
                 )
 
     if for_each_subsystem:
@@ -225,11 +275,11 @@ def produce_results_and_displays_for_libary(
                     output_directory_name=output_directory_name,
                     # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
                     create_excel_file=create_excel_file,
-                    time_delta=time_delta,
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     create_html_file=create_html_file,
                     cfx_filters=cfx_filters + [cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[subsystem])])],
+                    generate_by_project_instruction=generate_by_project_instruction,
                 )
 
 
