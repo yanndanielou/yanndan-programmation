@@ -15,4 +15,5 @@ connexion_param.py
 *.pkl
 cfx_extended_history.txt
 output*.txt
-Output/*.json
+Output/
+Output*/
