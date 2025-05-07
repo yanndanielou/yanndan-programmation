@@ -155,13 +155,13 @@ class DecreasingIntervalDatesGenerator(DatesGenerator):
     def _compute_dates_since(self, start_date: datetime.datetime) -> List[datetime.datetime]:
 
         # Ensure 'beginning_of_next_month' is naive datetime.datetime
-        beginning_of_next_month = (datetime.datetime.now() + relativedelta.relativedelta(months=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        tomorrow = (datetime.datetime.now() + timedelta(days=1)).replace(tzinfo=None)
         dates = []
 
         # Ensure 'current_date' is naive datetime.datetime
         current_date_iter = start_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
 
-        while current_date_iter <= beginning_of_next_month:
+        while current_date_iter <= tomorrow:
             dates.append(current_date_iter)
 
             current_date_delta_with_now = datetime.datetime.now() - current_date_iter
