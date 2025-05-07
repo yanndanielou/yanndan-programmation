@@ -183,6 +183,9 @@ class DecreasingIntervalDatesGenerator(DatesGenerator):
             elif days_diff > 30:
                 time_delta = relativedelta.relativedelta(weeks=1)
 
+            elif days_diff > 15:
+                time_delta = relativedelta.relativedelta(days=3)
+
             else:
                 time_delta = relativedelta.relativedelta(days=3)
 
