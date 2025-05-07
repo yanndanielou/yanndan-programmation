@@ -121,15 +121,29 @@ class DatesGenerator:
         pass
 
     def get_tomorrow_naive(self) -> datetime.datetime:
-        tomorrow = (datetime.datetime.now() + timedelta(days=1)).replace(tzinfo=None)
-        return tomorrow
+        tomorrow_naive = (datetime.datetime.now() + timedelta(days=1)).replace(tzinfo=None)
+        return tomorrow_naive
+
+    def get_today_naive(self) -> datetime.datetime:
+        today_naive = datetime.datetime.now().replace(tzinfo=None)
+        return today_naive
 
     def get_dates_since(self, start_date: datetime.datetime) -> List[datetime.datetime]:
-        all_dates = self._compute_dates_since(start_date=start_date)
+        all_dates = self._compute_dates_since_until_today(start_date=start_date)
+        # Add today if not exist
+        today_naive = self.get_today_naive()
+        if not today_naive in all_dates:
+            all_dates.append(today_naive)
+
+        # Add tomorrow  if not exist
+        tomorrow_naive = self.get_tomorrow_naive()
+        if not tomorrow_naive in all_dates:
+            all_dates.append(tomorrow_naive)
+
         logger_config.print_and_log_info(f"Number of dates since:{start_date}: {len(all_dates)}")
         return all_dates
 
-    def _compute_dates_since(self, start_date: datetime.datetime) -> List[datetime.datetime]:
+    def _compute_dates_since_until_today(self, start_date: datetime.datetime) -> List[datetime.datetime]:
         return NotImplemented
 
 
@@ -137,14 +151,14 @@ class ConstantIntervalDatesGenerator(DatesGenerator):
     def __init__(self, time_delta: relativedelta.relativedelta) -> None:
         self._time_delta = time_delta
 
-    def _compute_dates_since(self, start_date: datetime.datetime) -> List[datetime.datetime]:
+    def _compute_dates_since_until_today(self, start_date: datetime.datetime) -> List[datetime.datetime]:
         dates = []
 
-        tomorrow_naive = self.get_tomorrow_naive()
+        today_naive = self.get_today_naive()
 
         # Ensure 'current_date' is naive datetime.datetime
         current_date_iter = start_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
-        while current_date_iter <= (tomorrow_naive + self._time_delta):
+        while current_date_iter <= today_naive:
             dates.append(current_date_iter)
             current_date_iter = current_date_iter + self._time_delta
 
@@ -155,16 +169,17 @@ class DecreasingIntervalDatesGenerator(DatesGenerator):
     def __init__(self) -> None:
         pass
 
-    def _compute_dates_since(self, start_date: datetime.datetime) -> List[datetime.datetime]:
+    def _compute_dates_since_until_today(self, start_date: datetime.datetime) -> List[datetime.datetime]:
 
         # Ensure 'beginning_of_next_month' is naive datetime.datetime
-        tomorrow = self.get_tomorrow_naive()
+        today_naive = self.get_today_naive()
+
         dates = []
 
         # Ensure 'current_date' is naive datetime.datetime
         current_date_iter = start_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
 
-        while current_date_iter <= tomorrow:
+        while current_date_iter <= today_naive:
             dates.append(current_date_iter)
 
             current_date_delta_with_now = datetime.datetime.now() - current_date_iter
