@@ -126,6 +126,7 @@ def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in
             "S003_Component PAL",
             "S003_Component Atelier de Développement Logiciel",
             "S003_Component Canevas",
+            "S004_Module PAI",
         ],
         SubSystem.SUBSYS: [
             "CDB",
