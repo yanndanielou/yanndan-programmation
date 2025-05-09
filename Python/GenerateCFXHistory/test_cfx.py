@@ -194,7 +194,7 @@ class TestCurrentOwner:
 
     class TestChampFxFilter:
         def test_next_project_field_filter(self) -> None:
-            nexteo_only_champfx_library = cfx.ChampFXLibrary(champfx_filters=[cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.FR_NEXTEO])])
+            nexteo_only_champfx_library = cfx.ChampFXLibrary(champfx_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[cfx.CfxProject.FR_NEXTEO])])
 
             assert len(nexteo_only_champfx_library.get_all_cfx()) > 0
             for cfx_entry in nexteo_only_champfx_library.get_all_cfx():
@@ -206,14 +206,14 @@ class TestCurrentOwner:
 
             ats_non_security_filter = cfx.ChampFxFilter(
                 field_filters=[
-                    cfx.ChampFXFieldFilter(field_name="_security_relevant", field_forbidden_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED]),
-                    cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[role.SubSystem.ATS]),
+                    cfx.ChampFxFilterFieldSecurityRelevant(field_forbidden_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED]),
+                    cfx.ChampFxFilterFieldSubsystem(field_accepted_values=[role.SubSystem.ATS]),
                 ],
             )
             ats_security_filter = cfx.ChampFxFilter(
                 field_filters=[
-                    cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED]),
-                    cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[role.SubSystem.ATS]),
+                    cfx.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED]),
+                    cfx.ChampFxFilterFieldSubsystem(field_accepted_values=[role.SubSystem.ATS]),
                 ],
             )
 
@@ -228,7 +228,7 @@ class TestCurrentOwner:
 
         def test_security_relevant_only_field_filter(self) -> None:
             security_relevant_only_champfx_library = cfx.ChampFXLibrary(
-                champfx_filters=[cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])]
+                champfx_filters=[cfx.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])]
             )
 
             assert len(security_relevant_only_champfx_library.get_all_cfx()) > 0
