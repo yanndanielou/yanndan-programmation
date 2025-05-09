@@ -1,9 +1,10 @@
 # -*-coding:Utf-8 -*
 """Utils for strings"""
 
-from typing import Optional
-from unidecode import unidecode
 import math
+from typing import Optional
+
+from unidecode import unidecode
 
 
 def format_filename(input_original_string: str, allow_spaces: bool = True) -> str:
