@@ -65,13 +65,6 @@ class SecurityRelevant(enums_utils.NameBasedEnum):
     UNDEFINED = auto()
 
 
-class SecurityRelevant(enums_utils.NameBasedEnum):
-    YES = auto()
-    NO = auto()
-    MITIGATED = auto()
-    UNDEFINED = auto()
-
-
 class ActionType(enums_utils.NameBasedEnum):
     IMPORT = auto()
     RESUBMIT = auto()
@@ -343,6 +336,10 @@ class ChampFXLibrary:
             with logger_config.stopwatch_with_label("create current owner modifications"):
                 self.create_current_owner_modifications()
 
+    @property
+    def cfx_users_library(self) -> role.CfxUserLibrary:
+        return self._cfx_users_library
+
     def create_or_fill_champfx_entry_with_dataframe(self, cfx_details_data_frame: pd.DataFrame) -> None:
         for _, row in cfx_details_data_frame.iterrows():
             cfx_id = row["CFXID"]
@@ -550,7 +547,7 @@ class ChampFXEntryBuilder:
         category: Category = ChampFXEntryBuilder.convert_champfx_category(raw_category)
 
         current_owner_raw: str = row["CurrentOwner.FullName"]
-        current_owner: role.CfxUser = cfx_library._cfx_users_library.get_cfx_user_by_full_name(current_owner_raw)
+        current_owner: role.CfxUser = cfx_library.cfx_users_library.get_cfx_user_by_full_name(current_owner_raw)
 
         fixed_implemented_in_raw: str = row["FixedImplementedIn"]
         fixed_implemented_in_subsystem: Optional[role.SubSystem] = role.get_subsystem_from_champfx_fixed_implemented_in(fixed_implemented_in_raw) if fixed_implemented_in_raw else None
@@ -559,7 +556,9 @@ class ChampFXEntryBuilder:
         submit_date: datetime.datetime = cast(datetime.datetime, utils.convert_champfx_extract_date(submit_date_raw))
 
         system_structure_raw: str = row["SystemStructure"]
-        system_structure: Optional[role.SubSystem] = role.get_subsystem_from_champfx_fixed_implemented_in(system_structure_raw)
+        system_structure: role.SubSystem = role.get_subsystem_from_champfx_fixed_implemented_in(system_structure_raw)
+
+        assert system_structure, f"{cfx_id} could not decode system structure {system_structure_raw}"
 
         champfx_entry = ChampFXEntry(
             cfx_id=cfx_id,
@@ -583,7 +582,7 @@ class ChampFXEntry:
         cfx_id: str,
         state: State,
         fixed_implemented_in_subsystem: Optional[role.SubSystem],
-        system_structure: Optional[role.SubSystem],
+        system_structure: role.SubSystem,
         submit_date: datetime.datetime,
         cfx_project: CfxProject,
         safety_relevant: Optional[bool],
@@ -608,7 +607,6 @@ class ChampFXEntry:
         self._current_owner_role: role.SubSystem = self._current_owner.subsystem
 
         self._rejection_cause = rejection_cause
-        self._subsystem: role.SubSystem.TBD
 
         self._current_owner_role = current_owner._subsystem
 
@@ -630,7 +628,7 @@ class ChampFXEntry:
             self._subsystem = self._fixed_implemented_in_subsystem if self._fixed_implemented_in_subsystem else self._current_owner_role
 
     def __repr__(self) -> str:
-        return f"<ChampFXEntry cfx_id={self.cfx_id} _raw_state={self._state} _current_owner_raw={self._current_owner_raw}>"
+        return f"<ChampFXEntry cfx_id={self.cfx_id} _raw_state={self._state} _current_owner_raw={self._current_owner._full_name}>"
 
     def compute_all_actions_sorted_chronologically(self) -> list[ChangeStateAction]:
         self._all_change_state_actions_sorted_chronologically = [action for _, action in sorted(self._change_state_actions_by_date.items())]
