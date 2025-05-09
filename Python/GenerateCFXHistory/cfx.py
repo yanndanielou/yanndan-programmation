@@ -15,6 +15,9 @@ import cfx_extended_history
 import role
 import utils
 
+from abc import ABC, abstractmethod
+
+
 DEFAULT_CHAMPFX_DETAILS_EXCEL_FILE_FULL_PATH: str = "Input/extract_cfx_details.xlsx"
 DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH: str = "Input/extract_cfx_change_state.xlsx"
 DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH: str = "Input/cfx_extended_history.txt"
@@ -700,14 +703,16 @@ class ChampFXEntry:
             return newest_change_action_that_is_before_date.new_state
 
 
-class ChampFXtSaticCriteriaFilter:
+class ChampFXtSaticCriteriaFilter(ABC):
     def __init__(self) -> None:
         self._cache_result_by_cfx: dict[ChampFXEntry, bool] = dict()
         self._number_of_results_obtained_by_cache_usage = 0
         self.label = ""
 
+    @abstractmethod
     def match_cfx_entry_without_cache(self, cfx_entry: ChampFXEntry) -> bool:
-        return NotImplemented
+        """This method must be overridden in child classes."""
+        pass
 
     def match_cfx_entry_with_cache(self, cfx_entry: ChampFXEntry) -> bool:
         if cfx_entry in self._cache_result_by_cfx:
@@ -772,6 +777,11 @@ class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter):
             return attribute_entry in self.field_accepted_values
         else:
             return attribute_entry not in cast(List[Any], self.field_forbidden_values)
+
+
+class ChampFxFilterFieldSecurityRelevant(ChampFXFieldFilter):
+    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
+        super().__init__("_security_relevant", field_accepted_values, field_forbidden_values)
 
 
 @dataclass
