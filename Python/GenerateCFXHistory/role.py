@@ -123,8 +123,25 @@ def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in
             "S002_Subsystem Automatic Train Control",
             "Module Application PAS",
             "Module Application PAL",
+            "S003_Component PAL",
+            "S003_Component Atelier de Développement Logiciel",
+            "S003_Component Canevas",
         ],
-        SubSystem.SUBSYS: ["CDB", "MDT", "Eurobalise", "Tiroir Calculateur", "Transition par balise", "Odotachy", "EVC/DMI/JRU", "Logiciel de service", "Compte à rebour"],
+        SubSystem.SUBSYS: [
+            "CDB",
+            "MDT",
+            "Eurobalise",
+            "Tiroir Calculateur",
+            "Transition par balise",
+            "Odotachy",
+            "EVC/DMI/JRU",
+            "Logiciel de service",
+            "Compte à rebour",
+            "S003_Component Niveau 3 - Sol",
+            "S003_Component Niveau 3 - Bord",
+            "S003_Component PPN",
+            "S004_Module GenTel",
+        ],
         SubSystem.TRACY: ["Cyclos"],
         SubSystem.ATS: [
             "Automatic Train Supervision",
@@ -139,21 +156,32 @@ def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in
             "S003_Component Package AD",
             "ATS",
             "Atelier de paramétrage",
+            "S002_Subsystem SECU IHM",
+            "S002_Subsystem RTO",
+            "Serveur d'authentification",
+            "Boitier PERLE Signalisation NT Durcisssement",
         ],
-        SubSystem.COC_DE: ["S002_Subsystem Invariants", "Invariants", "Paramètres"],
-        SubSystem.TCM_TC: ["SIMECH", "Gumps", "Outils", "XT_OT"],
+        SubSystem.COC_DE: ["S002_Subsystem Invariants", "Invariants", "Paramètres", "S003_Component SMT3"],
+        SubSystem.TCM_TC: ["SIMECH", "Gumps", "Outils", "XT_OT", "S003_Component TU"],
         SubSystem.RADIO: ["RADIO", "Baie Centrale Radio"],
         SubSystem.ATS_EVIDEN: ["COEUR CK", "FGPT", "MES SIL2"],
         SubSystem.RESEAU: ["Réseau", "Commutateur", "pare-feu"],
         SubSystem.ADONEM: ["ADONEM"],
         SubSystem.TCM_TM1: ["Plateforme", "Usine"],
         SubSystem.TCM_TM2: ["Site"],
-        SubSystem.SYSTEME: ["S001_System Système NExTEO ATC", "S001_System Système NExTEO", "Performances du système", "Interfaces Signalisation", "Interfaces Voie"],
+        SubSystem.SYSTEME: [
+            "S001_System Système NExTEO ATC",
+            "S001_System Système NExTEO",
+            "Performances du système",
+            "Interfaces Signalisation",
+            "Interfaces Voie",
+            "S003_Component Inferfaces Matériel Roulant",
+        ],
         SubSystem.ITF_MR: ["S001_System Système NExTEO ATC", "S002_Subsystem Interfaces_NEXTEO"],
-        SubSystem.PROJET: ["Management du projet"],
+        SubSystem.PROJET: ["Management du projet", "Mise en Service Commerciale NExTEO", "Module Formulaires COVASEC"],
         SubSystem.ATC_MANAGER: ["Matériels complémentaires"],
         SubSystem.SAF: ["Fiabilité"],
-        SubSystem.INSTALLATION: ["SBL"],
+        SubSystem.INSTALLATION: ["SBL", "S004_Module Installation"],
     }
 
     for subsystem, keywords in subsystem_mapping.items():
@@ -161,6 +189,7 @@ def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in
             if keyword.lower() in champfx_fixed_implemented_in.lower():
                 return subsystem
 
+    # logger_config.print_and_log_warning(f"Could not find subsystem for {champfx_fixed_implemented_in}")
     return None
 
 
