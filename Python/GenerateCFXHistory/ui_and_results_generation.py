@@ -58,9 +58,9 @@ def produce_results_and_displays(
 
     match generate_by_project_instruction:
         case GenerateByProjectInstruction.ONLY_ATP:
-            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.ATSP])]))
+            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[cfx.CfxProject.ATSP])]))
         case GenerateByProjectInstruction.ONLY_NEXTEO:
-            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.FR_NEXTEO])]))
+            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[cfx.CfxProject.FR_NEXTEO])]))
         case GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS:
             pass
         case GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS:
@@ -278,7 +278,7 @@ def produce_results_and_displays_for_libary(
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     create_html_file=create_html_file,
-                    cfx_filters=cfx_filters + [cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_subsystem", field_accepted_values=[subsystem])])],
+                    cfx_filters=cfx_filters + [cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[subsystem])])],
                     generate_by_project_instruction=generate_by_project_instruction,
                 )
 
