@@ -3,7 +3,7 @@ import math
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import timedelta
-from enum import auto
+from enum import auto, Enum
 from typing import Any, Dict, List, Optional, Set, cast
 
 import pandas as pd
@@ -20,7 +20,7 @@ DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH: str = "Input/extract_cfx_ch
 DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH: str = "Input/cfx_extended_history.txt"
 
 
-class RejectionCause(enums_utils.NameBasedEnum):
+class RejectionCause(Enum):
     NONE = auto()
     NO_FIX_CHANGE = auto()
     DUPLICATE = auto()
@@ -28,6 +28,29 @@ class RejectionCause(enums_utils.NameBasedEnum):
     NOT_PART_OF_CONTRACT = auto()
     FORWARDED_TO_SAP_CS = auto()
     NOT_REPRODUCIBLE = auto()
+
+    def __repr__(self) -> str:
+        return self.name
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Category(Enum):
+    SYSTEM = auto()
+    SOFTWARE = auto()
+    HARDWARE = auto()
+    DOCUMENTATION = auto()
+    CONFIGURATION_DATA = auto()
+    PROCESS = auto()
+    TEST_CASE = auto()
+    CONSTRAINT_TO_3RD_PARTY = auto()
+
+    def __repr__(self) -> str:
+        return self.name
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class CfxProject(enums_utils.NameBasedEnum):
@@ -129,10 +152,10 @@ class DatesGenerator:
         return today_naive
 
     def get_dates_since(self, start_date: datetime.datetime) -> List[datetime.datetime]:
-        all_dates = self._compute_dates_since_until_today(start_date=start_date)
+        all_dates: List[datetime.datetime] = self._compute_dates_since_until_today(start_date=start_date)
         # Add today if not exist
         today_naive = self.get_today_naive()
-        if not today_naive in all_dates:
+        if today_naive not in all_dates:
             all_dates.append(today_naive)
 
         # Add tomorrow  if not exist
@@ -144,7 +167,7 @@ class DatesGenerator:
         return all_dates
 
     def _compute_dates_since_until_today(self, start_date: datetime.datetime) -> List[datetime.datetime]:
-        return NotImplemented
+        return []
 
 
 class ConstantIntervalDatesGenerator(DatesGenerator):
@@ -310,17 +333,8 @@ class ChampFXLibrary:
                 change_state_actions_created = self.create_states_changes_with_dataframe(cfx_states_changes_data_frame)
                 logger_config.print_and_log_info(f"{len(change_state_actions_created)} ChangeStateAction objects created")
 
-            with logger_config.stopwatch_with_label("ChampFXLibrary process_current_owner_role"):
-                list(map(lambda champ_fx: champ_fx.process_current_owner_role(self), self.get_all_cfx()))
-
             with logger_config.stopwatch_with_label("create current owner modifications"):
                 self.create_current_owner_modifications()
-
-            with logger_config.stopwatch_with_label("ChampFXLibrary process_subsystems"):
-                list(map(lambda champ_fx: champ_fx.process_all_subsystems(), self.get_all_cfx()))
-
-            with logger_config.stopwatch_with_label("ChampFXLibrary process_subsystem"):
-                list(map(lambda champ_fx: champ_fx.process_subsystem(), self.get_all_cfx()))
 
     def create_or_fill_champfx_entry_with_dataframe(self, cfx_details_data_frame: pd.DataFrame) -> None:
         for _, row in cfx_details_data_frame.iterrows():
@@ -330,7 +344,7 @@ class ChampFXLibrary:
                 cfx_entry = self._champfx_entry_by_id[cfx_id]
                 cfx_entry._current_owner
             else:
-                cfx_entry = ChampFXEntryBuilder.build_with_row(row)
+                cfx_entry = ChampFXEntryBuilder.build_with_row(row, self)
                 if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
                     self._champfx_entry_by_id[cfx_id] = cfx_entry
                     self._champfx_entries.append(cfx_entry)
@@ -486,18 +500,19 @@ class ChampFXLibrary:
 class ChampFXEntryBuilder:
 
     @staticmethod
-    def convert_champfx_security_relevant(raw_security_relevant: str) -> SecurityRelevant:
-        security_relevant: SecurityRelevant = (
-            SecurityRelevant.UNDEFINED if type(raw_security_relevant) is not str and math.isnan(raw_security_relevant) else SecurityRelevant[raw_security_relevant.upper()]
-        )
-        return security_relevant
+    def convert_champfx_security_relevant(raw_str_value: str) -> SecurityRelevant:
+        raw_security_relevant_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
+        return SecurityRelevant.UNDEFINED if raw_security_relevant_valid_str_value is None else SecurityRelevant[raw_security_relevant_valid_str_value]
 
     @staticmethod
-    def convert_champfx_rejection_cause(raw_rejection_cause: str) -> RejectionCause:
-        rejection_cause: RejectionCause = (
-            RejectionCause.NONE if type(raw_rejection_cause) is not str and math.isnan(raw_rejection_cause) else RejectionCause[raw_rejection_cause.replace("/", "_").replace(" ", "_").upper()]
-        )
-        return rejection_cause
+    def convert_champfx_rejection_cause(raw_str_value: str) -> RejectionCause:
+        raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
+        return RejectionCause.NONE if raw_valid_str_value is None else RejectionCause[raw_valid_str_value]
+
+    @staticmethod
+    def convert_champfx_category(raw_str_value: str) -> Category:
+        raw_valid_str_value: str = string_utils.text_to_valid_enum_value_text(raw_str_value)
+        return Category[raw_valid_str_value]
 
     @staticmethod
     def to_optional_boolean(raw_value: str) -> Optional[bool]:
@@ -508,7 +523,7 @@ class ChampFXEntryBuilder:
         return None
 
     @staticmethod
-    def build_with_row(row: pd.Series) -> "ChampFXEntry":
+    def build_with_row(row: pd.Series, cfx_library: ChampFXLibrary) -> "ChampFXEntry":
         cfx_id = row["CFXID"]
         raw_state: State = State[(row["State"].upper())]
         fixed_implemented_in_raw: str = row["FixedImplementedIn"]
@@ -526,10 +541,18 @@ class ChampFXEntryBuilder:
         raw_rejection_cause: str = row["RejectionCause"]
         rejection_cause: RejectionCause = ChampFXEntryBuilder.convert_champfx_rejection_cause(raw_rejection_cause)
 
+        raw_category: str = row["Category"]
+        category: Category = ChampFXEntryBuilder.convert_champfx_category(raw_category)
+
+        current_owner: role.CfxUser = cfx_library._cfx_users_library.get_cfx_user_by_full_name(current_owner_raw)
+        current_owner_role: role.SubSystem = current_owner._subsystem
+
+        fixed_implemented_in_subsystem: Optional[role.SubSystem] = role.get_subsystem_from_champfx_fixed_implemented_in(fixed_implemented_in_raw) if fixed_implemented_in_raw else None
+
         champfx_entry = ChampFXEntry(
             cfx_id=cfx_id,
-            raw_state=raw_state,
-            fixed_implemented_in_raw=fixed_implemented_in_raw,
+            state=raw_state,
+            fixed_implemented_in_subsystem=fixed_implemented_in_subsystem,
             system_structure_raw=system_structure_raw,
             current_owner_raw=current_owner_raw,
             submit_date_raw=submit_date_raw,
@@ -537,6 +560,9 @@ class ChampFXEntryBuilder:
             safety_relevant=safety_relevant,
             security_relevant=security_relevant,
             rejection_cause=rejection_cause,
+            category=category,
+            current_owner=current_owner,
+            current_owner_role=current_owner_role,
         )
         return champfx_entry
 
@@ -545,8 +571,8 @@ class ChampFXEntry:
     def __init__(
         self,
         cfx_id: str,
-        raw_state: State,
-        fixed_implemented_in_raw: str,
+        state: State,
+        fixed_implemented_in_subsystem: Optional[role.SubSystem],
         system_structure_raw: str,
         current_owner_raw: str,
         submit_date_raw: str,
@@ -554,6 +580,9 @@ class ChampFXEntry:
         safety_relevant: Optional[bool],
         security_relevant: SecurityRelevant,
         rejection_cause: RejectionCause,
+        category: Category,
+        current_owner: role.CfxUser,
+        current_owner_role: role.SubSystem,
     ):
         self._change_state_actions: list[ChangeStateAction] = []
         self._change_state_actions_by_date: Dict[datetime.datetime, ChangeStateAction] = dict()
@@ -562,8 +591,8 @@ class ChampFXEntry:
         self._change_current_owner_actions_by_date: Dict[datetime.datetime, ChangeCurrentOwnerAction] = dict()
 
         self.cfx_id = cfx_id
-        self._raw_state: State = raw_state
-        self._fixed_implemented_in_raw: str = fixed_implemented_in_raw
+        self._state: State = state
+        self._fixed_implemented_in_subsystem = fixed_implemented_in_subsystem
         self._system_structure_raw: str = system_structure_raw
         self._current_owner_raw: str = current_owner_raw
         self._current_owner: role.CfxUser = role.UNKNOWN_USER
@@ -575,7 +604,7 @@ class ChampFXEntry:
 
         self._subsystem_from_fixed_implemented_in: Optional[role.SubSystem] = role.SubSystem.TBD
         self._system_structure: Optional[role.SubSystem] = role.SubSystem.TBD
-        self._submit_date: datetime.datetime = utils.convert_champfx_extract_date(submit_date_raw)
+        self._submit_date: datetime.datetime = cast(datetime.datetime, utils.convert_champfx_extract_date(submit_date_raw))
 
         self._cfx_project = cfx_project
         self._safety_relevant = safety_relevant
@@ -587,8 +616,21 @@ class ChampFXEntry:
         self._all_current_owner_modifications_sorted_chronologically: list[ChangeCurrentOwnerAction] = []
         self._all_current_owner_modifications_sorted_reversed_chronologically: list[ChangeCurrentOwnerAction] = []
 
+        self._category = category
+
+        if self._system_structure_raw:
+            self._system_structure = role.get_subsystem_from_champfx_fixed_implemented_in(self._system_structure_raw)
+
+        if self._rejection_cause != RejectionCause.NONE:
+            self._subsystem = self._system_structure
+        else:
+            self._subsystem = self._subsystem_from_fixed_implemented_in if self._subsystem_from_fixed_implemented_in else self._current_owner_role
+
+        self._current_owner = current_owner
+        self._current_owner_role = current_owner_role
+
     def __repr__(self) -> str:
-        return f"<ChampFXEntry cfx_id={self.cfx_id} _raw_state={self._raw_state} _current_owner_raw={self._current_owner_raw}>"
+        return f"<ChampFXEntry cfx_id={self.cfx_id} _raw_state={self._state} _current_owner_raw={self._current_owner_raw}>"
 
     def compute_all_actions_sorted_chronologically(self) -> list[ChangeStateAction]:
         self._all_change_state_actions_sorted_chronologically = [action for _, action in sorted(self._change_state_actions_by_date.items())]
@@ -636,26 +678,7 @@ class ChampFXEntry:
 
     @property
     def raw_state(self) -> State:
-        return self._raw_state
-
-    def process_current_owner_role(self, cfx_library: ChampFXLibrary) -> role.SubSystem:
-        self._current_owner = cfx_library._cfx_users_library.get_cfx_user_by_full_name(self._current_owner_raw)
-        self._current_owner_role: role.SubSystem = self._current_owner._subsystem
-
-        return self._current_owner_role
-
-    def process_subsystem(self) -> None:
-        if self._rejection_cause != RejectionCause.NONE:
-            self._subsystem = self._system_structure
-        else:
-            self._subsystem = self._subsystem_from_fixed_implemented_in if self._subsystem_from_fixed_implemented_in else self._current_owner_role
-
-    def process_all_subsystems(self) -> None:
-        if self._fixed_implemented_in_raw:
-            self._subsystem_from_fixed_implemented_in = role.get_subsystem_from_champfx_fixed_implemented_in(self._fixed_implemented_in_raw)
-
-        if self._system_structure_raw:
-            self._system_structure = role.get_subsystem_from_champfx_fixed_implemented_in(self._system_structure_raw)
+        return self._state
 
     def get_current_role_at_date(self, reference_date: datetime.datetime) -> Optional[role.SubSystem]:
         current_owner = self.get_current_owner_at_date(reference_date)
