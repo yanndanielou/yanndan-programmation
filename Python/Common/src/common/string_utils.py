@@ -1,7 +1,9 @@
 # -*-coding:Utf-8 -*
 """Utils for strings"""
 
+from typing import Optional
 from unidecode import unidecode
+import math
 
 
 def format_filename(input_original_string: str, allow_spaces: bool = True) -> str:
@@ -68,3 +70,11 @@ def right_part_after_last_occurence(input_string: str, separator: str) -> str:
 def without_diacritics(input_string: str) -> str:
     """return string without diacritics (accents, etc)"""
     return unidecode(input_string)
+
+
+def text_to_valid_enum_value_text(raw_text: str) -> Optional[str]:
+    return (
+        None
+        if type(raw_text) is not str and math.isnan(raw_text)
+        else raw_text.replace("/", "_").replace(" ", "_").replace("-", "_").upper()
+    )
