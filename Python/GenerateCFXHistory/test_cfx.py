@@ -236,6 +236,13 @@ class TestCurrentOwner:
                 assert cfx_entry._security_relevant
 
 
+class TestFullDatabase:
+    def test_all_system_structure(self, create_full_champfx_library: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_full_champfx_library
+        for cfx_entry in champfx_library.get_all_cfx():
+            assert cfx_entry._system_structure
+
+
 class TestStatisticsPreparation:
     @pytest.mark.timeout(120)
     def test_gather_state_counts_for_each_date_whithout_filter(self, create_full_champfx_library: cfx.ChampFXLibrary) -> None:
