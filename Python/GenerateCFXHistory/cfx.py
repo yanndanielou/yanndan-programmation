@@ -65,6 +65,13 @@ class SecurityRelevant(enums_utils.NameBasedEnum):
     UNDEFINED = auto()
 
 
+class SecurityRelevant(enums_utils.NameBasedEnum):
+    YES = auto()
+    NO = auto()
+    MITIGATED = auto()
+    UNDEFINED = auto()
+
+
 class ActionType(enums_utils.NameBasedEnum):
     IMPORT = auto()
     RESUBMIT = auto()
@@ -525,13 +532,11 @@ class ChampFXEntryBuilder:
     @staticmethod
     def build_with_row(row: pd.Series, cfx_library: ChampFXLibrary) -> "ChampFXEntry":
         cfx_id = row["CFXID"]
-        raw_state: State = State[(row["State"].upper())]
-        fixed_implemented_in_raw: str = row["FixedImplementedIn"]
-        system_structure_raw: str = row["SystemStructure"]
-        current_owner_raw: str = row["CurrentOwner.FullName"]
-        submit_date_raw: str = row["SubmitDate"]
+        state: State = State[(row["State"].upper())]
+
         raw_project: str = cast(str, row["Project"])
         cfx_project = CfxProject[raw_project]
+
         raw_safety_relevant: str = row["SafetyRelevant"]
         safety_relevant: Optional[bool] = ChampFXEntryBuilder.to_optional_boolean(raw_safety_relevant)
 
@@ -544,25 +549,30 @@ class ChampFXEntryBuilder:
         raw_category: str = row["Category"]
         category: Category = ChampFXEntryBuilder.convert_champfx_category(raw_category)
 
+        current_owner_raw: str = row["CurrentOwner.FullName"]
         current_owner: role.CfxUser = cfx_library._cfx_users_library.get_cfx_user_by_full_name(current_owner_raw)
-        current_owner_role: role.SubSystem = current_owner._subsystem
 
+        fixed_implemented_in_raw: str = row["FixedImplementedIn"]
         fixed_implemented_in_subsystem: Optional[role.SubSystem] = role.get_subsystem_from_champfx_fixed_implemented_in(fixed_implemented_in_raw) if fixed_implemented_in_raw else None
+
+        submit_date_raw: str = row["SubmitDate"]
+        submit_date: datetime.datetime = cast(datetime.datetime, utils.convert_champfx_extract_date(submit_date_raw))
+
+        system_structure_raw: str = row["SystemStructure"]
+        system_structure: Optional[role.SubSystem] = role.get_subsystem_from_champfx_fixed_implemented_in(system_structure_raw)
 
         champfx_entry = ChampFXEntry(
             cfx_id=cfx_id,
-            state=raw_state,
+            state=state,
             fixed_implemented_in_subsystem=fixed_implemented_in_subsystem,
-            system_structure_raw=system_structure_raw,
-            current_owner_raw=current_owner_raw,
-            submit_date_raw=submit_date_raw,
+            system_structure=system_structure,
+            submit_date=submit_date,
             cfx_project=cfx_project,
             safety_relevant=safety_relevant,
             security_relevant=security_relevant,
             rejection_cause=rejection_cause,
             category=category,
             current_owner=current_owner,
-            current_owner_role=current_owner_role,
         )
         return champfx_entry
 
@@ -573,17 +583,16 @@ class ChampFXEntry:
         cfx_id: str,
         state: State,
         fixed_implemented_in_subsystem: Optional[role.SubSystem],
-        system_structure_raw: str,
-        current_owner_raw: str,
-        submit_date_raw: str,
+        system_structure: Optional[role.SubSystem],
+        submit_date: datetime.datetime,
         cfx_project: CfxProject,
         safety_relevant: Optional[bool],
         security_relevant: SecurityRelevant,
         rejection_cause: RejectionCause,
         category: Category,
         current_owner: role.CfxUser,
-        current_owner_role: role.SubSystem,
     ):
+        self._submit_date = submit_date
         self._change_state_actions: list[ChangeStateAction] = []
         self._change_state_actions_by_date: Dict[datetime.datetime, ChangeStateAction] = dict()
 
@@ -593,18 +602,15 @@ class ChampFXEntry:
         self.cfx_id = cfx_id
         self._state: State = state
         self._fixed_implemented_in_subsystem = fixed_implemented_in_subsystem
-        self._system_structure_raw: str = system_structure_raw
-        self._current_owner_raw: str = current_owner_raw
-        self._current_owner: role.CfxUser = role.UNKNOWN_USER
-        self._current_owner_role: role.SubSystem = role.UNKNOWN_USER.subsystem
+        self._system_structure = system_structure
+
+        self._current_owner: role.CfxUser = current_owner
+        self._current_owner_role: role.SubSystem = self._current_owner.subsystem
 
         self._rejection_cause = rejection_cause
-
         self._subsystem: role.SubSystem.TBD
 
-        self._subsystem_from_fixed_implemented_in: Optional[role.SubSystem] = role.SubSystem.TBD
-        self._system_structure: Optional[role.SubSystem] = role.SubSystem.TBD
-        self._submit_date: datetime.datetime = cast(datetime.datetime, utils.convert_champfx_extract_date(submit_date_raw))
+        self._current_owner_role = current_owner._subsystem
 
         self._cfx_project = cfx_project
         self._safety_relevant = safety_relevant
@@ -618,16 +624,10 @@ class ChampFXEntry:
 
         self._category = category
 
-        if self._system_structure_raw:
-            self._system_structure = role.get_subsystem_from_champfx_fixed_implemented_in(self._system_structure_raw)
-
         if self._rejection_cause != RejectionCause.NONE:
             self._subsystem = self._system_structure
         else:
-            self._subsystem = self._subsystem_from_fixed_implemented_in if self._subsystem_from_fixed_implemented_in else self._current_owner_role
-
-        self._current_owner = current_owner
-        self._current_owner_role = current_owner_role
+            self._subsystem = self._fixed_implemented_in_subsystem if self._fixed_implemented_in_subsystem else self._current_owner_role
 
     def __repr__(self) -> str:
         return f"<ChampFXEntry cfx_id={self.cfx_id} _raw_state={self._state} _current_owner_raw={self._current_owner_raw}>"
