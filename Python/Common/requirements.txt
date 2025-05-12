@@ -1,2 +1,5 @@
 humanize
 nltk
+langdetect
+Langid
+py3langid
