@@ -1,26 +1,20 @@
 ﻿"""logger"""
 
-# -*-coding:Utf-8 -*
-import logging
-import os
-import sys
-
-import time
 import datetime
-
-import random
-
-from typing import Optional
-
-# from warnings import deprecated
-from logging.handlers import RotatingFileHandler
-
-from collections.abc import Generator
-from contextlib import contextmanager
-
 # To get line number for logs
 # from inspect import currentframe, getframeinfo
 import inspect
+# -*-coding:Utf-8 -*
+import logging
+import os
+import random
+import sys
+import time
+from collections.abc import Generator
+from contextlib import contextmanager
+# from warnings import deprecated
+from logging.handlers import RotatingFileHandler
+from typing import Optional
 
 # pylint: enable=logging-not-lazy
 # pylint: disable=logging-fstring-interpolation
