@@ -310,6 +310,7 @@ class ChampFXLibrary:
         self,
         champfx_details_excel_file_full_path: str = DEFAULT_CHAMPFX_DETAILS_EXCEL_FILE_FULL_PATH,
         champfx_states_changes_excel_file_full_path: str = DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH,
+        cfx_extended_history_file_full_path: str = DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH,
         # all_current_owner_modifications_pickle_file_full_path: str = "Input/all_current_owner_modifications.pkl",
         # all_current_owner_modifications_per_cfx_pickle_file_full_path: str = "Input/all_current_owner_modifications_per_cfx.pkl",
         champfx_filters: Optional[List["ChampFXtSaticCriteriaFilter"]] = None,
@@ -342,7 +343,7 @@ class ChampFXLibrary:
                 self.create_or_fill_champfx_entry_with_dataframe(cfx_details_data_frame)
                 logger_config.print_and_log_info(f"{len(self.get_all_cfx())} ChampFXEntry objects created")
 
-            all_cfx_complete_extended_histories_text_file_path = DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH
+            all_cfx_complete_extended_histories_text_file_path = cfx_extended_history_file_full_path
             with logger_config.stopwatch_with_label(f"Load cfx_extended_history {all_cfx_complete_extended_histories_text_file_path}"):
                 self._all_cfx_complete_extended_histories: List[cfx_extended_history.CFXEntryCompleteHistory] = (
                     cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path, self.get_all_cfx_ids())
