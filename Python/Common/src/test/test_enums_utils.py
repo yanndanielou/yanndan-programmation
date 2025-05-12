@@ -1,6 +1,6 @@
 import pytest
 
-from common import enums_utils
+from src.common import enums_utils
 
 from enum import auto
 

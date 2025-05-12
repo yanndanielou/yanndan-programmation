@@ -2,7 +2,7 @@
 
 import pytest
 
-from common import list_utils
+from src.common import list_utils
 
 
 class TestListEquals():

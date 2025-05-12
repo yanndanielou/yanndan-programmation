@@ -2,7 +2,7 @@
 
 import pytest
 
-from common import file_name_utils
+from src.common import file_name_utils
 
 
 file_extension_test_data = [

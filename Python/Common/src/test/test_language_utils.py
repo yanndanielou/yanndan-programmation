@@ -2,7 +2,7 @@
 
 import pytest
 
-from common import language_utils
+from src.common import language_utils
 
 class TestFileExtension():
 
