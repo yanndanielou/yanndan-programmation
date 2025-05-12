@@ -1,11 +1,8 @@
 import math
-from logger import logger_config
-
-
+from datetime import datetime
 from typing import Optional
 
-from datetime import datetime
-import pytz
+from logger import logger_config
 
 
 def convert_champfx_extract_date(raw_champfx_date: str | float) -> Optional[datetime]:

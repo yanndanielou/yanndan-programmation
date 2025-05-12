@@ -112,7 +112,7 @@ class OneTimestampResult:
         self.all_results_to_display.present_states.update(all_states_found)
 
     @property
-    def timestamp(self):
+    def timestamp(self) -> datetime.datetime:
         return self._timestamp
 
 
@@ -220,7 +220,7 @@ class DecreasingIntervalDatesGenerator(DatesGenerator):
             # Compare using days to determine the time delta
             if days_diff > 365 * 3:
                 time_delta = relativedelta.relativedelta(months=3)
- 
+
             elif days_diff > 365 * 2:
                 time_delta = relativedelta.relativedelta(months=2)
 
@@ -363,7 +363,6 @@ class ChampFXLibrary:
         for _, row in cfx_details_data_frame.iterrows():
             cfx_id = row["CFXID"]
 
-            
             if cfx_id not in self._champfx_entry_by_id:
                 cfx_entry = ChampFXEntryBuilder.build_with_row(row, self)
                 if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
@@ -470,8 +469,7 @@ class ChampFXLibrary:
             )
 
             for cfx_entry in self.get_all_cfx():
-                if len(all_roles_searched_in_filers) == 0 or list_utils.are_all_elements_of_list_included_in_list(all_roles_searched_in_filers, list(
-                        cfx_entry.all_history_current_owner_roles)):
+                if len(all_roles_searched_in_filers) == 0 or list_utils.are_all_elements_of_list_included_in_list(all_roles_searched_in_filers, list(cfx_entry.all_history_current_owner_roles)):
 
                     if all(cfx_filter.static_criteria_match_cfx_entry(cfx_entry) for cfx_filter in cfx_filters):
                         all_cfx_to_consider.append(cfx_entry)
@@ -560,8 +558,7 @@ class ChampFXEntryBuilder:
         current_owner: role.CfxUser = cfx_library.cfx_users_library.get_cfx_user_by_full_name(current_owner_raw)
 
         fixed_implemented_in_raw: str = row["FixedImplementedIn"]
-        fixed_implemented_in_subsystem: Optional[
-            role.SubSystem] = role.get_subsystem_from_champfx_fixed_implemented_in(fixed_implemented_in_raw) if fixed_implemented_in_raw else None
+        fixed_implemented_in_subsystem: Optional[role.SubSystem] = role.get_subsystem_from_champfx_fixed_implemented_in(fixed_implemented_in_raw) if fixed_implemented_in_raw else None
 
         submit_date_raw: str = row["SubmitDate"]
         submit_date: datetime.datetime = cast(datetime.datetime, utils.convert_champfx_extract_date(submit_date_raw))
