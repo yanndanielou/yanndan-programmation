@@ -100,7 +100,7 @@ class CfxUserLibrary:
         return self._add_user_with_user(cfx_user)
 
     def _add_user_with_user(self, cfx_user: CfxUser) -> CfxUser:
-        self._cfx_user_by_full_name_lower[cfx_user._full_name] = cfx_user
+        self._cfx_user_by_full_name_lower[cfx_user.full_name] = cfx_user
         self._cfx_user_by_full_name[cfx_user.raw_full_name] = cfx_user
         return cfx_user
 

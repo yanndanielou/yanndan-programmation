@@ -387,9 +387,9 @@ class ChampFXLibrary:
                 action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
                 history_raw_action_name: str = row["history.action_name"]
                 history_action = ActionType[history_raw_action_name.upper()]
-                change_state_actions_created.append(history_action)
 
                 change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
+                change_state_actions_created.append(change_state_action)
 
                 cfx_request.add_change_state_action(change_state_action)
                 cfx_request.compute_all_actions_sorted_chronologically()

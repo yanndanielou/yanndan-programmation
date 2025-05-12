@@ -105,7 +105,7 @@ def produce_results_and_displays(
 
     generation_label = cfx_library.label
     if len(cfx_filters) > 0:
-        generation_label += "".join([filter.label for filter in cfx_filters])
+        generation_label += "".join([filt.label for filt in cfx_filters])
     else:
         generation_label += "All"
 
@@ -120,7 +120,7 @@ def produce_results_and_displays(
 
     if dump_all_cfx_ids_in_json:
         json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
-            list_objects=all_results_to_display.all_cfx_ids_that_have_matched, json_file_full_path=f"{generic_output_files_path_without_suffix_and_extension}.json"
+            list_objects=list(all_results_to_display.all_cfx_ids_that_have_matched), json_file_full_path=f"{generic_output_files_path_without_suffix_and_extension}.json"
         )
 
     if not all_results_to_display.at_least_one_cfx_matching_filter_has_been_found:
@@ -135,7 +135,6 @@ def produce_results_and_displays(
         with logger_config.stopwatch_with_label(f"produce_displays cumulative,  {generation_label}"):
             produce_displays_and_create_html(
                 output_directory_name=output_directory_name,
-                cfx_library=cfx_library,
                 use_cumulative=True,
                 all_results_to_display=all_results_to_display,
                 create_html_file=create_html_file,
@@ -147,7 +146,6 @@ def produce_results_and_displays(
         with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {generation_label} library {cfx_library.label}"):
             produce_displays_and_create_html(
                 output_directory_name=output_directory_name,
-                cfx_library=cfx_library,
                 use_cumulative=False,
                 all_results_to_display=all_results_to_display,
                 create_html_file=create_html_file,
@@ -174,7 +172,6 @@ def produce_excel_output_file(output_excel_file: str, all_results_to_display: cf
 
 
 def produce_displays_and_create_html(
-    cfx_library: cfx.ChampFXLibrary,
     use_cumulative: bool,
     all_results_to_display: cfx.AllResultsPerDates,
     create_html_file: bool,

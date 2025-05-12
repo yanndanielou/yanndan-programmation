@@ -206,9 +206,9 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHi
         # Define regular expressions for extracting elements and fields
         element_regex = r"Time\s*:\s*(.*?)\nSchema Rev\s*:\s*(.*?)\nUser Name\s*:\s*(.*?)\nUser Login\s*:\s*(.*?)\nUser Groups\s*:\s*(.*?)\nAction\s*:\s*(.*?)\nState\s*:\s*(.*?)\n==Fields=="
         field_update_regex = r"(.+?)\s*\((\d+:\d+)\)\s*Old\s*:\s*(.*?)\s*New\s*:(.*?)(?=(\n.+?\s*\(\d+:\d+\)|\n====END====|\Z))"
-        field_submit_regex_not_working = r"(.+?)\s*\((\d+:\d+)\)\s*\s*:(.*?)(?=(\n.+?\s*\(\d+:\d+\)|\n====END====|\Z))"
-        field_submit_regex_try1 = r"(?P<field>[A-Za-z]+):\s+(?P<value>[\w\s\(\)/\.]+)"
-        field_submit_regex_try2 = r"(?P<field>[A-Za-z]+)\s*\(\d+\)\n\s*(?P<value>[\w\s\(\)/\.]+)"
+        #field_submit_regex_not_working = r"(.+?)\s*\((\d+:\d+)\)\s*\s*:(.*?)(?=(\n.+?\s*\(\d+:\d+\)|\n====END====|\Z))"
+        #field_submit_regex_try1 = r"(?P<field>[A-Za-z]+):\s+(?P<value>[\w\s\(\)/\.]+)"
+        #field_submit_regex_try2 = r"(?P<field>[A-Za-z]+)\s*\(\d+\)\n\s*(?P<value>[\w\s\(\)/\.]+)"
 
         # Parse history element details
         element_match = re.search(element_regex, block, re.DOTALL)
@@ -232,12 +232,12 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHi
                     # field_pattern = get_one_line_field_when_cfx_submit_regex(one_line_field_to_retrieve)
                     field_submit_match = re.search(one_line_field_to_retrieve, fields_section)
                     if field_submit_match:
-                        field_id, new_state = field_submit_match.groups()[:2]
+                        #field_id, new_state = field_submit_match.groups()[:2]
                         # field = CFXHistoryField(cfx_id=cfx_id, field_id=field_id, secondary_label="", old_state="", new_state=new_state, change_timestamp=element.decoded_time)
                         # element.add_field(field)
                         # fields_created.append(field)
                         # logger_config.print_and_log_info(f"Found field {field_id} with value {new_state} for {cfx_id}")
-
+                        pass
                     """
                     field_submit_matches = re.finditer(field_submit_regex_try2, fields_section, re.DOTALL)
                     logger_config.print_and_log_info(f"Has computed fields submit CFXHistoryElement {cfx_id, action}")

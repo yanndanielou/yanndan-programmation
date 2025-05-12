@@ -1,35 +1,18 @@
-import argparse
+import os
+from dataclasses import dataclass
 
-from dataclasses import dataclass, field
-
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.common.exceptions import TimeoutException
 import selenium.webdriver.chrome.options
 import selenium.webdriver.firefox.options
+from logger import logger_config
+from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chromium.webdriver import ChromiumDriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.chromium.webdriver import ChromiumDriver
-
-from typing import Optional, List, Dict
-
-
-import cfx_extended_history
-
-
-from common import json_encoders
 
 import connexion_param
-
-
-import pandas
-
-from logger import logger_config
-
-
-import os
-
 
 OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "export_query_to_excel"
 

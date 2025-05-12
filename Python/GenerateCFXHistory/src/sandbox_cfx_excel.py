@@ -1,13 +1,13 @@
 import time
+
+
+import selenium.webdriver.chrome.options
+import selenium.webdriver.firefox.options
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import TimeoutException
-import selenium.webdriver.chrome.options
-import selenium.webdriver.firefox.options
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.chromium.webdriver import ChromiumDriver
 
 chrome_driver_path = "C:\\Users\\fr232487\\Downloads\\chromedriver-win64\\chromedriver.exe"
 chrome_options = selenium.webdriver.chrome.options.Options()

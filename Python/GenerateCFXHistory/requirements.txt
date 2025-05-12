@@ -1,5 +1,5 @@
-.\..\Logger
-.\..\Common
+Logger
+Common
 pytest
 matplotlib
 mplcursors
@@ -8,3 +8,6 @@ pandas
 mplcursors
 unidecode
 openpyxl
+selenium
+pytz
+python-dateutil
