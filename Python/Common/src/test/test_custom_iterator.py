@@ -2,9 +2,9 @@
 """ test custom """
 import pytest
 
-from  common.custom_iterator import SimpleIntCustomIncrementDecrement
+from  src.common.custom_iterator import SimpleIntCustomIncrementDecrement
 
-class SimpleIntCustomIncrementDecrementTest():
+class TestSimpleIntCustomIncrementDecrementTest():
     """ SimpleIntCustomIncrementDecrementTest """
 
     def test_increment(self) -> None:
