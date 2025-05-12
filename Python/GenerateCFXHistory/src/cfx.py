@@ -111,6 +111,10 @@ class OneTimestampResult:
         all_states_found = list(self.count_by_state.keys())
         self.all_results_to_display.present_states.update(all_states_found)
 
+    @property
+    def timestamp(self):
+        return self._timestamp
+
 
 class AllResultsPerDates:
     def __init__(self) -> None:
@@ -125,7 +129,7 @@ class AllResultsPerDates:
         return not self.all_cfx_ids_that_have_matched
 
     def get_all_timestamps(self) -> List[datetime.datetime]:
-        all_timestamps = [results._timestamp for results in self.timestamp_results]
+        all_timestamps = [results.timestamp for results in self.timestamp_results]
         return all_timestamps
 
     def present_states_ordered(self) -> List[State]:
@@ -141,27 +145,29 @@ class AllResultsPerDates:
                 self.cumulative_counts[state].append(one_timestamp.count_by_state[state])
 
 
+def get_tomorrow_naive() -> datetime.datetime:
+    tomorrow_naive = (datetime.datetime.now() + timedelta(days=1)).replace(tzinfo=None)
+    return tomorrow_naive
+
+
+def get_today_naive() -> datetime.datetime:
+    today_naive = datetime.datetime.now().replace(tzinfo=None)
+    return today_naive
+
+
 class DatesGenerator:
     def __init__(self) -> None:
         pass
 
-    def get_tomorrow_naive(self) -> datetime.datetime:
-        tomorrow_naive = (datetime.datetime.now() + timedelta(days=1)).replace(tzinfo=None)
-        return tomorrow_naive
-
-    def get_today_naive(self) -> datetime.datetime:
-        today_naive = datetime.datetime.now().replace(tzinfo=None)
-        return today_naive
-
     def get_dates_since(self, start_date: datetime.datetime) -> List[datetime.datetime]:
         all_dates: List[datetime.datetime] = self._compute_dates_since_until_today(start_date=start_date)
         # Add today if not exist
-        today_naive = self.get_today_naive()
+        today_naive = get_today_naive()
         if today_naive not in all_dates:
             all_dates.append(today_naive)
 
         # Add tomorrow  if not exist
-        tomorrow_naive = self.get_tomorrow_naive()
+        tomorrow_naive = get_tomorrow_naive()
         if not tomorrow_naive in all_dates:
             all_dates.append(tomorrow_naive)
 
@@ -174,12 +180,13 @@ class DatesGenerator:
 
 class ConstantIntervalDatesGenerator(DatesGenerator):
     def __init__(self, time_delta: relativedelta.relativedelta) -> None:
+        super().__init__()
         self._time_delta = time_delta
 
     def _compute_dates_since_until_today(self, start_date: datetime.datetime) -> List[datetime.datetime]:
         dates = []
 
-        today_naive = self.get_today_naive()
+        today_naive = get_today_naive()
 
         # Ensure 'current_date' is naive datetime.datetime
         current_date_iter = start_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
@@ -192,12 +199,12 @@ class ConstantIntervalDatesGenerator(DatesGenerator):
 
 class DecreasingIntervalDatesGenerator(DatesGenerator):
     def __init__(self) -> None:
-        pass
+        super().__init__()
 
     def _compute_dates_since_until_today(self, start_date: datetime.datetime) -> List[datetime.datetime]:
 
         # Ensure 'beginning_of_next_month' is naive datetime.datetime
-        today_naive = self.get_today_naive()
+        today_naive = get_today_naive()
 
         dates = []
 
@@ -213,8 +220,8 @@ class DecreasingIntervalDatesGenerator(DatesGenerator):
             # Compare using days to determine the time delta
             if days_diff > 365 * 3:
                 time_delta = relativedelta.relativedelta(months=3)
-
-            if days_diff > 365 * 2:
+ 
+            elif days_diff > 365 * 2:
                 time_delta = relativedelta.relativedelta(months=2)
 
             elif days_diff > 365:
@@ -287,6 +294,16 @@ class ChangeStateAction(BaseAction):
         return self._action
 
 
+def convert_cfx_history_element_to_valid_full_name(cfx_history_element_state: str) -> str:
+    return cfx_history_element_state.split("(")[0].strip()
+
+
+def get_earliest_submit_date(cfx_list: List["ChampFXEntry"]) -> datetime.datetime:
+    earliest_date = min(entry.get_oldest_change_action_by_new_state(State.SUBMITTED).timestamp for entry in cfx_list)
+    logger_config.print_and_log_info(f"Earliest submit date among {len(cfx_list)} CFX: {earliest_date}")
+    return earliest_date
+
+
 class ChampFXLibrary:
 
     def __init__(
@@ -346,10 +363,8 @@ class ChampFXLibrary:
         for _, row in cfx_details_data_frame.iterrows():
             cfx_id = row["CFXID"]
 
-            if cfx_id in self._champfx_entry_by_id:
-                cfx_entry = self._champfx_entry_by_id[cfx_id]
-                cfx_entry._current_owner
-            else:
+            
+            if cfx_id not in self._champfx_entry_by_id:
                 cfx_entry = ChampFXEntryBuilder.build_with_row(row, self)
                 if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
                     self._champfx_entry_by_id[cfx_id] = cfx_entry
@@ -381,9 +396,6 @@ class ChampFXLibrary:
 
         return change_state_actions_created
 
-    def convert_cfx_history_element_to_valid_full_name(self, cfx_history_element_state: str) -> str:
-        return cfx_history_element_state.split("(")[0].strip()
-
     def create_current_owner_modifications(self) -> List[ChangeCurrentOwnerAction]:
 
         change_current_owner_actions_created: List[ChangeCurrentOwnerAction] = []
@@ -402,8 +414,8 @@ class ChampFXLibrary:
 
                     for cfx_history_field in cfx_history_element.get_all_current_owner_field_modifications():
 
-                        previous_current_owner_name = self.convert_cfx_history_element_to_valid_full_name(cfx_history_field.old_state)
-                        new_current_owner_name = self.convert_cfx_history_element_to_valid_full_name(cfx_history_field.new_state)
+                        previous_current_owner_name = convert_cfx_history_element_to_valid_full_name(cfx_history_field.old_state)
+                        new_current_owner_name = convert_cfx_history_element_to_valid_full_name(cfx_history_field.new_state)
 
                         if not previous_current_owner_name or not new_current_owner_name:
                             logger_config.print_and_log_error(f"Invalid current owner change history for {cfx_id}, from {previous_current_owner_name} to {new_current_owner_name}. {cfx_history_field}")
@@ -443,11 +455,6 @@ class ChampFXLibrary:
 
         return result
 
-    def get_earliest_submit_date(self, cfx_list: List["ChampFXEntry"]) -> datetime.datetime:
-        earliest_date = min(entry.get_oldest_change_action_by_new_state(State.SUBMITTED).timestamp for entry in cfx_list)
-        logger_config.print_and_log_info(f"Earliest submit date among {len(cfx_list)} CFX: {earliest_date}")
-        return earliest_date
-
     def gather_state_counts_for_each_date(self, dates_generator: DatesGenerator, cfx_filters: Optional[List["ChampFxFilter"]] = None) -> AllResultsPerDates:
 
         all_results_to_display: AllResultsPerDates = AllResultsPerDates()
@@ -463,7 +470,8 @@ class ChampFXLibrary:
             )
 
             for cfx_entry in self.get_all_cfx():
-                if len(all_roles_searched_in_filers) == 0 or list_utils.are_all_elements_of_list_included_in_list(all_roles_searched_in_filers, list(cfx_entry._all_history_current_owner_roles)):
+                if len(all_roles_searched_in_filers) == 0 or list_utils.are_all_elements_of_list_included_in_list(all_roles_searched_in_filers, list(
+                        cfx_entry.all_history_current_owner_roles)):
 
                     if all(cfx_filter.static_criteria_match_cfx_entry(cfx_entry) for cfx_filter in cfx_filters):
                         all_cfx_to_consider.append(cfx_entry)
@@ -475,7 +483,7 @@ class ChampFXLibrary:
             logger_config.print_and_log_info(f"No data")
             return all_results_to_display
 
-        timestamps_to_display_data: List[datetime.datetime] = dates_generator.get_dates_since(start_date=self.get_earliest_submit_date(all_cfx_to_consider).replace(day=1))
+        timestamps_to_display_data: List[datetime.datetime] = dates_generator.get_dates_since(start_date=get_earliest_submit_date(all_cfx_to_consider).replace(day=1))
 
         for timestamp_to_display_data in timestamps_to_display_data:
             timestamp_results = OneTimestampResult(timestamp=timestamp_to_display_data, all_results_to_display=all_results_to_display)
@@ -594,6 +602,10 @@ class ChampFXEntry:
         category: Category,
         current_owner: role.CfxUser,
     ):
+        """
+
+        :type rejection_cause: RejectionCause
+        """
         self._submit_date = submit_date
         self._change_state_actions: list[ChangeStateAction] = []
         self._change_state_actions_by_date: Dict[datetime.datetime, ChangeStateAction] = dict()
@@ -611,7 +623,7 @@ class ChampFXEntry:
 
         self._rejection_cause = rejection_cause
 
-        self._current_owner_role = current_owner._subsystem
+        self._current_owner_role = current_owner.subsystem
 
         self._cfx_project = cfx_project
         self._safety_relevant = safety_relevant
@@ -631,7 +643,7 @@ class ChampFXEntry:
             self._subsystem = self._fixed_implemented_in_subsystem if self._fixed_implemented_in_subsystem else self._current_owner_role
 
     def __repr__(self) -> str:
-        return f"<ChampFXEntry cfx_id={self.cfx_id} _raw_state={self._state} _current_owner_raw={self._current_owner._full_name}>"
+        return f"<ChampFXEntry cfx_id={self.cfx_id} _raw_state={self._state} _current_owner_raw={self._current_owner.full_name}>"
 
     def compute_all_actions_sorted_chronologically(self) -> list[ChangeStateAction]:
         self._all_change_state_actions_sorted_chronologically = [action for _, action in sorted(self._change_state_actions_by_date.items())]
@@ -674,8 +686,8 @@ class ChampFXEntry:
     def add_change_current_owner_action(self, change_current_owner_action: ChangeCurrentOwnerAction) -> None:
         self._change_current_owner_actions.append(change_current_owner_action)
         self._change_current_owner_actions_by_date[change_current_owner_action.timestamp] = change_current_owner_action
-        self._all_history_current_owner_roles.add(change_current_owner_action._previous_owner.subsystem)
-        self._all_history_current_owner_roles.add(change_current_owner_action._new_owner.subsystem)
+        self._all_history_current_owner_roles.add(change_current_owner_action.previous_owner.subsystem)
+        self._all_history_current_owner_roles.add(change_current_owner_action.new_owner.subsystem)
 
     @property
     def raw_state(self) -> State:
@@ -701,6 +713,10 @@ class ChampFXEntry:
             return State.NOT_CREATED_YET
         else:
             return newest_change_action_that_is_before_date.new_state
+
+    @property
+    def all_history_current_owner_roles(self):
+        return self._all_history_current_owner_roles
 
 
 class ChampFXtSaticCriteriaFilter(ABC):

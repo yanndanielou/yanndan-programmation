@@ -1,16 +1,9 @@
 from enum import auto
-from common import enums_utils
-
-
-from logger import logger_config
-
 from typing import Dict, Optional
 
-from dataclasses import dataclass, field
+from common import enums_utils
 
 import role_data
-
-from common import string_utils
 
 
 class SubSystem(enums_utils.NameBasedEnum):
@@ -59,6 +52,10 @@ class CfxUser:
     @property
     def raw_full_name(self) -> str:
         return self._raw_full_name
+
+    @property
+    def full_name(self):
+        return self._full_name
 
 
 class CfxUserLibrary:

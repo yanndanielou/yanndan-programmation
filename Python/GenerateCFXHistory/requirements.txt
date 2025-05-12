@@ -1,5 +1,5 @@
 .\..\Logger
-..\Common
+.\..\Common
 pytest
 matplotlib
 mplcursors
