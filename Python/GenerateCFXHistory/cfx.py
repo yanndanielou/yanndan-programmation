@@ -728,7 +728,7 @@ class ChampFXWhitelistFilter(ChampFXtSaticCriteriaFilter):
     def __init__(
         self,
         cfx_to_treat_whitelist_text_file_full_path: Optional[str] = None,
-        cfx_to_treat_ids: Optional[Set[str]] = None,
+        cfx_to_treat_ids: Optional[Set | List[str]] = None,
     ):
         super().__init__()
         self._cfx_to_treat_whitelist_text_file_full_path: Optional[str] = cfx_to_treat_whitelist_text_file_full_path
@@ -747,14 +747,15 @@ class ChampFXWhitelistFilter(ChampFXtSaticCriteriaFilter):
 
         elif cfx_to_treat_ids:
             self.label: str = f"list {len(cfx_to_treat_ids)} white listed"  # type: ignore[no-redef]
-            self._cfx_to_treat_whitelist_ids = cfx_to_treat_ids
+            self._cfx_to_treat_whitelist_ids.update(cfx_to_treat_ids)
 
     def match_cfx_entry_without_cache(self, cfx_entry: ChampFXEntry) -> bool:
         return cfx_entry.cfx_id in self._cfx_to_treat_whitelist_ids
 
 
-class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter):
+class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter, ABC):
 
+    @abstractmethod
     def __init__(self, field_name: str, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
         super().__init__()
         self.field_name = field_name
@@ -782,6 +783,16 @@ class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter):
 class ChampFxFilterFieldSecurityRelevant(ChampFXFieldFilter):
     def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
         super().__init__("_security_relevant", field_accepted_values, field_forbidden_values)
+
+
+class ChampFxFilterFieldProject(ChampFXFieldFilter):
+    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
+        super().__init__("_cfx_project", field_accepted_values, field_forbidden_values)
+
+
+class ChampFxFilterFieldSubsystem(ChampFXFieldFilter):
+    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
+        super().__init__("_subsystem", field_accepted_values, field_forbidden_values)
 
 
 @dataclass
