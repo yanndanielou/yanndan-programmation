@@ -1,7 +1,6 @@
 import pytest
 
-import utils
-
+from src import utils
 
 # fmt: off
 champfx_raw_dates_data = ["19 juillet 2022 à 16:00:58 UTC+2",

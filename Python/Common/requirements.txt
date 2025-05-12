@@ -3,3 +3,6 @@ nltk
 langdetect
 Langid
 py3langid
+unidecode
+../Logger
+

@@ -1,5 +1,4 @@
 import datetime
-import math
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import timedelta
@@ -18,9 +17,9 @@ import utils
 from abc import ABC, abstractmethod
 
 
-DEFAULT_CHAMPFX_DETAILS_EXCEL_FILE_FULL_PATH: str = "Input/extract_cfx_details.xlsx"
-DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH: str = "Input/extract_cfx_change_state.xlsx"
-DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH: str = "Input/cfx_extended_history.txt"
+DEFAULT_CHAMPFX_DETAILS_EXCEL_FILE_FULL_PATH: str = "../Input/extract_cfx_details.xlsx"
+DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH: str = "../Input/extract_cfx_change_state.xlsx"
+DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH: str = "../Input/cfx_extended_history.txt"
 
 
 class RejectionCause(Enum):
@@ -553,7 +552,8 @@ class ChampFXEntryBuilder:
         current_owner: role.CfxUser = cfx_library.cfx_users_library.get_cfx_user_by_full_name(current_owner_raw)
 
         fixed_implemented_in_raw: str = row["FixedImplementedIn"]
-        fixed_implemented_in_subsystem: Optional[role.SubSystem] = role.get_subsystem_from_champfx_fixed_implemented_in(fixed_implemented_in_raw) if fixed_implemented_in_raw else None
+        fixed_implemented_in_subsystem: Optional[
+            role.SubSystem] = role.get_subsystem_from_champfx_fixed_implemented_in(fixed_implemented_in_raw) if fixed_implemented_in_raw else None
 
         submit_date_raw: str = row["SubmitDate"]
         submit_date: datetime.datetime = cast(datetime.datetime, utils.convert_champfx_extract_date(submit_date_raw))

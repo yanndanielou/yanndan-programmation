@@ -65,7 +65,8 @@ class SaveCfxWebpageApplication:
     def __post_init__(self):
         self.lock = threading.Lock()
 
-    def add_all_current_owner_modification(self, cfx_id: str, current_owner_field_modifications: List[cfx_extended_history.CFXHistoryField]):
+    def add_all_current_owner_modification(self, cfx_id: str, current_owner_field_modifications: List[
+        cfx_extended_history.CFXHistoryField]):
         with self.lock:
             self.all_current_owner_modifications.extend(current_owner_field_modifications)
             self.all_current_owner_modifications_per_cfx[cfx_id] = current_owner_field_modifications
@@ -135,7 +136,7 @@ class SaveCfxWebpageApplication:
                 pickle.dump(self.all_current_owner_modifications_per_cfx, file)
 
     def get_all_cfx_id_unique_ordered_list(self) -> list[str]:
-        champfx_details_excel_file_full_path = "Input/extract_cfx_details.xlsx"
+        champfx_details_excel_file_full_path = "../Input/extract_cfx_details.xlsx"
         all_cfx_id_unique_ordered_list: list[str] = []
         with logger_config.stopwatch_with_label(f"Open cfx details excel file {champfx_details_excel_file_full_path}"):
             # Import panda fails when no-gil (python3.13t.exe)

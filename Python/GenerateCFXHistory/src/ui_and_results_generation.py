@@ -1,6 +1,6 @@
 import datetime
 from enum import auto, Enum
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import mplcursors
@@ -58,9 +58,11 @@ def produce_results_and_displays(
 
     match generate_by_project_instruction:
         case GenerateByProjectInstruction.ONLY_ATP:
-            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[cfx.CfxProject.ATSP])]))
+            cfx_filters.append(cfx.ChampFxFilter(field_filters=[
+                cfx.ChampFxFilterFieldProject(field_accepted_values=[cfx.CfxProject.ATSP])]))
         case GenerateByProjectInstruction.ONLY_NEXTEO:
-            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[cfx.CfxProject.FR_NEXTEO])]))
+            cfx_filters.append(cfx.ChampFxFilter(field_filters=[
+                cfx.ChampFxFilterFieldProject(field_accepted_values=[cfx.CfxProject.FR_NEXTEO])]))
         case GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS:
             pass
         case GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS:
@@ -262,7 +264,8 @@ def produce_results_and_displays_for_libary(
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     create_html_file=create_html_file,
-                    cfx_filters=cfx_filters + [cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))],
+                    cfx_filters=cfx_filters + [
+                        cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))],
                     generate_by_project_instruction=generate_by_project_instruction,
                 )
 
@@ -278,7 +281,8 @@ def produce_results_and_displays_for_libary(
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     create_html_file=create_html_file,
-                    cfx_filters=cfx_filters + [cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[subsystem])])],
+                    cfx_filters=cfx_filters + [cfx.ChampFxFilter(field_filters=[
+                        cfx.ChampFxFilterFieldProject(field_accepted_values=[subsystem])])],
                     generate_by_project_instruction=generate_by_project_instruction,
                 )
 

@@ -1,6 +1,6 @@
 import pytest
 
-import role
+from src import role
 
 # fmt: off
 
@@ -384,4 +384,4 @@ class TestRoleConversion:
     def test_random(self) -> None:
         cfx_user_library = role.CfxUserLibrary()
         user = cfx_user_library.get_cfx_user_by_full_name("Zehoub Khaled")
-        assert user.subsystem== role.SubSystem.ATS
+        assert user.subsystem == role.SubSystem.ATS

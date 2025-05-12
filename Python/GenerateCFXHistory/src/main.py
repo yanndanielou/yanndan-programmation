@@ -20,14 +20,16 @@ def print_gathering_time(champfx_library: cfx.ChampFXLibrary, number_iterations:
         with logger_config.stopwatch_with_label("gather_state_counts_for_each_date filter nexteo"):
             champfx_library.gather_state_counts_for_each_date(
                 dates_generator=cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
-                cfx_filters=[cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.FR_NEXTEO])])],
+                cfx_filters=[cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[
+                    cfx.CfxProject.FR_NEXTEO])])],
             )
 
     for _ in range(1, number_iterations):
         with logger_config.stopwatch_with_label("gather_state_counts_for_each_date filter ats+"):
             champfx_library.gather_state_counts_for_each_date(
                 dates_generator=cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
-                cfx_filters=[cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.ATSP])])],
+                cfx_filters=[cfx.ChampFxFilter(field_filters=[
+                    cfx.ChampFXFieldFilter(field_name="_cfx_project", field_accepted_values=[cfx.CfxProject.ATSP])])],
             )
 
     for _ in range(1, number_iterations):
@@ -35,7 +37,8 @@ def print_gathering_time(champfx_library: cfx.ChampFXLibrary, number_iterations:
             champfx_library.gather_state_counts_for_each_date(
                 dates_generator=cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
                 cfx_filters=[
-                    cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])])
+                    cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[
+                        cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])])
                 ],
             )
 
@@ -43,27 +46,34 @@ def print_gathering_time(champfx_library: cfx.ChampFXLibrary, number_iterations:
         with logger_config.stopwatch_with_label("gather_state_counts_for_each_date ChampFXRoleDependingOnDateFilter([role.SubSystem.ATS]"):
             champfx_library.gather_state_counts_for_each_date(
                 dates_generator=cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
-                cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.ATS]))],
+                cfx_filters=[
+                    cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[
+                        role.SubSystem.ATS]))],
             )
 
     for _ in range(1, number_iterations):
         with logger_config.stopwatch_with_label("gather_state_counts_for_each_date ChampFXRoleDependingOnDateFilter([role.SubSystem.SW]"):
             champfx_library.gather_state_counts_for_each_date(
                 dates_generator=cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
-                cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.SW]))],
+                cfx_filters=[
+                    cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[
+                        role.SubSystem.SW]))],
             )
 
     for _ in range(1, number_iterations):
         with logger_config.stopwatch_with_label("gather_state_counts_for_each_date ChampFXRoleDependingOnDateFilter([role.SubSystem.QUALITE]"):
             champfx_library.gather_state_counts_for_each_date(
                 dates_generator=cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
-                cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.QUALITE]))],
+                cfx_filters=[
+                    cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[
+                        role.SubSystem.QUALITE]))],
             )
 
 
 def produce_results_and_displays_for_adonem_known_cstmr() -> None:
 
-    adonem_library = cfx.ChampFXLibrary(champfx_filters=[cfx.ChampFXWhitelistFilter("Input/CFX_adonem_connus_client.txt")])
+    adonem_library = cfx.ChampFXLibrary(champfx_filters=[
+        cfx.ChampFXWhitelistFilter("../Input/CFX_adonem_connus_client.txt")])
 
     ui_and_results_generation.produce_results_and_displays_for_libary(
         cfx_library=adonem_library,
@@ -111,7 +121,7 @@ def main() -> None:
             for_each_subsystem=True,
             for_each_current_owner_per_date=True,
             cfx_filters=[
-                cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input/CFX_usine_site.txt"),
+                cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="../Input/CFX_usine_site.txt"),
             ],
             create_excel_file=True,
             create_html_file=True,
@@ -124,7 +134,8 @@ def main() -> None:
             for_each_subsystem=False,
             for_each_current_owner_per_date=False,
             cfx_filters=[
-                cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_security_relevant", field_forbidden_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])]),
+                cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldSecurityRelevant( field_forbidden_values=[
+                    cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])]),
             ],
             create_excel_file=True,
             create_html_file=True,
@@ -137,7 +148,8 @@ def main() -> None:
             for_each_subsystem=False,
             for_each_current_owner_per_date=False,
             cfx_filters=[
-                cfx.ChampFxFilter(field_filters=[cfx.ChampFXFieldFilter(field_name="_security_relevant", field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])]),
+                cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldSecurityRelevant( field_accepted_values=[
+                    cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])]),
             ],
             create_excel_file=True,
             create_html_file=True,

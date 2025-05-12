@@ -1,0 +1,10 @@
+.\..\Logger
+..\Common
+pytest
+matplotlib
+mplcursors
+mpld3
+pandas
+mplcursors
+unidecode
+openpyxl

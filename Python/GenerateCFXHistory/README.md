@@ -35,6 +35,8 @@ https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/QUERY/Personal%20Queries
 
 ```sh
 pip install .
+pip install -e ..\Logger
+pip install -e ..\Common
 ```
 
 ## Running Tests

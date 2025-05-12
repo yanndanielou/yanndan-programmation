@@ -265,7 +265,8 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHi
 
 
 def profile_load_full() -> None:
-    all_history: List["CFXEntryCompleteHistory"] = AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file("Input/cfx_extended_history.txt", set())
+    all_history: List["CFXEntryCompleteHistory"] = AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(
+        "../Input/cfx_extended_history.txt", set())
     pass
 
 
