@@ -3,7 +3,7 @@
 import pytest
 import os
 
-from common import string_utils
+from src.common import string_utils
 from enum import auto, Enum
 
 

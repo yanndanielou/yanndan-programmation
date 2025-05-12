@@ -3,7 +3,7 @@
 import pytest
 
 
-from common import tokenization_string, file_name_utils
+from src.common import tokenization_string, file_name_utils
 
 class TestTokenizationString():
 
