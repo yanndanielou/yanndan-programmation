@@ -1,15 +1,14 @@
 package common.timer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
+import common.exceptions.BadLogicException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import common.exceptions.BadLogicException;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class PausablePeriodicDelayedTaskTest {
 	static final Logger LOGGER = LogManager.getLogger(PausablePeriodicDelayedTaskTest.class);
