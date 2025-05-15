@@ -4,6 +4,3 @@ https://www.jetbrains.com/help/idea/junit.html#intellij
 
 Formatter: 
 Use Tab character
-
-
-https://blog.jetbrains.com/idea/2014/01/intellij-idea-13-importing-code-formatter-settings-from-eclipse/#:~:text=All%20you%20need%20is%20to,file%20by%20simply%20clicking%20Import.
