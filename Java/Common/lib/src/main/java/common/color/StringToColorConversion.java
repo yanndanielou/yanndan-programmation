@@ -7,7 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class StringToColorConversion {
-	private static final Logger LOGGER = LogManager.getLogger(StringToColorConversionTest.class);
+	private static final Logger LOGGER = LogManager.getLogger(StringToColorConversion.class);
 
 	/***
 	 * Source: http://www.java2s.com/Tutorial/Java/0261__2D-Graphics/Convertsagivenstringintoacolor.htm
