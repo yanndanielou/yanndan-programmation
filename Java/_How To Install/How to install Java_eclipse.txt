@@ -5,7 +5,8 @@ Json:
 JSON Editor Plugin	1.1.3	jsonedit-feature.feature.group	Boothen Technology
 
 Sonar:
-SonarLint for Eclipse	8.0.0.80157	org.sonarlint.eclipse.feature.feature.group	SonarSource
+SonarQube pour IDE
+
 
 Profiler:
 https://visualvm.github.io/
