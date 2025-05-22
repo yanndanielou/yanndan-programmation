@@ -133,6 +133,7 @@ class AllResultsPerDates:
 
         self.cumulative_counts: Dict[State, List[int]] = dict()
         self.all_cfx_ids_that_have_matched: set[str] = set()
+        self.all_cfx_that_have_matched: set[ChampFXEntry] = set()
         self.at_least_one_cfx_matching_filter_has_been_found = False
 
     def is_empty(self) -> bool:
@@ -504,6 +505,7 @@ class ChampFXLibrary:
                 )
                 if match_all_filters:
                     all_results_to_display.all_cfx_ids_that_have_matched.add(cfx_entry.cfx_id)
+                    all_results_to_display.all_cfx_that_have_matched.add(cfx_entry)
 
                     state = cfx_entry.get_state_at_date(timestamp_to_display_data)
                     if state != State.NOT_CREATED_YET:
