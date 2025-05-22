@@ -77,5 +77,10 @@ def text_to_valid_enum_value_text(raw_text: str) -> Optional[str]:
     return (
         None
         if type(raw_text) is not str and math.isnan(raw_text)
-        else raw_text.replace("/", "_").replace(" ", "_").replace("-", "_").upper()
+        else raw_text.replace("/", "_")
+        .replace(", ", "_")
+        .replace(" ", "_")
+        .replace("-", "_")
+        .replace(",", "_")
+        .upper()
     )
