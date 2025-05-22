@@ -84,11 +84,13 @@ class TestTextToValidEnumValueText:
         DUPLICATE = auto()
         NOT_A_BUG = auto()
         NOT_PART_OF_CONTRACT = auto()
+        CHANGE_INTERNAL = auto()
 
     # fmt: off
     text_to_valid_enum_value_text = ["no fix change",
     "not/A/bug",
-    "not-A-bug",]
+    "not-A-bug",
+    "Change, internal"] 
     # fmt: on
 
     @pytest.mark.parametrize("raw_text", text_to_valid_enum_value_text)
