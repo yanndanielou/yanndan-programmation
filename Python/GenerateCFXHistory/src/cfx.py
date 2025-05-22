@@ -22,6 +22,16 @@ DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH: str = "../Input/extract_cfx
 DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH: str = "../Input/cfx_extended_history.txt"
 
 
+class RequestType(enums_utils.NameBasedEnum):
+    CHANGE_REQUEST_EXTERNAL = auto()
+    DEFECT = auto()
+    CHANGE_REQUEST_INTERNAL = auto()
+    DEVELOPMENT_REQUEST = auto()
+    HAZARD = auto()
+    ACTION_ITEM = auto()
+    OPEN_POINT = auto()
+
+
 class RejectionCause(Enum):
     NONE = auto()
     NO_FIX_CHANGE = auto()
@@ -523,6 +533,11 @@ class ChampFXEntryBuilder:
         return RejectionCause.NONE if raw_valid_str_value is None else RejectionCause[raw_valid_str_value]
 
     @staticmethod
+    def convert_champfx_request_type(raw_str_value: str) -> RequestType:
+        raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
+        return RequestType[raw_valid_str_value]
+
+    @staticmethod
     def convert_champfx_category(raw_str_value: str) -> Category:
         raw_valid_str_value: str = string_utils.text_to_valid_enum_value_text(raw_str_value)
         return Category[raw_valid_str_value]
@@ -551,6 +566,8 @@ class ChampFXEntryBuilder:
 
         raw_rejection_cause: str = row["RejectionCause"]
         rejection_cause: RejectionCause = ChampFXEntryBuilder.convert_champfx_rejection_cause(raw_rejection_cause)
+
+        request_type: RequestType = ChampFXEntryBuilder.convert_champfx_request_type(row["RequestType"])
 
         raw_category: str = row["Category"]
         category: Category = ChampFXEntryBuilder.convert_champfx_category(raw_category)
@@ -581,6 +598,7 @@ class ChampFXEntryBuilder:
             rejection_cause=rejection_cause,
             category=category,
             current_owner=current_owner,
+            request_type=request_type,
         )
         return champfx_entry
 
@@ -599,6 +617,7 @@ class ChampFXEntry:
         rejection_cause: RejectionCause,
         category: Category,
         current_owner: role.CfxUser,
+        request_type: RequestType,
     ):
         """
 
@@ -615,6 +634,7 @@ class ChampFXEntry:
         self._state: State = state
         self._fixed_implemented_in_subsystem = fixed_implemented_in_subsystem
         self._system_structure = system_structure
+        self._request_type = request_type
 
         self._current_owner: role.CfxUser = current_owner
         self._current_owner_role: role.SubSystem = self._current_owner.subsystem
