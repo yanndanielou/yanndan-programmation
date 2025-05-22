@@ -30,10 +30,10 @@ def main() -> None:
             cfx_library=all_champfx_library,
             output_directory_name=OUTPUT_DIRECTORY_NAME,
             for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            create_excel_file=False,
-            create_html_file=False,
+            for_each_subsystem=True,
+            for_each_current_owner_per_date=True,
+            create_excel_file=True,
+            create_html_file=True,
             generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
         )
 
