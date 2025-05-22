@@ -58,11 +58,9 @@ def produce_results_and_displays(
 
     match generate_by_project_instruction:
         case GenerateByProjectInstruction.ONLY_ATP:
-            cfx_filters.append(cfx.ChampFxFilter(field_filters=[
-                cfx.ChampFxFilterFieldProject(field_accepted_values=[cfx.CfxProject.ATSP])]))
+            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[cfx.CfxProject.ATSP])]))
         case GenerateByProjectInstruction.ONLY_NEXTEO:
-            cfx_filters.append(cfx.ChampFxFilter(field_filters=[
-                cfx.ChampFxFilterFieldProject(field_accepted_values=[cfx.CfxProject.FR_NEXTEO])]))
+            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[cfx.CfxProject.FR_NEXTEO])]))
         case GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS:
             pass
         case GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS:
@@ -119,8 +117,10 @@ def produce_results_and_displays(
     generic_output_files_path_without_suffix_and_extension = f"{output_directory_name}/{generation_label_for_valid_file_name}"
 
     if dump_all_cfx_ids_in_json:
+        all_cfx_that_have_match_id_and_state = [(champfx_entry.cfx_id, champfx_entry._state) for champfx_entry in all_results_to_display.all_cfx_that_have_matched]
+
         json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
-            list_objects=list(all_results_to_display.all_cfx_ids_that_have_matched), json_file_full_path=f"{generic_output_files_path_without_suffix_and_extension}.json"
+            list_objects=list(all_cfx_that_have_match_id_and_state), json_file_full_path=f"{generic_output_files_path_without_suffix_and_extension}.json"
         )
 
     if not all_results_to_display.at_least_one_cfx_matching_filter_has_been_found:
@@ -261,8 +261,7 @@ def produce_results_and_displays_for_libary(
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     create_html_file=create_html_file,
-                    cfx_filters=cfx_filters + [
-                        cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))],
+                    cfx_filters=cfx_filters + [cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))],
                     generate_by_project_instruction=generate_by_project_instruction,
                 )
 
@@ -278,8 +277,7 @@ def produce_results_and_displays_for_libary(
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     create_html_file=create_html_file,
-                    cfx_filters=cfx_filters + [cfx.ChampFxFilter(field_filters=[
-                        cfx.ChampFxFilterFieldProject(field_accepted_values=[subsystem])])],
+                    cfx_filters=cfx_filters + [cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldSubsystem(field_accepted_values=[subsystem])])],
                     generate_by_project_instruction=generate_by_project_instruction,
                 )
 
