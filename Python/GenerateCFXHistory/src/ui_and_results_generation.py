@@ -117,7 +117,10 @@ def produce_results_and_displays(
     generic_output_files_path_without_suffix_and_extension = f"{output_directory_name}/{generation_label_for_valid_file_name}"
 
     if dump_all_cfx_ids_in_json:
-        all_cfx_that_have_match_id_and_state = [(champfx_entry.cfx_id, champfx_entry._state) for champfx_entry in all_results_to_display.all_cfx_that_have_matched]
+        all_cfx_that_have_match_id_and_state = [
+            (champfx_entry.cfx_id, champfx_entry._state.name, champfx_entry._current_owner.full_name, champfx_entry._request_type.name, champfx_entry._category.name, champfx_entry._cfx_project.name)
+            for champfx_entry in all_results_to_display.all_cfx_that_have_matched
+        ]
 
         json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
             list_objects=list(all_cfx_that_have_match_id_and_state), json_file_full_path=f"{generic_output_files_path_without_suffix_and_extension}.json"
