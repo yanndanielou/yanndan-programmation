@@ -70,6 +70,38 @@ def main() -> None:
             display_output_plots=DISPLAY_OUTPUT,
         )
 
+        ui_and_results_generation.produce_results_and_displays(
+            cfx_library=all_champfx_library,
+            output_directory_name=OUTPUT_DIRECTORY_NAME,
+            display_without_cumulative_eras=False,
+            display_with_cumulative_eras=True,
+            cfx_filters=[
+                cfx.ChampFxFilter(
+                    field_filters=[cfx.ChampFxFilterFieldCategory(field_accepted_values=[cfx.Category.SOFTWARE]), cfx.ChampFxFilterFieldType(field_accepted_values=[cfx.RequestType.DEFECT])]
+                ),
+            ],
+            create_excel_file=True,
+            create_html_file=True,
+            display_output_plots=DISPLAY_OUTPUT,
+            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.ONLY_ATP,
+        )
+
+        ui_and_results_generation.produce_results_and_displays(
+            cfx_library=all_champfx_library,
+            output_directory_name=OUTPUT_DIRECTORY_NAME,
+            display_without_cumulative_eras=False,
+            display_with_cumulative_eras=True,
+            cfx_filters=[
+                cfx.ChampFxFilter(
+                    field_filters=[cfx.ChampFxFilterFieldCategory(field_accepted_values=[cfx.Category.CONFIGURATION_DATA]), cfx.ChampFxFilterFieldType(field_accepted_values=[cfx.RequestType.DEFECT])]
+                ),
+            ],
+            create_excel_file=True,
+            create_html_file=True,
+            display_output_plots=DISPLAY_OUTPUT,
+            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.ONLY_ATP,
+        )
+
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=all_champfx_library,
             output_directory_name=OUTPUT_DIRECTORY_NAME,

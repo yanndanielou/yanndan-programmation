@@ -858,6 +858,16 @@ class ChampFxFilterFieldSubsystem(ChampFXFieldFilter):
         super().__init__(field_name="_subsystem", field_label="Subsystem", field_accepted_values=field_accepted_values, field_forbidden_values=field_forbidden_values)
 
 
+class ChampFxFilterFieldCategory(ChampFXFieldFilter):
+    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
+        super().__init__(field_name="_category", field_label="Category", field_accepted_values=field_accepted_values, field_forbidden_values=field_forbidden_values)
+
+
+class ChampFxFilterFieldType(ChampFXFieldFilter):
+    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
+        super().__init__(field_name="_request_type", field_label="Type", field_accepted_values=field_accepted_values, field_forbidden_values=field_forbidden_values)
+
+
 @dataclass
 class ChampFXRoleAtSpecificDateFilter:
     timestamp: datetime.datetime
