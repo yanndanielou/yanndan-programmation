@@ -332,7 +332,7 @@ class ChampFXLibrary:
             champfx_filters = []
 
         self._champfx_filters = champfx_filters
-        self.label = label if label is not None else " ".join([field_filter.label for field_filter in self._champfx_filters])
+        self.label = label if label is not None else " ".join([field_filter._label for field_filter in self._champfx_filters])
 
         # self._all_current_owner_modifications_pickle_file_full_path = all_current_owner_modifications_pickle_file_full_path
         # self._all_current_owner_modifications_per_cfx_pickle_file_full_path = all_current_owner_modifications_per_cfx_pickle_file_full_path
@@ -740,10 +740,10 @@ class ChampFXEntry:
 
 
 class ChampFXtSaticCriteriaFilter(ABC):
-    def __init__(self) -> None:
+    def __init__(self, label: str = "") -> None:
         self._cache_result_by_cfx: dict[ChampFXEntry, bool] = dict()
         self._number_of_results_obtained_by_cache_usage = 0
-        self.label = ""
+        self._label = label
 
     @abstractmethod
     def match_cfx_entry_without_cache(self, cfx_entry: ChampFXEntry) -> bool:
@@ -760,45 +760,63 @@ class ChampFXtSaticCriteriaFilter(ABC):
         return new_result_computed
 
 
-class ChampFXWhitelistFilter(ChampFXtSaticCriteriaFilter):
+class ChampFXWhitelistFilter(ChampFXtSaticCriteriaFilter, ABC):
+    @abstractmethod
     def __init__(
         self,
-        cfx_to_treat_whitelist_text_file_full_path: Optional[str] = None,
-        cfx_to_treat_ids: Optional[Set | List[str]] = None,
+        label: Optional[str] = None,
     ):
         super().__init__()
-        self._cfx_to_treat_whitelist_text_file_full_path: Optional[str] = cfx_to_treat_whitelist_text_file_full_path
         self._cfx_to_treat_whitelist_ids: Set[str] = set()
-
-        if self._cfx_to_treat_whitelist_text_file_full_path is not None:
-            self.label: str = self._cfx_to_treat_whitelist_text_file_full_path
-            self.label = string_utils.right_part_after_last_occurence(self.label, "/")
-            self.label = string_utils.right_part_after_last_occurence(self.label, "\\")
-            self.label += " "
-            self._cfx_to_treat_whitelist_ids = set()
-            with logger_config.stopwatch_with_label(f"Load CfxUserLibrary {cfx_to_treat_whitelist_text_file_full_path}"):
-                with open(self._cfx_to_treat_whitelist_text_file_full_path, "r", encoding="utf-8") as cfx_known_by_cstmr_text_file:
-                    self._cfx_to_treat_whitelist_ids.update([line.strip() for line in cfx_known_by_cstmr_text_file.readlines()])
-            logger_config.print_and_log_info(f"Number of cfx_to_treat_whitelist_ids:{len(self._cfx_to_treat_whitelist_ids)}")
-
-        elif cfx_to_treat_ids:
-            self.label: str = f"list {len(cfx_to_treat_ids)} white listed"  # type: ignore[no-redef]
-            self._cfx_to_treat_whitelist_ids.update(cfx_to_treat_ids)
+        self._label: str = "" if label is None else label
 
     def match_cfx_entry_without_cache(self, cfx_entry: ChampFXEntry) -> bool:
         return cfx_entry.cfx_id in self._cfx_to_treat_whitelist_ids
 
 
+class ChampFXWhiteListBasedOnListFilter(ChampFXWhitelistFilter):
+    def __init__(
+        self,
+        cfx_to_treat_ids: Optional[Set | List[str]] = None,
+        label: Optional[str] = None,
+    ):
+        super().__init__(label=label)
+
+        if label is None:
+            self._label = f"list {len(cfx_to_treat_ids)} white listed"  # type: ignore[no-redef]
+
+        self._cfx_to_treat_whitelist_ids.update(cfx_to_treat_ids)
+
+
+class ChampFXWhiteListBasedOnFileFilter(ChampFXWhitelistFilter):
+    def __init__(self, cfx_to_treat_whitelist_text_file_full_path: str, label: Optional[str] = None):
+        super().__init__(label=label)
+
+        self._cfx_to_treat_whitelist_text_file_full_path: str = cfx_to_treat_whitelist_text_file_full_path
+
+        if label is None:
+            self._label: str = self._cfx_to_treat_whitelist_text_file_full_path
+            self._label = string_utils.right_part_after_last_occurence(self._label, "/")
+            self._label = string_utils.right_part_after_last_occurence(self._label, "\\")
+            self._label += " "
+
+        with logger_config.stopwatch_with_label(f"Load ChampFXWhiteListBasedOnFileFilter {cfx_to_treat_whitelist_text_file_full_path}"):
+            with open(self._cfx_to_treat_whitelist_text_file_full_path, "r", encoding="utf-8") as cfx_known_by_cstmr_text_file:
+                self._cfx_to_treat_whitelist_ids.update([line.strip() for line in cfx_known_by_cstmr_text_file.readlines()])
+        logger_config.print_and_log_info(f"Number of cfx_to_treat_whitelist_ids:{len(self._cfx_to_treat_whitelist_ids)}")
+
+
 class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter, ABC):
 
     @abstractmethod
-    def __init__(self, field_name: str, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
+    def __init__(self, field_name: str, field_label: str, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
         super().__init__()
         self.field_name = field_name
+        self.field_label = field_label
         self.field_accepted_values = field_accepted_values
         self.field_forbidden_values = field_forbidden_values
 
-        label: str = f"{self.field_name}"
+        label: str = f"{self.field_label}"
 
         if self.field_accepted_values:
             label = f"{label} among {self.field_accepted_values}" if len(self.field_accepted_values) > 1 else f"{label}  {self.field_accepted_values}"
@@ -806,7 +824,7 @@ class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter, ABC):
             label = f"{label} without {self.field_forbidden_values}"
 
         label = label.translate({ord(i): None for i in "'[]"})
-        self.label = label
+        self._label = label
 
     def match_cfx_entry_without_cache(self, cfx_entry: ChampFXEntry) -> bool:
         attribute_entry = getattr(cfx_entry, self.field_name)
@@ -818,17 +836,17 @@ class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter, ABC):
 
 class ChampFxFilterFieldSecurityRelevant(ChampFXFieldFilter):
     def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
-        super().__init__("_security_relevant", field_accepted_values, field_forbidden_values)
+        super().__init__(field_name="_security_relevant", field_label="Security Relevant", field_accepted_values=field_accepted_values, field_forbidden_values=field_forbidden_values)
 
 
 class ChampFxFilterFieldProject(ChampFXFieldFilter):
     def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
-        super().__init__("_cfx_project", field_accepted_values, field_forbidden_values)
+        super().__init__(field_name="_cfx_project", field_label="Project", field_accepted_values=field_accepted_values, field_forbidden_values=field_forbidden_values)
 
 
 class ChampFxFilterFieldSubsystem(ChampFXFieldFilter):
     def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
-        super().__init__("_subsystem", field_accepted_values, field_forbidden_values)
+        super().__init__(field_name="_subsystem", field_label="Subsystem", field_accepted_values=field_accepted_values, field_forbidden_values=field_forbidden_values)
 
 
 @dataclass
@@ -876,7 +894,7 @@ class ChampFxFilter:
         self._static_criteria_filters: List[ChampFXtSaticCriteriaFilter] = [] + self._field_filters
 
         self._white_list_filter: Optional[ChampFXWhitelistFilter] = (
-            ChampFXWhitelistFilter(cfx_to_treat_whitelist_text_file_full_path) if cfx_to_treat_whitelist_text_file_full_path is not None else whitelist_filter
+            ChampFXWhiteListBasedOnFileFilter(cfx_to_treat_whitelist_text_file_full_path) if cfx_to_treat_whitelist_text_file_full_path is not None else whitelist_filter
         )
         if self._white_list_filter is not None:
             self._static_criteria_filters.append(self._white_list_filter)
@@ -894,10 +912,10 @@ class ChampFxFilter:
             label = f"{label} role {self.role_depending_on_date_filter.roles_at_date_allowed} per date"
 
         if len(self._field_filters) > 0:
-            label = f"{label} {[field_filter.label for field_filter in self._field_filters]}"
+            label = f"{label} {[field_filter._label for field_filter in self._field_filters]}"
 
         if self._white_list_filter:
-            label = f"{label} {self._white_list_filter.label}"
+            label = f"{label} {self._white_list_filter._label}"
 
         label = label.translate({ord(i): None for i in "'[]"})
 
