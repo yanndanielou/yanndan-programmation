@@ -187,6 +187,15 @@ class DatesGenerator:
         return []
 
 
+class SpecificForTestsDatesGenerator(DatesGenerator):
+    def __init__(self, all_dates_to_generate: List[datetime.datetime]) -> None:
+        super().__init__()
+        self._all_dates_to_generate: List[datetime.datetime] = all_dates_to_generate
+
+    def get_dates_since(self, start_date: datetime.datetime) -> List[datetime.datetime]:
+        return self._all_dates_to_generate
+
+
 class ConstantIntervalDatesGenerator(DatesGenerator):
     def __init__(self, time_delta: relativedelta.relativedelta) -> None:
         super().__init__()
@@ -650,6 +659,8 @@ class ChampFXEntry:
         self._all_change_state_actions_sorted_reversed_chronologically: List[ChangeStateAction] = []
 
         self._all_history_current_owner_roles: set[role.SubSystem] = set()
+        self._all_history_current_owner_roles.add(self._current_owner_role)
+
         self._all_current_owner_modifications_sorted_chronologically: list[ChangeCurrentOwnerAction] = []
         self._all_current_owner_modifications_sorted_reversed_chronologically: list[ChangeCurrentOwnerAction] = []
 
@@ -733,7 +744,7 @@ class ChampFXEntry:
             return newest_change_action_that_is_before_date.new_state
 
     @property
-    def all_history_current_owner_roles(self):
+    def all_history_current_owner_roles(self) -> set[role.SubSystem]:
         return self._all_history_current_owner_roles
 
 
@@ -904,16 +915,18 @@ class ChampFxFilter:
         label = self.label
 
         if label is None:
-            label = ""
+            label = " "
+        else:
+            label += " "
 
         if self.role_depending_on_date_filter:
-            label = f"{label} role {self.role_depending_on_date_filter.roles_at_date_allowed} per date"
+            label = f"{label}role {self.role_depending_on_date_filter.roles_at_date_allowed} per date"
 
         if len(self._field_filters) > 0:
-            label = f"{label} {[field_filter._label for field_filter in self._field_filters]}"
+            label = f"{label}{[field_filter._label for field_filter in self._field_filters]}"
 
         if self._white_list_filter:
-            label = f"{label} {self._white_list_filter._label}"
+            label = f"{label}{self._white_list_filter._label}"
 
         label = label.translate({ord(i): None for i in "'[]"})
 
