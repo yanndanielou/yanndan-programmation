@@ -9,6 +9,8 @@ from generatecfxhistory import ui_and_results_generation
 
 OUTPUT_DIRECTORY_NAME = "output"
 
+DISPLAY_OUTPUT = False
+
 
 def main() -> None:
     """Main function"""
@@ -37,6 +39,7 @@ def main() -> None:
             ],
             create_excel_file=True,
             create_html_file=True,
+            display_output_plots=DISPLAY_OUTPUT,
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
@@ -50,6 +53,7 @@ def main() -> None:
             ],
             create_excel_file=True,
             create_html_file=True,
+            display_output_plots=DISPLAY_OUTPUT,
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
@@ -61,6 +65,7 @@ def main() -> None:
             create_excel_file=True,
             create_html_file=True,
             generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
+            display_output_plots=DISPLAY_OUTPUT,
         )
 
         ui_and_results_generation.block_execution_and_keep_all_windows_open()

@@ -45,6 +45,7 @@ def produce_results_and_displays(
     display_without_cumulative_eras: bool,
     display_with_cumulative_eras: bool,
     create_html_file: bool,
+    display_output_plots: bool,
     cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
     dump_all_cfx_ids_in_json: bool = True,
     generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
@@ -73,6 +74,7 @@ def produce_results_and_displays(
                 cfx_filters=cfx_filters,
                 dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
                 generate_by_project_instruction=GenerateByProjectInstruction.ONLY_ATP,
+                display_output_plots=display_output_plots,
             )
 
             produce_results_and_displays(
@@ -85,6 +87,7 @@ def produce_results_and_displays(
                 cfx_filters=cfx_filters,
                 dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
                 generate_by_project_instruction=GenerateByProjectInstruction.ONLY_NEXTEO,
+                display_output_plots=display_output_plots,
             )
 
             produce_results_and_displays(
@@ -97,6 +100,7 @@ def produce_results_and_displays(
                 cfx_filters=cfx_filters,
                 dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
                 generate_by_project_instruction=GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
+                display_output_plots=display_output_plots,
             )
             return
 
@@ -112,7 +116,7 @@ def produce_results_and_displays(
     with logger_config.stopwatch_alert_if_exceeds_duration("compute_cumulative_counts", duration_threshold_to_alert_info_in_s=0.1):
         all_results_to_display.compute_cumulative_counts()
 
-    generation_label_for_valid_file_name = string_utils.format_filename(generation_label)
+    generation_label_for_valid_file_name = string_utils.format_filename(generation_label).lstrip()
     generic_output_files_path_without_suffix_and_extension = f"{output_directory_name}/{generation_label_for_valid_file_name}"
 
     if dump_all_cfx_ids_in_json:
@@ -133,28 +137,29 @@ def produce_results_and_displays(
         with logger_config.stopwatch_with_label(f"produce_excel_output_file,  {generation_label}"):
             produce_excel_output_file(output_excel_file=f"{generic_output_files_path_without_suffix_and_extension}.xlsx", all_results_to_display=all_results_to_display)
 
-    if display_with_cumulative_eras:
-        with logger_config.stopwatch_with_label(f"produce_displays cumulative,  {generation_label}"):
-            produce_displays_and_create_html(
-                output_directory_name=output_directory_name,
-                use_cumulative=True,
-                all_results_to_display=all_results_to_display,
-                create_html_file=create_html_file,
-                window_title=f"Filter {generation_label}, CFX States Over Time (Cumulative)",
-                generation_label=generation_label,
-                generation_label_for_valid_file_name=generation_label_for_valid_file_name,
-            )
-    if display_without_cumulative_eras:
-        with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {generation_label} library {cfx_library.label}"):
-            produce_displays_and_create_html(
-                output_directory_name=output_directory_name,
-                use_cumulative=False,
-                all_results_to_display=all_results_to_display,
-                create_html_file=create_html_file,
-                window_title=f"Filter {generation_label}, CFX States Over Time (Values)",
-                generation_label=generation_label,
-                generation_label_for_valid_file_name=generation_label_for_valid_file_name,
-            )
+    if display_output_plots:
+        if display_with_cumulative_eras:
+            with logger_config.stopwatch_with_label(f"produce_displays cumulative,  {generation_label}"):
+                produce_displays_and_create_html(
+                    output_directory_name=output_directory_name,
+                    use_cumulative=True,
+                    all_results_to_display=all_results_to_display,
+                    create_html_file=create_html_file,
+                    window_title=f"Filter {generation_label}, CFX States Over Time (Cumulative)",
+                    generation_label=generation_label,
+                    generation_label_for_valid_file_name=generation_label_for_valid_file_name,
+                )
+        if display_without_cumulative_eras:
+            with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {generation_label} library {cfx_library.label}"):
+                produce_displays_and_create_html(
+                    output_directory_name=output_directory_name,
+                    use_cumulative=False,
+                    all_results_to_display=all_results_to_display,
+                    create_html_file=create_html_file,
+                    window_title=f"Filter {generation_label}, CFX States Over Time (Values)",
+                    generation_label=generation_label,
+                    generation_label_for_valid_file_name=generation_label_for_valid_file_name,
+                )
 
 
 def produce_excel_output_file(output_excel_file: str, all_results_to_display: cfx.AllResultsPerDates) -> None:
@@ -235,6 +240,7 @@ def produce_results_and_displays_for_libary(
     cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
     create_html_file: bool = True,
     create_excel_file: bool = True,
+    display_output_plots: bool = True,
 ) -> None:
 
     if cfx_filters is None:
@@ -250,6 +256,7 @@ def produce_results_and_displays_for_libary(
             create_html_file=create_html_file,
             cfx_filters=cfx_filters,
             generate_by_project_instruction=generate_by_project_instruction,
+            display_output_plots=display_output_plots,
         )
 
     if for_each_current_owner_per_date:
@@ -265,6 +272,7 @@ def produce_results_and_displays_for_libary(
                     create_html_file=create_html_file,
                     cfx_filters=cfx_filters + [cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))],
                     generate_by_project_instruction=generate_by_project_instruction,
+                    display_output_plots=display_output_plots,
                 )
 
     if for_each_subsystem:
@@ -281,6 +289,7 @@ def produce_results_and_displays_for_libary(
                     create_html_file=create_html_file,
                     cfx_filters=cfx_filters + [cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldSubsystem(field_accepted_values=[subsystem])])],
                     generate_by_project_instruction=generate_by_project_instruction,
+                    display_output_plots=display_output_plots,
                 )
 
 
