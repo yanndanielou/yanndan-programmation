@@ -82,7 +82,8 @@ def main() -> None:
             display_output_plots=DISPLAY_OUTPUT,
         )
 
-        ui_and_results_generation.block_execution_and_keep_all_windows_open()
+        if DISPLAY_OUTPUT:
+            ui_and_results_generation.block_execution_and_keep_all_windows_open()
 
 
 if __name__ == "__main__":
