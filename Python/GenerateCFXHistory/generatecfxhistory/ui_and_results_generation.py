@@ -10,8 +10,7 @@ from common import enums_utils, json_encoders, string_utils
 from logger import logger_config
 from mplcursors._mplcursors import HoverMode
 
-import cfx
-import role
+from generatecfxhistory import cfx, role
 
 state_colors = {
     cfx.State.SUBMITTED: "red",

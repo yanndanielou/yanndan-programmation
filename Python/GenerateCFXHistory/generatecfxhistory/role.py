@@ -3,7 +3,7 @@ from typing import Dict, Optional
 
 from common import enums_utils
 
-import role_data
+from generatecfxhistory import role_data
 
 
 class SubSystem(enums_utils.NameBasedEnum):
