@@ -18,7 +18,7 @@ move "*Project ATSP*.html" "C:\Users\fr232487\OneDrive - Siemens AG\General - Pr
 move "*Project ATSP.html" "C:\Users\fr232487\OneDrive - Siemens AG\General - Projet Nexteo_ATS+\10 - KPI des lots\KPI CFX\Projet ATSP"
 move "Project ATSP*.html" "C:\Users\fr232487\OneDrive - Siemens AG\General - Projet Nexteo_ATS+\10 - KPI des lots\KPI CFX\Projet ATSP"
 
-move "*.html" "C:\Users\fr232487\OneDrive - Siemens AG\General - Projet Nexteo_ATS+\10 - KPI des lots\KPI CFX\"
+move "*.html" "C:\Users\fr232487\OneDrive - Siemens AG\General - Projet Nexteo_ATS+\10 - KPI des lots\KPI CFX"
 
 timeout /t 30
 
