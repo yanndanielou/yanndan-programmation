@@ -1,6 +1,6 @@
 import pytest
 
-from src import role
+from generatecfxhistory import role
 
 # fmt: off
 

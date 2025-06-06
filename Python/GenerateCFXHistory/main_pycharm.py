@@ -3,9 +3,9 @@ import os
 from dateutil import relativedelta
 from logger import logger_config
 
-import cfx
-import role
-import ui_and_results_generation
+from generatecfxhistory import cfx
+from generatecfxhistory import role
+from generatecfxhistory import ui_and_results_generation
 
 OUTPUT_DIRECTORY_NAME = "output"
 

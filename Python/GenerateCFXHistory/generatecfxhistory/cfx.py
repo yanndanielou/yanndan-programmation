@@ -10,9 +10,7 @@ from common import enums_utils, string_utils, list_utils
 from dateutil import relativedelta
 from logger import logger_config
 
-import cfx_extended_history
-import role
-import utils
+from generatecfxhistory import cfx_extended_history, role, utils
 
 from abc import ABC, abstractmethod
 
