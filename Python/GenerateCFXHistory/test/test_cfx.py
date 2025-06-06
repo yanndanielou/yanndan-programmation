@@ -173,9 +173,42 @@ class TestRoleOnDate:
         assert cfx_entry.get_current_role_at_date(datetime.now()) == role.SubSystem.PROJET
 
 
+class TestCurrentRoleAtDate:
+    def test_all_std_cfx_7th_june_2025(self, create_full_champfx_library: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_full_champfx_library
+        all_std_cfx_at_date_6th_june = set()
+        all_std_cfx_at_date_7th_june = set()
+        all_std_submitted_cfx_at_date_7th_june = set()
+        for cfx_entry in champfx_library.get_all_cfx():
+
+            if cfx_entry.get_current_role_at_date(datetime(year=int(2025), month=int(6), day=int(7))) == role.SubSystem.RESEAU:
+                all_std_cfx_at_date_7th_june.add(cfx_entry)
+
+                if cfx_entry._state == cfx.State.SUBMITTED:
+                    all_std_submitted_cfx_at_date_7th_june.add(cfx_entry)
+
+            if cfx_entry.get_current_role_at_date(datetime(year=int(2025), month=int(6), day=int(6))) == role.SubSystem.RESEAU:
+                all_std_cfx_at_date_6th_june.add(cfx_entry)
+
+        assert len(all_std_cfx_at_date_6th_june) > 86
+        assert len(all_std_cfx_at_date_7th_june) >= 90
+        assert len(all_std_submitted_cfx_at_date_7th_june) == 61
+
+        all_results_6th_and_7th_june_2025 = champfx_library.gather_state_counts_for_each_date(
+            cfx_filters=[cfx.ChampFxFilter(cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=([role.SubSystem.RESEAU])))],
+            dates_generator=cfx.SpecificForTestsDatesGenerator([datetime(year=int(2025), month=int(6), day=int(7)), datetime(year=int(2025), month=int(6), day=int(6))]),
+        )
+
+        result_6th_june_2025 = all_results_6th_and_7th_june_2025.get_state_counts_per_timestamp([0])
+        result_7th_june_2025 = all_results_6th_and_7th_june_2025.get_state_counts_per_timestamp([1])
+        assert result_6th_june_2025[cfx.State.SUBMITTED] > 60
+        assert result_7th_june_2025[cfx.State.SUBMITTED] > 80
+        pass
+
+
 class TestCurrentOwner:
 
-    def test_CFX00427036_currenet_owner_by_date(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
+    def test_cfx00427036_current_owner_by_date(self, create_light_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library
         cfx_entry = champfx_library.get_cfx_by_id("CFX00427036")
         assert cfx_entry.get_current_owner_at_date(datetime.now()) == cfx_entry._current_owner
