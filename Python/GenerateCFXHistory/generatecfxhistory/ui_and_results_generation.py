@@ -159,7 +159,7 @@ def produce_results_and_displays(
                 window_title=f"Filter {generation_label}, CFX States Over Time (Values)",
                 generation_label=generation_label,
                 generation_label_for_valid_file_name=generation_label_for_valid_file_name,
-                display_output_plot=display_output_plots,
+                display_output_plots=display_output_plots,
             )
 
 
@@ -220,7 +220,7 @@ def produce_displays_and_create_html(
     ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
-    
+
     if display_output_plots:
         plt.show(block=False)
 
