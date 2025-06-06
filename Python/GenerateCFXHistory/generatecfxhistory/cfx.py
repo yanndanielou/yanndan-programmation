@@ -828,7 +828,7 @@ class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter, ABC):
         label: str = f"{self.field_label}"
 
         if self.field_accepted_values:
-            label = f"{label} among {self.field_accepted_values}" if len(self.field_accepted_values) > 1 else f"{label}  {self.field_accepted_values}"
+            label = f"{label} among {self.field_accepted_values}" if len(self.field_accepted_values) > 1 else f"{label} {self.field_accepted_values}"
         else:
             label = f"{label} without {self.field_forbidden_values}"
 
