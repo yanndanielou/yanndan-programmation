@@ -137,29 +137,30 @@ def produce_results_and_displays(
         with logger_config.stopwatch_with_label(f"produce_excel_output_file,  {generation_label}"):
             produce_excel_output_file(output_excel_file=f"{generic_output_files_path_without_suffix_and_extension}.xlsx", all_results_to_display=all_results_to_display)
 
-    if display_output_plots:
-        if display_with_cumulative_eras:
-            with logger_config.stopwatch_with_label(f"produce_displays cumulative,  {generation_label}"):
-                produce_displays_and_create_html(
-                    output_directory_name=output_directory_name,
-                    use_cumulative=True,
-                    all_results_to_display=all_results_to_display,
-                    create_html_file=create_html_file,
-                    window_title=f"Filter {generation_label}, CFX States Over Time (Cumulative)",
-                    generation_label=generation_label,
-                    generation_label_for_valid_file_name=generation_label_for_valid_file_name,
-                )
-        if display_without_cumulative_eras:
-            with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {generation_label} library {cfx_library.label}"):
-                produce_displays_and_create_html(
-                    output_directory_name=output_directory_name,
-                    use_cumulative=False,
-                    all_results_to_display=all_results_to_display,
-                    create_html_file=create_html_file,
-                    window_title=f"Filter {generation_label}, CFX States Over Time (Values)",
-                    generation_label=generation_label,
-                    generation_label_for_valid_file_name=generation_label_for_valid_file_name,
-                )
+    if display_with_cumulative_eras:
+        with logger_config.stopwatch_with_label(f"produce_displays cumulative,  {generation_label}"):
+            produce_displays_and_create_html(
+                output_directory_name=output_directory_name,
+                use_cumulative=True,
+                all_results_to_display=all_results_to_display,
+                create_html_file=create_html_file,
+                window_title=f"Filter {generation_label}, CFX States Over Time (Cumulative)",
+                generation_label=generation_label,
+                generation_label_for_valid_file_name=generation_label_for_valid_file_name,
+                display_output_plots=display_output_plots,
+            )
+    if display_without_cumulative_eras:
+        with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {generation_label} library {cfx_library.label}"):
+            produce_displays_and_create_html(
+                output_directory_name=output_directory_name,
+                use_cumulative=False,
+                all_results_to_display=all_results_to_display,
+                create_html_file=create_html_file,
+                window_title=f"Filter {generation_label}, CFX States Over Time (Values)",
+                generation_label=generation_label,
+                generation_label_for_valid_file_name=generation_label_for_valid_file_name,
+                display_output_plot=display_output_plots,
+            )
 
 
 def produce_excel_output_file(output_excel_file: str, all_results_to_display: cfx.AllResultsPerDates) -> None:
@@ -186,6 +187,7 @@ def produce_displays_and_create_html(
     generation_label: str,
     generation_label_for_valid_file_name: str,
     output_directory_name: str,
+    display_output_plots: bool,
 ) -> None:
     fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -218,7 +220,9 @@ def produce_displays_and_create_html(
     ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.show(block=False)
+    
+    if display_output_plots:
+        plt.show(block=False)
 
     if create_html_file:
         # Save the plot to an HTML file
