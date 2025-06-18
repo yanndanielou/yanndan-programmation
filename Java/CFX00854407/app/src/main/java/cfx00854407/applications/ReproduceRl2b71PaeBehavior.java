@@ -11,6 +11,7 @@ public class ReproduceRl2b71PaeBehavior {
 
 	
 	public static void main(String[] args) {
+		LOGGER.info(()->"Beginning of application");
 
 		short counter_value = 10;
 		Sender sender = new Sender();
@@ -26,7 +27,7 @@ public class ReproduceRl2b71PaeBehavior {
 			cfx00854407.utils.Sleep.waitSafe(cfx00854407.constants.Constants.MESSAGES_FREQUENCY);	
 			sender.sendPaeAffcarMessage(cfx00854407.constants.Constants.DISPLAY_COLOR_BLOCKED, counter_value);
 		}
-		LOGGER.error(()->"End of application");
+		LOGGER.info(()->"End of application");
 
 	}
 }
