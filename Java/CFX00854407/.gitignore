@@ -1,1 +1,6 @@
 /bin/
+output/
+logs
+*.pdf
+*.zip
+*.7z

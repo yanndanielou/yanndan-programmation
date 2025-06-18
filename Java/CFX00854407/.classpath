@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="app/src/main/java"/>
+	<classpathentry kind="src" output="target/test-classes" path="app/src/test/java"/>
+	<classpathentry excluding="**/*.java" kind="src" path="app/src/main/resources"/>
+
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
+	
+	<classpathentry kind="output" path="bin"/>
+	
+	
+	
+	<classpathentry kind="lib" path="../ExternalLibraries/log4j-api-2.20.0.jar"/>
+	<classpathentry kind="lib" path="../ExternalLibraries/log4j-core-2.20.0.jar"/>
+	
+</classpath>
