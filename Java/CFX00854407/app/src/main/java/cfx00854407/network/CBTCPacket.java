@@ -104,7 +104,8 @@ public class CBTCPacket {
         bytes = getBytes();
         DatagramPacket packet = new DatagramPacket(bytes, bytes.length);
 
-        LOGGER.info(()->"sendPacket packet:"+packet+ ", bytes:" + bytes);
+        
+        LOGGER.info(()->"sendPacket packet:"+packet+ ", bytes:" + cfx00854407.utils.StringUtils.transformBytesArrayToString(bytes));
         
         udpSocket = new DatagramSocket();
         packet.setSocketAddress(new InetSocketAddress(ipAddr, port));

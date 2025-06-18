@@ -5,8 +5,8 @@ import org.apache.logging.log4j.Logger;
 
 import cfx00854407.network.Sender;
 
-public class ReproduceRl2b71PaeBehavior {
-	private static final Logger LOGGER = LogManager.getLogger(ReproduceRl2b71PaeBehavior.class);
+public class ReproduceFuturPaeBehavior {
+	private static final Logger LOGGER = LogManager.getLogger(ReproduceFuturPaeBehavior.class);
 
 
 	
