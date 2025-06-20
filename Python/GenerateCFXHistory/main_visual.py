@@ -26,6 +26,7 @@ def main() -> None:
             champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
             champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
             cfx_extended_history_file_full_path="Input/cfx_extended_history.txt",
+            user_and_role_data_text_file_full_path="Input/role_data_next_ats.txt",
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
