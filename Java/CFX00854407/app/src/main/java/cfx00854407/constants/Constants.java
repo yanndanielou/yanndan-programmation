@@ -7,8 +7,8 @@ public interface Constants {
 	public static final String PAE_IP_ADDRESS = "172.40.0.62";
 	public static final String AFFCAR_IP_ADDRESS = "172.40.0.41";
 	public static final int PAE_AFFCAR_DESTINATION_PORT = 61440;
-	public static final byte AFFCAR_PAE_MESSAGE_ID = 103;
-	public static final byte PAE_AFFCAR_MESSAGE_ID = 102;
+	public static final byte AFFCAR_PAE_MESSAGE_ID = 102;
+	public static final byte PAE_AFFCAR_MESSAGE_ID = 103;
 	public static final boolean ACK_REQUIRED = false;
 
 	public static final boolean AFFCAR_1_MODE = true;
