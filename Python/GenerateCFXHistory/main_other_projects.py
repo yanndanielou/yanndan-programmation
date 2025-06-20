@@ -27,34 +27,7 @@ def main() -> None:
             cfx_extended_history_file_full_path=None,
             user_and_role_data_text_file_full_path="Input/role_data_next_other_projects.txt",
             release_subsystem_mapping=release_role_mapping.other_projects_release_subsystem_mapping,
-        )
-
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input/CFX_list_cyber_aio.txt"),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-        )
-
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=True,
-            for_each_current_owner_per_date=True,
-            cfx_filters=[
-                cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input/CFX_usine_site.txt"),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
+            label="Other projects",
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
@@ -66,9 +39,25 @@ def main() -> None:
             cfx_filters=[
                 cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])]),
             ],
-            create_excel_file=True,
+            create_excel_file=False,
             create_html_file=True,
             display_output_plots=DISPLAY_OUTPUT,
+            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
+        )
+
+        ui_and_results_generation.produce_results_and_displays_for_libary(
+            cfx_library=all_champfx_library,
+            output_directory_name=OUTPUT_DIRECTORY_NAME,
+            for_global=True,
+            for_each_subsystem=False,
+            for_each_current_owner_per_date=False,
+            cfx_filters=[
+                cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])]),
+            ],
+            create_excel_file=False,
+            create_html_file=True,
+            display_output_plots=DISPLAY_OUTPUT,
+            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
         )
 
         ui_and_results_generation.produce_results_and_displays(
@@ -81,10 +70,10 @@ def main() -> None:
                     field_filters=[cfx.ChampFxFilterFieldCategory(field_accepted_values=[cfx.Category.SOFTWARE]), cfx.ChampFxFilterFieldType(field_accepted_values=[cfx.RequestType.DEFECT])]
                 ),
             ],
-            create_excel_file=True,
+            create_excel_file=False,
             create_html_file=True,
             display_output_plots=DISPLAY_OUTPUT,
-            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.ONLY_ATP,
+            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
         )
 
         ui_and_results_generation.produce_results_and_displays(
@@ -98,21 +87,9 @@ def main() -> None:
                 ),
             ],
             create_excel_file=True,
-            create_html_file=True,
+            create_html_file=False,
             display_output_plots=DISPLAY_OUTPUT,
-            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.ONLY_ATP,
-        )
-
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=True,
-            for_each_current_owner_per_date=True,
-            create_excel_file=True,
-            create_html_file=True,
             generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
-            display_output_plots=DISPLAY_OUTPUT,
         )
 
         if DISPLAY_OUTPUT:

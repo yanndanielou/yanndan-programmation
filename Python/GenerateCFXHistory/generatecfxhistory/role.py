@@ -1,9 +1,7 @@
 from enum import auto
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 from common import enums_utils
-
-from generatecfxhistory import role_data
 
 
 class SubSystem(enums_utils.NameBasedEnum):
@@ -39,6 +37,16 @@ class SubSystem(enums_utils.NameBasedEnum):
     TCR3 = auto()
 
 
+class WorkPackage:
+    ADC_DC: "WorkPackage" = None
+
+    def __init__(self, sub_systems: List[SubSystem]):
+        self._sub_systems = sub_systems
+
+
+WorkPackage.ADC_DC = WorkPackage([SubSystem.SW, SubSystem.SW_ANALYSES_SECU, SubSystem.SW_VAL, SubSystem.TCR3, SubSystem.V3])
+
+
 class CfxUser:
     def __init__(self, full_name: str, raw_full_name: str, subsystem: SubSystem):
         self._raw_full_name = raw_full_name
@@ -54,24 +62,26 @@ class CfxUser:
         return self._raw_full_name
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return self._full_name
 
 
 class CfxUserLibrary:
 
-    def __init__(self) -> None:
+    def __init__(self, user_and_role_data_text_file_full_path: str, release_subsystem_mapping: dict[SubSystem, list[str]]) -> None:
         self._cfx_user_by_full_name: Dict[str, CfxUser] = dict()
         self._cfx_user_by_full_name_lower: Dict[str, CfxUser] = dict()
+        self._release_subsystem_mapping: dict[SubSystem, list[str]] = release_subsystem_mapping
 
-        # Split the data into lines
-        lines = role_data.ressource_subsystem_data.strip().split("\n")
+        with open(user_and_role_data_text_file_full_path, "r", encoding="utf-8") as user_and_role_data_text_file:
+            lines = user_and_role_data_text_file.readlines()
 
         # Iterate over each line
         for line in lines:
             # Split the name and the associated value
             raw_full_name_unstripped, raw_subsystem = line.split("\t")
 
+            raw_subsystem = raw_subsystem.strip()
             # formated_subsystem_text = string_utils._diacritics(raw_subsystem.replace(" ", "_").replace("-", "_").replace("(", "").replace(")", ""))
             formatted_subsystem_text = raw_subsystem.replace(" ", "_")
             formatted_subsystem_text = formatted_subsystem_text.replace("-", "_")
@@ -108,87 +118,15 @@ class CfxUserLibrary:
         full_name_to_consider = full_name.lower()
         return self._cfx_user_by_full_name_lower[full_name_to_consider]
 
+    def get_subsystem_from_champfx_fixed_implemented_in(self, champfx_fixed_implemented_in: str) -> Optional[SubSystem]:
 
-def get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in: str) -> Optional[SubSystem]:
-    subsystem_mapping = {
-        SubSystem.TCR3: ["S003_Component TCR3", "TCR3"],
-        SubSystem.SW: [
-            "Component MES",
-            "Component PAE",
-            "Component PAS",
-            "Applicatif PAS",
-            "S002_Subsystem Automatic Train Control",
-            "Module Application PAS",
-            "Module Application PAL",
-            "S003_Component PAL",
-            "S003_Component Atelier de Développement Logiciel",
-            "S003_Component Canevas",
-            "S004_Module PAI",
-        ],
-        SubSystem.SUBSYS: [
-            "CDB",
-            "MDT",
-            "Eurobalise",
-            "Tiroir Calculateur",
-            "Transition par balise",
-            "Odotachy",
-            "EVC/DMI/JRU",
-            "Logiciel de service",
-            "Compte à rebour",
-            "S003_Component Niveau 3 - Sol",
-            "S003_Component Niveau 3 - Bord",
-            "S003_Component PPN",
-            "S004_Module GenTel",
-        ],
-        SubSystem.TRACY: ["Cyclos"],
-        SubSystem.ATS: [
-            "Automatic Train Supervision",
-            "S001_System ATSP",
-            "Tube",
-            "SIMEV",
-            "SIFOR",
-            "Foxtrot",
-            "S003_Component Master",
-            "S004_Module Package AD",
-            "Module Master",
-            "S003_Component Package AD",
-            "ATS",
-            "Atelier de paramétrage",
-            "S002_Subsystem SECU IHM",
-            "S002_Subsystem RTO",
-            "Serveur d'authentification",
-            "Boitier PERLE Signalisation NT Durcisssement",
-        ],
-        SubSystem.COC_DE: ["S002_Subsystem Invariants", "Invariants", "Paramètres", "S003_Component SMT3"],
-        SubSystem.TCM_TC: ["SIMECH", "Gumps", "Outils", "XT_OT", "S003_Component TU"],
-        SubSystem.RADIO: ["RADIO", "Baie Centrale Radio"],
-        SubSystem.ATS_EVIDEN: ["COEUR CK", "FGPT", "MES SIL2"],
-        SubSystem.RESEAU: ["Réseau", "Commutateur", "pare-feu"],
-        SubSystem.ADONEM: ["ADONEM"],
-        SubSystem.TCM_TM1: ["Plateforme", "Usine"],
-        SubSystem.TCM_TM2: ["Site"],
-        SubSystem.SYSTEME: [
-            "S001_System Système NExTEO ATC",
-            "S001_System Système NExTEO",
-            "Performances du système",
-            "Interfaces Signalisation",
-            "Interfaces Voie",
-            "S003_Component Inferfaces Matériel Roulant",
-        ],
-        SubSystem.ITF_MR: ["S001_System Système NExTEO ATC", "S002_Subsystem Interfaces_NEXTEO"],
-        SubSystem.PROJET: ["Management du projet", "Mise en Service Commerciale NExTEO", "Module Formulaires COVASEC"],
-        SubSystem.ATC_MANAGER: ["Matériels complémentaires"],
-        SubSystem.SAF: ["Fiabilité"],
-        SubSystem.INSTALLATION: ["SBL", "S004_Module Installation"],
-    }
+        for subsystem, keywords in self._release_subsystem_mapping.items():
+            for keyword in keywords:
+                if keyword.lower() in champfx_fixed_implemented_in.lower():
+                    return subsystem
 
-    for subsystem, keywords in subsystem_mapping.items():
-        for keyword in keywords:
-            if keyword.lower() in champfx_fixed_implemented_in.lower():
-                return subsystem
-
-    # logger_config.print_and_log_warning(f"Could not find subsystem for {champfx_fixed_implemented_in}")
-    return None
+        # logger_config.print_and_log_warning(f"Could not find subsystem for {champfx_fixed_implemented_in}")
+        return None
 
 
 UNKNOWN_USER: CfxUser = CfxUser(raw_full_name="Unknown", full_name="Unknown", subsystem=SubSystem.TBD)

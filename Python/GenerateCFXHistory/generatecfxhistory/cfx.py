@@ -10,7 +10,7 @@ from common import enums_utils, string_utils, list_utils
 from dateutil import relativedelta
 from logger import logger_config
 
-from generatecfxhistory import cfx_extended_history, role, utils
+from generatecfxhistory import cfx_extended_history, role, utils, release_role_mapping
 
 from abc import ABC, abstractmethod
 
@@ -18,6 +18,7 @@ from abc import ABC, abstractmethod
 DEFAULT_CHAMPFX_DETAILS_EXCEL_FILE_FULL_PATH: str = "../Input/extract_cfx_details.xlsx"
 DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH: str = "../Input/extract_cfx_change_state.xlsx"
 DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH: str = "../Input/cfx_extended_history.txt"
+DEFAULT_USER_AND_ROLE_DATA_FILE_FULL_PATH: str = "../Input/role_data_next_ats.txt"
 
 
 class RequestType(enums_utils.NameBasedEnum):
@@ -67,6 +68,19 @@ class CfxProject(enums_utils.NameBasedEnum):
     FR_NEXTEO = auto()
     ATSP = auto()
 
+    FR_BUD2_BUDAPEST_M2 = auto()
+    FR_BUM4_BUDAPEST_M4 = auto()
+    FR_PATH = auto()
+    FR_POUR_OURAGAN = auto()
+    FR_REB_CITYVAL_RENNES_LINEB = auto()
+    US_NYCT_CBTC_QUEENS_BLVD_61OP_00025 = auto()
+    FR_PAR4 = auto()
+    FR_REA_RENNES = auto()
+    FR_BKK_APM = auto()
+    FR_PL14 = auto()
+    FR_FPT3 = auto()
+    FR_GPE1567 = auto()
+
 
 class SecurityRelevant(enums_utils.NameBasedEnum):
     YES = auto()
@@ -101,6 +115,7 @@ class State(enums_utils.NameBasedIntEnum):
     VERIFIED = auto()
     VALIDATED = auto()
     CLOSED = auto()
+    CLONING = auto()
 
 
 class OneTimestampResult:
@@ -326,9 +341,11 @@ class ChampFXLibrary:
 
     def __init__(
         self,
+        release_subsystem_mapping: dict[role.SubSystem, list[str]] = release_role_mapping.next_atsp_release_subsystem_mapping,
         champfx_details_excel_file_full_path: str = DEFAULT_CHAMPFX_DETAILS_EXCEL_FILE_FULL_PATH,
         champfx_states_changes_excel_file_full_path: str = DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH,
-        cfx_extended_history_file_full_path: str = DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH,
+        cfx_extended_history_file_full_path: Optional[str] = DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH,
+        user_and_role_data_text_file_full_path: str = DEFAULT_USER_AND_ROLE_DATA_FILE_FULL_PATH,
         # all_current_owner_modifications_pickle_file_full_path: str = "Input/all_current_owner_modifications.pkl",
         # all_current_owner_modifications_per_cfx_pickle_file_full_path: str = "Input/all_current_owner_modifications_per_cfx.pkl",
         champfx_filters: Optional[List["ChampFXtSaticCriteriaFilter"]] = None,
@@ -341,13 +358,15 @@ class ChampFXLibrary:
         self._champfx_filters = champfx_filters
         self.label = label if label is not None else " ".join([field_filter._label for field_filter in self._champfx_filters])
 
+        self._all_projects: Set[CfxProject] = set()
+
         # self._all_current_owner_modifications_pickle_file_full_path = all_current_owner_modifications_pickle_file_full_path
         # self._all_current_owner_modifications_per_cfx_pickle_file_full_path = all_current_owner_modifications_per_cfx_pickle_file_full_path
         self._champfx_entry_by_id: Dict[str, ChampFXEntry] = dict()
         self._champfx_entries: List[ChampFXEntry] = []
 
         with logger_config.stopwatch_with_label("Load CfxUserLibrary"):
-            self._cfx_users_library: role.CfxUserLibrary = role.CfxUserLibrary()
+            self._cfx_users_library: role.CfxUserLibrary = role.CfxUserLibrary(user_and_role_data_text_file_full_path, release_subsystem_mapping)
 
         with logger_config.stopwatch_with_label("ChampFXLibrary creation and initialisation"):
 
@@ -361,11 +380,12 @@ class ChampFXLibrary:
                 self.create_or_fill_champfx_entry_with_dataframe(cfx_details_data_frame)
                 logger_config.print_and_log_info(f"{len(self.get_all_cfx())} ChampFXEntry objects created")
 
-            all_cfx_complete_extended_histories_text_file_path = cfx_extended_history_file_full_path
-            with logger_config.stopwatch_with_label(f"Load cfx_extended_history {all_cfx_complete_extended_histories_text_file_path}"):
-                self._all_cfx_complete_extended_histories: List[cfx_extended_history.CFXEntryCompleteHistory] = (
-                    cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path, self.get_all_cfx_ids())
-                )
+            if cfx_extended_history_file_full_path:
+                all_cfx_complete_extended_histories_text_file_path = cfx_extended_history_file_full_path
+                with logger_config.stopwatch_with_label(f"Load cfx_extended_history {all_cfx_complete_extended_histories_text_file_path}"):
+                    self._all_cfx_complete_extended_histories: List[cfx_extended_history.CFXEntryCompleteHistory] = (
+                        cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path, self.get_all_cfx_ids())
+                    )
 
             with logger_config.stopwatch_with_label("Create state changes objects"):
                 change_state_actions_created = self.create_states_changes_with_dataframe(cfx_states_changes_data_frame)
@@ -387,6 +407,7 @@ class ChampFXLibrary:
                 if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
                     self._champfx_entry_by_id[cfx_id] = cfx_entry
                     self._champfx_entries.append(cfx_entry)
+                    self._all_projects.add(cfx_entry._cfx_project)
 
     def create_states_changes_with_dataframe(self, cfx_states_changes_data_frame: pd.DataFrame) -> List[ChangeStateAction]:
         change_state_actions_created: List[ChangeStateAction] = []
@@ -565,7 +586,9 @@ class ChampFXEntryBuilder:
         state: State = State[(row["State"].upper())]
 
         raw_project: str = cast(str, row["Project"])
-        cfx_project = CfxProject[raw_project]
+        project_name = string_utils.text_to_valid_enum_value_text(raw_project)
+
+        cfx_project = CfxProject[project_name]
 
         raw_safety_relevant: str = row["SafetyRelevant"]
         safety_relevant: Optional[bool] = ChampFXEntryBuilder.to_optional_boolean(raw_safety_relevant)
@@ -585,15 +608,18 @@ class ChampFXEntryBuilder:
         current_owner: role.CfxUser = cfx_library.cfx_users_library.get_cfx_user_by_full_name(current_owner_raw)
 
         fixed_implemented_in_raw: str = row["FixedImplementedIn"]
-        fixed_implemented_in_subsystem: Optional[role.SubSystem] = role.get_subsystem_from_champfx_fixed_implemented_in(fixed_implemented_in_raw) if fixed_implemented_in_raw else None
+        fixed_implemented_in_subsystem: Optional[role.SubSystem] = (
+            cfx_library.cfx_users_library.get_subsystem_from_champfx_fixed_implemented_in(fixed_implemented_in_raw) if fixed_implemented_in_raw else None
+        )
 
         submit_date_raw: str = row["SubmitDate"]
         submit_date: datetime.datetime = cast(datetime.datetime, utils.convert_champfx_extract_date(submit_date_raw))
 
         system_structure_raw: str = row["SystemStructure"]
-        system_structure: role.SubSystem = role.get_subsystem_from_champfx_fixed_implemented_in(system_structure_raw)
+        temptative_system_structure: Optional[role.SubSystem] = cfx_library.cfx_users_library.get_subsystem_from_champfx_fixed_implemented_in(system_structure_raw)
 
-        assert system_structure, f"{cfx_id} could not decode system structure {system_structure_raw}"
+        assert temptative_system_structure, f"{cfx_id} could not decode system structure {system_structure_raw}"
+        system_structure: role.SubSystem = temptative_system_structure
 
         champfx_entry = ChampFXEntry(
             cfx_id=cfx_id,

@@ -84,7 +84,8 @@ def main() -> None:
             create_excel_file=True,
             create_html_file=True,
             display_output_plots=DISPLAY_OUTPUT,
-            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.ONLY_ATP,
+            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.ONLY_ONE_PROJECT,
+            project_in_case_of_generate_by_project_instruction_one_project=cfx.CfxProject.ATSP,
         )
 
         ui_and_results_generation.produce_results_and_displays(
@@ -100,7 +101,8 @@ def main() -> None:
             create_excel_file=True,
             create_html_file=True,
             display_output_plots=DISPLAY_OUTPUT,
-            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.ONLY_ATP,
+            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.ONLY_ONE_PROJECT,
+            project_in_case_of_generate_by_project_instruction_one_project=cfx.CfxProject.ATSP,
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(

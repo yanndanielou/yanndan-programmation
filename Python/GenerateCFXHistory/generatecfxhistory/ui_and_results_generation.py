@@ -1,6 +1,6 @@
 import datetime
 from enum import auto, Enum
-from typing import List, Optional
+from typing import Set, List, Optional
 
 import matplotlib.pyplot as plt
 import mplcursors
@@ -27,10 +27,10 @@ state_colors = {
 
 
 class GenerateByProjectInstruction(Enum):
-    ONLY_ATP = auto()
-    ONLY_NEXTEO = auto()
     GLOBAL_ALL_PROJECTS = auto()
     BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS = auto()
+    BY_PROJECT = auto()
+    ONLY_ONE_PROJECT = auto()
 
 
 class RepresentationType(enums_utils.NameBasedEnum):
@@ -49,6 +49,7 @@ def produce_results_and_displays(
     cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
     dump_all_cfx_ids_in_json: bool = True,
     generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
+    project_in_case_of_generate_by_project_instruction_one_project: Optional[cfx.CfxProject] = None,
 ) -> None:
 
     if cfx_filters is None:
@@ -57,12 +58,28 @@ def produce_results_and_displays(
         cfx_filters = cfx_filters.copy()
 
     match generate_by_project_instruction:
-        case GenerateByProjectInstruction.ONLY_ATP:
-            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[cfx.CfxProject.ATSP])]))
-        case GenerateByProjectInstruction.ONLY_NEXTEO:
-            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[cfx.CfxProject.FR_NEXTEO])]))
+        case GenerateByProjectInstruction.ONLY_ONE_PROJECT:
+            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[project_in_case_of_generate_by_project_instruction_one_project])]))
         case GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS:
             pass
+        case GenerateByProjectInstruction.BY_PROJECT:
+            for project in cfx_library._all_projects:
+                produce_results_and_displays(
+                    cfx_library=cfx_library,
+                    output_directory_name=output_directory_name,
+                    create_excel_file=create_excel_file,
+                    display_without_cumulative_eras=display_without_cumulative_eras,
+                    display_with_cumulative_eras=display_with_cumulative_eras,
+                    create_html_file=create_html_file,
+                    cfx_filters=cfx_filters,
+                    dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
+                    generate_by_project_instruction=GenerateByProjectInstruction.ONLY_ONE_PROJECT,
+                    project_in_case_of_generate_by_project_instruction_one_project=project,
+                    display_output_plots=display_output_plots,
+                )
+
+            cfx_library.get_all_cfx
+
         case GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS:
             produce_results_and_displays(
                 cfx_library=cfx_library,
@@ -73,20 +90,7 @@ def produce_results_and_displays(
                 create_html_file=create_html_file,
                 cfx_filters=cfx_filters,
                 dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
-                generate_by_project_instruction=GenerateByProjectInstruction.ONLY_ATP,
-                display_output_plots=display_output_plots,
-            )
-
-            produce_results_and_displays(
-                cfx_library=cfx_library,
-                output_directory_name=output_directory_name,
-                create_excel_file=create_excel_file,
-                display_without_cumulative_eras=display_without_cumulative_eras,
-                display_with_cumulative_eras=display_with_cumulative_eras,
-                create_html_file=create_html_file,
-                cfx_filters=cfx_filters,
-                dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
-                generate_by_project_instruction=GenerateByProjectInstruction.ONLY_NEXTEO,
+                generate_by_project_instruction=GenerateByProjectInstruction.BY_PROJECT,
                 display_output_plots=display_output_plots,
             )
 
