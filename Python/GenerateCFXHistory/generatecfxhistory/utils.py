@@ -47,9 +47,9 @@ def convert_champfx_extract_date(raw_champfx_date: str | float) -> Optional[date
         dt_naif = datetime(int(annee), int(mois), int(jour), int(heure), int(minute), int(seconde))
 
         # Ajuster pour le fuseau horaire
-        #utc_offset = int(fuseau)
-        #timezone = pytz.FixedOffset(utc_offset * 60)
-        #dt_aware = dt_naif.replace(tzinfo=timezone)
+        # utc_offset = int(fuseau)
+        # timezone = pytz.FixedOffset(utc_offset * 60)
+        # dt_aware = dt_naif.replace(tzinfo=timezone)
 
         return dt_naif
     except:

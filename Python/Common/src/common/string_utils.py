@@ -4,6 +4,8 @@
 import math
 from typing import Optional
 
+from logger import logger_config
+
 from unidecode import unidecode
 
 
@@ -74,10 +76,14 @@ def without_diacritics(input_string: str) -> str:
 
 
 def text_to_valid_enum_value_text(raw_text: str) -> Optional[str]:
+    if type(raw_text) is not str and math.isnan(raw_text):
+        logger_config.print_and_log_error(
+            f"text_to_valid_enum_value_text: Could not treat {raw_text}"
+        )
+        return None
+
     return (
-        None
-        if type(raw_text) is not str and math.isnan(raw_text)
-        else raw_text.replace("/", "_")
+        raw_text.replace("/", "_")
         .replace(", ", "_")
         .replace(" ", "_")
         .replace("-", "_")

@@ -10,7 +10,8 @@ from common import enums_utils, string_utils, list_utils
 from dateutil import relativedelta
 from logger import logger_config
 
-from generatecfxhistory import cfx_extended_history, role, utils, release_role_mapping
+from generatecfxhistory import cfx_extended_history, role, utils, release_role_mapping, conversions
+from generatecfxhistory.constants import State
 
 from abc import ABC, abstractmethod
 
@@ -101,21 +102,6 @@ class ActionType(enums_utils.NameBasedEnum):
     VERIFY = auto()
     VALIDATE = auto()
     CLOSE = auto()
-
-
-class State(enums_utils.NameBasedIntEnum):
-    NOT_CREATED_YET = auto()
-    NO_VALUE = auto()
-    SUBMITTED = auto()
-    ANALYSED = auto()
-    ASSIGNED = auto()
-    RESOLVED = auto()
-    REJECTED = auto()
-    POSTPONED = auto()
-    VERIFIED = auto()
-    VALIDATED = auto()
-    CLOSED = auto()
-    CLONING = auto()
 
 
 class OneTimestampResult:
@@ -332,7 +318,11 @@ def convert_cfx_history_element_to_valid_full_name(cfx_history_element_state: st
 
 
 def get_earliest_submit_date(cfx_list: List["ChampFXEntry"]) -> datetime.datetime:
-    earliest_date = min(entry.get_oldest_change_action_by_new_state(State.SUBMITTED).timestamp for entry in cfx_list)
+    earliest_date = min(
+        (oldest_action.timestamp for entry in cfx_list if
+         (oldest_action := entry.get_oldest_change_action_by_new_state(State.SUBMITTED)) is not None),
+        default=None
+    )
     logger_config.print_and_log_info(f"Earliest submit date among {len(cfx_list)} CFX: {earliest_date}")
     return earliest_date
 
@@ -380,6 +370,10 @@ class ChampFXLibrary:
                 self.create_or_fill_champfx_entry_with_dataframe(cfx_details_data_frame)
                 logger_config.print_and_log_info(f"{len(self.get_all_cfx())} ChampFXEntry objects created")
 
+            with logger_config.stopwatch_with_label("Create state changes objects"):
+                change_state_actions_created = self.create_states_changes_with_dataframe(cfx_states_changes_data_frame)
+                logger_config.print_and_log_info(f"{len(change_state_actions_created)} ChangeStateAction objects created")
+
             if cfx_extended_history_file_full_path:
                 all_cfx_complete_extended_histories_text_file_path = cfx_extended_history_file_full_path
                 with logger_config.stopwatch_with_label(f"Load cfx_extended_history {all_cfx_complete_extended_histories_text_file_path}"):
@@ -387,12 +381,9 @@ class ChampFXLibrary:
                         cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path, self.get_all_cfx_ids())
                     )
 
-            with logger_config.stopwatch_with_label("Create state changes objects"):
-                change_state_actions_created = self.create_states_changes_with_dataframe(cfx_states_changes_data_frame)
-                logger_config.print_and_log_info(f"{len(change_state_actions_created)} ChangeStateAction objects created")
+                with logger_config.stopwatch_with_label("create current owner modifications"):
+                    self.create_current_owner_modifications()
 
-            with logger_config.stopwatch_with_label("create current owner modifications"):
-                self.create_current_owner_modifications()
 
     @property
     def cfx_users_library(self) -> role.CfxUserLibrary:
@@ -419,12 +410,17 @@ class ChampFXLibrary:
 
                 cfx_request = self.get_cfx_by_id(cfx_id)
                 history_raw_old_state: str = row["history.old_state"]
-                old_state: State = State[history_raw_old_state.upper()]
                 history_raw_new_state: str = row["history.new_state"]
-                new_state: State = State[history_raw_new_state.upper()]
                 history_raw_action_timestamp_str = row["history.action_timestamp"]
-                action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
                 history_raw_action_name: str = row["history.action_name"]
+
+                if type(history_raw_old_state) is not str:
+                    logger_config.print_and_log_error(f"{cfx_id} ignore change state from {history_raw_old_state} to {history_raw_new_state} {history_raw_action_timestamp_str}  {history_raw_action_name} ")
+                    continue
+
+                old_state: State = conversions.convert_state(history_raw_old_state)
+                new_state: State = conversions.convert_state(history_raw_new_state)
+                action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
                 history_action = ActionType[history_raw_action_name.upper()]
 
                 change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
@@ -553,12 +549,16 @@ class ChampFXLibrary:
 class ChampFXEntryBuilder:
 
     @staticmethod
-    def convert_champfx_security_relevant(raw_str_value: str) -> SecurityRelevant:
+    def convert_champfx_security_relevant(raw_str_value: str) -> Optional[SecurityRelevant]:
+        if type(raw_str_value) is not str:
+            return None
         raw_security_relevant_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
         return SecurityRelevant.UNDEFINED if raw_security_relevant_valid_str_value is None else SecurityRelevant[raw_security_relevant_valid_str_value]
 
     @staticmethod
-    def convert_champfx_rejection_cause(raw_str_value: str) -> RejectionCause:
+    def convert_champfx_rejection_cause(raw_str_value: str) -> Optional[RejectionCause]:
+        if type(raw_str_value) is not str:
+            return None
         raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
         return RejectionCause.NONE if raw_valid_str_value is None else RejectionCause[raw_valid_str_value]
 
@@ -583,7 +583,7 @@ class ChampFXEntryBuilder:
     @staticmethod
     def build_with_row(row: pd.Series, cfx_library: ChampFXLibrary) -> "ChampFXEntry":
         cfx_id = row["CFXID"]
-        state: State = State[(row["State"].upper())]
+        state: State = conversions.convert_state(row["State"])
 
         raw_project: str = cast(str, row["Project"])
         project_name = string_utils.text_to_valid_enum_value_text(raw_project)
@@ -872,6 +872,11 @@ class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter, ABC):
 class ChampFxFilterFieldSecurityRelevant(ChampFXFieldFilter):
     def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
         super().__init__(field_name="_security_relevant", field_label="Security Relevant", field_accepted_values=field_accepted_values, field_forbidden_values=field_forbidden_values)
+
+class ChampFxFilterFieldSafetyRelevant(ChampFXFieldFilter):
+    def __init__(self, field_accepted_value: Optional[bool] = None, field_forbidden_value:Optional[bool]  = None) -> None:
+        super().__init__(field_name="_safety_relevant", field_label="Safety Relevant", field_accepted_values=[field_accepted_value], field_forbidden_values=[field_forbidden_value])
+
 
 
 class ChampFxFilterFieldProject(ChampFXFieldFilter):

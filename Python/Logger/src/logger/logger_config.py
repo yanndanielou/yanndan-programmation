@@ -33,7 +33,7 @@ def __get_calling_file_name_and_line_number(
     previous_stack = inspect.stack(call_stack_context)[call_stack_frame]
     file_name = previous_stack.filename
     line_number = previous_stack.lineno
-    return file_name + ", line " + str(line_number)
+    return file_name + ":" + str(line_number)
 
 
 def __get_calling_file_name() -> str:
@@ -263,7 +263,7 @@ def stopwatch_with_label(
         previous_stack = inspect.stack(0)[2]
         file_name = previous_stack.filename
         line_number = previous_stack.lineno
-        calling_file_name_and_line_number = file_name + ", line " + str(line_number)
+        calling_file_name_and_line_number = file_name + ":" + str(line_number)
 
         # pylint: disable=line-too-long
         if enable_print:
@@ -303,7 +303,7 @@ def stopwatch_alert_if_exceeds_duration(
             previous_stack = inspect.stack(0)[2]
             file_name = previous_stack.filename
             line_number = previous_stack.lineno
-            calling_file_name_and_line_number = file_name + ", line " + str(line_number)
+            calling_file_name_and_line_number = file_name + ":" + str(line_number)
 
             # pylint: disable=line-too-long
             if enable_print:

@@ -78,7 +78,6 @@ def produce_results_and_displays(
                     display_output_plots=display_output_plots,
                 )
 
-            cfx_library.get_all_cfx
 
         case GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS:
             produce_results_and_displays(
