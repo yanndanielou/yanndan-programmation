@@ -71,6 +71,21 @@ def main() -> None:
             display_output_plots=DISPLAY_OUTPUT,
         )
 
+        ui_and_results_generation.produce_results_and_displays_for_libary(
+            cfx_library=all_champfx_library,
+            output_directory_name=OUTPUT_DIRECTORY_NAME,
+            for_global=True,
+            for_each_subsystem=False,
+            for_each_current_owner_per_date=False,
+            cfx_filters=[
+                cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldSafetyRelevant(field_accepted_value=True)]),
+            ],
+            create_excel_file=False,
+            create_html_file=True,
+            display_output_plots=DISPLAY_OUTPUT,
+            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
+        )
+
         ui_and_results_generation.produce_results_and_displays(
             cfx_library=all_champfx_library,
             output_directory_name=OUTPUT_DIRECTORY_NAME,
