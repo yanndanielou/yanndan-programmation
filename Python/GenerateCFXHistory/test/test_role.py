@@ -372,6 +372,11 @@ champfx_fixed_implemented_in_data = ["S003_Component TCR3 CBTC_SFE_PAS -",
 # fmt: off
 
 
+class TestUserLibrary:
+    def test_input_files(self)->None:
+        cfx_users_library: role.CfxUserLibrary = role.CfxUserLibrary("../../Input/role_data_next_ats.txt")
+        assert cfx_users_library
+
 
 class TestFixedImplementedInToSubsystemConversion:
     @pytest.mark.parametrize("champfx_fixed_implemented_in", champfx_fixed_implemented_in_data)
@@ -382,6 +387,6 @@ class TestFixedImplementedInToSubsystemConversion:
 
 class TestRoleConversion:
     def test_random(self) -> None:
-        cfx_user_library = role.CfxUserLibrary()
+        cfx_user_library = role.CfxUserLibrary("Input/role_data_next_ats.txt")
         user = cfx_user_library.get_cfx_user_by_full_name("Zehoub Khaled")
         assert user.subsystem == role.SubSystem.ATS
