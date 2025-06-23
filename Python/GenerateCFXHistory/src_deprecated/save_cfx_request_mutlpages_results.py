@@ -1,4 +1,5 @@
 # Standard
+# Standard
 import argparse
 
 import pickle
@@ -6,6 +7,7 @@ import pickle
 import threading
 import queue
 import os
+import time
 
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict
@@ -20,6 +22,8 @@ import selenium.webdriver.firefox.options
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver import ActionChains
 
 
 # Other libraries
@@ -28,11 +32,10 @@ from logger import logger_config
 from common import json_encoders
 
 # Current programm
-import cfx_extended_history
 import connexion_param
 
 
-OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_webpage"
+OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_request_results"
 
 
 CREATE_PARSED_EXTENDED_HISTORY_FILES = False
@@ -46,38 +49,20 @@ DEFAULT_NUMBER_OF_THREADS = 2
 
 
 @dataclass
-class SaveCfxWebpageApplication:
-    first_cfx_index: Optional[int]
-    last_cfx_index: Optional[int]
-    _number_of_threads: int
-    do_not_open_website_and_treat_previous_results: bool
-
+class SaveCfxReequestMultipagesResultsApplication:
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
-    all_current_owner_modifications: List[cfx_extended_history.CFXHistoryField] = field(default_factory=list)
-    all_current_owner_modifications_per_cfx: Dict[str, cfx_extended_history.CFXHistoryField] = field(default_factory=dict)
-
-    extended_history_raw_text_sub_output_directory_name = "extended_history_raw_text"
-    parsed_extended_history_sub_output_directory_name = "parsed_extended_history"
-    parsed_current_owner_changes_output_directory_name = "parsed_current_owner_changes"
 
     errors_output_sub_directory_name = "errors"
+    driver: ChromiumDriver = None
 
     def __post_init__(self) -> None:
         self.lock = threading.Lock()
-
-    def add_all_current_owner_modification(self, cfx_id: str, current_owner_field_modifications: List[cfx_extended_history.CFXHistoryField]) -> None:
-        with self.lock:
-            self.all_current_owner_modifications.extend(current_owner_field_modifications)
-            self.all_current_owner_modifications_per_cfx[cfx_id] = current_owner_field_modifications
 
     def run(self) -> None:
 
         for directory_path in [
             self.output_parent_directory_name,
-            f"{self.output_parent_directory_name}/{self.extended_history_raw_text_sub_output_directory_name}",
-            f"{self.output_parent_directory_name}/{self.parsed_extended_history_sub_output_directory_name}",
             f"{self.output_parent_directory_name}/{self.errors_output_sub_directory_name}",
-            f"{self.output_parent_directory_name}/{self.parsed_current_owner_changes_output_directory_name}",
         ]:
             if not os.path.exists(directory_path):
                 logger_config.print_and_log_info(f"Create folder {directory_path}")
@@ -85,36 +70,41 @@ class SaveCfxWebpageApplication:
             else:
                 logger_config.print_and_log_info(f"Folder {directory_path} already exists")
 
-        with logger_config.stopwatch_with_label("get_all_cfx_id_unique_ordered_list"):
-            all_cfx_id_unique_ordered_list: list[str] = self.get_all_cfx_id_unique_ordered_list()
-            all_cfx_id_to_handle_unique_ordered_list = all_cfx_id_unique_ordered_list[self.first_cfx_index : self.last_cfx_index]
+        self.create_webdriver_and_login()
 
-        logger_config.print_and_log_info(f"Number of cfx to treat: {len(all_cfx_id_to_handle_unique_ordered_list)}")
+        change_state_query = "Personal%20Queries/NExTEO_ATS_Courbes/NExteo_ATSp_changements_etats"
+        change_state_query = "Personal%20Queries/all_projects/all_projets_changements_etats"
+        change_state_query = "66875867"
+        self.open_request_url(change_state_query)
 
-        task_queue = queue.Queue()
+        selectionner_button_containerNode = self.driver.find_element(By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']")
+        selectionner_button_containerNode.click()
 
-        with logger_config.stopwatch_with_label("Create Threads"):
-            threads = []
-            for _ in range(self._number_of_threads):
-                thread = HandlingCfxThread(task_queue=task_queue, application=self, do_not_open_website_and_treat_previous_results=self.do_not_open_website_and_treat_previous_results)
-                thread.start()
-                threads.append(thread)
+        # list_projets_select_element = self.driver.find_element(By.ID, "cq_widget_CqDoubleListBox_0_choiceList")
+        # select_selector = Select(list_projets_select_element)
+        # select_selector.select_by_visible_text("FR_NEXTEO")
 
-        with logger_config.stopwatch_with_label("Add tasks to the queue"):
-            for cfx_id_to_handle in all_cfx_id_to_handle_unique_ordered_list:
-                task_queue.put(cfx_id_to_handle)
+        nexteo_option_element = self.driver.find_element(By.XPATH, "//select[@id='cq_widget_CqDoubleListBox_0_choiceList']//option[text()='FR_NEXTEO']")
+        actions = ActionChains(self.driver)
+        actions.double_click(nexteo_option_element).perform()
 
-        with logger_config.stopwatch_with_label("Block until all tasks are done"):
-            task_queue.join()
+        ok_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='OK']")
+        ok_button.click()
 
-        with logger_config.stopwatch_with_label("Stop the threads by adding a sentinel object (None)"):
-            for _ in threads:
-                task_queue.put(None)
-            for thread in threads:
-                thread.join()
+        executer_requete_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='Exécuter la requête']")
+        executer_requete_button.click()
 
-        # for cfx_id in all_cfx_id_to_handle_unique_ordered_list:
-        #    self.handle_cfx(cfx_id=cfx_id)
+        select_button_1 = self.driver.find_element(By.XPATH, '//dijitButtonText[text()="Sélectionner"]')
+        select_button_1.click()
+
+        with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
+            time.sleep(10)
+
+        select_button = WebDriverWait(self.driver, 10).until(expected_conditions.element_to_be_clickable((By.XPATH, '//button[text()="Sélectionner"]')))
+        select_button.click()
+
+        with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
+            time.sleep(10)
 
         all_current_owner_modifications_json_file_full_path = f"{self.output_parent_directory_name}/all_current_owner_modifications.json"
         all_current_owner_modifications_pickel_file_full_path = f"{self.output_parent_directory_name}/all_current_owner_modifications.pkl"
@@ -155,31 +145,6 @@ class SaveCfxWebpageApplication:
         logger_config.print_and_log_info(f"{len(all_cfx_id_unique_ordered_list)} cfx found")
         return all_cfx_id_unique_ordered_list
 
-
-class HandlingCfxThread(threading.Thread):
-
-    def __init__(self, task_queue: queue.Queue, application: SaveCfxWebpageApplication, do_not_open_website_and_treat_previous_results: bool):
-        threading.Thread.__init__(self)
-        self._application = application
-
-        self.do_not_open_website_and_treat_previous_results = do_not_open_website_and_treat_previous_results
-        self.task_queue = task_queue
-
-        self.driver: ChromiumDriver = None
-
-    def run(self) -> None:
-        if not self.do_not_open_website_and_treat_previous_results:
-            with logger_config.stopwatch_with_label("create_webdriver_and_login"):
-                self.create_webdriver_and_login()
-
-        while True:
-            cfx_id = self.task_queue.get()  # Get a task from the queue
-            if cfx_id is None:  # None is a signal to stop the thread
-                break
-            # Implement the complex logic here
-            self.handle_cfx(cfx_id)
-            self.task_queue.task_done()  # Signal completion of the task
-
     def create_webdriver_firefox(self) -> None:
         logger_config.print_and_log_info("create_webdriver_firefox")
 
@@ -217,7 +182,7 @@ class HandlingCfxThread(threading.Thread):
         with logger_config.stopwatch_with_label(f"Driver get login url {login_url}"):
             self.driver.get(login_url)
 
-        with logger_config.stopwatch_with_label(label="Waited page is loaded", enable_print=False):
+        with logger_config.stopwatch_with_label(label="Waited page is loaded", enable_print=True):
             WebDriverWait(self.driver, 100).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
             WebDriverWait(self.driver, 40).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
             try:
@@ -225,25 +190,23 @@ class HandlingCfxThread(threading.Thread):
             except TimeoutException as e:
                 logger_config.print_and_log_exception(e)
 
-    def open_cfx_url(self, cfx_id: str) -> None:
-        # URL of the web page you want to save
-        cfx_url = (
-            f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/RECORD/{cfx_id}?format=HTML&loginId={connexion_param.champfx_login}&password={connexion_param.champfx_password}&noframes=true"
-        )
+        with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
+            time.sleep(10)
 
-        with logger_config.stopwatch_with_label(f"Driver get url {cfx_url}", enabled=False):
-            self.driver.get(cfx_url)
+    def open_request_url(self, request_full_path: str) -> None:
+        request_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/QUERY/{request_full_path}?format=HTML&loginId={connexion_param.champfx_login}&password={connexion_param.champfx_password}&noframes=true"
 
-        with logger_config.stopwatch_with_label(label="Waited page to be loaded", enabled=False):
+        with logger_config.stopwatch_with_label(f"Driver get url {request_url}"):
+            self.driver.get(request_url)
 
-            with logger_config.stopwatch_with_label(label="Waited Title is now good", enabled=False):
-                WebDriverWait(self.driver, 10).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
+        with logger_config.stopwatch_with_label(label="Waited Title is now good"):
+            WebDriverWait(self.driver, 10).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
 
-            with logger_config.stopwatch_with_label(label="Wait for the page to be fully loaded (JavaScript):: document.readyState now good", enabled=False):
-                WebDriverWait(self.driver, 10).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
+        with logger_config.stopwatch_with_label(label="Wait for the page to be fully loaded (JavaScript):: document.readyState now good"):
+            WebDriverWait(self.driver, 10).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
 
-            with logger_config.stopwatch_with_label(label="Waited for history tab available", enabled=False):
-                WebDriverWait(self.driver, 10).until(expected_conditions.text_to_be_present_in_element((By.ID, "dijit_layout_TabContainer_1_tablist_dijit_layout_ContentPane_14"), "History"))
+        with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
+            time.sleep(15)
 
     # Locate the "History" tab using its unique attributes and click it
     def locate_hitory_tab_and_click_it(self) -> None:
@@ -350,45 +313,25 @@ def main() -> None:
     """Main function"""
 
     with logger_config.stopwatch_with_label("Application"):
-        logger_config.configure_logger_with_random_log_file_suffix("SaveCfxWebPage")
+        logger_config.configure_logger_with_random_log_file_suffix("save_cfx_request_mutlpages_results")
 
         logger_config.print_and_log_info("Application start")
 
         parser = argparse.ArgumentParser(description="Your application description here.")
-        parser.add_argument("--first_cfx_index", type=int, help="first_cfx_index.", default=None)
-        parser.add_argument("--last_cfx_index", type=int, help="last_cfx_index.", default=None)
-        parser.add_argument("--number_of_threads", type=int, help="Number of threads.", default=DEFAULT_NUMBER_OF_THREADS)
 
         parser.add_argument("--do_not_open_website_and_treat_previous_results", action=argparse.BooleanOptionalAction)
 
-        args = parser.parse_args()
+        output_parent_directory_name = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
 
-        first_cfx_index = args.first_cfx_index
-        last_cfx_index = args.last_cfx_index
-        number_of_threads = args.number_of_threads
-        do_not_open_website_and_treat_previous_results = args.do_not_open_website_and_treat_previous_results
-
-        output_parent_directory_name = (
-            OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME if (first_cfx_index is None and last_cfx_index is None) else f"{OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME}_{first_cfx_index}_{last_cfx_index}"
-        )
-
-        output_parent_directory_name = output_parent_directory_name + f"_{number_of_threads}_Threads"
+        output_parent_directory_name = output_parent_directory_name
 
         # first_cfx_index = 10
         # last_cfx_index = 100
 
-        logger_config.print_and_log_info(f"first_cfx_index:{first_cfx_index}")
-        logger_config.print_and_log_info(f"last_cfx_index: {last_cfx_index}")
         logger_config.print_and_log_info(f"output_parent_directory_name: {output_parent_directory_name}")
-        logger_config.print_and_log_info(f"number_of_threads: {number_of_threads}")
-        logger_config.print_and_log_info(f"do_not_open_website_and_treat_previous_results: {do_not_open_website_and_treat_previous_results}")
 
-        application: SaveCfxWebpageApplication = SaveCfxWebpageApplication(
-            first_cfx_index=first_cfx_index,
-            last_cfx_index=last_cfx_index,
+        application: SaveCfxReequestMultipagesResultsApplication = SaveCfxReequestMultipagesResultsApplication(
             output_parent_directory_name=output_parent_directory_name,
-            _number_of_threads=number_of_threads,
-            do_not_open_website_and_treat_previous_results=do_not_open_website_and_treat_previous_results,
         )
         application.run()
 

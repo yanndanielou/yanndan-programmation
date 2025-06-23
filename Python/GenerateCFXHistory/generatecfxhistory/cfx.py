@@ -19,7 +19,7 @@ from abc import ABC, abstractmethod
 DEFAULT_CHAMPFX_DETAILS_EXCEL_FILE_FULL_PATH: str = "../Input/extract_cfx_details.xlsx"
 DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH: str = "../Input/extract_cfx_change_state.xlsx"
 DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH: str = "../Input/cfx_extended_history.txt"
-DEFAULT_USER_AND_ROLE_DATA_FILE_FULL_PATH: str = "../Input/role_data_next_ats.txt"
+DEFAULT_USER_AND_ROLE_DATA_FILE_FULL_PATH: str = "Input/role_data_next_ats.txt"
 
 
 class RequestType(enums_utils.NameBasedEnum):
@@ -331,7 +331,6 @@ class ChampFXLibrary:
 
     def __init__(
         self,
-        release_subsystem_mapping: dict[role.SubSystem, list[str]] = release_role_mapping.next_atsp_release_subsystem_mapping,
         champfx_details_excel_file_full_path: str = DEFAULT_CHAMPFX_DETAILS_EXCEL_FILE_FULL_PATH,
         champfx_states_changes_excel_file_full_path: str = DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH,
         cfx_extended_history_file_full_path: Optional[str] = DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH,
@@ -340,6 +339,7 @@ class ChampFXLibrary:
         # all_current_owner_modifications_per_cfx_pickle_file_full_path: str = "Input/all_current_owner_modifications_per_cfx.pkl",
         champfx_filters: Optional[List["ChampFXtSaticCriteriaFilter"]] = None,
         label: Optional[str] = None,
+        cfx_users_library: Optional[role.CfxLibraryBase] =None
     ):
 
         if champfx_filters is None:
@@ -355,8 +355,11 @@ class ChampFXLibrary:
         self._champfx_entry_by_id: Dict[str, ChampFXEntry] = dict()
         self._champfx_entries: List[ChampFXEntry] = []
 
-        with logger_config.stopwatch_with_label("Load CfxUserLibrary"):
-            self._cfx_users_library: role.CfxUserLibrary = role.CfxUserLibrary(user_and_role_data_text_file_full_path, release_subsystem_mapping)
+        if cfx_users_library:
+            self._cfx_users_library = cfx_users_library
+        else:
+            with logger_config.stopwatch_with_label("Load CfxUserLibrary"):
+                self._cfx_users_library = role.CfxUserLibrary(DEFAULT_USER_AND_ROLE_DATA_FILE_FULL_PATH, release_role_mapping.next_atsp_release_subsystem_mapping)
 
         with logger_config.stopwatch_with_label("ChampFXLibrary creation and initialisation"):
 

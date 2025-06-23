@@ -4,7 +4,7 @@ from dateutil import relativedelta
 from logger import logger_config
 
 from generatecfxhistory import cfx
-from generatecfxhistory import ui_and_results_generation, release_role_mapping
+from generatecfxhistory import ui_and_results_generation, release_role_mapping, role
 
 OUTPUT_DIRECTORY_NAME = "output"
 
@@ -26,8 +26,8 @@ def main() -> None:
             champfx_states_changes_excel_file_full_path="Input/autres_projets___changements_etats.xlsx",
             cfx_extended_history_file_full_path=None,
             user_and_role_data_text_file_full_path="Input/role_data_next_other_projects.txt",
-            release_subsystem_mapping=release_role_mapping.other_projects_release_subsystem_mapping,
             label="Other projects",
+            cfx_users_library=role.CfxEmptyUserLibrary(),
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
