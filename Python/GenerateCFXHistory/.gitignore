@@ -1,5 +1,6 @@
 *.zip
 *.xls*
+*.png
 /.mypy_cache/
 /Input/
 /Input/*.txt
