@@ -77,7 +77,12 @@ class SaveCfxReequestMultipagesResultsApplication:
         change_state_query = "66875867"
         self.open_request_url(change_state_query)
 
-        selectionner_button_containerNode = self.driver.find_element(By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']")
+        # resp = webdriver.request('POST','https://www.facebook.com/login/device-based/regular/login/?login_attempt=1&lwv=110', params)
+
+        selectionner_button_containerNode = WebDriverWait(self.driver, 100).until(
+            expected_conditions.element_to_be_clickable((By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']"))
+        )
+        # selectionner_button_containerNode = self.driver.find_element(By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']")
         selectionner_button_containerNode.click()
 
         # list_projets_select_element = self.driver.find_element(By.ID, "cq_widget_CqDoubleListBox_0_choiceList")
@@ -94,15 +99,6 @@ class SaveCfxReequestMultipagesResultsApplication:
         executer_requete_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='Exécuter la requête']")
         executer_requete_button.click()
 
-        select_button_1 = self.driver.find_element(By.XPATH, '//dijitButtonText[text()="Sélectionner"]')
-        select_button_1.click()
-
-        with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
-            time.sleep(10)
-
-        select_button = WebDriverWait(self.driver, 10).until(expected_conditions.element_to_be_clickable((By.XPATH, '//button[text()="Sélectionner"]')))
-        select_button.click()
-
         with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
             time.sleep(10)
 
@@ -111,12 +107,57 @@ class SaveCfxReequestMultipagesResultsApplication:
 
         time.sleep(1000)
 
+
+    # Fonction pour vérifier l'achèvement de téléchargement
+    def wait_for_download_to_complete(self, download_dir, timeout=120):
+        seconds_passed = 0
+        while seconds_passed < timeout:
+            files = os.listdir(download_dir)
+            # Vérifiez si un fichier temporaire est téléchargé
+            if not any(file.endswith('.part') or file.endswith('.crdownload') for file in files):
+                # Si aucun fichier temporaire trouvé, vérifiez si le fichier Excel est présent et complet
+                if any(file.endswith('.xlsx') for file in files):
+                    break
+            time.sleep(1)
+            seconds_passed += 1
+        else:
+            raise Exception("Le téléchargement n'a pas pu être confirmé dans le délai imparti.")
+
     # Locate the "History" tab using its unique attributes and click it
     def locate_save_excel_click_it(self) -> None:
+
+        arrow_to_acces_export = WebDriverWait(self.driver, 40).until(expected_conditions.element_to_be_clickable((By.ID, "dijit_form_ComboButton_1_arrow")))
+        arrow_to_acces_export.click()
+
+        self.driver.get_screenshot_as_file("after_arrow_to_acces_export_click.png")
+
         # history_tab = self.driver.find_element(By.XPATH, "//text()='Exporter vers un tableur Excel']")
         # export_button = self.driver.find_element(By.ID, "dijit_MenuItem_42")
         export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'Exporter vers un tableur Excel')]")
         export_button.click()
+        
+        
+        # Attendre que le fichier soit téléchargé
+        self.wait_for_download_to_complete(download_folder_path)
+
+        # Trouver le fichier téléchargé le plus récent
+        list_of_files = os.listdir(download_folder_path)
+        list_of_files = [file for file in list_of_files if file.endswith('.xlsx')]
+        latest_file = max([os.path.join(download_folder_path, f) for f in list_of_files], key=os.path.getctime)
+
+        # Renommer le fichier téléchargé
+        os.rename(latest_file, os.path.join(download_folder_path, nom_du_fichier_final))
+
+        
+        
+        # Trouver le fichier téléchargé le plus récent
+list_of_files = os.listdir(download_folder_path)
+list_of_files = [file for file in list_of_files if file.endswith('.xlsx')]
+latest_file = max([os.path.join(download_folder_path, f) for f in list_of_files], key=os.path.getctime)
+
+        # excel_export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'Exporter vers un tableur Excel')]")
+        # "excel_export_button.click()
+        pass
 
     def create_webdriver_chrome(self) -> None:
         logger_config.print_and_log_info("create_webdriver_chrome")
