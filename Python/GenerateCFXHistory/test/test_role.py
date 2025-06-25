@@ -1,6 +1,6 @@
 import pytest
 
-from generatecfxhistory import role
+from generatecfxhistory import role, release_role_mapping
 
 # fmt: off
 
@@ -374,19 +374,20 @@ champfx_fixed_implemented_in_data = ["S003_Component TCR3 CBTC_SFE_PAS -",
 
 class TestUserLibrary:
     def test_input_files(self)->None:
-        cfx_users_library: role.CfxUserLibrary = role.CfxUserLibrary("../../Input/role_data_next_ats.txt")
+        cfx_users_library: role.CfxUserLibrary = role.CfxUserLibrary( user_and_role_data_text_file_full_path="Input/role_data_next_ats.txt",   release_subsystem_mapping=release_role_mapping.next_atsp_release_subsystem_mapping)
         assert cfx_users_library
 
 
 class TestFixedImplementedInToSubsystemConversion:
     @pytest.mark.parametrize("champfx_fixed_implemented_in", champfx_fixed_implemented_in_data)
     def test_all_champfx_fixed_implemented_can_be_converted(self, champfx_fixed_implemented_in: str) -> None:
-        assert role.get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in)
+        cfx_users_library: role.CfxUserLibrary = role.CfxUserLibrary( user_and_role_data_text_file_full_path="Input/role_data_next_ats.txt",   release_subsystem_mapping=release_role_mapping.next_atsp_release_subsystem_mapping)
+        assert cfx_users_library.get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in)
 
 
 
 class TestRoleConversion:
     def test_random(self) -> None:
-        cfx_user_library = role.CfxUserLibrary("Input/role_data_next_ats.txt")
-        user = cfx_user_library.get_cfx_user_by_full_name("Zehoub Khaled")
+        cfx_users_library: role.CfxUserLibrary = role.CfxUserLibrary( user_and_role_data_text_file_full_path="Input/role_data_next_ats.txt",   release_subsystem_mapping=release_role_mapping.next_atsp_release_subsystem_mapping)
+        user = cfx_users_library.get_cfx_user_by_full_name("Zehoub Khaled")
         assert user.subsystem == role.SubSystem.ATS
