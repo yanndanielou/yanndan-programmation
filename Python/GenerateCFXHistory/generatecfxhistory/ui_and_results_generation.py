@@ -78,7 +78,6 @@ def produce_results_and_displays(
                     display_output_plots=display_output_plots,
                 )
 
-
         case GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS:
             produce_results_and_displays(
                 cfx_library=cfx_library,
@@ -248,6 +247,7 @@ def produce_results_and_displays_for_libary(
     create_html_file: bool = True,
     create_excel_file: bool = True,
     display_output_plots: bool = True,
+    dump_all_cfx_ids_in_json: bool = True,
 ) -> None:
 
     if cfx_filters is None:
@@ -264,6 +264,7 @@ def produce_results_and_displays_for_libary(
             cfx_filters=cfx_filters,
             generate_by_project_instruction=generate_by_project_instruction,
             display_output_plots=display_output_plots,
+            dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
         )
 
     if for_each_current_owner_per_date:
@@ -280,6 +281,7 @@ def produce_results_and_displays_for_libary(
                     cfx_filters=cfx_filters + [cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))],
                     generate_by_project_instruction=generate_by_project_instruction,
                     display_output_plots=display_output_plots,
+                    dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
                 )
 
     if for_each_subsystem:
@@ -297,6 +299,7 @@ def produce_results_and_displays_for_libary(
                     cfx_filters=cfx_filters + [cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldSubsystem(field_accepted_values=[subsystem])])],
                     generate_by_project_instruction=generate_by_project_instruction,
                     display_output_plots=display_output_plots,
+                    dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
                 )
 
 

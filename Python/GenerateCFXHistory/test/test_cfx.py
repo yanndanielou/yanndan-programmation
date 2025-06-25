@@ -288,7 +288,7 @@ class TestFullDatabase:
     def test_all_system_structure(self, create_full_champfx_library: cfx.ChampFXLibrary) -> None:
         champfx_library = create_full_champfx_library
         for cfx_entry in champfx_library.get_all_cfx():
-            assert cfx_entry._system_structure
+            assert cfx_entry._system_structure_subsystem
 
 
 class TestStatisticsPreparation:

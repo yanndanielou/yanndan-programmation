@@ -318,11 +318,7 @@ def convert_cfx_history_element_to_valid_full_name(cfx_history_element_state: st
 
 
 def get_earliest_submit_date(cfx_list: List["ChampFXEntry"]) -> datetime.datetime:
-    earliest_date = min(
-        (oldest_action.timestamp for entry in cfx_list if
-         (oldest_action := entry.get_oldest_change_action_by_new_state(State.SUBMITTED)) is not None),
-        default=None
-    )
+    earliest_date = min((oldest_action.timestamp for entry in cfx_list if (oldest_action := entry.get_oldest_change_action_by_new_state(State.SUBMITTED)) is not None), default=None)
     logger_config.print_and_log_info(f"Earliest submit date among {len(cfx_list)} CFX: {earliest_date}")
     return earliest_date
 
@@ -339,7 +335,7 @@ class ChampFXLibrary:
         # all_current_owner_modifications_per_cfx_pickle_file_full_path: str = "Input/all_current_owner_modifications_per_cfx.pkl",
         champfx_filters: Optional[List["ChampFXtSaticCriteriaFilter"]] = None,
         label: Optional[str] = None,
-        cfx_users_library: Optional[role.CfxLibraryBase] =None
+        cfx_users_library: Optional[role.CfxLibraryBase] = None,
     ):
 
         if champfx_filters is None:
@@ -387,7 +383,6 @@ class ChampFXLibrary:
                 with logger_config.stopwatch_with_label("create current owner modifications"):
                     self.create_current_owner_modifications()
 
-
     @property
     def cfx_users_library(self) -> role.CfxUserLibrary:
         return self._cfx_users_library
@@ -418,7 +413,9 @@ class ChampFXLibrary:
                 history_raw_action_name: str = row["history.action_name"]
 
                 if type(history_raw_old_state) is not str:
-                    logger_config.print_and_log_error(f"{cfx_id} ignore change state from {history_raw_old_state} to {history_raw_new_state} {history_raw_action_timestamp_str}  {history_raw_action_name} ")
+                    logger_config.print_and_log_error(
+                        f"{cfx_id} ignore change state from {history_raw_old_state} to {history_raw_new_state} {history_raw_action_timestamp_str}  {history_raw_action_name} "
+                    )
                     continue
 
                 old_state: State = conversions.convert_state(history_raw_old_state)
@@ -610,25 +607,27 @@ class ChampFXEntryBuilder:
         current_owner_raw: str = row["CurrentOwner.FullName"]
         current_owner: role.CfxUser = cfx_library.cfx_users_library.get_cfx_user_by_full_name(current_owner_raw)
 
-        fixed_implemented_in_raw: str = row["FixedImplementedIn"]
+        fixed_implemented_in_config_unit: str = row["FixedImplementedIn"]
         fixed_implemented_in_subsystem: Optional[role.SubSystem] = (
-            cfx_library.cfx_users_library.get_subsystem_from_champfx_fixed_implemented_in(fixed_implemented_in_raw) if fixed_implemented_in_raw else None
+            cfx_library.cfx_users_library.get_subsystem_from_champfx_fixed_implemented_in(fixed_implemented_in_config_unit) if fixed_implemented_in_config_unit else None
         )
 
         submit_date_raw: str = row["SubmitDate"]
         submit_date: datetime.datetime = cast(datetime.datetime, utils.convert_champfx_extract_date(submit_date_raw))
 
-        system_structure_raw: str = row["SystemStructure"]
-        temptative_system_structure: Optional[role.SubSystem] = cfx_library.cfx_users_library.get_subsystem_from_champfx_fixed_implemented_in(system_structure_raw)
+        system_structure_config_unit: str = row["SystemStructure"]
+        temptative_system_structure: Optional[role.SubSystem] = cfx_library.cfx_users_library.get_subsystem_from_champfx_fixed_implemented_in(system_structure_config_unit)
 
-        assert temptative_system_structure, f"{cfx_id} could not decode system structure {system_structure_raw}"
+        assert temptative_system_structure, f"{cfx_id} could not decode system structure {system_structure_config_unit}"
         system_structure: role.SubSystem = temptative_system_structure
 
         champfx_entry = ChampFXEntry(
             cfx_id=cfx_id,
             state=state,
             fixed_implemented_in_subsystem=fixed_implemented_in_subsystem,
-            system_structure=system_structure,
+            system_structure_config_unit=system_structure_config_unit,
+            fixed_implemented_in_config_unit=fixed_implemented_in_config_unit,
+            system_structure_subsystem=system_structure,
             submit_date=submit_date,
             cfx_project=cfx_project,
             safety_relevant=safety_relevant,
@@ -647,7 +646,9 @@ class ChampFXEntry:
         cfx_id: str,
         state: State,
         fixed_implemented_in_subsystem: Optional[role.SubSystem],
-        system_structure: role.SubSystem,
+        fixed_implemented_in_config_unit: str,
+        system_structure_subsystem: role.SubSystem,
+        system_structure_config_unit: str,
         submit_date: datetime.datetime,
         cfx_project: CfxProject,
         safety_relevant: Optional[bool],
@@ -670,8 +671,11 @@ class ChampFXEntry:
 
         self.cfx_id = cfx_id
         self._state: State = state
+
+        self._fixed_implemented_in_config_unit = fixed_implemented_in_config_unit
         self._fixed_implemented_in_subsystem = fixed_implemented_in_subsystem
-        self._system_structure = system_structure
+        self._system_structure_subsystem = system_structure_subsystem
+        self._system_structure_config_unit = system_structure_config_unit
         self._request_type = request_type
 
         self._current_owner: role.CfxUser = current_owner
@@ -696,9 +700,11 @@ class ChampFXEntry:
         self._category = category
 
         if self._rejection_cause != RejectionCause.NONE:
-            self._subsystem = self._system_structure
+            self._subsystem = self._system_structure_subsystem
         else:
             self._subsystem = self._fixed_implemented_in_subsystem if self._fixed_implemented_in_subsystem else self._current_owner_role
+
+        self._config_unit: str = self._fixed_implemented_in_config_unit if self._fixed_implemented_in_subsystem else self._system_structure_config_unit
 
     def __repr__(self) -> str:
         return f"<ChampFXEntry cfx_id={self.cfx_id} _raw_state={self._state} _current_owner_raw={self._current_owner.full_name}>"
@@ -847,59 +853,148 @@ class ChampFXWhiteListBasedOnFileFilter(ChampFXWhitelistFilter):
 class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter, ABC):
 
     @abstractmethod
-    def __init__(self, field_name: str, field_label: str, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
+    def __init__(
+        self,
+        field_name: str,
+        field_label: str,
+        field_accepted_values: Optional[List[Any]] = None,
+        field_forbidden_values: Optional[List[Any]] = None,
+        field_accepted_contained_texts: Optional[List[Any]] = None,
+        field_forbidden_contained_texts: Optional[List[Any]] = None,
+        forced_label: Optional[str] = None,
+    ) -> None:
         super().__init__()
         self.field_name = field_name
         self.field_label = field_label
         self.field_accepted_values = field_accepted_values
         self.field_forbidden_values = field_forbidden_values
+        self.field_accepted_contained_texts = field_accepted_contained_texts
+        self.field_forbidden_contained_texts = field_forbidden_contained_texts
 
-        label: str = f"{self.field_label}"
+        if forced_label:
+            self._label = forced_label
 
-        if self.field_accepted_values:
-            label = f"{label} among {self.field_accepted_values}" if len(self.field_accepted_values) > 1 else f"{label} {self.field_accepted_values}"
         else:
-            label = f"{label} without {self.field_forbidden_values}"
+            label: str = f"{self.field_label}"
 
-        label = label.translate({ord(i): None for i in "'[]"})
-        self._label = label
+            if self.field_accepted_values:
+                label = f"{label} among {self.field_accepted_values}" if len(self.field_accepted_values) > 1 else f"{label} {self.field_accepted_values}"
+            elif self.field_forbidden_values:
+                label = f"{label} without {self.field_forbidden_values}"
+            elif self.field_accepted_contained_texts:
+                label = (
+                    f"{label} contains texts {self.field_accepted_contained_texts}" if len(self.field_accepted_contained_texts) > 1 else f"{label} contains text {self.field_accepted_contained_texts}"
+                )
+            elif self.field_forbidden_contained_texts:
+                label = (
+                    f"{label} does not contain any of text {self.field_forbidden_contained_texts}"
+                    if len(self.field_forbidden_contained_texts) > 1
+                    else f"{label} does not contain {self.field_forbidden_contained_texts}"
+                )
+
+            label = label.translate({ord(i): None for i in "'[]"})
+            self._label = label
 
     def match_cfx_entry_without_cache(self, cfx_entry: ChampFXEntry) -> bool:
         attribute_entry = getattr(cfx_entry, self.field_name)
         if self.field_accepted_values is not None:
             return attribute_entry in self.field_accepted_values
-        else:
+        elif self.field_forbidden_values:
             return attribute_entry not in cast(List[Any], self.field_forbidden_values)
+        elif self.field_accepted_contained_texts:
+            match_found: bool = any(text in attribute_entry for text in self.field_accepted_contained_texts)
+            return match_found
+        elif self.field_forbidden_contained_texts:
+            match_found: bool = any(text in attribute_entry for text in self.field_forbidden_contained_texts)
+            return not match_found
+        else:
+            return False
 
 
 class ChampFxFilterFieldSecurityRelevant(ChampFXFieldFilter):
-    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
-        super().__init__(field_name="_security_relevant", field_label="Security Relevant", field_accepted_values=field_accepted_values, field_forbidden_values=field_forbidden_values)
+    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None, forced_label: Optional[str] = None) -> None:
+        super().__init__(
+            field_name="_security_relevant",
+            field_label="Security Relevant",
+            field_accepted_values=field_accepted_values,
+            field_forbidden_values=field_forbidden_values,
+            forced_label=forced_label,
+        )
+
 
 class ChampFxFilterFieldSafetyRelevant(ChampFXFieldFilter):
-    def __init__(self, field_accepted_value: Optional[bool] = None, field_forbidden_value:Optional[bool]  = None) -> None:
-        super().__init__(field_name="_safety_relevant", field_label="Safety Relevant", field_accepted_values=[field_accepted_value], field_forbidden_values=[field_forbidden_value])
-
+    def __init__(self, field_accepted_value: Optional[bool] = None, field_forbidden_value: Optional[bool] = None, forced_label: Optional[str] = None) -> None:
+        super().__init__(
+            field_name="_safety_relevant",
+            field_label="Safety Relevant",
+            field_accepted_values=[field_accepted_value],
+            field_forbidden_values=[field_forbidden_value],
+            forced_label=forced_label,
+        )
 
 
 class ChampFxFilterFieldProject(ChampFXFieldFilter):
-    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
-        super().__init__(field_name="_cfx_project", field_label="Project", field_accepted_values=field_accepted_values, field_forbidden_values=field_forbidden_values)
+    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None, forced_label: Optional[str] = None) -> None:
+        super().__init__(
+            field_name="_cfx_project",
+            field_label="Project",
+            field_accepted_values=field_accepted_values,
+            field_forbidden_values=field_forbidden_values,
+            forced_label=forced_label,
+        )
 
 
 class ChampFxFilterFieldSubsystem(ChampFXFieldFilter):
-    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
-        super().__init__(field_name="_subsystem", field_label="Subsystem", field_accepted_values=field_accepted_values, field_forbidden_values=field_forbidden_values)
+    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None, forced_label: Optional[str] = None) -> None:
+        super().__init__(
+            field_name="_subsystem",
+            field_label="Subsystem",
+            field_accepted_values=field_accepted_values,
+            field_forbidden_values=field_forbidden_values,
+            forced_label=forced_label,
+        )
 
 
 class ChampFxFilterFieldCategory(ChampFXFieldFilter):
-    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
-        super().__init__(field_name="_category", field_label="Category", field_accepted_values=field_accepted_values, field_forbidden_values=field_forbidden_values)
+    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None, forced_label: Optional[str] = None) -> None:
+        super().__init__(
+            field_name="_category",
+            field_label="Category",
+            field_accepted_values=field_accepted_values,
+            field_forbidden_values=field_forbidden_values,
+            forced_label=forced_label,
+        )
 
 
 class ChampFxFilterFieldType(ChampFXFieldFilter):
-    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None) -> None:
-        super().__init__(field_name="_request_type", field_label="Type", field_accepted_values=field_accepted_values, field_forbidden_values=field_forbidden_values)
+    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None, forced_label: Optional[str] = None) -> None:
+        super().__init__(
+            field_name="_request_type",
+            field_label="Type",
+            field_accepted_values=field_accepted_values,
+            field_forbidden_values=field_forbidden_values,
+            forced_label=forced_label,
+        )
+
+
+class ChampFxFilterFieldConfigUnit(ChampFXFieldFilter):
+    def __init__(
+        self,
+        field_accepted_values: Optional[List[Any]] = None,
+        field_forbidden_values: Optional[List[Any]] = None,
+        field_accepted_contained_texts: Optional[List[Any]] = None,
+        field_forbidden_contained_texts: Optional[List[Any]] = None,
+        forced_label: Optional[str] = None,
+    ) -> None:
+        super().__init__(
+            field_name="_config_unit",
+            field_label="Config Unit",
+            field_accepted_values=field_accepted_values,
+            field_forbidden_values=field_forbidden_values,
+            field_accepted_contained_texts=field_accepted_contained_texts,
+            field_forbidden_contained_texts=field_forbidden_contained_texts,
+            forced_label=forced_label,
+        )
 
 
 @dataclass
