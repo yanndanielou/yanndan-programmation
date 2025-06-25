@@ -1,5 +1,7 @@
 import os
 
+from typing import List
+
 from dateutil import relativedelta
 from logger import logger_config
 
@@ -13,6 +15,33 @@ CREATE_EXCEL_FILE = True
 CREATE_HTML_FILE = True
 
 DISPLAY_OUTPUT = False
+
+
+atc_bord_filter = cfx.ChampFxFilterFieldConfigUnit(
+    field_forbidden_contained_texts=[
+        "Component MES",
+        "Component PAS",
+        "Applicatif PAS",
+        "Module Application PAS",
+        "S004_Module PAI",
+        "S003_Component PAL",
+        "Module Application PAL",
+    ],
+    forced_label="ATC Bord",
+)
+
+atc_sol_filter = cfx.ChampFxFilterFieldConfigUnit(
+    field_accepted_contained_texts=[
+        "Component MES",
+        "Component PAS",
+        "Applicatif PAS",
+        "Module Application PAS",
+        "S004_Module PAI",
+        "S003_Component PAL",
+        "Module Application PAL",
+    ],
+    forced_label="ATC Sol",
+)
 
 
 def main() -> None:
@@ -32,346 +61,61 @@ def main() -> None:
             user_and_role_data_text_file_full_path="Input/role_data_next_ats.txt",
         )
 
-        # Bord
+        def generate_with_filters(field_filters: List[cfx.ChampFXFieldFilter]) -> None:
 
-        ui_and_results_generation.produce_results_and_displays(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            create_excel_file=CREATE_EXCEL_FILE,
-            display_without_cumulative_eras=False,
-            display_with_cumulative_eras=True,
-            create_html_file=CREATE_HTML_FILE,
-            display_output_plots=DISPLAY_OUTPUT,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        cfx.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                        cfx.ChampFxFilterFieldType(field_accepted_values=[cfx.RequestType.DEFECT]),
-                        cfx.ChampFxFilterFieldConfigUnit(
-                            field_forbidden_contained_texts=[
-                                "Component MES",
-                                "Component PAS",
-                                "Applicatif PAS",
-                                "Module Application PAS",
-                                "S004_Module PAI",
-                                "S003_Component PAL",
-                                "Module Application PAL",
-                            ],
-                            forced_label="ADC DC Bord",
-                        ),
-                    ]
-                ),
+            adc_dc_subsystem_filter = cfx.ChampFxFilterFieldSubsystem(
+                field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
+            )
+            ui_and_results_generation.produce_results_and_displays(
+                cfx_library=all_champfx_library,
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                create_excel_file=CREATE_EXCEL_FILE,
+                display_without_cumulative_eras=False,
+                display_with_cumulative_eras=True,
+                create_html_file=CREATE_HTML_FILE,
+                display_output_plots=DISPLAY_OUTPUT,
+                cfx_filters=[cfx.ChampFxFilter(field_filters=field_filters + [adc_dc_subsystem_filter])],
+                dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+                generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
+            )
+
+        def generate_for_bord_et_sol_filter(field_filters: List[cfx.ChampFXFieldFilter]) -> None:
+            generate_with_filters(field_filters + [atc_bord_filter])
+            generate_with_filters(field_filters + [atc_sol_filter])
+
+        request_type_defect_filter = cfx.ChampFxFilterFieldType(field_accepted_values=[cfx.RequestType.DEFECT])
+        request_type_not_defect_filter = cfx.ChampFxFilterFieldType(field_forbidden_values=[cfx.RequestType.DEFECT])
+
+        safety_cfx_filter = cfx.ChampFxFilterFieldSafetyRelevant(field_accepted_value=True)
+        not_safety_cfx_filter = cfx.ChampFxFilterFieldSafetyRelevant(field_accepted_value=False)
+
+        generate_for_bord_et_sol_filter(
+            field_filters=[
+                request_type_defect_filter,
             ],
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
-            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
         )
-
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        cfx.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                        cfx.ChampFxFilterFieldType(field_accepted_values=[cfx.RequestType.DEFECT]),
-                        cfx.ChampFxFilterFieldConfigUnit(
-                            field_forbidden_contained_texts=[
-                                "Component MES",
-                                "Component PAS",
-                                "Applicatif PAS",
-                                "Module Application PAS",
-                                "S004_Module PAI",
-                                "S003_Component PAL",
-                                "Module Application PAL",
-                            ],
-                            forced_label="ADC DC Bord",
-                        ),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+        generate_for_bord_et_sol_filter(
+            field_filters=[
+                request_type_not_defect_filter,
+            ]
         )
 
-        # Sol
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        cfx.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                        cfx.ChampFxFilterFieldType(
-                            field_accepted_values=[cfx.RequestType.DEFECT],
-                            forced_label="Defect",
-                        ),
-                        cfx.ChampFxFilterFieldConfigUnit(
-                            field_accepted_contained_texts=[
-                                "Component MES",
-                                "Component PAS",
-                                "Applicatif PAS",
-                                "Module Application PAS",
-                                "S004_Module PAI",
-                                "S003_Component PAL",
-                                "Module Application PAL",
-                            ],
-                            forced_label="ADC DC Sol",
-                        ),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+        generate_for_bord_et_sol_filter(
+            field_filters=[
+                not_safety_cfx_filter,
+            ]
+        )
+        generate_for_bord_et_sol_filter(
+            field_filters=[
+                safety_cfx_filter,
+            ]
+        )
+        generate_for_bord_et_sol_filter(
+            field_filters=[],
         )
 
-        # Bord
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        cfx.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                        cfx.ChampFxFilterFieldType(field_accepted_values=[cfx.RequestType.DEFECT]),
-                        cfx.ChampFxFilterFieldConfigUnit(
-                            field_forbidden_contained_texts=[
-                                "Component MES",
-                                "Component PAS",
-                                "Applicatif PAS",
-                                "Module Application PAS",
-                                "S004_Module PAI",
-                                "S003_Component PAL",
-                                "Module Application PAL",
-                            ],
-                            forced_label="ADC DC Bord",
-                        ),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
-        )
-        # Sol
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        cfx.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                        cfx.ChampFxFilterFieldType(field_accepted_values=[cfx.RequestType.DEFECT]),
-                        cfx.ChampFxFilterFieldConfigUnit(
-                            field_accepted_contained_texts=[
-                                "Component MES",
-                                "Component PAS",
-                                "Applicatif PAS",
-                                "Module Application PAS",
-                                "S004_Module PAI",
-                                "S003_Component PAL",
-                                "Module Application PAL",
-                            ],
-                            forced_label="ADC DC Sol",
-                        ),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-        )
-        # Bord
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        cfx.ChampFxFilterFieldConfigUnit(
-                            field_forbidden_contained_texts=[
-                                "Component MES",
-                                "Component PAS",
-                                "Applicatif PAS",
-                                "Module Application PAS",
-                                "S004_Module PAI",
-                                "S003_Component PAL",
-                                "Module Application PAL",
-                            ],
-                            forced_label="ADC DC Bord",
-                        ),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
-        )
-        # Sol
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        cfx.ChampFxFilterFieldConfigUnit(
-                            field_accepted_contained_texts=[
-                                "Component MES",
-                                "Component PAS",
-                                "Applicatif PAS",
-                                "Module Application PAS",
-                                "S004_Module PAI",
-                                "S003_Component PAL",
-                                "Module Application PAL",
-                            ],
-                            forced_label="ADC DC Sol",
-                        ),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-        )
-
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        cfx.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                        cfx.ChampFxFilterFieldType(field_accepted_values=[cfx.RequestType.DEFECT]),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
-        )
-
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        cfx.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                        cfx.ChampFxFilterFieldType(field_forbidden_values=[cfx.RequestType.DEFECT]),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
-        )
-
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        cfx.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
-        )
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        cfx.ChampFxFilterFieldSafetyRelevant(field_accepted_value=True),
-                        cfx.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
-        )
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=all_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        cfx.ChampFxFilterFieldSafetyRelevant(field_accepted_value=False),
-                        cfx.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+        generate_with_filters(
+            field_filters=[],
         )
 
         if DISPLAY_OUTPUT:
