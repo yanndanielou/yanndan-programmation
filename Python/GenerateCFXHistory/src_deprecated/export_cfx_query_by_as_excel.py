@@ -12,6 +12,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
+from common import file_utils
+
 import connexion_param
 
 OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "export_query_to_excel"
@@ -29,16 +31,12 @@ class ExportCfxQueryApplication:
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
     driver: ChromiumDriver = None
 
-    def run(self):
+    def run(self) -> None:
 
         self.create_webdriver_and_login()
 
         for directory_path in [self.output_parent_directory_name]:
-            if not os.path.exists(directory_path):
-                logger_config.print_and_log_info(f"Create folder {directory_path}")
-                os.mkdir(directory_path)
-            else:
-                logger_config.print_and_log_info(f"Folder {directory_path} already exists")
+            file_utils.create_folder_if_not_exist(directory_path)
 
         with logger_config.stopwatch_with_label(f"open_cfx_url CCB"):
             self.open_query_url(query_url=CCB_QUERY)
@@ -48,16 +46,15 @@ class ExportCfxQueryApplication:
         with logger_config.stopwatch_with_label(f"locate_save_excel_click_it"):
             self.locate_save_excel_click_it()
         pass
-        pass
 
-    def create_webdriver_firefox(self):
+    def create_webdriver_firefox(self) -> None:
         logger_config.print_and_log_info("create_webdriver_firefox")
 
         options = selenium.webdriver.firefox.options.Options()
         options.add_argument("--headless")
         self.driver = webdriver.Firefox(options=options)
 
-    def create_webdriver_chrome(self):
+    def create_webdriver_chrome(self) -> None:
         logger_config.print_and_log_info("create_webdriver_chrome")
         # Path to the ChromeDriver
         chrome_driver_path = "C:\\Users\\fr232487\\Downloads\\chromedriver-win64\\chromedriver.exe"
@@ -70,12 +67,12 @@ class ExportCfxQueryApplication:
         driver_service = Service(chrome_driver_path)
         self.driver = webdriver.Chrome(service=driver_service, options=chrome_options)
 
-    def create_webdriver_and_login(self):
+    def create_webdriver_and_login(self) -> None:
         self.create_webdriver_chrome()
         # self.create_webdriver_firefox()
         self.login_champfx()
 
-    def reset_driver(self):
+    def reset_driver(self) -> None:
         self.driver.quit()
         self.create_webdriver_and_login()
 
