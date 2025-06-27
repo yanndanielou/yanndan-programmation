@@ -1,35 +1,21 @@
 [project]
-# This is the name of your project. The first time you publish this
-# package, this name will be registered for you. It will determine how
-# users can install this project, e.g.:
-#
-# $ pip install sampleproject
-#
-# And where it will live on PyPI: https://pypi.org/project/sampleproject/
-#
-# There are some restrictions on what makes a valid project name
-# specification here:
-# https://packaging.python.org/specifications/core-metadata/#name
 name = "common" # REQUIRED, is the only field that cannot be marked as dynamic.
 
-# Versions should comply with PEP 440:
-# https://www.python.org/dev/peps/pep-0440/
-#
-# For a discussion on single-sourcing the version, see
-# https://packaging.python.org/guides/single-sourcing-package-version/
+
 version = "0.0.0" # REQUIRED, although can be dynamic
 
-# This is a one-line description or tagline of what your project does. This
-# corresponds to the "Summary" metadata field:
-# https://packaging.python.org/specifications/core-metadata/#summary
+
 description = "Common library"
 
-[tool.poetry]
-name = "common-library"
-description = "Common lib"
 
-[tool.black]
-line-length = 88  # Longueur maximale des lignes pour Black
+
+
+[tool.pylint]
+disable = ["C0114", "C0115", "C0116"]  # Désactivation de certaines règles
+#missing-function-docstring
+#missing-module-docstring
+#Missing class docstringPylintC0115:missing-class-docstring
+max-line-length = 200  # Longueur maximale des lignes
 
 [tool.mypy]
 # Specify files or directories to analyze
@@ -55,9 +41,6 @@ warn_redundant_casts = true
 # Warn about unnecessary "type: ignore" comments
 warn_unused_ignores = true
 
-[tool.pylint]
-disable = ["C0114", "C0115", "C0116"]  # Désactivation de certaines règles
-#missing-function-docstring
-#missing-module-docstring
-#Missing class docstringPylintC0115:missing-class-docstring
-max-line-length = 120  # Longueur maximale des lignes
+[tool.black]
+line-length = 200
+
