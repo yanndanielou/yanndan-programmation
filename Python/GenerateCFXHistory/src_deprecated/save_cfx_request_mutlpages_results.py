@@ -26,14 +26,22 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver import ActionChains
 
 
+import time
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+import fnmatch
+import os
+
 # Other libraries
 
 from logger import logger_config
-from common import file_utils
+from common import file_utils, download_utils
 
 # Current programm
 import connexion_param
 
+
+CFX_EXCEL_FILES_DOWNLOADED_PATTERN = "QueryResult*.xlsx"
 
 OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_request_results"
 nom_du_fichier_final = "generated_file_yda.xlsx"
@@ -53,7 +61,7 @@ DEFAULT_NUMBER_OF_THREADS = 2
 @dataclass
 class SaveCfxRequestMultipagesResultsApplication:
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
-    download_directory = DEFAULT_DOWNLOAD_DIRECTORY
+    web_browser_download_directory = DEFAULT_DOWNLOAD_DIRECTORY
 
     errors_output_sub_directory_name = "errors"
     driver: ChromiumDriver = None
@@ -137,13 +145,15 @@ class SaveCfxRequestMultipagesResultsApplication:
         export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'Exporter vers un tableur Excel')]")
         export_button.click()
 
+        file_downloaded_path: Optional[str] = download_utils.monitor_download(directory_path=self.web_browser_download_directory, filename_pattern=CFX_EXCEL_FILES_DOWNLOADED_PATTERN)
+
         file_utils.create_folder_if_not_exist(OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME)
         # Attendre que le fichier soit téléchargé
         self.wait_for_download_to_complete(OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME)
 
         # Trouver le fichier téléchargé le plus récent
         list_of_files = os.listdir(OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME)
-        list_of_files = [file for file in list_of_files if file.(".xlsx") ]
+        list_of_files = [file for file in list_of_files if file.startswith("QueryResult") and file.endswith(".xlsx")]
         latest_file = max([os.path.join(OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME, f) for f in list_of_files], key=os.path.getctime)
         logger_config.print_and_log_info(f"latest_file: {latest_file}")
 
