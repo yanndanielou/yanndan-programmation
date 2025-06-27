@@ -29,14 +29,16 @@ from selenium.webdriver import ActionChains
 # Other libraries
 
 from logger import logger_config
-from common import json_encoders
+from common import file_utils
 
 # Current programm
 import connexion_param
 
 
 OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_request_results"
+nom_du_fichier_final = "generated_file_yda.xlsx"
 
+DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
 
 CREATE_PARSED_EXTENDED_HISTORY_FILES = False
 
@@ -49,8 +51,9 @@ DEFAULT_NUMBER_OF_THREADS = 2
 
 
 @dataclass
-class SaveCfxReequestMultipagesResultsApplication:
+class SaveCfxRequestMultipagesResultsApplication:
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
+    download_directory = DEFAULT_DOWNLOAD_DIRECTORY
 
     errors_output_sub_directory_name = "errors"
     driver: ChromiumDriver = None
@@ -64,11 +67,7 @@ class SaveCfxReequestMultipagesResultsApplication:
             self.output_parent_directory_name,
             f"{self.output_parent_directory_name}/{self.errors_output_sub_directory_name}",
         ]:
-            if not os.path.exists(directory_path):
-                logger_config.print_and_log_info(f"Create folder {directory_path}")
-                os.mkdir(directory_path)
-            else:
-                logger_config.print_and_log_info(f"Folder {directory_path} already exists")
+            file_utils.create_folder_if_not_exist(directory_path)
 
         self.create_webdriver_and_login()
 
@@ -108,14 +107,17 @@ class SaveCfxReequestMultipagesResultsApplication:
         time.sleep(1000)
 
     # Fonction pour vérifier l'achèvement de téléchargement
-    def wait_for_download_to_complete(self, download_dir, timeout=120):
+    def wait_for_download_to_complete(self, download_dir: str, timeout: int = 120) -> None:
         seconds_passed = 0
         while seconds_passed < timeout:
             files = os.listdir(download_dir)
             # Vérifiez si un fichier temporaire est téléchargé
             if not any(file.endswith(".part") or file.endswith(".crdownload") for file in files):
                 # Si aucun fichier temporaire trouvé, vérifiez si le fichier Excel est présent et complet
+                logger_config.print_and_log_info(f"downloaded is in progress {(file.endswith(".part") or file.endswith(".crdownload") for file in files)}")
+
                 if any(file.endswith(".xlsx") for file in files):
+                    logger_config.print_and_log_info(f"downloaded filee found:{(file.endswith(".xlsx") for file in files)}")
                     break
             time.sleep(1)
             seconds_passed += 1
@@ -135,21 +137,18 @@ class SaveCfxReequestMultipagesResultsApplication:
         export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'Exporter vers un tableur Excel')]")
         export_button.click()
 
+        file_utils.create_folder_if_not_exist(OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME)
         # Attendre que le fichier soit téléchargé
-        self.wait_for_download_to_complete(download_folder_path)
+        self.wait_for_download_to_complete(OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME)
 
         # Trouver le fichier téléchargé le plus récent
-        list_of_files = os.listdir(download_folder_path)
-        list_of_files = [file for file in list_of_files if file.endswith(".xlsx")]
-        latest_file = max([os.path.join(download_folder_path, f) for f in list_of_files], key=os.path.getctime)
+        list_of_files = os.listdir(OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME)
+        list_of_files = [file for file in list_of_files if file.(".xlsx") ]
+        latest_file = max([os.path.join(OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME, f) for f in list_of_files], key=os.path.getctime)
+        logger_config.print_and_log_info(f"latest_file: {latest_file}")
 
         # Renommer le fichier téléchargé
-        os.rename(latest_file, os.path.join(download_folder_path, nom_du_fichier_final))
-
-        # Trouver le fichier téléchargé le plus récent
-        list_of_files = os.listdir(download_folder_path)
-        list_of_files = [file for file in list_of_files if file.endswith(".xlsx")]
-        latest_file = max([os.path.join(download_folder_path, f) for f in list_of_files], key=os.path.getctime)
+        os.rename(latest_file, os.path.join(OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME, nom_du_fichier_final))
 
         # excel_export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'Exporter vers un tableur Excel')]")
         # "excel_export_button.click()
@@ -162,7 +161,14 @@ class SaveCfxReequestMultipagesResultsApplication:
 
         # Set up the Chrome options
         chrome_options = selenium.webdriver.chrome.options.Options()
-        chrome_options.headless = True
+        prefs = {
+            "download.default_directory": OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME,
+            "savefile.default_directory": OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME,
+            "download.prompt_for_download": False,
+            "download.directory_upgrade": True,
+            "safebrowsing.enabled": True,
+        }
+        chrome_options.add_experimental_option("prefs", prefs)
 
         # Create a new instance of the Chrome self.driver
         driver_service = Service(chrome_driver_path)
@@ -208,7 +214,7 @@ class SaveCfxReequestMultipagesResultsApplication:
             WebDriverWait(self.driver, 10).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
 
         with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
-            time.sleep(15)
+            time.sleep(11)
 
 
 def main() -> None:
@@ -225,14 +231,12 @@ def main() -> None:
 
         output_parent_directory_name = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
 
-        output_parent_directory_name = output_parent_directory_name
-
         # first_cfx_index = 10
         # last_cfx_index = 100
 
         logger_config.print_and_log_info(f"output_parent_directory_name: {output_parent_directory_name}")
 
-        application: SaveCfxReequestMultipagesResultsApplication = SaveCfxReequestMultipagesResultsApplication(
+        application: SaveCfxRequestMultipagesResultsApplication = SaveCfxRequestMultipagesResultsApplication(
             output_parent_directory_name=output_parent_directory_name,
         )
         application.run()
