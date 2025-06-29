@@ -1,7 +1,7 @@
 # -*-coding:Utf-8 -*
-from logger import logger_config
-
 import os
+
+from logger import logger_config
 
 
 def create_folder_if_not_exist(directory_path: str) -> bool:
