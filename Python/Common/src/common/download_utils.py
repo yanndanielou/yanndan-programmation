@@ -1,11 +1,17 @@
 # -*-coding:Utf-8 -*
 
+import fnmatch
+import time
 from typing import Optional
 
-import time
+from watchdog.events import (
+    DirCreatedEvent,
+    DirModifiedEvent,
+    FileCreatedEvent,
+    FileModifiedEvent,
+    FileSystemEventHandler,
+)
 from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler, DirCreatedEvent, FileCreatedEvent, DirModifiedEvent, FileModifiedEvent
-import fnmatch
 
 from logger import logger_config
 
