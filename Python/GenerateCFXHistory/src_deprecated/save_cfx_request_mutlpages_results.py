@@ -1,45 +1,39 @@
 # Standard
-# Standard
 import argparse
-
-import pickle
-
-import threading
-import queue
+import fnmatch
+import inspect
 import os
+import pickle
+import queue
+import threading
 import time
-
+from collections.abc import Generator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
+
+import selenium.webdriver.chrome.options
+import selenium.webdriver.firefox.options
+from common import download_utils, file_utils
+
+import shutil
+
+
+# Other libraries
+from logger import logger_config
 
 # Third Party
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
-import selenium.webdriver.chrome.options
-import selenium.webdriver.firefox.options
-from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.chromium.webdriver import ChromiumDriver
-from selenium.webdriver.support.ui import Select
 from selenium.webdriver import ActionChains
-
-
-import time
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-import fnmatch
-import os
-
-# Other libraries
-
-from logger import logger_config
-from common import file_utils, download_utils
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chromium.webdriver import ChromiumDriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.ui import Select, WebDriverWait
 
 # Current programm
 import connexion_param
-
 
 CFX_EXCEL_FILES_DOWNLOADED_PATTERN = "QueryResult*.xlsx"
 
@@ -57,6 +51,42 @@ DEFAULT_DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = False
 
 DEFAULT_NUMBER_OF_THREADS = 2
 
+BIGGEST_PROJECTS_NAMES: List[str] = [
+    "SA_RMP_COM",
+    "SA_RMP_REL",
+    "ESBO",
+    "SA_RMP_SIG_Site",
+    "TrashCan",
+    "DK_S-bane",
+    "Cargo",
+    "Sicas Tools",
+    "Op_LT_D_901",
+    "Simis_Basis",
+    "OC501",
+    "OC100",
+    "ESF",
+    "TGMT R3",
+    "AU_BHPBIO",
+    "GB_Crossrail_CRL",
+    "Simis_W_Basis",
+    "TGMT R1",
+    "BE_ETCS_L2_IXL_RO",
+    "LZB80E - LZB-STM",
+    "EPOS",
+    "Entegro",
+    "Controlguide",
+    "ATSP",
+    "FI_ESKO",
+    "US_NYCT_CBTC-Queens-Blvd_61OP-00025",
+]
+
+
+@contextmanager
+def surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, screenshots_directory_path: str) -> Generator[float, None, None]:
+    remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/before {label}.png")
+    yield 0.0
+    remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/after {label}.png")
+
 
 @dataclass
 class SaveCfxRequestMultipagesResultsApplication:
@@ -64,31 +94,41 @@ class SaveCfxRequestMultipagesResultsApplication:
     web_browser_download_directory = DEFAULT_DOWNLOAD_DIRECTORY
 
     errors_output_sub_directory_name = "errors"
+    screenshots_output_sub_directory_name = "screenshots"
     driver: ChromiumDriver = None
 
     def __post_init__(self) -> None:
         self.lock = threading.Lock()
+        self.errors_output_relative_path = f"{self.output_parent_directory_name}/{self.errors_output_sub_directory_name}"
+        self.screenshots_output_relative_path = f"{self.output_parent_directory_name}/{self.screenshots_output_sub_directory_name}"
 
     def run(self) -> None:
 
         for directory_path in [
             self.output_parent_directory_name,
-            f"{self.output_parent_directory_name}/{self.errors_output_sub_directory_name}",
+            self.errors_output_relative_path,
+            self.screenshots_output_relative_path,
         ]:
             file_utils.create_folder_if_not_exist(directory_path)
 
         self.create_webdriver_and_login()
 
-        change_state_query = "Personal%20Queries/NExTEO_ATS_Courbes/NExteo_ATSp_changements_etats"
-        change_state_query = "Personal%20Queries/all_projects/all_projets_changements_etats"
-        change_state_query = "66875867"
-        self.open_request_url(change_state_query)
+        for project_name in BIGGEST_PROJECTS_NAMES:
+            logger_config.print_and_log_info(f"Handling project {project_name}")
+            self.generate_and_dowload_query_for_project(project_name=project_name)
+
+        time.sleep(1000)
+
+    def generate_and_dowload_query_for_project(self, project_name: str) -> None:
+        project_manual_selection_change_state_query = "66875867"
+        self.open_request_url(project_manual_selection_change_state_query)
 
         # resp = webdriver.request('POST','https://www.facebook.com/login/device-based/regular/login/?login_attempt=1&lwv=110', params)
-
+        self.driver.get_screenshot_as_file(f"{project_name} before element_to_be_clickable Selectionnr.png")
         selectionner_button_containerNode = WebDriverWait(self.driver, 100).until(
             expected_conditions.element_to_be_clickable((By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']"))
         )
+        self.driver.get_screenshot_as_file("after element_to_be_clickable Selectionnr.png")
         # selectionner_button_containerNode = self.driver.find_element(By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']")
         selectionner_button_containerNode.click()
 
@@ -96,9 +136,10 @@ class SaveCfxRequestMultipagesResultsApplication:
         # select_selector = Select(list_projets_select_element)
         # select_selector.select_by_visible_text("FR_NEXTEO")
 
-        nexteo_option_element = self.driver.find_element(By.XPATH, "//select[@id='cq_widget_CqDoubleListBox_0_choiceList']//option[text()='FR_NEXTEO']")
+        project_option_element = self.driver.find_element(By.XPATH, f"//select[@id='cq_widget_CqDoubleListBox_0_choiceList']//option[text()='{project_name}']")
         actions = ActionChains(self.driver)
-        actions.double_click(nexteo_option_element).perform()
+        self.driver.get_screenshot_as_file("before double_click.png")
+        actions.double_click(project_option_element).perform()
 
         ok_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='OK']")
         ok_button.click()
@@ -107,12 +148,12 @@ class SaveCfxRequestMultipagesResultsApplication:
         executer_requete_button.click()
 
         with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
+            self.driver.get_screenshot_as_file("login_champfx before Additional waiting time.png")
             time.sleep(10)
+            self.driver.get_screenshot_as_file("login_champfx after Additional waiting time.png")
 
         with logger_config.stopwatch_with_label(label="locate_save_excel_click_it", enabled=True):
-            self.dowload_excel_file()
-
-        time.sleep(1000)
+            self.dowload_states_changes_excel_file_for_project(project_name)
 
     # Fonction pour vérifier l'achèvement de téléchargement
     def wait_for_download_to_complete(self, download_dir: str, timeout: int = 120) -> None:
@@ -133,9 +174,11 @@ class SaveCfxRequestMultipagesResultsApplication:
             raise Exception("Le téléchargement n'a pas pu être confirmé dans le délai imparti.")
 
     # Locate the "History" tab using its unique attributes and click it
-    def dowload_excel_file(self) -> None:
+    def dowload_states_changes_excel_file_for_project(self, project_name: str) -> bool:
 
         arrow_to_acces_export = WebDriverWait(self.driver, 40).until(expected_conditions.element_to_be_clickable((By.ID, "dijit_form_ComboButton_1_arrow")))
+        self.driver.get_screenshot_as_file("before_arrow_to_acces_export.click.png")
+
         arrow_to_acces_export.click()
 
         self.driver.get_screenshot_as_file("after_arrow_to_acces_export_click.png")
@@ -143,26 +186,19 @@ class SaveCfxRequestMultipagesResultsApplication:
         # history_tab = self.driver.find_element(By.XPATH, "//text()='Exporter vers un tableur Excel']")
         # export_button = self.driver.find_element(By.ID, "dijit_MenuItem_42")
         export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'Exporter vers un tableur Excel')]")
+
+        download_file_detector = download_utils.DownloadFileDetector(directory_path=self.web_browser_download_directory, filename_pattern=CFX_EXCEL_FILES_DOWNLOADED_PATTERN)
         export_button.click()
 
-        file_downloaded_path: Optional[str] = download_utils.monitor_download(directory_path=self.web_browser_download_directory, filename_pattern=CFX_EXCEL_FILES_DOWNLOADED_PATTERN)
+        file_downloaded_path: Optional[str] = download_file_detector.monitor_download()
+        if not file_downloaded_path:
+            logger_config.print_and_log_error(f"No downloaded file found for {project_name}")
+            return False
 
-        file_utils.create_folder_if_not_exist(OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME)
-        # Attendre que le fichier soit téléchargé
-        self.wait_for_download_to_complete(OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME)
+        logger_config.print_and_log_info(f"File downloaded : {file_downloaded_path}")
+        shutil.move(file_downloaded_path, f"{self.output_parent_directory_name}/{project_name}_states_changes.xlsx")
 
-        # Trouver le fichier téléchargé le plus récent
-        list_of_files = os.listdir(OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME)
-        list_of_files = [file for file in list_of_files if file.startswith("QueryResult") and file.endswith(".xlsx")]
-        latest_file = max([os.path.join(OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME, f) for f in list_of_files], key=os.path.getctime)
-        logger_config.print_and_log_info(f"latest_file: {latest_file}")
-
-        # Renommer le fichier téléchargé
-        os.rename(latest_file, os.path.join(OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME, nom_du_fichier_final))
-
-        # excel_export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'Exporter vers un tableur Excel')]")
-        # "excel_export_button.click()
-        pass
+        return True
 
     def create_webdriver_chrome(self) -> None:
         logger_config.print_and_log_info("create_webdriver_chrome")
@@ -201,30 +237,40 @@ class SaveCfxRequestMultipagesResultsApplication:
             self.driver.get(login_url)
 
         with logger_config.stopwatch_with_label(label="Waited page is loaded", enable_print=True):
-            WebDriverWait(self.driver, 100).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
-            WebDriverWait(self.driver, 40).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
+            with surround_with_screenshots(label="login_champfx - title_contains ok", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+                WebDriverWait(self.driver, 100).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
+            # self.driver.get_screenshot_as_file("login_champfx: title_contains ok.png")
+
+            with surround_with_screenshots(label="login_champfx - document.readyState complete", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+                WebDriverWait(self.driver, 40).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
             try:
                 WebDriverWait(self.driver, 100).until(expected_conditions.text_to_be_present_in_element((By.ID, "welcomeMsg"), "AD001\\fr232487"))
             except TimeoutException as e:
                 logger_config.print_and_log_exception(e)
 
-        with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
-            time.sleep(10)
+        with surround_with_screenshots(label="login_champfx - Additional waiting time", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+            with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
+                time.sleep(10)
 
     def open_request_url(self, request_full_path: str) -> None:
         request_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/QUERY/{request_full_path}?format=HTML&loginId={connexion_param.champfx_login}&password={connexion_param.champfx_password}&noframes=true"
 
         with logger_config.stopwatch_with_label(f"Driver get url {request_url}"):
             self.driver.get(request_url)
+        self.driver.get_screenshot_as_file("open_request_url after get(request_url).png")
 
         with logger_config.stopwatch_with_label(label="Waited Title is now good"):
             WebDriverWait(self.driver, 10).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
+            self.driver.get_screenshot_as_file("open_request_url title_contains ok.png")
 
         with logger_config.stopwatch_with_label(label="Wait for the page to be fully loaded (JavaScript):: document.readyState now good"):
             WebDriverWait(self.driver, 10).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
+            self.driver.get_screenshot_as_file("open_request_url document.readyState complete.png")
 
         with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
-            time.sleep(11)
+            self.driver.get_screenshot_as_file("open_request_url before Additional waiting time.png")
+            time.sleep(10)
+            self.driver.get_screenshot_as_file("open_request_url after Additional waiting time.png")
 
 
 def main() -> None:
