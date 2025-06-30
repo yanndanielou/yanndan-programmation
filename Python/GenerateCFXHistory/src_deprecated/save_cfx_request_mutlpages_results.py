@@ -124,11 +124,11 @@ class SaveCfxRequestMultipagesResultsApplication:
         self.open_request_url(project_manual_selection_change_state_query)
 
         # resp = webdriver.request('POST','https://www.facebook.com/login/device-based/regular/login/?login_attempt=1&lwv=110', params)
-        self.driver.get_screenshot_as_file(f"{project_name} before element_to_be_clickable Selectionnr.png")
+        self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/{project_name} before element_to_be_clickable Selectionnr.png")
         selectionner_button_containerNode = WebDriverWait(self.driver, 100).until(
             expected_conditions.element_to_be_clickable((By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']"))
         )
-        self.driver.get_screenshot_as_file("after element_to_be_clickable Selectionnr.png")
+        self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/after element_to_be_clickable Selectionnr.png")
         # selectionner_button_containerNode = self.driver.find_element(By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']")
         selectionner_button_containerNode.click()
 
@@ -138,7 +138,7 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         project_option_element = self.driver.find_element(By.XPATH, f"//select[@id='cq_widget_CqDoubleListBox_0_choiceList']//option[text()='{project_name}']")
         actions = ActionChains(self.driver)
-        self.driver.get_screenshot_as_file("before double_click.png")
+        self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/before double_click.png")
         actions.double_click(project_option_element).perform()
 
         ok_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='OK']")
@@ -148,9 +148,9 @@ class SaveCfxRequestMultipagesResultsApplication:
         executer_requete_button.click()
 
         with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
-            self.driver.get_screenshot_as_file("login_champfx before Additional waiting time.png")
+            self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/login_champfx before Additional waiting time.png")
             time.sleep(10)
-            self.driver.get_screenshot_as_file("login_champfx after Additional waiting time.png")
+            self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/login_champfx after Additional waiting time.png")
 
         with logger_config.stopwatch_with_label(label="locate_save_excel_click_it", enabled=True):
             self.dowload_states_changes_excel_file_for_project(project_name)
@@ -177,11 +177,11 @@ class SaveCfxRequestMultipagesResultsApplication:
     def dowload_states_changes_excel_file_for_project(self, project_name: str) -> bool:
 
         arrow_to_acces_export = WebDriverWait(self.driver, 40).until(expected_conditions.element_to_be_clickable((By.ID, "dijit_form_ComboButton_1_arrow")))
-        self.driver.get_screenshot_as_file("before_arrow_to_acces_export.click.png")
+        self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/before_arrow_to_acces_export.click.png")
 
         arrow_to_acces_export.click()
 
-        self.driver.get_screenshot_as_file("after_arrow_to_acces_export_click.png")
+        self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/after_arrow_to_acces_export_click.png")
 
         # history_tab = self.driver.find_element(By.XPATH, "//text()='Exporter vers un tableur Excel']")
         # export_button = self.driver.find_element(By.ID, "dijit_MenuItem_42")
@@ -257,20 +257,20 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         with logger_config.stopwatch_with_label(f"Driver get url {request_url}"):
             self.driver.get(request_url)
-        self.driver.get_screenshot_as_file("open_request_url after get(request_url).png")
+        self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/open_request_url after get(request_url).png")
 
         with logger_config.stopwatch_with_label(label="Waited Title is now good"):
             WebDriverWait(self.driver, 10).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
-            self.driver.get_screenshot_as_file("open_request_url title_contains ok.png")
+            self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/open_request_url title_contains ok.png")
 
         with logger_config.stopwatch_with_label(label="Wait for the page to be fully loaded (JavaScript):: document.readyState now good"):
             WebDriverWait(self.driver, 10).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
-            self.driver.get_screenshot_as_file("open_request_url document.readyState complete.png")
+            self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/open_request_url document.readyState complete.png")
 
         with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
-            self.driver.get_screenshot_as_file("open_request_url before Additional waiting time.png")
+            self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/open_request_url before Additional waiting time.png")
             time.sleep(10)
-            self.driver.get_screenshot_as_file("open_request_url after Additional waiting time.png")
+            self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/open_request_url after Additional waiting time.png")
 
 
 def main() -> None:
