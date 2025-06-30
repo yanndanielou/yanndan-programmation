@@ -2,7 +2,11 @@
 
 import fnmatch
 import time
-from typing import Optional
+from typing import Optional, List, Tuple
+
+from dataclasses import dataclass, field, fields
+import os
+
 
 from watchdog.events import (
     DirCreatedEvent,
@@ -35,21 +39,59 @@ class DownloadEventHandler(FileSystemEventHandler):
             self.file_detected_path = event.src_path
 
 
-def monitor_download(directory_path: str, filename_pattern: str, timeout_in_seconds: int = 100) -> Optional[str]:
-    download_event_handler = DownloadEventHandler(filename_pattern)
-    observer = Observer()
-    observer.schedule(download_event_handler, directory_path, recursive=False)
-    observer.start()
+def get_files_and_modified_time(directory_path: str, filename_pattern: str) -> List[Tuple[str, float]]:
+    files_and_modified_time: List[Tuple[str, float]] = []
+    for file in os.listdir(directory_path):
+        if fnmatch.fnmatch(file, filename_pattern):
+            file_path = os.path.join(directory_path, file)
+            files_and_modified_time.append((file_path, os.path.getmtime(file_path)))
+    return files_and_modified_time
 
-    logger_config.print_and_log_info("En attente du téléchargement ou de la mise à jour du fichier...")
-    try:
-        while not download_event_handler.file_detected and timeout_in_seconds > 0:
-            time.sleep(1)
-            timeout_in_seconds -= 1
-    except KeyboardInterrupt:
+
+@dataclass
+class DownloadFileDetector:
+    directory_path: str
+    filename_pattern: str
+    remaining_timeout_in_seconds: int = field(init=False)
+    timeout_in_seconds: int = 100
+    initial_files_and_modified_time: List[Tuple[str, float]] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        self.remaining_timeout_in_seconds = self.timeout_in_seconds
+        self.initial_files_and_modified_time = get_files_and_modified_time(self.directory_path, self.filename_pattern)
+        logger_config.print_and_log_info(f"At init, {len(self.initial_files_and_modified_time)} files detected:{self.initial_files_and_modified_time}")
+
+    def rescan_directory_for_changes(self) -> List[Tuple[str, float]]:
+        current_files_and_modified_time = get_files_and_modified_time(self.directory_path, self.filename_pattern)
+        logger_config.print_and_log_info(f"Current {len(current_files_and_modified_time)} files detected:{current_files_and_modified_time}")
+
+        differences = list(set(current_files_and_modified_time) - set(self.initial_files_and_modified_time))
+        logger_config.print_and_log_info(f"differences:{differences}")
+        return differences
+
+    def monitor_download(self) -> Optional[str]:
+        download_event_handler = DownloadEventHandler(self.filename_pattern)
+        observer = Observer()
+        observer.schedule(download_event_handler, self.directory_path, recursive=False)
+        observer.start()
+
+        logger_config.print_and_log_info("En attente du téléchargement ou de la mise à jour du fichier...")
+        try:
+            while not download_event_handler.file_detected and self.remaining_timeout_in_seconds > 0:
+                time.sleep(1)
+                self.remaining_timeout_in_seconds -= 1
+                manual_scan_files_modified_name_and_timestamp = self.rescan_directory_for_changes()
+                logger_config.print_and_log_info(f"Files downloaded found after manual scan:{manual_scan_files_modified_name_and_timestamp}")
+
+                if len(manual_scan_files_modified_name_and_timestamp) == 1:
+                    file_detected: Tuple[str, float] = manual_scan_files_modified_name_and_timestamp[0]
+                    file_detected_name = file_detected[0]
+                    logger_config.print_and_log_info(f"File download found after manual scan:{file_detected_name}")
+                    return file_detected_name
+        except KeyboardInterrupt:
+            observer.stop()
+            logger_config.print_and_log_warning("KeyboardInterrupt")
         observer.stop()
-        logger_config.print_and_log_warning("KeyboardInterrupt")
-    observer.stop()
-    observer.join()
+        observer.join()
 
-    return download_event_handler.file_detected_path
+        return download_event_handler.file_detected_path
