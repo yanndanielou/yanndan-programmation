@@ -95,7 +95,7 @@ class SaveCfxRequestMultipagesResultsApplication:
 
     errors_output_sub_directory_name = "errors"
     screenshots_output_sub_directory_name = "screenshots"
-    driver: ChromiumDriver = None
+    driver: ChromiumDriver = field(init=False)
 
     def __post_init__(self) -> None:
         self.lock = threading.Lock()
@@ -124,13 +124,12 @@ class SaveCfxRequestMultipagesResultsApplication:
         self.open_request_url(project_manual_selection_change_state_query)
 
         # resp = webdriver.request('POST','https://www.facebook.com/login/device-based/regular/login/?login_attempt=1&lwv=110', params)
-        self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/{project_name} before element_to_be_clickable Selectionnr.png")
-        selectionner_button_containerNode = WebDriverWait(self.driver, 100).until(
-            expected_conditions.element_to_be_clickable((By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']"))
-        )
-        self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/after element_to_be_clickable Selectionnr.png")
+        with surround_with_screenshots(label=f"{project_name} element_to_be_clickable Sélectionner", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+            selectionner_button_container_node = WebDriverWait(self.driver, 100).until(
+                expected_conditions.element_to_be_clickable((By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']"))
+            )
         # selectionner_button_containerNode = self.driver.find_element(By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']")
-        selectionner_button_containerNode.click()
+        selectionner_button_container_node.click()
 
         # list_projets_select_element = self.driver.find_element(By.ID, "cq_widget_CqDoubleListBox_0_choiceList")
         # select_selector = Select(list_projets_select_element)
@@ -138,50 +137,36 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         project_option_element = self.driver.find_element(By.XPATH, f"//select[@id='cq_widget_CqDoubleListBox_0_choiceList']//option[text()='{project_name}']")
         actions = ActionChains(self.driver)
-        self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/before double_click.png")
-        actions.double_click(project_option_element).perform()
+        with surround_with_screenshots(label=f"{project_name} project_option_element double_click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+            actions.double_click(project_option_element).perform()
 
         ok_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='OK']")
         ok_button.click()
 
-        executer_requete_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='Exécuter la requête']")
-        executer_requete_button.click()
+        with surround_with_screenshots(label=f"{project_name} Exécuter la requête", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+            executer_requete_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='Exécuter la requête']")
+            executer_requete_button.click()
 
-        with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
-            self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/login_champfx before Additional waiting time.png")
-            time.sleep(10)
-            self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/login_champfx after Additional waiting time.png")
+        with surround_with_screenshots(
+            label=f"{project_name} - request execution additional waiting time", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+        ):
+            with logger_config.stopwatch_with_label(label=f"{project_name} request execution additional waiting time", enabled=True):
+                time.sleep(10)
 
-        with logger_config.stopwatch_with_label(label="locate_save_excel_click_it", enabled=True):
-            self.dowload_states_changes_excel_file_for_project(project_name)
-
-    # Fonction pour vérifier l'achèvement de téléchargement
-    def wait_for_download_to_complete(self, download_dir: str, timeout: int = 120) -> None:
-        seconds_passed = 0
-        while seconds_passed < timeout:
-            files = os.listdir(download_dir)
-            # Vérifiez si un fichier temporaire est téléchargé
-            if not any(file.endswith(".part") or file.endswith(".crdownload") for file in files):
-                # Si aucun fichier temporaire trouvé, vérifiez si le fichier Excel est présent et complet
-                logger_config.print_and_log_info(f"downloaded is in progress {(file.endswith(".part") or file.endswith(".crdownload") for file in files)}")
-
-                if any(file.endswith(".xlsx") for file in files):
-                    logger_config.print_and_log_info(f"downloaded filee found:{(file.endswith(".xlsx") for file in files)}")
-                    break
-            time.sleep(1)
-            seconds_passed += 1
-        else:
-            raise Exception("Le téléchargement n'a pas pu être confirmé dans le délai imparti.")
+        with surround_with_screenshots(label=f"{project_name} locate_save_excel_click_it", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+            with logger_config.stopwatch_with_label(label=f"{project_name} locate_save_excel_click_it", enabled=True):
+                self.dowload_states_changes_excel_file_for_project(project_name)
 
     # Locate the "History" tab using its unique attributes and click it
     def dowload_states_changes_excel_file_for_project(self, project_name: str) -> bool:
 
-        arrow_to_acces_export = WebDriverWait(self.driver, 40).until(expected_conditions.element_to_be_clickable((By.ID, "dijit_form_ComboButton_1_arrow")))
-        self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/before_arrow_to_acces_export.click.png")
+        with surround_with_screenshots(
+            label=f"{project_name} arrow_to_acces_export element_to_be_clickable", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+        ):
+            arrow_to_acces_export = WebDriverWait(self.driver, 40).until(expected_conditions.element_to_be_clickable((By.ID, "dijit_form_ComboButton_1_arrow")))
 
-        arrow_to_acces_export.click()
-
-        self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/after_arrow_to_acces_export_click.png")
+        with surround_with_screenshots(label=f"{project_name} arrow_to_acces_export click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+            arrow_to_acces_export.click()
 
         # history_tab = self.driver.find_element(By.XPATH, "//text()='Exporter vers un tableur Excel']")
         # export_button = self.driver.find_element(By.ID, "dijit_MenuItem_42")
@@ -196,7 +181,7 @@ class SaveCfxRequestMultipagesResultsApplication:
             return False
 
         logger_config.print_and_log_info(f"File downloaded : {file_downloaded_path}")
-        shutil.move(file_downloaded_path, f"{self.output_parent_directory_name}/{project_name}_states_changes.xlsx")
+        shutil.move(file_downloaded_path, f"{self.output_parent_directory_name}/states_changes_project_{project_name}.xlsx")
 
         return True
 
@@ -244,7 +229,10 @@ class SaveCfxRequestMultipagesResultsApplication:
             with surround_with_screenshots(label="login_champfx - document.readyState complete", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
                 WebDriverWait(self.driver, 40).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
             try:
-                WebDriverWait(self.driver, 100).until(expected_conditions.text_to_be_present_in_element((By.ID, "welcomeMsg"), "AD001\\fr232487"))
+                with surround_with_screenshots(
+                    label="login_champfx - text_to_be_present_in_element welcomeMsg", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+                ):
+                    WebDriverWait(self.driver, 100).until(expected_conditions.text_to_be_present_in_element((By.ID, "welcomeMsg"), "AD001\\fr232487"))
             except TimeoutException as e:
                 logger_config.print_and_log_exception(e)
 
