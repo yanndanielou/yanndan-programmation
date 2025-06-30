@@ -1,13 +1,13 @@
 # -*-coding:Utf-8 -*
 
 import fnmatch
-import time
-from typing import Optional, List, Tuple
-
-from dataclasses import dataclass, field, fields
 import os
+import time
+from dataclasses import dataclass, field
+from typing import List, Optional, Tuple
+from warnings import deprecated
 
-
+from logger import logger_config
 from watchdog.events import (
     DirCreatedEvent,
     DirModifiedEvent,
@@ -16,8 +16,6 @@ from watchdog.events import (
     FileSystemEventHandler,
 )
 from watchdog.observers import Observer
-
-from logger import logger_config
 
 
 class DownloadEventHandler(FileSystemEventHandler):
@@ -39,7 +37,7 @@ class DownloadEventHandler(FileSystemEventHandler):
             self.file_detected_path = event.src_path
 
 
-def get_files_and_modified_time(directory_path: str, filename_pattern: str) -> List[Tuple[str, float]]:
+def get_files_and_modification_time(directory_path: str, filename_pattern: str) -> List[Tuple[str, float]]:
     files_and_modified_time: List[Tuple[str, float]] = []
     for file in os.listdir(directory_path):
         if fnmatch.fnmatch(file, filename_pattern):
@@ -58,11 +56,11 @@ class DownloadFileDetector:
 
     def __post_init__(self) -> None:
         self.remaining_timeout_in_seconds = self.timeout_in_seconds
-        self.initial_files_and_modified_time = get_files_and_modified_time(self.directory_path, self.filename_pattern)
+        self.initial_files_and_modified_time = get_files_and_modification_time(self.directory_path, self.filename_pattern)
         logger_config.print_and_log_info(f"At init, {len(self.initial_files_and_modified_time)} files detected:{self.initial_files_and_modified_time}")
 
     def rescan_directory_for_changes(self) -> List[Tuple[str, float]]:
-        current_files_and_modified_time = get_files_and_modified_time(self.directory_path, self.filename_pattern)
+        current_files_and_modified_time = get_files_and_modification_time(self.directory_path, self.filename_pattern)
         logger_config.print_and_log_info(f"Current {len(current_files_and_modified_time)} files detected:{current_files_and_modified_time}")
 
         differences = list(set(current_files_and_modified_time) - set(self.initial_files_and_modified_time))
@@ -75,7 +73,7 @@ class DownloadFileDetector:
         observer.schedule(download_event_handler, self.directory_path, recursive=False)
         observer.start()
 
-        logger_config.print_and_log_info("En attente du téléchargement ou de la mise à jour du fichier...")
+        logger_config.print_and_log_info("Waiting download...")
         try:
             while not download_event_handler.file_detected and self.remaining_timeout_in_seconds > 0:
                 time.sleep(1)
@@ -94,4 +92,26 @@ class DownloadFileDetector:
         observer.stop()
         observer.join()
 
+        logger_config.print_and_log_info("End monitor_download")
+
         return download_event_handler.file_detected_path
+
+
+# Fonction pour vérifier l'achèvement de téléchargement
+@deprecated("Kept just in case")
+def wait_for_download_to_complete_deprecated(download_dir: str, timeout: int = 120) -> None:
+    seconds_passed = 0
+    while seconds_passed < timeout:
+        files = os.listdir(download_dir)
+        # Vérifiez si un fichier temporaire est téléchargé
+        if not any(file.endswith(".part") or file.endswith(".crdownload") for file in files):
+            # Si aucun fichier temporaire trouvé, vérifiez si le fichier Excel est présent et complet
+            logger_config.print_and_log_info(f"downloaded is in progress {(file.endswith(".part") or file.endswith(".crdownload") for file in files)}")
+
+            if any(file.endswith(".xlsx") for file in files):
+                logger_config.print_and_log_info(f"downloaded filee found:{(file.endswith(".xlsx") for file in files)}")
+                break
+        time.sleep(1)
+        seconds_passed += 1
+    else:
+        raise Exception("Le téléchargement n'a pas pu être confirmé dans le délai imparti.")
