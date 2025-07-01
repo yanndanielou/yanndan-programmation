@@ -113,9 +113,20 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         self.create_webdriver_and_login()
 
+        number_of_exceptions_caught: int = 0
         for project_name in BIGGEST_PROJECTS_NAMES:
             logger_config.print_and_log_info(f"Handling project {project_name}")
-            self.generate_and_dowload_query_for_project(project_name=project_name)
+            try:
+                with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project:{project_name}"):
+                    self.generate_and_dowload_query_for_project(project_name=project_name)
+            except Exception as e:
+                number_of_exceptions_caught += 1
+                logger_config.print_and_log_exception(e)
+                self.driver.get_screenshot_as_file(f"{self.screenshots_output_sub_directory_name}/{project_name} {number_of_exceptions_caught} th Exception caught.png")
+                with logger_config.stopwatch_with_label(f"reset_driver :{project_name}"):
+                    self.reset_driver()
+                with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project:{project_name}"):
+                    self.generate_and_dowload_query_for_project(project_name=project_name)
 
         time.sleep(1000)
 
