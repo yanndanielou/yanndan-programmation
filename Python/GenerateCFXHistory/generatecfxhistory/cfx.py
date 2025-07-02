@@ -355,7 +355,7 @@ class ChampFXLibrary:
             self._cfx_users_library = cfx_users_library
         else:
             with logger_config.stopwatch_with_label("Load CfxUserLibrary"):
-                self._cfx_users_library = role.CfxUserLibrary(DEFAULT_USER_AND_ROLE_DATA_FILE_FULL_PATH, release_role_mapping.next_atsp_release_subsystem_mapping)
+                self._cfx_users_library = role.CfxUserLibrary(user_and_role_data_text_file_full_path, release_role_mapping.next_atsp_release_subsystem_mapping)
 
         with logger_config.stopwatch_with_label("ChampFXLibrary creation and initialisation"):
 
