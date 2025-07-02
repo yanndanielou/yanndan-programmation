@@ -19,6 +19,7 @@ from common import download_utils, file_utils
 
 import shutil
 
+import logging
 
 # Other libraries
 from logger import logger_config
@@ -38,8 +39,8 @@ import connexion_param
 
 CFX_EXCEL_FILES_DOWNLOADED_PATTERN = "QueryResult*.xlsx"
 
+DOWNLOADED_FILES_FINAL_DIRECTORY = "Input"
 OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_request_results"
-nom_du_fichier_final = "generated_file_yda.xlsx"
 
 DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
 
@@ -79,7 +80,63 @@ BIGGEST_PROJECTS_NAMES: List[str] = [
     "ATSP",
     "FI_ESKO",
     "US_NYCT_CBTC-Queens-Blvd_61OP-00025",
+    "NL_EBS_PLUS",
+    "TGMT R2",
+    "PTC_OBU",
+    "FR_CS_Op_and_Maint",
+    "ML_Projektierungstools",
+    "ES_AVE_S10x",
+    "LT_Siauliai_Klaipeda",
+    "HK_Signalling_SCL",
+    "BE_ETCS_L2_IXL",
+    "TCR3_CBTC",
+    "CH_CHP_ETCS",
+    "GCP5000",
+    "FR_PAR4",
+    "US_PATH_CBTC-Phase2-STS-F_61OP-70051",
+    "iVIU_PTC_Console",
+    "MY_KVLRT3-SIG",
+    "LZB8016",
+    "SA_RMP_CIS",
+    "SA_RMP_SIG",
+    "FR_PL14",
+    "NO_NOR_TRA",
+    "Stage",
+    "SA_RMP_PSD",
+    "STAC",
+    "Engineering_Tools",
+    "BAI",
+    "DE_FPTS",
+    "Simis_W_Logic_International",
+    "IN_CMRP1",
+    "FR_NEXTEO",
 ]
+
+
+@contextmanager
+def stopwatch_with_label_and_surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, screenshots_directory_path: str) -> Generator[float, None, None]:
+    """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
+    https://www.docstring.fr/glossaire/with/"""
+    remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/before {label}.png")
+    debut = time.perf_counter()
+    yield time.perf_counter() - debut
+    fin = time.perf_counter()
+    remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/after {label}.png")
+
+    duree = fin - debut
+    to_print_and_log = f"{label} Elapsed: {duree:.2f} seconds"
+
+    log_timestamp = time.asctime(time.localtime(time.time()))
+
+    previous_stack = inspect.stack(0)[2]
+    file_name = previous_stack.filename
+    line_number = previous_stack.lineno
+    calling_file_name_and_line_number = file_name + ":" + str(line_number)
+
+    # pylint: disable=line-too-long
+    print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
+
+    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
 
 
 @contextmanager
@@ -92,6 +149,7 @@ def surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, scr
 @dataclass
 class SaveCfxRequestMultipagesResultsApplication:
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
+    output_downloaded_files_final_directory_path: str = DOWNLOADED_FILES_FINAL_DIRECTORY
     web_browser_download_directory = DEFAULT_DOWNLOAD_DIRECTORY
 
     errors_output_sub_directory_name = "errors"
@@ -105,23 +163,19 @@ class SaveCfxRequestMultipagesResultsApplication:
 
     def run(self) -> None:
 
-        for directory_path in [
-            self.output_parent_directory_name,
-            self.errors_output_relative_path,
-            self.screenshots_output_relative_path,
-        ]:
+        for directory_path in [self.output_parent_directory_name, self.errors_output_relative_path, self.screenshots_output_relative_path, self.output_downloaded_files_final_directory_path]:
             file_utils.create_folder_if_not_exist(directory_path)
 
         self.create_webdriver_and_login()
 
-        self.generate_and_dowload_query_for_all_projects_except(projects_names_to_exclude=BIGGEST_PROJECTS_NAMES)
+        self.generate_and_dowload_states_changes_query_for_all_projects_except(projects_names_to_exclude=BIGGEST_PROJECTS_NAMES)
 
         number_of_exceptions_caught: int = 0
         for project_name in BIGGEST_PROJECTS_NAMES:
             logger_config.print_and_log_info(f"Handling project {project_name}")
             try:
                 with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project:{project_name}"):
-                    self.generate_and_dowload_query_for_project(project_name=project_name)
+                    self.generate_and_dowload_states_change_query_for_project(project_name=project_name)
             except Exception as e:
                 number_of_exceptions_caught += 1
                 logger_config.print_and_log_exception(e)
@@ -129,39 +183,31 @@ class SaveCfxRequestMultipagesResultsApplication:
                 with logger_config.stopwatch_with_label(f"reset_driver :{project_name}"):
                     self.reset_driver()
                 with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project:{project_name}"):
-                    self.generate_and_dowload_query_for_project(project_name=project_name)
+                    self.generate_and_dowload_states_change_query_for_project(project_name=project_name)
 
         time.sleep(1000)
 
-    def generate_and_dowload_query_for_all_projects_except(self, projects_names_to_exclude: List[str]) -> None:
+    def generate_and_dowload_states_changes_query_for_all_projects_except(self, projects_names_to_exclude: List[str]) -> None:
         project_manual_selection_change_state_query = "66875867"
         self.open_request_url(project_manual_selection_change_state_query)
 
-        # resp = webdriver.request('POST','https://www.facebook.com/login/device-based/regular/login/?login_attempt=1&lwv=110', params)
-        with surround_with_screenshots(
-            label=f"generate_and_dowload_query_for_all_projects_except element_to_be_clickable Sélectionner",
+        with stopwatch_with_label_and_surround_with_screenshots(
+            label="generate_and_dowload_query_for_all_projects_except element_to_be_clickable Sélectionner",
             remote_web_driver=self.driver,
             screenshots_directory_path=self.screenshots_output_relative_path,
         ):
             selectionner_button_container_node = WebDriverWait(self.driver, 100).until(
                 expected_conditions.element_to_be_clickable((By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']"))
             )
-        # selectionner_button_containerNode = self.driver.find_element(By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']")
         selectionner_button_container_node.click()
 
-        # list_projets_select_element = self.driver.find_element(By.ID, "cq_widget_CqDoubleListBox_0_choiceList")
-        # select_selector = Select(list_projets_select_element)
-        # select_selector.select_by_visible_text("FR_NEXTEO")
-
-        # add_all_button = self.driver.find_element(By.CSS_SELECTOR, 'button[dojoattachpoint="addAllBtn"]')
         add_all_button = WebDriverWait(self.driver, 100).until(expected_conditions.element_to_be_clickable((By.CSS_SELECTOR, 'button[dojoattachpoint="addAllBtn"]')))
-
         add_all_button.click()
 
         for project_name_to_exclude in projects_names_to_exclude:
             project_selection_element = self.driver.find_element(By.XPATH, f"//select[@id='cq_widget_CqDoubleListBox_0_valueList']//option[text()='{project_name_to_exclude}']")
             actions = ActionChains(self.driver)
-            with surround_with_screenshots(
+            with stopwatch_with_label_and_surround_with_screenshots(
                 label="generate_and_dowload_query_for_all_projects_except project_selection_element double_click",
                 remote_web_driver=self.driver,
                 screenshots_directory_path=self.screenshots_output_relative_path,
@@ -171,13 +217,27 @@ class SaveCfxRequestMultipagesResultsApplication:
         ok_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='OK']")
         ok_button.click()
 
-        with surround_with_screenshots(
+        with stopwatch_with_label_and_surround_with_screenshots(
             label="generate_and_dowload_query_for_all_projects_except Exécuter la requête", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
         ):
             executer_requete_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='Exécuter la requête']")
             executer_requete_button.click()
 
-        with surround_with_screenshots(
+        with stopwatch_with_label_and_surround_with_screenshots(
+            label="generate_and_dowload_query_for_all_projects_except - wait table result",
+            remote_web_driver=self.driver,
+            screenshots_directory_path=self.screenshots_output_relative_path,
+        ):
+            WebDriverWait(self.driver, 1000).until(expected_conditions.presence_of_element_located((By.ID, "unique_info_col")))
+
+        with stopwatch_with_label_and_surround_with_screenshots(
+            label="generate_and_dowload_query_for_all_projects_except - wait column CFXID",
+            remote_web_driver=self.driver,
+            screenshots_directory_path=self.screenshots_output_relative_path,
+        ):
+            WebDriverWait(self.driver, 10).until(expected_conditions.presence_of_element_located((By.XPATH, "//th/div[text()='CFXID']")))
+
+        with stopwatch_with_label_and_surround_with_screenshots(
             label="generate_and_dowload_query_for_all_projects_except - request execution additional waiting time",
             remote_web_driver=self.driver,
             screenshots_directory_path=self.screenshots_output_relative_path,
@@ -185,27 +245,20 @@ class SaveCfxRequestMultipagesResultsApplication:
             with logger_config.stopwatch_with_label(label="generate_and_dowload_query_for_all_projects_except request execution additional waiting time", enabled=True):
                 time.sleep(10)
 
-        with surround_with_screenshots(
+        with stopwatch_with_label_and_surround_with_screenshots(
             label="generate_and_dowload_query_for_all_projects_except locate_save_excel_click_it", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
         ):
-            with logger_config.stopwatch_with_label(label="generate_and_dowload_query_for_all_projects_except locate_save_excel_click_it", enabled=True):
-                self.dowload_states_changes_excel_file_query("Other_projects")
+            self.dowload_states_changes_excel_file_query("Other_projects")
 
-    def generate_and_dowload_query_for_project(self, project_name: str) -> None:
+    def generate_and_dowload_states_change_query_for_project(self, project_name: str) -> None:
         project_manual_selection_change_state_query = "66875867"
         self.open_request_url(project_manual_selection_change_state_query)
 
-        # resp = webdriver.request('POST','https://www.facebook.com/login/device-based/regular/login/?login_attempt=1&lwv=110', params)
         with surround_with_screenshots(label=f"{project_name} element_to_be_clickable Sélectionner", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             selectionner_button_container_node = WebDriverWait(self.driver, 100).until(
                 expected_conditions.element_to_be_clickable((By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']"))
             )
-        # selectionner_button_containerNode = self.driver.find_element(By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']")
         selectionner_button_container_node.click()
-
-        # list_projets_select_element = self.driver.find_element(By.ID, "cq_widget_CqDoubleListBox_0_choiceList")
-        # select_selector = Select(list_projets_select_element)
-        # select_selector.select_by_visible_text("FR_NEXTEO")
 
         project_option_element = self.driver.find_element(By.XPATH, f"//select[@id='cq_widget_CqDoubleListBox_0_choiceList']//option[text()='{project_name}']")
         actions = ActionChains(self.driver)
@@ -229,17 +282,14 @@ class SaveCfxRequestMultipagesResultsApplication:
             with logger_config.stopwatch_with_label(label=f"{project_name} locate_save_excel_click_it", enabled=True):
                 self.dowload_states_changes_excel_file_query(project_name)
 
-    # Locate the "History" tab using its unique attributes and click it
-    def dowload_states_changes_excel_file_query(self, label: str) -> bool:
+    def download_excel_file_query(self, label: str, file_to_create_path: str) -> bool:
 
         with surround_with_screenshots(label=f"{label} arrow_to_acces_export element_to_be_clickable", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
-            arrow_to_acces_export = WebDriverWait(self.driver, 40).until(expected_conditions.element_to_be_clickable((By.ID, "dijit_form_ComboButton_1_arrow")))
+            arrow_to_acces_export = WebDriverWait(self.driver, 100).until(expected_conditions.element_to_be_clickable((By.ID, "dijit_form_ComboButton_1_arrow")))
 
         with surround_with_screenshots(label=f"{label} arrow_to_acces_export click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             arrow_to_acces_export.click()
 
-        # history_tab = self.driver.find_element(By.XPATH, "//text()='Exporter vers un tableur Excel']")
-        # export_button = self.driver.find_element(By.ID, "dijit_MenuItem_42")
         export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'Exporter vers un tableur Excel')]")
 
         download_file_detector = download_utils.DownloadFileDetector(directory_path=self.web_browser_download_directory, filename_pattern=CFX_EXCEL_FILES_DOWNLOADED_PATTERN)
@@ -251,9 +301,13 @@ class SaveCfxRequestMultipagesResultsApplication:
             return False
 
         logger_config.print_and_log_info(f"File downloaded : {file_downloaded_path}")
-        shutil.move(file_downloaded_path, f"{self.output_parent_directory_name}/states_changes_project_{label}.xlsx")
+        shutil.move(file_downloaded_path, f"{self.output_downloaded_files_final_directory_path}/states_changes_project_{label}.xlsx")
 
         return True
+
+    # Locate the "History" tab using its unique attributes and click it
+    def dowload_states_changes_excel_file_query(self, label: str) -> bool:
+        return self.download_excel_file_query(label=label, file_to_create_path=f"{self.output_downloaded_files_final_directory_path}/states_changes_project_{label}.xlsx")
 
     def create_webdriver_chrome(self) -> None:
         logger_config.print_and_log_info("create_webdriver_chrome")
@@ -274,6 +328,8 @@ class SaveCfxRequestMultipagesResultsApplication:
         # Create a new instance of the Chrome self.driver
         driver_service = Service(chrome_driver_path)
         self.driver = webdriver.Chrome(service=driver_service, options=chrome_options)
+
+        # self.driver.command_executor.set_timeout(1000)
 
     def create_webdriver_and_login(self) -> None:
         self.create_webdriver_chrome()
