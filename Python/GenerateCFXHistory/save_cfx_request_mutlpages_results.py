@@ -168,8 +168,6 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         self.create_webdriver_and_login()
 
-        self.generate_and_dowload_states_changes_query_for_all_projects_except(projects_names_to_exclude=BIGGEST_PROJECTS_NAMES)
-
         number_of_exceptions_caught: int = 0
         for project_name in BIGGEST_PROJECTS_NAMES:
             logger_config.print_and_log_info(f"Handling project {project_name}")
@@ -184,6 +182,8 @@ class SaveCfxRequestMultipagesResultsApplication:
                     self.reset_driver()
                 with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project:{project_name}"):
                     self.generate_and_dowload_states_change_query_for_project(project_name=project_name)
+
+        self.generate_and_dowload_states_changes_query_for_all_projects_except(projects_names_to_exclude=BIGGEST_PROJECTS_NAMES)
 
         time.sleep(1000)
 
