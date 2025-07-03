@@ -90,6 +90,30 @@ BIGGEST_PROJECTS_NAMES: List[str] = [
     "Entegro",
     "Controlguide",
     "ATSP",
+    "FI_ESKO",
+    "US_NYCT_CBTC-Queens-Blvd_61OP-00025",
+    "NL_EBS_PLUS",
+    "TGMT R2",
+    "PTC_OBU",
+    "FR_CS_Op_and_Maint",
+    "ML_Projektierungstools",
+    "ES_AVE_S10x",
+    "LT_Siauliai_Klaipeda",
+    "HK_Signalling_SCL",
+    "BE_ETCS_L2_IXL",
+    "TCR3_CBTC",
+    "CH_CHP_ETCS",
+    "GCP5000",
+    "FR_PAR4",
+    "US_PATH_CBTC-Phase2-STS-F_61OP-70051",
+    "iVIU_PTC_Console",
+    "MY_KVLRT3-SIG",
+    "LZB8016",
+    "SA_RMP_CIS",
+    "SA_RMP_SIG",
+    "FR_PL14",
+    "NO_NOR_TRA",
+    "Stage",
 ]
 
 INTERESTED_IN_PROJECTS_NAMES: List[str] = ["FR_NEXTEO", "ATSP"]
@@ -151,6 +175,15 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         self.create_webdriver_and_login()
 
+        with stopwatch_with_label_and_surround_with_screenshots(
+            label="generate_and_download_query_results_for_project_filters for all other projects",
+            remote_web_driver=self.driver,
+            screenshots_directory_path=self.screenshots_output_relative_path,
+        ):
+            self.generate_and_download_query_results_for_project_filters(
+                projects_field_filter=ProjectsFieldFilter(projects_names=self.projects_to_handle_with_priority, filter_type=FilterFieldType.DIFFERENT_TO, label="other_projects")
+            )
+
         number_of_exceptions_caught: int = 0
         for project_name in self.projects_to_handle_with_priority:
             projects_field_filter = ProjectsFieldFilter(projects_names=[project_name], filter_type=FilterFieldType.EQUAL_TO, label=project_name)
@@ -167,9 +200,6 @@ class SaveCfxRequestMultipagesResultsApplication:
                 with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project:{project_name}"):
                     self.generate_and_download_query_results_for_project_filters(projects_field_filter=projects_field_filter)
 
-        self.generate_and_download_query_results_for_project_filters(
-            projects_field_filter=ProjectsFieldFilter(projects_names=self.projects_to_handle_with_priority, filter_type=FilterFieldType.DIFFERENT_TO, label="other_projects")
-        )
         time.sleep(1000)
 
     def generate_and_download_query_results_for_project_filters(self, projects_field_filter: ProjectsFieldFilter) -> None:
@@ -303,7 +333,7 @@ class SaveCfxRequestMultipagesResultsApplication:
         driver_service = Service(chrome_driver_path)
         self.driver = webdriver.Chrome(service=driver_service, options=chrome_options)
 
-        # self.driver.command_executor.set_timeout(1000)
+        self.driver.command_executor.set_timeout(1000)
 
     def create_webdriver_and_login(self) -> None:
         self.create_webdriver_chrome()
