@@ -176,9 +176,6 @@ class SaveCfxRequestMultipagesResultsApplication:
         project_manual_selection_change_state_query = "66875867"
         self.open_request_url(project_manual_selection_change_state_query)
 
-        # with surround_with_screenshots(label=f"arrow_type_field_filter element_to_be_clickable", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
-        #    arrow_type_field_filter = WebDriverWait(self.driver, 100).until(expected_conditions.element_to_be_clickable((By.ID, "widget_dijit_form_FilteringSelect_0")))
-
         filter_text_to_type = projects_field_filter.filter_type.value
         with stopwatch_with_label_and_surround_with_screenshots(
             label=f"generate_and_download_query_results_for_project_filters type filter type {filter_text_to_type}",
@@ -188,23 +185,6 @@ class SaveCfxRequestMultipagesResultsApplication:
             input_element = self.driver.find_element(By.ID, "dijit_form_FilteringSelect_0")
             input_element.clear()  # Clear any pre-existing text
             input_element.send_keys(filter_text_to_type)
-
-        # with surround_with_screenshots(label=f"arrow_type_field_filter click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
-        # s    arrow_type_field_filter.click()
-
-        # operation_combobox = WebDriverWait(self.driver, 100).until(expected_conditions.presence_of_element_located((By.ID, "widget_dijit_form_FilteringSelect_7_dropdown")))
-        # operation_combobox.click()
-
-        # operation_combobox = WebDriverWait(self.driver, 100).until(expected_conditions.element_to_be_clickable((By.ID, "widget_dijit_form_FilteringSelect_7_dropdown")))
-        # operation_combobox = WebDriverWait(self.driver, 100).until(expected_conditions.visibility_of_element_located((By.ID, "widget_dijit_form_FilteringSelect_7_dropdown")))
-        # operation_combobox = WebDriverWait(self.driver, 100).until(expected_conditions.visibility_of_element_located((By.ID, "widget_dijit_form_FilteringSelect_7_dropdown")))
-        # different_de_option = self.driver.find_element(By.ID, "dijit_form_FilteringSelect_7_popup1")
-
-        # option = self.driver.find_element(By.CSS_SELECTOR, "div.dijitReset.dijitMenuItem[role='option'][item='11']")
-
-        # actions = ActionChains(self.driver)
-        # actions.move_to_element(different_de_option).click().perform()
-        # pass
 
         with stopwatch_with_label_and_surround_with_screenshots(
             label=f"{projects_field_filter.label} generate_and_dowload_query_for_all_projects_except element_to_be_clickable Sélectionner",
@@ -275,38 +255,6 @@ class SaveCfxRequestMultipagesResultsApplication:
             screenshots_directory_path=self.screenshots_output_relative_path,
         ):
             self.dowload_states_changes_queery_result_excel_file_query(projects_field_filter.label)
-
-    def generate_and_dowload_states_change_query_for_project(self, project_name: str) -> None:
-        project_manual_selection_change_state_query = "66875867"
-        self.open_request_url(project_manual_selection_change_state_query)
-
-        with surround_with_screenshots(label=f"{project_name} element_to_be_clickable Sélectionner", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
-            selectionner_button_container_node = WebDriverWait(self.driver, 100).until(
-                expected_conditions.element_to_be_clickable((By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']"))
-            )
-        selectionner_button_container_node.click()
-
-        project_option_element = self.driver.find_element(By.XPATH, f"//select[@id='cq_widget_CqDoubleListBox_0_choiceList']//option[text()='{project_name}']")
-        actions = ActionChains(self.driver)
-        with surround_with_screenshots(label=f"{project_name} project_option_element double_click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
-            actions.double_click(project_option_element).perform()
-
-        ok_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='OK']")
-        ok_button.click()
-
-        with surround_with_screenshots(label=f"{project_name} Exécuter la requête", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
-            executer_requete_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='Exécuter la requête']")
-            executer_requete_button.click()
-
-        with surround_with_screenshots(
-            label=f"{project_name} - request execution additional waiting time", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
-        ):
-            with logger_config.stopwatch_with_label(label=f"{project_name} request execution additional waiting time", enabled=True):
-                time.sleep(10)
-
-        with surround_with_screenshots(label=f"{project_name} locate_save_excel_click_it", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
-            with logger_config.stopwatch_with_label(label=f"{project_name} locate_save_excel_click_it", enabled=True):
-                self.dowload_states_changes_queery_result_excel_file_query(project_name)
 
     def download_current_query_to_excel_file(self, label: str, file_to_create_path: str) -> bool:
 
