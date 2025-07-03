@@ -1,25 +1,24 @@
 # Standard
+
+from enum import Enum
 import argparse
 import fnmatch
 import inspect
+import logging
 import os
 import pickle
 import queue
+import shutil
 import threading
 import time
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
-from selenium.webdriver.common.by import By
 
 import selenium.webdriver.chrome.options
 import selenium.webdriver.firefox.options
 from common import download_utils, file_utils
-
-import shutil
-
-import logging
 
 # Other libraries
 from logger import logger_config
@@ -52,6 +51,13 @@ DEFAULT_DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = False
 # DEFAULT_DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = True
 
 DEFAULT_NUMBER_OF_THREADS = 2
+
+
+class FilterFieldType(Enum):
+    EQUAL_TO = "Egal à"
+    DIFFERENT_TO = "Egal à"
+    EQUAL_TO = "Egal à"
+
 
 BIGGEST_PROJECTS_NAMES: List[str] = [
     "SA_RMP_COM",
@@ -110,6 +116,74 @@ BIGGEST_PROJECTS_NAMES: List[str] = [
     "Simis_W_Logic_International",
     "IN_CMRP1",
     "FR_NEXTEO",
+    "FR_POUR_Ouragan",
+    "FR_PAR1_Paris_Line_1",
+    "FR_PATH",
+    "FR_SPL4_Sao_Paulo_L4",
+    "FR_REB_CityVAL_RENNES_LineB",
+    "FR_HKL1_Helsinki",
+    "FR_BUD2_Budapest_M2",
+    "FR_FPT3",
+    "FR_BUM4_Budapest_M4",
+    "FR_BKK_APM",
+    "FR_BAC9_Barcelone_L9",
+    "FR_GPE1567",
+    "FR_NYCV_CULVER",
+    "FR_ALGE1_Alger_L1",
+    "FR_HARDWARE",
+    "FR_TO_Toulouse_Lines_A_B",
+    "FR_OCTYS_L11",
+    "FR_R160_Canarsie_Line",
+    "FR_EXL1_Extension_LISA",
+    "FR_UJBU_Uijeongbu",
+    "FR_L14_MSO",
+    "FR_IS_LILLE",
+    "FR_TO_TO52",
+    "FR_TU_VAL_extension",
+    "FR_ALG1AC_Alger_L1",
+    "FR_OCTYS_L9_VB2",
+    "FR_RIO_L4",
+    "FR_MNRE_Maintenance_Rennes",
+    "FR_RIO_L1L2",
+    "FR_ALG1B_Alger_L1",
+    "FR_XX208_RA_Vehicle",
+    "FR_TURN_Contr_Maint_Turin",
+    "FR_XX_Multiproject_VAL",
+    "FR_RSY1_Roissy",
+    "FR_LTQS2_Los_Teques_L2",
+    "FR_AO_OrlyVAL",
+    "FR_P14A_METEOR",
+    "FR_KCVB_SNCF",
+    "FR_NYL_Canarsie_CTR",
+    "FR_TO_Toulouse_Maintenance",
+    "FR_TO_CLB",
+    "FR_SJ_SAN_JUAN",
+    "FR_STM_KCVP",
+    "FR_BSGE",
+    "FR_REA_RENNES_NewTrains_Ext",
+    "FR_TO_TOM2",
+    "FR_SDCS",
+    "FR_OCT2030",
+    "FR_OPTIGUIDE_ROUEN",
+    "FR_OPTIGUIDE_ROUEN_RS_REN",
+    "FR_ISCH_Chicago",
+    "FR_HKDV_Hong-Kong_DVAS",
+    "FR_HTKS_Hong-Kong_TKS",
+    "FR_REA_RENNES",
+    "FR_OCTYS_MIN_MAX",
+    "FR_OPTIGUIDE_NIMES",
+    "FR_GATL2",
+    "FR_ALGE12T_Alger_L1",
+    "FR_HK_TKL_CATSS",
+    "FR_RJ1G_PA135_Rio_Osorio",
+    "FR_OPTIBOARD_BOLOGNA",
+    "FR_Caracas",
+    "FR_OPTIGUIDE_BOLOGNE",
+    "FR_ReA_JFK",
+    "FR_OPTIBOARD_CASTELLON",
+    "SMO_FR_IT_CM",
+    "FR_RECY",
+    "FR_TI_Taipei",
 ]
 
 
@@ -168,6 +242,8 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         self.create_webdriver_and_login()
 
+        self.generate_and_dowload_states_changes_query_for_all_projects_except(projects_names_to_exclude=BIGGEST_PROJECTS_NAMES)
+
         number_of_exceptions_caught: int = 0
         for project_name in BIGGEST_PROJECTS_NAMES:
             logger_config.print_and_log_info(f"Handling project {project_name}")
@@ -183,13 +259,35 @@ class SaveCfxRequestMultipagesResultsApplication:
                 with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project:{project_name}"):
                     self.generate_and_dowload_states_change_query_for_project(project_name=project_name)
 
-        self.generate_and_dowload_states_changes_query_for_all_projects_except(projects_names_to_exclude=BIGGEST_PROJECTS_NAMES)
-
         time.sleep(1000)
 
     def generate_and_dowload_states_changes_query_for_all_projects_except(self, projects_names_to_exclude: List[str]) -> None:
         project_manual_selection_change_state_query = "66875867"
         self.open_request_url(project_manual_selection_change_state_query)
+
+        # with surround_with_screenshots(label=f"arrow_type_field_filter element_to_be_clickable", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+        #    arrow_type_field_filter = WebDriverWait(self.driver, 100).until(expected_conditions.element_to_be_clickable((By.ID, "widget_dijit_form_FilteringSelect_0")))
+
+        input_element = self.driver.find_element(By.ID, "dijit_form_FilteringSelect_0")
+        input_element.clear()  # Clear any pre-existing text
+        input_element.send_keys("Différent de")
+
+        # with surround_with_screenshots(label=f"arrow_type_field_filter click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+        # s    arrow_type_field_filter.click()
+
+        # operation_combobox = WebDriverWait(self.driver, 100).until(expected_conditions.presence_of_element_located((By.ID, "widget_dijit_form_FilteringSelect_7_dropdown")))
+        # operation_combobox.click()
+
+        # operation_combobox = WebDriverWait(self.driver, 100).until(expected_conditions.element_to_be_clickable((By.ID, "widget_dijit_form_FilteringSelect_7_dropdown")))
+        # operation_combobox = WebDriverWait(self.driver, 100).until(expected_conditions.visibility_of_element_located((By.ID, "widget_dijit_form_FilteringSelect_7_dropdown")))
+        # operation_combobox = WebDriverWait(self.driver, 100).until(expected_conditions.visibility_of_element_located((By.ID, "widget_dijit_form_FilteringSelect_7_dropdown")))
+        different_de_option = self.driver.find_element(By.ID, "dijit_form_FilteringSelect_7_popup1")
+
+        option = self.driver.find_element(By.CSS_SELECTOR, "div.dijitReset.dijitMenuItem[role='option'][item='11']")
+
+        actions = ActionChains(self.driver)
+        actions.move_to_element(different_de_option).click().perform()
+        pass
 
         with stopwatch_with_label_and_surround_with_screenshots(
             label="generate_and_dowload_query_for_all_projects_except element_to_be_clickable Sélectionner",
@@ -248,7 +346,7 @@ class SaveCfxRequestMultipagesResultsApplication:
         with stopwatch_with_label_and_surround_with_screenshots(
             label="generate_and_dowload_query_for_all_projects_except locate_save_excel_click_it", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
         ):
-            self.dowload_states_changes_excel_file_query("Other_projects")
+            self.dowload_states_changes_queery_result_excel_file_query("Other_projects")
 
     def generate_and_dowload_states_change_query_for_project(self, project_name: str) -> None:
         project_manual_selection_change_state_query = "66875867"
@@ -280,9 +378,9 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         with surround_with_screenshots(label=f"{project_name} locate_save_excel_click_it", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             with logger_config.stopwatch_with_label(label=f"{project_name} locate_save_excel_click_it", enabled=True):
-                self.dowload_states_changes_excel_file_query(project_name)
+                self.dowload_states_changes_queery_result_excel_file_query(project_name)
 
-    def download_excel_file_query(self, label: str, file_to_create_path: str) -> bool:
+    def download_current_query_to_excel_file(self, label: str, file_to_create_path: str) -> bool:
 
         with surround_with_screenshots(label=f"{label} arrow_to_acces_export element_to_be_clickable", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             arrow_to_acces_export = WebDriverWait(self.driver, 100).until(expected_conditions.element_to_be_clickable((By.ID, "dijit_form_ComboButton_1_arrow")))
@@ -300,14 +398,14 @@ class SaveCfxRequestMultipagesResultsApplication:
             logger_config.print_and_log_error(f"No downloaded file found for {label}")
             return False
 
-        logger_config.print_and_log_info(f"File downloaded : {file_downloaded_path}")
-        shutil.move(file_downloaded_path, f"{self.output_downloaded_files_final_directory_path}/states_changes_project_{label}.xlsx")
+        logger_config.print_and_log_info(f"File downloaded : {file_downloaded_path}, will be moveds to {file_to_create_path}")
+        shutil.move(file_downloaded_path, file_to_create_path)
 
         return True
 
     # Locate the "History" tab using its unique attributes and click it
-    def dowload_states_changes_excel_file_query(self, label: str) -> bool:
-        return self.download_excel_file_query(label=label, file_to_create_path=f"{self.output_downloaded_files_final_directory_path}/states_changes_project_{label}.xlsx")
+    def dowload_states_changes_queery_result_excel_file_query(self, label: str) -> bool:
+        return self.download_current_query_to_excel_file(label=label, file_to_create_path=f"{self.output_downloaded_files_final_directory_path}/states_changes_project_{label}.xlsx")
 
     def create_webdriver_chrome(self) -> None:
         logger_config.print_and_log_info("create_webdriver_chrome")
@@ -383,7 +481,7 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
             self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/open_request_url before Additional waiting time.png")
-            time.sleep(10)
+            time.sleep(3.5)
             self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/open_request_url after Additional waiting time.png")
 
 
