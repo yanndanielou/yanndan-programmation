@@ -79,7 +79,7 @@ class DownloadFileDetector:
                 time.sleep(1)
                 self.remaining_timeout_in_seconds -= 1
                 manual_scan_files_modified_name_and_timestamp = self.rescan_directory_for_changes()
-                logger_config.print_and_log_info(f"Files downloaded found after manual scan:{manual_scan_files_modified_name_and_timestamp}")
+                logger_config.print_and_log_info(f"{self.remaining_timeout_in_seconds} remaining seconds: Files downloaded found after manual scan:{manual_scan_files_modified_name_and_timestamp}")
 
                 if len(manual_scan_files_modified_name_and_timestamp) == 1:
                     file_detected: Tuple[str, float] = manual_scan_files_modified_name_and_timestamp[0]
