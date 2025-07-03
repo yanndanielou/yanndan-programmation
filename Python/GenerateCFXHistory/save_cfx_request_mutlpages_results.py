@@ -14,7 +14,7 @@ import time
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 import selenium.webdriver.chrome.options
 import selenium.webdriver.firefox.options
@@ -55,8 +55,14 @@ DEFAULT_NUMBER_OF_THREADS = 2
 
 class FilterFieldType(Enum):
     EQUAL_TO = "Egal à"
-    DIFFERENT_TO = "Egal à"
-    EQUAL_TO = "Egal à"
+    DIFFERENT_TO = "Différent de"
+
+
+@dataclass
+class ProjectsFieldFilter:
+    projects_names: Set[str] | List[str]
+    filter_type: FilterFieldType
+    label: str
 
 
 BIGGEST_PROJECTS_NAMES: List[str] = [
@@ -84,107 +90,9 @@ BIGGEST_PROJECTS_NAMES: List[str] = [
     "Entegro",
     "Controlguide",
     "ATSP",
-    "FI_ESKO",
-    "US_NYCT_CBTC-Queens-Blvd_61OP-00025",
-    "NL_EBS_PLUS",
-    "TGMT R2",
-    "PTC_OBU",
-    "FR_CS_Op_and_Maint",
-    "ML_Projektierungstools",
-    "ES_AVE_S10x",
-    "LT_Siauliai_Klaipeda",
-    "HK_Signalling_SCL",
-    "BE_ETCS_L2_IXL",
-    "TCR3_CBTC",
-    "CH_CHP_ETCS",
-    "GCP5000",
-    "FR_PAR4",
-    "US_PATH_CBTC-Phase2-STS-F_61OP-70051",
-    "iVIU_PTC_Console",
-    "MY_KVLRT3-SIG",
-    "LZB8016",
-    "SA_RMP_CIS",
-    "SA_RMP_SIG",
-    "FR_PL14",
-    "NO_NOR_TRA",
-    "Stage",
-    "SA_RMP_PSD",
-    "STAC",
-    "Engineering_Tools",
-    "BAI",
-    "DE_FPTS",
-    "Simis_W_Logic_International",
-    "IN_CMRP1",
-    "FR_NEXTEO",
-    "FR_POUR_Ouragan",
-    "FR_PAR1_Paris_Line_1",
-    "FR_PATH",
-    "FR_SPL4_Sao_Paulo_L4",
-    "FR_REB_CityVAL_RENNES_LineB",
-    "FR_HKL1_Helsinki",
-    "FR_BUD2_Budapest_M2",
-    "FR_FPT3",
-    "FR_BUM4_Budapest_M4",
-    "FR_BKK_APM",
-    "FR_BAC9_Barcelone_L9",
-    "FR_GPE1567",
-    "FR_NYCV_CULVER",
-    "FR_ALGE1_Alger_L1",
-    "FR_HARDWARE",
-    "FR_TO_Toulouse_Lines_A_B",
-    "FR_OCTYS_L11",
-    "FR_R160_Canarsie_Line",
-    "FR_EXL1_Extension_LISA",
-    "FR_UJBU_Uijeongbu",
-    "FR_L14_MSO",
-    "FR_IS_LILLE",
-    "FR_TO_TO52",
-    "FR_TU_VAL_extension",
-    "FR_ALG1AC_Alger_L1",
-    "FR_OCTYS_L9_VB2",
-    "FR_RIO_L4",
-    "FR_MNRE_Maintenance_Rennes",
-    "FR_RIO_L1L2",
-    "FR_ALG1B_Alger_L1",
-    "FR_XX208_RA_Vehicle",
-    "FR_TURN_Contr_Maint_Turin",
-    "FR_XX_Multiproject_VAL",
-    "FR_RSY1_Roissy",
-    "FR_LTQS2_Los_Teques_L2",
-    "FR_AO_OrlyVAL",
-    "FR_P14A_METEOR",
-    "FR_KCVB_SNCF",
-    "FR_NYL_Canarsie_CTR",
-    "FR_TO_Toulouse_Maintenance",
-    "FR_TO_CLB",
-    "FR_SJ_SAN_JUAN",
-    "FR_STM_KCVP",
-    "FR_BSGE",
-    "FR_REA_RENNES_NewTrains_Ext",
-    "FR_TO_TOM2",
-    "FR_SDCS",
-    "FR_OCT2030",
-    "FR_OPTIGUIDE_ROUEN",
-    "FR_OPTIGUIDE_ROUEN_RS_REN",
-    "FR_ISCH_Chicago",
-    "FR_HKDV_Hong-Kong_DVAS",
-    "FR_HTKS_Hong-Kong_TKS",
-    "FR_REA_RENNES",
-    "FR_OCTYS_MIN_MAX",
-    "FR_OPTIGUIDE_NIMES",
-    "FR_GATL2",
-    "FR_ALGE12T_Alger_L1",
-    "FR_HK_TKL_CATSS",
-    "FR_RJ1G_PA135_Rio_Osorio",
-    "FR_OPTIBOARD_BOLOGNA",
-    "FR_Caracas",
-    "FR_OPTIGUIDE_BOLOGNE",
-    "FR_ReA_JFK",
-    "FR_OPTIBOARD_CASTELLON",
-    "SMO_FR_IT_CM",
-    "FR_RECY",
-    "FR_TI_Taipei",
 ]
+
+INTERESTED_IN_PROJECTS_NAMES: List[str] = ["FR_NEXTEO", "ATSP"]
 
 
 @contextmanager
@@ -222,6 +130,7 @@ def surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, scr
 
 @dataclass
 class SaveCfxRequestMultipagesResultsApplication:
+    projects_to_handle_with_priority: Set[str]
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
     output_downloaded_files_final_directory_path: str = DOWNLOADED_FILES_FINAL_DIRECTORY
     web_browser_download_directory = DEFAULT_DOWNLOAD_DIRECTORY
@@ -242,14 +151,13 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         self.create_webdriver_and_login()
 
-        self.generate_and_dowload_states_changes_query_for_all_projects_except(projects_names_to_exclude=BIGGEST_PROJECTS_NAMES)
-
         number_of_exceptions_caught: int = 0
-        for project_name in BIGGEST_PROJECTS_NAMES:
+        for project_name in self.projects_to_handle_with_priority:
+            projects_field_filter = ProjectsFieldFilter(projects_names=[project_name], filter_type=FilterFieldType.EQUAL_TO, label=project_name)
             logger_config.print_and_log_info(f"Handling project {project_name}")
             try:
                 with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project:{project_name}"):
-                    self.generate_and_dowload_states_change_query_for_project(project_name=project_name)
+                    self.generate_and_download_query_results_for_project_filters(projects_field_filter=projects_field_filter)
             except Exception as e:
                 number_of_exceptions_caught += 1
                 logger_config.print_and_log_exception(e)
@@ -257,20 +165,29 @@ class SaveCfxRequestMultipagesResultsApplication:
                 with logger_config.stopwatch_with_label(f"reset_driver :{project_name}"):
                     self.reset_driver()
                 with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project:{project_name}"):
-                    self.generate_and_dowload_states_change_query_for_project(project_name=project_name)
+                    self.generate_and_download_query_results_for_project_filters(projects_field_filter=projects_field_filter)
 
+        self.generate_and_download_query_results_for_project_filters(
+            projects_field_filter=ProjectsFieldFilter(projects_names=self.projects_to_handle_with_priority, filter_type=FilterFieldType.DIFFERENT_TO, label="other_projects")
+        )
         time.sleep(1000)
 
-    def generate_and_dowload_states_changes_query_for_all_projects_except(self, projects_names_to_exclude: List[str]) -> None:
+    def generate_and_download_query_results_for_project_filters(self, projects_field_filter: ProjectsFieldFilter) -> None:
         project_manual_selection_change_state_query = "66875867"
         self.open_request_url(project_manual_selection_change_state_query)
 
         # with surround_with_screenshots(label=f"arrow_type_field_filter element_to_be_clickable", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
         #    arrow_type_field_filter = WebDriverWait(self.driver, 100).until(expected_conditions.element_to_be_clickable((By.ID, "widget_dijit_form_FilteringSelect_0")))
 
-        input_element = self.driver.find_element(By.ID, "dijit_form_FilteringSelect_0")
-        input_element.clear()  # Clear any pre-existing text
-        input_element.send_keys("Différent de")
+        filter_text_to_type = projects_field_filter.filter_type.value
+        with stopwatch_with_label_and_surround_with_screenshots(
+            label=f"generate_and_download_query_results_for_project_filters type filter type {filter_text_to_type}",
+            remote_web_driver=self.driver,
+            screenshots_directory_path=self.screenshots_output_relative_path,
+        ):
+            input_element = self.driver.find_element(By.ID, "dijit_form_FilteringSelect_0")
+            input_element.clear()  # Clear any pre-existing text
+            input_element.send_keys(filter_text_to_type)
 
         # with surround_with_screenshots(label=f"arrow_type_field_filter click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
         # s    arrow_type_field_filter.click()
@@ -281,72 +198,83 @@ class SaveCfxRequestMultipagesResultsApplication:
         # operation_combobox = WebDriverWait(self.driver, 100).until(expected_conditions.element_to_be_clickable((By.ID, "widget_dijit_form_FilteringSelect_7_dropdown")))
         # operation_combobox = WebDriverWait(self.driver, 100).until(expected_conditions.visibility_of_element_located((By.ID, "widget_dijit_form_FilteringSelect_7_dropdown")))
         # operation_combobox = WebDriverWait(self.driver, 100).until(expected_conditions.visibility_of_element_located((By.ID, "widget_dijit_form_FilteringSelect_7_dropdown")))
-        different_de_option = self.driver.find_element(By.ID, "dijit_form_FilteringSelect_7_popup1")
+        # different_de_option = self.driver.find_element(By.ID, "dijit_form_FilteringSelect_7_popup1")
 
-        option = self.driver.find_element(By.CSS_SELECTOR, "div.dijitReset.dijitMenuItem[role='option'][item='11']")
+        # option = self.driver.find_element(By.CSS_SELECTOR, "div.dijitReset.dijitMenuItem[role='option'][item='11']")
 
-        actions = ActionChains(self.driver)
-        actions.move_to_element(different_de_option).click().perform()
-        pass
+        # actions = ActionChains(self.driver)
+        # actions.move_to_element(different_de_option).click().perform()
+        # pass
 
         with stopwatch_with_label_and_surround_with_screenshots(
-            label="generate_and_dowload_query_for_all_projects_except element_to_be_clickable Sélectionner",
+            label=f"{projects_field_filter.label} generate_and_dowload_query_for_all_projects_except element_to_be_clickable Sélectionner",
             remote_web_driver=self.driver,
             screenshots_directory_path=self.screenshots_output_relative_path,
         ):
             selectionner_button_container_node = WebDriverWait(self.driver, 100).until(
                 expected_conditions.element_to_be_clickable((By.XPATH, "//span[@data-dojo-attach-point='containerNode' and text()='Sélectionner']"))
             )
-        selectionner_button_container_node.click()
-
-        add_all_button = WebDriverWait(self.driver, 100).until(expected_conditions.element_to_be_clickable((By.CSS_SELECTOR, 'button[dojoattachpoint="addAllBtn"]')))
-        add_all_button.click()
-
-        for project_name_to_exclude in projects_names_to_exclude:
-            project_selection_element = self.driver.find_element(By.XPATH, f"//select[@id='cq_widget_CqDoubleListBox_0_valueList']//option[text()='{project_name_to_exclude}']")
-            actions = ActionChains(self.driver)
-            with stopwatch_with_label_and_surround_with_screenshots(
-                label="generate_and_dowload_query_for_all_projects_except project_selection_element double_click",
-                remote_web_driver=self.driver,
-                screenshots_directory_path=self.screenshots_output_relative_path,
-            ):
-                actions.double_click(project_selection_element).perform()
-
-        ok_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='OK']")
-        ok_button.click()
 
         with stopwatch_with_label_and_surround_with_screenshots(
-            label="generate_and_dowload_query_for_all_projects_except Exécuter la requête", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+            label=f"{projects_field_filter.label} selectionner_button_container_node.click()",
+            remote_web_driver=self.driver,
+            screenshots_directory_path=self.screenshots_output_relative_path,
+        ):
+            selectionner_button_container_node.click()
+
+        for project_name in projects_field_filter.projects_names:
+
+            with surround_with_screenshots(
+                label=f"{project_name}  project_option_element find_element", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+            ):
+                project_option_element = self.driver.find_element(By.XPATH, f"//select[@id='cq_widget_CqDoubleListBox_0_choiceList']//option[text()='{project_name}']")
+
+            actions = ActionChains(self.driver)
+            with surround_with_screenshots(
+                label=f"{project_name} project_option_element double_click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+            ):
+                actions.double_click(project_option_element).perform()
+
+        ok_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='OK']")
+        with surround_with_screenshots(label=f"{project_name} ok_button.click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+            ok_button.click()
+
+        with stopwatch_with_label_and_surround_with_screenshots(
+            label=f"{projects_field_filter.label} generate_and_dowload_query_for_all_projects_except Exécuter la requête",
+            remote_web_driver=self.driver,
+            screenshots_directory_path=self.screenshots_output_relative_path,
         ):
             executer_requete_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='Exécuter la requête']")
             executer_requete_button.click()
 
         with stopwatch_with_label_and_surround_with_screenshots(
-            label="generate_and_dowload_query_for_all_projects_except - wait table result",
+            label=f"{projects_field_filter.label} generate_and_dowload_query_for_all_projects_except - wait table result",
             remote_web_driver=self.driver,
             screenshots_directory_path=self.screenshots_output_relative_path,
         ):
             WebDriverWait(self.driver, 1000).until(expected_conditions.presence_of_element_located((By.ID, "unique_info_col")))
 
         with stopwatch_with_label_and_surround_with_screenshots(
-            label="generate_and_dowload_query_for_all_projects_except - wait column CFXID",
+            label=f"{projects_field_filter.label} generate_and_dowload_query_for_all_projects_except - wait column CFXID",
             remote_web_driver=self.driver,
             screenshots_directory_path=self.screenshots_output_relative_path,
         ):
             WebDriverWait(self.driver, 10).until(expected_conditions.presence_of_element_located((By.XPATH, "//th/div[text()='CFXID']")))
 
         with stopwatch_with_label_and_surround_with_screenshots(
-            label="generate_and_dowload_query_for_all_projects_except - request execution additional waiting time",
+            label=f"{projects_field_filter.label} generate_and_dowload_query_for_all_projects_except - request execution additional waiting time",
             remote_web_driver=self.driver,
             screenshots_directory_path=self.screenshots_output_relative_path,
         ):
-            with logger_config.stopwatch_with_label(label="generate_and_dowload_query_for_all_projects_except request execution additional waiting time", enabled=True):
+            with logger_config.stopwatch_with_label(label=f"{projects_field_filter.label} generate_and_dowload_query_for_all_projects_except request execution additional waiting time", enabled=True):
                 time.sleep(10)
 
         with stopwatch_with_label_and_surround_with_screenshots(
-            label="generate_and_dowload_query_for_all_projects_except locate_save_excel_click_it", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+            label=f"{projects_field_filter.label} generate_and_dowload_query_for_all_projects_except locate_save_excel_click_it",
+            remote_web_driver=self.driver,
+            screenshots_directory_path=self.screenshots_output_relative_path,
         ):
-            self.dowload_states_changes_queery_result_excel_file_query("Other_projects")
+            self.dowload_states_changes_queery_result_excel_file_query(projects_field_filter.label)
 
     def generate_and_dowload_states_change_query_for_project(self, project_name: str) -> None:
         project_manual_selection_change_state_query = "66875867"
@@ -462,7 +390,7 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         with surround_with_screenshots(label="login_champfx - Additional waiting time", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
-                time.sleep(10)
+                time.sleep(3)
 
     def open_request_url(self, request_full_path: str) -> None:
         request_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/QUERY/{request_full_path}?format=HTML&loginId={connexion_param.champfx_login}&password={connexion_param.champfx_password}&noframes=true"
@@ -505,7 +433,7 @@ def main() -> None:
         logger_config.print_and_log_info(f"output_parent_directory_name: {output_parent_directory_name}")
 
         application: SaveCfxRequestMultipagesResultsApplication = SaveCfxRequestMultipagesResultsApplication(
-            output_parent_directory_name=output_parent_directory_name,
+            output_parent_directory_name=output_parent_directory_name, projects_to_handle_with_priority=set(BIGGEST_PROJECTS_NAMES + INTERESTED_IN_PROJECTS_NAMES)
         )
         application.run()
 
