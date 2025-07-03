@@ -112,7 +112,6 @@ BIGGEST_PROJECTS_NAMES: List[str] = [
     "SA_RMP_CIS",
     "SA_RMP_SIG",
     "FR_PL14",
-    "NO_NOR_TRA",
     "Stage",
 ]
 
@@ -234,19 +233,21 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         for project_name in projects_field_filter.projects_names:
 
-            with surround_with_screenshots(
+            with stopwatch_with_label_and_surround_with_screenshots(
                 label=f"{project_name}  project_option_element find_element", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
             ):
                 project_option_element = self.driver.find_element(By.XPATH, f"//select[@id='cq_widget_CqDoubleListBox_0_choiceList']//option[text()='{project_name}']")
 
             actions = ActionChains(self.driver)
-            with surround_with_screenshots(
+            with stopwatch_with_label_and_surround_with_screenshots(
                 label=f"{project_name} project_option_element double_click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
             ):
                 actions.double_click(project_option_element).perform()
 
         ok_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='OK']")
-        with surround_with_screenshots(label=f"{project_name} ok_button.click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+        with stopwatch_with_label_and_surround_with_screenshots(
+            label=f"{project_name} ok_button.click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+        ):
             ok_button.click()
 
         with stopwatch_with_label_and_surround_with_screenshots(
@@ -276,8 +277,7 @@ class SaveCfxRequestMultipagesResultsApplication:
             remote_web_driver=self.driver,
             screenshots_directory_path=self.screenshots_output_relative_path,
         ):
-            with logger_config.stopwatch_with_label(label=f"{projects_field_filter.label} generate_and_dowload_query_for_all_projects_except request execution additional waiting time", enabled=True):
-                time.sleep(10)
+            time.sleep(10)
 
         with stopwatch_with_label_and_surround_with_screenshots(
             label=f"{projects_field_filter.label} generate_and_dowload_query_for_all_projects_except locate_save_excel_click_it",
@@ -348,10 +348,12 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         login_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX?format=HTML&loginId={connexion_param.champfx_login}&password={connexion_param.champfx_password}"
 
-        with logger_config.stopwatch_with_label(f"Driver get login url {login_url}"):
+        with stopwatch_with_label_and_surround_with_screenshots(
+            label=f"Driver get login url {login_url}", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+        ):
             self.driver.get(login_url)
 
-        with logger_config.stopwatch_with_label(label="Waited page is loaded", enable_print=True):
+        with stopwatch_with_label_and_surround_with_screenshots(label="Waited page is loaded", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             with surround_with_screenshots(label="login_champfx - title_contains ok", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
                 WebDriverWait(self.driver, 100).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
             # self.driver.get_screenshot_as_file("login_champfx: title_contains ok.png")
@@ -366,29 +368,27 @@ class SaveCfxRequestMultipagesResultsApplication:
             except TimeoutException as e:
                 logger_config.print_and_log_exception(e)
 
-        with surround_with_screenshots(label="login_champfx - Additional waiting time", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
-            with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
-                time.sleep(3)
+        with stopwatch_with_label_and_surround_with_screenshots(
+            label="login_champfx - Additional waiting time", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+        ):
+            time.sleep(3)
 
     def open_request_url(self, request_full_path: str) -> None:
         request_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/QUERY/{request_full_path}?format=HTML&loginId={connexion_param.champfx_login}&password={connexion_param.champfx_password}&noframes=true"
 
-        with logger_config.stopwatch_with_label(f"Driver get url {request_url}"):
+        with stopwatch_with_label_and_surround_with_screenshots(label=f"Driver get url {request_url}", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             self.driver.get(request_url)
-        self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/open_request_url after get(request_url).png")
 
-        with logger_config.stopwatch_with_label(label="Waited Title is now good"):
+        with stopwatch_with_label_and_surround_with_screenshots(label="Waited Title is now good", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             WebDriverWait(self.driver, 10).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
-            self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/open_request_url title_contains ok.png")
 
-        with logger_config.stopwatch_with_label(label="Wait for the page to be fully loaded (JavaScript):: document.readyState now good"):
+        with stopwatch_with_label_and_surround_with_screenshots(
+            label="Wait for the page to be fully loaded (JavaScript):: document.readyState now good", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+        ):
             WebDriverWait(self.driver, 10).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
-            self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/open_request_url document.readyState complete.png")
 
-        with logger_config.stopwatch_with_label(label="Additional waiting time", enabled=True):
-            self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/open_request_url before Additional waiting time.png")
+        with stopwatch_with_label_and_surround_with_screenshots(label="Additional waiting time", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             time.sleep(3.5)
-            self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/open_request_url after Additional waiting time.png")
 
 
 def main() -> None:
