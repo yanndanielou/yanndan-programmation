@@ -1,6 +1,6 @@
 # Standard
 
-from enum import Enum
+from enum import Enum, auto
 import argparse
 import fnmatch
 import inspect
@@ -36,7 +36,7 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 # Current programm
 import connexion_param
 
-CFX_EXCEL_FILES_DOWNLOADED_PATTERN = "QueryResult*.xlsx"
+CFX_FILES_DOWNLOADED_PATTERN_WITHOUT_EXTENSION = "QueryResult*"
 
 DOWNLOADED_FILES_FINAL_DIRECTORY = "Input"
 OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_request_results"
@@ -54,11 +54,26 @@ DEFAULT_NUMBER_OF_THREADS = 2
 
 PROJECT_MANUAL_SELECTION_DETAIL_QUERY_ID = 66977872
 PROJECT_MANUAL_SELECTION_CHANGE_STATE_QUERY_ID = 66875867
+NEXT_ATS_EXTENDED_HISTORY_QUERY_ID = 65753660
+
+EXCEL_FILE_EXTENSION = ".xlsx"
+TEXT_FILE_EXTENSION = ".txt"
 
 
 class FilterFieldType(Enum):
     EQUAL_TO = "Egal à"
     DIFFERENT_TO = "Différent de"
+
+
+class QueryOutputFileType(Enum):
+    EXCEL_EXPORT = auto()
+    TXT_EXPORT = auto()
+
+    def get_file_extension(self) -> str:
+        return TEXT_FILE_EXTENSION if self == QueryOutputFileType.TXT_EXPORT else EXCEL_FILE_EXTENSION
+
+    def get_file_download_dropdown_menu_option_text(self) -> str:
+        return "Exporter vers un fichier texte" if self == QueryOutputFileType.TXT_EXPORT else "Exporter vers un tableur Excel"
 
 
 @dataclass
@@ -69,10 +84,11 @@ class ProjectsFieldFilter:
 
 @dataclass
 class CfxQuery:
-    projects_field_filters: Optional[ProjectsFieldFilter]
-    output_file_name: str
+    output_file_name_without_extension: str
     query_id: int
     label: str
+    output_file_type: QueryOutputFileType
+    projects_field_filters: Optional[ProjectsFieldFilter] = None
 
 
 BIGGEST_PROJECTS_NAMES: List[str] = [
@@ -371,26 +387,41 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         self.create_webdriver_and_login()
 
+        self.generate_and_download_query_results_for_project_filters(
+            change_state_cfx_query=CfxQuery(
+                query_id=NEXT_ATS_EXTENDED_HISTORY_QUERY_ID,
+                output_file_name_without_extension="extended_history_nextats",
+                label="extended_history_nextatsp",
+                output_file_type=QueryOutputFileType.TXT_EXPORT,
+            )
+        )
+
         for project_name in self.projects_to_handle_with_priority:
             projects_field_filter = ProjectsFieldFilter(projects_names=[project_name], filter_type=FilterFieldType.EQUAL_TO)
             change_state_cfx_query = CfxQuery(
                 projects_field_filters=projects_field_filter,
                 query_id=PROJECT_MANUAL_SELECTION_CHANGE_STATE_QUERY_ID,
-                output_file_name=f"states_changes_project_{project_name}.xlsx",
+                output_file_name_without_extension=f"states_changes_project_{project_name}",
                 label=project_name,
+                output_file_type=QueryOutputFileType.EXCEL_EXPORT,
             )
-            details_cfx_query = CfxQuery(
+            extended_history_cfx_query = CfxQuery(
                 projects_field_filters=projects_field_filter,
                 query_id=PROJECT_MANUAL_SELECTION_DETAIL_QUERY_ID,
-                output_file_name=f"details_project_{project_name}.xlsx",
+                output_file_name_without_extension=f"details_project_{project_name}",
                 label=project_name,
+                output_file_type=QueryOutputFileType.EXCEL_EXPORT,
             )
             logger_config.print_and_log_info(f"Handling project {project_name}")
-            with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project:{project_name} {change_state_cfx_query.label} {change_state_cfx_query.output_file_name}"):
+            with logger_config.stopwatch_with_label(
+                f"generate_and_dowload_query_for_project:{project_name} {change_state_cfx_query.label} {change_state_cfx_query.output_file_name_without_extension}"
+            ):
                 self.generate_and_download_query_results_for_project_filters(change_state_cfx_query=change_state_cfx_query)
             logger_config.print_and_log_info(f"Handling project {project_name}")
-            with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project:{project_name} {details_cfx_query.label} {details_cfx_query.output_file_name}"):
-                self.generate_and_download_query_results_for_project_filters(change_state_cfx_query=details_cfx_query)
+            with logger_config.stopwatch_with_label(
+                f"generate_and_dowload_query_for_project:{project_name} {extended_history_cfx_query.label} {extended_history_cfx_query.output_file_name_without_extension}"
+            ):
+                self.generate_and_download_query_results_for_project_filters(change_state_cfx_query=extended_history_cfx_query)
 
         with stopwatch_with_label_and_surround_with_screenshots(
             label="generate_and_download_query_results_for_project_filters for all other projects",
@@ -403,8 +434,9 @@ class SaveCfxRequestMultipagesResultsApplication:
                 change_state_cfx_query=CfxQuery(
                     projects_field_filters=projects_field_filters,
                     query_id=PROJECT_MANUAL_SELECTION_CHANGE_STATE_QUERY_ID,
-                    output_file_name="states_changes_other_projects.xlsx",
+                    output_file_name_without_extension="states_changes_other_projects.xlsx",
                     label="other_projects",
+                    output_file_type=QueryOutputFileType.EXCEL_EXPORT,
                 )
             )
 
@@ -412,8 +444,9 @@ class SaveCfxRequestMultipagesResultsApplication:
                 change_state_cfx_query=CfxQuery(
                     projects_field_filters=projects_field_filters,
                     query_id=PROJECT_MANUAL_SELECTION_DETAIL_QUERY_ID,
-                    output_file_name="details_project_other_projects.xlsx",
+                    output_file_name_without_extension="details_project_other_projects.xlsx",
                     label="other_projects",
+                    output_file_type=QueryOutputFileType.EXCEL_EXPORT,
                 )
             )
 
@@ -466,9 +499,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                         actions.double_click(project_option_element).perform()
 
                 ok_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='OK']")
-                with stopwatch_with_label_and_surround_with_screenshots(
-                    label=f"{project_name} ok_button.click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
-                ):
+                with stopwatch_with_label_and_surround_with_screenshots(label="ok_button.click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
                     ok_button.click()
 
                 with stopwatch_with_label_and_surround_with_screenshots(
@@ -500,27 +531,44 @@ class SaveCfxRequestMultipagesResultsApplication:
             ):
                 time.sleep(2.5)
 
-            with stopwatch_with_label_and_surround_with_screenshots(
-                label=f"{change_state_cfx_query.label} generate_and_dowload_query_for_all_projects_except locate_save_excel_click_it",
-                remote_web_driver=self.driver,
-                screenshots_directory_path=self.screenshots_output_relative_path,
-            ):
-                self.download_current_query_to_excel_file(
-                    label=change_state_cfx_query.label, file_to_create_path=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name}"
-                )
+            match change_state_cfx_query.output_file_type:
+                case QueryOutputFileType.EXCEL_EXPORT:
+                    with stopwatch_with_label_and_surround_with_screenshots(
+                        label=f"{change_state_cfx_query.label} download_current_query_to_excel_file",
+                        remote_web_driver=self.driver,
+                        screenshots_directory_path=self.screenshots_output_relative_path,
+                    ):
+                        self.download_current_query_to_file(
+                            change_state_cfx_query=change_state_cfx_query,
+                            label=change_state_cfx_query.label,
+                            file_to_create_path_without_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{EXCEL_FILE_EXTENSION}",
+                        )
+                case QueryOutputFileType.TXT_EXPORT:
+
+                    with stopwatch_with_label_and_surround_with_screenshots(
+                        label=f"{change_state_cfx_query.label} download_current_query_to_text_file",
+                        remote_web_driver=self.driver,
+                        screenshots_directory_path=self.screenshots_output_relative_path,
+                    ):
+                        self.download_current_query_to_file(
+                            change_state_cfx_query=change_state_cfx_query,
+                            label=change_state_cfx_query.label,
+                            file_to_create_path_without_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{TEXT_FILE_EXTENSION}",
+                        )
+
         except Exception as e:
 
             self.number_of_exceptions_caught += 1
             logger_config.print_and_log_exception(e)
-            logger_config.print_and_log_error(f"Exception {project_name} {self.number_of_exceptions_caught}  number_of_retry_if_failure:{number_of_retry_if_failure}")
-            self.driver.get_screenshot_as_file(f"{self.screenshots_output_sub_directory_name}/{project_name} {self.number_of_exceptions_caught} th Exception caught.png")
-            with logger_config.stopwatch_with_label(f"reset_driver :{project_name}"):
+            logger_config.print_and_log_error(f"Exception  {self.number_of_exceptions_caught}  number_of_retry_if_failure:{number_of_retry_if_failure}")
+            self.driver.get_screenshot_as_file(f"{self.screenshots_output_sub_directory_name}/{self.number_of_exceptions_caught} th Exception caught.png")
+            with logger_config.stopwatch_with_label(f"reset_driver :"):
                 self.reset_driver()
             if number_of_retry_if_failure > 0:
-                with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project:{project_name}"):
+                with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project"):
                     self.generate_and_download_query_results_for_project_filters(change_state_cfx_query=change_state_cfx_query, number_of_retry_if_failure=number_of_retry_if_failure - 1)
 
-    def download_current_query_to_excel_file(self, label: str, file_to_create_path: str) -> bool:
+    def download_current_query_to_file(self, change_state_cfx_query: CfxQuery, label: str, file_to_create_path_without_extension: str) -> bool:
 
         with surround_with_screenshots(label=f"{label} arrow_to_acces_export element_to_be_clickable", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             arrow_to_acces_export = WebDriverWait(self.driver, 100).until(expected_conditions.element_to_be_clickable((By.ID, "dijit_form_ComboButton_1_arrow")))
@@ -528,9 +576,13 @@ class SaveCfxRequestMultipagesResultsApplication:
         with surround_with_screenshots(label=f"{label} arrow_to_acces_export click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             arrow_to_acces_export.click()
 
-        export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'Exporter vers un tableur Excel')]")
+        export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'" + change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text() + "')]")
 
-        download_file_detector = download_utils.DownloadFileDetector(directory_path=self.web_browser_download_directory, filename_pattern=CFX_EXCEL_FILES_DOWNLOADED_PATTERN, timeout_in_seconds=1000)
+        download_file_detector = download_utils.DownloadFileDetector(
+            directory_path=self.web_browser_download_directory,
+            filename_pattern=CFX_FILES_DOWNLOADED_PATTERN_WITHOUT_EXTENSION + change_state_cfx_query.output_file_type.get_file_extension(),
+            timeout_in_seconds=1000,
+        )
         export_button.click()
 
         file_downloaded_path: Optional[str] = download_file_detector.monitor_download()
@@ -538,8 +590,10 @@ class SaveCfxRequestMultipagesResultsApplication:
             logger_config.print_and_log_error(f"No downloaded file found for {label}")
             return False
 
-        logger_config.print_and_log_info(f"File downloaded : {file_downloaded_path}, will be moveds to {file_to_create_path}")
-        shutil.move(file_downloaded_path, file_to_create_path)
+        logger_config.print_and_log_info(
+            f"File downloaded : {file_downloaded_path}, will be moved to {file_to_create_path_without_extension}{change_state_cfx_query.output_file_type.get_file_extension()}"
+        )
+        shutil.move(file_downloaded_path, file_to_create_path_without_extension)
 
         return True
 
