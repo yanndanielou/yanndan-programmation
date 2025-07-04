@@ -2,7 +2,7 @@
 *.xls*
 *.png
 /.mypy_cache/
-/Input/
+/Input__/
 /Input/*.txt
 Input/CFX_kown_by_customer.txt
 /Input_for_Tests/*.json
