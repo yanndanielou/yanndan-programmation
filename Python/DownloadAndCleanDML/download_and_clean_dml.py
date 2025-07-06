@@ -141,9 +141,9 @@ class DownloadAndCleanDMLApplication:
 
     def run(self) -> None:
 
-        # self.download_dml_file()
-        # self.remove_useless_tabs_with_xlwings(DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH)
-        # self.remove_excel_external_links_with_xlwings(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
+        self.download_dml_file()
+        self.remove_useless_tabs_with_xlwings(DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH)
+        self.remove_excel_external_links_with_xlwings(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
         self.remove_useless_columns_with_xlwings(DML_FILE_WITHOUT_LINKS)
         self.replace_formulas_with_values_with_xlwings(DML_FILE_WITHOUT_USELESS_COLUMNS)
 
@@ -234,7 +234,7 @@ class DownloadAndCleanDMLApplication:
 
         # Parcourir toutes les feuilles
         for sheet in workbook_dml.sheets:
-            with logger_config.stopwatch_with_label(label=f"Handle sheet:{sheet}", inform_beginning=True):
+            with logger_config.stopwatch_with_label(label=f"Handle sheet:{sheet} with {len(sheet.used_range)} cells to parse", inform_beginning=True):
                 # Parcourir toutes les cellules dans la zone utilisée de la feuille
                 for cell in sheet.used_range:
                     # Si la cellule contient une formule
