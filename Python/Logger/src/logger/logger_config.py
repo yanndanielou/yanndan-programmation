@@ -19,6 +19,8 @@ from contextlib import contextmanager
 from logging.handlers import RotatingFileHandler
 from typing import Optional
 
+from common import date_time_formats
+
 # pylint: enable=logging-not-lazy
 # pylint: disable=logging-fstring-interpolation
 
@@ -126,6 +128,28 @@ def print_and_log_error(
         + to_print_and_log
     )
     logging.error(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
+
+
+@contextmanager
+def application_logger(application_name: str, logger_level: int = logging.INFO) -> Generator[float, None, None]:
+
+    configure_logger_with_random_log_file_suffix(log_file_name_prefix=application_name, logger_level=logger_level)
+    previous_stack = inspect.stack(0)[2]
+    file_name = previous_stack.filename
+    line_number = previous_stack.lineno
+
+    calling_file_name_and_line_number = file_name + ":" + str(line_number)
+
+    at_beginning_log_timestamp = time.asctime(time.localtime(time.time()))
+    to_print_and_log = f"{application_name} : application begin"
+    print(at_beginning_log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
+    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
+
+    yield 0.0
+
+    to_print_and_log = f"{application_name} : application end"
+    print(at_beginning_log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
+    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
 
 
 def configure_logger_with_random_log_file_suffix(
@@ -271,8 +295,8 @@ def stopwatch_with_label(
         debut = time.perf_counter()
         yield time.perf_counter() - debut
         fin = time.perf_counter()
-        duree = fin - debut
-        to_print_and_log = f"{label} Elapsed: {duree:.2f} seconds"
+        elapsed_time_seconds = fin - debut
+        to_print_and_log = f"{label} Elapsed: {date_time_formats.format_duration_to_string(elapsed_time_seconds)}"
 
         end_log_timestamp = time.asctime(time.localtime(time.time()))
 
@@ -304,10 +328,10 @@ def stopwatch_alert_if_exceeds_duration(
         start_time = time.perf_counter()
         yield time.perf_counter() - start_time
         end_time = time.perf_counter()
-        elapsed_time_conds = end_time - start_time
+        elapsed_time_seconds = end_time - start_time
 
-        if elapsed_time_conds >= duration_threshold_to_alert_info_in_s:
-            to_print_and_log = f"{label} took: {elapsed_time_conds:.2f} seconds"
+        if elapsed_time_seconds >= duration_threshold_to_alert_info_in_s:
+            to_print_and_log = f"{label} took: {date_time_formats.format_duration_to_string(elapsed_time_seconds)}"
 
             log_timestamp = time.asctime(time.localtime(time.time()))
 
@@ -323,19 +347,19 @@ def stopwatch_alert_if_exceeds_duration(
                     "!!! Critical !!\t"
                     if (
                         duration_threshold_to_alert_critical_in_s is not None
-                        and elapsed_time_conds > duration_threshold_to_alert_critical_in_s
+                        and elapsed_time_seconds > duration_threshold_to_alert_critical_in_s
                     )
                     else (
                         "!!! Error !!\t"
                         if (
                             duration_threshold_to_alert_error_in_s is not None
-                            and elapsed_time_conds > duration_threshold_to_alert_error_in_s
+                            and elapsed_time_seconds > duration_threshold_to_alert_error_in_s
                         )
                         else (
                             "! Warning !\t"
                             if (
                                 duration_threshold_to_alert_warning_in_s is not None
-                                and elapsed_time_conds > duration_threshold_to_alert_warning_in_s
+                                and elapsed_time_seconds > duration_threshold_to_alert_warning_in_s
                             )
                             else ""
                         )
@@ -350,19 +374,19 @@ def stopwatch_alert_if_exceeds_duration(
                     logging.CRITICAL
                     if (
                         duration_threshold_to_alert_critical_in_s is not None
-                        and elapsed_time_conds > duration_threshold_to_alert_critical_in_s
+                        and elapsed_time_seconds > duration_threshold_to_alert_critical_in_s
                     )
                     else (
                         logging.ERROR
                         if (
                             duration_threshold_to_alert_error_in_s is not None
-                            and elapsed_time_conds > duration_threshold_to_alert_error_in_s
+                            and elapsed_time_seconds > duration_threshold_to_alert_error_in_s
                         )
                         else (
                             logging.WARNING
                             if (
                                 duration_threshold_to_alert_warning_in_s is not None
-                                and elapsed_time_conds > duration_threshold_to_alert_warning_in_s
+                                and elapsed_time_seconds > duration_threshold_to_alert_warning_in_s
                             )
                             else logging.INFO
                         )
