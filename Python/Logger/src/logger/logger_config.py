@@ -247,27 +247,33 @@ def get_logger(name: str, rotating_file_name_without_extension: str, level: int 
 
 @contextmanager
 def stopwatch_with_label(
-    label: str, enable_print: bool = True, enable_log: bool = True, enabled: bool = True
+    label: str, enable_print: bool = True, enable_log: bool = True, enabled: bool = True, print_beginning: bool = False
 ) -> Generator[float, None, None]:
     """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
     https://www.docstring.fr/glossaire/with/"""
     if enabled:
-        debut = time.perf_counter()
-        yield time.perf_counter() - debut
-        fin = time.perf_counter()
-        duree = fin - debut
-        to_print_and_log = f"{label} Elapsed: {duree:.2f} seconds"
-
-        log_timestamp = time.asctime(time.localtime(time.time()))
 
         previous_stack = inspect.stack(0)[2]
         file_name = previous_stack.filename
         line_number = previous_stack.lineno
         calling_file_name_and_line_number = file_name + ":" + str(line_number)
 
+        if print_beginning:
+            at_beeginning_log_timestamp = time.asctime(time.localtime(time.time()))
+            to_print_and_log = f"{label} : begin"
+            print(at_beeginning_log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
+
+        debut = time.perf_counter()
+        yield time.perf_counter() - debut
+        fin = time.perf_counter()
+        duree = fin - debut
+        to_print_and_log = f"{label} Elapsed: {duree:.2f} seconds"
+
+        end_log_timestamp = time.asctime(time.localtime(time.time()))
+
         # pylint: disable=line-too-long
         if enable_print:
-            print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
+            print(end_log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
 
         if enable_log:
             logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
