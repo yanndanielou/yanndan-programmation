@@ -450,8 +450,6 @@ class SaveCfxRequestMultipagesResultsApplication:
                 )
             )
 
-        time.sleep(1000)
-
     def generate_and_download_query_results_for_project_filters(self, change_state_cfx_query: CfxQuery, number_of_retry_if_failure: int = 3) -> None:
 
         try:
@@ -529,7 +527,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                 remote_web_driver=self.driver,
                 screenshots_directory_path=self.screenshots_output_relative_path,
             ):
-                time.sleep(2.5)
+                time.sleep(0.5)
 
             match change_state_cfx_query.output_file_type:
                 case QueryOutputFileType.EXCEL_EXPORT:
@@ -589,6 +587,11 @@ class SaveCfxRequestMultipagesResultsApplication:
         if not file_downloaded_path:
             logger_config.print_and_log_error(f"No downloaded file found for {label}")
             return False
+
+        with stopwatch_with_label_and_surround_with_screenshots(
+            label="Downloading file - Additional waiting time for antivirus", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+        ):
+            time.sleep(5)
 
         logger_config.print_and_log_info(
             f"File downloaded : {file_downloaded_path}, will be moved to {file_to_create_path_without_extension}{change_state_cfx_query.output_file_type.get_file_extension()}"
@@ -654,7 +657,7 @@ class SaveCfxRequestMultipagesResultsApplication:
         with stopwatch_with_label_and_surround_with_screenshots(
             label="login_champfx - Additional waiting time", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
         ):
-            time.sleep(3)
+            time.sleep(0.5)
 
     def open_request_url(self, request_full_path: int) -> None:
         request_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/QUERY/{request_full_path}?format=HTML&loginId={connexion_param.champfx_login}&password={connexion_param.champfx_password}&noframes=true"
@@ -671,7 +674,7 @@ class SaveCfxRequestMultipagesResultsApplication:
             WebDriverWait(self.driver, 10).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
 
         with stopwatch_with_label_and_surround_with_screenshots(label="Additional waiting time", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
-            time.sleep(3.5)
+            time.sleep(0.8)
 
 
 def main() -> None:
