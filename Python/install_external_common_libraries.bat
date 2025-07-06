@@ -1,5 +1,6 @@
 @CALL SET_PYTHON_HOME.bat
 
+@call :INSTALL_PYTHON_LIB xlwings
 @call :INSTALL_PYTHON_LIB watchdog
 @call :INSTALL_PYTHON_LIB imageio-ffmpeg
 @call :INSTALL_PYTHON_LIB moviepy
