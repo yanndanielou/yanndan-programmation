@@ -67,11 +67,8 @@ class DownloadAndCleanDMLApplication:
 
     def run(self) -> None:
 
-        dml_file_path = self.download_dml_file()
-        if dml_file_path:
-            self.remove_useless_tabs_with_xlwings(dml_file_path)
-
-        pass
+        self.download_dml_file()
+        self.remove_useless_tabs_with_xlwings(DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH)
 
     def remove_useless_tabs_with_xlwings(self, dml_file_path: str) -> None:
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
