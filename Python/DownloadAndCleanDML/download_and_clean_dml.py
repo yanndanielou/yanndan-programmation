@@ -16,6 +16,9 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
 
+import openpyxl
+
+
 import selenium.webdriver.chrome.options
 import selenium.webdriver.firefox.options
 from common import download_utils, file_utils
@@ -37,47 +40,14 @@ DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
 
 DML_FILE_DOWNLOADED_PATTERN = "DML_NEXTEO_ATS+_V*.xlsm"
 
-DML_FILE_DESTINATION_PATH = f"{DEFAULT_DOWNLOAD_DIRECTORY}/DML_NEXTEO_ATS+_V14.xlsm"
+DML_FILE_DESTINATION_PATH = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14.xlsm"
+
+ALLOWED_DML_SHEETS_NAMES = ["Database"]
 
 DOWNLOADED_FILES_FINAL_DIRECTORY = "Input"
 OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_request_results"
 
-
-
 EXCEL_FILE_EXTENSION = ".xlsx"
-
-
-@contextmanager
-def stopwatch_with_label_and_surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, screenshots_directory_path: str) -> Generator[float, None, None]:
-    """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
-    https://www.docstring.fr/glossaire/with/"""
-    remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/before {label}.png")
-    debut = time.perf_counter()
-    yield time.perf_counter() - debut
-    fin = time.perf_counter()
-    remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/after {label}.png")
-
-    duree = fin - debut
-    to_print_and_log = f"{label} Elapsed: {duree:.2f} seconds"
-
-    log_timestamp = time.asctime(time.localtime(time.time()))
-
-    previous_stack = inspect.stack(0)[2]
-    file_name = previous_stack.filename
-    line_number = previous_stack.lineno
-    calling_file_name_and_line_number = file_name + ":" + str(line_number)
-
-    # pylint: disable=line-too-long
-    print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
-
-    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
-
-
-@contextmanager
-def surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, screenshots_directory_path: str) -> Generator[float, None, None]:
-    remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/before {label}.png")
-    yield 0.0
-    remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/after {label}.png")
 
 
 @dataclass
@@ -86,79 +56,74 @@ class DownloadAndCleanDMLApplication:
     output_downloaded_files_final_directory_path: str = DOWNLOADED_FILES_FINAL_DIRECTORY
     web_browser_download_directory = DEFAULT_DOWNLOAD_DIRECTORY
 
-    driver: ChromiumDriver = field(init=False)
-
     def __post_init__(self) -> None:
         self.number_of_exceptions_caught = 0
 
     def run(self) -> None:
 
-        self.create_webdriver()
+        dml_file_path = self.download_dml_file()
+        if dml_file_path:
+            self.remove_useless_tabs(dml_file_path)
 
-        download_file_detector = download_utils.DownloadFileDetector(
-            directory_path=self.web_browser_download_directory,
-            filename_pattern=DML_FILE_DOWNLOADED_PATTERN,
-            timeout_in_seconds=1000,
-        )
-        self.open_dml_url()
+        pass
 
-        file_downloaded_path: Optional[str] = download_file_detector.monitor_download()
-        if not file_downloaded_path:
-            logger_config.print_and_log_error(f"No downloaded file found for")
-            return
+    def remove_useless_tabs(self, dml_file_path: str) -> None:
+        logger_config.print_and_log_info(f"Open:{dml_file_path}")
+        workbook_dml = openpyxl.load_workbook(dml_file_path)
+        sheets_names = workbook_dml.sheetnames
+        logger_config.print_and_log_info(f"Tabs found: {sheets_names}")
+        print(workbook_dml.sheetnames)
+        for sheet_name in sheets_names:
+            if sheet_name in ALLOWED_DML_SHEETS_NAMES:
+                logger_config.print_and_log_info(f"Allowed sheet:{sheet_name}")
+            else:
+                logger_config.print_and_log_info(f"Removing sheet:{sheet_name}")
+                workbook_dml.remove(workbook_dml[sheet_name])
+            pass
 
-        logger_config.print_and_log_info(f"File downloaded : {file_downloaded_path}")
+        logger_config.print_and_log_info(f"Save:{workbook_dml}")
+        workbook_dml.save(DML_FILE_DESTINATION_PATH)
 
-        logger_config.print_and_log_info(
-            f"File downloaded : {file_downloaded_path}, will be moved to {DML_FILE_DESTINATION_PATH}}"
-        )
-        shutil.move(file_downloaded_path, DML_FILE_DESTINATION_PATH)
+    def download_dml_file(self) -> Optional[str]:
 
-    def open_dml_url(self) -> None:
-        logger_config.print_and_log_info("login_champfx")
+        driver: ChromiumDriver = webdriver.Firefox()
 
         dml_download_url = "https://rhapsody.siemens.net/livelink/livelink.exe?func=ll&objId=79329709&objAction=Download"
 
-        self.driver.get(dml_download_url)
+        driver.get(dml_download_url)
 
         time.sleep(0.5)
 
-        wait = WebDriverWait(self.driver, 10)
+        wait = WebDriverWait(driver, 10)
         more_providers_button = wait.until(expected_conditions.element_to_be_clickable((By.ID, "moreProviders")))
         more_providers_button.click()
 
         # Wait until the Azure option is visible and then click it
         azure_option = wait.until(expected_conditions.visibility_of_element_located((By.XPATH, "//li[@class='secondary-menu-item authprovider-choice' and @data-authhandler='Azure']")))
+
+        download_file_detector = download_utils.DownloadFileDetector(
+            directory_path=self.web_browser_download_directory,
+            filename_pattern=DML_FILE_DOWNLOADED_PATTERN,
+            timeout_in_seconds=30,
+        )
+
         azure_option.click()
 
-    def create_webdriver_firefox(self) -> None:
-        self.driver = webdriver.Firefox()
+        file_downloaded_path: Optional[str] = download_file_detector.monitor_download()
+        if not file_downloaded_path:
+            logger_config.print_and_log_error("No downloaded file found")
+            return None
 
-    def create_webdriver_chrome(self) -> None:
-        logger_config.print_and_log_info("create_webdriver_chrome")
-        # Path to the ChromeDriver
-        chrome_driver_path = "C:\\Users\\fr232487\\Downloads\\chromedriver-win64\\chromedriver.exe"
+        logger_config.print_and_log_info(f"File downloaded : {file_downloaded_path}, will be moved to {DML_FILE_DESTINATION_PATH}")
 
-        # Set up the Chrome options
-        chrome_options = selenium.webdriver.chrome.options.Options()
-        prefs = {
-            "download.default_directory": OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME,
-            "savefile.default_directory": OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME,
-            "download.prompt_for_download": False,
-            "download.directory_upgrade": True,
-            "safebrowsing.enabled": True,
-        }
-        chrome_options.add_experimental_option("prefs", prefs)
+        time.sleep(5)
 
-        # Create a new instance of the Chrome self.driver
-        driver_service = Service(chrome_driver_path)
-        self.driver = webdriver.Chrome(service=driver_service, options=chrome_options)
+        shutil.move(file_downloaded_path, DML_FILE_DESTINATION_PATH)
 
-        self.driver.command_executor.set_timeout(1000)
+        time.sleep(5)
 
-    def create_webdriver(self) -> None:
-        # self.create_webdriver_chrome()
-        self.create_webdriver_firefox()
+        driver.quit()
+        return DML_FILE_DESTINATION_PATH
 
 
 def main() -> None:
