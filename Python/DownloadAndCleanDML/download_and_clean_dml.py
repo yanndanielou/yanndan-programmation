@@ -79,7 +79,6 @@ COLUMNS_NAMES_TO_REMOVE = [
     "Désignation Phase",
     "Work Package",
     "WorkPackageLeader",
-    "Statut",
     "Jalon Contractuel",
     "Date Jalon Contractuel",
     "Commentaires Internes",
@@ -115,6 +114,10 @@ COLUMNS_NAMES_TO_REMOVE = [
     "IS FIRST ACCEPTATIONTBDLAST REFUSAL",
     "VERSION & REVISION",
     "CHROMATIC DISCRIMINANT",
+    "Numeros  SNCF Mobilités \nn°10-5969 632 \nà\nn°10-5970-637",
+    "Statut acceptation",
+    "Date Acceptation",
+    "Baseline FA",
 ]
 
 
@@ -140,11 +143,9 @@ class DownloadAndCleanDMLApplication:
 
         # self.download_dml_file()
         # self.remove_useless_tabs_with_xlwings(DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH)
-        # self.remove_excel_external_links(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
+        # self.remove_excel_external_links_with_xlwings(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
         self.remove_useless_columns_with_xlwings(DML_FILE_WITHOUT_LINKS)
-        # self.remove_useless_columns(DML_FILE_WITHOUT_LINKS)
-        # self.clean_useless_columns(DML_FILE_WITHOUT_USELESS_COLUMNS)
-        # self.replace_formulas_with_values_with_xlwings(DML_FILE_WITHOUT_LINKS)
+        self.replace_formulas_with_values_with_xlwings(DML_FILE_WITHOUT_USELESS_COLUMNS)
 
     def remove_useless_tabs_with_xlwings(self, dml_file_path: str) -> None:
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
@@ -280,7 +281,7 @@ class DownloadAndCleanDMLApplication:
 
             # Obtenir toutes les valeurs de la première ligne
             headers = sht.range("A1").expand("right").value
-            logger_config.print_and_log_info(f"headers:{headers}")
+            logger_config.print_and_log_info(f"{len(headers)} headers:{headers}")
 
             # Trouver l'index de la colonne à supprimer
             logger_config.print_and_log_error(f"removing column '{column_name_to_remove}'")
