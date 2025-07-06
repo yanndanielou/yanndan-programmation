@@ -46,7 +46,7 @@ DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
 DML_FILE_DOWNLOADED_PATTERN = "DML_NEXTEO_ATS+_V*.xlsm"
 DML_FILE_WITHOUT_USELESS_SHEETS_PATH = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_useless_sheets.xlsm"
 DML_FILE_WITHOUT_USELESS_COLUMNS = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_useless_columns.xlsm"
-DML_FILE_WITE_USELESS_COLUMNS_CLEANED = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_with_useless_columns_cleaned.xlsm"
+DML_FILE_WITH_USELESS_COLUMNS_CLEANED = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_with_useless_columns_cleaned.xlsm"
 DML_FILE_WITHOUT_FORMULA_REPLACED_BY_VALUE = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_formula.xlsm"
 DML_FILE_WITHOUT_LINKS = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_links.xlsm"
 
@@ -62,15 +62,69 @@ OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_request_results"
 
 EXCEL_FILE_EXTENSION = ".xlsx"
 
+FIRST_LINE_TO_REMOVE_RANGES = ["1:1"]
+# RANGES_TO_REMOVE = ["A:G", "L:P", "S:W", "AA:AC"]
+
+COLUMNS_NAMES_TO_REMOVE = [
+    "Unique ID",
+    "Code Dico & Code Arborescence",
+    "MemoEasy",
+    "Niveau Arborescence",
+    "Code Arborescence",
+    "Nom Arborescence",
+    "Code Dico",
+    "Type Document",
+    "Tranche",
+    "Phase",
+    "Désignation Phase",
+    "Work Package",
+    "WorkPackageLeader",
+    "Statut",
+    "Jalon Contractuel",
+    "Date Jalon Contractuel",
+    "Commentaires Internes",
+    "Commentaires MOE",
+    "Référentiel",
+    "Jalon GUIDE",
+    "Work Product",
+    "ID Macrotache",
+    "% Macro Tache",
+    "Montant",
+    "Activité Planning",
+    "Date Planning",
+    "Lien Doc-Planning",
+    "Baseline Livraison",
+    "Previous Forecast Livraison",
+    "À confirmer Livraison",
+    "Durée Livraison 1è Version & Acceptation",
+    "GCONF",
+    "Jalon Fourniture",
+    "Nb de commentaires bloquants encore ouverts",
+    "Document Supprimé",
+    "Dernière Soumission ",
+    "Document technique (Yes/No)",
+    "Confidentialité Document",
+    "Référence SNCF",
+    "ATS+/Nexteo",
+    "% Avancement DML",
+    "Dernier statut Document",
+    "Version avec dernier statut",
+    "FILTERED OR NOT",
+    "IS LAST VERSION",
+    "IS FIRST VERSION",
+    "IS FIRST ACCEPTATIONTBDLAST REFUSAL",
+    "VERSION & REVISION",
+    "CHROMATIC DISCRIMINANT",
+]
+
 
 def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file_path: str) -> None:
 
-    # Enregistrer et fermer le classeur
-    with logger_config.stopwatch_with_label(label="Close workbook", inform_beginning=True):
-        workbook_dml.close()
-
-    with logger_config.stopwatch_with_label(label=f"Save:{file_path}", inform_beginning=True):
+    with logger_config.stopwatch_with_label(label=f"Save:{file_path}"):
         workbook_dml.save(file_path)
+
+    with logger_config.stopwatch_with_label(label="Close workbook"):
+        workbook_dml.close()
 
 
 @dataclass
@@ -85,11 +139,12 @@ class DownloadAndCleanDMLApplication:
     def run(self) -> None:
 
         # self.download_dml_file()
-        self.remove_useless_tabs_with_xlwings(DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH)
-        self.remove_excel_external_links(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
-        self.replace_formulas_with_values(DML_FILE_WITHOUT_LINKS)
-        self.remove_useless_columns(DML_FILE_WITHOUT_FORMULA_REPLACED_BY_VALUE)
-        self.clean_useless_columns(DML_FILE_WITHOUT_USELESS_COLUMNS)
+        # self.remove_useless_tabs_with_xlwings(DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH)
+        # self.remove_excel_external_links(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
+        self.remove_useless_columns_with_xlwings(DML_FILE_WITHOUT_LINKS)
+        # self.remove_useless_columns(DML_FILE_WITHOUT_LINKS)
+        # self.clean_useless_columns(DML_FILE_WITHOUT_USELESS_COLUMNS)
+        # self.replace_formulas_with_values_with_xlwings(DML_FILE_WITHOUT_LINKS)
 
     def remove_useless_tabs_with_xlwings(self, dml_file_path: str) -> None:
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
@@ -119,7 +174,7 @@ class DownloadAndCleanDMLApplication:
 
         save_and_close_workbook(workbook_dml, DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
 
-    def remove_excel_external_links(self, dml_file_path: str) -> None:
+    def remove_excel_external_links_with_xlwings(self, dml_file_path: str) -> None:
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
             workbook_dml = xlwings.Book(dml_file_path)
 
@@ -131,12 +186,12 @@ class DownloadAndCleanDMLApplication:
         logger_config.print_and_log_info(f"{len(external_links_sources)} links found: {external_links_sources}")
 
         for external_links_source_name in external_links_sources:
-            with logger_config.stopwatch_with_label(label=f"Removing link:{external_links_source_name}", inform_beginning=True):
+            with logger_config.stopwatch_with_label(label=f"Removing link:{external_links_source_name}"):
                 workbook_dml.api.BreakLink(Name=external_links_source_name, Type=1)  # Type=1 pour les liaisons de type Excel
 
         save_and_close_workbook(workbook_dml, DML_FILE_WITHOUT_LINKS)
 
-    def replace_formulas_with_values(self, dml_file_path: str) -> None:
+    def replace_formulas_with_values_with_openpyxl(self, dml_file_path: str) -> None:
         # Load the workbook
         with logger_config.stopwatch_with_label(label=f"Open workbook_data_only:{dml_file_path}", inform_beginning=True):
             workbook_data_only = openpyxl.load_workbook(dml_file_path, data_only=True)
@@ -169,7 +224,31 @@ class DownloadAndCleanDMLApplication:
 
         save_and_close_workbook(writable_workbook, DML_FILE_WITHOUT_FORMULA_REPLACED_BY_VALUE)
 
-    def remove_useless_columns(self, dml_file_path: str) -> None:
+    def replace_formulas_with_values_with_xlwings(self, dml_file_path: str) -> None:
+        with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
+            workbook_dml = xlwings.Book(dml_file_path)
+
+        number_of_cells_updated = 0
+        number_of_cells_not_updated = 0
+
+        # Parcourir toutes les feuilles
+        for sheet in workbook_dml.sheets:
+            with logger_config.stopwatch_with_label(label=f"Handle sheet:{sheet}", inform_beginning=True):
+                # Parcourir toutes les cellules dans la zone utilisée de la feuille
+                for cell in sheet.used_range:
+                    # Si la cellule contient une formule
+                    if cell.formula != "":
+                        # Remplacer la formule par sa valeur actuelle
+                        cell.value = cell.value
+                        number_of_cells_updated += 1
+                    else:
+                        number_of_cells_not_updated += 1
+
+        logger_config.print_and_log_info(f"{number_of_cells_updated} cells updateds and {number_of_cells_not_updated} not updated")
+
+        save_and_close_workbook(workbook_dml, DML_FILE_WITHOUT_FORMULA_REPLACED_BY_VALUE)
+
+    def remove_useless_columns_with_openpyxl(self, dml_file_path: str) -> None:
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
             workbook_dml = openpyxl.load_workbook(dml_file_path)
 
@@ -187,7 +266,39 @@ class DownloadAndCleanDMLApplication:
 
         save_and_close_workbook(workbook_dml, DML_FILE_WITHOUT_USELESS_COLUMNS)
 
-    def clean_useless_columns(self, dml_file_path: str) -> None:
+    def remove_useless_columns_with_xlwings(self, dml_file_path: str) -> None:
+        with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
+            workbook_dml = xlwings.Book(dml_file_path)
+
+        for range_to_remove in FIRST_LINE_TO_REMOVE_RANGES:
+            with logger_config.stopwatch_with_label(label=f"Remove:{range_to_remove}", inform_beginning=True):
+                xlwings.Range(range_to_remove).delete()
+
+        sht = workbook_dml.sheets[USEFUL_DML_SHEET_NAME]
+
+        for column_name_to_remove in COLUMNS_NAMES_TO_REMOVE:
+
+            # Obtenir toutes les valeurs de la première ligne
+            headers = sht.range("A1").expand("right").value
+            logger_config.print_and_log_info(f"headers:{headers}")
+
+            # Trouver l'index de la colonne à supprimer
+            logger_config.print_and_log_error(f"removing column '{column_name_to_remove}'")
+            try:
+                col_index = headers.index(column_name_to_remove) + 1  # Ajouter 1 car Excel utilise des index de base 1
+                logger_config.print_and_log_info(f"index of column {column_name_to_remove} is {col_index}")
+                sht.range((1, col_index), (sht.cells.last_cell.row, col_index)).delete()  # Supprimer la colonne
+
+            except ValueError as e:
+                logger_config.print_and_log_exception(e)
+                logger_config.print_and_log_error(f"La colonne '{column_name_to_remove}' n'a pas été trouvée.")
+                for range_to_remove in FIRST_LINE_TO_REMOVE_RANGES:
+                    with logger_config.stopwatch_with_label(label=f"Remove:{range_to_remove}", inform_beginning=True):
+                        xlwings.Range(range_to_remove).delete()
+
+        save_and_close_workbook(workbook_dml, DML_FILE_WITHOUT_USELESS_COLUMNS)
+
+    def clean_useless_columns_with_openpyxl(self, dml_file_path: str) -> None:
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
             workbook_dml = openpyxl.load_workbook(dml_file_path)
 
@@ -204,7 +315,7 @@ class DownloadAndCleanDMLApplication:
                     cell.value = None
                     number_of_cells_updated += 1
 
-        save_and_close_workbook(workbook_dml, DML_FILE_WITE_USELESS_COLUMNS_CLEANED)
+        save_and_close_workbook(workbook_dml, DML_FILE_WITH_USELESS_COLUMNS_CLEANED)
 
     def remove_useless_tabs_with_openpyxl(self, dml_file_path: str) -> None:
         logger_config.print_and_log_info(f"Open:{dml_file_path}")
