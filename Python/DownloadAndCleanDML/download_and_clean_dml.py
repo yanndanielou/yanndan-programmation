@@ -63,6 +63,16 @@ OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_request_results"
 EXCEL_FILE_EXTENSION = ".xlsx"
 
 
+def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file_path: str) -> None:
+
+    # Enregistrer et fermer le classeur
+    with logger_config.stopwatch_with_label(label="Close workbook", inform_beginning=True):
+        workbook_dml.close()
+
+    with logger_config.stopwatch_with_label(label=f"Save:{file_path}", inform_beginning=True):
+        workbook_dml.save(file_path)
+
+
 @dataclass
 class DownloadAndCleanDMLApplication:
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
@@ -74,10 +84,10 @@ class DownloadAndCleanDMLApplication:
 
     def run(self) -> None:
 
-        self.download_dml_file()
+        # self.download_dml_file()
         self.remove_useless_tabs_with_xlwings(DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH)
         self.remove_excel_external_links(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
-        self.replace_formulas_with_values(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
+        self.replace_formulas_with_values(DML_FILE_WITHOUT_LINKS)
         self.remove_useless_columns(DML_FILE_WITHOUT_FORMULA_REPLACED_BY_VALUE)
         self.clean_useless_columns(DML_FILE_WITHOUT_USELESS_COLUMNS)
 
@@ -107,9 +117,7 @@ class DownloadAndCleanDMLApplication:
                         logger_config.print_and_log_exception(exc)
             pass
 
-        # Enregistrer et fermer le classeur
-        workbook_dml.save(path=DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
-        workbook_dml.close()
+        save_and_close_workbook(workbook_dml, DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
 
     def remove_excel_external_links(self, dml_file_path: str) -> None:
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
@@ -126,9 +134,7 @@ class DownloadAndCleanDMLApplication:
             with logger_config.stopwatch_with_label(label=f"Removing link:{external_links_source_name}", inform_beginning=True):
                 workbook_dml.api.BreakLink(Name=external_links_source_name, Type=1)  # Type=1 pour les liaisons de type Excel
 
-        # Enregistrer et fermer le classeur
-        workbook_dml.save(path=DML_FILE_WITHOUT_LINKS)
-        workbook_dml.close()
+        save_and_close_workbook(workbook_dml, DML_FILE_WITHOUT_LINKS)
 
     def replace_formulas_with_values(self, dml_file_path: str) -> None:
         # Load the workbook
@@ -145,6 +151,7 @@ class DownloadAndCleanDMLApplication:
         writable_sheet = writable_workbook[sheet_name]
 
         number_of_cells_updated = 0
+        number_of_cells_not_updated = 0
 
         with logger_config.stopwatch_with_label(label="Iterate and remove formula", inform_beginning=True):
 
@@ -155,11 +162,12 @@ class DownloadAndCleanDMLApplication:
                         # If the cell contains a formula, replace it with its value
                         writable_sheet[cell.coordinate].value = cell.value
                         number_of_cells_updated += 1
+                    else:
+                        number_of_cells_not_updated += 1
 
-        logger_config.print_and_log_info(f"{number_of_cells_updated} cells updateds")
+        logger_config.print_and_log_info(f"{number_of_cells_updated} cells updateds and {number_of_cells_not_updated} not updated")
 
-        # Save the changes
-        writable_workbook.save(DML_FILE_WITHOUT_FORMULA_REPLACED_BY_VALUE)
+        save_and_close_workbook(writable_workbook, DML_FILE_WITHOUT_FORMULA_REPLACED_BY_VALUE)
 
     def remove_useless_columns(self, dml_file_path: str) -> None:
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
@@ -177,7 +185,7 @@ class DownloadAndCleanDMLApplication:
             # Delete the column
             sheet.delete_cols(column_number)
 
-        workbook_dml.save(DML_FILE_WITHOUT_USELESS_COLUMNS)
+        save_and_close_workbook(workbook_dml, DML_FILE_WITHOUT_USELESS_COLUMNS)
 
     def clean_useless_columns(self, dml_file_path: str) -> None:
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
@@ -196,7 +204,7 @@ class DownloadAndCleanDMLApplication:
                     cell.value = None
                     number_of_cells_updated += 1
 
-        workbook_dml.save(DML_FILE_WITE_USELESS_COLUMNS_CLEANED)
+        save_and_close_workbook(workbook_dml, DML_FILE_WITE_USELESS_COLUMNS_CLEANED)
 
     def remove_useless_tabs_with_openpyxl(self, dml_file_path: str) -> None:
         logger_config.print_and_log_info(f"Open:{dml_file_path}")
@@ -214,8 +222,7 @@ class DownloadAndCleanDMLApplication:
                 workbook_dml.remove(workbook_dml[sheet_name])
             pass
 
-        logger_config.print_and_log_info(f"Save:{workbook_dml}")
-        workbook_dml.save(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
+        save_and_close_workbook(workbook_dml, DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
 
     def download_dml_file(self) -> Optional[str]:
 
