@@ -45,12 +45,16 @@ DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
 
 DML_FILE_DOWNLOADED_PATTERN = "DML_NEXTEO_ATS+_V*.xlsm"
 DML_FILE_WITHOUT_USELESS_SHEETS_PATH = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_useless_sheets.xlsm"
+DML_FILE_WITHOUT_USELESS_COLUMNS = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_useless_columns.xlsm"
+DML_FILE_WITE_USELESS_COLUMNS_CLEANED = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_with_useless_columns_cleaned.xlsm"
+DML_FILE_WITHOUT_FORMULA_REPLACED_BY_VALUE = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_formula.xlsm"
 DML_FILE_WITHOUT_LINKS = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_links.xlsm"
 
 DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_raw_from_rhapsody.xlsm"
 DML_FILE_FINAL_DESTINATION_PATH = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14.xlsm"
 
-ALLOWED_DML_SHEETS_NAMES = ["Database"]
+USEFUL_DML_SHEET_NAME = "Database"
+ALLOWED_DML_SHEETS_NAMES = [USEFUL_DML_SHEET_NAME]
 EXCEL_INTERNAL_RESERVED_SHEETS_NAMES = ["Register"]
 
 DOWNLOADED_FILES_FINAL_DIRECTORY = "Input"
@@ -70,10 +74,12 @@ class DownloadAndCleanDMLApplication:
 
     def run(self) -> None:
 
-        # self.download_dml_file()
-        # self.remove_useless_tabs_with_xlwings(DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH)
+        self.download_dml_file()
+        self.remove_useless_tabs_with_xlwings(DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH)
         self.remove_excel_external_links(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
-        # self.remove_useless_columns(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
+        self.replace_formulas_with_values(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
+        self.remove_useless_columns(DML_FILE_WITHOUT_FORMULA_REPLACED_BY_VALUE)
+        self.clean_useless_columns(DML_FILE_WITHOUT_USELESS_COLUMNS)
 
     def remove_useless_tabs_with_xlwings(self, dml_file_path: str) -> None:
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
@@ -124,12 +130,73 @@ class DownloadAndCleanDMLApplication:
         workbook_dml.save(path=DML_FILE_WITHOUT_LINKS)
         workbook_dml.close()
 
+    def replace_formulas_with_values(self, dml_file_path: str) -> None:
+        # Load the workbook
+        with logger_config.stopwatch_with_label(label=f"Open workbook_data_only:{dml_file_path}", inform_beginning=True):
+            workbook_data_only = openpyxl.load_workbook(dml_file_path, data_only=True)
+
+        with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
+            # Read the workbook again to write values (data_only doesn't write back)
+            writable_workbook = openpyxl.load_workbook(dml_file_path)
+
+        sheet_name = USEFUL_DML_SHEET_NAME
+        # Select the readable and writable sheets
+        readable_sheet = workbook_data_only[sheet_name]
+        writable_sheet = writable_workbook[sheet_name]
+
+        number_of_cells_updated = 0
+
+        with logger_config.stopwatch_with_label(label="Iterate and remove formula", inform_beginning=True):
+
+            # Iterate over all cells in the sheet
+            for row in readable_sheet.iter_rows():
+                for cell in row:
+                    if cell.value is not None and isinstance(cell.value, str) and cell.value.startswith("="):
+                        # If the cell contains a formula, replace it with its value
+                        writable_sheet[cell.coordinate].value = cell.value
+                        number_of_cells_updated += 1
+
+        logger_config.print_and_log_info(f"{number_of_cells_updated} cells updateds")
+
+        # Save the changes
+        writable_workbook.save(DML_FILE_WITHOUT_FORMULA_REPLACED_BY_VALUE)
+
     def remove_useless_columns(self, dml_file_path: str) -> None:
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
             workbook_dml = openpyxl.load_workbook(dml_file_path)
 
-        sheets_names = workbook_dml.sheetnames
-        logger_config.print_and_log_info(f"{len(sheets_names)} Sheets found: {sheets_names}")
+        sheet = workbook_dml[USEFUL_DML_SHEET_NAME]
+
+        columns_to_remove_letters = ["A", "E"]
+
+        for columns_to_remove_letter in columns_to_remove_letters:
+
+            # Convert the column letter to a number
+            column_number = openpyxl.utils.column_index_from_string(columns_to_remove_letter)
+
+            # Delete the column
+            sheet.delete_cols(column_number)
+
+        workbook_dml.save(DML_FILE_WITHOUT_USELESS_COLUMNS)
+
+    def clean_useless_columns(self, dml_file_path: str) -> None:
+        with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
+            workbook_dml = openpyxl.load_workbook(dml_file_path)
+
+        sheet = workbook_dml[USEFUL_DML_SHEET_NAME]
+        columns_to_clean_letters = ["B", "C"]
+
+        number_of_cells_updated = 0
+
+        # Iterate over each column specified
+        for column_to_remove in columns_to_clean_letters:
+            with logger_config.stopwatch_with_label(label=f"Remove column:{column_to_remove}", inform_beginning=True):
+                # Iterate over each cell in the column (excluding the header)
+                for cell in sheet[column_to_remove][2:]:  # Assuming the second row is header, start from the second
+                    cell.value = None
+                    number_of_cells_updated += 1
+
+        workbook_dml.save(DML_FILE_WITE_USELESS_COLUMNS_CLEANED)
 
     def remove_useless_tabs_with_openpyxl(self, dml_file_path: str) -> None:
         logger_config.print_and_log_info(f"Open:{dml_file_path}")
