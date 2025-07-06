@@ -42,13 +42,16 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 
 DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
 
+
 DML_FILE_DOWNLOADED_PATTERN = "DML_NEXTEO_ATS+_V*.xlsm"
 DML_FILE_WITHOUT_USELESS_SHEETS_PATH = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_useless_sheets.xlsm"
+DML_FILE_WITHOUT_LINKS = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_links.xlsm"
 
 DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_raw_from_rhapsody.xlsm"
 DML_FILE_FINAL_DESTINATION_PATH = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14.xlsm"
 
 ALLOWED_DML_SHEETS_NAMES = ["Database"]
+EXCEL_INTERNAL_RESERVED_SHEETS_NAMES = ["Register"]
 
 DOWNLOADED_FILES_FINAL_DIRECTORY = "Input"
 OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_request_results"
@@ -67,8 +70,10 @@ class DownloadAndCleanDMLApplication:
 
     def run(self) -> None:
 
-        self.download_dml_file()
-        self.remove_useless_tabs_with_xlwings(DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH)
+        # self.download_dml_file()
+        # self.remove_useless_tabs_with_xlwings(DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH)
+        self.remove_excel_external_links(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
+        # self.remove_useless_columns(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
 
     def remove_useless_tabs_with_xlwings(self, dml_file_path: str) -> None:
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
@@ -83,6 +88,8 @@ class DownloadAndCleanDMLApplication:
         for sheet_name in sheets_names:
             if sheet_name in ALLOWED_DML_SHEETS_NAMES:
                 logger_config.print_and_log_info(f"Allowed sheet:{sheet_name}")
+            elif sheet_name in EXCEL_INTERNAL_RESERVED_SHEETS_NAMES:
+                logger_config.print_and_log_info(f"ignore Excel internal reserved sheet:{sheet_name}")
             else:
                 with logger_config.stopwatch_with_label(label=f"Removing sheet:{sheet_name}", inform_beginning=True):
                     # Accéder à la feuille que l'on veut supprimer
@@ -98,6 +105,32 @@ class DownloadAndCleanDMLApplication:
         workbook_dml.save(path=DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
         workbook_dml.close()
 
+    def remove_excel_external_links(self, dml_file_path: str) -> None:
+        with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
+            workbook_dml = xlwings.Book(dml_file_path)
+
+        logger_config.print_and_log_info("set formulas calculations to manual to improve speed")
+
+        workbook_dml.app.calculation = "manual"
+        external_links_sources = workbook_dml.api.LinkSources()
+
+        logger_config.print_and_log_info(f"{len(external_links_sources)} links found: {external_links_sources}")
+
+        for external_links_source_name in external_links_sources:
+            with logger_config.stopwatch_with_label(label=f"Removing link:{external_links_source_name}", inform_beginning=True):
+                workbook_dml.api.BreakLink(Name=external_links_source_name, Type=1)  # Type=1 pour les liaisons de type Excel
+
+        # Enregistrer et fermer le classeur
+        workbook_dml.save(path=DML_FILE_WITHOUT_LINKS)
+        workbook_dml.close()
+
+    def remove_useless_columns(self, dml_file_path: str) -> None:
+        with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
+            workbook_dml = openpyxl.load_workbook(dml_file_path)
+
+        sheets_names = workbook_dml.sheetnames
+        logger_config.print_and_log_info(f"{len(sheets_names)} Sheets found: {sheets_names}")
+
     def remove_useless_tabs_with_openpyxl(self, dml_file_path: str) -> None:
         logger_config.print_and_log_info(f"Open:{dml_file_path}")
         workbook_dml = openpyxl.load_workbook(dml_file_path)
@@ -107,6 +140,8 @@ class DownloadAndCleanDMLApplication:
         for sheet_name in sheets_names:
             if sheet_name in ALLOWED_DML_SHEETS_NAMES:
                 logger_config.print_and_log_info(f"Allowed sheet:{sheet_name}")
+            elif sheet_name in EXCEL_INTERNAL_RESERVED_SHEETS_NAMES:
+                logger_config.print_and_log_info(f"ignore Excel internal reserved sheet:{sheet_name}")
             else:
                 logger_config.print_and_log_info(f"Removing sheet:{sheet_name}")
                 workbook_dml.remove(workbook_dml[sheet_name])
