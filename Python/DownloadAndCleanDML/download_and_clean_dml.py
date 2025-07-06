@@ -16,7 +16,11 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
 
+import pywintypes
+
+
 import openpyxl
+import xlwings
 
 
 import selenium.webdriver.chrome.options
@@ -39,8 +43,10 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
 
 DML_FILE_DOWNLOADED_PATTERN = "DML_NEXTEO_ATS+_V*.xlsm"
+DML_FILE_WITHOUT_USELESS_SHEETS_PATH = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_useless_sheets.xlsm"
 
-DML_FILE_DESTINATION_PATH = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14.xlsm"
+DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_raw_from_rhapsody.xlsm"
+DML_FILE_FINAL_DESTINATION_PATH = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14.xlsm"
 
 ALLOWED_DML_SHEETS_NAMES = ["Database"]
 
@@ -63,16 +69,44 @@ class DownloadAndCleanDMLApplication:
 
         dml_file_path = self.download_dml_file()
         if dml_file_path:
-            self.remove_useless_tabs(dml_file_path)
+            self.remove_useless_tabs_with_xlwings(dml_file_path)
 
         pass
 
-    def remove_useless_tabs(self, dml_file_path: str) -> None:
+    def remove_useless_tabs_with_xlwings(self, dml_file_path: str) -> None:
+        with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
+            workbook_dml = xlwings.Book(dml_file_path)
+
+        logger_config.print_and_log_info("set formulas calculations to manual to improve speed")
+
+        workbook_dml.app.calculation = "manual"
+        sheets_names = workbook_dml.sheet_names
+        logger_config.print_and_log_info(f"{len(sheets_names)} Sheets found: {sheets_names}")
+
+        for sheet_name in sheets_names:
+            if sheet_name in ALLOWED_DML_SHEETS_NAMES:
+                logger_config.print_and_log_info(f"Allowed sheet:{sheet_name}")
+            else:
+                with logger_config.stopwatch_with_label(label=f"Removing sheet:{sheet_name}", inform_beginning=True):
+                    # Accéder à la feuille que l'on veut supprimer
+                    sheet_to_remove = xlwings.sheets[sheet_name]
+                    # Supprimer la feuille
+                    try:
+                        sheet_to_remove.delete()
+                    except Exception as exc:
+                        logger_config.print_and_log_exception(exc)
+            pass
+
+        # Enregistrer et fermer le classeur
+        workbook_dml.save(path=DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
+        workbook_dml.close()
+
+    def remove_useless_tabs_with_openpyxl(self, dml_file_path: str) -> None:
         logger_config.print_and_log_info(f"Open:{dml_file_path}")
         workbook_dml = openpyxl.load_workbook(dml_file_path)
         sheets_names = workbook_dml.sheetnames
-        logger_config.print_and_log_info(f"Tabs found: {sheets_names}")
-        print(workbook_dml.sheetnames)
+        logger_config.print_and_log_info(f"{len(sheets_names)} Sheets found: {sheets_names}")
+        # print(workbook_dml.sheetnames)
         for sheet_name in sheets_names:
             if sheet_name in ALLOWED_DML_SHEETS_NAMES:
                 logger_config.print_and_log_info(f"Allowed sheet:{sheet_name}")
@@ -82,7 +116,7 @@ class DownloadAndCleanDMLApplication:
             pass
 
         logger_config.print_and_log_info(f"Save:{workbook_dml}")
-        workbook_dml.save(DML_FILE_DESTINATION_PATH)
+        workbook_dml.save(DML_FILE_WITHOUT_USELESS_SHEETS_PATH)
 
     def download_dml_file(self) -> Optional[str]:
 
@@ -114,25 +148,22 @@ class DownloadAndCleanDMLApplication:
             logger_config.print_and_log_error("No downloaded file found")
             return None
 
-        logger_config.print_and_log_info(f"File downloaded : {file_downloaded_path}, will be moved to {DML_FILE_DESTINATION_PATH}")
+        logger_config.print_and_log_info(f"File downloaded : {file_downloaded_path}, will be moved to {DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH}")
 
         time.sleep(5)
 
-        shutil.move(file_downloaded_path, DML_FILE_DESTINATION_PATH)
+        shutil.move(file_downloaded_path, DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH)
 
         time.sleep(5)
 
         driver.quit()
-        return DML_FILE_DESTINATION_PATH
+        return DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH
 
 
 def main() -> None:
     """Main function"""
 
-    with logger_config.stopwatch_with_label("DownloadAndCleanDML application"):
-        logger_config.configure_logger_with_random_log_file_suffix("DownloadAndCleanDML")
-
-        logger_config.print_and_log_info("Application start")
+    with logger_config.application_logger("DownloadAndCleanDML"):
 
         application: DownloadAndCleanDMLApplication = DownloadAndCleanDMLApplication()
         application.run()
