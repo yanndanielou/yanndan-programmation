@@ -228,9 +228,16 @@ class DownloadAndCleanDMLApplication:
 
         # Parcourir toutes les feuilles
         for sheet in workbook_dml.sheets:
-            with logger_config.stopwatch_with_label(label=f"Handle sheet:{sheet} with {len(sheet.used_range)} cells to parse", inform_beginning=True):
+            sheet: xlwings.Sheet = sheet
+            number_of_cells_to_parse = len(sheet.used_range)
+            with logger_config.stopwatch_with_label(label=f"Handle sheet:{sheet.name} with {number_of_cells_to_parse} cells to parse", inform_beginning=True):
                 # Parcourir toutes les cellules dans la zone utilisée de la feuille
                 for cell in sheet.used_range:
+
+                    number_of_cells_treated = number_of_cells_updated + number_of_cells_not_updated
+                    if (number_of_cells_treated) % 500 == 0:
+                        logger_config.print_and_log_info(f"sheet:{sheet.name} : {number_of_cells_treated} cells treated {number_of_cells_treated/number_of_cells_to_parse*100:.2f} %")
+
                     # Si la cellule contient une formule
                     if cell.formula != "":
                         # Remplacer la formule par sa valeur actuelle
