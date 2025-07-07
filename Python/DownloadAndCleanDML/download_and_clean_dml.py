@@ -125,6 +125,10 @@ COLUMNS_NAMES_TO_REMOVE = [
 
 
 DOWNLOAD_FROM_RHAPSODY_ENABLED = False
+REMOVE_USELESS_SHEETS_ENABLED = False
+REMOVE_LINKS_SHEETS_ENABLED = False
+REMOVE_USELESS_COLUMNS_ENABLED = False
+REPLACE_FORMULA_BY_VALUE_ENABLED = True
 
 
 def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file_path: str) -> str:
@@ -158,6 +162,9 @@ class DownloadAndCleanDMLApplication:
     def remove_useless_tabs_with_xlwings(self, dml_file_path: str) -> str:
         file_to_create_path = DML_FILE_WITHOUT_USELESS_SHEETS_PATH
 
+        if not REMOVE_USELESS_SHEETS_ENABLED:
+            return file_to_create_path
+
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
             workbook_dml = xlwings.Book(dml_file_path)
 
@@ -188,6 +195,9 @@ class DownloadAndCleanDMLApplication:
     def remove_excel_external_links_with_xlwings(self, dml_file_path: str) -> str:
         file_to_create_path = DML_FILE_WITHOUT_LINKS
 
+        if not REMOVE_LINKS_SHEETS_ENABLED:
+            return file_to_create_path
+
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
             workbook_dml = xlwings.Book(dml_file_path)
 
@@ -206,6 +216,9 @@ class DownloadAndCleanDMLApplication:
 
     def replace_formulas_with_values_with_xlwings(self, dml_file_path: str) -> str:
         file_to_create_path = DML_FILE_WITHOUT_FORMULA_REPLACED_BY_VALUE
+
+        if not REPLACE_FORMULA_BY_VALUE_ENABLED:
+            return file_to_create_path
 
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
             workbook_dml = xlwings.Book(dml_file_path)
@@ -232,6 +245,9 @@ class DownloadAndCleanDMLApplication:
 
     def remove_useless_columns_with_xlwings(self, dml_file_path: str) -> str:
         file_to_create_path = DML_FILE_WITHOUT_USELESS_COLUMNS
+
+        if not REMOVE_USELESS_COLUMNS_ENABLED:
+            return file_to_create_path
 
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
             workbook_dml = xlwings.Book(dml_file_path)
