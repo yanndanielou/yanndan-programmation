@@ -1,5 +1,6 @@
 import tkinter as tk
 import random
+from collections import deque
 
 
 class MazeGame:
@@ -10,36 +11,57 @@ class MazeGame:
         self.canvas = tk.Canvas(root, width=400, height=400, bg="white")
         self.canvas.pack()
         self.cell_size = 400 // self.size
-        self.solution_path = []
 
-        self.maze, self.solution_path = self.generate_maze_with_solution()
+        self.maze = self.generate_maze()
+        self.solution_path = self.find_shortest_path((1, 1), (size - 2, size - 2))
         self.player_pos = (1, 1)
 
         self.root.bind("<KeyPress>", self.key_press)
         self.draw_maze()
 
-    def generate_maze_with_solution(self):
+    def generate_maze(self):
         maze = [["#" for _ in range(self.size)] for _ in range(self.size)]
-        solution_path = []
-        self._generate_path(maze, solution_path, 1, 1)
+        self._generate_path(maze, 1, 1)
         maze[1][1] = "S"
         maze[self.size - 2][self.size - 2] = "E"
-        return maze, solution_path
+        return maze
 
-    def _generate_path(self, maze, solution_path, x, y):
+    def _generate_path(self, maze, x, y):
+        maze[x][y] = " "
         directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         random.shuffle(directions)
-        solution_path.append((x, y))
 
         for dx, dy in directions:
             nx, ny = x + dx, y + dy
             if 1 <= nx < self.size - 1 and 1 <= ny < self.size - 1 and maze[nx][ny] == "#":
-                if sum(1 for dx, dy in directions if maze[nx + dx][ny + dy] == " ") < 2:
+                if maze[nx + dx][ny + dy] == "#":
                     maze[nx][ny] = " "
-                    self._generate_path(maze, solution_path, nx, ny)
-                    if maze[self.size - 2][self.size - 2] == "E":
-                        break
-        return maze
+                    self._generate_path(maze, nx, ny)
+
+    def find_shortest_path(self, start, end):
+        queue = deque([start])
+        visited = {start: None}
+
+        while queue:
+            current = queue.popleft()
+            if current == end:
+                break
+
+            for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+                next_cell = (current[0] + dx, current[1] + dy)
+                if (0 <= next_cell[0] < self.size) and (0 <= next_cell[1] < self.size):
+                    if self.maze[next_cell[0]][next_cell[1]] == " " and next_cell not in visited:
+                        queue.append(next_cell)
+                        visited[next_cell] = current
+
+        # Reconstruct the path from end to start
+        path = []
+        step = end
+        while step is not None:
+            path.append(step)
+            step = visited[step]
+        path.reverse()
+        return path
 
     def draw_maze(self, show_solution=False):
         self.canvas.delete("all")
@@ -68,9 +90,6 @@ class MazeGame:
             self.player_pos = new_position
 
     def key_press(self, event):
-        print(f"event.keysym:{event.keysym}")
-        show_solution = False
-
         if event.keysym == "Up":
             self.move_player(-1, 0)
         elif event.keysym == "Down":
@@ -80,10 +99,9 @@ class MazeGame:
         elif event.keysym == "Right":
             self.move_player(0, 1)
         elif event.keysym == "s":
-            print(f"draw_maze show_solution")
-            show_solution = True
+            self.draw_maze(show_solution=True)
 
-        self.draw_maze(show_solution=show_solution)
+        self.draw_maze()
 
         if self.maze[self.player_pos[0]][self.player_pos[1]] == "E":
             print("You've reached the end!")
