@@ -74,12 +74,13 @@ class GameMainWindow(tk.Tk):
         congrats_text = f"Bonne réponse ! Vous avez gagné un point. Vous avez {self.points} points"
         message_label = tk.Label(popup, text=congrats_text, font=("Arial", 12))
 
-        self.synthetise_and_play_sentence(sentence=congrats_text, blocking=False)
+        self.synthetise_and_play_sentence(sentence=congrats_text, blocking=True)
 
         message_label.pack(pady=10)
 
         popup.after(15000, popup.destroy)
         popup.bind("<Return>", lambda _: popup.destroy())
+        popup.focus()
 
     def exercise_won(self) -> None:
         self.points += 1
@@ -127,9 +128,10 @@ class ListenNumberAndType(ModexFrame):
         logger_config.print_and_log_info(f"number_to_guess {self.number_to_guess}")
         self.say_consigne()
 
-        self.entry = tk.Entry(self)
-        self.entry.pack(pady=5)
-        self.entry.bind("<Return>", lambda _: self.check_answer())
+        self.answer_entry = tk.Entry(self)
+        self.answer_entry.pack(pady=5)
+        self.answer_entry.bind("<Return>", lambda _: self.check_answer())
+        self.answer_entry.focus()
 
         check_button = tk.Button(self, text="Vérifier", command=self.check_answer)
         check_button.pack(pady=5)
@@ -142,7 +144,7 @@ class ListenNumberAndType(ModexFrame):
         self.game_main_window.synthetise_and_play_sentence(f"{self.number_to_guess}", blocking=True)
 
     def check_answer(self) -> None:
-        answer = self.entry.get()
+        answer = self.answer_entry.get()
         logger_config.print_and_log_info(f"answer:{answer}")
 
         if answer == self.number_to_guess:
