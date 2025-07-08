@@ -2,7 +2,7 @@ import threading
 import time
 import tkinter as tk
 from tkinter import Toplevel, messagebox, simpledialog
-from typing import Callable
+from typing import Callable, List
 
 import pygame
 import pyttsx3
@@ -36,7 +36,12 @@ class GameMainWindow(tk.Tk):
         self.header_frame = HeaderFrame(self)
         self.header_frame.pack(fill=tk.X)
 
-        self.modes = [
+        self.modes: List[ModexFrame] = [
+            ListenNumberAndType(self, self.switch_mode),
+            ListenNumberAndType(self, self.switch_mode),
+            ListenNumberAndType(self, self.switch_mode),
+            ListenNumberAndType(self, self.switch_mode),
+            ListenNumberAndType(self, self.switch_mode),
             ListenNumberAndType(self, self.switch_mode),
             RecognizeSyllabeInChoiceWithVoice(self, self.switch_mode),
         ]
@@ -58,7 +63,7 @@ class GameMainWindow(tk.Tk):
         for mode in self.modes:
             mode.pack_forget()
 
-        self.modes[self.current_mode_index].pack()
+        self.modes[self.current_mode_index].start_exercise()
 
     def switch_mode(self) -> None:
         self.current_mode_index = (self.current_mode_index + 1) % len(self.modes)
@@ -119,6 +124,13 @@ class ModexFrame(tk.Frame):
         self.game_main_window.exercise_won()
         self.switch_mode_callback()
 
+    def start_exercise(self) -> None:
+        self.say_consigne()
+        self.pack()
+
+    def say_consigne(self) -> None:
+        self.game_main_window.synthetise_and_play_sentence(sentence="Consigne de l'exercice")
+
 
 class ListenNumberAndType(ModexFrame):
     def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None]) -> None:
@@ -126,7 +138,6 @@ class ListenNumberAndType(ModexFrame):
 
         self.number_to_guess = f"{random.randint(3, 12)}"
         logger_config.print_and_log_info(f"number_to_guess {self.number_to_guess}")
-        self.say_consigne()
 
         self.answer_entry = tk.Entry(self)
         self.answer_entry.pack(pady=5)
@@ -137,23 +148,24 @@ class ListenNumberAndType(ModexFrame):
         check_button.pack(pady=5)
 
     def say_consigne(self) -> None:
-        self.game_main_window.synthetise_and_play_sentence(sentence="Consigne de l'exercice")
-        time.sleep(0.5)
+        super().say_consigne()
         self.game_main_window.synthetise_and_play_sentence("Écouter et écrire le chiffre", blocking=True)
         time.sleep(1)
         self.game_main_window.synthetise_and_play_sentence(f"{self.number_to_guess}", blocking=True)
 
     def check_answer(self) -> None:
-        answer = self.answer_entry.get()
-        logger_config.print_and_log_info(f"answer:{answer}")
+        answer_given = self.answer_entry.get()
+        logger_config.print_and_log_info(f"answer:{answer_given}")
 
-        if answer == self.number_to_guess:
+        if answer_given == self.number_to_guess:
             self.exercise_won()
         else:
             self.exercise_retry()
 
     def exercise_retry(self) -> None:
-        self.game_main_window.synthetise_and_play_sentence("Mauvaise réponse, essaie encore!")
+        answer_given = self.answer_entry.get()
+
+        self.game_main_window.synthetise_and_play_sentence(f"Mauvaise réponse. Tu as écrit {answer_given}, il fallait écrire {self.number_to_guess}")
         self.say_consigne()
 
 
@@ -162,24 +174,30 @@ class RecognizeSyllabeInChoiceWithVoice(ModexFrame):
         super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback)
 
         self.syllabes = ["pa", "ma", "la"]
+        self.expected_answer = "ma"
 
         label = tk.Label(self, text="Mode 2: Écouter et cliquer sur la syllabe")
         label.pack(pady=10)
 
-        play_sound_button = tk.Button(self, text="Jouer le son", command=self.play_sound)
+        play_sound_button = tk.Button(self, text="Jouer le son", command=self.say_syllabe)
         play_sound_button.pack(pady=5)
 
         for syllabe in self.syllabes:
             button = tk.Button(self, text=syllabe, command=lambda s=syllabe: self.check_answer(s))
             button.pack(side=tk.LEFT, padx=2)
 
-    def play_sound(self) -> None:
-        pygame.mixer.music.load("syllabe.mp3")
-        pygame.mixer.music.play()
+    def say_consigne(self) -> None:
+        super().say_consigne()
+        self.game_main_window.synthetise_and_play_sentence("Clique sur la syllabe", blocking=True)
+        time.sleep(0.5)
+        self.say_syllabe()
 
-    def check_answer(self, syllabe: str) -> None:
-        correct_syllabe = "pa"  # Remplacez cela par la logique correcte
-        if syllabe == correct_syllabe:
+    def say_syllabe(self) -> None:
+        self.game_main_window.synthetise_and_play_sentence(self.expected_answer)
+
+    def check_answer(self, answer_given: str) -> None:
+
+        if answer_given == self.expected_answer:
             self.exercise_won()
 
 
