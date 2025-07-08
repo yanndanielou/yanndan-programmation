@@ -1,13 +1,25 @@
+import threading
+import time
 import tkinter as tk
-from tkinter import messagebox, simpledialog, Toplevel
-from PIL import ImageTk, Image
-import pygame
+from tkinter import Toplevel, messagebox, simpledialog
 from typing import Callable
 
+import pygame
+import pyttsx3
+from PIL import Image, ImageTk
 
-class Jeu(tk.Tk):
+import random
+
+from logger import logger_config
+
+DEFAULT_PLAYER_NAME = "Carabistouille"
+
+
+class GameMainWindow(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
+
+        self.pyttsx3_engine = pyttsx3.init()
 
         self.title("Jeu éducatif")
         self.geometry("400x300")  # Définir une taille pour l'application
@@ -29,17 +41,17 @@ class Jeu(tk.Tk):
         self.header_frame = HeaderFrame(self)
         self.header_frame.pack(fill=tk.X)
 
-        self.mode1_frame = Mode1Frame(self, self.show_mode2)
-        self.mode2_frame = Mode2Frame(self, self.show_mode1)
+        self.mode1_frame = ListenNumberAndType(self, self.show_mode2)
+        self.mode2_frame = RecognizeSyllabeInChoiceWithVoice(self, self.show_mode1)
 
         # Afficher le premier mode
         self.show_mode1()
 
     def prompt_for_name(self) -> None:
         """Demande le prénom de l'enfant au démarrage."""
-        self.child_name = simpledialog.askstring("Bienvenue", "Entrez votre prénom :")
-        if not self.child_name:  # Si aucune entrée, on utilise un nom par défaut
-            self.child_name = "Enfant"
+        child_name_entered = simpledialog.askstring("Bienvenue", "Entrez votre prénom :")
+        self.child_name = child_name_entered if child_name_entered else DEFAULT_PLAYER_NAME
+        self.synthetise_and_play_sentence(f"Tu t'appelles {self.child_name}")
 
     def update_header(self) -> None:
         """Met à jour le header avec le nouveau score et nom."""
@@ -55,25 +67,41 @@ class Jeu(tk.Tk):
         self.mode1_frame.pack_forget()
         self.mode2_frame.pack()
 
-    def display_felicitation_dialog(self) -> None:
+    def congrats_player(self) -> None:
         """Afficher une fenêtre popup personnalisée de félicitations."""
         popup = Toplevel(self)
         popup.title("Bravo!")
-        popup.geometry("300x300")
+        # popup.geometry("300x300")
 
         felicitation_label = tk.Label(popup, image=self.felicitation_image)
         felicitation_label.pack(pady=10)
 
-        message_label = tk.Label(popup, text="Bonne réponse ! Vous avez gagné un point.", font=("Arial", 12))
+        congrats_text = f"Bonne réponse ! Vous avez gagné un point. Vous avez {self.points} points"
+        message_label = tk.Label(popup, text=congrats_text, font=("Arial", 12))
+
+        self.synthetise_and_play_sentence(sentence=congrats_text, blocking=False)
+
         message_label.pack(pady=10)
 
         # Fermer le popup automatiquement après 15 secondes ou à l'appui sur "Entrée"
         popup.after(15000, popup.destroy)
         popup.bind("<Return>", lambda _: popup.destroy())
 
+    def exercise_won(self) -> None:
+        self.points += 1
+        self.update_header()
+        self.congrats_player()
+
+    def synthetise_and_play_sentence(self, sentence: str, blocking: bool = True) -> None:
+        self.pyttsx3_engine.say(sentence)
+        if blocking:
+            self.pyttsx3_engine.runAndWait()
+        else:
+            threading.Thread(target=self.pyttsx3_engine.runAndWait).start()
+
 
 class HeaderFrame(tk.Frame):
-    def __init__(self, master: Jeu) -> None:
+    def __init__(self, master: GameMainWindow) -> None:
         super().__init__(master, bg="lightblue")
         self.name_label = tk.Label(self, text="", bg="lightblue", font=("Arial", 14, "bold"))
         self.name_label.pack(side=tk.LEFT, padx=10)
@@ -86,17 +114,25 @@ class HeaderFrame(tk.Frame):
         self.points_label.config(text=f"Points: {points}")
 
 
-class Mode1Frame(tk.Frame):
-    def __init__(self, master: Jeu, switch_mode_callback: Callable[[], None]) -> None:
-        super().__init__(master)
-        self.master = master
+class ModexFrame(tk.Frame):
+    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None]) -> None:
+        super().__init__(game_main_window)
+        self.game_main_window = game_main_window
         self.switch_mode_callback = switch_mode_callback
+        self.master = game_main_window
 
-        label = tk.Label(self, text="Mode 1: Écouter et écrire le chiffre")
-        label.pack(pady=10)
+    def exercise_won(self) -> None:
+        self.game_main_window.exercise_won()
+        self.switch_mode_callback()
 
-        play_sound_button = tk.Button(self, text="Jouer le son", command=self.play_sound)
-        play_sound_button.pack(pady=5)
+
+class ListenNumberAndType(ModexFrame):
+    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None]) -> None:
+        super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback)
+
+        self.number_to_guess = random.randint(3, 12)
+        logger_config.print_and_log_info(f"number_to_guess {self.number_to_guess}")
+        self.say_consigne()
 
         self.entry = tk.Entry(self)
         self.entry.pack(pady=5)
@@ -105,28 +141,30 @@ class Mode1Frame(tk.Frame):
         check_button = tk.Button(self, text="Vérifier", command=self.check_answer)
         check_button.pack(pady=5)
 
-        next_button = tk.Button(self, text="Suivant", command=self.switch_mode_callback)
-        next_button.pack(pady=10)
-
-    def play_sound(self) -> None:
-        pygame.mixer.music.load("number.mp3")  # Placez le chemin de votre fichier mp3 ici
-        pygame.mixer.music.play()
+    def say_consigne(self) -> None:
+        self.game_main_window.synthetise_and_play_sentence(sentence="Consigne de l'exercice")
+        time.sleep(0.5)
+        self.game_main_window.synthetise_and_play_sentence("Écouter et écrire le chiffre", blocking=True)
+        time.sleep(1)
+        self.game_main_window.synthetise_and_play_sentence(f"{self.number_to_guess}", blocking=True)
 
     def check_answer(self) -> None:
         answer = self.entry.get()
-        correct_answer = "5"  # Remplacez cela par la logique correcte
 
-        if answer == correct_answer:
-            self.master.points += 1
-            self.master.update_header()
-            self.master.display_felicitation_dialog()
+        if answer == self.number_to_guess:
+            self.exercise_won()
+        else:
+            self.exercise_retry()
+
+    def exercise_retry(self) -> None:
+        self.game_main_window.synthetise_and_play_sentence("Mauvaise réponse, essaie encore!")
+        self.say_consigne()
 
 
-class Mode2Frame(tk.Frame):
-    def __init__(self, master: Jeu, switch_mode_callback: Callable[[], None]) -> None:
-        super().__init__(master)
-        self.master = master
-        self.switch_mode_callback = switch_mode_callback
+class RecognizeSyllabeInChoiceWithVoice(ModexFrame):
+    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None]) -> None:
+        super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback)
+
         self.syllabes = ["pa", "ma", "la"]
 
         label = tk.Label(self, text="Mode 2: Écouter et cliquer sur la syllabe")
@@ -149,11 +187,10 @@ class Mode2Frame(tk.Frame):
     def check_answer(self, syllabe: str) -> None:
         correct_syllabe = "pa"  # Remplacez cela par la logique correcte
         if syllabe == correct_syllabe:
-            self.master.points += 1
-            self.master.update_header()
-            self.master.display_felicitation_dialog()
+            self.exercise_won()
 
 
 if __name__ == "__main__":
-    jeu = Jeu()
-    jeu.mainloop()
+    with logger_config.application_logger("nombres_et_syllabes"):
+        jeu = GameMainWindow()
+        jeu.mainloop()
