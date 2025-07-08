@@ -1,7 +1,7 @@
 import threading
 import time
 import tkinter as tk
-from tkinter import Toplevel, messagebox, simpledialog
+from tkinter import Toplevel, messagebox, simpledialog, StringVar
 from typing import Callable, List, cast
 
 import pygame
@@ -56,13 +56,18 @@ class GameMainWindow(tk.Tk):
         self.header_frame.pack(fill=tk.X)
 
         self.modes: List[ModexFrame] = [
-            RecognizeSyllabeInChoiceWithVoice(self, self.switch_mode),
-            ListenNumberAndType(self, self.switch_mode),
-            ListenNumberAndType(self, self.switch_mode),
-            ListenNumberAndType(self, self.switch_mode),
-            ListenNumberAndType(self, self.switch_mode),
-            ListenNumberAndType(self, self.switch_mode),
-            ListenNumberAndType(self, self.switch_mode),
+            AdditionExercise(self, self.switch_mode),
+            AdditionExercise(self, self.switch_mode),
+            AdditionExercise(self, self.switch_mode),
+            AdditionExercise(self, self.switch_mode),
+            AdditionExercise(self, self.switch_mode),
+            RecognizeSyllabeInChoiceWithVoiceExercise(self, self.switch_mode),
+            ListenNumberAndTypeExercise(self, self.switch_mode),
+            ListenNumberAndTypeExercise(self, self.switch_mode),
+            ListenNumberAndTypeExercise(self, self.switch_mode),
+            ListenNumberAndTypeExercise(self, self.switch_mode),
+            ListenNumberAndTypeExercise(self, self.switch_mode),
+            ListenNumberAndTypeExercise(self, self.switch_mode),
         ]
 
         self.current_mode_index = 0
@@ -106,7 +111,7 @@ class GameMainWindow(tk.Tk):
 
     def congrats_player(self) -> None:
         popup = Toplevel(self)
-        popup.title("Bravo!")
+        popup.title("Bravo champion!")
 
         felicitation_label = tk.Label(popup, image=self.felicitation_image)
         felicitation_label.pack(pady=10)
@@ -157,6 +162,11 @@ class ModexFrame(tk.Frame):
         self.game_main_window = game_main_window
         self.switch_mode_callback = switch_mode_callback
 
+        self.consigne_label_value = StringVar()
+        self.consigne_label_value.set("Consigne")
+        self.consigne_label = tk.Label(self, textvariable=self.consigne_label_value)
+        self.consigne_label.pack(pady=10)
+
     def exercise_won(self) -> None:
         self.game_main_window.exercise_won()
         self.switch_mode_callback()
@@ -171,7 +181,46 @@ class ModexFrame(tk.Frame):
         pass
 
 
-class ListenNumberAndType(ModexFrame):
+class AdditionExercise(ModexFrame):
+    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], first_number: int = random.randint(0, 20), second_number: int = random.randint(0, 10)) -> None:
+        super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback)
+
+        self.consigne_label_value.set(f"{first_number} + {second_number}")
+
+        self.expected_result = f"{first_number + second_number}"
+        logger_config.print_and_log_info(f"number_to_guess {self.expected_result}")
+
+        self.first_number = first_number
+        self.second_number = second_number
+
+        self.answer_entry = tk.Entry(self)
+        self.answer_entry.pack(pady=5)
+        self.answer_entry.bind("<Return>", lambda _: self.check_answer())
+
+    def start_exercise(self) -> None:
+        super().start_exercise()
+        self.answer_entry.focus()
+
+    def say_consigne(self) -> None:
+        super().say_consigne()
+        self.game_main_window.synthetise_and_play_sentence(f"Calcule la somme de {self.first_number} et {self.second_number}")
+
+    def check_answer(self) -> None:
+        answer_given = self.answer_entry.get()
+        logger_config.print_and_log_info(f"answer:{answer_given}")
+
+        self.game_main_window.synthetise_and_play_sentence(f"Tu as écris {answer_given}")
+
+        if answer_given == self.expected_result:
+            self.exercise_won()
+        else:
+            self.exercise_retry()
+
+    def exercise_retry(self) -> None:
+        self.game_main_window.synthetise_and_play_sentence(f"Mauvaise réponse. Il fallait écrire {self.expected_result}. Recommence!")
+
+
+class ListenNumberAndTypeExercise(ModexFrame):
     def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None]) -> None:
         super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback)
 
@@ -210,7 +259,7 @@ class ListenNumberAndType(ModexFrame):
         self.game_main_window.synthetise_and_play_sentence(f"Ecrire le chiffre {self.number_to_guess}")
 
 
-class RecognizeSyllabeInChoiceWithVoice(ModexFrame):
+class RecognizeSyllabeInChoiceWithVoiceExercise(ModexFrame):
     def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None]) -> None:
         super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback)
 
