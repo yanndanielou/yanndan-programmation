@@ -3,7 +3,7 @@ import random
 
 
 class MazeGame:
-    def __init__(self, root, size=10):
+    def __init__(self, root, size=14) -> None:
         self.size = size
         self.root = root
         self.root.title("Maze Game")
