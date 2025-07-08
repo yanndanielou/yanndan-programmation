@@ -14,12 +14,15 @@ from logger import logger_config
 
 DEFAULT_PLAYER_NAME = "Carabistouille"
 
+DEVINETTES_QUESTION_REPONSE = [("Comment s'appelle ton chat?", "Moka"), ("Quel est le prénom de ton papa?", "Yann"), ("Quel est le prénom de ta maman?", "Céline")]
+
 
 class GameMainWindow(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
 
         self.pyttsx3_engine = pyttsx3.init()
+        self.pyttsx3_engine.setProperty("voice", "french")
 
         self.title("Jeu éducatif")
         self.geometry("400x300")
@@ -32,6 +35,7 @@ class GameMainWindow(tk.Tk):
         self.points = 0
 
         self.prompt_for_name()
+        self.guess_to_enter_game()
 
         self.header_frame = HeaderFrame(self)
         self.header_frame.pack(fill=tk.X)
@@ -50,6 +54,16 @@ class GameMainWindow(tk.Tk):
         self.show_current_mode()
 
     def prompt_for_name(self) -> None:
+        self.synthetise_and_play_sentence(f"Comment t'appelles-tu?")
+        child_name_entered = simpledialog.askstring("Bienvenue", "Entrez votre prénom :")
+        self.child_name = child_name_entered if child_name_entered else DEFAULT_PLAYER_NAME
+        self.synthetise_and_play_sentence(f"Tu t'appelles {self.child_name}")
+        self.show_current_mode()
+
+    def guess_to_enter_game(self) -> None:
+
+        devinette_et_réponse = DEVINETTES_QUESTION_REPONSE.an
+        self.synthetise_and_play_sentence(f"Comment t'appelles-tu?")
         child_name_entered = simpledialog.askstring("Bienvenue", "Entrez votre prénom :")
         self.child_name = child_name_entered if child_name_entered else DEFAULT_PLAYER_NAME
         self.synthetise_and_play_sentence(f"Tu t'appelles {self.child_name}")
