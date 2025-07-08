@@ -180,30 +180,24 @@ class ModexFrame(tk.Frame):
         # self.game_main_window.synthetise_and_play_sentence(sentence="Consigne de l'exercice")
         pass
 
+    def check_answer(self) -> None:
+        pass
 
-class AdditionExercise(ModexFrame):
-    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], first_number: int = random.randint(0, 20), second_number: int = random.randint(0, 10)) -> None:
-        super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback)
 
-        self.consigne_label_value.set(f"{first_number} + {second_number}")
-
-        self.expected_result = f"{first_number + second_number}"
-        logger_config.print_and_log_info(f"number_to_guess {self.expected_result}")
-
-        self.first_number = first_number
-        self.second_number = second_number
-
+class TextAnswerInEntryExercise(ModexFrame):
+    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], expected_result: str, give_answer_on_error: bool) -> None:
+        super().__init__(game_main_window, switch_mode_callback)
         self.answer_entry = tk.Entry(self)
         self.answer_entry.pack(pady=5)
         self.answer_entry.bind("<Return>", lambda _: self.check_answer())
 
+        self.expected_result = expected_result
+        logger_config.print_and_log_info(f"expected_result {self.expected_result}")
+
     def start_exercise(self) -> None:
         super().start_exercise()
+        logger_config.print_and_log_info(f"expected_result {self.expected_result}")
         self.answer_entry.focus()
-
-    def say_consigne(self) -> None:
-        super().say_consigne()
-        self.game_main_window.synthetise_and_play_sentence(f"Calcule la somme de {self.first_number} et {self.second_number}")
 
     def check_answer(self) -> None:
         answer_given = self.answer_entry.get()
@@ -214,10 +208,27 @@ class AdditionExercise(ModexFrame):
         if answer_given == self.expected_result:
             self.exercise_won()
         else:
-            self.exercise_retry()
+            self.exercise_retry(True)
 
-    def exercise_retry(self) -> None:
-        self.game_main_window.synthetise_and_play_sentence(f"Mauvaise réponse. Il fallait écrire {self.expected_result}. Recommence!")
+    def exercise_retry(self, give_answer: bool) -> None:
+        if give_answer:
+            self.game_main_window.synthetise_and_play_sentence(f"Mauvaise réponse. Il fallait écrire {self.expected_result}. Recommence!")
+        else:
+            self.game_main_window.synthetise_and_play_sentence("Mauvaise réponse. Recommence!")
+
+
+class AdditionExercise(TextAnswerInEntryExercise):
+    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], first_number: int = random.randint(0, 20), second_number: int = random.randint(0, 10)) -> None:
+        super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback, expected_result=f"{first_number + second_number}", give_answer_on_error=True)
+
+        self.consigne_label_value.set(f"{first_number} + {second_number}")
+
+        self.first_number = first_number
+        self.second_number = second_number
+
+    def say_consigne(self) -> None:
+        super().say_consigne()
+        self.game_main_window.synthetise_and_play_sentence(f"Calcule la somme de {self.first_number} et {self.second_number}")
 
 
 class ListenNumberAndTypeExercise(ModexFrame):
