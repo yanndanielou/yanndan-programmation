@@ -77,11 +77,17 @@ class GameMainWindow(tk.Tk):
 
     def guess_to_enter_game(self) -> None:
 
-        devinette_et_réponse = DEVINETTES_QUESTION_REPONSE.an
-        self.synthetise_and_play_sentence(f"Comment t'appelles-tu?")
-        child_name_entered = simpledialog.askstring("Bienvenue", "Entrez votre prénom :")
-        self.child_name = child_name_entered if child_name_entered else DEFAULT_PLAYER_NAME
-        self.synthetise_and_play_sentence(f"Tu t'appelles {self.child_name}")
+        devinette, expected_answer = DEVINETTES_QUESTION_REPONSE[random.randint(0, len(DEVINETTES_QUESTION_REPONSE))]
+        expected_answer = expected_answer.lower()
+        answer_given = ""
+        while answer_given.lower() != expected_answer:
+            answer_given = simpledialog.askstring("Devinette", devinette).lower()
+            self.synthetise_and_play_sentence(devinette)
+
+            if answer_given == expected_answer:
+                self.synthetise_and_play_sentence(f"Bonne réponse champion! {self.child_name}")
+
+            self.synthetise_and_play_sentence(f"Mauvaise réponse, recommence. La bonne réponse est {expected_answer}")
 
     def update_header(self) -> None:
         self.header_frame.update_info(self.child_name, self.points)
@@ -185,7 +191,7 @@ class ListenNumberAndType(ModexFrame):
 
     def say_consigne(self) -> None:
         super().say_consigne()
-        self.game_main_window.synthetise_and_play_sentence(f"Écouter et écrire le chiffre {self.number_to_guess}")
+        self.game_main_window.synthetise_and_play_sentence(f"Ecrire le chiffre {self.number_to_guess}")
         # self.game_main_window.synthetise_and_play_sentence(f"{self.number_to_guess}")
 
     def check_answer(self) -> None:
@@ -201,7 +207,7 @@ class ListenNumberAndType(ModexFrame):
         answer_given = self.answer_entry.get()
 
         self.game_main_window.synthetise_and_play_sentence(f"Mauvaise réponse. Tu as écrit {answer_given}, il fallait écrire {self.number_to_guess}. Recommence!")
-        self.game_main_window.synthetise_and_play_sentence(f"Écouter et écrire le chiffre {self.number_to_guess}")
+        self.game_main_window.synthetise_and_play_sentence(f"Ecrire le chiffre {self.number_to_guess}")
 
 
 class RecognizeSyllabeInChoiceWithVoice(ModexFrame):
