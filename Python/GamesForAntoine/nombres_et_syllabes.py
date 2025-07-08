@@ -22,56 +22,51 @@ class GameMainWindow(tk.Tk):
         self.pyttsx3_engine = pyttsx3.init()
 
         self.title("Jeu éducatif")
-        self.geometry("400x300")  # Définir une taille pour l'application
+        self.geometry("400x300")
 
-        # Initialiser pygame pour le son
         pygame.mixer.init()
 
-        # Charger l'image de félicitations
         self.felicitation_image = ImageTk.PhotoImage(Image.open("felicitation.png"))
 
-        # Variables pour nom et score
         self.child_name = ""
         self.points = 0
 
-        # Obtenir le prénom de l'enfant
         self.prompt_for_name()
 
-        # Créer des frames
         self.header_frame = HeaderFrame(self)
         self.header_frame.pack(fill=tk.X)
 
-        self.mode1_frame = ListenNumberAndType(self, self.show_mode2)
-        self.mode2_frame = RecognizeSyllabeInChoiceWithVoice(self, self.show_mode1)
+        self.modes = [
+            ListenNumberAndType(self, self.switch_mode),
+            RecognizeSyllabeInChoiceWithVoice(self, self.switch_mode),
+        ]
 
-        # Afficher le premier mode
-        self.show_mode1()
+        self.current_mode_index = 0
+        self.show_current_mode()
 
     def prompt_for_name(self) -> None:
-        """Demande le prénom de l'enfant au démarrage."""
         child_name_entered = simpledialog.askstring("Bienvenue", "Entrez votre prénom :")
         self.child_name = child_name_entered if child_name_entered else DEFAULT_PLAYER_NAME
         self.synthetise_and_play_sentence(f"Tu t'appelles {self.child_name}")
 
     def update_header(self) -> None:
-        """Met à jour le header avec le nouveau score et nom."""
         self.header_frame.update_info(self.child_name, self.points)
 
-    def show_mode1(self) -> None:
+    def show_current_mode(self) -> None:
         self.update_header()
-        self.mode2_frame.pack_forget()
-        self.mode1_frame.pack()
 
-    def show_mode2(self) -> None:
-        self.update_header()
-        self.mode1_frame.pack_forget()
-        self.mode2_frame.pack()
+        for mode in self.modes:
+            mode.pack_forget()
+
+        self.modes[self.current_mode_index].pack()
+
+    def switch_mode(self) -> None:
+        self.current_mode_index = (self.current_mode_index + 1) % len(self.modes)
+        self.show_current_mode()
 
     def congrats_player(self) -> None:
-        """Afficher une fenêtre popup personnalisée de félicitations."""
         popup = Toplevel(self)
         popup.title("Bravo!")
-        # popup.geometry("300x300")
 
         felicitation_label = tk.Label(popup, image=self.felicitation_image)
         felicitation_label.pack(pady=10)
@@ -83,7 +78,6 @@ class GameMainWindow(tk.Tk):
 
         message_label.pack(pady=10)
 
-        # Fermer le popup automatiquement après 15 secondes ou à l'appui sur "Entrée"
         popup.after(15000, popup.destroy)
         popup.bind("<Return>", lambda _: popup.destroy())
 
@@ -119,7 +113,6 @@ class ModexFrame(tk.Frame):
         super().__init__(game_main_window)
         self.game_main_window = game_main_window
         self.switch_mode_callback = switch_mode_callback
-        self.master = game_main_window
 
     def exercise_won(self) -> None:
         self.game_main_window.exercise_won()
@@ -136,7 +129,7 @@ class ListenNumberAndType(ModexFrame):
 
         self.entry = tk.Entry(self)
         self.entry.pack(pady=5)
-        self.entry.bind("<Return>", lambda _: self.check_answer())  # Associer la touche "Entrée" à la validation
+        self.entry.bind("<Return>", lambda _: self.check_answer())
 
         check_button = tk.Button(self, text="Vérifier", command=self.check_answer)
         check_button.pack(pady=5)
@@ -178,11 +171,8 @@ class RecognizeSyllabeInChoiceWithVoice(ModexFrame):
             button = tk.Button(self, text=syllabe, command=lambda s=syllabe: self.check_answer(s))
             button.pack(side=tk.LEFT, padx=2)
 
-        prev_button = tk.Button(self, text="Précédent", command=self.switch_mode_callback)
-        prev_button.pack(pady=10)
-
     def play_sound(self) -> None:
-        pygame.mixer.music.load("syllabe.mp3")  # Placez le chemin de votre fichier mp3 ici
+        pygame.mixer.music.load("syllabe.mp3")
         pygame.mixer.music.play()
 
     def check_answer(self, syllabe: str) -> None:
