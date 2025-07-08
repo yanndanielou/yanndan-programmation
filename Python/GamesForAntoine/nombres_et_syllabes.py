@@ -56,11 +56,11 @@ class GameMainWindow(tk.Tk):
         self.header_frame.pack(fill=tk.X)
 
         self.modes: List[ModexFrame] = [
-            AdditionExercise(self, self.switch_mode),
-            AdditionExercise(self, self.switch_mode),
-            AdditionExercise(self, self.switch_mode),
-            AdditionExercise(self, self.switch_mode),
-            AdditionExercise(self, self.switch_mode),
+            AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
+            AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
+            AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
+            AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
+            AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
             RecognizeSyllabeInChoiceWithVoiceExercise(self, self.switch_mode),
             ListenNumberAndTypeExercise(self, self.switch_mode),
             ListenNumberAndTypeExercise(self, self.switch_mode),
@@ -222,6 +222,7 @@ class AdditionExercise(TextAnswerInEntryExercise):
         super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback, expected_result=f"{first_number + second_number}", give_answer_on_error=True)
 
         self.consigne_label_value.set(f"{first_number} + {second_number}")
+        logger_config.print_and_log_info(f"Consigne:{self.consigne_label_value.get()}")
 
         self.first_number = first_number
         self.second_number = second_number
