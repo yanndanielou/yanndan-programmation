@@ -130,7 +130,7 @@ class ListenNumberAndType(ModexFrame):
     def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None]) -> None:
         super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback)
 
-        self.number_to_guess = random.randint(3, 12)
+        self.number_to_guess = f"{random.randint(3, 12)}"
         logger_config.print_and_log_info(f"number_to_guess {self.number_to_guess}")
         self.say_consigne()
 
@@ -150,6 +150,7 @@ class ListenNumberAndType(ModexFrame):
 
     def check_answer(self) -> None:
         answer = self.entry.get()
+        logger_config.print_and_log_info(f"answer:{answer}")
 
         if answer == self.number_to_guess:
             self.exercise_won()
