@@ -2,11 +2,12 @@ import threading
 import time
 import tkinter as tk
 from tkinter import Toplevel, messagebox, simpledialog
-from typing import Callable, List
+from typing import Callable, List, cast
 
 import pygame
-import pyttsx3
+import pyttsx3, pyttsx3.voice
 from PIL import Image, ImageTk
+
 
 import random
 
@@ -16,13 +17,27 @@ DEFAULT_PLAYER_NAME = "Carabistouille"
 
 DEVINETTES_QUESTION_REPONSE = [("Comment s'appelle ton chat?", "Moka"), ("Quel est le prénom de ton papa?", "Yann"), ("Quel est le prénom de ta maman?", "Céline")]
 
+EXPECTED_LANGUAGE_IN_VOICE_NAME = "french"
+
 
 class GameMainWindow(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
 
         self.pyttsx3_engine = pyttsx3.init()
-        self.pyttsx3_engine.setProperty("voice", "french")
+
+        current_voice: str = self.pyttsx3_engine.getProperty("voice")
+        if "fr-fr" not in current_voice:
+            logger_config.print_and_log_info(f"Default voice {current_voice} is not french. Change voice")
+
+            for voice in (cast(pyttsx3.voice.Voice, n) for n in self.pyttsx3_engine.getProperty("voices")):
+                logger_config.print_and_log_info(f"voice: {voice}, voice.id: {voice.id}, voice.languages: {voice.languages}, voice.name: {voice.name}, voice.gender: {voice.gender}")
+                if EXPECTED_LANGUAGE_IN_VOICE_NAME.lower() in cast(str, voice.name).lower():
+                    logger_config.print_and_log_info(
+                        f"voice found for {EXPECTED_LANGUAGE_IN_VOICE_NAME}: {voice}, voice.id: {voice.id}, voice.languages: {voice.languages}, voice.name: {voice.name}, voice.gender: {voice.gender}"
+                    )
+                    # self.pyttsx3_engine.setProperty("voice", voice.name)
+                    self.pyttsx3_engine.setProperty("voice", voice.id)
 
         self.title("Jeu éducatif")
         self.geometry("400x300")
@@ -35,7 +50,7 @@ class GameMainWindow(tk.Tk):
         self.points = 0
 
         self.prompt_for_name()
-        self.guess_to_enter_game()
+        # self.guess_to_enter_game()
 
         self.header_frame = HeaderFrame(self)
         self.header_frame.pack(fill=tk.X)
@@ -58,7 +73,7 @@ class GameMainWindow(tk.Tk):
         child_name_entered = simpledialog.askstring("Bienvenue", "Entrez votre prénom :")
         self.child_name = child_name_entered if child_name_entered else DEFAULT_PLAYER_NAME
         self.synthetise_and_play_sentence(f"Tu t'appelles {self.child_name}")
-        self.show_current_mode()
+        # self.show_current_mode()
 
     def guess_to_enter_game(self) -> None:
 
@@ -90,7 +105,7 @@ class GameMainWindow(tk.Tk):
         felicitation_label = tk.Label(popup, image=self.felicitation_image)
         felicitation_label.pack(pady=10)
 
-        congrats_text = f"Bonne réponse ! Vous avez gagné un point. Vous avez {self.points} points"
+        congrats_text = f"Bonne réponse {self.child_name} ! Tu as {self.points} points champion!!"
         message_label = tk.Label(popup, text=congrats_text, font=("Arial", 12))
 
         self.synthetise_and_play_sentence(sentence=congrats_text, blocking=True)
