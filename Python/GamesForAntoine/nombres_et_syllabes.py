@@ -50,7 +50,7 @@ class GameMainWindow(tk.Tk):
         self.points = 0
 
         self.prompt_for_name()
-        # self.guess_to_enter_game()
+        self.guess_to_enter_game()
 
         self.header_frame = HeaderFrame(self)
         self.header_frame.pack(fill=tk.X)
@@ -86,8 +86,8 @@ class GameMainWindow(tk.Tk):
         expected_answer = expected_answer.lower()
         answer_given = ""
         while answer_given.lower() != expected_answer:
-            answer_given = simpledialog.askstring("Devinette", devinette).lower()
             self.synthetise_and_play_sentence(devinette)
+            answer_given = simpledialog.askstring("Devinette", devinette).lower()
 
             if answer_given == expected_answer:
                 self.synthetise_and_play_sentence(f"Bonne réponse champion! {self.child_name}")
