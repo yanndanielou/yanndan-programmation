@@ -341,7 +341,7 @@ def surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, scr
 
 @dataclass
 class SaveCfxRequestMultipagesResultsApplication:
-    projects_to_handle_with_priority: Set[str]
+    projects_to_handle_list: List[str]
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
     output_downloaded_files_final_directory_path: str = DOWNLOADED_FILES_FINAL_DIRECTORY
     web_browser_download_directory = DEFAULT_DOWNLOAD_DIRECTORY
@@ -406,7 +406,7 @@ class SaveCfxRequestMultipagesResultsApplication:
             )
         )
 
-        for project_name in self.projects_to_handle_with_priority:
+        for project_name in self.projects_to_handle_list:
             projects_field_filter = ProjectsFieldFilter(projects_names=[project_name], filter_type=FilterFieldType.EQUAL_TO)
             change_state_cfx_query = CfxQuery(
                 projects_field_filters=projects_field_filter,
@@ -438,7 +438,7 @@ class SaveCfxRequestMultipagesResultsApplication:
             remote_web_driver=self.driver,
             screenshots_directory_path=self.screenshots_output_relative_path,
         ):
-            projects_field_filters = ProjectsFieldFilter(projects_names=self.projects_to_handle_with_priority, filter_type=FilterFieldType.DIFFERENT_TO)
+            projects_field_filters = ProjectsFieldFilter(projects_names=set(self.projects_to_handle_list), filter_type=FilterFieldType.DIFFERENT_TO)
 
             self.generate_and_download_query_results_for_project_filters(
                 change_state_cfx_query=CfxQuery(
@@ -700,7 +700,7 @@ def main() -> None:
         logger_config.print_and_log_info(f"output_parent_directory_name: {output_parent_directory_name}")
 
         application: SaveCfxRequestMultipagesResultsApplication = SaveCfxRequestMultipagesResultsApplication(
-            output_parent_directory_name=output_parent_directory_name, projects_to_handle_with_priority=set(BIGGEST_PROJECTS_NAMES + INTERESTED_IN_PROJECTS_NAMES)
+            output_parent_directory_name=output_parent_directory_name, projects_to_handle_list=INTERESTED_IN_PROJECTS_NAMES + BIGGEST_PROJECTS_NAMES
         )
         application.run()
 
