@@ -50,13 +50,15 @@ class GameMainWindow(tk.Tk):
         self.points = 0
 
         self.prompt_for_name()
-        self.guess_to_enter_game()
+        # self.guess_to_enter_game()
 
         self.header_frame = HeaderFrame(self)
         self.header_frame.pack(fill=tk.X)
 
         self.modes: List[ModexFrame] = [
-            AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
+            DoubleExercise(self, switch_mode_callback=self.switch_mode, number=random.randint(0, 5)),
+            AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 9), second_number=random.randint(0, 5)),
+            AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 10), second_number=random.randint(0, 8)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
@@ -82,7 +84,7 @@ class GameMainWindow(tk.Tk):
 
     def guess_to_enter_game(self) -> None:
 
-        devinette, expected_answer = DEVINETTES_QUESTION_REPONSE[random.randint(0, len(DEVINETTES_QUESTION_REPONSE))]
+        devinette, expected_answer = DEVINETTES_QUESTION_REPONSE[random.randint(0, len(DEVINETTES_QUESTION_REPONSE - 1))]
         expected_answer = expected_answer.lower()
         answer_given = ""
         while answer_given.lower() != expected_answer:
@@ -229,7 +231,12 @@ class AdditionExercise(TextAnswerInEntryExercise):
 
     def say_consigne(self) -> None:
         super().say_consigne()
-        self.game_main_window.synthetise_and_play_sentence(f"Calcule la somme de {self.first_number} et {self.second_number}")
+        self.game_main_window.synthetise_and_play_sentence(f"Calcule la somme de {self.first_number} plus {self.second_number}")
+
+
+class DoubleExercise(AdditionExercise):
+    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], number: int = random.randint(0, 20)) -> None:
+        super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback, first_number=number, second_number=number)
 
 
 class ListenNumberAndTypeExercise(ModexFrame):
