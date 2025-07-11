@@ -55,6 +55,7 @@ DEFAULT_NUMBER_OF_THREADS = 2
 PROJECT_MANUAL_SELECTION_DETAIL_QUERY_ID = 66977872
 PROJECT_MANUAL_SELECTION_CHANGE_STATE_QUERY_ID = 66875867
 NEXT_ATS_EXTENDED_HISTORY_QUERY_ID = 65753660
+NEXT_ATS_CMC_QUERY_ID = 63323368
 
 EXCEL_FILE_EXTENSION = ".xlsx"
 TEXT_FILE_EXTENSION = ".txt"
@@ -386,6 +387,15 @@ class SaveCfxRequestMultipagesResultsApplication:
             file_utils.create_folder_if_not_exist(directory_path)
 
         self.create_webdriver_and_login()
+
+        self.generate_and_download_query_results_for_project_filters(
+            change_state_cfx_query=CfxQuery(
+                query_id=NEXT_ATS_CMC_QUERY_ID,
+                output_file_name_without_extension="nextatsp_CMC",
+                label="nextatsp_CMC",
+                output_file_type=QueryOutputFileType.EXCEL_EXPORT,
+            )
+        )
 
         self.generate_and_download_query_results_for_project_filters(
             change_state_cfx_query=CfxQuery(
