@@ -1,6 +1,9 @@
 # -*-coding:Utf-8 -*
 
 import threading
+from threading import Thread
+
+from queue import Queue
 import logging
 from typing import List, cast
 
@@ -15,8 +18,41 @@ FRENCH_LANGUAGE_SHORT_NAME = "FR-FR"
 class TextToSpeachManager:
     """allows simple int counter"""
 
+
+class TextToSpeechManager:
     def __init__(self) -> None:
         self.pyttsx3_engine = pyttsx3.init()
+        self.queue: Queue = Queue()
+        self.running = False
+
+    def _play_from_queue(self) -> None:
+        while self.running:
+            sentence = self.queue.get()
+            if sentence is None:
+                break
+            self.pyttsx3_engine.say(sentence)
+            self.pyttsx3_engine.runAndWait()
+
+    def synthetise_and_play_sentence(self, sentence: str, blocking: bool = True) -> None:
+        logger_config.print_and_log_info(f"synthetise_and_play_sentence: {sentence}, blocking:{blocking}")
+
+        if blocking:
+            # Blocking call
+            self.pyttsx3_engine.say(sentence)
+            self.pyttsx3_engine.runAndWait()
+        else:
+            # Non-blocking call using thread and queue
+            if not self.running:
+                self.running = True
+                threading.Thread(target=self._play_from_queue, daemon=True).start()
+            self.queue.put(sentence)
+
+    def stop(self) -> None:
+        # Stop the playback and clear the queue
+        logger_config.print_and_log_info("TextToSpeechManager: Stop")
+        self.queue.put(None)
+        self.running = False
+        self.pyttsx3_engine.stop()
 
     def change_voice_to_language(self, language_long_name: str, language_short_name: str) -> bool:
         current_voice: str = self.pyttsx3_engine.getProperty("voice")
@@ -37,9 +73,11 @@ class TextToSpeachManager:
 
         return False
 
-    def synthetise_and_play_sentence(self, sentence: str, blocking: bool = True) -> None:
-        self.pyttsx3_engine.say(sentence)
-        if blocking:
-            self.pyttsx3_engine.runAndWait()
-        else:
-            threading.Thread(target=self.pyttsx3_engine.runAndWait).start()
+
+# Example Usage
+if __name__ == "__main__":
+    tts = TextToSpeechManager()
+    tts.synthetise_and_play_sentence("Hello World", blocking=False)
+    tts.synthetise_and_play_sentence("This is a test sentence", blocking=False)
+    # To stop the non-blocking queue processing
+    tts.stop()
