@@ -24,6 +24,7 @@ class TextToSpeechManager:
         self.pyttsx3_engine = pyttsx3.init()
         self.queue: Queue = Queue()
         self.running = False
+        self.thread = None
 
     def _play_from_queue(self) -> None:
         while self.running:
@@ -37,6 +38,11 @@ class TextToSpeechManager:
         logger_config.print_and_log_info(f"synthetise_and_play_sentence: {sentence}, blocking:{blocking}")
 
         if blocking:
+            # Wait for any existing non-blocking process to complete
+            if self.thread and self.thread.is_alive():
+                self.queue.put(None)  # Signal the thread to complete
+                self.thread.join()  # Wait for the thread to finish
+
             # Blocking call
             self.pyttsx3_engine.say(sentence)
             self.pyttsx3_engine.runAndWait()
@@ -44,14 +50,18 @@ class TextToSpeechManager:
             # Non-blocking call using thread and queue
             if not self.running:
                 self.running = True
-                threading.Thread(target=self._play_from_queue, daemon=True).start()
+                self.thread = threading.Thread(target=self._play_from_queue, daemon=True)
+                self.thread.start()
             self.queue.put(sentence)
 
     def stop(self) -> None:
         # Stop the playback and clear the queue
         logger_config.print_and_log_info("TextToSpeechManager: Stop")
+
         self.queue.put(None)
         self.running = False
+        if self.thread:
+            self.thread.join()
         self.pyttsx3_engine.stop()
 
     def change_voice_to_language(self, language_long_name: str, language_short_name: str) -> bool:
