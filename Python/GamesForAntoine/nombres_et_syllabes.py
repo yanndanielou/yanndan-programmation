@@ -50,9 +50,10 @@ class GameMainWindow(tk.Tk):
             ListenAndTypeExercise(self, self.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 10))),
             ListenAndTypeExercise(self, self.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 20))),
             ListenAndTypeExercise(self, self.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 30))),
-            DoubleExercise(self, switch_mode_callback=self.switch_mode, number=random.randint(0, 5)),
+            DoubleExercise(self, switch_mode_callback=self.switch_mode, number=random.randint(0, 6)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 9), second_number=random.randint(0, 5)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 10), second_number=random.randint(0, 8)),
+            SoustractionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(3, 9), second_number=random.randint(0, 2)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
@@ -220,6 +221,21 @@ class AdditionExercise(TextAnswerInEntryExercise):
     def say_consigne(self) -> None:
         super().say_consigne()
         self.game_main_window.synthetise_and_play_sentence(f"Calcule la somme de {self.first_number} plus {self.second_number}", blocking=False)
+
+
+class SoustractionExercise(TextAnswerInEntryExercise):
+    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], first_number: int = random.randint(0, 20), second_number: int = random.randint(0, 10)) -> None:
+        super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback, expected_result=f"{first_number - second_number}", give_answer_on_error=True)
+
+        self.consigne_label_value.set(f"{first_number} - {second_number}")
+        logger_config.print_and_log_info(f"Consigne:{self.consigne_label_value.get()}")
+
+        self.first_number = first_number
+        self.second_number = second_number
+
+    def say_consigne(self) -> None:
+        super().say_consigne()
+        self.game_main_window.synthetise_and_play_sentence(f"Calcule la différence de {self.first_number} moins {self.second_number}", blocking=False)
 
 
 class DoubleExercise(AdditionExercise):
