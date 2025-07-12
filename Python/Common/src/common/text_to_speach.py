@@ -1,12 +1,14 @@
 # -*-coding:Utf-8 -*
 
-import logging
 import threading
-from queue import Queue
-from typing import Optional, cast
+from threading import Thread
 
-import pyttsx3
-import pyttsx3.voice
+from queue import Queue
+import logging
+from typing import List, cast, Optional
+
+import pyttsx3, pyttsx3.voice
+
 from logger import logger_config
 
 FRENCH_LANGUAGE_LONG_NAME = "french"
