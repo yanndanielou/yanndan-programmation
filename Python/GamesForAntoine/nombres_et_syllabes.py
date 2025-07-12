@@ -8,7 +8,7 @@ import pygame
 import pyttsx3, pyttsx3.voice
 from PIL import Image, ImageTk
 
-from common import text_to_speach
+from common import text_to_speach, string_utils
 
 from enum import Enum, auto
 
@@ -72,16 +72,22 @@ class GameMainWindow(tk.Tk):
     def guess_to_enter_game(self) -> None:
 
         devinette, expected_answer = DEVINETTES_QUESTION_REPONSE[random.randint(0, len(DEVINETTES_QUESTION_REPONSE) - 1)]
-        expected_answer = expected_answer.lower()
-        answer_given = ""
-        while answer_given.lower() != expected_answer:
+        expected_answer_used = string_utils.without_diacritics(expected_answer.lower())
+        logger_config.print_and_log_info(f"expected_answer_used:{expected_answer_used}")
+
+        answer_given_used = ""
+        while answer_given_used != expected_answer_used:
             self.synthetise_and_play_sentence(devinette, blocking=False)
             answer_given = simpledialog.askstring("Devinette", devinette)
+            logger_config.print_and_log_info(f"answer_given:{answer_given}")
+            answer_given_used = string_utils.without_diacritics(answer_given.lower())
+            logger_config.print_and_log_info(f"answer_given_used:{answer_given_used}")
 
-            if answer_given == expected_answer:
+            if answer_given_used == expected_answer_used:
                 self.synthetise_and_play_sentence(f"Bonne réponse champion! {self.child_name}", blocking=False)
 
-            self.synthetise_and_play_sentence(f"Mauvaise réponse (tu as entré {answer_given}). Recommence. La bonne réponse est {expected_answer}", blocking=False)
+            else:
+                self.synthetise_and_play_sentence(f"Mauvaise réponse (tu as entré {answer_given}). Recommence. La bonne réponse est {expected_answer}", blocking=False)
 
     def update_header(self) -> None:
         self.header_frame.update_info(self.child_name, self.points)
