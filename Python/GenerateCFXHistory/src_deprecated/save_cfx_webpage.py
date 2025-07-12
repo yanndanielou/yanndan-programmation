@@ -91,7 +91,7 @@ class SaveCfxWebpageApplication:
 
         logger_config.print_and_log_info(f"Number of cfx to treat: {len(all_cfx_id_to_handle_unique_ordered_list)}")
 
-        task_queue = queue.Queue()
+        task_queue:queue.Queue = queue.Queue()
 
         with logger_config.stopwatch_with_label("Create Threads"):
             threads = []
