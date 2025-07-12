@@ -8,6 +8,9 @@ import pygame
 import pyttsx3, pyttsx3.voice
 from PIL import Image, ImageTk
 
+from common import text_to_speach
+
+from enum import Enum, auto
 
 import random
 
@@ -24,20 +27,8 @@ class GameMainWindow(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
 
-        self.pyttsx3_engine = pyttsx3.init()
-
-        current_voice: str = self.pyttsx3_engine.getProperty("voice")
-        if "fr-fr" not in current_voice:
-            logger_config.print_and_log_info(f"Default voice {current_voice} is not french. Change voice")
-
-            for voice in (cast(pyttsx3.voice.Voice, n) for n in self.pyttsx3_engine.getProperty("voices")):
-                logger_config.print_and_log_info(f"voice: {voice}, voice.id: {voice.id}, voice.languages: {voice.languages}, voice.name: {voice.name}, voice.gender: {voice.gender}")
-                if EXPECTED_LANGUAGE_IN_VOICE_NAME.lower() in cast(str, voice.name).lower():
-                    logger_config.print_and_log_info(
-                        f"voice found for {EXPECTED_LANGUAGE_IN_VOICE_NAME}: {voice}, voice.id: {voice.id}, voice.languages: {voice.languages}, voice.name: {voice.name}, voice.gender: {voice.gender}"
-                    )
-                    # self.pyttsx3_engine.setProperty("voice", voice.name)
-                    self.pyttsx3_engine.setProperty("voice", voice.id)
+        self.text_to_speech_manager = text_to_speach.TextToSpeechManager()
+        self.text_to_speech_manager.change_voice_to_language(language_long_name=text_to_speach.FRENCH_LANGUAGE_LONG_NAME, language_short_name=text_to_speach.FRENCH_LANGUAGE_SHORT_NAME)
 
         self.title("Jeu éducatif")
         self.geometry("400x300")
@@ -56,6 +47,9 @@ class GameMainWindow(tk.Tk):
         self.header_frame.pack(fill=tk.X)
 
         self.modes: List[ModexFrame] = [
+            ListenAndTypeExercise(self, self.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 10))),
+            ListenAndTypeExercise(self, self.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 20))),
+            ListenAndTypeExercise(self, self.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 30))),
             DoubleExercise(self, switch_mode_callback=self.switch_mode, number=random.randint(0, 5)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 9), second_number=random.randint(0, 5)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 10), second_number=random.randint(0, 8)),
@@ -64,37 +58,31 @@ class GameMainWindow(tk.Tk):
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
             RecognizeSyllabeInChoiceWithVoiceExercise(self, self.switch_mode),
-            ListenNumberAndTypeExercise(self, self.switch_mode),
-            ListenNumberAndTypeExercise(self, self.switch_mode),
-            ListenNumberAndTypeExercise(self, self.switch_mode),
-            ListenNumberAndTypeExercise(self, self.switch_mode),
-            ListenNumberAndTypeExercise(self, self.switch_mode),
-            ListenNumberAndTypeExercise(self, self.switch_mode),
         ]
 
         self.current_mode_index = 0
         self.show_current_mode()
 
     def prompt_for_name(self) -> None:
-        self.synthetise_and_play_sentence(f"Comment t'appelles-tu?")
+        self.synthetise_and_play_sentence("Comment t'appelles-tu?", blocking=False)
         child_name_entered = simpledialog.askstring("Bienvenue", "Entrez votre prénom :")
         self.child_name = child_name_entered if child_name_entered else DEFAULT_PLAYER_NAME
-        self.synthetise_and_play_sentence(f"Tu t'appelles {self.child_name}")
+        self.synthetise_and_play_sentence(f"Tu t'appelles {self.child_name}", blocking=False)
         # self.show_current_mode()
 
     def guess_to_enter_game(self) -> None:
 
-        devinette, expected_answer = DEVINETTES_QUESTION_REPONSE[random.randint(0, len(DEVINETTES_QUESTION_REPONSE - 1))]
+        devinette, expected_answer = DEVINETTES_QUESTION_REPONSE[random.randint(0, len(DEVINETTES_QUESTION_REPONSE) - 1)]
         expected_answer = expected_answer.lower()
         answer_given = ""
         while answer_given.lower() != expected_answer:
-            self.synthetise_and_play_sentence(devinette)
-            answer_given = simpledialog.askstring("Devinette", devinette).lower()
+            self.synthetise_and_play_sentence(devinette, blocking=False)
+            answer_given = simpledialog.askstring("Devinette", devinette)
 
             if answer_given == expected_answer:
-                self.synthetise_and_play_sentence(f"Bonne réponse champion! {self.child_name}")
+                self.synthetise_and_play_sentence(f"Bonne réponse champion! {self.child_name}", blocking=False)
 
-            self.synthetise_and_play_sentence(f"Mauvaise réponse, recommence. La bonne réponse est {expected_answer}")
+            self.synthetise_and_play_sentence(f"Mauvaise réponse, recommence. La bonne réponse est {expected_answer}", blocking=False)
 
     def update_header(self) -> None:
         self.header_frame.update_info(self.child_name, self.points)
@@ -121,11 +109,11 @@ class GameMainWindow(tk.Tk):
         congrats_text = f"Bonne réponse {self.child_name} ! Tu as {self.points} points champion!!"
         message_label = tk.Label(popup, text=congrats_text, font=("Arial", 12))
 
-        self.synthetise_and_play_sentence(sentence=congrats_text, blocking=True)
+        self.synthetise_and_play_sentence(sentence=congrats_text, blocking=False)
 
         message_label.pack(pady=10)
 
-        popup.after(15000, popup.destroy)
+        popup.after(2000, popup.destroy)
         popup.bind("<Return>", lambda _: popup.destroy())
         popup.focus()
 
@@ -136,12 +124,8 @@ class GameMainWindow(tk.Tk):
         self.update_header()
         self.congrats_player()
 
-    def synthetise_and_play_sentence(self, sentence: str, blocking: bool = True) -> None:
-        self.pyttsx3_engine.say(sentence)
-        if blocking:
-            self.pyttsx3_engine.runAndWait()
-        else:
-            threading.Thread(target=self.pyttsx3_engine.runAndWait).start()
+    def synthetise_and_play_sentence(self, sentence: str, blocking: bool) -> None:
+        self.text_to_speech_manager.synthetise_and_play_sentence(sentence=sentence, blocking=blocking)
 
 
 class HeaderFrame(tk.Frame):
@@ -182,9 +166,6 @@ class ModexFrame(tk.Frame):
         # self.game_main_window.synthetise_and_play_sentence(sentence="Consigne de l'exercice")
         pass
 
-    def check_answer(self) -> None:
-        pass
-
 
 class TextAnswerInEntryExercise(ModexFrame):
     def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], expected_result: str, give_answer_on_error: bool) -> None:
@@ -192,6 +173,7 @@ class TextAnswerInEntryExercise(ModexFrame):
         self.answer_entry = tk.Entry(self)
         self.answer_entry.pack(pady=5)
         self.answer_entry.bind("<Return>", lambda _: self.check_answer())
+        self.give_answer_on_error = give_answer_on_error
 
         self.expected_result = expected_result
         logger_config.print_and_log_info(f"expected_result {self.expected_result}")
@@ -205,18 +187,18 @@ class TextAnswerInEntryExercise(ModexFrame):
         answer_given = self.answer_entry.get()
         logger_config.print_and_log_info(f"answer:{answer_given}")
 
-        self.game_main_window.synthetise_and_play_sentence(f"Tu as écris {answer_given}")
+        self.game_main_window.synthetise_and_play_sentence(f"Tu as écris {answer_given}", blocking=False)
 
         if answer_given == self.expected_result:
             self.exercise_won()
         else:
-            self.exercise_retry(True)
+            self.exercise_retry(self.give_answer_on_error)
 
     def exercise_retry(self, give_answer: bool) -> None:
         if give_answer:
-            self.game_main_window.synthetise_and_play_sentence(f"Mauvaise réponse. Il fallait écrire {self.expected_result}. Recommence!")
+            self.game_main_window.synthetise_and_play_sentence(f"Mauvaise réponse. Il fallait écrire {self.expected_result}. Recommence!", blocking=False)
         else:
-            self.game_main_window.synthetise_and_play_sentence("Mauvaise réponse. Recommence!")
+            self.game_main_window.synthetise_and_play_sentence("Mauvaise réponse. Recommence!", blocking=False)
 
 
 class AdditionExercise(TextAnswerInEntryExercise):
@@ -231,7 +213,7 @@ class AdditionExercise(TextAnswerInEntryExercise):
 
     def say_consigne(self) -> None:
         super().say_consigne()
-        self.game_main_window.synthetise_and_play_sentence(f"Calcule la somme de {self.first_number} plus {self.second_number}")
+        self.game_main_window.synthetise_and_play_sentence(f"Calcule la somme de {self.first_number} plus {self.second_number}", blocking=False)
 
 
 class DoubleExercise(AdditionExercise):
@@ -239,12 +221,41 @@ class DoubleExercise(AdditionExercise):
         super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback, first_number=number, second_number=number)
 
 
-class ListenNumberAndTypeExercise(ModexFrame):
-    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None]) -> None:
+class ListenAndTypeExercise(ModexFrame):
+
+    class ExerciseType(Enum):
+        WORD = auto()
+        NUMBER = auto()
+
+    class ItemToListenAndType:
+        def __init__(self) -> None:
+            pass
+
+        def label(self) -> str:
+            return ""
+
+    class NumberToListenAndType(ItemToListenAndType):
+        def __init__(self, number: int) -> None:
+            self.exercise_type = ListenAndTypeExercise.ExerciseType.NUMBER
+            self.number = number
+
+        def label(self) -> str:
+            return "le nombre"
+
+    class WordToListenAndType(ItemToListenAndType):
+        def __init__(self, word: str) -> None:
+            self.exercise_type = ListenAndTypeExercise.ExerciseType.WORD
+            self.number = word
+
+        def label(self) -> str:
+            return "le mot"
+
+    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], item_to_listen_and_learn: ItemToListenAndType) -> None:
         super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback)
 
+        self.item_to_listen_and_learn = item_to_listen_and_learn
         self.number_to_guess = f"{random.randint(0, 40)}"
-        logger_config.print_and_log_info(f"number_to_guess {self.number_to_guess}")
+        logger_config.print_and_log_info(f"{item_to_listen_and_learn.label()} to_guess {self.number_to_guess}")
 
         self.answer_entry = tk.Entry(self)
         self.answer_entry.pack(pady=5)
@@ -259,8 +270,7 @@ class ListenNumberAndTypeExercise(ModexFrame):
 
     def say_consigne(self) -> None:
         super().say_consigne()
-        self.game_main_window.synthetise_and_play_sentence(f"Ecrire le chiffre {self.number_to_guess}")
-        # self.game_main_window.synthetise_and_play_sentence(f"{self.number_to_guess}")
+        self.game_main_window.synthetise_and_play_sentence(sentence=f"Ecrire le {self.item_to_listen_and_learn.label()}  {self.number_to_guess}", blocking=False)
 
     def check_answer(self) -> None:
         answer_given = self.answer_entry.get()
@@ -274,8 +284,8 @@ class ListenNumberAndTypeExercise(ModexFrame):
     def exercise_retry(self) -> None:
         answer_given = self.answer_entry.get()
 
-        self.game_main_window.synthetise_and_play_sentence(f"Mauvaise réponse. Tu as écrit {answer_given}, il fallait écrire {self.number_to_guess}. Recommence!")
-        self.game_main_window.synthetise_and_play_sentence(f"Ecrire le chiffre {self.number_to_guess}")
+        self.game_main_window.synthetise_and_play_sentence(sentence=f"Mauvaise réponse. Tu as écrit {answer_given}, il fallait écrire {self.number_to_guess}. Recommence!", blocking=False)
+        self.game_main_window.synthetise_and_play_sentence(sentence=f"Ecrire le {self.item_to_listen_and_learn.label()}  {self.number_to_guess}", blocking=False)
 
 
 class RecognizeSyllabeInChoiceWithVoiceExercise(ModexFrame):
@@ -301,14 +311,14 @@ class RecognizeSyllabeInChoiceWithVoiceExercise(ModexFrame):
         self.say_syllabe()
 
     def say_syllabe(self) -> None:
-        self.game_main_window.synthetise_and_play_sentence(self.expected_answer)
+        self.game_main_window.synthetise_and_play_sentence(sentence=self.expected_answer, blocking=False)
 
     def check_answer(self, answer_given: str) -> None:
 
         if answer_given == self.expected_answer:
             self.exercise_won()
         else:
-            self.game_main_window.synthetise_and_play_sentence(f"Mauvaise réponse. Tu as choisit {answer_given}, il fallait écrire {self.expected_answer}. Recommence!")
+            self.game_main_window.synthetise_and_play_sentence(sentence=f"Mauvaise réponse. Tu as choisit {answer_given}, il fallait écrire {self.expected_answer}. Recommence!", blocking=False)
 
 
 if __name__ == "__main__":
