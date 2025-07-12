@@ -175,6 +175,7 @@ class ModexFrame(tk.Frame):
 class TextAnswerInEntryExercise(ModexFrame):
     def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], expected_result: str, give_answer_on_error: bool) -> None:
         super().__init__(game_main_window, switch_mode_callback)
+
         self.answer_entry = tk.Entry(self)
         self.answer_entry.pack(pady=5)
         self.answer_entry.bind("<Return>", lambda _: self.check_answer())
@@ -266,6 +267,8 @@ class ListenAndTypeExercise(ModexFrame):
 
     def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], item_to_listen_and_learn: ItemToListenAndType) -> None:
         super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback)
+
+        self.consigne_label_value.set(f"Ecoute et écris {item_to_listen_and_learn.type_label()}")
 
         self.item_to_listen_and_learn = item_to_listen_and_learn
         logger_config.print_and_log_info(f"{item_to_listen_and_learn.type_label()} to_guess {self.item_to_listen_and_learn.answer_label()}")
