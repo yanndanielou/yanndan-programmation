@@ -14,6 +14,8 @@ from enum import Enum, auto
 
 import random
 
+import labyrinthe
+
 from logger import logger_config
 
 DEFAULT_PLAYER_NAME = "Carabistouille"
@@ -21,6 +23,8 @@ DEFAULT_PLAYER_NAME = "Carabistouille"
 DEVINETTES_QUESTION_REPONSE = [("Comment s'appelle ton chat?", "Moka"), ("Quel est le prénom de ton papa?", "Yann"), ("Quel est le prénom de ta maman?", "Céline")]
 
 EXPECTED_LANGUAGE_IN_VOICE_NAME = "french"
+
+FRENCH_SYLLABES_SUFFIXES = [""]
 
 
 class GameMainWindow(tk.Tk):
@@ -129,6 +133,7 @@ class GameMainWindow(tk.Tk):
         self.points += 1
         self.update_header()
         self.congrats_player()
+        labyrinthe.MazeGame(root=self, size=self.points + 3, embedded_in_other_application=True)
 
     def synthetise_and_play_sentence(self, sentence: str, blocking: bool) -> None:
         self.text_to_speech_manager.synthetise_and_play_sentence(sentence=sentence, blocking=blocking)
