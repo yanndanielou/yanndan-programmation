@@ -5,7 +5,7 @@ from threading import Thread
 
 from queue import Queue
 import logging
-from typing import List, cast
+from typing import List, cast, Optional
 
 import pyttsx3, pyttsx3.voice
 
@@ -15,16 +15,12 @@ FRENCH_LANGUAGE_LONG_NAME = "french"
 FRENCH_LANGUAGE_SHORT_NAME = "FR-FR"
 
 
-class TextToSpeachManager:
-    """allows simple int counter"""
-
-
 class TextToSpeechManager:
     def __init__(self) -> None:
         self.pyttsx3_engine = pyttsx3.init()
         self.queue: Queue = Queue()
-        self.running = False
-        self.thread = None
+        self.running: bool = False
+        self.thread: Optional[threading.Thread] = None
 
     def _play_from_queue(self) -> None:
         while self.running:
