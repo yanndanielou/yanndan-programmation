@@ -1,4 +1,4 @@
-""" Filters to search M3u entry by criteria """
+"""Filters to search M3u entry by criteria"""
 
 # -*-coding:Utf-8 -*
 
@@ -11,6 +11,8 @@ from common import singleton, tokenization_string, language_utils, list_utils
 
 from m3u import M3uEntry
 
+from typing import List, Optional
+
 
 class M3uEntryFilter:
     """base class"""
@@ -19,18 +21,18 @@ class M3uEntryFilter:
         self._label: str = label
 
     @property
-    def label(self):
+    def label(self) -> str:
         return self._label
 
     @label.setter
-    def label(self, value):
+    def label(self, value: str) -> None:
         self._label = value
 
 
 class M3uFiltersManager(metaclass=singleton.Singleton):
     """Manager of m3u filters"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._by_title_filters: list[M3uEntryByTitleFilter] = []
         self._by_title_filters.append(TitleContainsExactlyFilter(label="Contains Exactly"))
         self._by_title_filters.append(TitleContainsAllWordsFilter(whole_words=False, label="Contains all words"))
@@ -45,28 +47,28 @@ class M3uFiltersManager(metaclass=singleton.Singleton):
             self._by_type_filters.append(M3uEntryByTypeFilter(e))
 
     @property
-    def by_title_filters(self):
+    def by_title_filters(self) -> list["M3uEntryByTitleFilter"]:
         """Getter filters"""
         return self._by_title_filters
 
     @by_title_filters.setter
-    def by_title_filters(self, value):
+    def by_title_filters(self, value: List["M3uEntryByTitleFilter"]) -> None:
         self._by_title_filters = value
 
     @property
-    def by_type_filters(self):
+    def by_type_filters(self) -> List["M3uEntryByTypeFilter"]:
         """Getter filters"""
         return self._by_type_filters
 
     @by_type_filters.setter
-    def by_type_filters(self, value):
+    def by_type_filters(self, value: List["M3uEntryByTypeFilter"]) -> None:
         self._by_type_filters = value
 
 
 class M3uEntryByTypeFilter(M3uEntryFilter):
-    def __init__(self, entry_type: M3uEntry.EntryType):
+    def __init__(self, entry_type: Optional[M3uEntry.EntryType]):
         super().__init__("Any" if entry_type is None else str(entry_type.value))
-        self._entry_type: M3uEntry.EntryType = entry_type
+        self._entry_type: Optional[M3uEntry.EntryType] = entry_type
 
     def match_m3u(self, m3u_entry: M3uEntry) -> bool:
         if self._entry_type is None:
@@ -101,13 +103,13 @@ class TitleContainsExactlyFilter(M3uEntryByTitleFilter):
 class TitleMatchesFilterTextRegex(M3uEntryByTitleFilter):
     """TitleMatchesFilterTextRegex"""
 
-    def __init__(self, label):
+    def __init__(self, label: str) -> None:
         super().__init__(label)
 
-        self._filter_text = None
-        self._regex_pattern = None
+        self._filter_text: str = None
+        self._regex_pattern: re.Pattern = None
 
-    def match_m3u(self, m3u_entry: M3uEntry, filter_text: str, ignore_case: bool, ignore_diacritics: bool):
+    def match_m3u(self, m3u_entry: M3uEntry, filter_text: str, ignore_case: bool, ignore_diacritics: bool) -> bool:
 
         if not ignore_case:
             filter_text = filter_text.lower()
@@ -135,7 +137,7 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
         self._filter_text_language = None
         self._filter_text_words = None
 
-    def recompute_filter_text_words_and_language(self, filter_text: str):
+    def recompute_filter_text_words_and_language(self, filter_text: str) -> None:
         if self._filter_text != filter_text:
             self._filter_text = filter_text
             self._filter_text_language = language_utils.get_full_language_name(
@@ -143,7 +145,7 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
             )
             self._filter_text_words = tokenization_string.tokenize_text_with_nltk_regexp_tokenizer(filter_text)
 
-    def match_m3u(self, m3u_entry: M3uEntry, filter_text: str, ignore_case: bool, ignore_diacritics: bool):
+    def match_m3u(self, m3u_entry: M3uEntry, filter_text: str, ignore_case: bool, ignore_diacritics: bool) -> bool:
 
         if not self._whole_words:
             filter_text_words = tokenization_string.tokenize_text_with_nltk_regexp_tokenizer(filter_text)
@@ -172,9 +174,10 @@ class TitleContainsAllWordsFilter(M3uEntryByTitleFilter):
                 m3u_entry_original_raw_title
             )
 
-            return list_utils.are_all_elements_of_list_included_in_list(
+            all_elements_of_list_are_included_in_list = list_utils.are_all_elements_of_list_included_in_list(
                 self._filter_text_words, self._m3u_entry_original_words
             )
+            return all_elements_of_list_are_included_in_list
 
 
 if __name__ == "__main__":
