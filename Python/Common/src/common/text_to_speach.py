@@ -67,13 +67,17 @@ class TextToSpeechManager:
 
             for voice in (cast(pyttsx3.voice.Voice, n) for n in self.pyttsx3_engine.getProperty("voices")):
                 logging.info(f"voice: {voice}, voice.id: {voice.id}, voice.languages: {voice.languages}, voice.name: {voice.name}, voice.gender: {voice.gender}")
-                if language_long_name.lower() in cast(str, voice.name).lower():
+                voice_name = cast(str, voice.name).lower()
+                language_long_name = language_long_name.lower()
+                if language_long_name in voice_name:
                     logger_config.print_and_log_info(
-                        f"voice found for {language_long_name}: {voice}, voice.id: {voice.id}, voice.languages: {voice.languages}, voice.name: {voice.name}, voice.gender: {voice.gender}"
+                        f"voice found for {language_long_name}: voice.id: {voice.id}, voice.languages: {voice.languages}, voice.name: {voice.name}, voice.gender: {voice.gender}"
                     )
                     # self.pyttsx3_engine.setProperty("voice", voice.name)
                     self.pyttsx3_engine.setProperty("voice", voice.id)
                     return True
+                else:
+                    logging.info(f"{language_long_name} not found in {voice_name}")
 
         logger_config.print_and_log_error(f"could not find voicee {language_long_name} {language_short_name} among {self.pyttsx3_engine.getProperty("voices")}")
 
