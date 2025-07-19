@@ -17,10 +17,16 @@
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\AF\\AFP\\Server"
             },
             {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\AF\\AFP\\Common"
+            },
+            {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\RDV3"
             },
             {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\SPOCC\\AtspSrv"
+            },
+            {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\SPOCC\\Common"
             },
             {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\SPOCC\\Build"
@@ -152,6 +158,9 @@
             },
             {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\XERCES\\V3_1_4"
+            },
+            {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\DBLIB"
             }
         ],
         "IncludedExtensions":[
@@ -208,6 +217,9 @@
             },
             {
                 "extension":"lib"
+            },
+            {
+                "extension":"LIB"
             },
             {
                 "extension":"dll"
