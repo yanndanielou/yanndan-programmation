@@ -168,6 +168,9 @@
                 "extension":"c"
             },
             {
+                "extension":"ipp"
+            },
+            {
                 "extension":"cpp"
             },
             {
@@ -223,6 +226,9 @@
             },
             {
                 "extension":"dll"
+            },
+            {
+                "extension":"obj"
             }
         ],
         "ExcludedPaths":[
