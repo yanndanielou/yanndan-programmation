@@ -88,6 +88,9 @@
         ],
         "IncludedExtensions":[
             {
+                "extension":"cc"
+            },
+            {
                 "extension":"cpp"
             },
             {
