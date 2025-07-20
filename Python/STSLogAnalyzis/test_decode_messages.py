@@ -17,7 +17,7 @@ decode_hlf_test_data = [
 
 
 class TestDecodeHlfFieldsToDatetime:
-    def test_0(self):
+    def test_0(self)->None:
         decoded_datetime = decode_message.decode_hlf_fields_to_datetime(time_field_value=0, time_offset_value=0, decade_field_value=0, day_on_decade_field_value=0)
         assert decode_message.decode_hlf_fields_to_datetime(time_field_value=0, time_offset_value=0, decade_field_value=0, day_on_decade_field_value=0) == datetime.datetime(
             year=2000, month=1, day=1, hour=0, minute=0, second=0
