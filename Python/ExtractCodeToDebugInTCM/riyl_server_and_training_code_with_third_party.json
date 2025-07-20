@@ -5,94 +5,94 @@
     {
         "IncludedPaths":[
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\RIYL_PCC\\PCC\\build"
+                "folder":"M:\\RIYL_PCC_V3_06\\RIYL_PCC\\PCC\\build"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\AF\\Build"
+                "folder":"M:\\RIYL_PCC_V3_06\\XT_PCC\\AF\\Build"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\AF\\AF\\Server"
+                "folder":"M:\\RIYL_PCC_V3_06\\XT_PCC\\AF\\AF\\Server"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\AF\\AF\\Common"
+                "folder":"M:\\RIYL_PCC_V3_06\\XT_PCC\\AF\\AF\\Common"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\RDV3"
+                "folder":"M:\\RIYL_PCC_V3_06\\XT_PCC\\RDV3"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_CPP"
+                "folder":"M:\\RIYL_PCC_V3_06\\XT_CPP"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\build"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\build"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpCmn"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpCmn"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpCmnFileArchive"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpCmnFileArchive"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpPerfCounter"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpPerfCounter"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpCmnSQL"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpCmnSQL"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\Ilog"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\Ilog"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpLog"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpLog"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpMsg"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpMsg"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\timer"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\timer"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpReplic"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpReplic"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpRecon"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpRecon"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpScript"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpScript"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpStore"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpStore"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpSrv"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpSrv"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\AF\\AF\\Simulator\\Training"
+                "folder":"M:\\RIYL_PCC_V3_06\\XT_PCC\\AF\\AF\\Simulator\\Training"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\AF\\AF\\VideoCom"
+                "folder":"M:\\RIYL_PCC_V3_06\\XT_PCC\\AF\\AF\\VideoCom"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpOpe"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpOpe"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpOpeLookFeel"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpOpeLookFeel"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpAcqNOPC"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpAcqNOPC"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpSvaApplication"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpSvaApplication"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpSvaCmn"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpSvaCmn"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SPOCC\\Ilog"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SPOCC\\Ilog"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpReplay"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpReplay"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpSimu"
+                "folder":"M:\\RIYL_PCC_V3_06\\SPOCC\\SpSimu"
             }
         ],
         "IncludedExtensions":[
@@ -154,25 +154,25 @@
     {
         "IncludedPaths":[
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\Boost\\V1_66_0"
+                "folder":"M:\\RIYL_PCC_V3_06\\XT_PCC_TOOLS\\CppLibraries\\Boost\\V1_66_0"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\ILOG\\Server63"
+                "folder":"M:\\RIYL_PCC_V3_06\\XT_PCC_TOOLS\\CppLibraries\\ILOG\\Server63"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\ILOG\\Views63"
+                "folder":"M:\\RIYL_PCC_V3_06\\XT_PCC_TOOLS\\CppLibraries\\ILOG\\Views63"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\CrashHandler"
+                "folder":"M:\\RIYL_PCC_V3_06\\XT_PCC_TOOLS\\CppLibraries\\CrashHandler"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\jsoncpp"
+                "folder":"M:\\RIYL_PCC_V3_06\\XT_PCC_TOOLS\\CppLibraries\\jsoncpp"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\XERCES\\V3_1_4"
+                "folder":"M:\\RIYL_PCC_V3_06\\XT_PCC_TOOLS\\CppLibraries\\XERCES\\V3_1_4"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\DBLIB"
+                "folder":"M:\\RIYL_PCC_V3_06\\XT_PCC_TOOLS\\CppLibraries\\DBLIB"
             }
         ],
         "IncludedExtensions":[
