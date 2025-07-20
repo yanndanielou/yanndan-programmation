@@ -1,6 +1,7 @@
 *.7z
 *.zip
 *.txt
+*.png
 /Input/
 /.mypy_cache/
 Dependencies/
