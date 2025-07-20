@@ -5,31 +5,10 @@
     {
         "IncludedPaths":[
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\NEXT_PCC\\PCC\\build"
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\RIYL_PCC\\PCC\\build"
             },
             {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\AF\\Build"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\AF\\Build"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\AF\\AFP\\Server"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\AF\\AFP\\Common"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\RDV3"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\SPOCC\\AtspSrv"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\SPOCC\\Common"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\SPOCC\\Build"
             },
             {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\AF\\AF\\Server"
@@ -84,6 +63,36 @@
             },
             {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpSrv"
+            },
+            {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\AF\\AF\\Simulator\\Training"
+            },
+            {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\AF\\AF\\VideoCom"
+            },
+            {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpOpe"
+            },
+            {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpOpeLookFeel"
+            },
+            {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpAcqNOPC"
+            },
+            {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpSvaApplication"
+            },
+            {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpSvaCmn"
+            },
+            {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SPOCC\\Ilog"
+            },
+            {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpReplay"
+            },
+            {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpSimu"
             }
         ],
         "IncludedExtensions":[
@@ -148,10 +157,10 @@
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\Boost\\V1_66_0"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\ILOG\\Server65"
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\ILOG\\Server63"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\ILOG\\Views65"
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\ILOG\\Views63"
             },
             {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC_TOOLS\\CppLibraries\\CrashHandler"
