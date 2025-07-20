@@ -47,10 +47,16 @@
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpAcqNOPC"
             },
             {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpSvaApplication"
+            },
+            {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpSvaCmn"
             },
             {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\Ilog"
+            },
+            {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SPOCC\\Ilog"
             },
             {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpReplay"
@@ -75,6 +81,9 @@
             }
         ],
         "IncludedExtensions":[
+            {
+                "extension":"cc"
+            },
             {
                 "extension":"cpp"
             },
