@@ -1,6 +1,38 @@
+from dataclasses import dataclass, field
 import datetime
 import xml.etree.ElementTree as ET
 import datetime
+from typing import List, Dict, Optional, Tuple
+
+import csv
+
+
+@dataclass
+class InvariantMessage:
+    message_id: str
+    message_number: int
+
+
+class InvariantMessagesManager:
+    def __init__(self, messages_csv_file_full_path: str) -> None:
+
+        self.all_messages: List[InvariantMessage] = []
+        self.all_messages_by_id: Dict[str, InvariantMessage] = []
+
+        # Read the CSV file
+        with open(messages_csv_file_full_path, mode="r", encoding="utf-8") as file:
+            csv_reader = csv.DictReader(file, delimiter=";")
+
+            # Iterate through each row in the CSV
+            for csv_row in csv_reader:
+                message_id: str = csv_row["ID"]
+                message_number = int(csv_row["MESSAGE_INDEX"])
+                message = InvariantMessage(message_id=message_id, message_number=message_number)
+                self.all_messages.append(message)
+                self.all_messages_by_id[message_id] = message
+
+    def get_message_by_id(self, message_id: str) -> Optional[InvariantMessage]:
+        return self.all_messages_by_id[message_id] if message_id in self.all_messages_by_id else None
 
 
 def decode_hlf_fields_to_datetime(time_field_value: int, time_offset_value: int, decade_field_value: int, day_on_decade_field_value: int) -> datetime.datetime:
@@ -39,12 +71,12 @@ def decode_hlf_fields_to_datetime(time_field_value: int, time_offset_value: int,
     return local_time
 
 
-def hex_to_int(hex_string):
+def hex_to_int(hex_string: str) -> int:
     """Convert a hex string to an integer."""
     return int(hex_string, 16)
 
 
-def extract_bits(data, start_bit, bit_length):
+def extract_bits(data: bytes, start_bit: int, bit_length: int) -> int:
     """Extract a specific number of bits starting at a given bit index from a list of bytes."""
     start_byte = start_bit // 8
     end_bit = start_bit + bit_length
@@ -59,7 +91,7 @@ def extract_bits(data, start_bit, bit_length):
     return int(bit_segment, 2)
 
 
-def parse_record(record, hex_string, current_bit_index=0):
+def parse_record(record: ET.Element, hex_string: str, current_bit_index: int = 0) -> Tuple[dict, bytes]:
     """Recursively parse records to decode fields."""
     decoded_fields = {}
     hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
@@ -126,6 +158,7 @@ def decode_hlf_hexa(hlf_content_hexa: str) -> datetime.datetime:
         day_on_decade_field_value=decoded_hexa_content_with_xml["DayOnDecade"],
     )
     print(f"{hlf_content_hexa} is {decoded_hlf}")
+    return decoded_hlf
 
 
 # Example usage
