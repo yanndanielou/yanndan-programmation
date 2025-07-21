@@ -12,7 +12,7 @@ class ArchiveLine:
         self.sqlarch_fields_dict: Dict[str, str | int] = self.full_archive_line_as_json.get("SQLARCH", {})
 
         # Access global fields
-        self.date = self.full_archive_line_as_json["date"]
+        self.date_raw = self.full_archive_line_as_json["date"]
         self.tags = self.full_archive_line_as_json["tags"]
 
         # Accessing specific fields
@@ -20,13 +20,14 @@ class ArchiveLine:
 
         # Directly copy all items from SQLARCH section into a new dictionary
         self.sqlarch_fields_dict = self.full_archive_line_as_json.get("SQLARCH", {})
+        self.sqlarch_fields_dict_raw = {f"{key}_raw": value for key, value in self.sqlarch_fields_dict.items()}
 
         # Accessing specific fields
         self.caller = self.sqlarch_json_section.get("caller")
-        self.catAla = self.sqlarch_json_section.get("catAla")
+        self.cat_ala = self.sqlarch_json_section.get("catAla")
         self.eqp = self.sqlarch_json_section.get("eqp")
-        self.eqpId = self.sqlarch_json_section.get("eqpId")
-        self.exeSt = self.sqlarch_json_section.get("exeSt")
+        self.eqp_id = self.sqlarch_json_section.get("eqpId")
+        self.exe_st = self.sqlarch_json_section.get("exeSt")
         self.id_field = self.sqlarch_json_section.get("id")
         self.jdb = self.sqlarch_json_section.get("jdb")
         self.label = self.sqlarch_json_section.get("label")
@@ -35,10 +36,10 @@ class ArchiveLine:
     def print_all(self) -> None:
         # Print extracted fields
         print("Caller:", self.caller)
-        print("CatAla:", self.catAla)
+        print("CatAla:", self.cat_ala)
         print("Eqp:", self.eqp)
-        print("EqpId:", self.eqpId)
-        print("ExeSt:", self.exeSt)
+        print("EqpId:", self.eqp_id)
+        print("ExeSt:", self.exe_st)
         print("ID:", self.id_field)
         print("Jdb:", self.jdb)
         print("Label:", self.label)
@@ -48,7 +49,7 @@ class ArchiveLine:
         for key, value in self.sqlarch_fields_dict.items():
             print(f"{key}: {value}")
 
-        print("Date:", self.date)
+        print("Date:", self.date_raw)
         print("Tags:", self.tags)
 
 
