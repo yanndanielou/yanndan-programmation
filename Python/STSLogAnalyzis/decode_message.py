@@ -84,7 +84,7 @@ class MessageDecoder:
         """Convert a hex string to an integer."""
         return int(hex_string, 16)
 
-    def extract_bits(self, data: bytes, start_bit: int, bit_length: int) -> int:
+    def extract_bits(self, data: bytes, start_bit: int, bit_length: int) -> str:
         """Extract a specific number of bits starting at a given bit index from a list of bytes."""
         start_byte = start_bit // 8
         end_bit = start_bit + bit_length
@@ -94,6 +94,14 @@ class MessageDecoder:
         relevant_bytes = data[start_byte:end_byte]
         combined_bits = "".join(f"{byte:08b}" for byte in relevant_bytes)
 
+        return combined_bits
+
+    def extract_bits_bitfield(self, combined_bits: str, start_bit: int, bit_length: int) -> str:
+        # Extract the substring of the combined bits and convert to an integer
+        bit_segment = combined_bits[start_bit % 8 : start_bit % 8 + bit_length]
+        return bit_segment
+
+    def extract_bits_int(self, combined_bits: str, start_bit: int, bit_length: int) -> int:
         # Extract the substring of the combined bits and convert to an integer
         bit_segment = combined_bits[start_bit % 8 : start_bit % 8 + bit_length]
         return int(bit_segment, 2)
@@ -112,11 +120,17 @@ class MessageDecoder:
                 field_name = element.get("id")
                 field_size_bits = int(element.get("size", 0))  # Bits
 
-                field_value = self.extract_bits(hex_bytes, current_bit_index, field_size_bits)
-                current_bit_index += field_size_bits
+                bits_extracted = self.extract_bits(hex_bytes, current_bit_index, field_size_bits)
                 field_type = element.get("class")
 
-                if field_type == "int":
+                if field_type == "BigEndianInteger":
+                    field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
+                    decoded_fields[field_name] = field_value
+                elif field_type == "BigEndianBitSet":
+                    field_value = self.extract_bits_bitfield(bits_extracted, current_bit_index, field_size_bits)
+                    decoded_fields[field_name] = field_value
+                    pass
+                elif field_type == "int":
                     decoded_fields[field_name] = field_value
                 else:
                     # Handle other types as needed, or store raw bit value
@@ -125,7 +139,7 @@ class MessageDecoder:
                 # Debugging print statement
                 # print(f"Decoded {field_name} ({field_type}): {field_value}")
                 # Save the decoded field
-                decoded_fields[field_name] = field_value
+                current_bit_index += field_size_bits
 
         return decoded_fields, hex_bytes
 
@@ -184,10 +198,11 @@ def decode_hlf_hexa(hlf_content_hexa: str) -> datetime.datetime:
 
 # Example usage
 
-
+"""
 decode_hlf_hexa("00 0d 23 f2 00 00 8c a0 27 4a")
 decode_hlf_hexa("00 0d 24 88 00 00 8c a0 27 4a")
 decode_hlf_hexa("00 0d 25 1e 00 00 8c a0 27 4a")
 decode_hlf_hexa("00 0d 25 b4 00 00 8c a0 27 4a")
 
 # print(decode_hlf(time_field_value=322730, time_offset_value=1, decade_field_value=2, day_on_decade_field_value=1428))
+"""
