@@ -36,6 +36,9 @@ class ArchiveLine:
     def get_id(self) -> str:
         return cast(str, self.sqlarch_fields_dict.get("id"))
 
+    def get_new_state_str(self) -> str:
+        return cast(str, self.sqlarch_fields_dict.get("newSt"))
+
     def print_all(self) -> None:
         # Print extracted fields
         print("Caller:", self.caller)
