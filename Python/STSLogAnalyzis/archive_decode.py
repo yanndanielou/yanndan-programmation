@@ -1,5 +1,5 @@
 import json
-from typing import Dict
+from typing import Dict, cast
 
 
 class ArchiveLine:
@@ -32,6 +32,9 @@ class ArchiveLine:
         self.jdb = self.sqlarch_json_section.get("jdb")
         self.label = self.sqlarch_json_section.get("label")
         self.loc = self.sqlarch_json_section.get("loc")
+
+    def get_id(self) -> str:
+        return cast(str, self.sqlarch_fields_dict.get("id"))
 
     def print_all(self) -> None:
         # Print extracted fields
