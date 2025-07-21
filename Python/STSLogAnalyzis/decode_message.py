@@ -17,10 +17,10 @@ class InvariantMessagesManager:
     def __init__(self, messages_csv_file_full_path: str) -> None:
 
         self.all_messages: List[InvariantMessage] = []
-        self.all_messages_by_id: Dict[str, InvariantMessage] = []
+        self.all_messages_by_id: Dict[str, InvariantMessage] = dict()
 
         # Read the CSV file
-        with open(messages_csv_file_full_path, mode="r", encoding="utf-8") as file:
+        with open(messages_csv_file_full_path, mode="r", encoding="ANSI") as file:
             csv_reader = csv.DictReader(file, delimiter=";")
 
             # Iterate through each row in the CSV
