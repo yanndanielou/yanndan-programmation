@@ -150,7 +150,20 @@ class MessageDecoder:
         # print(f"Decoded fields: {decoded_fields}")
 
         decoded_message = DecodedMessage(decoded_fields)
+
         return decoded_message
+
+    def decode_hlf_hexa(self, hlf_content_hexa: str, decoded_fields: dict) -> datetime.datetime:
+
+        decoded_hlf = MessageDecoder.decode_hlf_fields_to_datetime(
+            time_field_value=decoded_fields["Time"],
+            time_offset_value=decoded_fields["TimeOffset"],
+            decade_field_value=decoded_fields["Decade"],
+            day_on_decade_field_value=decoded_fields["DayOnDecade"],
+        )
+        print(f"{hlf_content_hexa} is {decoded_hlf}")
+        decoded_fields["Decoded time"] = decoded_hlf
+        return decoded_hlf
 
 
 def decode_hlf_hexa(hlf_content_hexa: str) -> datetime.datetime:
