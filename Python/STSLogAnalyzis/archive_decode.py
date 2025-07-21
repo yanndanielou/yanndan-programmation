@@ -1,21 +1,22 @@
 import json
+from typing import Dict
 
 
 class ArchiveLine:
     def __init__(self, full_raw_archive_line: str) -> None:
 
         # Parsing JSON string
-        self.full_archive_line_as_json = json.loads(full_raw_archive_line)
+        self.full_archive_line_as_json: Dict = json.loads(full_raw_archive_line)
 
         # Directly copy all items from SQLARCH section into a new dictionary
-        self.sqlarch_fields_dict = self.full_archive_line_as_json.get("SQLARCH", {})
+        self.sqlarch_fields_dict: Dict[str, str | int] = self.full_archive_line_as_json.get("SQLARCH", {})
 
         # Access global fields
         self.date = self.full_archive_line_as_json["date"]
         self.tags = self.full_archive_line_as_json["tags"]
 
         # Accessing specific fields
-        self.sqlarch_json_section = self.full_archive_line_as_json["SQLARCH"]
+        self.sqlarch_json_section: Dict = self.full_archive_line_as_json["SQLARCH"]
 
         # Directly copy all items from SQLARCH section into a new dictionary
         self.sqlarch_fields_dict = self.full_archive_line_as_json.get("SQLARCH", {})
