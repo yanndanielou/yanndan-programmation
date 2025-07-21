@@ -157,7 +157,7 @@ class DownloadAndCleanDMLApplication:
         dml_file_path = self.remove_useless_tabs_with_xlwings(dml_file_path)
         dml_file_path = self.remove_excel_external_links_with_xlwings(dml_file_path)
         dml_file_path = self.remove_useless_columns_with_xlwings(dml_file_path)
-        dml_file_path = self.replace_formulas_with_values_with_xlwings(dml_file_path)
+        # dml_file_path = self.replace_formulas_with_values_with_xlwings(dml_file_path)
 
     def remove_useless_tabs_with_xlwings(self, dml_file_path: str) -> str:
         file_to_create_path = DML_FILE_WITHOUT_USELESS_SHEETS_PATH
