@@ -6,6 +6,14 @@ json_data = '{"SQLARCH":{"caller":"","catAla":0,"eqp":"PAS 05","eqpId":"EQ_PAS_0
 # Parsing JSON string
 data = json.loads(json_data)
 
+# Directly copy all items from SQLARCH section into a new dictionary
+sqlarch_fields = data.get("SQLARCH", {})
+
+# Access global fields
+date = data["date"]
+tags = data["tags"]
+
+
 # Accessing specific fields
 sqlarch = data["SQLARCH"]
 caller = sqlarch.get("caller")
@@ -28,3 +36,11 @@ print("ID:", id_field)
 print("Jdb:", jdb)
 print("Label:", label)
 print("Loc:", loc)
+
+
+# Print the dictionary for SQLARCH fields
+for key, value in sqlarch_fields.items():
+    print(f"{key}: {value}")
+
+print("Date:", date)
+print("Tags:", tags)
