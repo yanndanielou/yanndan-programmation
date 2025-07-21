@@ -35,123 +35,132 @@ class InvariantMessagesManager:
         return self.all_messages_by_id[message_id] if message_id in self.all_messages_by_id else None
 
 
-def decode_hlf_fields_to_datetime(time_field_value: int, time_offset_value: int, decade_field_value: int, day_on_decade_field_value: int) -> datetime.datetime:
-    """
-    Decodes the given fields into a datetime object.
-
-    Parameters:
-        time_field_value (int): Number of tenths of a second into the day [0..864000].
-        time_offset_value (int): Time offset in tenths of an hour [0..86400].
-        decade_field_value (int): Decade within the century [0..9].
-        day_on_decade_field_value (int): Day within the decade [0..3652].
-
-    Returns:
-        datetime.datetime: The decoded date and time.
-    """
-
-    # Calculate the start year of the decade
-    start_year = 2000 + (decade_field_value * 10)
-
-    # Calculate the date by adding the day on decade to start of the decade
-    decade_date = datetime.datetime(start_year, 1, 1) + datetime.timedelta(days=day_on_decade_field_value)
-
-    # Calculate time in hours, minutes, and seconds from time_field_value
-    total_seconds = time_field_value / 10  # tenths of a second to seconds
-    hours = int(total_seconds // 3600)
-    minutes = int((total_seconds % 3600) // 60)
-    seconds = total_seconds % 60
-
-    # Calculate the time offset:
-    offset_hours = time_offset_value // 36000
-    offset_minutes = (time_offset_value % 36000) // 600
-
-    # Apply the offset for local time
-    local_time = decade_date + datetime.timedelta(hours=hours - offset_hours, minutes=minutes - offset_minutes, seconds=seconds)
-
-    return local_time
+class DecodedMessage:
+    def __init__(self, decoded_fields: Dict) -> None:
+        self.decoded_fields = decoded_fields
 
 
-def hex_to_int(hex_string: str) -> int:
-    """Convert a hex string to an integer."""
-    return int(hex_string, 16)
+@dataclass
+class MessageDecoder:
+    xml_directory_path: str
 
+    @staticmethod
+    def decode_hlf_fields_to_datetime(time_field_value: int, time_offset_value: int, decade_field_value: int, day_on_decade_field_value: int) -> datetime.datetime:
+        """
+        Decodes the given fields into a datetime object.
 
-def extract_bits(data: bytes, start_bit: int, bit_length: int) -> int:
-    """Extract a specific number of bits starting at a given bit index from a list of bytes."""
-    start_byte = start_bit // 8
-    end_bit = start_bit + bit_length
-    end_byte = (end_bit + 7) // 8
+        Parameters:
+            time_field_value (int): Number of tenths of a second into the day [0..864000].
+            time_offset_value (int): Time offset in tenths of an hour [0..86400].
+            decade_field_value (int): Decade within the century [0..9].
+            day_on_decade_field_value (int): Day within the decade [0..3652].
 
-    # Get the relevant bytes
-    relevant_bytes = data[start_byte:end_byte]
-    combined_bits = "".join(f"{byte:08b}" for byte in relevant_bytes)
+        Returns:
+            datetime.datetime: The decoded date and time.
+        """
 
-    # Extract the substring of the combined bits and convert to an integer
-    bit_segment = combined_bits[start_bit % 8 : start_bit % 8 + bit_length]
-    return int(bit_segment, 2)
+        # Calculate the start year of the decade
+        start_year = 2000 + (decade_field_value * 10)
 
+        # Calculate the date by adding the day on decade to start of the decade
+        decade_date = datetime.datetime(start_year, 1, 1) + datetime.timedelta(days=day_on_decade_field_value)
 
-def parse_record(record: ET.Element, hex_string: str, current_bit_index: int = 0) -> Tuple[dict, bytes]:
-    """Recursively parse records to decode fields."""
-    decoded_fields = {}
-    hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
+        # Calculate time in hours, minutes, and seconds from time_field_value
+        total_seconds = time_field_value / 10  # tenths of a second to seconds
+        hours = int(total_seconds // 3600)
+        minutes = int((total_seconds % 3600) // 60)
+        seconds = total_seconds % 60
 
-    for element in record:
-        if element.tag == "record" or element.tag == "layer":
-            # Recursive call to process nested records
-            nested_fields, current_bit_index = parse_record(element, hex_string, current_bit_index)
-            decoded_fields.update(nested_fields)
-        elif element.tag == "field":
-            field_name = element.get("id")
-            field_size_bits = int(element.get("size", 0))  # Bits
+        # Calculate the time offset:
+        offset_hours = time_offset_value // 36000
+        offset_minutes = (time_offset_value % 36000) // 600
 
-            field_value = extract_bits(hex_bytes, current_bit_index, field_size_bits)
-            current_bit_index += field_size_bits
-            field_type = element.get("class")
+        # Apply the offset for local time
+        local_time = decade_date + datetime.timedelta(hours=hours - offset_hours, minutes=minutes - offset_minutes, seconds=seconds)
 
-            if field_type == "int":
+        return local_time
+
+    def hex_to_int(self, hex_string: str) -> int:
+        """Convert a hex string to an integer."""
+        return int(hex_string, 16)
+
+    def extract_bits(self, data: bytes, start_bit: int, bit_length: int) -> int:
+        """Extract a specific number of bits starting at a given bit index from a list of bytes."""
+        start_byte = start_bit // 8
+        end_bit = start_bit + bit_length
+        end_byte = (end_bit + 7) // 8
+
+        # Get the relevant bytes
+        relevant_bytes = data[start_byte:end_byte]
+        combined_bits = "".join(f"{byte:08b}" for byte in relevant_bytes)
+
+        # Extract the substring of the combined bits and convert to an integer
+        bit_segment = combined_bits[start_bit % 8 : start_bit % 8 + bit_length]
+        return int(bit_segment, 2)
+
+    def parse_record(self, record: ET.Element, hex_string: str, current_bit_index: int = 0) -> Tuple[dict, bytes]:
+        """Recursively parse records to decode fields."""
+        decoded_fields = {}
+        hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
+
+        for element in record:
+            if element.tag == "record" or element.tag == "layer":
+                # Recursive call to process nested records
+                nested_fields, current_bit_index = self.parse_record(element, hex_string, current_bit_index)
+                decoded_fields.update(nested_fields)
+            elif element.tag == "field":
+                field_name = element.get("id")
+                field_size_bits = int(element.get("size", 0))  # Bits
+
+                field_value = self.extract_bits(hex_bytes, current_bit_index, field_size_bits)
+                current_bit_index += field_size_bits
+                field_type = element.get("class")
+
+                if field_type == "int":
+                    decoded_fields[field_name] = field_value
+                else:
+                    # Handle other types as needed, or store raw bit value
+                    decoded_fields[field_name] = field_value
+
+                # Debugging print statement
+                # print(f"Decoded {field_name} ({field_type}): {field_value}")
+                # Save the decoded field
                 decoded_fields[field_name] = field_value
-            else:
-                # Handle other types as needed, or store raw bit value
-                decoded_fields[field_name] = field_value
 
-            # Debugging print statement
-            # print(f"Decoded {field_name} ({field_type}): {field_value}")
-            # Save the decoded field
-            decoded_fields[field_name] = field_value
+        return decoded_fields, hex_bytes
 
-    return decoded_fields, hex_bytes
+    def decode_message(self, xml_file_path: str, hexadecimal_content: str) -> Optional[DecodedMessage]:
+        # Open the corresponding XML file based on message_id
 
+        try:
+            # Load and parse the XML file
+            tree = ET.parse(xml_file_path)
+            root = tree.getroot()
+        except FileNotFoundError:
+            print(f"File {xml_file_path} not found.")
+            return None
 
-def decode_message(hexadecimal_content: str, message_id: int) -> dict:
-    # Open the corresponding XML file based on message_id
-    xml_filename = f"D:/RIYL1/Data/Xml/MsgId{message_id}scheme.xml"
+        # Debugging print statement
+        # print(f"XML parsed: Root tag - {root.tag}")
 
-    try:
-        # Load and parse the XML file
-        tree = ET.parse(xml_filename)
-        root = tree.getroot()
-    except FileNotFoundError:
-        print(f"File {xml_filename} not found.")
-        return {}
+        # Traverse the root record and decode
+        decoded_fields, _ = self.parse_record(root, hexadecimal_content)
 
-    # Debugging print statement
-    # print(f"XML parsed: Root tag - {root.tag}")
+        # Final debug statement
+        # print(f"Decoded fields: {decoded_fields}")
 
-    # Traverse the root record and decode
-    decoded_fields, _ = parse_record(root, hexadecimal_content)
-
-    # Final debug statement
-    # print(f"Decoded fields: {decoded_fields}")
-
-    return decoded_fields
+        decoded_message = DecodedMessage(decoded_fields)
+        return decoded_message
 
 
 def decode_hlf_hexa(hlf_content_hexa: str) -> datetime.datetime:
     hlf_message_id = 85
-    decoded_hexa_content_with_xml = decode_message(hlf_content_hexa, hlf_message_id)
+    message_decoder = MessageDecoder(xml_directory_path=f"D:/RIYL1/Data/Xml")
+
+    xml_file_path = message_decoder.xml_directory_path + "/" + f"MsgId{hlf_message_id}scheme.xml"
+    decoded_hexa_content_with_xml = message_decoder.decode_message(xml_file_path, hlf_content_hexa)
     # print(decoded_hexa_content_with_xml)
-    decoded_hlf = decode_hlf_fields_to_datetime(
+    decoded_hlf = MessageDecoder.decode_hlf_fields_to_datetime(
         time_field_value=decoded_hexa_content_with_xml["Time"],
         time_offset_value=decoded_hexa_content_with_xml["TimeOffset"],
         decade_field_value=decoded_hexa_content_with_xml["Decade"],
@@ -163,10 +172,10 @@ def decode_hlf_hexa(hlf_content_hexa: str) -> datetime.datetime:
 
 # Example usage
 
-"""
+
 decode_hlf_hexa("00 0d 23 f2 00 00 8c a0 27 4a")
 decode_hlf_hexa("00 0d 24 88 00 00 8c a0 27 4a")
 decode_hlf_hexa("00 0d 25 1e 00 00 8c a0 27 4a")
 decode_hlf_hexa("00 0d 25 b4 00 00 8c a0 27 4a")
-"""
+
 # print(decode_hlf(time_field_value=322730, time_offset_value=1, decade_field_value=2, day_on_decade_field_value=1428))
