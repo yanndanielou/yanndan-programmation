@@ -129,9 +129,9 @@ class MessageDecoder:
 
         return decoded_fields, hex_bytes
 
-    def decode_message(self, xml_file_path: str, hexadecimal_content: str) -> Optional[DecodedMessage]:
+    def decode_message(self, message_number: int, hexadecimal_content: str) -> Optional[DecodedMessage]:
         # Open the corresponding XML file based on message_id
-
+        xml_file_path = self.xml_directory_path + "/" + f"MsgId{message_number}scheme.xml"
         try:
             # Load and parse the XML file
             tree = ET.parse(xml_file_path)
@@ -157,8 +157,7 @@ def decode_hlf_hexa(hlf_content_hexa: str) -> datetime.datetime:
     hlf_message_id = 85
     message_decoder = MessageDecoder(xml_directory_path=f"D:/RIYL1/Data/Xml")
 
-    xml_file_path = message_decoder.xml_directory_path + "/" + f"MsgId{hlf_message_id}scheme.xml"
-    decoded_hexa_content_with_xml = message_decoder.decode_message(xml_file_path, hlf_content_hexa)
+    decoded_hexa_content_with_xml = message_decoder.decode_message(hlf_message_id, hlf_content_hexa).decoded_fields
     # print(decoded_hexa_content_with_xml)
     decoded_hlf = MessageDecoder.decode_hlf_fields_to_datetime(
         time_field_value=decoded_hexa_content_with_xml["Time"],
