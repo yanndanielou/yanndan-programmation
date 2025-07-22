@@ -29,17 +29,37 @@ class TestDecodeOneLine:
         assert archive_line.get_id() == "M_PAL_01_LC_ATS_SSO_VERSIONS"
 
         invariant_message = message_manager.get_message_by_id(archive_line.get_id())
-        if invariant_message:
-            decoded_message = message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
-            pass
+        assert invariant_message
+        decoded_message = message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
+        assert decoded_message
+        assert decoded_message.decoded_fields["InitLCStatus"] == 1
+        assert decoded_message.decoded_fields["SSOLineVersion"] == 0
+        assert decoded_message.decoded_fields["Time"] == 8
 
-    def test_decode_basic_fields_message_ats_pae_action_set(self) -> None:
+    def test_get_archive_line_fields_message_ats_pae_action_set(self) -> None:
+        archive_line = decode_archive.ArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_action_set)
+        assert archive_line.get_id() == "M_TRAIN_CC_9_ATS_CC_ACTION_SET"
+
+    def test_decode_message_fields_with_xml_ats_pae_action_set(self) -> None:
         archive_line = decode_archive.ArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_action_set)
 
         invariant_message = message_manager.get_message_by_id(archive_line.get_id())
-        if invariant_message:
-            decoded_message = message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
-            assert decode_message
+        assert invariant_message
+        decoded_message = message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
+        assert decoded_message
+        assert decoded_message.decoded_fields["LineId"] == 1
+        assert decoded_message.decoded_fields["ActionSetId"] == 1
+        assert decoded_message.decoded_fields["AllStationsSkip"] == 0
+        assert decoded_message.decoded_fields["RunDirectionRefSegId"] == 391
+        assert decoded_message.decoded_fields["RunDirection"] == 1
+        assert decoded_message.decoded_fields["PartStopDestination"] == 1
+        assert decoded_message.decoded_fields["FinalStopPlatform"] == 3
+        assert decoded_message.decoded_fields["FinalStopStaIdPis"] == 7
+        assert decoded_message.decoded_fields["ExchZoneTypeTdI"] == "0000000000000000000000000000000000000000000000000000000000000000"
+        assert (
+            decoded_message.decoded_fields["Actions"]
+            == "010100010010100010110010010010010010010100010010010010010010010010010001000100010001001011011000001001000100010001000100010001001000010010001000010001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010100101011111111010111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        )
 
     def test_decode_string_version_field_in_message(self) -> None:
         archive_line = decode_archive.ArchiveLine(full_raw_archive_line=archive_line_str_message_pae_ats_soft_versions)
