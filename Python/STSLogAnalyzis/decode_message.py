@@ -87,7 +87,7 @@ class MessageDecoder:
 
     def extract_bits(self, data: bytes, start_bit: int, bit_length: int) -> str:
         """Extract a specific number of bits starting at a given bit index from a list of bytes."""
-        start_byte = start_bit '//' 8
+        start_byte = start_bit // 8
         end_bit = start_bit + bit_length
         end_byte = (end_bit + 7) // 8
 
@@ -126,8 +126,8 @@ class MessageDecoder:
                 field_name = element.get("id")
 
                 field_size_bits = int(element.get("size", 0))  # Bits
-                field_dim = element.get("dim",1)
-                
+                field_dim = element.get("dim", 1)
+
                 logger_config.print_and_log_info(f"Field {field_name} with size {field_size_bits} bits and dim {field_dim}")
 
                 bits_extracted = self.extract_bits(hex_bytes, current_bit_index, field_size_bits)
