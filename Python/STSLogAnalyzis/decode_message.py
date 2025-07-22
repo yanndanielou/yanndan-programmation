@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 import datetime
 import xml.etree.ElementTree as ET
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, cast
 
 import csv
 
@@ -123,37 +123,39 @@ class MessageDecoder:
                 nested_fields, current_bit_index = self.parse_record(element, hex_string, current_bit_index)
                 decoded_fields.update(nested_fields)
             elif element.tag == "field":
-                field_name = element.get("id")
+                field_name = cast(str, element.get("id"))
 
                 field_size_bits = int(element.get("size", 0))  # Bits
-                field_dim = element.get("dim", 1)
+                field_dim = int(element.get("dim", 1))
 
-                logger_config.print_and_log_info(f"Field {field_name} with size {field_size_bits} bits and dim {field_dim}")
+                # slogger_config.print_and_log_info(f"Field {field_name} with size {field_size_bits} bits and dim {field_dim}")
 
-                bits_extracted = self.extract_bits(hex_bytes, current_bit_index, field_size_bits)
-                field_type = element.get("class")
+                for i in range(0, field_dim):
+                    field_name_with_dim = field_name if field_dim == 1 else field_name + f"_{i}"
+                    bits_extracted = self.extract_bits(hex_bytes, current_bit_index, field_size_bits)
+                    field_type = element.get("class")
 
-                if field_type == "BigEndianInteger":
-                    field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
-                    decoded_fields[field_name] = field_value
-                elif field_type == "BigEndianBitSet":
-                    # field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
-                    field_value = self.extract_bits_bitfield(bits_extracted, current_bit_index, field_size_bits)
-                    decoded_fields[field_name] = field_value
-                    pass
-                elif field_type == "BigEndianASCIIChar":
-                    field_value = self.extract_bits_ascii_char(bits_extracted, current_bit_index, field_size_bits)
+                    if field_type == "BigEndianInteger":
+                        field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
+                        decoded_fields[field_name_with_dim] = field_value
+                    elif field_type == "BigEndianBitSet":
+                        # field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
+                        field_value = self.extract_bits_bitfield(bits_extracted, current_bit_index, field_size_bits)
+                        decoded_fields[field_name_with_dim] = field_value
+                        pass
+                    elif field_type == "BigEndianASCIIChar":
+                        field_value = self.extract_bits_ascii_char(bits_extracted, current_bit_index, field_size_bits)
 
-                    decoded_fields[field_name] = field_value
-                else:
-                    # Handle other types as needed, or store raw bit value
-                    decoded_fields[field_name] = field_value
+                        decoded_fields[field_name_with_dim] = field_value
+                    else:
+                        # Handle other types as needed, or store raw bit value
+                        decoded_fields[field_name_with_dim] = field_value
 
-                logger_config.print_and_log_info(f"Field {field_name} is {decoded_fields[field_name]}")
-                # Debugging print statement
-                # print(f"Decoded {field_name} ({field_type}): {field_value}")
-                # Save the decoded field
-                current_bit_index += field_size_bits
+                    logger_config.print_and_log_info(f"Field {field_name_with_dim} is {decoded_fields[field_name_with_dim]}")
+                    # Debugging print statement
+                    # print(f"Decoded {field_name} ({field_type}): {field_value}")
+                    # Save the decoded field
+                    current_bit_index += field_size_bits
 
         return decoded_fields, hex_bytes
 
