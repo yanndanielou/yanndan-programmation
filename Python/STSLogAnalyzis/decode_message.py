@@ -87,6 +87,7 @@ class MessageDecoder:
 
     def extract_bits(self, data: bytes, start_bit: int, bit_length: int) -> str:
         """Extract a specific number of bits starting at a given bit index from a list of bytes."""
+        logger_config.print_and_log_info(f"data length:{len(data)}, start_bit:{start_bit},bit_length:{bit_length},")
         start_byte = start_bit // 8
         end_bit = start_bit + bit_length
         end_byte = (end_bit + 7) // 8
@@ -118,7 +119,10 @@ class MessageDecoder:
         hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
 
         for element in record:
+            logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
+
             if element.tag == "record" or element.tag == "layer":
+                logger_config.print_and_log_info(f"Record found: {element.get("id")}, current_bit_index:{current_bit_index}")
                 # Recursive call to process nested records
                 nested_fields, current_bit_index = self.parse_record(element, hex_string, current_bit_index)
                 decoded_fields.update(nested_fields)
@@ -132,6 +136,12 @@ class MessageDecoder:
 
                 for i in range(0, field_dim):
                     field_name_with_dim = field_name if field_dim == 1 else field_name + f"_{i}"
+                    logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
+                    if isinstance(current_bit_index, int):
+                        pass
+                    else:
+                        pass
+
                     bits_extracted = self.extract_bits(hex_bytes, current_bit_index, field_size_bits)
                     field_type = element.get("class")
 
@@ -140,12 +150,13 @@ class MessageDecoder:
                         decoded_fields[field_name_with_dim] = field_value
                     elif field_type == "BigEndianBitSet":
                         # field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
-                        field_value = self.extract_bits_bitfield(bits_extracted, current_bit_index, field_size_bits)
+                        field_valuea = self.extract_bits_bitfield(bits_extracted, current_bit_index, field_size_bits)
+                        field_value = field_valuea
                         decoded_fields[field_name_with_dim] = field_value
                         pass
                     elif field_type == "BigEndianASCIIChar":
-                        field_value = self.extract_bits_ascii_char(bits_extracted, current_bit_index, field_size_bits)
-
+                        field_valueb = self.extract_bits_ascii_char(bits_extracted, current_bit_index, field_size_bits)
+                        field_value = field_valueb
                         decoded_fields[field_name_with_dim] = field_value
                     else:
                         logger_config.print_and_log_error(f"Field {field_name_with_dim} has unsupported type {field_type}")
@@ -158,6 +169,9 @@ class MessageDecoder:
                     # print(f"Decoded {field_name} ({field_type}): {field_value}")
                     # Save the decoded field
                     current_bit_index += field_size_bits
+                    logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
+                    if current_bit_index == 2856:
+                        pass
 
         return decoded_fields, hex_bytes
 
