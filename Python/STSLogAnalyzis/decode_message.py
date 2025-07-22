@@ -128,7 +128,7 @@ class MessageDecoder:
                 field_size_bits = int(element.get("size", 0))  # Bits
                 field_dim = int(element.get("dim", 1))
 
-                # slogger_config.print_and_log_info(f"Field {field_name} with size {field_size_bits} bits and dim {field_dim}")
+                logger_config.print_and_log_info(f"Field {field_name} with size {field_size_bits} bits and dim {field_dim}")
 
                 for i in range(0, field_dim):
                     field_name_with_dim = field_name if field_dim == 1 else field_name + f"_{i}"
@@ -148,8 +148,10 @@ class MessageDecoder:
 
                         decoded_fields[field_name_with_dim] = field_value
                     else:
+                        logger_config.print_and_log_error(f"Field {field_name_with_dim} has unsupported type {field_type}")
+
                         # Handle other types as needed, or store raw bit value
-                        decoded_fields[field_name_with_dim] = field_value
+                        # decoded_fields[field_name_with_dim] = field_value
 
                     logger_config.print_and_log_info(f"Field {field_name_with_dim} is {decoded_fields[field_name_with_dim]}")
                     # Debugging print statement
