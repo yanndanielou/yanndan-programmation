@@ -18,7 +18,7 @@ decode_hlf_test_data = [
 
 class TestDecodeHlfFieldsToDatetime:
     def test_0(self) -> None:
-        decoded_datetime = decode_message.MessageDecoder(xml_directory_path=f"D:/RIYL1/Data/Xml").decode_hlf_fields_to_datetime(
+        decoded_datetime = decode_message.MessageDecoder(xml_directory_path="D:/RIYL1/Data/Xml").decode_hlf_fields_to_datetime(
             time_field_value=0, time_offset_value=0, decade_field_value=0, day_on_decade_field_value=0
         )
         assert decode_message.MessageDecoder.decode_hlf_fields_to_datetime(time_field_value=0, time_offset_value=0, decade_field_value=0, day_on_decade_field_value=0) == datetime.datetime(
