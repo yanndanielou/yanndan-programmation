@@ -113,7 +113,7 @@ class MessageDecoder:
         bit_segment = combined_bits[start_bit % 8 : start_bit % 8 + bit_length]
         return int(bit_segment, 2)
 
-    def parse_record(self, record: ET.Element, hex_string: str, current_bit_index: int = 0) -> Tuple[dict, bytes]:
+    def parse_record(self, record: ET.Element, hex_string: str, current_bit_index: int = 0) -> Tuple[dict, int]:
         """Recursively parse records to decode fields."""
         decoded_fields = {}
         hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
@@ -132,7 +132,7 @@ class MessageDecoder:
                 field_size_bits = int(element.get("size", 0))  # Bits
                 field_dim = int(element.get("dim", 1))
 
-                logger_config.print_and_log_info(f"Field {field_name} with size {field_size_bits} bits and dim {field_dim}")
+                # logger_config.print_and_log_info(f"Field {field_name} with size {field_size_bits} bits and dim {field_dim}")
 
                 field_table_values: List[str | int] = []
 
@@ -161,21 +161,18 @@ class MessageDecoder:
                     else:
                         logger_config.print_and_log_error(f"Field {field_name_with_dim} has unsupported type {field_type}")
 
-                        # Handle other types as needed, or store raw bit value
-                        # decoded_fields[field_name_with_dim] = field_value
-
                     field_table_values.append(field_value)
-                    logger_config.print_and_log_info(f"Field {field_name_with_dim} is {field_value}")
-                    # Debugging print statement
-                    # print(f"Decoded {field_name} ({field_type}): {field_value}")
-                    # Save the decoded field
+                    # logger_config.print_and_log_info(f"Field {field_name_with_dim} is {field_value}")
                     current_bit_index += field_size_bits
                     # logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
 
                 if field_dim > 1:
-                    decoded_fields[field_name + "_list"] = field_table_values
                     if field_type == "BigEndianASCIIChar":
-                        decoded_fields[field_name] = "".join(field_table_values)
+                        decoded_fields[field_name] = "".join(cast(str, field_table_values)).rstrip()
+                        logger_config.print_and_log_info(f"Field {field_name} is {decoded_fields[field_name]}")
+                        decoded_fields[field_name + "_list"] = field_table_values
+                    else:
+                        decoded_fields[field_name] = field_table_values
 
         return decoded_fields, current_bit_index
 
