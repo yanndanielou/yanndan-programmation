@@ -2,6 +2,8 @@ import datetime
 
 import pytest
 
+from typing import cast
+
 import decode_archive
 import decode_archive
 import decode_message
@@ -65,6 +67,11 @@ class TestDecodeOneLine:
         archive_line = decode_archive.ArchiveLine(full_raw_archive_line=archive_line_str_message_pae_ats_soft_versions)
 
         invariant_message = message_manager.get_message_by_id(archive_line.get_id())
-        if invariant_message:
-            decoded_message = message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
-            pass
+        assert invariant_message
+        decoded_message = message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
+        assert decoded_message
+        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1"]).startswith("PAE__NEXT_PAE_CUCP_V10_0")
+        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1"]) == "PAE__NEXT_PAE_CUCP_V10_0"
+        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1_0"]) == "P"
+        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1_1"]) == "A"
+        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1_2"]) == "E"
