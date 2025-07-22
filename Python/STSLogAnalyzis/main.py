@@ -9,7 +9,7 @@ action_sets_messages_archives = [
 ]
 
 message_manager = decode_message.InvariantMessagesManager(messages_csv_file_full_path=r"D:\NEXT\Data\Csv\NEXT_message.csv")
-message_decoder = decode_message.MessageDecoder(xml_directory_path=r"D:\RIYL1\Data\Xml")
+message_decoder = decode_message.MessageDecoder(xml_directory_path=r"D:\NEXT\Data\Xml")
 
 for action_set_message_archive in action_sets_messages_archives:
     archive_line = decode_archive.ArchiveLine(action_set_message_archive)
