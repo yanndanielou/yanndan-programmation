@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
 import datetime
 import xml.etree.ElementTree as ET
-import datetime
 from typing import List, Dict, Optional, Tuple
 
 import csv
+
+from logger import logger_config
 
 
 @dataclass
@@ -86,7 +87,7 @@ class MessageDecoder:
 
     def extract_bits(self, data: bytes, start_bit: int, bit_length: int) -> str:
         """Extract a specific number of bits starting at a given bit index from a list of bytes."""
-        start_byte = start_bit // 8
+        start_byte = start_bit '//' 8
         end_bit = start_bit + bit_length
         end_byte = (end_bit + 7) // 8
 
@@ -97,6 +98,11 @@ class MessageDecoder:
         return combined_bits
 
     def extract_bits_bitfield(self, combined_bits: str, start_bit: int, bit_length: int) -> str:
+        # Extract the substring of the combined bits and convert to an integer
+        bit_segment = combined_bits[start_bit % 8 : start_bit % 8 + bit_length]
+        return bit_segment
+
+    def extract_bits_ascii_char(self, combined_bits: str, start_bit: int, bit_length: int) -> str:
         # Extract the substring of the combined bits and convert to an integer
         bit_segment = combined_bits[start_bit % 8 : start_bit % 8 + bit_length]
         return bit_segment
@@ -118,7 +124,11 @@ class MessageDecoder:
                 decoded_fields.update(nested_fields)
             elif element.tag == "field":
                 field_name = element.get("id")
+
                 field_size_bits = int(element.get("size", 0))  # Bits
+                field_dim = element.get("dim",1)
+                
+                logger_config.print_and_log_info(f"Field {field_name} with size {field_size_bits} bits and dim {field_dim}")
 
                 bits_extracted = self.extract_bits(hex_bytes, current_bit_index, field_size_bits)
                 field_type = element.get("class")
@@ -127,15 +137,19 @@ class MessageDecoder:
                     field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
                     decoded_fields[field_name] = field_value
                 elif field_type == "BigEndianBitSet":
+                    # field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
                     field_value = self.extract_bits_bitfield(bits_extracted, current_bit_index, field_size_bits)
                     decoded_fields[field_name] = field_value
                     pass
-                elif field_type == "int":
+                elif field_type == "BigEndianASCIIChar":
+                    field_value = self.extract_bits_ascii_char(bits_extracted, current_bit_index, field_size_bits)
+
                     decoded_fields[field_name] = field_value
                 else:
                     # Handle other types as needed, or store raw bit value
                     decoded_fields[field_name] = field_value
 
+                logger_config.print_and_log_info(f"Field {field_name} is {decoded_fields[field_name]}")
                 # Debugging print statement
                 # print(f"Decoded {field_name} ({field_type}): {field_value}")
                 # Save the decoded field
@@ -148,6 +162,7 @@ class MessageDecoder:
         xml_file_path = self.xml_directory_path + "/" + f"MsgId{message_number}scheme.xml"
         try:
             # Load and parse the XML file
+            print(f"Load and parse file {xml_file_path}")
             tree = ET.parse(xml_file_path)
             root = tree.getroot()
         except FileNotFoundError:
@@ -180,9 +195,9 @@ class MessageDecoder:
         return decoded_hlf
 
 
-def decode_hlf_hexa(hlf_content_hexa: str) -> datetime.datetime:
+def decode_hlf_hexa_tests_(hlf_content_hexa: str) -> datetime.datetime:
     hlf_message_id = 85
-    message_decoder = MessageDecoder(xml_directory_path=f"D:/RIYL1/Data/Xml")
+    message_decoder = MessageDecoder(xml_directory_path="D:/RIYL1/Data/Xml")
 
     decoded_hexa_content_with_xml = message_decoder.decode_message(hlf_message_id, hlf_content_hexa).decoded_fields
     # print(decoded_hexa_content_with_xml)
