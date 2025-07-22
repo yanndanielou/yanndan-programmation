@@ -13,7 +13,7 @@ action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(c
 
 
 for action_set_message_archive in action_sets_messages_archives:
-    archive_line = decode_archive.ArchiveLine(action_set_message_archive)
+    archive_line = decode_archive.ContentArchiveLine(action_set_message_archive)
     archive_line_object_id = archive_line.get_id()
 
     invariant_message = message_manager.get_message_by_id(archive_line_object_id)

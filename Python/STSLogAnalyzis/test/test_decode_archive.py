@@ -16,7 +16,7 @@ message_decoder = decode_message.MessageDecoder(xml_directory_path=r"D:\NEXT\Dat
 
 class TestDecodeOneLine:
     def test_decode_basic_fields_zc_ats_tracking_status(self) -> None:
-        archive_line = decode_archive.ArchiveLine(full_raw_archive_line=archive_line_str_message_zc_ats_tracking_status)
+        archive_line = decode_archive.ContentArchiveLine(full_raw_archive_line=archive_line_str_message_zc_ats_tracking_status)
         assert archive_line.get_date_raw_str() == "2025-07-21T10:54:18.440+02:00"
         assert archive_line.get_id() == "M_PAS_05_ZC_ATS_TRACKING_STATUS_TRAINS_ID"
         assert (
@@ -25,7 +25,7 @@ class TestDecodeOneLine:
         )
 
     def test_decode_basic_fields_lc_ats_sso_versions(self) -> None:
-        archive_line = decode_archive.ArchiveLine(full_raw_archive_line=archive_line_str_message_lc_ats_sso_versions)
+        archive_line = decode_archive.ContentArchiveLine(full_raw_archive_line=archive_line_str_message_lc_ats_sso_versions)
         assert archive_line.get_id() == "M_PAL_01_LC_ATS_SSO_VERSIONS"
 
         invariant_message = message_manager.get_message_by_id(archive_line.get_id())
@@ -37,11 +37,11 @@ class TestDecodeOneLine:
         assert decoded_message.decoded_fields["Time"] == 8
 
     def test_get_archive_line_fields_message_ats_pae_action_set(self) -> None:
-        archive_line = decode_archive.ArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_action_set)
+        archive_line = decode_archive.ContentArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_action_set)
         assert archive_line.get_id() == "M_TRAIN_CC_9_ATS_CC_ACTION_SET"
 
     def test_decode_message_fields_with_xml_ats_pae_action_set(self) -> None:
-        archive_line = decode_archive.ArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_action_set)
+        archive_line = decode_archive.ContentArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_action_set)
 
         invariant_message = message_manager.get_message_by_id(archive_line.get_id())
         assert invariant_message
@@ -62,7 +62,7 @@ class TestDecodeOneLine:
         )
 
     def test_decode_string_version_field_in_message(self) -> None:
-        archive_line = decode_archive.ArchiveLine(full_raw_archive_line=archive_line_str_message_pae_ats_soft_versions)
+        archive_line = decode_archive.ContentArchiveLine(full_raw_archive_line=archive_line_str_message_pae_ats_soft_versions)
 
         invariant_message = message_manager.get_message_by_id(archive_line.get_id())
         assert invariant_message
