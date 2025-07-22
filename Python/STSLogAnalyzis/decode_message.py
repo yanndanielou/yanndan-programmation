@@ -36,9 +36,10 @@ class InvariantMessagesManager:
         return self.all_messages_by_id[message_id] if message_id in self.all_messages_by_id else None
 
 
+@dataclass
 class DecodedMessage:
-    def __init__(self, decoded_fields: Dict) -> None:
-        self.decoded_fields = decoded_fields
+    message_number: int
+    decoded_fields: Dict
 
 
 @dataclass
@@ -197,7 +198,7 @@ class MessageDecoder:
         # Final debug statement
         # print(f"Decoded fields: {decoded_fields}")
 
-        decoded_message = DecodedMessage(decoded_fields)
+        decoded_message = DecodedMessage(decoded_fields=decoded_fields, message_number=message_number)
 
         return decoded_message
 
@@ -218,7 +219,7 @@ def decode_hlf_hexa_tests_(hlf_content_hexa: str) -> datetime.datetime:
     hlf_message_id = 85
     message_decoder = MessageDecoder(xml_directory_path="D:/RIYL1/Data/Xml")
 
-    decoded_hexa_content_with_xml = message_decoder.decode_message(hlf_message_id, hlf_content_hexa).decoded_fields
+    decoded_hexa_content_with_xml = cast(DecodedMessage, message_decoder.decode_message(hlf_message_id, hlf_content_hexa)).decoded_fields
     # print(decoded_hexa_content_with_xml)
     decoded_hlf = MessageDecoder.decode_hlf_fields_to_datetime(
         time_field_value=decoded_hexa_content_with_xml["Time"],
