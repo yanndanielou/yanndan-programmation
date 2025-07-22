@@ -2,6 +2,11 @@ import json
 from typing import Dict, cast
 
 
+class ArchiveExtract:
+    def __init__(self) -> None:
+        pass
+
+
 class ArchiveLine:
     def __init__(self, full_raw_archive_line: str) -> None:
 
