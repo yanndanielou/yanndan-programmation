@@ -29,6 +29,11 @@
     "python.linting.mypyArgs": [
         "--config-file=${workspaceFolder}/pyproject.toml"
     ], // Activer l'exécution des tests à la sauvegarde
+    "python.sortImports.args": [
+        "--profile",
+        "black"
+    ],
+    "python.sortImports.path": "isort",
     "python.testing.autoTestDiscoverOnSaveEnabled": true,
     // Formater automatiquement le code à la sauvegarde
     "editor.formatOnSave": true,

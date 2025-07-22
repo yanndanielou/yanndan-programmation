@@ -2,7 +2,7 @@ import pytest
 
 import datetime
 
-import decode_action_set_content
+from stsloganalyzis import decode_action_set_content
 
 
 class TestRiyl:

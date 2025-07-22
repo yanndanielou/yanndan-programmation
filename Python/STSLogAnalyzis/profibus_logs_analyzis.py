@@ -1,22 +1,16 @@
 # -*-coding:Utf-8 -*
 """Main"""
 
-from dataclasses import dataclass, field
-import os
-import gzip
 import datetime
+import gzip
+import logging
+import os
+from dataclasses import dataclass, field
 from typing import List, Optional, cast
 
 from logger import logger_config
 
-import logging
-import param
-
-
-import os
-import gzip
-import datetime
-from typing import List
+PERIOD_TO_DETECT_LACK_OF_LOGS = datetime.timedelta(seconds=3)  # Example period to detect missing logs
 
 
 @dataclass
@@ -172,7 +166,7 @@ def detect_missing_logs(all_log_sessions: List[ProfibusLogSession]):
 
                     # logger_config.print_and_log_info(f"Going back to past logs detected between {previous_line.timestamp} and {log_line.timestamp}")
 
-                if log_line.timestamp - previous_line.timestamp > param.PERIOD_TO_DETECT_LACK_OF_LOGS:
+                if log_line.timestamp - previous_line.timestamp > PERIOD_TO_DETECT_LACK_OF_LOGS:
                     if current_going_back_to_past_event and (
                         current_going_back_to_past_group.is_during_back_to_past_period(log_line.timestamp) or current_going_back_to_past_group.is_near_present_timestamp(log_line.timestamp)
                     ):

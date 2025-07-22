@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 
-import decode_message
+from stsloganalyzis import decode_message
 
 # fmt: off
 
