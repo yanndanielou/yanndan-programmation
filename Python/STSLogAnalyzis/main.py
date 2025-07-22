@@ -11,6 +11,8 @@ action_sets_messages_archives = [
 
 message_manager = decode_message.InvariantMessagesManager(messages_csv_file_full_path=r"D:\NEXT\Data\Csv\NEXT_message.csv")
 message_decoder = decode_message.MessageDecoder(xml_directory_path=r"D:\NEXT\Data\Xml")
+action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(csv_file_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv")
+
 
 for action_set_message_archive in action_sets_messages_archives:
     archive_line = decode_archive.ArchiveLine(action_set_message_archive)
@@ -20,6 +22,9 @@ for action_set_message_archive in action_sets_messages_archives:
     if invariant_message:
 
         decoded_message = message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
-        print(decoded_message is not None)
-        if decoded_message:
-            print(decoded_message.decoded_fields)
+        # print(decoded_message is not None)
+        if decoded_message and decoded_message.message_number == 192:
+            # print(decoded_message.decoded_fields)
+            actions_field = decoded_message.decoded_fields["Actions"]
+            action_set_decoded = action_set_content_decoder.decode_actions_bitfield(bitfield=actions_field)
+            pass
