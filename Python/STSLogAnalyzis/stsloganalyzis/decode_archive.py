@@ -4,8 +4,15 @@ from typing import Dict, cast, List
 from logger import logger_config
 
 
-ARCHIVE_VERSION_LINE_PREFIX = '{"VERSIONS":{'
-ARCHIVE_CONTENT_LINE_PREFIX = '{"SQLARCH":{'
+ARCHIVE_VERSION_LINE_TAG = "VERSIONS"
+ARCHIVE_SQLARCH_LINE_TAG = "SQLARCH"
+ARCHIVE_SPMQ_LINE_TAG = "SPMQ"
+ARCHIVE_ALARM_LINE_TAG = "ALARM"
+
+ARCHIVE_VERSION_LINE_PREFIX = '{"' + ARCHIVE_VERSION_LINE_TAG + '":{'
+ARCHIVE_SQLARCH_LINE_PREFIX = '{"' + ARCHIVE_SQLARCH_LINE_TAG + '":{'
+ARCHIVE_SPMQ_LINE_PREFIX = '{"' + ARCHIVE_SPMQ_LINE_TAG + '":{'
+ARCHIVE_ALARM_LINE_PREFIX = '{"' + ARCHIVE_ALARM_LINE_TAG + '":{'
 
 
 class ArchiveExtract:
@@ -17,23 +24,43 @@ class ArchiveFile:
     def __init__(self, file_full_path: str) -> None:
         self.file_full_path = file_full_path
         self.all_archive_lines: List[ArchiveLine] = []
-        self.all_content_archive_lines: List[ContentArchiveLine] = []
+        self.all_archive_lines_by_type: Dict[str, List[ArchiveLine]] = dict()
+        self.all_sqlarch_lines: List[ContentArchiveLine] = []
+        self.all_version_lines: List[VersionArchiveLine] = []
+        self.all_spmq_lines: List[ArchiveLine] = []
+        self.all_alarm_lines: List[ArchiveLine] = []
 
     def process(self) -> None:
 
-        with open(self.file_full_path, mode="r", encoding="utf-8") as file:
-            all_raw_lines = file.readlines()
-            logger_config.print_and_log_info(f"Archive file {self.file_full_path} has {len(all_raw_lines)} lines")
-            for line in all_raw_lines:
-                if line.startswith(ARCHIVE_VERSION_LINE_PREFIX):
-                    version_line = VersionArchiveLine(full_raw_archive_line=line)
-                elif line.startswith(ARCHIVE_CONTENT_LINE_PREFIX):
-                    version_line = ContentArchiveLine(full_raw_archive_line=line)
-                    self.all_content_archive_lines.append(version_line)
-                else:
-                    logger_config.print_and_log_error("Unsupported line:" + line)
+        with logger_config.stopwatch_with_label(f"Process archive file {self.file_full_path}"):
+            with open(self.file_full_path, mode="r", encoding="utf-8") as file:
+                all_raw_lines = file.readlines()
+                logger_config.print_and_log_info(f"Archive file {self.file_full_path} has {len(all_raw_lines)} lines")
+                for line_number, line in enumerate(all_raw_lines):
+                    archive_line = ArchiveLine(full_raw_archive_line=line)
 
-                self.all_archive_lines.append(version_line)
+                    if line.startswith(ARCHIVE_VERSION_LINE_PREFIX):
+                        archive_line = VersionArchiveLine(full_raw_archive_line=line)
+                        self.all_version_lines.append(archive_line)
+                    elif line.startswith(ARCHIVE_SQLARCH_LINE_PREFIX):
+                        archive_line = ContentArchiveLine(full_raw_archive_line=line)
+                        self.all_sqlarch_lines.append(archive_line)
+                    elif line.startswith(ARCHIVE_SPMQ_LINE_PREFIX):
+                        archive_line = ArchiveLine(full_raw_archive_line=line)
+                        self.all_spmq_lines.append(archive_line)
+                    elif line.startswith(ARCHIVE_ALARM_LINE_PREFIX):
+                        archive_line = ArchiveLine(full_raw_archive_line=line)
+                        self.all_alarm_lines.append(archive_line)
+                    else:
+                        logger_config.print_and_log_error(f"Unsupported line {line_number}:" + line)
+
+                    self.all_archive_lines.append(archive_line)
+                    archive_line_type = archive_line.tag
+
+                    if archive_line_type not in self.all_archive_lines_by_type:
+                        self.all_archive_lines_by_type[archive_line_type] = []
+
+                    self.all_archive_lines_by_type[archive_line_type].append(archive_line)
 
 
 class ArchiveLine:
@@ -42,6 +69,14 @@ class ArchiveLine:
         self.full_raw_archive_line = full_raw_archive_line
         # Parsing JSON string
         self.full_archive_line_as_json: Dict = json.loads(full_raw_archive_line)
+
+        # Access global fields
+        self.date_raw = self.full_archive_line_as_json["date"]
+        self.tags: List[str] = self.full_archive_line_as_json["tags"]
+        self.tag: str = self.tags[0]
+
+    def get_date_raw_str(self) -> str:
+        return cast(str, self.date_raw)
 
 
 class VersionArchiveLine(ArchiveLine):
@@ -55,10 +90,6 @@ class ContentArchiveLine(ArchiveLine):
 
         # Directly copy all items from SQLARCH section into a new dictionary
         self.sqlarch_fields_dict: Dict[str, str | int] = self.full_archive_line_as_json.get("SQLARCH", {})
-
-        # Access global fields
-        self.date_raw = self.full_archive_line_as_json["date"]
-        self.tags = self.full_archive_line_as_json["tags"]
 
         # Accessing specific fields
         self.sqlarch_json_section: Dict = self.full_archive_line_as_json["SQLARCH"]
@@ -83,9 +114,6 @@ class ContentArchiveLine(ArchiveLine):
 
     def get_new_state_str(self) -> str:
         return cast(str, self.sqlarch_fields_dict.get("newSt"))
-
-    def get_date_raw_str(self) -> str:
-        return cast(str, self.date_raw)
 
     def print_all(self) -> None:
         # Print extracted fields
