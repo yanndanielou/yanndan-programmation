@@ -16,7 +16,7 @@ message_decoder = decode_message.MessageDecoder(xml_directory_path=r"D:\NEXT\Dat
 
 class TestDecodeOneArchiveFile:
     def test_process_one_file(self) -> None:
-        archive_file = decode_archive.ArchiveFile(r"C:\D_Drive\GitHub\yanndanielou-programmation\Python\STSLogAnalyzis\Input\archive_2025_07_22\NEXTFileArchiveServer_365.json")
+        archive_file = decode_archive.ArchiveFile(r"Input\archive_2025_07_22\NEXTFileArchiveServer_365.json")
         archive_file.process()
         assert len(archive_file.all_version_lines) == 1
         assert len(archive_file.all_sqlarch_lines) > 100
