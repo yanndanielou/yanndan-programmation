@@ -11,6 +11,7 @@ archive_line_str_message_lc_ats_sso_versions = '{"SQLARCH":{"caller":"","catAla"
 archive_line_str_message_pae_ats_soft_versions = '{"SQLARCH":{"caller":"","catAla":0,"eqp":"TRAIN 9","eqpId":"EQ_CET_9","exeSt":"","id":"M_CC_9_CC_ATS_SOFT_VERSIONS","jdb":false,"label":"CC_ATS_SOFT_VERSIONS [113]","loc":"INDETERMINE","locale":"2025-07-09T12:55:53.616+02:00","newSt":"14 09 20 50 41 45 5F 5F 4E 45 58 54 5F 50 41 45 5F 43 55 43 50 5F 56 31 30 5F 30 20 20 20 20 20 20 20 20 20 20 20 20 50 41 45 5F 5F 4E 45 58 54 5F 50 41 45 5F 43 55 43 50 5F 56 31 30 5F 30 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 00 06 01 36 00 01 19 40 27 E0 ","oldSt":"","orders":"","sigT":"TSA","tstamp":"2025-07-09T12:55:52.600+02:00","utc_locale":"2025-07-09T10:55:53.616+01:00"},"date":"2025-07-09T12:55:53.616+02:00","tags":["SQLARCH"]}'
 archive_line_str_message_ats_pae_action_set = '{"SQLARCH":{"caller":"","catAla":0,"eqp":"TRAIN 9","eqpId":"EQ_CET_9","exeSt":"","id":"M_TRAIN_CC_9_ATS_CC_ACTION_SET","jdb":false,"label":"TRAIN : ATS_CC_ACTION_SET [192]","loc":"TB_CDV_z8321_03","locale":"2025-07-21T13:06:13.489+02:00","newSt":"08 08 30 F8 30 00 00 00 70 00 00 00 00 00 00 00 01 44 A2 C9 24 94 49 24 92 44 44 4B 60 91 11 11 12 12 21 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 29 5F EB FC 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ","oldSt":"","orders":"","sigT":"TCA","tstamp":"","utc_locale":"2025-07-21T11:06:13.489+01:00"},"date":"2025-07-21T13:06:13.490+02:00","tags":["SQLARCH"]}'
 archive_line_str_message_ats_pae_spe_remote_ctrl = '{"SQLARCH":{"caller":"","catAla":0,"eqp":"TRAIN 9","eqpId":"EQ_CET_9","exeSt":"","id":"M_TRAIN_CC_9_ATS_CC_REMOTE_CONTROL_SPE","jdb":false,"label":"TRAIN : ATS_CC_REMOTE_CONTROL_SPE [101]","loc":"TB_CDV_z2466_01","locale":"2025-07-21T18:03:50.661+02:00","newSt":"04 A0 83 18 EA C7 00 71 82 0C 20 00 00 00 F8 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ","oldSt":"","orders":"","sigT":"TCA","tstamp":"","utc_locale":"2025-07-21T16:03:50.661+01:00"},"date":"2025-07-21T18:03:50.662+02:00","tags":["SQLARCH"]}'
+archive_line_str_message_pae_ats_spe_oper = '{"SQLARCH":{"caller":"","catAla":0,"eqp":"TRAIN 9","eqpId":"EQ_CET_9","exeSt":"","id":"M_TRAIN_CC_9_CC_ATS_OPERATION_SPE","jdb":false,"label":"TRAIN : CC_ATS_OPERATION_SPE [36]","loc":"INDETERMINE","locale":"2025-07-21T17:57:14.924+02:00","newSt":"00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 40 40 40 40 40 40 40 40 01 C5 23 FF FF FF FF FF FE 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 10 40 00 00 00 00 02 84 00 00 00 00 00 00 00 00 00 00 00 00 ","oldSt":"","orders":"","sigT":"TSA","tstamp":"2000-01-01T01:00:01.200+01:00","utc_locale":"2025-07-21T15:57:14.924+01:00"},"date":"2025-07-21T17:57:14.924+02:00","tags":["SQLARCH"]}'
 
 message_manager = decode_message.InvariantMessagesManager(messages_list_csv_file_full_path=r"D:\NEXT\Data\Csv\NEXT_message.csv")
 message_decoder = decode_message.MessageDecoder(xml_directory_path=r"D:\NEXT\Data\Xml")
@@ -18,8 +19,13 @@ message_decoder = decode_message.MessageDecoder(xml_directory_path=r"D:\NEXT\Dat
 
 class TestDecodeOneArchiveFile:
     def test_process_one_file(self) -> None:
+        archive_decoder = decode_archive.ArchiveDecoder(
+            messages_list_csv_file_full_path=r"D:\NEXT\Data\Csv\NEXT_message.csv", xml_directory_path=r"D:\NEXT\Data\Xml", csv_file_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv"
+        )
+
         archive_file = decode_archive.ArchiveFile(r"Input\archive_2025_07_22\NEXTFileArchiveServer_365.json")
         archive_file.open_and_read_archive_file_lines()
+        archive_file.decode_all_lines(archive_decoder=archive_decoder)
         assert len(archive_file.all_version_lines) == 1
         assert len(archive_file.all_sqlarch_lines) > 100
         pass
@@ -85,7 +91,20 @@ class TestDecodeOneLine:
         assert cast(str, decoded_message.decoded_fields["SoftVersionPart1_1"]) == "A"
         assert cast(str, decoded_message.decoded_fields["SoftVersionPart1_2"]) == "E"
 
-    def test_decode_when_selctor_rc_type(self) -> None:
+    def test_decode_message_pae_ats_spe_oper(self) -> None:
+        archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_pae_ats_spe_oper)
+
+        invariant_message = message_manager.get_message_by_id(archive_line.get_id())
+        assert invariant_message
+        decoded_message = message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
+        assert decoded_message
+        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1"]).startswith("PAE__NEXT_PAE_CUCP_V10_0")
+        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1"]) == "PAE__NEXT_PAE_CUCP_V10_0"
+        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1_0"]) == "P"
+        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1_1"]) == "A"
+        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1_2"]) == "E"
+
+    def test_decode_when_selector_rc_type(self) -> None:
         archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_spe_remote_ctrl)
         invariant_message = message_manager.get_message_by_id(archive_line.get_id())
         assert invariant_message
