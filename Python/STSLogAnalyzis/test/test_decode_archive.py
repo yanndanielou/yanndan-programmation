@@ -14,6 +14,15 @@ message_manager = decode_message.InvariantMessagesManager(messages_csv_file_full
 message_decoder = decode_message.MessageDecoder(xml_directory_path=r"D:\NEXT\Data\Xml")
 
 
+class TestDecodeOneArchiveFile:
+    def test_process_one_file(self) -> None:
+        archive_file = decode_archive.ArchiveFile(r"C:\D_Drive\GitHub\yanndanielou-programmation\Python\STSLogAnalyzis\Input\archive_2025_07_22\NEXTFileArchiveServer_365.json")
+        archive_file.process()
+        assert len(archive_file.all_version_lines) == 1
+        assert len(archive_file.all_sqlarch_lines) > 100
+        pass
+
+
 class TestDecodeOneLine:
     def test_decode_basic_fields_zc_ats_tracking_status(self) -> None:
         archive_line = decode_archive.ContentArchiveLine(full_raw_archive_line=archive_line_str_message_zc_ats_tracking_status)
