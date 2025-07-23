@@ -91,7 +91,8 @@ class TestDecodeOneLine:
         assert invariant_message
         decoded_message = message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
-        assert cast(str, decoded_message.decoded_fields["CcRcType"]) == 4
+        assert "TrainNumber" not in decoded_message.decoded_fields
+        assert cast(str, decoded_message.decoded_fields["RestrEnd1SegId"]) == 8390
         assert cast(str, decoded_message.decoded_fields["RestrEnd1SegId"]) == 8390
         assert cast(str, decoded_message.decoded_fields["RestrEnd1Offset"]) == 60103
         assert cast(str, decoded_message.decoded_fields["RestrEnd1Stationning"]) == 454
