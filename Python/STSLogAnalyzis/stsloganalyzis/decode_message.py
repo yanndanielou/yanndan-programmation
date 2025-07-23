@@ -114,9 +114,28 @@ class MessageDecoder:
         bit_segment = combined_bits[start_bit % 8 : start_bit % 8 + bit_length]
         return int(bit_segment, 2)
 
-    def parse_record(self, record: ET.Element, hex_string: str, current_bit_index: int = 0) -> Tuple[dict, int]:
+    def parse_selector(self, record: ET.Element, previously_decoded_fields: dict, hex_string: str, current_bit_index: int = 0) -> Tuple[Dict[str, int | str], int]:
+        newly_decoded_fields: Dict[str, int | str] = {}
+        hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
+
+        trigger_value_trigger_element = record[0]
+        assert trigger_value_trigger_element.get("class")
+        trigger_field = trigger_value_trigger_element.get("case")
+        trigger_value = int(cast(str, trigger_value_trigger_element.get("value")))
+
+        assert trigger_field in previously_decoded_fields
+        if previously_decoded_fields[trigger_field] == trigger_value:
+            elements_to_decode = record[1:]
+            assert len(elements_to_decode) == 1
+            element_to_decode = elements_to_decode[0]
+            assert element_to_decode.tag == "record"
+            newly_decoded_fields, current_bit_index = self.parse_record(record=element_to_decode, hex_string=hex_string, current_bit_index=current_bit_index)
+
+        return newly_decoded_fields, current_bit_index
+
+    def parse_record(self, record: ET.Element, hex_string: str, current_bit_index: int = 0) -> Tuple[Dict[str, int | str], int]:
         """Recursively parse records to decode fields."""
-        decoded_fields = {}
+        decoded_fields: Dict[str, int | str] = {}
         hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
 
         for element in record:
@@ -127,8 +146,9 @@ class MessageDecoder:
                 # Recursive call to process nested records
                 nested_fields, current_bit_index = self.parse_record(element, hex_string, current_bit_index)
                 decoded_fields.update(nested_fields)
-            elif element.tag == "field":
-                field_name = cast(str, element.get("id"))
+            elif element.tag == "selector":
+                nested_fields, current_bit_index = self.parse_selector(element, decoded_fields, hex_string, current_bit_index)
+                decoded_fields.update(nested_fields)
             elif element.tag == "field":
                 field_name = cast(str, element.get("id"))
 
