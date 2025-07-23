@@ -142,7 +142,7 @@ class MessageDecoder:
             # logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
 
             if element.tag == "record" or element.tag == "layer":
-                logger_config.print_and_log_info(f"{element.tag} found: {element.get("id")}, current_bit_index:{current_bit_index}")
+                # logger_config.print_and_log_info(f"{element.tag} found: {element.get("id")}, current_bit_index:{current_bit_index}")
                 # Recursive call to process nested records
                 nested_fields, current_bit_index = self.parse_record(element, hex_string, current_bit_index)
                 decoded_fields.update(nested_fields)
