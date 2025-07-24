@@ -7,13 +7,13 @@ action_sets_messages_archives = [
     '{"SQLARCH":{"caller":"","catAla":0,"eqp":"TRAIN 9","eqpId":"EQ_CET_9","exeSt":"","id":"M_CC_9_CC_ATS_SOFT_VERSIONS","jdb":false,"label":"CC_ATS_SOFT_VERSIONS [113]","loc":"INDETERMINE","locale":"2025-07-09T12:55:53.616+02:00","newSt":"14 09 20 50 41 45 5F 5F 4E 45 58 54 5F 50 41 45 5F 43 55 43 50 5F 56 31 30 5F 30 20 20 20 20 20 20 20 20 20 20 20 20 50 41 45 5F 5F 4E 45 58 54 5F 50 41 45 5F 43 55 43 50 5F 56 31 30 5F 30 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 20 00 06 01 36 00 01 19 40 27 E0 ","oldSt":"","orders":"","sigT":"TSA","tstamp":"2025-07-09T12:55:52.600+02:00","utc_locale":"2025-07-09T10:55:53.616+01:00"},"date":"2025-07-09T12:55:53.616+02:00","tags":["SQLARCH"]}',
 ]
 
-message_manager = decode_message.InvariantMessagesManager(messages_csv_file_full_path=r"D:\NEXT\Data\Csv\NEXT_message.csv")
+message_manager = decode_message.InvariantMessagesManager(messages_list_csv_file_full_path=r"D:\NEXT\Data\Csv\NEXT_message.csv")
 message_decoder = decode_message.MessageDecoder(xml_directory_path=r"D:\NEXT\Data\Xml")
 action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(csv_file_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv")
 
 
 for action_set_message_archive in action_sets_messages_archives:
-    archive_line = decode_archive.ContentArchiveLine(action_set_message_archive)
+    archive_line = decode_archive.SqlArchArchiveLine(action_set_message_archive)
     archive_line_object_id = archive_line.get_id()
 
     invariant_message = message_manager.get_message_by_id(archive_line_object_id)
