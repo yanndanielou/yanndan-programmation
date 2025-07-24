@@ -5,91 +5,10 @@
     {
         "IncludedPaths":[
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\NEXT_PCC\\PCC\\build"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\AF\\Build"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\AF\\Build"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\AF\\AFP\\Server"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\AF\\AFP\\Common"
-            },
-            {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\RDV3"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\SPOCC\\AtspSrv"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\SPOCC\\Common"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\SPOCC\\Build"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\AF\\AF\\Server"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\AF\\AF\\Common"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\RDV3"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_CPP"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\build"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpCmn"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpCmnFileArchive"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpPerfCounter"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpCmnSQL"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\Ilog"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpLog"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpMsg"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\timer"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpReplic"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpRecon"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpScript"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpStore"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpSrv"
             }
         ],
         "IncludedExtensions":[
-            {
-                "extension":"cc"
-            },
             {
                 "extension":"cpp"
             },
