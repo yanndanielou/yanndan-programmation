@@ -14,6 +14,12 @@
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\AF\\Build"
             },
             {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\SPOCC\\Build"
+            },
+            {
+                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\build"
+            },
+            {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\AF\\AFP\\Server"
             },
             {
@@ -29,9 +35,6 @@
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\SPOCC\\Common"
             },
             {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\ATSP\\SPOCC\\Build"
-            },
-            {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_PCC\\AF\\AF\\Server"
             },
             {
@@ -42,9 +45,6 @@
             },
             {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\XT_CPP"
-            },
-            {
-                "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\build"
             },
             {
                 "folder":"M:\\NEXT_PCC_V0_40_BLD\\SPOCC\\SpCmn"
