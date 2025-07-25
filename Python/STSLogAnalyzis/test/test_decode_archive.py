@@ -14,13 +14,13 @@ archive_line_str_message_ats_pae_spe_remote_ctrl = '{"SQLARCH":{"caller":"","cat
 archive_line_str_message_pae_ats_spe_oper = '{"SQLARCH":{"caller":"","catAla":0,"eqp":"TRAIN 9","eqpId":"EQ_CET_9","exeSt":"","id":"M_TRAIN_CC_9_CC_ATS_OPERATION_SPE","jdb":false,"label":"TRAIN : CC_ATS_OPERATION_SPE [36]","loc":"INDETERMINE","locale":"2025-07-21T17:57:14.924+02:00","newSt":"00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 40 40 40 40 40 40 40 40 01 C5 23 FF FF FF FF FF FE 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 10 40 00 00 00 00 02 84 00 00 00 00 00 00 00 00 00 00 00 00 ","oldSt":"","orders":"","sigT":"TSA","tstamp":"2000-01-01T01:00:01.200+01:00","utc_locale":"2025-07-21T15:57:14.924+01:00"},"date":"2025-07-21T17:57:14.924+02:00","tags":["SQLARCH"]}'
 
 message_manager = decode_message.InvariantMessagesManager(messages_list_csv_file_full_path=r"D:\NEXT\Data\Csv\NEXT_message.csv")
-message_decoder = decode_message.MessageDecoder(xml_directory_path=r"D:\NEXT\Data\Xml")
+message_decoder = decode_message.XmlMessageDecoder(xml_directory_path=r"D:\NEXT\Data\Xml")
 
 
 class TestDecodeOneArchiveFile:
     def test_process_one_file(self) -> None:
         archive_decoder = decode_archive.ArchiveDecoder(
-            messages_list_csv_file_full_path=r"D:\NEXT\Data\Csv\NEXT_message.csv", xml_directory_path=r"D:\NEXT\Data\Xml", csv_file_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv"
+            messages_list_csv_file_full_path=r"D:\NEXT\Data\Csv\NEXT_message.csv", xml_directory_path=r"D:\NEXT\Data\Xml", action_set_content_csv_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv"
         )
 
         archive_file = decode_archive.ArchiveFile(r"Input\archive_2025_07_22\NEXTFileArchiveServer_365.json")
@@ -47,7 +47,7 @@ class TestDecodeOneLine:
 
         invariant_message = message_manager.get_message_by_id(archive_line.get_id())
         assert invariant_message
-        decoded_message = message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
+        decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
         assert decoded_message.decoded_fields["InitLCStatus"] == 1
         assert decoded_message.decoded_fields["SSOLineVersion"] == 0
@@ -62,7 +62,7 @@ class TestDecodeOneLine:
 
         invariant_message = message_manager.get_message_by_id(archive_line.get_id())
         assert invariant_message
-        decoded_message = message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
+        decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
         assert decoded_message.decoded_fields["LineId"] == 1
         assert decoded_message.decoded_fields["ActionSetId"] == 1
@@ -83,7 +83,7 @@ class TestDecodeOneLine:
 
         invariant_message = message_manager.get_message_by_id(archive_line.get_id())
         assert invariant_message
-        decoded_message = message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
+        decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
         assert cast(str, decoded_message.decoded_fields["SoftVersionPart1"]).startswith("PAE__NEXT_PAE_CUCP_V10_0")
         assert cast(str, decoded_message.decoded_fields["SoftVersionPart1"]) == "PAE__NEXT_PAE_CUCP_V10_0"
@@ -96,7 +96,7 @@ class TestDecodeOneLine:
 
         invariant_message = message_manager.get_message_by_id(archive_line.get_id())
         assert invariant_message
-        decoded_message = message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
+        decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
         assert cast(str, decoded_message.decoded_fields["SoftVersionPart1"]).startswith("PAE__NEXT_PAE_CUCP_V10_0")
         assert cast(str, decoded_message.decoded_fields["SoftVersionPart1"]) == "PAE__NEXT_PAE_CUCP_V10_0"
@@ -108,7 +108,7 @@ class TestDecodeOneLine:
         archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_spe_remote_ctrl)
         invariant_message = message_manager.get_message_by_id(archive_line.get_id())
         assert invariant_message
-        decoded_message = message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
+        decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
         assert "TrainNumber" not in decoded_message.decoded_fields
         assert cast(str, decoded_message.decoded_fields["RestrEnd1SegId"]) == 8390

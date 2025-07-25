@@ -1,11 +1,12 @@
-from dataclasses import dataclass, field
+import csv
 import datetime
 import xml.etree.ElementTree as ET
-from typing import List, Dict, Optional, Tuple, cast
-
-import csv
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple, cast
 
 from logger import logger_config
+
+from stsloganalyzis import decode_action_set_content
 
 
 @dataclass
@@ -42,8 +43,28 @@ class DecodedMessage:
     decoded_fields: Dict
 
 
-@dataclass
 class MessageDecoder:
+    def __init__(self, xml_directory_path: str, invariant_message_manager: InvariantMessagesManager, action_set_content_decoder: decode_action_set_content.ActionSetContentDecoder) -> None:
+        self.xml_message_decoder = XmlMessageDecoder(xml_directory_path=xml_directory_path)
+        self.invariant_message_manager = invariant_message_manager
+        self.action_set_content_decoder = action_set_content_decoder
+
+    def decode_raw_hexadecimal_message(self, message_number: int, hexadecimal_content: str, also_decode_additional_fields_in_specific_messages: bool) -> Optional[DecodedMessage]:
+        decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=message_number, hexadecimal_content=hexadecimal_content)
+        if decoded_message and also_decode_additional_fields_in_specific_messages:
+            self.decode_additional_fields_in_specific_messages(decoded_message=decoded_message)
+
+        return decoded_message
+
+    def decode_additional_fields_in_specific_messages(self, decoded_message: DecodedMessage) -> None:
+        if decoded_message.message_number == 192:
+            actions_field = decoded_message.decoded_fields["Actions"]
+            action_set_decoded = self.action_set_content_decoder.decode_actions_bitfield(bitfield=actions_field)
+            decoded_message.decoded_fields.update(action_set_decoded.action_set_id_with_value)
+
+
+@dataclass
+class XmlMessageDecoder:
     xml_directory_path: str
 
     @staticmethod
@@ -114,8 +135,8 @@ class MessageDecoder:
         bit_segment = combined_bits[start_bit % 8 : start_bit % 8 + bit_length]
         return int(bit_segment, 2)
 
-    def parse_selector(self, record: ET.Element, previously_decoded_fields: dict, hex_string: str, current_bit_index: int = 0) -> Tuple[Dict[str, int | str], int]:
-        newly_decoded_fields: Dict[str, int | str] = {}
+    def parse_selector(self, record: ET.Element, previously_decoded_fields: dict, hex_string: str, current_bit_index: int = 0) -> Tuple[Dict[str, int | bool | str | List[int | str | bool]], int]:
+        newly_decoded_fields: Dict[str, int | bool | str | List[int | str | bool]] = {}
         hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
 
         trigger_value_trigger_element = record[0]
@@ -133,9 +154,9 @@ class MessageDecoder:
 
         return newly_decoded_fields, current_bit_index
 
-    def parse_record(self, record: ET.Element, hex_string: str, current_bit_index: int = 0) -> Tuple[Dict[str, int | str], int]:
+    def parse_record(self, record: ET.Element, hex_string: str, current_bit_index: int = 0) -> Tuple[Dict[str, int | bool | str | List[int | str | bool]], int]:
         """Recursively parse records to decode fields."""
-        decoded_fields: Dict[str, int | str] = {}
+        decoded_fields: Dict[str, int | bool | str | List[int | str | bool]] = {}
         hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
 
         for element in record:
@@ -192,14 +213,14 @@ class MessageDecoder:
                 if field_dim > 1:
                     if field_type == "BigEndianASCIIChar":
                         decoded_fields[field_name] = "".join(cast(str, field_table_values)).rstrip()
-                        logger_config.print_and_log_info(f"Field {field_name} is {decoded_fields[field_name]}")
+                        # logger_config.print_and_log_info(f"Field {field_name} is {decoded_fields[field_name]}")
                         decoded_fields[field_name + "_list"] = field_table_values
                     else:
                         decoded_fields[field_name] = field_table_values
 
         return decoded_fields, current_bit_index
 
-    def decode_message(self, message_number: int, hexadecimal_content: str) -> Optional[DecodedMessage]:
+    def decode_xml_fields_in_message_hexadecimal(self, message_number: int, hexadecimal_content: str) -> Optional[DecodedMessage]:
         # Open the corresponding XML file based on message_id
         xml_file_path = self.xml_directory_path + "/" + f"MsgId{message_number}scheme.xml"
         try:
@@ -211,22 +232,14 @@ class MessageDecoder:
             print(f"File {xml_file_path} not found.")
             return None
 
-        # Debugging print statement
-        # print(f"XML parsed: Root tag - {root.tag}")
-
         # Traverse the root record and decode
         decoded_fields, _ = self.parse_record(root, hexadecimal_content)
-
-        # Final debug statement
-        # print(f"Decoded fields: {decoded_fields}")
-
         decoded_message = DecodedMessage(decoded_fields=decoded_fields, message_number=message_number)
-
         return decoded_message
 
     def decode_hlf_hexa(self, hlf_content_hexa: str, decoded_fields: dict) -> datetime.datetime:
 
-        decoded_hlf = MessageDecoder.decode_hlf_fields_to_datetime(
+        decoded_hlf = XmlMessageDecoder.decode_hlf_fields_to_datetime(
             time_field_value=decoded_fields["Time"],
             time_offset_value=decoded_fields["TimeOffset"],
             decade_field_value=decoded_fields["Decade"],
@@ -239,11 +252,11 @@ class MessageDecoder:
 
 def decode_hlf_hexa_tests_(hlf_content_hexa: str) -> datetime.datetime:
     hlf_message_id = 85
-    message_decoder = MessageDecoder(xml_directory_path="D:/RIYL1/Data/Xml")
+    message_decoder = XmlMessageDecoder(xml_directory_path="D:/RIYL1/Data/Xml")
 
-    decoded_hexa_content_with_xml = cast(DecodedMessage, message_decoder.decode_message(hlf_message_id, hlf_content_hexa)).decoded_fields
+    decoded_hexa_content_with_xml = cast(DecodedMessage, message_decoder.decode_xml_fields_in_message_hexadecimal(hlf_message_id, hlf_content_hexa)).decoded_fields
     # print(decoded_hexa_content_with_xml)
-    decoded_hlf = MessageDecoder.decode_hlf_fields_to_datetime(
+    decoded_hlf = XmlMessageDecoder.decode_hlf_fields_to_datetime(
         time_field_value=decoded_hexa_content_with_xml["Time"],
         time_offset_value=decoded_hexa_content_with_xml["TimeOffset"],
         decade_field_value=decoded_hexa_content_with_xml["Decade"],

@@ -1,5 +1,5 @@
 import json
-from typing import Dict, cast, List
+from typing import Dict, cast, List, Optional
 
 from logger import logger_config
 
@@ -18,10 +18,13 @@ ARCHIVE_ALARM_LINE_PREFIX = '{"' + ARCHIVE_ALARM_LINE_TAG + '":{'
 
 
 class ArchiveDecoder:
-    def __init__(self, messages_list_csv_file_full_path: str, xml_directory_path: str, csv_file_file_path: str) -> None:
+    def __init__(self, messages_list_csv_file_full_path: str, xml_directory_path: str, action_set_content_csv_file_path: str) -> None:
         self.message_manager = decode_message.InvariantMessagesManager(messages_list_csv_file_full_path=messages_list_csv_file_full_path)
-        self.message_decoder = decode_message.MessageDecoder(xml_directory_path=xml_directory_path)
-        self.action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(csv_file_file_path=csv_file_file_path)
+        self.xml_message_decoder = decode_message.XmlMessageDecoder(xml_directory_path=xml_directory_path)
+        self.action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(csv_file_file_path=action_set_content_csv_file_path)
+        self.message_decoder = decode_message.MessageDecoder(
+            xml_directory_path=xml_directory_path, invariant_message_manager=self.message_manager, action_set_content_decoder=self.action_set_content_decoder
+        )
 
 
 class ArchiveExtract:
@@ -44,18 +47,7 @@ class ArchiveFile:
         with logger_config.stopwatch_with_label(f"Decode all lines {self.file_full_path}"):
 
             for sqlarch_line in self.all_sqlarch_lines:
-                archive_line_object_id = sqlarch_line.get_id()
-                invariant_message = archive_decoder.message_manager.get_message_by_id(archive_line_object_id)
-                if invariant_message:
-                    decoded_message = archive_decoder.message_decoder.decode_message(message_number=invariant_message.message_number, hexadecimal_content=sqlarch_line.get_new_state_str())
-                    assert decoded_message
-                    sqlarch_line.all_fields_dict.update(decoded_message.decoded_fields)
-                    # print(decoded_message is not None)
-                    if decoded_message and decoded_message.message_number == 192:
-                        # print(decoded_message.decoded_fields)
-                        actions_field = decoded_message.decoded_fields["Actions"]
-                        action_set_decoded = archive_decoder.action_set_content_decoder.decode_actions_bitfield(bitfield=actions_field)
-                        sqlarch_line.all_fields_dict.update(action_set_decoded.action_set_id_with_value)
+                sqlarch_line.decode_message(archive_decoder)
 
         return number_of_lines_decoded
 
@@ -123,9 +115,6 @@ class SqlArchArchiveLine(ArchiveLine):
         # Accessing specific fields
         self.sqlarch_json_section: Dict = self.full_archive_line_as_json["SQLARCH"]
 
-        # Directly copy all items from SQLARCH section into a new dictionary
-        self.sqlarch_fields_dict_raw = {f"{key}_raw": value for key, value in self.all_fields_dict.items()}
-
         # Accessing specific fields
         self.caller = self.sqlarch_json_section.get("caller")
         self.cat_ala = self.sqlarch_json_section.get("catAla")
@@ -136,6 +125,19 @@ class SqlArchArchiveLine(ArchiveLine):
         self.jdb = self.sqlarch_json_section.get("jdb")
         self.label = self.sqlarch_json_section.get("label")
         self.loc = self.sqlarch_json_section.get("loc")
+
+        self.sqlarch_fields_dict_raw: dict[str, str | int | bool] = dict()
+        self.invariant_message: Optional[decode_message.InvariantMessage] = None
+        self.decoded_message: Optional[decode_message.DecodedMessage] = None
+
+    def decode_message(self, archive_decoder: ArchiveDecoder) -> None:
+        # Directly copy all items from SQLARCH section into a new dictionary
+        self.sqlarch_fields_dict_raw = {f"{key}_raw": value for key, value in self.all_fields_dict.items()}
+        self.invariant_message = archive_decoder.message_manager.get_message_by_id(self.get_id())
+        if self.invariant_message:
+            self.decoded_message = archive_decoder.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(
+                message_number=self.invariant_message.message_number, hexadecimal_content=self.get_new_state_str()
+            )
 
     def get_id(self) -> str:
         return cast(str, self.all_fields_dict.get("id"))
