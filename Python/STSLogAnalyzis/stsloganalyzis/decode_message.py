@@ -137,7 +137,6 @@ class XmlMessageDecoder:
 
     def parse_selector(self, record: ET.Element, previously_decoded_fields: dict, hex_string: str, current_bit_index: int = 0) -> Tuple[Dict[str, int | bool | str | List[int | str | bool]], int]:
         newly_decoded_fields: Dict[str, int | bool | str | List[int | str | bool]] = {}
-        hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
 
         trigger_value_trigger_element = record[0]
         assert trigger_value_trigger_element.get("class")
@@ -197,7 +196,6 @@ class XmlMessageDecoder:
                         # field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
                         field_value = self.extract_bits_bitfield(bits_extracted, current_bit_index, field_size_bits)
                         decoded_fields[field_name_with_dim] = field_value
-                        pass
                     elif field_type == "BigEndianASCIIChar":
                         field_value = self.extract_bits_ascii_char(bits_extracted, current_bit_index, field_size_bits)
                         decoded_fields[field_name_with_dim] = field_value
@@ -264,15 +262,3 @@ def decode_hlf_hexa_tests_(hlf_content_hexa: str) -> datetime.datetime:
     )
     print(f"{hlf_content_hexa} is {decoded_hlf}")
     return decoded_hlf
-
-
-# Example usage
-
-"""
-decode_hlf_hexa("00 0d 23 f2 00 00 8c a0 27 4a")
-decode_hlf_hexa("00 0d 24 88 00 00 8c a0 27 4a")
-decode_hlf_hexa("00 0d 25 1e 00 00 8c a0 27 4a")
-decode_hlf_hexa("00 0d 25 b4 00 00 8c a0 27 4a")
-
-# print(decode_hlf(time_field_value=322730, time_offset_value=1, decade_field_value=2, day_on_decade_field_value=1428))
-"""
