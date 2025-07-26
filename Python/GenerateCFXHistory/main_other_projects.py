@@ -21,13 +21,18 @@ def main() -> None:
         if not os.path.exists(OUTPUT_DIRECTORY_NAME):
             os.mkdir(OUTPUT_DIRECTORY_NAME)
 
+        cfx_inputs = (
+            cfx.ChampFxInputsBuilder()
+            .add_champfx_details_excel_file_full_path("Input/details_project_FR_NEXTEO.xlsx")
+            .add_champfx_details_excel_file_full_path("Input/details_project_ATSP.xlsx")
+            .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_FR_NEXTEO.xlsx")
+            .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_ATSP.xlsx")
+            .build()
+        )
+
         all_champfx_library = cfx.ChampFXLibrary(
-            champfx_details_excel_file_full_path="Input/autres_projets___details.xlsx",
-            champfx_states_changes_excel_file_full_path="Input/autres_projets___changements_etats.xlsx",
-            cfx_extended_history_file_full_path=None,
-            user_and_role_data_text_file_full_path="Input/role_data_next_other_projects.txt",
+            cfx_inputs=cfx_inputs,
             label="Other projects",
-            cfx_users_library=role.CfxEmptyUserLibrary(),
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
@@ -71,7 +76,6 @@ def main() -> None:
             display_output_plots=DISPLAY_OUTPUT,
             generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
         )
-
 
         ui_and_results_generation.produce_results_and_displays(
             cfx_library=all_champfx_library,

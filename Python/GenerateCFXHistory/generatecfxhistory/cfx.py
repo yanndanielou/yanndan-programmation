@@ -666,6 +666,7 @@ class ChampFXEntryBuilder:
         category: Category = ChampFXEntryBuilder.convert_champfx_category(raw_category)
 
         current_owner_raw: str = row["CurrentOwner.FullName"]
+        assert cfx_library.cfx_users_library.has_user_by_full_name(current_owner_raw), cfx_id
         current_owner: role.CfxUser = cfx_library.cfx_users_library.get_cfx_user_by_full_name(current_owner_raw)
 
         fixed_implemented_in_config_unit: str = row["FixedImplementedIn"]

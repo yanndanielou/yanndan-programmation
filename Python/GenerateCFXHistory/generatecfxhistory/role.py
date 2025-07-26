@@ -95,6 +95,7 @@ class CfxLibraryBase(ABC):
     def get_subsystem_from_champfx_fixed_implemented_in(self, champfx_fixed_implemented_in: str) -> Optional[SubSystem]:
         return None
 
+
 class CfxUserLibrary(CfxLibraryBase):
 
     def __init__(self, user_and_role_data_text_file_full_path: str, release_subsystem_mapping: dict[SubSystem, list[str]]) -> None:
@@ -126,12 +127,13 @@ class CfxUserLibrary(CfxLibraryBase):
             raw_full_name_lower = raw_full_name.lower()
             self._add_user_with_raw_data(subsystem=subsystem, raw_full_name_lower=raw_full_name_lower, raw_full_name=raw_full_name)
 
-
-
     def _add_user_with_raw_data(self, subsystem: SubSystem, raw_full_name_lower: str, raw_full_name: str) -> CfxUser:
         cfx_user = CfxUser(raw_full_name=raw_full_name, full_name=raw_full_name_lower, subsystem=subsystem)
         return self._add_user_with_user(cfx_user)
 
+    def has_user_by_full_name(self, full_name: str) -> bool:
+        full_name_to_consider = full_name.lower()
+        return full_name_to_consider in self._cfx_user_by_full_name_lower
 
     def get_cfx_user_by_full_name(self, full_name: str) -> CfxUser:
         full_name_to_consider = full_name.lower()
@@ -153,10 +155,8 @@ class CfxEmptyUserLibrary(CfxLibraryBase):
     def __init__(self) -> None:
         super().__init__()
 
-
     def get_cfx_user_by_full_name(self, full_name: str) -> CfxUser:
         return self.unknown_user
-
 
     def get_subsystem_from_champfx_fixed_implemented_in(self, champfx_fixed_implemented_in: str) -> Optional[SubSystem]:
         return self.unknown_user.subsystem

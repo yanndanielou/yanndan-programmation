@@ -54,12 +54,17 @@ def main() -> None:
         if not os.path.exists(OUTPUT_DIRECTORY_NAME):
             os.mkdir(OUTPUT_DIRECTORY_NAME)
 
-        all_champfx_library = cfx.ChampFXLibrary(
-            champfx_details_excel_file_full_path="Input/extract_cfx_details.xlsx",
-            champfx_states_changes_excel_file_full_path="Input/extract_cfx_change_state.xlsx",
-            cfx_extended_history_file_full_path="Input/cfx_extended_history.txt",
-            user_and_role_data_text_file_full_path="Input/role_data_next_ats.txt",
+        cfx_inputs = (
+            cfx.ChampFxInputsBuilder()
+            .add_champfx_details_excel_file_full_path("Input/details_project_FR_NEXTEO.xlsx")
+            .add_champfx_details_excel_file_full_path("Input/details_project_ATSP.xlsx")
+            .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_FR_NEXTEO.xlsx")
+            .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_ATSP.xlsx")
+            .add_cfx_extended_history_file_full_path("Input/extended_history_nextats.txt")
+            .build()
         )
+
+        all_champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
 
         def generate_with_filters(field_filters: List[cfx.ChampFXFieldFilter]) -> None:
 

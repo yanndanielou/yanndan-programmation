@@ -22,11 +22,11 @@ DEFAULT_CFX_INPUTS_FOR_TESTS = (
 )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", name="create_champfx_library_only_cfx_closed_by_yda_in_whitelist_fixture")
 def create_champfx_library_only_cfx_closed_by_yda_in_whitelist() -> cfx.ChampFXLibrary:
     champfx_library = cfx.ChampFXLibrary(
         cfx_inputs=DEFAULT_CFX_INPUTS_FOR_TESTS,
-        champfx_filters=[cfx.ChampFXWhiteListBasedOnFileFilter("Input/CFX_list_ids_closed_yda.txt")],
+        champfx_filters=[cfx.ChampFXWhiteListBasedOnFileFilter("Input_for_Tests/CFX_list_ids_closed_yda.txt")],
     )
     return champfx_library
 
@@ -179,8 +179,8 @@ class TestRoleOnDate:
 
 
 class TestCurrentRoleAtDate:
-    def test_all_std_cfx_7th_june_2025(self, create_light_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
-        champfx_library = create_light_champfx_library_fixture
+    def test_all_std_cfx_7th_june_2025(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_full_champfx_library_fixture
         all_results = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=([role.SubSystem.RESEAU])))],
             dates_generator=cfx.SpecificForTestsDatesGenerator(
@@ -188,9 +188,18 @@ class TestCurrentRoleAtDate:
             ),
         )
 
+        assert not all_results.is_empty()
+
+        assert all_results.get_state_counts_per_timestamp()
+
         result_5th_june_2025 = all_results.get_state_counts_per_timestamp()[0]
         result_6th_june_2025 = all_results.get_state_counts_per_timestamp()[1]
         result_7th_june_2025 = all_results.get_state_counts_per_timestamp()[2]
+
+        assert bool(result_5th_june_2025)
+        assert bool(result_6th_june_2025)
+        assert bool(result_7th_june_2025)
+
         assert result_5th_june_2025[cfx.State.SUBMITTED] == 26
         assert result_6th_june_2025[cfx.State.SUBMITTED] == 57
         assert result_7th_june_2025[cfx.State.SUBMITTED] == 61
@@ -311,8 +320,8 @@ class TestStatisticsPreparation:
 class TestStatisticsPreparationRoleDependingOnDate:
     """['CFX00398968', 'CFX00401911', 'CFX00466137', 'CFX00494052', 'CFX00551164', 'CFX00551910', 'CFX00584295', 'CFX00587132', 'CFX00618804', 'CFX00623862', 'CFX00623864', 'CFX00623870', 'CFX00623879', 'CFX00623898', 'CFX00623899', 'CFX00624544', 'CFX00639805', 'CFX00674321', 'CFX00687787', 'CFX00690605', 'CFX00690624', 'CFX00695357', 'CFX00695358', 'CFX00701981', 'CFX00716682', 'CFX00716724', 'CFX00720447', 'CFX00723144', 'CFX00723481', 'CFX00734937', 'CFX00742602', 'CFX00749341', 'CFX00786363', 'CFX00786374', 'CFX00789495', 'CFX00806369', 'CFX00812751', 'CFX00817953', 'CFX00831083', 'CFX00842156', 'CFX00842390', 'CFX00848518', 'CFX00849529', 'CFX00849547', 'CFX00849556', 'CFX00849571', 'CFX00849576']"""
 
-    def test_role_sw_constant_interval(self, create_champfx_library_only_cfx_closed_by_yda_in_whitelist: cfx.ChampFXLibrary) -> None:
-        champfx_library = create_champfx_library_only_cfx_closed_by_yda_in_whitelist
+    def test_role_sw_constant_interval(self, create_champfx_library_only_cfx_closed_by_yda_in_whitelist_fixture: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_champfx_library_only_cfx_closed_by_yda_in_whitelist_fixture
         all_results_per_date = champfx_library.gather_state_counts_for_each_date(
             cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
             cfx_filters=[
@@ -324,8 +333,8 @@ class TestStatisticsPreparationRoleDependingOnDate:
         )
         assert not all_results_per_date.is_empty()
 
-    def test_role_sw_decreasing_interval(self, create_champfx_library_only_cfx_closed_by_yda_in_whitelist: cfx.ChampFXLibrary) -> None:
-        champfx_library = create_champfx_library_only_cfx_closed_by_yda_in_whitelist
+    def test_role_sw_decreasing_interval(self, create_champfx_library_only_cfx_closed_by_yda_in_whitelist_fixture: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_champfx_library_only_cfx_closed_by_yda_in_whitelist_fixture
         all_results_per_date = champfx_library.gather_state_counts_for_each_date(
             cfx.DecreasingIntervalDatesGenerator(),
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.SW]))],

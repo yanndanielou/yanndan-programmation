@@ -80,7 +80,7 @@ class AllCFXCompleteHistoryExport:
 
         for all_cfx_extended_history_text_file_content in all_cfx_complete_extended_histories_text_files_contents:
 
-            with logger_config.stopwatch_with_label(f"Split file {all_cfx_complete_extended_histories_text_files_contents} by CFX"):
+            with logger_config.stopwatch_with_label("Split extended history content by CFX"):
                 without_first_line = all_cfx_extended_history_text_file_content.split("CFXID|at_field_history.audit_trail_text|\n")[1]
                 split_by_end = without_first_line.split("====END====\n\n|\n")
                 for one_cfx_history_description_raw in split_by_end:
