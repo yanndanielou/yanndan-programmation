@@ -55,6 +55,7 @@ class GameMainWindow(tk.Tk):
             ListenAndTypeExercise(self, self.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 20))),
             ListenAndTypeExercise(self, self.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 30))),
             DoubleExercise(self, switch_mode_callback=self.switch_mode, number=random.randint(0, 6)),
+            DoubleExercise(self, switch_mode_callback=self.switch_mode, number=random.randint(0, 8)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 9), second_number=random.randint(0, 5)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 10), second_number=random.randint(0, 8)),
             SoustractionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(3, 9), second_number=random.randint(0, 2)),
@@ -133,7 +134,7 @@ class GameMainWindow(tk.Tk):
         self.points += 1
         self.update_header()
         self.congrats_player()
-        labyrinthe.MazeGame(root=self, size=self.points + 3, embedded_in_other_application=True)
+        # labyrinthe.MazeGame(root=self, size=self.points + 3, embedded_in_other_application=True)
 
     def synthetise_and_play_sentence(self, sentence: str, blocking: bool) -> None:
         self.text_to_speech_manager.synthetise_and_play_sentence(sentence=sentence, blocking=blocking)
