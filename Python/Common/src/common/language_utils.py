@@ -1,16 +1,18 @@
 # -*-coding:Utf-8 -*
 
-from py3langid.langid import LanguageIdentifier, MODEL_FILE 
+from py3langid.langid import LanguageIdentifier, MODEL_FILE
 from langdetect import detect_langs
 
+
 def detect_language_with_langid(line):
-    """ detect_language_with_langid """
+    """detect_language_with_langid"""
     identifier = LanguageIdentifier.from_pickled_model(MODEL_FILE, norm_probs=True)
     lang, prob = identifier.classify(line)
     return lang, prob
 
-def detect_language_with_langdetect(line):
-    """ detect_language_with_langdetect """
+
+def detect_language_with_langdetect(line: str):
+    """detect_language_with_langdetect"""
     try:
         langs = detect_langs(line)
         for item in langs:
@@ -19,8 +21,9 @@ def detect_language_with_langdetect(line):
     except:
         return "err", 0.0
 
-def get_full_language_name(short_language_name):
-    """ get_full_language_name """
+
+def get_full_language_name(short_language_name: str) -> str:
+    """get_full_language_name"""
     if short_language_name[0] == "fr":
         return "French"
     return "English"
