@@ -40,6 +40,7 @@ class RejectionCause(Enum):
     NOT_PART_OF_CONTRACT = auto()
     FORWARDED_TO_SAP_CS = auto()
     NOT_REPRODUCIBLE = auto()
+    SOLVED_INDIRECTLY = auto()
 
     def __repr__(self) -> str:
         return self.name
