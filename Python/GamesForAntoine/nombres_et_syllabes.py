@@ -55,6 +55,7 @@ class GameMainWindow(tk.Tk):
             ListenAndTypeExercise(self, self.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 20))),
             ListenAndTypeExercise(self, self.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 30))),
             DoubleExercise(self, switch_mode_callback=self.switch_mode, number=random.randint(0, 6)),
+            DoubleExercise(self, switch_mode_callback=self.switch_mode, number=random.randint(0, 8)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 9), second_number=random.randint(0, 5)),
             AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 10), second_number=random.randint(0, 8)),
             SoustractionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(3, 9), second_number=random.randint(0, 2)),
