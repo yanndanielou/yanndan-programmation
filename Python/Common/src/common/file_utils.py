@@ -17,7 +17,7 @@ def create_folder_if_not_exist(directory_path: str) -> bool:
         return False
 
 
-def get_files_by_directory_and_mask(directory_path: str, filename_pattern: str) -> List[str]:
+def get_files_by_directory_and_file_name_mask(directory_path: str, filename_pattern: str) -> List[str]:
     files_paths: List[str] = []
     for file in os.listdir(directory_path):
         if fnmatch.fnmatch(file, filename_pattern):

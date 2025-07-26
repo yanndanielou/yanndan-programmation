@@ -6,7 +6,7 @@ from enum import auto, Enum
 from typing import Any, Dict, List, Optional, Set, cast
 
 import pandas as pd
-from common import enums_utils, string_utils, list_utils
+from common import enums_utils, string_utils, list_utils, file_utils
 from dateutil import relativedelta
 from logger import logger_config
 
@@ -349,8 +349,20 @@ class ChampFxInputsBuilder:
         self.champfx_details_excel_files_full_paths.append(champfx_details_excel_file_full_path)
         return self
 
+    def add_champfx_details_excel_files_by_directory_and_file_name_mask(self, directory_path: str, filename_pattern: str) -> "ChampFxInputsBuilder":
+        files_found = file_utils.get_files_by_directory_and_file_name_mask(directory_path=directory_path, filename_pattern=filename_pattern)
+        for file in files_found:
+            self.add_champfx_details_excel_file_full_path(file)
+        # [self.add_champfx_details_excel_file_full_path(file) for file in files_found]
+        return self
+
     def add_champfx_states_changes_excel_file_full_path(self, champfx_states_changes_excel_file_full_path: str) -> "ChampFxInputsBuilder":
         self.champfx_states_changes_excel_files_full_paths.append(champfx_states_changes_excel_file_full_path)
+        return self
+
+    def add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(self, directory_path: str, filename_pattern: str) -> "ChampFxInputsBuilder":
+        files_found = file_utils.get_files_by_directory_and_file_name_mask(directory_path=directory_path, filename_pattern=filename_pattern)
+        list(map(self.add_champfx_states_changes_excel_file_full_path, files_found))
         return self
 
     def add_cfx_extended_history_file_full_path(self, cfx_extended_history_file_full_path: str) -> "ChampFxInputsBuilder":
@@ -370,26 +382,30 @@ class ChampFxInputsBuilder:
 
     def build(self) -> ChampFxInputs:
 
-        for champfx_details_excel_file_full_path in self.champfx_details_excel_files_full_paths:
-            with logger_config.stopwatch_with_label(f"Open cfx details excel file {champfx_details_excel_file_full_path}"):
-                self.champfx_details_excel_files_full_data_frames.append(pd.read_excel(champfx_details_excel_file_full_path))
+        with logger_config.stopwatch_with_label("Build cfx inputs"):
+            with logger_config.stopwatch_with_label(f"Open {len(self.champfx_details_excel_files_full_paths)} cfx details files"):
+                for champfx_details_excel_file_full_path in self.champfx_details_excel_files_full_paths:
+                    with logger_config.stopwatch_with_label(f"Open cfx details excel file {champfx_details_excel_file_full_path}"):
+                        self.champfx_details_excel_files_full_data_frames.append(pd.read_excel(champfx_details_excel_file_full_path))
 
-        for champfx_states_changes_excel_file_full_path in self.champfx_states_changes_excel_files_full_paths:
-            with logger_config.stopwatch_with_label(f"Open cfx state changes excel file {champfx_states_changes_excel_file_full_path}"):
-                self.champfx_states_changes_excel_files_data_frames.append(pd.read_excel(champfx_states_changes_excel_file_full_path))
+            with logger_config.stopwatch_with_label(f"Open {len(self.champfx_states_changes_excel_files_full_paths)} cfx states changes files"):
+                for champfx_states_changes_excel_file_full_path in self.champfx_states_changes_excel_files_full_paths:
+                    with logger_config.stopwatch_with_label(f"Open cfx state changes excel file {champfx_states_changes_excel_file_full_path}"):
+                        self.champfx_states_changes_excel_files_data_frames.append(pd.read_excel(champfx_states_changes_excel_file_full_path))
 
-        for cfx_extended_history_file_full_path in self.cfx_extended_history_files_full_paths:
-            with logger_config.stopwatch_with_label(f"Open and read {cfx_extended_history_file_full_path}"):
-                with open(cfx_extended_history_file_full_path, "r", encoding="utf-8") as all_cfx_extended_history_text_file:
-                    self.cfx_extended_history_files_contents.append(all_cfx_extended_history_text_file.read())
+            with logger_config.stopwatch_with_label(f"Open {len(self.cfx_extended_history_files_full_paths)} cfx extended history files"):
+                for cfx_extended_history_file_full_path in self.cfx_extended_history_files_full_paths:
+                    with logger_config.stopwatch_with_label(f"Open and read {cfx_extended_history_file_full_path}"):
+                        with open(cfx_extended_history_file_full_path, "r", encoding="utf-8") as all_cfx_extended_history_text_file:
+                            self.cfx_extended_history_files_contents.append(all_cfx_extended_history_text_file.read())
 
-        cfx_inputs = ChampFxInputs(
-            champfx_details_excel_files_full_data_frames=self.champfx_details_excel_files_full_data_frames,
-            champfx_states_changes_excel_files_data_frames=self.champfx_states_changes_excel_files_data_frames,
-            cfx_extended_history_files_contents=self.cfx_extended_history_files_contents,
-            user_and_role_data_text_file_full_path=self.user_and_role_data_text_file_full_path,
-        )
-        return cfx_inputs
+            cfx_inputs = ChampFxInputs(
+                champfx_details_excel_files_full_data_frames=self.champfx_details_excel_files_full_data_frames,
+                champfx_states_changes_excel_files_data_frames=self.champfx_states_changes_excel_files_data_frames,
+                cfx_extended_history_files_contents=self.cfx_extended_history_files_contents,
+                user_and_role_data_text_file_full_path=self.user_and_role_data_text_file_full_path,
+            )
+            return cfx_inputs
 
 
 class ChampFXLibrary:

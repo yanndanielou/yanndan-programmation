@@ -6,7 +6,7 @@ from logger import logger_config
 from generatecfxhistory import cfx
 from generatecfxhistory import ui_and_results_generation, release_role_mapping, role
 
-OUTPUT_DIRECTORY_NAME = "output"
+OUTPUT_DIRECTORY_NAME = "output_all_projects"
 
 DISPLAY_OUTPUT = False
 
@@ -23,13 +23,10 @@ def main() -> None:
 
         cfx_inputs = (
             cfx.ChampFxInputsBuilder()
-            .add_champfx_details_excel_file_full_path("Input/details_project_FR_NEXTEO.xlsx")
-            .add_champfx_details_excel_file_full_path("Input/details_project_ATSP.xlsx")
-            .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_FR_NEXTEO.xlsx")
-            .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_ATSP.xlsx")
+            .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_*.xlsx")
+            .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_project_*.xlsx")
             .build()
         )
-
         all_champfx_library = cfx.ChampFXLibrary(
             cfx_inputs=cfx_inputs,
             label="Other projects",
