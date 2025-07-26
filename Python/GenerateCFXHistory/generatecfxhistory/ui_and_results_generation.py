@@ -1,6 +1,6 @@
 import datetime
 from enum import auto, Enum
-from typing import Set, List, Optional
+from typing import Set, List, Optional, cast
 
 import matplotlib.pyplot as plt
 import mplcursors
@@ -49,7 +49,7 @@ def produce_results_and_displays(
     cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
     dump_all_cfx_ids_in_json: bool = True,
     generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
-    project_in_case_of_generate_by_project_instruction_one_project: Optional[cfx.CfxProject] = None,
+    project_in_case_of_generate_by_project_instruction_one_project: Optional[str] = None,
 ) -> None:
 
     if cfx_filters is None:
@@ -59,7 +59,7 @@ def produce_results_and_displays(
 
     match generate_by_project_instruction:
         case GenerateByProjectInstruction.ONLY_ONE_PROJECT:
-            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[project_in_case_of_generate_by_project_instruction_one_project])]))
+            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[cast(str, project_in_case_of_generate_by_project_instruction_one_project)])]))
         case GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS:
             pass
         case GenerateByProjectInstruction.BY_PROJECT:
@@ -123,7 +123,14 @@ def produce_results_and_displays(
 
     if dump_all_cfx_ids_in_json:
         all_cfx_that_have_match_id_and_state = [
-            (champfx_entry.cfx_id, champfx_entry._state.name, champfx_entry._current_owner.full_name, champfx_entry._request_type.name, champfx_entry._category.name, champfx_entry._cfx_project.name)
+            (
+                champfx_entry.cfx_id,
+                champfx_entry._state.name,
+                champfx_entry._current_owner.full_name,
+                champfx_entry._request_type.name,
+                champfx_entry._category.name,
+                champfx_entry._cfx_project_name.name,
+            )
             for champfx_entry in all_results_to_display.all_cfx_that_have_matched
         ]
 

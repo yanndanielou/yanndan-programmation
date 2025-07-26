@@ -255,7 +255,7 @@ class TestCurrentOwner:
 
             assert len(nexteo_only_champfx_library.get_all_cfx()) > 0
             for cfx_entry in nexteo_only_champfx_library.get_all_cfx():
-                assert cfx_entry._cfx_project == cfx.CfxProject.FR_NEXTEO
+                assert cfx_entry._cfx_project_name == cfx.CfxProject.FR_NEXTEO
 
         def test_two_field_filters(self, create_light_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
             security_and_ats = cfx.ChampFxFilter

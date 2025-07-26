@@ -65,22 +65,9 @@ class Category(Enum):
         return self.name
 
 
-class CfxProject(enums_utils.NameBasedEnum):
-    FR_NEXTEO = auto()
-    ATSP = auto()
-
-    FR_BUD2_BUDAPEST_M2 = auto()
-    FR_BUM4_BUDAPEST_M4 = auto()
-    FR_PATH = auto()
-    FR_POUR_OURAGAN = auto()
-    FR_REB_CITYVAL_RENNES_LINEB = auto()
-    US_NYCT_CBTC_QUEENS_BLVD_61OP_00025 = auto()
-    FR_PAR4 = auto()
-    FR_REA_RENNES = auto()
-    FR_BKK_APM = auto()
-    FR_PL14 = auto()
-    FR_FPT3 = auto()
-    FR_GPE1567 = auto()
+class CfxProject:
+    FR_NEXTEO: str = "FR_NEXTEO"
+    ATSP: str = "ATSP"
 
 
 class SecurityRelevant(enums_utils.NameBasedEnum):
@@ -386,20 +373,20 @@ class ChampFxInputsBuilder:
             with logger_config.stopwatch_with_label(f"Open {len(self.champfx_details_excel_files_full_paths)} cfx details files"):
                 for i, champfx_details_excel_file_full_path in enumerate(self.champfx_details_excel_files_full_paths):
                     with logger_config.stopwatch_with_label(
-                        f"Open {i+1} / {len(self.champfx_details_excel_files_full_paths)} ({(i+1)/len(self.champfx_details_excel_files_full_paths)*100}%) cfx details excel file {champfx_details_excel_file_full_path}"
+                        f"Open {i+1} / {len(self.champfx_details_excel_files_full_paths)} ({round((i+1)/len(self.champfx_details_excel_files_full_paths)*100,2)}%) cfx details excel file {champfx_details_excel_file_full_path}"
                     ):
                         self.champfx_details_excel_files_full_data_frames.append(pd.read_excel(champfx_details_excel_file_full_path))
 
             with logger_config.stopwatch_with_label(f"Open {len(self.champfx_states_changes_excel_files_full_paths)} cfx states changes files"):
                 for i, champfx_states_changes_excel_file_full_path in enumerate(self.champfx_states_changes_excel_files_full_paths):
                     with logger_config.stopwatch_with_label(
-                        f"Open {i+1} / {len(self.champfx_states_changes_excel_files_full_paths)} ({(i+1)/len(self.champfx_states_changes_excel_files_full_paths)*100}%) cfx state changes excel file {champfx_states_changes_excel_file_full_path}"
+                        f"Open {i+1} / {len(self.champfx_states_changes_excel_files_full_paths)} ({(i+1)/len(self.champfx_states_changes_excel_files_full_paths)*100:.2f}%) cfx state changes excel file {champfx_states_changes_excel_file_full_path}"
                     ):
                         self.champfx_states_changes_excel_files_data_frames.append(pd.read_excel(champfx_states_changes_excel_file_full_path))
 
             with logger_config.stopwatch_with_label(f"Open {len(self.cfx_extended_history_files_full_paths)} cfx extended history files"):
-                for cfx_extended_history_file_full_path in self.cfx_extended_history_files_full_paths:
-                    with logger_config.stopwatch_with_label(f"Open and read {cfx_extended_history_file_full_path}"):
+                for i, cfx_extended_history_file_full_path in enumerate(self.cfx_extended_history_files_full_paths):
+                    with logger_config.stopwatch_with_label(f"Open {i+1} / {len(self.cfx_extended_history_files_full_paths)} cfx extended history file {cfx_extended_history_file_full_path}"):
                         with open(cfx_extended_history_file_full_path, "r", encoding="utf-8") as all_cfx_extended_history_text_file:
                             self.cfx_extended_history_files_contents.append(all_cfx_extended_history_text_file.read())
 
@@ -428,7 +415,7 @@ class ChampFXLibrary:
         self._champfx_filters = champfx_filters
         self.label = label if label is not None else " ".join([field_filter._label for field_filter in self._champfx_filters])
 
-        self._all_projects: Set[CfxProject] = set()
+        self._all_projects: Set[str] = set()
 
         # self._all_current_owner_modifications_pickle_file_full_path = all_current_owner_modifications_pickle_file_full_path
         # self._all_current_owner_modifications_per_cfx_pickle_file_full_path = all_current_owner_modifications_per_cfx_pickle_file_full_path
@@ -475,7 +462,7 @@ class ChampFXLibrary:
                     if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
                         self._champfx_entry_by_id[cfx_id] = cfx_entry
                         self._champfx_entries.append(cfx_entry)
-                        self._all_projects.add(cfx_entry._cfx_project)
+                        self._all_projects.add(cfx_entry._cfx_project_name)
 
     def create_states_changes_with_dataframe(self, cfx_inputs: ChampFxInputs) -> List[ChangeStateAction]:
 
@@ -669,7 +656,7 @@ class ChampFXEntryBuilder:
         raw_project: str = cast(str, row["Project"])
         project_name = string_utils.text_to_valid_enum_value_text(raw_project)
 
-        cfx_project = CfxProject[project_name]
+        cfx_project_name = project_name
 
         raw_safety_relevant: str = row["SafetyRelevant"]
         safety_relevant: Optional[bool] = ChampFXEntryBuilder.to_optional_boolean(raw_safety_relevant)
@@ -711,7 +698,7 @@ class ChampFXEntryBuilder:
             fixed_implemented_in_config_unit=fixed_implemented_in_config_unit,
             system_structure_subsystem=system_structure,
             submit_date=submit_date,
-            cfx_project=cfx_project,
+            cfx_project_name=cfx_project_name,
             safety_relevant=safety_relevant,
             security_relevant=security_relevant,
             rejection_cause=rejection_cause,
@@ -732,7 +719,7 @@ class ChampFXEntry:
         system_structure_subsystem: role.SubSystem,
         system_structure_config_unit: str,
         submit_date: datetime.datetime,
-        cfx_project: CfxProject,
+        cfx_project_name: str,
         safety_relevant: Optional[bool],
         security_relevant: SecurityRelevant,
         rejection_cause: RejectionCause,
@@ -767,7 +754,7 @@ class ChampFXEntry:
 
         self._current_owner_role = current_owner.subsystem
 
-        self._cfx_project = cfx_project
+        self._cfx_project_name = cfx_project_name
         self._safety_relevant = safety_relevant
         self._security_relevant = security_relevant
         self._all_change_state_actions_sorted_chronologically: List[ChangeStateAction] = []
@@ -1016,9 +1003,9 @@ class ChampFxFilterFieldSafetyRelevant(ChampFXFieldFilter):
 
 
 class ChampFxFilterFieldProject(ChampFXFieldFilter):
-    def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None, forced_label: Optional[str] = None) -> None:
+    def __init__(self, field_accepted_values: Optional[List[str]] = None, field_forbidden_values: Optional[List[str]] = None, forced_label: Optional[str] = None) -> None:
         super().__init__(
-            field_name="_cfx_project",
+            field_name="_cfx_project_name",
             field_label="Project",
             field_accepted_values=field_accepted_values,
             field_forbidden_values=field_forbidden_values,

@@ -87,13 +87,13 @@ class CfxLibraryBase(ABC):
     def unknown_user(self) -> CfxUser:
         return self._unknown_user
 
+    @abstractmethod
     def has_user_by_full_name(self, full_name: str) -> bool:
-        full_name_to_consider = full_name.lower()
-        return full_name_to_consider in self._cfx_user_by_full_name_lower
+        pass
 
+    @abstractmethod
     def get_cfx_user_by_full_name(self, full_name: str) -> CfxUser:
-        full_name_to_consider = full_name.lower()
-        return self._cfx_user_by_full_name_lower[full_name_to_consider]
+        pass
 
     @abstractmethod
     def get_subsystem_from_champfx_fixed_implemented_in(self, champfx_fixed_implemented_in: str) -> Optional[SubSystem]:
@@ -145,11 +145,22 @@ class CfxUserLibrary(CfxLibraryBase):
         # logger_config.print_and_log_warning(f"Could not find subsystem for {champfx_fixed_implemented_in}")
         return None
 
+    def has_user_by_full_name(self, full_name: str) -> bool:
+        full_name_to_consider = full_name.lower()
+        return full_name_to_consider in self._cfx_user_by_full_name_lower
+
+    def get_cfx_user_by_full_name(self, full_name: str) -> CfxUser:
+        full_name_to_consider = full_name.lower()
+        return self._cfx_user_by_full_name_lower[full_name_to_consider]
+
 
 class CfxEmptyUserLibrary(CfxLibraryBase):
 
     def __init__(self) -> None:
         super().__init__()
+
+    def has_user_by_full_name(self, full_name: str) -> bool:
+        return True
 
     def get_cfx_user_by_full_name(self, full_name: str) -> CfxUser:
         return self.unknown_user
