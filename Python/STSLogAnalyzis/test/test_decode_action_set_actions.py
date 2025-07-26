@@ -1,7 +1,3 @@
-import pytest
-
-import datetime
-
 from stsloganalyzis import decode_action_set_content
 
 

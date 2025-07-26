@@ -41,46 +41,23 @@ class InvariantMessagesManager:
 class DecodedMessage:
     message_number: int
     decoded_fields: Dict
+    hlf_decoded: Optional[datetime.datetime] = None
 
 
-class MessageDecoder:
-    def __init__(self, xml_directory_path: str, invariant_message_manager: InvariantMessagesManager, action_set_content_decoder: decode_action_set_content.ActionSetContentDecoder) -> None:
-        self.xml_message_decoder = XmlMessageDecoder(xml_directory_path=xml_directory_path)
-        self.invariant_message_manager = invariant_message_manager
-        self.action_set_content_decoder = action_set_content_decoder
+class HLFDecoder:
 
-    def decode_raw_hexadecimal_message(self, message_number: int, hexadecimal_content: str, also_decode_additional_fields_in_specific_messages: bool) -> Optional[DecodedMessage]:
-        decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=message_number, hexadecimal_content=hexadecimal_content)
-        if decoded_message and also_decode_additional_fields_in_specific_messages:
-            self.decode_additional_fields_in_specific_messages(decoded_message=decoded_message)
+    @staticmethod
+    def decode_hlf(decoded_message: DecodedMessage) -> None:
+        time_field_value = decoded_message.decoded_fields["Time"]
+        time_offset_value = decoded_message.decoded_fields["TimeOffset"]
+        decade_field_value = decoded_message.decoded_fields["Decade"]
+        day_on_decade_field_value = decoded_message.decoded_fields["DayOnDecade"]
 
-        return decoded_message
-
-    def decode_additional_fields_in_specific_messages(self, decoded_message: DecodedMessage) -> None:
-        if decoded_message.message_number == 192:
-            actions_field = decoded_message.decoded_fields["Actions"]
-            action_set_decoded = self.action_set_content_decoder.decode_actions_bitfield(bitfield=actions_field)
-            decoded_message.decoded_fields.update(action_set_decoded.action_set_id_with_value)
-
-
-@dataclass
-class XmlMessageDecoder:
-    xml_directory_path: str
+        hlf_decoded = HLFDecoder.decode_hlf_fields_to_datetime(time_field_value, time_offset_value, decade_field_value, day_on_decade_field_value)
+        decoded_message.hlf_decoded = hlf_decoded
 
     @staticmethod
     def decode_hlf_fields_to_datetime(time_field_value: int, time_offset_value: int, decade_field_value: int, day_on_decade_field_value: int) -> datetime.datetime:
-        """
-        Decodes the given fields into a datetime object.
-
-        Parameters:
-            time_field_value (int): Number of tenths of a second into the day [0..864000].
-            time_offset_value (int): Time offset in tenths of an hour [0..86400].
-            decade_field_value (int): Decade within the century [0..9].
-            day_on_decade_field_value (int): Day within the decade [0..3652].
-
-        Returns:
-            datetime.datetime: The decoded date and time.
-        """
 
         # Calculate the start year of the decade
         start_year = 2000 + (decade_field_value * 10)
@@ -102,6 +79,37 @@ class XmlMessageDecoder:
         local_time = decade_date + datetime.timedelta(hours=hours - offset_hours, minutes=minutes - offset_minutes, seconds=seconds)
 
         return local_time
+
+
+class MessageDecoder:
+    def __init__(self, xml_directory_path: str, invariant_message_manager: InvariantMessagesManager, action_set_content_decoder: decode_action_set_content.ActionSetContentDecoder) -> None:
+        self.xml_message_decoder = XmlMessageDecoder(xml_directory_path=xml_directory_path)
+        self.invariant_message_manager = invariant_message_manager
+        self.action_set_content_decoder = action_set_content_decoder
+
+    def decode_raw_hexadecimal_message(
+        self, message_number: int, hexadecimal_content: str, also_decode_additional_fields_in_specific_messages: bool, also_decode_hlf: bool
+    ) -> Optional[DecodedMessage]:
+        decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=message_number, hexadecimal_content=hexadecimal_content)
+        if decoded_message:
+            if also_decode_additional_fields_in_specific_messages:
+                self.decode_additional_fields_in_specific_messages(decoded_message=decoded_message)
+
+            if also_decode_hlf:
+                HLFDecoder.decode_hlf(decoded_message=decoded_message)
+
+        return decoded_message
+
+    def decode_additional_fields_in_specific_messages(self, decoded_message: DecodedMessage) -> None:
+        if decoded_message.message_number == 192:
+            actions_field = decoded_message.decoded_fields["Actions"]
+            action_set_decoded = self.action_set_content_decoder.decode_actions_bitfield(bitfield=actions_field)
+            decoded_message.decoded_fields.update(action_set_decoded.action_set_id_with_value)
+
+
+@dataclass
+class XmlMessageDecoder:
+    xml_directory_path: str
 
     def hex_to_int(self, hex_string: str) -> int:
         """Convert a hex string to an integer."""
@@ -237,7 +245,7 @@ class XmlMessageDecoder:
 
     def decode_hlf_hexa(self, hlf_content_hexa: str, decoded_fields: dict) -> datetime.datetime:
 
-        decoded_hlf = XmlMessageDecoder.decode_hlf_fields_to_datetime(
+        decoded_hlf = MessageDecoder.decode_hlf_fields_to_datetime(
             time_field_value=decoded_fields["Time"],
             time_offset_value=decoded_fields["TimeOffset"],
             decade_field_value=decoded_fields["Decade"],
@@ -254,7 +262,7 @@ def decode_hlf_hexa_tests_(hlf_content_hexa: str) -> datetime.datetime:
 
     decoded_hexa_content_with_xml = cast(DecodedMessage, message_decoder.decode_xml_fields_in_message_hexadecimal(hlf_message_id, hlf_content_hexa)).decoded_fields
     # print(decoded_hexa_content_with_xml)
-    decoded_hlf = XmlMessageDecoder.decode_hlf_fields_to_datetime(
+    decoded_hlf = MessageDecoder.decode_hlf_fields_to_datetime(
         time_field_value=decoded_hexa_content_with_xml["Time"],
         time_offset_value=decoded_hexa_content_with_xml["TimeOffset"],
         decade_field_value=decoded_hexa_content_with_xml["Decade"],
