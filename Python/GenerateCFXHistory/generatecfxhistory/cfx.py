@@ -384,13 +384,17 @@ class ChampFxInputsBuilder:
 
         with logger_config.stopwatch_with_label("Build cfx inputs"):
             with logger_config.stopwatch_with_label(f"Open {len(self.champfx_details_excel_files_full_paths)} cfx details files"):
-                for champfx_details_excel_file_full_path in self.champfx_details_excel_files_full_paths:
-                    with logger_config.stopwatch_with_label(f"Open cfx details excel file {champfx_details_excel_file_full_path}"):
+                for i, champfx_details_excel_file_full_path in enumerate(self.champfx_details_excel_files_full_paths):
+                    with logger_config.stopwatch_with_label(
+                        f"Open {i+1} / {len(self.champfx_details_excel_files_full_paths)} ({(i+1)/len(self.champfx_details_excel_files_full_paths)*100}%) cfx details excel file {champfx_details_excel_file_full_path}"
+                    ):
                         self.champfx_details_excel_files_full_data_frames.append(pd.read_excel(champfx_details_excel_file_full_path))
 
             with logger_config.stopwatch_with_label(f"Open {len(self.champfx_states_changes_excel_files_full_paths)} cfx states changes files"):
-                for champfx_states_changes_excel_file_full_path in self.champfx_states_changes_excel_files_full_paths:
-                    with logger_config.stopwatch_with_label(f"Open cfx state changes excel file {champfx_states_changes_excel_file_full_path}"):
+                for i, champfx_states_changes_excel_file_full_path in enumerate(self.champfx_states_changes_excel_files_full_paths):
+                    with logger_config.stopwatch_with_label(
+                        f"Open {i+1} / {len(self.champfx_states_changes_excel_files_full_paths)} ({(i+1)/len(self.champfx_states_changes_excel_files_full_paths)*100}%) cfx state changes excel file {champfx_states_changes_excel_file_full_path}"
+                    ):
                         self.champfx_states_changes_excel_files_data_frames.append(pd.read_excel(champfx_states_changes_excel_file_full_path))
 
             with logger_config.stopwatch_with_label(f"Open {len(self.cfx_extended_history_files_full_paths)} cfx extended history files"):
