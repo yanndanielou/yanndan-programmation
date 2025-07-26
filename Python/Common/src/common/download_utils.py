@@ -40,7 +40,7 @@ class DownloadEventHandler(FileSystemEventHandler):
 
 
 def get_files_and_modification_time(directory_path: str, filename_pattern: str) -> List[Tuple[str, float]]:
-    return file_utils.get_files_modification_time(file_utils.get_files_by_directory_and_mask(directory_path=directory_path, filename_pattern=filename_pattern))
+    return file_utils.get_files_modification_time(file_utils.get_files_by_directory_and_file_name_mask(directory_path=directory_path, filename_pattern=filename_pattern))
 
 
 @dataclass
