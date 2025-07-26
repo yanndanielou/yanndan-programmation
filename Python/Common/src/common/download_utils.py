@@ -17,6 +17,8 @@ from watchdog.events import (
 )
 from watchdog.observers import Observer
 
+from common import file_utils
+
 
 class DownloadEventHandler(FileSystemEventHandler):
     def __init__(self, filename_pattern: str) -> None:
@@ -38,12 +40,7 @@ class DownloadEventHandler(FileSystemEventHandler):
 
 
 def get_files_and_modification_time(directory_path: str, filename_pattern: str) -> List[Tuple[str, float]]:
-    files_and_modified_time: List[Tuple[str, float]] = []
-    for file in os.listdir(directory_path):
-        if fnmatch.fnmatch(file, filename_pattern):
-            file_path = os.path.join(directory_path, file)
-            files_and_modified_time.append((file_path, os.path.getmtime(file_path)))
-    return files_and_modified_time
+    return file_utils.get_files_modification_time(file_utils.get_files_by_directory_and_mask(directory_path=directory_path, filename_pattern=filename_pattern))
 
 
 @dataclass
