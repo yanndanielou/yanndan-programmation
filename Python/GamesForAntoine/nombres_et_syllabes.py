@@ -133,7 +133,7 @@ class GameMainWindow(tk.Tk):
         self.points += 1
         self.update_header()
         self.congrats_player()
-        labyrinthe.MazeGame(root=self, size=self.points + 3, embedded_in_other_application=True)
+        # labyrinthe.MazeGame(root=self, size=self.points + 3, embedded_in_other_application=True)
 
     def synthetise_and_play_sentence(self, sentence: str, blocking: bool) -> None:
         self.text_to_speech_manager.synthetise_and_play_sentence(sentence=sentence, blocking=blocking)
