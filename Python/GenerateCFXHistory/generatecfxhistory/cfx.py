@@ -323,23 +323,87 @@ def get_earliest_submit_date(cfx_list: List["ChampFXEntry"]) -> datetime.datetim
     return earliest_date
 
 
+@dataclass
+class ChampFxInputs:
+    champfx_details_excel_files_full_data_frames: List[pd.DataFrame]
+    champfx_states_changes_excel_files_data_frames: List[pd.DataFrame]
+    cfx_extended_history_files_contents: List[str]
+    user_and_role_data_text_file_full_path: Optional[str]
+
+
+class ChampFxInputsBuilder:
+    def __init__(self) -> None:
+
+        self.champfx_details_excel_files_full_paths: List[str] = []
+        self.champfx_details_excel_files_full_data_frames: List[pd.DataFrame] = []
+
+        self.champfx_states_changes_excel_files_full_paths: List[str] = []
+        self.champfx_states_changes_excel_files_data_frames: List[pd.DataFrame] = []
+
+        self.cfx_extended_history_files_full_paths: List[str] = []
+        self.cfx_extended_history_files_contents: List[str] = []
+
+        self.user_and_role_data_text_file_full_path: Optional[str] = None
+
+    def add_champfx_details_excel_file_full_path(self, champfx_details_excel_file_full_path: str) -> "ChampFxInputsBuilder":
+        self.champfx_details_excel_files_full_paths.append(champfx_details_excel_file_full_path)
+        return self
+
+    def add_champfx_states_changes_excel_file_full_path(self, champfx_states_changes_excel_file_full_path: str) -> "ChampFxInputsBuilder":
+        self.champfx_states_changes_excel_files_full_paths.append(champfx_states_changes_excel_file_full_path)
+        return self
+
+    def add_cfx_extended_history_file_full_path(self, cfx_extended_history_file_full_path: str) -> "ChampFxInputsBuilder":
+        self.cfx_extended_history_files_full_paths.append(cfx_extended_history_file_full_path)
+        return self
+
+    def set_user_and_role_data_text_file_full_path(self, user_and_role_data_text_file_full_path: str) -> "ChampFxInputsBuilder":
+        self.user_and_role_data_text_file_full_path = user_and_role_data_text_file_full_path
+        return self
+
+    def set_default_files(self) -> "ChampFxInputsBuilder":
+        self.add_champfx_details_excel_file_full_path(DEFAULT_CHAMPFX_DETAILS_EXCEL_FILE_FULL_PATH)
+        self.add_champfx_states_changes_excel_file_full_path(DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH)
+        self.add_cfx_extended_history_file_full_path(DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH)
+        self.set_user_and_role_data_text_file_full_path(DEFAULT_USER_AND_ROLE_DATA_FILE_FULL_PATH)
+        return self
+
+    def build(self) -> ChampFxInputs:
+
+        for champfx_details_excel_file_full_path in self.champfx_details_excel_files_full_paths:
+            with logger_config.stopwatch_with_label(f"Open cfx details excel file {champfx_details_excel_file_full_path}"):
+                self.champfx_details_excel_files_full_data_frames.append(pd.read_excel(champfx_details_excel_file_full_path))
+
+        for champfx_states_changes_excel_file_full_path in self.champfx_states_changes_excel_files_full_paths:
+            with logger_config.stopwatch_with_label(f"Open cfx state changes excel file {champfx_states_changes_excel_file_full_path}"):
+                self.champfx_states_changes_excel_files_data_frames.append(pd.read_excel(champfx_states_changes_excel_file_full_path))
+
+        for cfx_extended_history_file_full_path in self.cfx_extended_history_files_full_paths:
+            with logger_config.stopwatch_with_label(f"Open and read {cfx_extended_history_file_full_path}"):
+                with open(cfx_extended_history_file_full_path, "r", encoding="utf-8") as all_cfx_extended_history_text_file:
+                    self.cfx_extended_history_files_contents.append(all_cfx_extended_history_text_file.read())
+
+        cfx_inputs = ChampFxInputs(
+            champfx_details_excel_files_full_data_frames=self.champfx_details_excel_files_full_data_frames,
+            champfx_states_changes_excel_files_data_frames=self.champfx_states_changes_excel_files_data_frames,
+            cfx_extended_history_files_contents=self.cfx_extended_history_files_contents,
+            user_and_role_data_text_file_full_path=self.user_and_role_data_text_file_full_path,
+        )
+        return cfx_inputs
+
+
 class ChampFXLibrary:
 
     def __init__(
         self,
-        champfx_details_excel_file_full_path: str = DEFAULT_CHAMPFX_DETAILS_EXCEL_FILE_FULL_PATH,
-        champfx_states_changes_excel_file_full_path: str = DEFAULT_CHAMPFX_STATES_CHANGES_EXCEL_FILE_FULL_PATH,
-        cfx_extended_history_file_full_path: Optional[str] = DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH,
-        user_and_role_data_text_file_full_path: str = DEFAULT_USER_AND_ROLE_DATA_FILE_FULL_PATH,
-        # all_current_owner_modifications_pickle_file_full_path: str = "Input/all_current_owner_modifications.pkl",
-        # all_current_owner_modifications_per_cfx_pickle_file_full_path: str = "Input/all_current_owner_modifications_per_cfx.pkl",
+        cfx_inputs: ChampFxInputs,
         champfx_filters: Optional[List["ChampFXtSaticCriteriaFilter"]] = None,
         label: Optional[str] = None,
-        cfx_users_library: Optional[role.CfxLibraryBase] = None,
     ):
-
         if champfx_filters is None:
             champfx_filters = []
+
+        self.cfx_inputs = cfx_inputs
 
         self._champfx_filters = champfx_filters
         self.label = label if label is not None else " ".join([field_filter._label for field_filter in self._champfx_filters])
@@ -351,83 +415,80 @@ class ChampFXLibrary:
         self._champfx_entry_by_id: Dict[str, ChampFXEntry] = dict()
         self._champfx_entries: List[ChampFXEntry] = []
 
-        if cfx_users_library:
-            self._cfx_users_library = cfx_users_library
-        else:
-            with logger_config.stopwatch_with_label("Load CfxUserLibrary"):
-                self._cfx_users_library = role.CfxUserLibrary(user_and_role_data_text_file_full_path, release_role_mapping.next_atsp_release_subsystem_mapping)
+        self._cfx_users_library = (
+            role.CfxUserLibrary(cfx_inputs.user_and_role_data_text_file_full_path, release_role_mapping.next_atsp_release_subsystem_mapping)
+            if cfx_inputs.user_and_role_data_text_file_full_path
+            else role.CfxEmptyUserLibrary()
+        )
 
         with logger_config.stopwatch_with_label("ChampFXLibrary creation and initialisation"):
 
-            with logger_config.stopwatch_with_label(f"Open cfx details excel file {champfx_details_excel_file_full_path}"):
-                cfx_details_data_frame = pd.read_excel(champfx_details_excel_file_full_path)
-
-            with logger_config.stopwatch_with_label(f"Open cfx state changes excel file {champfx_states_changes_excel_file_full_path}"):
-                cfx_states_changes_data_frame = pd.read_excel(champfx_states_changes_excel_file_full_path)
-
             with logger_config.stopwatch_with_label("Create ChampFXEntry objects"):
-                self.create_or_fill_champfx_entry_with_dataframe(cfx_details_data_frame)
+                self.create_or_fill_champfx_entry_with_dataframe(cfx_inputs)
                 logger_config.print_and_log_info(f"{len(self.get_all_cfx())} ChampFXEntry objects created")
 
             with logger_config.stopwatch_with_label("Create state changes objects"):
-                change_state_actions_created = self.create_states_changes_with_dataframe(cfx_states_changes_data_frame)
+                change_state_actions_created = self.create_states_changes_with_dataframe(cfx_inputs)
                 logger_config.print_and_log_info(f"{len(change_state_actions_created)} ChangeStateAction objects created")
 
-            if cfx_extended_history_file_full_path:
-                all_cfx_complete_extended_histories_text_file_path = cfx_extended_history_file_full_path
-                with logger_config.stopwatch_with_label(f"Load cfx_extended_history {all_cfx_complete_extended_histories_text_file_path}"):
-                    self._all_cfx_complete_extended_histories: List[cfx_extended_history.CFXEntryCompleteHistory] = (
-                        cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(all_cfx_complete_extended_histories_text_file_path, self.get_all_cfx_ids())
-                    )
+            with logger_config.stopwatch_with_label("Process cfx_extended_histories"):
+                self._all_cfx_complete_extended_histories: List[cfx_extended_history.CFXEntryCompleteHistory] = (
+                    cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_files_contents(cfx_inputs.cfx_extended_history_files_contents, self.get_all_cfx_ids())
+                )
 
-                with logger_config.stopwatch_with_label("create current owner modifications"):
-                    self.create_current_owner_modifications()
+            with logger_config.stopwatch_with_label("create current owner modifications"):
+                self.create_current_owner_modifications()
 
     @property
     def cfx_users_library(self) -> role.CfxUserLibrary:
         return self._cfx_users_library
 
-    def create_or_fill_champfx_entry_with_dataframe(self, cfx_details_data_frame: pd.DataFrame) -> None:
-        for _, row in cfx_details_data_frame.iterrows():
-            cfx_id = row["CFXID"]
+    def create_or_fill_champfx_entry_with_dataframe(self, cfx_inputs: ChampFxInputs) -> None:
 
-            if cfx_id not in self._champfx_entry_by_id:
-                cfx_entry = ChampFXEntryBuilder.build_with_row(row, self)
-                if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
-                    self._champfx_entry_by_id[cfx_id] = cfx_entry
-                    self._champfx_entries.append(cfx_entry)
-                    self._all_projects.add(cfx_entry._cfx_project)
+        for cfx_details_data_frame in cfx_inputs.champfx_details_excel_files_full_data_frames:
 
-    def create_states_changes_with_dataframe(self, cfx_states_changes_data_frame: pd.DataFrame) -> List[ChangeStateAction]:
+            for _, row in cfx_details_data_frame.iterrows():
+                cfx_id = row["CFXID"]
+
+                if cfx_id not in self._champfx_entry_by_id:
+                    cfx_entry = ChampFXEntryBuilder.build_with_row(row, self)
+                    if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
+                        self._champfx_entry_by_id[cfx_id] = cfx_entry
+                        self._champfx_entries.append(cfx_entry)
+                        self._all_projects.add(cfx_entry._cfx_project)
+
+    def create_states_changes_with_dataframe(self, cfx_inputs: ChampFxInputs) -> List[ChangeStateAction]:
+
         change_state_actions_created: List[ChangeStateAction] = []
 
-        for _, row in cfx_states_changes_data_frame.iterrows():
-            cfx_id = row["CFXID"]
+        for cfx_states_changes_data_frame in cfx_inputs.champfx_states_changes_excel_files_data_frames:
+            for _, row in cfx_states_changes_data_frame.iterrows():
+                cfx_id = row["CFXID"]
 
-            if cfx_id in self.get_all_cfx_ids():
+                if cfx_id in self.get_all_cfx_ids():
 
-                cfx_request = self.get_cfx_by_id(cfx_id)
-                history_raw_old_state: str = row["history.old_state"]
-                history_raw_new_state: str = row["history.new_state"]
-                history_raw_action_timestamp_str = row["history.action_timestamp"]
-                history_raw_action_name: str = row["history.action_name"]
+                    cfx_request = self.get_cfx_by_id(cfx_id)
+                    history_raw_old_state: str = row["history.old_state"]
+                    history_raw_new_state: str = row["history.new_state"]
+                    history_raw_action_timestamp_str = row["history.action_timestamp"]
+                    history_raw_action_name: str = row["history.action_name"]
 
-                if type(history_raw_old_state) is not str:
-                    logger_config.print_and_log_error(
-                        f"{cfx_id} ignore change state from {history_raw_old_state} to {history_raw_new_state} {history_raw_action_timestamp_str}  {history_raw_action_name} "
-                    )
-                    continue
+                    if type(history_raw_old_state) is not str:
+                        logger_config.print_and_log_error(
+                            f"{cfx_id} ignore change state from {history_raw_old_state} to {history_raw_new_state} {history_raw_action_timestamp_str}  {history_raw_action_name} "
+                        )
+                        continue
 
-                old_state: State = conversions.convert_state(history_raw_old_state)
-                new_state: State = conversions.convert_state(history_raw_new_state)
-                action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
-                history_action = ActionType[history_raw_action_name.upper()]
+                    old_state: State = conversions.convert_state(history_raw_old_state)
+                    new_state: State = conversions.convert_state(history_raw_new_state)
+                    action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
+                    history_action = ActionType[history_raw_action_name.upper()]
 
-                change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
-                change_state_actions_created.append(change_state_action)
+                    change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
+                    change_state_actions_created.append(change_state_action)
 
-                cfx_request.add_change_state_action(change_state_action)
-                cfx_request.compute_all_actions_sorted_chronologically()
+                    cfx_request.add_change_state_action(change_state_action)
+                    cfx_request.compute_all_actions_sorted_chronologically()
 
         return change_state_actions_created
 

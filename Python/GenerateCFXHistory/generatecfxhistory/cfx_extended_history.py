@@ -65,48 +65,54 @@ class AllCFXCompleteHistoryExport:
     def parse_full_complete_extended_histories_text_file(
         all_cfx_complete_extended_histories_text_file_path: str, cfx_to_treat_whitelist_ids: Optional[Set | List[str]]
     ) -> List["CFXEntryCompleteHistory"]:
+        with logger_config.stopwatch_with_label(f"Opene and read {all_cfx_complete_extended_histories_text_file_path}"):
+            with open(all_cfx_complete_extended_histories_text_file_path, "r", encoding="utf-8") as all_cfx_extended_history_text_file:
+                return AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_files_contents([all_cfx_extended_history_text_file.read()], cfx_to_treat_whitelist_ids)
+
+    @staticmethod
+    def parse_full_complete_extended_histories_text_files_contents(
+        all_cfx_complete_extended_histories_text_files_contents: List[str], cfx_to_treat_whitelist_ids: Optional[Set | List[str]]
+    ) -> List["CFXEntryCompleteHistory"]:
         all_cfx_complete_history: List[CFXEntryCompleteHistory] = list()
 
         complete_history_len_by_cfx: Dict[str, int] = dict()
         raw_history_by_cfx: Dict[str, CFXRawCompleteHistoryExport] = dict()
 
-        with logger_config.stopwatch_with_label(f"Opene and read {all_cfx_complete_extended_histories_text_file_path}"):
-            with open(all_cfx_complete_extended_histories_text_file_path, "r", encoding="utf-8") as all_cfx_extended_history_text_file:
-                all_cfx_extended_history_text_file_content = all_cfx_extended_history_text_file.read()
+        for all_cfx_extended_history_text_file_content in all_cfx_complete_extended_histories_text_files_contents:
 
-        with logger_config.stopwatch_with_label(f"Split file {all_cfx_complete_extended_histories_text_file_path} by CFX"):
-            without_first_line = all_cfx_extended_history_text_file_content.split("CFXID|at_field_history.audit_trail_text|\n")[1]
-            split_by_end = without_first_line.split("====END====\n\n|\n")
-            for one_cfx_history_description_raw in split_by_end:
+            with logger_config.stopwatch_with_label(f"Split file {all_cfx_complete_extended_histories_text_files_contents} by CFX"):
+                without_first_line = all_cfx_extended_history_text_file_content.split("CFXID|at_field_history.audit_trail_text|\n")[1]
+                split_by_end = without_first_line.split("====END====\n\n|\n")
+                for one_cfx_history_description_raw in split_by_end:
 
-                cfx_id = one_cfx_history_description_raw.split("|")[0]
+                    cfx_id = one_cfx_history_description_raw.split("|")[0]
 
-                full_text = one_cfx_history_description_raw
-                raw_history = CFXRawCompleteHistoryExport(cfx_id=cfx_id, history_full_text=full_text)
-                raw_history_by_cfx[cfx_id] = raw_history
-                complete_history_len_by_cfx[cfx_id] = len(one_cfx_history_description_raw)
+                    full_text = one_cfx_history_description_raw
+                    raw_history = CFXRawCompleteHistoryExport(cfx_id=cfx_id, history_full_text=full_text)
+                    raw_history_by_cfx[cfx_id] = raw_history
+                    complete_history_len_by_cfx[cfx_id] = len(one_cfx_history_description_raw)
 
-        sorted_cfxs = sorted(complete_history_len_by_cfx.items(), key=lambda item: item[1], reverse=True)
-        top_10_biggest_history_cfxs = dict(sorted_cfxs[:10])
-        logger_config.print_and_log_info(f"biggest_history_cfxs:{top_10_biggest_history_cfxs}")
+            sorted_cfxs = sorted(complete_history_len_by_cfx.items(), key=lambda item: item[1], reverse=True)
+            top_10_biggest_history_cfxs = dict(sorted_cfxs[:10])
+            logger_config.print_and_log_info(f"biggest_history_cfxs:{top_10_biggest_history_cfxs}")
 
-        cfx_processed: Set[str] = set()
-        for cfx_id, raw_complete_history_export in raw_history_by_cfx.items():
-            with logger_config.stopwatch_alert_if_exceeds_duration(
-                label=f"Processing complete history of {cfx_id}",
-                duration_threshold_to_alert_info_in_s=0.2,
-                duration_threshold_to_alert_warning_in_s=0.5,
-                duration_threshold_to_alert_error_in_s=1,
-                duration_threshold_to_alert_critical_in_s=5,
-            ):
+            cfx_processed: Set[str] = set()
+            for cfx_id, raw_complete_history_export in raw_history_by_cfx.items():
+                with logger_config.stopwatch_alert_if_exceeds_duration(
+                    label=f"Processing complete history of {cfx_id}",
+                    duration_threshold_to_alert_info_in_s=0.2,
+                    duration_threshold_to_alert_warning_in_s=0.5,
+                    duration_threshold_to_alert_error_in_s=1,
+                    duration_threshold_to_alert_critical_in_s=5,
+                ):
 
-                if cfx_to_treat_whitelist_ids is None or cfx_id in cfx_to_treat_whitelist_ids:
-                    cfx_complete_history = parse_history(cfx_id=cfx_id, extended_history_text=raw_complete_history_export.history_full_text)
-                    all_cfx_complete_history.append(cfx_complete_history)
-                    cfx_processed.add(cfx_id)
+                    if cfx_to_treat_whitelist_ids is None or cfx_id in cfx_to_treat_whitelist_ids:
+                        cfx_complete_history = parse_history(cfx_id=cfx_id, extended_history_text=raw_complete_history_export.history_full_text)
+                        all_cfx_complete_history.append(cfx_complete_history)
+                        cfx_processed.add(cfx_id)
 
-                    if len(cfx_processed) % 200 == 0:
-                        logger_config.print_and_log_info(f"Number of CFX processed:{len(cfx_processed)}. Just processed {cfx_id}")
+                        if len(cfx_processed) % 200 == 0:
+                            logger_config.print_and_log_info(f"Number of CFX processed:{len(cfx_processed)}. Just processed {cfx_id}")
 
         logger_config.print_and_log_info(f"cfx_extended_history_text_file_content_split_by_cfx:{len(all_cfx_complete_history)}")
 
@@ -123,7 +129,7 @@ class CFXHistoryField:
         self.change_timestamp = change_timestamp
         self.change_timestamp_without_timezone = change_timestamp.replace(tzinfo=None)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         pass
 
     def __repr__(self) -> str:
@@ -206,9 +212,9 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHi
         # Define regular expressions for extracting elements and fields
         element_regex = r"Time\s*:\s*(.*?)\nSchema Rev\s*:\s*(.*?)\nUser Name\s*:\s*(.*?)\nUser Login\s*:\s*(.*?)\nUser Groups\s*:\s*(.*?)\nAction\s*:\s*(.*?)\nState\s*:\s*(.*?)\n==Fields=="
         field_update_regex = r"(.+?)\s*\((\d+:\d+)\)\s*Old\s*:\s*(.*?)\s*New\s*:(.*?)(?=(\n.+?\s*\(\d+:\d+\)|\n====END====|\Z))"
-        #field_submit_regex_not_working = r"(.+?)\s*\((\d+:\d+)\)\s*\s*:(.*?)(?=(\n.+?\s*\(\d+:\d+\)|\n====END====|\Z))"
-        #field_submit_regex_try1 = r"(?P<field>[A-Za-z]+):\s+(?P<value>[\w\s\(\)/\.]+)"
-        #field_submit_regex_try2 = r"(?P<field>[A-Za-z]+)\s*\(\d+\)\n\s*(?P<value>[\w\s\(\)/\.]+)"
+        # field_submit_regex_not_working = r"(.+?)\s*\((\d+:\d+)\)\s*\s*:(.*?)(?=(\n.+?\s*\(\d+:\d+\)|\n====END====|\Z))"
+        # field_submit_regex_try1 = r"(?P<field>[A-Za-z]+):\s+(?P<value>[\w\s\(\)/\.]+)"
+        # field_submit_regex_try2 = r"(?P<field>[A-Za-z]+)\s*\(\d+\)\n\s*(?P<value>[\w\s\(\)/\.]+)"
 
         # Parse history element details
         element_match = re.search(element_regex, block, re.DOTALL)
@@ -232,7 +238,7 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHi
                     # field_pattern = get_one_line_field_when_cfx_submit_regex(one_line_field_to_retrieve)
                     field_submit_match = re.search(one_line_field_to_retrieve, fields_section)
                     if field_submit_match:
-                        #field_id, new_state = field_submit_match.groups()[:2]
+                        # field_id, new_state = field_submit_match.groups()[:2]
                         # field = CFXHistoryField(cfx_id=cfx_id, field_id=field_id, secondary_label="", old_state="", new_state=new_state, change_timestamp=element.decoded_time)
                         # element.add_field(field)
                         # fields_created.append(field)
@@ -262,4 +268,3 @@ def parse_history(cfx_id: str, extended_history_text: str) -> CFXEntryCompleteHi
             cfx_complete_history.add_field_history_element(element)
 
     return cfx_complete_history
-
