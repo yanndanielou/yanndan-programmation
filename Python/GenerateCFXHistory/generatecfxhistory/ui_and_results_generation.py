@@ -127,7 +127,7 @@ def produce_results_and_displays(
                 champfx_entry.cfx_id,
                 champfx_entry._state.name,
                 champfx_entry._current_owner.full_name,
-                champfx_entry._request_type.name,
+                champfx_entry._request_type.name if champfx_entry._request_type else "unknown request type",
                 champfx_entry._category.name if champfx_entry._category else "unknown category",
                 champfx_entry._cfx_project_name,
             )

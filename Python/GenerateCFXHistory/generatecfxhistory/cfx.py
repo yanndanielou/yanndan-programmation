@@ -64,6 +64,7 @@ class Category(Enum):
     TEST_CASE = auto()
     CONSTRAINT_TO_3RD_PARTY = auto()
     NONE = auto()
+    TBD = auto()
 
     def __repr__(self) -> str:
         return self.name
@@ -639,6 +640,8 @@ class ChampFXEntryBuilder:
 
     @staticmethod
     def convert_champfx_request_type(raw_str_value: str) -> RequestType:
+        if type(raw_str_value) is not str:
+            return None
         raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
         return RequestType[raw_valid_str_value]
 
