@@ -129,7 +129,7 @@ def produce_results_and_displays(
                 champfx_entry._current_owner.full_name,
                 champfx_entry._request_type.name,
                 champfx_entry._category.name,
-                champfx_entry._cfx_project_name.name,
+                champfx_entry._cfx_project_name,
             )
             for champfx_entry in all_results_to_display.all_cfx_that_have_matched
         ]
