@@ -32,6 +32,7 @@ class RequestType(enums_utils.NameBasedEnum):
     OPEN_POINT = auto()
     DEFECT_INTERNAL = auto()
     CHANGE_REQUEST_PLM = auto()
+    CHANGE_REQUEST_PROJECTS = auto()
 
 
 class RejectionCause(Enum):
