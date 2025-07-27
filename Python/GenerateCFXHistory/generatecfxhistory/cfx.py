@@ -33,6 +33,8 @@ class RequestType(enums_utils.NameBasedEnum):
     DEFECT_INTERNAL = auto()
     CHANGE_REQUEST_PLM = auto()
     CHANGE_REQUEST_PROJECTS = auto()
+    MPP = auto()
+    TO_BE_ADDED_YDA = auto()
 
 
 class RejectionCause(Enum):
@@ -46,6 +48,8 @@ class RejectionCause(Enum):
     SOLVED_INDIRECTLY = auto()
     OUT_OF_SCOPE = auto()
     WILL_NOT_BE_FIXED = auto()
+    ALREADY_DONE = auto()
+    TO_BE_ADDED_YDA = auto()
 
     def __repr__(self) -> str:
         return self.name
@@ -636,14 +640,14 @@ class ChampFXEntryBuilder:
         if type(raw_str_value) is not str:
             return None
         raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
-        return RejectionCause.NONE if raw_valid_str_value is None else RejectionCause[raw_valid_str_value]
+        return RejectionCause.NONE if raw_valid_str_value is None else RejectionCause[raw_valid_str_value] if raw_valid_str_value in RejectionCause else RejectionCause.TO_BE_ADDED_YDA
 
     @staticmethod
     def convert_champfx_request_type(raw_str_value: str) -> RequestType:
         if type(raw_str_value) is not str:
             return None
         raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
-        return RequestType[raw_valid_str_value]
+        return RequestType[raw_valid_str_value] if raw_valid_str_value in RequestType else RequestType.TO_BE_ADDED_YDA
 
     @staticmethod
     def convert_champfx_category(raw_str_value: str) -> Category:
