@@ -4,6 +4,8 @@ from common import string_utils
 
 def convert_state(raw_state: str) -> State:
     match raw_state:
+        case "In_Analysis":
+            return State.SUBMITTED
         case "Opened":
             return State.SUBMITTED
         case "Qualifying":
