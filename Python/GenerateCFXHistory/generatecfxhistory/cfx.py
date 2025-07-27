@@ -41,6 +41,8 @@ class RejectionCause(Enum):
     FORWARDED_TO_SAP_CS = auto()
     NOT_REPRODUCIBLE = auto()
     SOLVED_INDIRECTLY = auto()
+    OUT_OF_SCOPE = auto()
+    WILL_NOT_BE_FIXED = auto()
 
     def __repr__(self) -> str:
         return self.name
@@ -58,6 +60,7 @@ class Category(Enum):
     PROCESS = auto()
     TEST_CASE = auto()
     CONSTRAINT_TO_3RD_PARTY = auto()
+    NONE = auto()
 
     def __repr__(self) -> str:
         return self.name
@@ -671,7 +674,7 @@ class ChampFXEntryBuilder:
         request_type: RequestType = ChampFXEntryBuilder.convert_champfx_request_type(row["RequestType"])
 
         raw_category: str = row["Category"]
-        category: Category = ChampFXEntryBuilder.convert_champfx_category(raw_category)
+        category: Category = ChampFXEntryBuilder.convert_champfx_category(raw_category) if raw_category else None
 
         current_owner_raw: str = row["CurrentOwner.FullName"]
         assert cfx_library.cfx_users_library.has_user_by_full_name(current_owner_raw), cfx_id
