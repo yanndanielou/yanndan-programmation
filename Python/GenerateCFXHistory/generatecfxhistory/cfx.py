@@ -466,52 +466,56 @@ class ChampFXLibrary:
 
     def create_or_fill_champfx_entry_with_dataframe(self, cfx_inputs: ChampFxInputs) -> None:
 
-        for cfx_details_file_name, cfx_details_data_frame in cfx_inputs.champfx_details_excel_files_full_data_frames.items():
+        for i, (cfx_details_file_name, cfx_details_data_frame) in enumerate(cfx_inputs.champfx_details_excel_files_full_data_frames.items()):
+            with logger_config.stopwatch_with_label(
+                label=f"Process {i}th / {len(cfx_inputs.champfx_details_excel_files_full_data_frames)} ({round(i/len(cfx_inputs.champfx_details_excel_files_full_data_frames)*100,2)}%) state change file {cfx_details_file_name}"
+            ):
+                for _, row in cfx_details_data_frame.iterrows():
+                    cfx_id = row["CFXID"]
 
-            logger_config.print_and_log_info(f"Process file {cfx_details_file_name}")
-            for _, row in cfx_details_data_frame.iterrows():
-                cfx_id = row["CFXID"]
-
-                if cfx_id not in self._champfx_entry_by_id:
-                    cfx_entry = ChampFXEntryBuilder.build_with_row(row, self)
-                    if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
-                        self._champfx_entry_by_id[cfx_id] = cfx_entry
-                        self._champfx_entries.append(cfx_entry)
-                        self._all_projects.add(cfx_entry._cfx_project_name)
+                    if cfx_id not in self._champfx_entry_by_id:
+                        cfx_entry = ChampFXEntryBuilder.build_with_row(row, self)
+                        if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
+                            self._champfx_entry_by_id[cfx_id] = cfx_entry
+                            self._champfx_entries.append(cfx_entry)
+                            self._all_projects.add(cfx_entry._cfx_project_name)
 
     def create_states_changes_with_dataframe(self, cfx_inputs: ChampFxInputs) -> List[ChangeStateAction]:
 
         change_state_actions_created: List[ChangeStateAction] = []
 
-        for cfx_states_changes_file_name, cfx_states_changes_data_frame in cfx_inputs.champfx_states_changes_excel_files_data_frames.items():
-            logger_config.print_and_log_info(f"Process file {cfx_states_changes_file_name}")
-            for _, row in cfx_states_changes_data_frame.iterrows():
-                cfx_id = row["CFXID"]
+        for i, (cfx_states_changes_file_name, cfx_states_changes_data_frame) in enumerate(cfx_inputs.champfx_states_changes_excel_files_data_frames.items()):
+            with logger_config.stopwatch_with_label(
+                label=f"Process {i}th / {len(cfx_inputs.champfx_states_changes_excel_files_data_frames)} ({round(i/len(cfx_inputs.champfx_states_changes_excel_files_data_frames)*100,2)}%) state change file {cfx_states_changes_file_name}"
+            ):
+                logger_config.print_and_log_info(f"Process {cfx_states_changes_file_name}")
+                for _, row in cfx_states_changes_data_frame.iterrows():
+                    cfx_id = row["CFXID"]
 
-                if cfx_id in self.get_all_cfx_ids():
+                    if cfx_id in self.get_all_cfx_ids():
 
-                    cfx_request = self.get_cfx_by_id(cfx_id)
-                    history_raw_old_state: str = row["history.old_state"]
-                    history_raw_new_state: str = row["history.new_state"]
-                    history_raw_action_timestamp_str = row["history.action_timestamp"]
-                    history_raw_action_name: str = row["history.action_name"]
+                        cfx_request = self.get_cfx_by_id(cfx_id)
+                        history_raw_old_state: str = row["history.old_state"]
+                        history_raw_new_state: str = row["history.new_state"]
+                        history_raw_action_timestamp_str = row["history.action_timestamp"]
+                        history_raw_action_name: str = row["history.action_name"]
 
-                    if type(history_raw_old_state) is not str:
-                        logger_config.print_and_log_error(
-                            f"{cfx_id} project {cfx_request._cfx_project_name} ignore change state from {history_raw_old_state} to {history_raw_new_state} {history_raw_action_timestamp_str}  {history_raw_action_name} "
-                        )
-                        continue
+                        if type(history_raw_old_state) is not str:
+                            logger_config.print_and_log_error(
+                                f"{cfx_id} project {cfx_request._cfx_project_name} ignore change state from {history_raw_old_state} to {history_raw_new_state} {history_raw_action_timestamp_str}  {history_raw_action_name} "
+                            )
+                            continue
 
-                    old_state: State = conversions.convert_state(history_raw_old_state)
-                    new_state: State = conversions.convert_state(history_raw_new_state)
-                    action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
-                    history_action = ActionType[history_raw_action_name.upper()]
+                        old_state: State = conversions.convert_state(history_raw_old_state)
+                        new_state: State = conversions.convert_state(history_raw_new_state)
+                        action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
+                        history_action = ActionType[history_raw_action_name.upper()]
 
-                    change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
-                    change_state_actions_created.append(change_state_action)
+                        change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
+                        change_state_actions_created.append(change_state_action)
 
-                    cfx_request.add_change_state_action(change_state_action)
-                    cfx_request.compute_all_actions_sorted_chronologically()
+                        cfx_request.add_change_state_action(change_state_action)
+                        cfx_request.compute_all_actions_sorted_chronologically()
 
         return change_state_actions_created
 
