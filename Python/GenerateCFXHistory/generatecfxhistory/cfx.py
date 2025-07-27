@@ -472,7 +472,7 @@ class ChampFXLibrary:
 
         for i, (cfx_details_file_name, cfx_details_data_frame) in enumerate(cfx_inputs.champfx_details_excel_files_full_data_frames.items()):
             with logger_config.stopwatch_with_label(
-                label=f"Process {i+1}th / {len(cfx_inputs.champfx_details_excel_files_full_data_frames)} ({round((i+1)/len(cfx_inputs.champfx_details_excel_files_full_data_frames)*100,2)}%) cfx detail file {cfx_details_file_name}"
+                label=f"Process {i+1}th / {len(cfx_inputs.champfx_details_excel_files_full_data_frames)} ({round((i+1)/len(cfx_inputs.champfx_details_excel_files_full_data_frames)*100,2)}%) cfx detail file {cfx_details_file_name} with length {len(cfx_details_data_frame)}"
             ):
                 for _, row in cfx_details_data_frame.iterrows():
                     cfx_id = row["CFXID"]
@@ -515,9 +515,10 @@ class ChampFXLibrary:
 
         for i, (cfx_states_changes_file_name, cfx_states_changes_data_frame) in enumerate(cfx_inputs.champfx_states_changes_excel_files_data_frames.items()):
             with logger_config.stopwatch_with_label(
-                label=f"Process {i+1}th / {len(cfx_inputs.champfx_states_changes_excel_files_data_frames)} ({round((i+1)/len(cfx_inputs.champfx_states_changes_excel_files_data_frames)*100,2)}%) state change file {cfx_states_changes_file_name}"
+                label=f"Process {i+1}th / {len(cfx_inputs.champfx_states_changes_excel_files_data_frames)} ({round((i+1)/len(cfx_inputs.champfx_states_changes_excel_files_data_frames)*100,2)}%) state change file {cfx_states_changes_file_name} with length {len(cfx_states_changes_data_frame)}"
             ):
-                logger_config.print_and_log_info(f"Process {cfx_states_changes_file_name}")
+                logger_config.print_and_log_info(f"Process {cfx_states_changes_file_name} with size {len(cfx_states_changes_data_frame)}      {cfx_states_changes_data_frame.size}")
+
                 for _, row in cfx_states_changes_data_frame.iterrows():
                     cfx_id = row["CFXID"]
 
