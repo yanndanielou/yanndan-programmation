@@ -480,6 +480,27 @@ class ChampFXLibrary:
                             self._champfx_entries.append(cfx_entry)
                             self._all_projects.add(cfx_entry._cfx_project_name)
 
+    def create_states_changes_action(
+        self, cfx_request: "ChampFXEntry", cfx_id: str, history_raw_old_state: str, history_raw_new_state: str, history_raw_action_timestamp_str: str, history_raw_action_name: str
+    ) -> Optional[ChangeStateAction]:
+        if type(history_raw_old_state) is not str:
+            logger_config.print_and_log_error(
+                f"{cfx_id} project {cfx_request._cfx_project_name} ignore change state from {history_raw_old_state} to {history_raw_new_state} {history_raw_action_timestamp_str}  {history_raw_action_name} "
+            )
+            return None
+
+        old_state: State = conversions.convert_state(history_raw_old_state)
+        new_state: State = conversions.convert_state(history_raw_new_state)
+        action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
+        history_action = ActionType[history_raw_action_name.upper()]
+
+        change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
+
+        cfx_request.add_change_state_action(change_state_action)
+        cfx_request.compute_all_actions_sorted_chronologically()
+
+        return change_state_action
+
     def create_states_changes_with_dataframe(self, cfx_inputs: ChampFxInputs) -> List[ChangeStateAction]:
 
         change_state_actions_created: List[ChangeStateAction] = []
@@ -500,22 +521,19 @@ class ChampFXLibrary:
                         history_raw_action_timestamp_str = row["history.action_timestamp"]
                         history_raw_action_name: str = row["history.action_name"]
 
-                        if type(history_raw_old_state) is not str:
-                            logger_config.print_and_log_error(
-                                f"{cfx_id} project {cfx_request._cfx_project_name} ignore change state from {history_raw_old_state} to {history_raw_new_state} {history_raw_action_timestamp_str}  {history_raw_action_name} "
+                        try:
+                            change_state_action = self.create_states_changes_action(
+                                cfx_id=cfx_id,
+                                cfx_request=cfx_request,
+                                history_raw_action_name=history_raw_action_name,
+                                history_raw_old_state=history_raw_old_state,
+                                history_raw_new_state=history_raw_new_state,
+                                history_raw_action_timestamp_str=history_raw_action_timestamp_str,
                             )
-                            continue
-
-                        old_state: State = conversions.convert_state(history_raw_old_state)
-                        new_state: State = conversions.convert_state(history_raw_new_state)
-                        action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
-                        history_action = ActionType[history_raw_action_name.upper()]
-
-                        change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
-                        change_state_actions_created.append(change_state_action)
-
-                        cfx_request.add_change_state_action(change_state_action)
-                        cfx_request.compute_all_actions_sorted_chronologically()
+                            if change_state_action:
+                                change_state_actions_created.append(change_state_action)
+                        except Exception as ex:
+                            logger_config.print_and_log_exception(ex)
 
         return change_state_actions_created
 
