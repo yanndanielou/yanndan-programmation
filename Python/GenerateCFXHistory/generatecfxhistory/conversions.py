@@ -4,6 +4,8 @@ from common import string_utils
 
 def convert_state(raw_state: str) -> State:
     match raw_state:
+        case "Opened":
+            return State.SUBMITTED
         case "Qualifying":
             return State.SUBMITTED
         case "WaitingAssignment":
@@ -28,5 +30,7 @@ def convert_state(raw_state: str) -> State:
             return State.POSTPONED
         case "Cloning":  # only found for USTS00033443   in 2014
             return State.SUBMITTED
+        case "Duplicate":  # only found for USTS00033443   in 2014
+            return State.REJECTED
 
     return State[string_utils.text_to_valid_enum_value_text(raw_state)]
