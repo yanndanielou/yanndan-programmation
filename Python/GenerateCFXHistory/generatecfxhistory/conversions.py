@@ -24,7 +24,7 @@ def convert_state(raw_state: str) -> State:
             return State.SUBMITTED
         case "InAnalysis":
             return State.SUBMITTED
-        case "InAnalysis":
+        case "In Analysis":
             return State.SUBMITTED
         case "WaitingDecision":
             return State.POSTPONED
