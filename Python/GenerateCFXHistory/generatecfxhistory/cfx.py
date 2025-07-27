@@ -30,6 +30,7 @@ class RequestType(enums_utils.NameBasedEnum):
     HAZARD = auto()
     ACTION_ITEM = auto()
     OPEN_POINT = auto()
+    DEFECT_INTERNAL = auto()
 
 
 class RejectionCause(Enum):
@@ -641,6 +642,8 @@ class ChampFXEntryBuilder:
 
     @staticmethod
     def convert_champfx_category(raw_str_value: str) -> Category:
+        if type(raw_str_value) is not str:
+            return None
         raw_valid_str_value: str = string_utils.text_to_valid_enum_value_text(raw_str_value)
         return Category[raw_valid_str_value]
 
