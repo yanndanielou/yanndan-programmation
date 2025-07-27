@@ -452,6 +452,10 @@ class ChampFXLibrary:
                 change_state_actions_created = self.create_states_changes_with_dataframe(cfx_inputs)
                 logger_config.print_and_log_info(f"{len(change_state_actions_created)} ChangeStateAction objects created")
 
+            with logger_config.stopwatch_with_label("compute_all_actions_sorted_chronologically"):
+                for cfx_entry in self.get_all_cfx():
+                    cfx_entry.compute_all_actions_sorted_chronologically()
+
             with logger_config.stopwatch_with_label("Process cfx_extended_histories"):
                 self._all_cfx_complete_extended_histories: List[cfx_extended_history.CFXEntryCompleteHistory] = (
                     cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_files_contents(cfx_inputs.cfx_extended_history_files_contents, self.get_all_cfx_ids())
@@ -468,17 +472,21 @@ class ChampFXLibrary:
 
         for i, (cfx_details_file_name, cfx_details_data_frame) in enumerate(cfx_inputs.champfx_details_excel_files_full_data_frames.items()):
             with logger_config.stopwatch_with_label(
-                label=f"Process {i}th / {len(cfx_inputs.champfx_details_excel_files_full_data_frames)} ({round(i/len(cfx_inputs.champfx_details_excel_files_full_data_frames)*100,2)}%) state change file {cfx_details_file_name}"
+                label=f"Process {i+1}th / {len(cfx_inputs.champfx_details_excel_files_full_data_frames)} ({round((i+1)/len(cfx_inputs.champfx_details_excel_files_full_data_frames)*100,2)}%) cfx detail file {cfx_details_file_name}"
             ):
                 for _, row in cfx_details_data_frame.iterrows():
                     cfx_id = row["CFXID"]
 
                     if cfx_id not in self._champfx_entry_by_id:
-                        cfx_entry = ChampFXEntryBuilder.build_with_row(row, self)
-                        if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
-                            self._champfx_entry_by_id[cfx_id] = cfx_entry
-                            self._champfx_entries.append(cfx_entry)
-                            self._all_projects.add(cfx_entry._cfx_project_name)
+                        try:
+                            cfx_entry = ChampFXEntryBuilder.build_with_row(row, self)
+                            if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
+                                self._champfx_entry_by_id[cfx_id] = cfx_entry
+                                self._champfx_entries.append(cfx_entry)
+                                self._all_projects.add(cfx_entry._cfx_project_name)
+                        except Exception as ex:
+                            logger_config.print_and_log_exception(ex)
+                            logger_config.print_and_log_error(f"Error when creating cfx {cfx_id}")
 
     def create_states_changes_action(
         self, cfx_request: "ChampFXEntry", cfx_id: str, history_raw_old_state: str, history_raw_new_state: str, history_raw_action_timestamp_str: str, history_raw_action_name: str
@@ -497,7 +505,7 @@ class ChampFXLibrary:
         change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
 
         cfx_request.add_change_state_action(change_state_action)
-        cfx_request.compute_all_actions_sorted_chronologically()
+        # cfx_request.compute_all_actions_sorted_chronologically()
 
         return change_state_action
 
@@ -507,7 +515,7 @@ class ChampFXLibrary:
 
         for i, (cfx_states_changes_file_name, cfx_states_changes_data_frame) in enumerate(cfx_inputs.champfx_states_changes_excel_files_data_frames.items()):
             with logger_config.stopwatch_with_label(
-                label=f"Process {i}th / {len(cfx_inputs.champfx_states_changes_excel_files_data_frames)} ({round(i/len(cfx_inputs.champfx_states_changes_excel_files_data_frames)*100,2)}%) state change file {cfx_states_changes_file_name}"
+                label=f"Process {i+1}th / {len(cfx_inputs.champfx_states_changes_excel_files_data_frames)} ({round((i+1)/len(cfx_inputs.champfx_states_changes_excel_files_data_frames)*100,2)}%) state change file {cfx_states_changes_file_name}"
             ):
                 logger_config.print_and_log_info(f"Process {cfx_states_changes_file_name}")
                 for _, row in cfx_states_changes_data_frame.iterrows():
@@ -534,6 +542,9 @@ class ChampFXLibrary:
                                 change_state_actions_created.append(change_state_action)
                         except Exception as ex:
                             logger_config.print_and_log_exception(ex)
+                            logger_config.print_and_log_error(
+                                f"Error when creating state change for {cfx_id} project {cfx_request._cfx_project_name} ignore change state from {history_raw_old_state} to {history_raw_new_state} {history_raw_action_timestamp_str}  {history_raw_action_name}"
+                            )
 
         return change_state_actions_created
 
