@@ -69,6 +69,8 @@ class Category(Enum):
     CONSTRAINT_TO_3RD_PARTY = auto()
     NONE = auto()
     TBD = auto()
+    MONTAGE = auto()
+    TO_BE_ADDED_YDA = auto()
 
     def __repr__(self) -> str:
         return self.name
@@ -654,7 +656,7 @@ class ChampFXEntryBuilder:
         if type(raw_str_value) is not str:
             return None
         raw_valid_str_value: str = string_utils.text_to_valid_enum_value_text(raw_str_value)
-        return Category[raw_valid_str_value]
+        return Category[raw_valid_str_value] if raw_valid_str_value in Category else Category.TO_BE_ADDED_YDA
 
     @staticmethod
     def to_optional_boolean(raw_value: str) -> Optional[bool]:
