@@ -326,8 +326,8 @@ def get_earliest_submit_date(cfx_list: List["ChampFXEntry"]) -> datetime.datetim
 
 @dataclass
 class ChampFxInputs:
-    champfx_details_excel_files_full_data_frames: List[pd.DataFrame]
-    champfx_states_changes_excel_files_data_frames: List[pd.DataFrame]
+    champfx_details_excel_files_full_data_frames: Dict[str, pd.DataFrame]
+    champfx_states_changes_excel_files_data_frames: Dict[str, pd.DataFrame]
     cfx_extended_history_files_contents: List[str]
     user_and_role_data_text_file_full_path: Optional[str]
 
@@ -336,10 +336,10 @@ class ChampFxInputsBuilder:
     def __init__(self) -> None:
 
         self.champfx_details_excel_files_full_paths: List[str] = []
-        self.champfx_details_excel_files_full_data_frames: List[pd.DataFrame] = []
+        self.champfx_details_excel_files_full_data_frames: Dict[str, pd.DataFrame] = dict()
 
         self.champfx_states_changes_excel_files_full_paths: List[str] = []
-        self.champfx_states_changes_excel_files_data_frames: List[pd.DataFrame] = []
+        self.champfx_states_changes_excel_files_data_frames: Dict[str, pd.DataFrame] = dict()
 
         self.cfx_extended_history_files_full_paths: List[str] = []
         self.cfx_extended_history_files_contents: List[str] = []
@@ -389,14 +389,14 @@ class ChampFxInputsBuilder:
                     with logger_config.stopwatch_with_label(
                         f"Open {i+1} / {len(self.champfx_details_excel_files_full_paths)} ({round((i+1)/len(self.champfx_details_excel_files_full_paths)*100,2)}%) cfx details excel file {champfx_details_excel_file_full_path}"
                     ):
-                        self.champfx_details_excel_files_full_data_frames.append(pd.read_excel(champfx_details_excel_file_full_path))
+                        self.champfx_details_excel_files_full_data_frames[champfx_details_excel_file_full_path] = pd.read_excel(champfx_details_excel_file_full_path)
 
             with logger_config.stopwatch_with_label(f"Open {len(self.champfx_states_changes_excel_files_full_paths)} cfx states changes files"):
                 for i, champfx_states_changes_excel_file_full_path in enumerate(self.champfx_states_changes_excel_files_full_paths):
                     with logger_config.stopwatch_with_label(
                         f"Open {i+1} / {len(self.champfx_states_changes_excel_files_full_paths)} ({(i+1)/len(self.champfx_states_changes_excel_files_full_paths)*100:.2f}%) cfx state changes excel file {champfx_states_changes_excel_file_full_path}"
                     ):
-                        self.champfx_states_changes_excel_files_data_frames.append(pd.read_excel(champfx_states_changes_excel_file_full_path))
+                        self.champfx_states_changes_excel_files_data_frames[champfx_states_changes_excel_file_full_path] = pd.read_excel(champfx_states_changes_excel_file_full_path)
 
             with logger_config.stopwatch_with_label(f"Open {len(self.cfx_extended_history_files_full_paths)} cfx extended history files"):
                 for i, cfx_extended_history_file_full_path in enumerate(self.cfx_extended_history_files_full_paths):
@@ -466,8 +466,9 @@ class ChampFXLibrary:
 
     def create_or_fill_champfx_entry_with_dataframe(self, cfx_inputs: ChampFxInputs) -> None:
 
-        for cfx_details_data_frame in cfx_inputs.champfx_details_excel_files_full_data_frames:
+        for cfx_details_file_name, cfx_details_data_frame in cfx_inputs.champfx_details_excel_files_full_data_frames.items():
 
+            logger_config.print_and_log_info(f"Process file {cfx_details_file_name}")
             for _, row in cfx_details_data_frame.iterrows():
                 cfx_id = row["CFXID"]
 
@@ -482,7 +483,8 @@ class ChampFXLibrary:
 
         change_state_actions_created: List[ChangeStateAction] = []
 
-        for cfx_states_changes_data_frame in cfx_inputs.champfx_states_changes_excel_files_data_frames:
+        for cfx_states_changes_file_name, cfx_states_changes_data_frame in cfx_inputs.champfx_states_changes_excel_files_data_frames.items():
+            logger_config.print_and_log_info(f"Process file {cfx_states_changes_file_name}")
             for _, row in cfx_states_changes_data_frame.iterrows():
                 cfx_id = row["CFXID"]
 
@@ -496,7 +498,7 @@ class ChampFXLibrary:
 
                     if type(history_raw_old_state) is not str:
                         logger_config.print_and_log_error(
-                            f"{cfx_id} ignore change state from {history_raw_old_state} to {history_raw_new_state} {history_raw_action_timestamp_str}  {history_raw_action_name} "
+                            f"{cfx_id} project {cfx_request._cfx_project_name} ignore change state from {history_raw_old_state} to {history_raw_new_state} {history_raw_action_timestamp_str}  {history_raw_action_name} "
                         )
                         continue
 
