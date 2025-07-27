@@ -63,7 +63,7 @@ def produce_results_and_displays(
         case GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS:
             pass
         case GenerateByProjectInstruction.BY_PROJECT:
-            for project in cfx_library._all_projects:
+            for project in sorted(cfx_library._all_projects):
                 produce_results_and_displays(
                     cfx_library=cfx_library,
                     output_directory_name=output_directory_name,
@@ -128,7 +128,7 @@ def produce_results_and_displays(
                 champfx_entry._state.name,
                 champfx_entry._current_owner.full_name,
                 champfx_entry._request_type.name,
-                champfx_entry._category.name,
+                champfx_entry._category.name if champfx_entry._category else "unknown category",
                 champfx_entry._cfx_project_name,
             )
             for champfx_entry in all_results_to_display.all_cfx_that_have_matched
