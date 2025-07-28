@@ -24,9 +24,12 @@ def main() -> None:
         cfx_inputs = (
             cfx.ChampFxInputsBuilder()
             .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_other_projects.xlsx")
-            .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_other_projects.xlsx")
+            .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_other_projects.xlsx
             .build()
         )
+        #.add_champfx_details_excel_file_full_path("Input_for_Tests/details_project_other_projects_for_tests.xlsx")
+        #.add_champfx_states_changes_excel_file_full_path("Input_for_Tests/states_changes_other_projects_for_tests.xlsx")")
+            
 
         all_raw_states: Set[str] = set()
         all_possible_values_by_column: Dict[str, Any] = {}
