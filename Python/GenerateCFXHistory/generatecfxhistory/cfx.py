@@ -84,6 +84,12 @@ class Category(Enum):
     CHANGE_REQUEST = auto()
     SUPPORT = auto()
     DEVELOPMENT_REQUEST = auto()
+    MISSVERSTANDEN = auto()
+    TRACK_LAYOUT___TDB___IXL = auto()
+    PRODUCT = auto()
+    REQUIREMENT = auto()
+    POTENTIAL_CLAIM = auto()
+    TEST_SYSTEM_HANDLING = auto()
     TO_BE_ADDED_YDA = auto()
 
     def __repr__(self) -> str:
@@ -656,7 +662,8 @@ class ChampFXLibrary:
             logger_config.print_and_log_info(f"No data")
             return all_results_to_display
 
-        timestamps_to_display_data: List[datetime.datetime] = dates_generator.get_dates_since(start_date=get_earliest_submit_date(all_cfx_to_consider).replace(day=1))
+        earliest_submit_date = get_earliest_submit_date(all_cfx_to_consider)
+        timestamps_to_display_data: List[datetime.datetime] = dates_generator.get_dates_since(start_date=earliest_submit_date.replace(day=1))
 
         for timestamp_to_display_data in timestamps_to_display_data:
             timestamp_results = OneTimestampResult(timestamp=timestamp_to_display_data, all_results_to_display=all_results_to_display)
@@ -706,7 +713,7 @@ class ChampFXEntryBuilder:
             return RejectionCause[raw_valid_str_value]
         except KeyError as key_error:
             logger_config.print_and_log_exception(key_error)
-            logger_config.print_and_log_error(f"RejectionCause {raw_valid_str_value} not found")
+            logger_config.print_and_log_error(f"RejectionCause {raw_valid_str_value} not supported")
             return RejectionCause.TO_BE_ADDED_YDA
 
     @staticmethod
@@ -719,7 +726,7 @@ class ChampFXEntryBuilder:
             return RequestType[raw_valid_str_value]
         except KeyError as key_error:
             logger_config.print_and_log_exception(key_error)
-            logger_config.print_and_log_error(f"RequestType {raw_valid_str_value} not found")
+            logger_config.print_and_log_error(f"RequestType {raw_valid_str_value} not supported")
             return None
 
     @staticmethod
@@ -731,7 +738,7 @@ class ChampFXEntryBuilder:
             return Category[raw_valid_str_value]
         except KeyError as key_error:
             logger_config.print_and_log_exception(key_error)
-            logger_config.print_and_log_error(f"Category {raw_valid_str_value} not found")
+            logger_config.print_and_log_error(f"Category {raw_valid_str_value} not supported")
             return None
 
     @staticmethod
