@@ -16,6 +16,8 @@ def convert_state(raw_state: str) -> State:
             return State.VALIDATED
         case "In_Verification":
             return State.RESOLVED
+        case "In_Validation":
+            return State.VERIFIED
         case "InVerification":
             return State.RESOLVED
         case "FunctionalValidation":

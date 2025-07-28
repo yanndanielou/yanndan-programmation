@@ -34,6 +34,9 @@ class RequestType(enums_utils.NameBasedEnum):
     CHANGE_REQUEST_PLM = auto()
     CHANGE_REQUEST_PROJECTS = auto()
     MPP = auto()
+    HINDERING_NOTICE = auto()
+    FCR = auto()
+    NCP = auto()
     TO_BE_ADDED_YDA = auto()
 
 
@@ -70,6 +73,15 @@ class Category(Enum):
     NONE = auto()
     TBD = auto()
     MONTAGE = auto()
+    NICHT_IM_LV = auto()
+    LIEFERUNG = auto()
+    BESCHRIFTUNG = auto()
+    RELEVANZ = auto()
+    DESIGN = auto()
+    TEST_AND_COMISSIONING = auto()
+    CHANGE_REQUEST = auto()
+    SUPPORT = auto()
+    DEVELOPMENT_REQUEST = auto()
     TO_BE_ADDED_YDA = auto()
 
     def __repr__(self) -> str:
@@ -685,21 +697,40 @@ class ChampFXEntryBuilder:
         if type(raw_str_value) is not str:
             return None
         raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
-        return RejectionCause.NONE if raw_valid_str_value is None else RejectionCause[raw_valid_str_value] if raw_valid_str_value in RejectionCause else RejectionCause.TO_BE_ADDED_YDA
+        try:
+            return RejectionCause.NONE if raw_valid_str_value is None else RejectionCause[raw_valid_str_value]
+        except KeyError as key_error:
+            logger_config.print_and_log_exception(key_error)
+            return RejectionCause[raw_valid_str_value]
+        except KeyError as key_error:
+            logger_config.print_and_log_exception(key_error)
+            logger_config.print_and_log_error(f"RejectionCause {raw_valid_str_value} not found")
+            return RejectionCause.TO_BE_ADDED_YDA
 
     @staticmethod
     def convert_champfx_request_type(raw_str_value: str) -> RequestType:
         if type(raw_str_value) is not str:
             return None
         raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
-        return RequestType[raw_valid_str_value]
+
+        try:
+            return RequestType[raw_valid_str_value]
+        except KeyError as key_error:
+            logger_config.print_and_log_exception(key_error)
+            logger_config.print_and_log_error(f"RequestType {raw_valid_str_value} not found")
+            return None
 
     @staticmethod
-    def convert_champfx_category(raw_str_value: str) -> Category:
+    def convert_champfx_category(raw_str_value: str) -> Optional[Category]:
         if type(raw_str_value) is not str:
             return None
         raw_valid_str_value: str = string_utils.text_to_valid_enum_value_text(raw_str_value)
-        return Category[raw_valid_str_value]
+        try:
+            return Category[raw_valid_str_value]
+        except KeyError as key_error:
+            logger_config.print_and_log_exception(key_error)
+            logger_config.print_and_log_error(f"Category {raw_valid_str_value} not found")
+            return None
 
     @staticmethod
     def to_optional_boolean(raw_value: str) -> Optional[bool]:
@@ -727,11 +758,19 @@ class ChampFXEntryBuilder:
 
         raw_rejection_cause: str = row["RejectionCause"]
         rejection_cause: RejectionCause = ChampFXEntryBuilder.convert_champfx_rejection_cause(raw_rejection_cause)
+        if raw_rejection_cause == RejectionCause.TO_BE_ADDED_YDA:
+            logger_config.print_and_log_error(f"{cfx_id} project {raw_project}: RejectionCause {raw_rejection_cause} not supported")
 
         request_type: RequestType = ChampFXEntryBuilder.convert_champfx_request_type(row["RequestType"])
+        if request_type is None:
+            logger_config.print_and_log_error(f"{cfx_id} project {raw_project}: Request Type {request_type} not supported")
+            request_type = RequestType.TO_BE_ADDED_YDA
 
         raw_category: str = row["Category"]
         category: Category = ChampFXEntryBuilder.convert_champfx_category(raw_category) if raw_category else None
+        if category is None:
+            logger_config.print_and_log_error(f"{cfx_id} project {raw_project}: Category {raw_category} not supported")
+            category = Category.TO_BE_ADDED_YDA
 
         current_owner_raw: str = row["CurrentOwner.FullName"]
         assert cfx_library.cfx_users_library.has_user_by_full_name(current_owner_raw), cfx_id
