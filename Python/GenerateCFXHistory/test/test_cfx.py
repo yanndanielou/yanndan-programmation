@@ -374,3 +374,16 @@ class TestCrashObserved:
             .build()
         )
         champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
+        earliest_submit_date = cfx.get_earliest_submit_date(champfx_library.get_all_cfx())
+        assert earliest_submit_date
+
+    def test_coreshield(self) -> None:
+        cfx_inputs = (
+            cfx.ChampFxInputsBuilder()
+            .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_other_projects.xlsx")
+            .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_other_projects.xlsx")
+            .build()
+        )
+        champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
+        earliest_submit_date = cfx.get_earliest_submit_date(champfx_library.get_all_cfx())
+        assert earliest_submit_date
