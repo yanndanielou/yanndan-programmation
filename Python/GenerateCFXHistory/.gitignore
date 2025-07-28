@@ -6,7 +6,6 @@
 /Input/*.txt
 Input/CFX_kown_by_customer.txt
 /Input_for_Tests/*.json
-/Input_for_Tests/*.xlsx
 test*.json
 test*.xlsx
 role_data.*
@@ -19,3 +18,4 @@ output*.txt
 Output/
 Output*/
 Output*.7z
+generatecfxhistory\output\
