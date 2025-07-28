@@ -362,3 +362,15 @@ class TestDecreasingIntervalDatesGenerator:
 
     def test_few_values(self) -> None:
         assert len(cfx.DecreasingIntervalDatesGenerator().get_dates_since(datetime(int(2000), int(1), int(4)))) > 100
+
+
+class TestCrashObserved:
+
+    def test_CFX00608002(self) -> None:
+        cfx_inputs = (
+            cfx.ChampFxInputsBuilder()
+            .add_champfx_details_excel_file_full_path("Input_for_Tests/details_project_other_projects_for_tests.xlsx")
+            .add_champfx_states_changes_excel_file_full_path("Input_for_Tests/states_changes_other_projects_for_tests.xlsx")
+            .build()
+        )
+        champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
