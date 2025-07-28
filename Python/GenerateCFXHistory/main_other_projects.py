@@ -1,5 +1,7 @@
 import os
 
+from typing import Set, Dict, Any
+
 from dateutil import relativedelta
 from logger import logger_config
 
@@ -25,6 +27,41 @@ def main() -> None:
             .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_project_*.xlsx")
             .build()
         )
+
+        all_raw_states: Set[str] = set()
+        all_possible_values_by_column: Dict[str, Any] = {}
+
+        "CFXID	State	SubmitDate	RequestType	Category	CurrentOwner.FullName	SystemStructure	Project	SafetyRelevant	SecurityRelevant	FixedImplementedIn	Severity	RejectionCause"
+
+        "CFXID	history.old_state	history.new_state	history.action_timestamp	history.action_name	Project"
+
+        combined_data_frames_list = cfx_inputs.champfx_details_excel_files_full_data_frames | cfx_inputs.champfx_states_changes_excel_files_data_frames
+        for _, cfx_details_data_frame in combined_data_frames_list.items():
+            for col in cfx_details_data_frame.columns:
+                # Get the set of values for this column from the current DataFrame
+                values = set(cfx_details_data_frame[col])
+                if col in all_possible_values_by_column:
+                    # Update the current set with the new values
+                    all_possible_values_by_column[col].update(values)
+                else:
+                    # Initialize the set if the column is not present in the dictionary
+                    all_possible_values_by_column[col] = values
+
+        # logger_config.print_and_log_info("all_possible_values_by_column:" + str(all_possible_values_by_column))
+        logger_config.print_and_log_info("All states:" + str(all_raw_states))
+        logger_config.print_and_log_info("All states:" + str(all_possible_values_by_column["State"]))
+        logger_config.print_and_log_info("All Category:" + str(all_possible_values_by_column["Category"]))
+        logger_config.print_and_log_info("All RejectionCause:" + str(all_possible_values_by_column["RejectionCause"]))
+        logger_config.print_and_log_info("All history.old_state:" + str(all_possible_values_by_column["history.old_state"]))
+        logger_config.print_and_log_info("All history.new_state:" + str(all_possible_values_by_column["history.new_state"]))
+        # logger_config.print_and_log_info("all_possible_values_by_column:" + str(all_possible_values_by_column))
+
+        for _, cfx_details_data_frame in cfx_inputs.champfx_details_excel_files_full_data_frames.items():
+            all_possible_values = {col: set(cfx_details_data_frame[col]) for col in cfx_details_data_frame.columns}
+            columns = cfx_details_data_frame.columns
+            for _, row in cfx_details_data_frame.iterrows():
+                all_raw_states.add(row["State"])
+
         all_champfx_library = cfx.ChampFXLibrary(
             cfx_inputs=cfx_inputs,
             label="Other projects",

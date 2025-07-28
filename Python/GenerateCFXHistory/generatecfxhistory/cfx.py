@@ -435,6 +435,7 @@ class ChampFXLibrary:
         # self._all_current_owner_modifications_per_cfx_pickle_file_full_path = all_current_owner_modifications_per_cfx_pickle_file_full_path
         self._champfx_entry_by_id: Dict[str, ChampFXEntry] = dict()
         self._champfx_entries: List[ChampFXEntry] = []
+        # self._champfx_entries: List[str] = []
 
         self._cfx_users_library = (
             role.CfxUserLibrary(cfx_inputs.user_and_role_data_text_file_full_path, release_role_mapping.next_atsp_release_subsystem_mapping)
@@ -468,6 +469,14 @@ class ChampFXLibrary:
     def cfx_users_library(self) -> role.CfxUserLibrary:
         return self._cfx_users_library
 
+    def create_cfx_entry(self, cfx_id: str, row: pd.Series) -> "ChampFXEntry":
+        cfx_entry = ChampFXEntryBuilder.build_with_row(row, self)
+        if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
+            self._champfx_entry_by_id[cfx_id] = cfx_entry
+            self._champfx_entries.append(cfx_entry)
+            self._all_projects.add(cfx_entry._cfx_project_name)
+        return cfx_entry
+
     def create_or_fill_champfx_entry_with_dataframe(self, cfx_inputs: ChampFxInputs) -> None:
 
         for i, (cfx_details_file_name, cfx_details_data_frame) in enumerate(cfx_inputs.champfx_details_excel_files_full_data_frames.items()):
@@ -479,11 +488,7 @@ class ChampFXLibrary:
 
                     if cfx_id not in self._champfx_entry_by_id:
                         try:
-                            cfx_entry = ChampFXEntryBuilder.build_with_row(row, self)
-                            if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
-                                self._champfx_entry_by_id[cfx_id] = cfx_entry
-                                self._champfx_entries.append(cfx_entry)
-                                self._all_projects.add(cfx_entry._cfx_project_name)
+                            self.create_cfx_entry(cfx_id=cfx_id, row=row)
                         except Exception as ex:
                             logger_config.print_and_log_exception(ex)
                             logger_config.print_and_log_error(f"Error when creating cfx {cfx_id}")
@@ -522,8 +527,7 @@ class ChampFXLibrary:
                 for _, row in cfx_states_changes_data_frame.iterrows():
                     cfx_id = row["CFXID"]
 
-                    if cfx_id in self.get_all_cfx_ids():
-
+                    if self.is_cfx_with_id_exists(cfx_id=cfx_id):
                         cfx_request = self.get_cfx_by_id(cfx_id)
                         history_raw_old_state: str = row["history.old_state"]
                         history_raw_new_state: str = row["history.new_state"]
@@ -557,7 +561,7 @@ class ChampFXLibrary:
 
             cfx_id = cfx_entry_complete_history.cfx_id
 
-            if cfx_id in self.get_all_cfx_ids():
+            if self.is_cfx_with_id_exists(cfx_id):
 
                 cfx_entry = self.get_cfx_by_id(cfx_id)
                 for cfx_history_element in cfx_entry_complete_history.history_elements:
@@ -594,6 +598,9 @@ class ChampFXLibrary:
 
     def get_all_cfx_ids(self) -> List[str]:
         return list(self._champfx_entry_by_id.keys())
+
+    def is_cfx_with_id_exists(self, cfx_id: str) -> bool:
+        return cfx_id in self._champfx_entry_by_id
 
     def get_cfx_by_id(self, cfx_id: str) -> "ChampFXEntry":
         return self._champfx_entry_by_id[cfx_id]
@@ -685,14 +692,14 @@ class ChampFXEntryBuilder:
         if type(raw_str_value) is not str:
             return None
         raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
-        return RequestType[raw_valid_str_value] if raw_valid_str_value in RequestType else RequestType.TO_BE_ADDED_YDA
+        return RequestType[raw_valid_str_value]
 
     @staticmethod
     def convert_champfx_category(raw_str_value: str) -> Category:
         if type(raw_str_value) is not str:
             return None
         raw_valid_str_value: str = string_utils.text_to_valid_enum_value_text(raw_str_value)
-        return Category[raw_valid_str_value] if raw_valid_str_value in Category else Category.TO_BE_ADDED_YDA
+        return Category[raw_valid_str_value]
 
     @staticmethod
     def to_optional_boolean(raw_value: str) -> Optional[bool]:

@@ -145,10 +145,12 @@ class CfxUserLibrary(CfxLibraryBase):
         # logger_config.print_and_log_warning(f"Could not find subsystem for {champfx_fixed_implemented_in}")
         return None
 
+    @abstractmethod
     def has_user_by_full_name(self, full_name: str) -> bool:
         full_name_to_consider = full_name.lower()
         return full_name_to_consider in self._cfx_user_by_full_name_lower
 
+    @abstractmethod
     def get_cfx_user_by_full_name(self, full_name: str) -> CfxUser:
         full_name_to_consider = full_name.lower()
         return self._cfx_user_by_full_name_lower[full_name_to_consider]
