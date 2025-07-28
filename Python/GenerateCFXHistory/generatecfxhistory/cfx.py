@@ -52,6 +52,7 @@ class RejectionCause(Enum):
     OUT_OF_SCOPE = auto()
     WILL_NOT_BE_FIXED = auto()
     ALREADY_DONE = auto()
+    AFFECTED_PACKAGE_IS_NOT_INSTALLED = auto()
     TO_BE_ADDED_YDA = auto()
 
     def __repr__(self) -> str:
@@ -70,6 +71,7 @@ class Category(Enum):
     PROCESS = auto()
     TEST_CASE = auto()
     CONSTRAINT_TO_3RD_PARTY = auto()
+    NO_CATEGORY_DEFINED = auto()
     NONE = auto()
     TBD = auto()
     MONTAGE = auto()
@@ -509,7 +511,7 @@ class ChampFXLibrary:
         self, cfx_request: "ChampFXEntry", cfx_id: str, history_raw_old_state: str, history_raw_new_state: str, history_raw_action_timestamp_str: str, history_raw_action_name: str
     ) -> Optional[ChangeStateAction]:
         if type(history_raw_old_state) is not str:
-            logger_config.print_and_log_error(
+            logger_config.print_and_log_warning(
                 f"{cfx_id} project {cfx_request._cfx_project_name} ignore change state from {history_raw_old_state} to {history_raw_new_state} {history_raw_action_timestamp_str}  {history_raw_action_name} "
             )
             return None
@@ -723,7 +725,7 @@ class ChampFXEntryBuilder:
     @staticmethod
     def convert_champfx_category(raw_str_value: str) -> Optional[Category]:
         if type(raw_str_value) is not str:
-            return None
+            return Category.NO_CATEGORY_DEFINED
         raw_valid_str_value: str = string_utils.text_to_valid_enum_value_text(raw_str_value)
         try:
             return Category[raw_valid_str_value]
