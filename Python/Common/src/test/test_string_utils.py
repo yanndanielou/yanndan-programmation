@@ -85,16 +85,16 @@ class TestTextToValidEnumValueText:
         NOT_A_BUG = auto()
         NOT_PART_OF_CONTRACT = auto()
         CHANGE_INTERNAL = auto()
+        N_A_CHANGE_REQUEST = auto()
 
     # fmt: off
     text_to_valid_enum_value_text = ["no fix change",
     "not/A/bug",
     "not-A-bug",
-    "Change, internal"] 
+    "Change, internal",
+    "N/A (Change Request)"] 
     # fmt: on
 
     @pytest.mark.parametrize("raw_text", text_to_valid_enum_value_text)
     def test_some_values(self, raw_text: str) -> None:
-        assert TestTextToValidEnumValueText.EnumClassForTests[
-            string_utils.text_to_valid_enum_value_text(raw_text)
-        ]
+        assert TestTextToValidEnumValueText.EnumClassForTests[string_utils.text_to_valid_enum_value_text(raw_text)]
