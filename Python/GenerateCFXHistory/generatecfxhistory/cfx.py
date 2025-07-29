@@ -945,7 +945,7 @@ class ChampFXEntry:
         oldest_submit_date_state_change = self.get_oldest_change_action_by_new_state(State.SUBMITTED)
         if not oldest_submit_date_state_change:
             return self._submit_date
-        return oldest_submit_date_state_change
+        return oldest_submit_date_state_change.timestamp
 
     def get_oldest_change_action_by_new_state(self, new_state: State) -> Optional[ChangeStateAction]:
         return next((action for action in self.get_all_change_state_actions_sorted_chronologically() if action.new_state == new_state), None)
