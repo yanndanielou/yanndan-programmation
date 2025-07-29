@@ -49,6 +49,32 @@ def create_full_champfx_library() -> cfx.ChampFXLibrary:
     return champfx_library
 
 
+@pytest.fixture(scope="session", name="create_other_projects_partial_champfx_library_fixture")
+def create_other_projects_partial_champfx_library() -> cfx.ChampFXLibrary:
+    cfx_inputs = (
+        cfx.ChampFxInputsBuilder()
+        .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_other_projects.xlsx")
+        .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_other_projects.xlsx")
+        .build()
+    )
+    champfx_library = cfx.ChampFXLibrary(
+        cfx_inputs=cfx_inputs, champfx_filters=[cfx.ChampFXWhiteListBasedOnListFilter(cfx_to_treat_ids=["CFX00388493", "CFX00388494", "CFX00388495", "CFX00388496", "CFX00388497", "CFX00388498"])]
+    )
+    return champfx_library
+
+
+@pytest.fixture(scope="session", name="create_other_projects_full_champfx_library_fixture")
+def create_other_projects_full_champfx_library() -> cfx.ChampFXLibrary:
+    cfx_inputs = (
+        cfx.ChampFxInputsBuilder()
+        .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_other_projects.xlsx")
+        .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_other_projects.xlsx")
+        .build()
+    )
+    champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
+    return champfx_library
+
+
 @pytest.fixture(scope="session")
 def get_cfx_closed_status_according_to_date_today(create_light_champfx_library_fixture: cfx.ChampFXLibrary) -> List[cfx.ChampFXEntry]:
     return create_light_champfx_library_fixture.get_cfx_by_state_at_date(reference_date=datetime.now().replace(hour=23, minute=59, second=59, microsecond=0, tzinfo=None))[cfx.State.CLOSED]
@@ -295,10 +321,20 @@ class TestCurrentOwner:
 
 
 class TestFullDatabase:
-    def test_all_system_structure(self, create_light_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
-        champfx_library = create_light_champfx_library_fixture
+    def test_all_system_structure(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_full_champfx_library_fixture
         for cfx_entry in champfx_library.get_all_cfx():
             assert cfx_entry._system_structure_subsystem
+
+    def test_all_cfx_have_submit_state_change(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_full_champfx_library_fixture
+        for cfx_entry in champfx_library.get_all_cfx():
+            assert cfx_entry.get_oldest_change_action_by_new_state(cfx.State.SUBMITTED), cfx_entry.cfx_id
+
+    def test_all_cfx_have_submit_date(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_full_champfx_library_fixture
+        for cfx_entry in champfx_library.get_all_cfx():
+            assert cfx_entry.get_oldest_submit_date(), cfx_entry.cfx_id
 
 
 class TestStatisticsPreparation:
@@ -364,26 +400,27 @@ class TestDecreasingIntervalDatesGenerator:
         assert len(cfx.DecreasingIntervalDatesGenerator().get_dates_since(datetime(int(2000), int(1), int(4)))) > 100
 
 
-class TestCrashObserved:
+class TestCrashObservedOtherProjects:
 
-    def test_CFX00608002(self) -> None:
-        cfx_inputs = (
-            cfx.ChampFxInputsBuilder()
-            .add_champfx_details_excel_file_full_path("Input_for_Tests/details_project_other_projects_for_tests.xlsx")
-            .add_champfx_states_changes_excel_file_full_path("Input_for_Tests/states_changes_other_projects_for_tests.xlsx")
-            .build()
-        )
-        champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
+    def test_CFX00608002(self, create_other_projects_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_other_projects_full_champfx_library_fixture
         earliest_submit_date = cfx.get_earliest_submit_date(champfx_library.get_all_cfx())
         assert earliest_submit_date
 
-    def test_coreshield(self) -> None:
-        cfx_inputs = (
-            cfx.ChampFxInputsBuilder()
-            .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_other_projects.xlsx")
-            .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_other_projects.xlsx")
-            .build()
-        )
-        champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
+    def test_get_earliest_submit_date(self, create_other_projects_partial_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_other_projects_partial_champfx_library_fixture
+        assert champfx_library.get_all_cfx()
         earliest_submit_date = cfx.get_earliest_submit_date(champfx_library.get_all_cfx())
         assert earliest_submit_date
+
+    def test_change_state_submit_date_exist(self, create_other_projects_partial_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_other_projects_partial_champfx_library_fixture
+        assert champfx_library.get_all_cfx()
+        for cfx_entry in champfx_library.get_all_cfx():
+            assert cfx_entry.get_oldest_change_action_by_new_state(cfx.State.SUBMITTED), cfx_entry.cfx_id
+
+    def test_cfx_have_oldest_submit_date(self, create_other_projects_partial_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_other_projects_partial_champfx_library_fixture
+        assert champfx_library.get_all_cfx()
+        for cfx_entry in champfx_library.get_all_cfx():
+            assert cfx_entry.get_oldest_submit_date(), cfx_entry.cfx_id
