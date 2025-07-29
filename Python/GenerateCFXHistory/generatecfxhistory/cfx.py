@@ -53,6 +53,7 @@ class RejectionCause(Enum):
     WILL_NOT_BE_FIXED = auto()
     ALREADY_DONE = auto()
     AFFECTED_PACKAGE_IS_NOT_INSTALLED = auto()
+    SOLVED_BY = auto()
     TO_BE_ADDED_YDA = auto()
 
     def __repr__(self) -> str:
@@ -339,7 +340,7 @@ def convert_cfx_history_element_to_valid_full_name(cfx_history_element_state: st
 
 
 def get_earliest_submit_date(cfx_list: List["ChampFXEntry"]) -> datetime.datetime:
-    earliest_date = min((oldest_action.timestamp for entry in cfx_list if (oldest_action := entry.get_oldest_change_action_by_new_state(State.SUBMITTED)) is not None), default=None)
+    earliest_date = min(entry.get_oldest_submit_date() for entry in cfx_list)
     logger_config.print_and_log_info(f"Earliest submit date among {len(cfx_list)} CFX: {earliest_date}")
     return earliest_date
 
@@ -911,6 +912,12 @@ class ChampFXEntry:
     def get_all_current_owner_modifications_sorted_reversed_chronologically(self) -> list[ChangeCurrentOwnerAction]:
         # return sorted(self._change_state_actions_by_date.items())
         return self._all_current_owner_modifications_sorted_reversed_chronologically
+
+    def get_oldest_submit_date(self) -> datetime.datetime:
+        oldest_submit_date_state_change = self.get_oldest_change_action_by_new_state(State.SUBMITTED)
+        if not oldest_submit_date_state_change:
+            return self._submit_date
+        return oldest_submit_date_state_change
 
     def get_oldest_change_action_by_new_state(self, new_state: State) -> Optional[ChangeStateAction]:
         return next((action for action in self.get_all_change_state_actions_sorted_chronologically() if action.new_state == new_state), None)
