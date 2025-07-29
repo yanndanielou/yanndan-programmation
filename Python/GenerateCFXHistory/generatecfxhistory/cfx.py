@@ -352,18 +352,43 @@ class ChampFxInputs:
     cfx_extended_history_files_contents: List[str]
     user_and_role_data_text_file_full_path: Optional[str]
 
+    def print_all_possible_values_by_column(self) -> Dict[str, Any]:
+        all_possible_values_by_column = self.get_all_possible_values_by_column()
+
+        logger_config.print_and_log_info("All states:" + str(all_possible_values_by_column["State"]))
+        logger_config.print_and_log_info("All Category:" + str(all_possible_values_by_column["Category"]))
+        logger_config.print_and_log_info("All RejectionCause:" + str(all_possible_values_by_column["RejectionCause"]))
+        logger_config.print_and_log_info("All history.old_state:" + str(all_possible_values_by_column["history.old_state"]))
+        logger_config.print_and_log_info("All history.new_state:" + str(all_possible_values_by_column["history.new_state"]))
+
+        return all_possible_values_by_column
+
+    def get_all_possible_values_by_column(self) -> Dict[str, Any]:
+
+        all_possible_values_by_column: Dict[str, Any] = {}
+        combined_data_frames_list = self.champfx_details_excel_files_full_data_frames | self.champfx_states_changes_excel_files_data_frames
+        for _, cfx_details_data_frame in combined_data_frames_list.items():
+            for col in cfx_details_data_frame.columns:
+                # Get the set of values for this column from the current DataFrame
+                values = set(cfx_details_data_frame[col])
+                if col in all_possible_values_by_column:
+                    # Update the current set with the new values
+                    all_possible_values_by_column[col].update(values)
+                else:
+                    # Initialize the set if the column is not present in the dictionary
+                    all_possible_values_by_column[col] = values
+
+        return all_possible_values_by_column
+
 
 class ChampFxInputsBuilder:
     def __init__(self) -> None:
 
         self.champfx_details_excel_files_full_paths: List[str] = []
-        self.champfx_details_excel_files_full_data_frames: Dict[str, pd.DataFrame] = dict()
 
         self.champfx_states_changes_excel_files_full_paths: List[str] = []
-        self.champfx_states_changes_excel_files_data_frames: Dict[str, pd.DataFrame] = dict()
 
         self.cfx_extended_history_files_full_paths: List[str] = []
-        self.cfx_extended_history_files_contents: List[str] = []
 
         self.user_and_role_data_text_file_full_path: Optional[str] = None
 
@@ -402,35 +427,10 @@ class ChampFxInputsBuilder:
         self.set_user_and_role_data_text_file_full_path(DEFAULT_USER_AND_ROLE_DATA_FILE_FULL_PATH)
         return self
 
-    def print_all_possible_values_by_column(self) -> Dict[str, Any]:
-        all_possible_values_by_column = self.get_all_possible_values_by_column()
-
-        logger_config.print_and_log_info("All states:" + str(all_possible_values_by_column["State"]))
-        logger_config.print_and_log_info("All Category:" + str(all_possible_values_by_column["Category"]))
-        logger_config.print_and_log_info("All RejectionCause:" + str(all_possible_values_by_column["RejectionCause"]))
-        logger_config.print_and_log_info("All history.old_state:" + str(all_possible_values_by_column["history.old_state"]))
-        logger_config.print_and_log_info("All history.new_state:" + str(all_possible_values_by_column["history.new_state"]))
-
-        return all_possible_values_by_column
-
-    def get_all_possible_values_by_column(self) -> Dict[str, Any]:
-
-        all_possible_values_by_column: Dict[str, Any] = {}
-        combined_data_frames_list = self.champfx_details_excel_files_full_data_frames | self.champfx_states_changes_excel_files_data_frames
-        for _, cfx_details_data_frame in combined_data_frames_list.items():
-            for col in cfx_details_data_frame.columns:
-                # Get the set of values for this column from the current DataFrame
-                values = set(cfx_details_data_frame[col])
-                if col in all_possible_values_by_column:
-                    # Update the current set with the new values
-                    all_possible_values_by_column[col].update(values)
-                else:
-                    # Initialize the set if the column is not present in the dictionary
-                    all_possible_values_by_column[col] = values
-
-        return all_possible_values_by_column
-
     def build(self) -> ChampFxInputs:
+        champfx_details_excel_files_full_data_frames: Dict[str, pd.DataFrame] = dict()
+        champfx_states_changes_excel_files_data_frames: Dict[str, pd.DataFrame] = dict()
+        cfx_extended_history_files_contents: List[str] = []
 
         with logger_config.stopwatch_with_label("Build cfx inputs"):
             with logger_config.stopwatch_with_label(f"Open {len(self.champfx_details_excel_files_full_paths)} cfx details files"):
@@ -438,25 +438,25 @@ class ChampFxInputsBuilder:
                     with logger_config.stopwatch_with_label(
                         f"Open {i+1} / {len(self.champfx_details_excel_files_full_paths)} ({round((i+1)/len(self.champfx_details_excel_files_full_paths)*100,2)}%) cfx details excel file {champfx_details_excel_file_full_path}"
                     ):
-                        self.champfx_details_excel_files_full_data_frames[champfx_details_excel_file_full_path] = pd.read_excel(champfx_details_excel_file_full_path)
+                        champfx_details_excel_files_full_data_frames[champfx_details_excel_file_full_path] = pd.read_excel(champfx_details_excel_file_full_path)
 
             with logger_config.stopwatch_with_label(f"Open {len(self.champfx_states_changes_excel_files_full_paths)} cfx states changes files"):
                 for i, champfx_states_changes_excel_file_full_path in enumerate(self.champfx_states_changes_excel_files_full_paths):
                     with logger_config.stopwatch_with_label(
                         f"Open {i+1} / {len(self.champfx_states_changes_excel_files_full_paths)} ({(i+1)/len(self.champfx_states_changes_excel_files_full_paths)*100:.2f}%) cfx state changes excel file {champfx_states_changes_excel_file_full_path}"
                     ):
-                        self.champfx_states_changes_excel_files_data_frames[champfx_states_changes_excel_file_full_path] = pd.read_excel(champfx_states_changes_excel_file_full_path)
+                        champfx_states_changes_excel_files_data_frames[champfx_states_changes_excel_file_full_path] = pd.read_excel(champfx_states_changes_excel_file_full_path)
 
             with logger_config.stopwatch_with_label(f"Open {len(self.cfx_extended_history_files_full_paths)} cfx extended history files"):
                 for i, cfx_extended_history_file_full_path in enumerate(self.cfx_extended_history_files_full_paths):
                     with logger_config.stopwatch_with_label(f"Open {i+1} / {len(self.cfx_extended_history_files_full_paths)} cfx extended history file {cfx_extended_history_file_full_path}"):
                         with open(cfx_extended_history_file_full_path, "r", encoding="utf-8") as all_cfx_extended_history_text_file:
-                            self.cfx_extended_history_files_contents.append(all_cfx_extended_history_text_file.read())
+                            cfx_extended_history_files_contents.append(all_cfx_extended_history_text_file.read())
 
             cfx_inputs = ChampFxInputs(
-                champfx_details_excel_files_full_data_frames=self.champfx_details_excel_files_full_data_frames,
-                champfx_states_changes_excel_files_data_frames=self.champfx_states_changes_excel_files_data_frames,
-                cfx_extended_history_files_contents=self.cfx_extended_history_files_contents,
+                champfx_details_excel_files_full_data_frames=champfx_details_excel_files_full_data_frames,
+                champfx_states_changes_excel_files_data_frames=champfx_states_changes_excel_files_data_frames,
+                cfx_extended_history_files_contents=cfx_extended_history_files_contents,
                 user_and_role_data_text_file_full_path=self.user_and_role_data_text_file_full_path,
             )
             return cfx_inputs
