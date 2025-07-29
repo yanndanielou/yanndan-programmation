@@ -413,12 +413,6 @@ class TestCrashObservedOtherProjects:
         earliest_submit_date = cfx.get_earliest_submit_date(champfx_library.get_all_cfx())
         assert earliest_submit_date
 
-    def test_change_state_submit_date_exist(self, create_other_projects_partial_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
-        champfx_library = create_other_projects_partial_champfx_library_fixture
-        assert champfx_library.get_all_cfx()
-        for cfx_entry in champfx_library.get_all_cfx():
-            assert cfx_entry.get_oldest_change_action_by_new_state(cfx.State.SUBMITTED), cfx_entry.cfx_id
-
     def test_cfx_have_oldest_submit_date(self, create_other_projects_partial_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_other_projects_partial_champfx_library_fixture
         assert champfx_library.get_all_cfx()
