@@ -164,12 +164,6 @@ class DownloadAndCleanDMLApplication:
 
         if not REMOVE_USELESS_SHEETS_ENABLED:
             logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
-
-            current_stack = inspect.stack(0)[0]
-            file_name = current_stack.filename
-            line_number = current_stack.lineno
-            function_stack = current_stack.function
-            logger_config.print_and_log_info("Disabled: pass")
             return file_to_create_path
 
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
