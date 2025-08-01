@@ -124,11 +124,11 @@ COLUMNS_NAMES_TO_REMOVE = [
 ]
 
 
-DOWNLOAD_FROM_RHAPSODY_ENABLED = False
-REMOVE_USELESS_SHEETS_ENABLED = False
-REMOVE_LINKS_SHEETS_ENABLED = False
-REMOVE_USELESS_COLUMNS_ENABLED = False
-REPLACE_FORMULA_BY_VALUE_ENABLED = True
+DOWNLOAD_FROM_RHAPSODY_ENABLED = True
+REMOVE_USELESS_SHEETS_ENABLED = True
+REMOVE_LINKS_SHEETS_ENABLED = True
+REMOVE_USELESS_COLUMNS_ENABLED = True
+REPLACE_FORMULA_BY_VALUE_ENABLED = False
 
 
 def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file_path: str) -> str:
@@ -163,7 +163,12 @@ class DownloadAndCleanDMLApplication:
         file_to_create_path = DML_FILE_WITHOUT_USELESS_SHEETS_PATH
 
         if not REMOVE_USELESS_SHEETS_ENABLED:
+            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
 
+            current_stack = inspect.stack(0)[0]
+            file_name = current_stack.filename
+            line_number = current_stack.lineno
+            function_stack = current_stack.function
             logger_config.print_and_log_info("Disabled: pass")
             return file_to_create_path
 
@@ -198,8 +203,7 @@ class DownloadAndCleanDMLApplication:
         file_to_create_path = DML_FILE_WITHOUT_LINKS
 
         if not REMOVE_LINKS_SHEETS_ENABLED:
-
-            logger_config.print_and_log_info("Disabled: pass")
+            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
@@ -222,7 +226,7 @@ class DownloadAndCleanDMLApplication:
         file_to_create_path = DML_FILE_WITHOUT_FORMULA_REPLACED_BY_VALUE
 
         if not REPLACE_FORMULA_BY_VALUE_ENABLED:
-            logger_config.print_and_log_info("Disabled: pass")
+            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
@@ -259,7 +263,7 @@ class DownloadAndCleanDMLApplication:
         file_to_create_path = DML_FILE_WITHOUT_USELESS_COLUMNS
 
         if not REMOVE_USELESS_COLUMNS_ENABLED:
-            logger_config.print_and_log_info("Disabled: pass")
+            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
         with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
@@ -298,7 +302,7 @@ class DownloadAndCleanDMLApplication:
         file_to_create_path = DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH
 
         if not DOWNLOAD_FROM_RHAPSODY_ENABLED:
-            logger_config.print_and_log_info("Disabled: pass")
+            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
         driver: RemoteWebDriver = webdriver.Firefox()
