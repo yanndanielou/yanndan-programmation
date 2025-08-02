@@ -31,7 +31,7 @@ $EXTMIN
   9
 $EXTMAX
  10
-853.3999999999999
+853.4
  20
 224.6611136825489
  30
@@ -1123,7 +1123,7 @@ AcDbViewportTableRecord
  12
 649.5755820261967
  22
-100.4225879454657
+132.1349841387707
  13
 0
  23
@@ -5749,6 +5749,122 @@ standard
 100
 AcDbText
   0
+LINE
+  5
+CA
+100
+AcDbEntity
+  8
+0
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbLine
+ 10
+853.3999999999999
+ 20
+-287.7000000000001
+ 11
+853.3999999999999
+ 21
+37.49999999999989
+  0
+LINE
+  5
+CB
+100
+AcDbEntity
+  8
+0
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbLine
+ 10
+853.4
+ 20
+37.49999999999989
+ 11
+491.8
+ 21
+37.49999999999989
+  0
+LINE
+  5
+CC
+100
+AcDbEntity
+  8
+0
+  6
+ByLayer
+ 62
+  256
+370
+   -1
+100
+AcDbLine
+ 10
+491.8
+ 20
+37.49999999999989
+ 11
+491.8
+ 21
+-289.3000000000001
+  0
+TEXT
+  5
+CD
+100
+AcDbEntity
+  8
+0
+  6
+ByLayer
+ 62
+    2
+370
+   -1
+100
+AcDbText
+ 10
+700
+ 20
+-204.4444444444445
+ 30
+0
+ 40
+5
+  1
+Hauteur chambre bas: 275cm au centre pièce
+ 50
+90
+ 41
+1
+ 51
+0
+  7
+standard
+ 71
+    0
+210
+0
+220
+0
+230
+1
+100
+AcDbText
+  0
 ENDSEC
   0
 SECTION
@@ -5781,7 +5897,7 @@ AcDbDictionary
   0
 PLOTSETTINGS
   5
-CA
+CE
 100
 AcDbPlotSettings
   6
