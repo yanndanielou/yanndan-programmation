@@ -739,9 +739,6 @@ class ChampFXEntryBuilder:
             return RejectionCause.NONE if raw_valid_str_value is None else RejectionCause[raw_valid_str_value]
         except KeyError as key_error:
             logger_config.print_and_log_exception(key_error)
-            return RejectionCause[raw_valid_str_value]
-        except KeyError as key_error:
-            logger_config.print_and_log_exception(key_error)
             logger_config.print_and_log_error(f"RejectionCause {raw_valid_str_value} not supported")
             return RejectionCause.TO_BE_ADDED_YDA
 
