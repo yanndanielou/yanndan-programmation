@@ -198,16 +198,17 @@ def produce_displays_and_create_html(
     output_directory_name: str,
     display_output_plots: bool,
 ) -> None:
+    # Create a figure and axis
     fig, ax = plt.subplots(figsize=(10, 6))
 
     # Set the window title
     fig.canvas.manager.set_window_title(window_title)
 
+    # Retrieve all timestamps
     all_timestamps = all_results_to_display.get_all_timestamps()
 
-    # Plot
+    # Plot data
     if use_cumulative:
-        # Plot cumulative areas
         bottom = [0] * len(all_timestamps)
         for state in all_results_to_display.present_states_ordered():
             color = state_colors.get(state, None)
@@ -215,7 +216,6 @@ def produce_displays_and_create_html(
             line = ax.fill_between(all_timestamps, bottom, upper, label=state.name, color=color)
             mplcursors.cursor(line, hover=True)
             bottom = upper
-
     else:
         for state in all_results_to_display.present_states_ordered():
             color = state_colors.get(state, None)
@@ -223,6 +223,7 @@ def produce_displays_and_create_html(
             (line,) = ax.plot(all_timestamps, counts, label=state.name, color=color)
             mplcursors.cursor(line, hover=HoverMode.Transient)
 
+    # Set axis labels and title 
     ax.set_xlabel("Month")
     ax.set_ylabel("Number of CFX Entries")
     ax.set_title(f"{generation_label} CFX States Over Time")
@@ -230,17 +231,22 @@ def produce_displays_and_create_html(
     plt.xticks(rotation=45)
     plt.tight_layout()
 
+    # Display plot if required
     if display_output_plots:
         plt.show(block=False)
 
+    # Generate and save HTML file if required
     if create_html_file:
-        # Save the plot to an HTML file
         output_html_file = output_directory_name + "/" + generation_label_for_valid_file_name + " cumulative " + str(use_cumulative) + ".html"
 
-        with logger_config.stopwatch_with_label(label=f"html {output_html_file} creation", inform_beginning=True): 
+        with logger_config.stopwatch_with_label(label=f"html {output_html_file} creation", inform_beginning=True):
             html_content = mpld3.fig_to_html(fig)
             with open(output_html_file, "w", encoding="utf8") as html_file:
                 html_file.write(html_content)
+
+    # Close the figure to free up memory resources
+    #if display_output_plots:
+    plt.close(fig)
 
 
 def produce_results_and_displays_for_libary( 
