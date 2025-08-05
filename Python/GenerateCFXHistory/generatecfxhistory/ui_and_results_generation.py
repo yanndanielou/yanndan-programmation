@@ -112,7 +112,7 @@ def produce_results_and_displays(
     else:
         generation_label += "All"
 
-    with logger_config.stopwatch_with_label(f"{generation_label} Gather state counts for each date"):
+    with logger_config.stopwatch_with_label(label=f"{generation_label} Gather state counts for each date", inform_beginning=True):
         all_results_to_display: cfx.AllResultsPerDates = cfx_library.gather_state_counts_for_each_date(cfx_filters=cfx_filters, dates_generator=cfx.DecreasingIntervalDatesGenerator())
 
     with logger_config.stopwatch_alert_if_exceeds_duration("compute_cumulative_counts", duration_threshold_to_alert_info_in_s=0.1):
@@ -143,11 +143,11 @@ def produce_results_and_displays(
         return
 
     if create_excel_file:
-        with logger_config.stopwatch_with_label(f"produce_excel_output_file,  {generation_label}"):
+        with logger_config.stopwatch_with_label(label=f"produce_excel_output_file,  {generation_label}", inform_beginning=True):
             produce_excel_output_file(output_excel_file=f"{generic_output_files_path_without_suffix_and_extension}.xlsx", all_results_to_display=all_results_to_display)
 
     if display_with_cumulative_eras:
-        with logger_config.stopwatch_with_label(f"produce_displays cumulative,  {generation_label}"):
+        with logger_config.stopwatch_with_label(label=f"produce_displays cumulative,  {generation_label}", inform_beginning=True):
             produce_displays_and_create_html(
                 output_directory_name=output_directory_name,
                 use_cumulative=True,
@@ -159,7 +159,7 @@ def produce_results_and_displays(
                 display_output_plots=display_output_plots,
             )
     if display_without_cumulative_eras:
-        with logger_config.stopwatch_with_label(f"produce_displays numbers, filter {generation_label} library {cfx_library.label}"):
+        with logger_config.stopwatch_with_label(label=f"produce_displays numbers, filter {generation_label} library {cfx_library.label}", inform_beginning=True):
             produce_displays_and_create_html(
                 output_directory_name=output_directory_name,
                 use_cumulative=False,
@@ -237,13 +237,13 @@ def produce_displays_and_create_html(
         # Save the plot to an HTML file
         output_html_file = output_directory_name + "/" + generation_label_for_valid_file_name + " cumulative " + str(use_cumulative) + ".html"
 
-        with logger_config.stopwatch_with_label(f"html {output_html_file} creation"):
+        with logger_config.stopwatch_with_label(label=f"html {output_html_file} creation", inform_beginning=True): 
             html_content = mpld3.fig_to_html(fig)
             with open(output_html_file, "w", encoding="utf8") as html_file:
                 html_file.write(html_content)
 
 
-def produce_results_and_displays_for_libary(
+def produce_results_and_displays_for_libary( 
     cfx_library: cfx.ChampFXLibrary,
     output_directory_name: str,
     for_global: bool,
@@ -276,7 +276,7 @@ def produce_results_and_displays_for_libary(
 
     if for_each_current_owner_per_date:
         for subsystem in role.SubSystem:
-            with logger_config.stopwatch_with_label(f"{cfx_library.label} produce_results_and_displays for {subsystem.name}"):
+            with logger_config.stopwatch_with_label(label=f"{cfx_library.label} produce_results_and_displays for {subsystem.name}", inform_beginning=True):
                 produce_results_and_displays(
                     cfx_library=cfx_library,
                     output_directory_name=output_directory_name,
@@ -293,7 +293,7 @@ def produce_results_and_displays_for_libary(
 
     if for_each_subsystem:
         for subsystem in role.SubSystem:
-            with logger_config.stopwatch_with_label(f"{cfx_library.label} produce_results_and_displays for {subsystem.name}"):
+            with logger_config.stopwatch_with_label(label=f"{cfx_library.label} produce_results_and_displays for {subsystem.name}", inform_beginning=True):
 
                 produce_results_and_displays(
                     cfx_library=cfx_library,
