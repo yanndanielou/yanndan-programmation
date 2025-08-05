@@ -4,6 +4,7 @@
 /.mypy_cache/
 /Input__/
 /Input/*.txt
+Input - Copie/
 Input/CFX_kown_by_customer.txt
 /Input_for_Tests/*.json
 test*.json
