@@ -54,6 +54,12 @@ class RejectionCause(Enum):
     ALREADY_DONE = auto()
     AFFECTED_PACKAGE_IS_NOT_INSTALLED = auto()
     SOLVED_BY = auto()
+    SOLVEDBY = auto()
+    NA = auto()
+    N_A_CHANGE_REQUEST = auto()
+    PATCH_WITHDREWN = auto()
+    SIMILAR = auto()
+    NO_DATA = auto()
     TO_BE_ADDED_YDA = auto()
 
     def __repr__(self) -> str:
