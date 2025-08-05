@@ -947,6 +947,7 @@ class ChampFXEntry:
     def get_oldest_submit_date(self) -> datetime.datetime:
         oldest_submit_date_state_change = self.get_oldest_change_action_by_new_state(State.SUBMITTED)
         if not oldest_submit_date_state_change:
+            assert self._submit_date, self.cfx_id
             return self._submit_date
         return oldest_submit_date_state_change.timestamp
 
