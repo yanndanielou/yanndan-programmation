@@ -8,6 +8,8 @@ from logger import logger_config
 
 from stsloganalyzis import decode_action_set_content
 
+CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR = "!!! Decoding Error !!!"
+
 
 @dataclass
 class InvariantMessage:
@@ -196,20 +198,26 @@ class XmlMessageDecoder:
 
                     field_value: str | int = ""
 
-                    if field_type == "BigEndianInteger":
-                        field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
+                    try:
+                        if field_type == "BigEndianInteger":
+                            field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
 
-                        decoded_fields[field_name_with_dim] = field_value
-                    elif field_type == "BigEndianBitSet":
-                        # field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
-                        field_value = self.extract_bits_bitfield(bits_extracted, current_bit_index, field_size_bits)
-                        decoded_fields[field_name_with_dim] = field_value
-                    elif field_type == "BigEndianASCIIChar":
-                        field_value = self.extract_bits_ascii_char(bits_extracted, current_bit_index, field_size_bits)
-                        decoded_fields[field_name_with_dim] = field_value
-                        # decoded_fields[field_name_with_dim + "_raw"] = field_value
-                    else:
-                        logger_config.print_and_log_error(f"Field {field_name_with_dim} has unsupported type {field_type}")
+                            decoded_fields[field_name_with_dim] = field_value
+                        elif field_type == "BigEndianBitSet":
+                            # field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
+                            field_value = self.extract_bits_bitfield(bits_extracted, current_bit_index, field_size_bits)
+                            decoded_fields[field_name_with_dim] = field_value
+                        elif field_type == "BigEndianASCIIChar":
+                            field_value = self.extract_bits_ascii_char(bits_extracted, current_bit_index, field_size_bits)
+                            decoded_fields[field_name_with_dim] = field_value
+                            # decoded_fields[field_name_with_dim + "_raw"] = field_value
+                        else:
+                            logger_config.print_and_log_error(f"Field {field_name_with_dim} has unsupported type {field_type}")
+                    except Exception as ex:
+                        logger_config.print_and_log_exception(ex)
+                        logger_config.print_and_log_error(f"Error when decoding field {field_name}")
+                        decoded_fields[field_name] = CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR
+                        pass
 
                     field_table_values.append(field_value)
                     # logger_config.print_and_log_info(f"Field {field_name_with_dim} is {field_value}")
