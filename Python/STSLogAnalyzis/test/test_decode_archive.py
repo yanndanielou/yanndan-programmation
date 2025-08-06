@@ -100,7 +100,8 @@ class TestDecodeOneLine:
         assert decoded_message
         assert decoded_message.decoded_fields["CriticalSectStop"] == 0
         assert decoded_message.decoded_fields["UnexpectedTransponderId"] == 0
-        assert decoded_message.decoded_fields["Time"] == decode_message.CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR
+        assert "Time" in decoded_message.not_decoded_fields_names
+        assert "Time" not in decoded_message.decoded_fields
 
     def test_decode_when_selector_rc_type(self) -> None:
         archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_spe_remote_ctrl)
