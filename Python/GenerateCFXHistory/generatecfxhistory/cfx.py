@@ -799,7 +799,7 @@ class ChampFXEntryBuilder:
 
         raw_rejection_cause: str = row["RejectionCause"]
         rejection_cause: RejectionCause = ChampFXEntryBuilder.convert_champfx_rejection_cause(raw_rejection_cause)
-        if raw_rejection_cause == RejectionCause.TO_BE_ADDED_YDA:
+        if rejection_cause == RejectionCause.TO_BE_ADDED_YDA:
             logger_config.print_and_log_error(f"{cfx_id} project {raw_project}: RejectionCause {raw_rejection_cause} not supported")
 
         request_type: RequestType = ChampFXEntryBuilder.convert_champfx_request_type(row["RequestType"])
