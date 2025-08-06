@@ -329,7 +329,7 @@ class TestFullDatabase:
     def test_all_cfx_have_submit_state_change(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_full_champfx_library_fixture
         for cfx_entry in champfx_library.get_all_cfx():
-            assert cfx_entry.get_oldest_change_action_by_new_state(cfx.State.SUBMITTED), cfx_entry.cfx_id
+            assert cfx_entry.get_oldest_change_state_action_by_new_state(cfx.State.SUBMITTED), cfx_entry.cfx_id
 
     def test_all_cfx_have_submit_date(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_full_champfx_library_fixture
