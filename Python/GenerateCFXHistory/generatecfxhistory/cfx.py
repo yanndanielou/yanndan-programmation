@@ -54,6 +54,7 @@ class RejectionCause(Enum):
     WILL_NOT_BE_FIXED = auto()
     ALREADY_DONE = auto()
     AFFECTED_PACKAGE_IS_NOT_INSTALLED = auto()
+    SOLVE_BY = auto()
     SOLVED_BY = auto()
     SOLVEDBY = auto()
     SOVED_BY = auto()
@@ -956,9 +957,9 @@ class ChampFXEntry:
     def get_oldest_submit_date(self) -> datetime.datetime:
         oldest_submit_date_state_change = self.get_oldest_change_state_action_by_new_state(State.SUBMITTED)
         if not oldest_submit_date_state_change:
-            logger_config.print_and_log_warning(f"{self.cfx_id} has no change state to submit state")
+            #logger_config.print_and_log_warning(f"{self.cfx_id} has no change state to submit state")
             if not self._submit_date:
-                logger_config.print_and_log_error(f"{self.cfx_id} has no submit date")
+                logger_config.print_and_log_error(f"{self._cfx_project_name} {self.cfx_id} has no submit date")
                 assert self.get_all_change_state_actions_sorted_chronologically()
                 return self.get_all_change_state_actions_sorted_chronologically()[0].timestamp
             return self._submit_date
