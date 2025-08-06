@@ -86,12 +86,14 @@ class TestTextToValidEnumValueText:
         NOT_PART_OF_CONTRACT = auto()
         CHANGE_INTERNAL = auto()
         N_A_CHANGE_REQUEST = auto()
+        AFFECTED_PACKAGE_IS_NOT_INSTALLED = auto()
 
     # fmt: off
     text_to_valid_enum_value_text = ["no fix change",
     "not/A/bug",
     "not-A-bug",
     "Change, internal",
+    "Affected package is not installed.",
     "N/A (Change Request)"] 
     # fmt: on
 
