@@ -62,6 +62,7 @@ class RejectionCause(Enum):
     PATCH_WITHDREWN = auto()
     SIMILAR = auto()
     NO_DATA = auto()
+    WRONG_ASSIGNEMENT = auto()
     TO_BE_ADDED_YDA = auto()
 
     def __repr__(self) -> str:
@@ -99,6 +100,7 @@ class Category(Enum):
     REQUIREMENT = auto()
     POTENTIAL_CLAIM = auto()
     TEST_SYSTEM_HANDLING = auto()
+    DOPPELT = auto()
     TO_BE_ADDED_YDA = auto()
 
     def __repr__(self) -> str:
@@ -368,17 +370,21 @@ class ChampFxInputs:
         logger_config.print_and_log_info("All RejectionCause:" + str(all_possible_values_by_column["RejectionCause"]))
         logger_config.print_and_log_info("All history.old_state:" + str(all_possible_values_by_column["history.old_state"]))
         logger_config.print_and_log_info("All history.new_state:" + str(all_possible_values_by_column["history.new_state"]))
+        
+        all_kind_of_states = all_possible_values_by_column["State"] | all_possible_values_by_column["history.old_state"] |all_possible_values_by_column["history.new_state"]
+        logger_config.print_and_log_info("all_kind_of_states:" + str(all_kind_of_states))
+        
 
         return all_possible_values_by_column
 
-    def get_all_possible_values_by_column(self) -> Dict[str, Any]:
+    def get_all_possible_values_by_column(self) -> Dict[str, Set[str]]:
 
         all_possible_values_by_column: Dict[str, Any] = {}
         combined_data_frames_list = self.champfx_details_excel_files_full_data_frames | self.champfx_states_changes_excel_files_data_frames
         for _, cfx_details_data_frame in combined_data_frames_list.items():
             for col in cfx_details_data_frame.columns:
                 # Get the set of values for this column from the current DataFrame
-                values = set(cfx_details_data_frame[col])
+                values:Set[str] = set(cfx_details_data_frame[col])
                 if col in all_possible_values_by_column:
                     # Update the current set with the new values
                     all_possible_values_by_column[col].update(values)
@@ -751,7 +757,7 @@ class ChampFXEntryBuilder:
             return RejectionCause.TO_BE_ADDED_YDA
 
     @staticmethod
-    def convert_champfx_request_type(raw_str_value: str) -> RequestType:
+    def convert_champfx_request_type(raw_str_value: str) -> Optional[RequestType]:
         if type(raw_str_value) is not str:
             return None
         raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
