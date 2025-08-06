@@ -37,6 +37,7 @@ class RequestType(enums_utils.NameBasedEnum):
     HINDERING_NOTICE = auto()
     FCR = auto()
     NCP = auto()
+    PRE_NC_NOTICE = auto()
     TO_BE_ADDED_YDA = auto()
 
 
@@ -55,6 +56,7 @@ class RejectionCause(Enum):
     AFFECTED_PACKAGE_IS_NOT_INSTALLED = auto()
     SOLVED_BY = auto()
     SOLVEDBY = auto()
+    SOVED_BY = auto()
     NA = auto()
     N_A_CHANGE_REQUEST = auto()
     PATCH_WITHDREWN = auto()
@@ -802,9 +804,10 @@ class ChampFXEntryBuilder:
         if rejection_cause == RejectionCause.TO_BE_ADDED_YDA:
             logger_config.print_and_log_error(f"{cfx_id} project {raw_project}: RejectionCause {raw_rejection_cause} not supported")
 
-        request_type: RequestType = ChampFXEntryBuilder.convert_champfx_request_type(row["RequestType"])
+        raw_request_type = row["RequestType"]
+        request_type: RequestType = ChampFXEntryBuilder.convert_champfx_request_type(raw_request_type)
         if request_type is None:
-            logger_config.print_and_log_error(f"{cfx_id} project {raw_project}: Request Type {request_type} not supported")
+            logger_config.print_and_log_error(f"{cfx_id} project {raw_project}: Request Type {raw_request_type} not supported")
             request_type = RequestType.TO_BE_ADDED_YDA
 
         raw_category: str = row["Category"]
@@ -945,13 +948,17 @@ class ChampFXEntry:
         return self._all_current_owner_modifications_sorted_reversed_chronologically
 
     def get_oldest_submit_date(self) -> datetime.datetime:
-        oldest_submit_date_state_change = self.get_oldest_change_action_by_new_state(State.SUBMITTED)
+        oldest_submit_date_state_change = self.get_oldest_change_state_action_by_new_state(State.SUBMITTED)
         if not oldest_submit_date_state_change:
-            assert self._submit_date, self.cfx_id
+            logger_config.print_and_log_warning(f"{self.cfx_id} has no change state to submit state")
+            if not self._submit_date:
+                logger_config.print_and_log_error(f"{self.cfx_id} has no submit date")
+                assert self.get_all_change_state_actions_sorted_chronologically()
+                return self.get_all_change_state_actions_sorted_chronologically()[0].timestamp
             return self._submit_date
         return oldest_submit_date_state_change.timestamp
 
-    def get_oldest_change_action_by_new_state(self, new_state: State) -> Optional[ChangeStateAction]:
+    def get_oldest_change_state_action_by_new_state(self, new_state: State) -> Optional[ChangeStateAction]:
         return next((action for action in self.get_all_change_state_actions_sorted_chronologically() if action.new_state == new_state), None)
 
     def get_newest_change_action_that_is_before_date(self, reference_date: datetime.datetime) -> Optional[ChangeStateAction]:
