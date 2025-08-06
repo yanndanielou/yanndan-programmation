@@ -28,7 +28,7 @@ def main() -> None:
             .build()
         )
 
-        with logger_config.stopwatch_with_label("Print possible values"):
+        with logger_config.stopwatch_with_label(label="Print possible values", inform_beginning=True):
             cfx_inputs.print_all_possible_values_by_column()
 
         all_champfx_library = cfx.ChampFXLibrary(
