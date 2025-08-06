@@ -87,9 +87,13 @@ class ProjectsFieldFilter:
 class CfxQuery:
     output_file_name_without_extension: str
     query_id: int
-    label: str
     output_file_type: QueryOutputFileType
     projects_field_filters: Optional[ProjectsFieldFilter] = None
+    label: str = None
+    
+    def __post_init__(self)->None:
+        if self.label is None:
+            self.label = self.output_file_name_without_extension
 
 
 BIGGEST_PROJECTS_NAMES: List[str] = [
@@ -392,7 +396,6 @@ class SaveCfxRequestMultipagesResultsApplication:
             change_state_cfx_query=CfxQuery(
                 query_id=NEXT_ATS_CMC_QUERY_ID,
                 output_file_name_without_extension="nextatsp_CMC",
-                label="nextatsp_CMC",
                 output_file_type=QueryOutputFileType.EXCEL_EXPORT,
             )
         )
@@ -401,7 +404,6 @@ class SaveCfxRequestMultipagesResultsApplication:
             change_state_cfx_query=CfxQuery(
                 query_id=NEXT_ATS_EXTENDED_HISTORY_QUERY_ID,
                 output_file_name_without_extension="extended_history_nextats",
-                label="extended_history_nextatsp",
                 output_file_type=QueryOutputFileType.TXT_EXPORT,
             )
         )
@@ -444,7 +446,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                 change_state_cfx_query=CfxQuery(
                     projects_field_filters=projects_field_filters,
                     query_id=PROJECT_MANUAL_SELECTION_CHANGE_STATE_QUERY_ID,
-                    output_file_name_without_extension="states_changes_other_projects.xlsx",
+                    output_file_name_without_extension="states_changes_other_projects",
                     label="other_projects",
                     output_file_type=QueryOutputFileType.EXCEL_EXPORT,
                 )
@@ -454,7 +456,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                 change_state_cfx_query=CfxQuery(
                     projects_field_filters=projects_field_filters,
                     query_id=PROJECT_MANUAL_SELECTION_DETAIL_QUERY_ID,
-                    output_file_name_without_extension="details_project_other_projects.xlsx",
+                    output_file_name_without_extension="details_project_other_projects",
                     label="other_projects",
                     output_file_type=QueryOutputFileType.EXCEL_EXPORT,
                 )
@@ -690,13 +692,8 @@ class SaveCfxRequestMultipagesResultsApplication:
 def main() -> None:
     """Main function"""
 
-    with logger_config.stopwatch_with_label("Application"):
-        logger_config.configure_logger_with_random_log_file_suffix("save_cfx_request_mutlpages_results")
-
-        logger_config.print_and_log_info("Application start")
-
+    with logger_config.application_logger("save_cfx_requests_to_files"):
         output_parent_directory_name = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
-
         logger_config.print_and_log_info(f"output_parent_directory_name: {output_parent_directory_name}")
 
         application: SaveCfxRequestMultipagesResultsApplication = SaveCfxRequestMultipagesResultsApplication(
