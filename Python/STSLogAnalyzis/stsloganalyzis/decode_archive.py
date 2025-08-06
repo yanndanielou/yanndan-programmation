@@ -22,9 +22,7 @@ class ArchiveDecoder:
         self.message_manager = decode_message.InvariantMessagesManager(messages_list_csv_file_full_path=messages_list_csv_file_full_path)
         self.xml_message_decoder = decode_message.XmlMessageDecoder(xml_directory_path=xml_directory_path)
         self.action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(csv_file_file_path=action_set_content_csv_file_path)
-        self.message_decoder = decode_message.MessageDecoder(
-            xml_directory_path=xml_directory_path, invariant_message_manager=self.message_manager, action_set_content_decoder=self.action_set_content_decoder
-        )
+        self.message_decoder = decode_message.MessageDecoder(xml_directory_path=xml_directory_path, action_set_content_decoder=self.action_set_content_decoder)
 
 
 class ArchiveExtract:

@@ -84,9 +84,8 @@ class HLFDecoder:
 
 
 class MessageDecoder:
-    def __init__(self, xml_directory_path: str, invariant_message_manager: InvariantMessagesManager, action_set_content_decoder: decode_action_set_content.ActionSetContentDecoder) -> None:
+    def __init__(self, xml_directory_path: str, action_set_content_decoder: Optional[decode_action_set_content.ActionSetContentDecoder]) -> None:
         self.xml_message_decoder = XmlMessageDecoder(xml_directory_path=xml_directory_path)
-        self.invariant_message_manager = invariant_message_manager
         self.action_set_content_decoder = action_set_content_decoder
 
     def decode_raw_hexadecimal_message(
@@ -103,7 +102,7 @@ class MessageDecoder:
         return decoded_message
 
     def decode_additional_fields_in_specific_messages(self, decoded_message: DecodedMessage) -> None:
-        if decoded_message.message_number == 192:
+        if decoded_message.message_number == 192 and self.action_set_content_decoder:
             actions_field = decoded_message.decoded_fields["Actions"]
             action_set_decoded = self.action_set_content_decoder.decode_actions_bitfield(bitfield=actions_field)
             decoded_message.decoded_fields.update(action_set_decoded.action_set_id_with_value)
