@@ -42,8 +42,8 @@ class InvariantMessagesManager:
 class DecodedMessage:
     def __init__(self, message_number: int, hex_string: str) -> None:
         self.message_number = message_number
-        self.decoded_fields: Dict[str, int | bool | str | List[int | str | bool]] = dict()
-        self.not_decoded_fields_names: List[str] = []
+        self.decoded_fields_flat_directory: Dict[str, int | bool | str | List[int | str | bool]] = dict()
+        self.not_decoded_because_error_fields_names: List[str] = []
         self.hex_string = hex_string
         self.hlf_decoded: Optional[datetime.datetime] = None
         self.current_bit_index = 0
@@ -54,10 +54,10 @@ class HLFDecoder:
 
     @staticmethod
     def decode_hlf(decoded_message: DecodedMessage) -> None:
-        time_field_value = cast(int, decoded_message.decoded_fields["Time"])
-        time_offset_value = cast(int, decoded_message.decoded_fields["TimeOffset"])
-        decade_field_value = cast(int, decoded_message.decoded_fields["Decade"])
-        day_on_decade_field_value = cast(int, decoded_message.decoded_fields["DayOnDecade"])
+        time_field_value = cast(int, decoded_message.decoded_fields_flat_directory["Time"])
+        time_offset_value = cast(int, decoded_message.decoded_fields_flat_directory["TimeOffset"])
+        decade_field_value = cast(int, decoded_message.decoded_fields_flat_directory["Decade"])
+        day_on_decade_field_value = cast(int, decoded_message.decoded_fields_flat_directory["DayOnDecade"])
 
         hlf_decoded = HLFDecoder.decode_hlf_fields_to_datetime(time_field_value, time_offset_value, decade_field_value, day_on_decade_field_value)
         decoded_message.hlf_decoded = hlf_decoded
@@ -107,9 +107,9 @@ class MessageDecoder:
 
     def decode_additional_fields_in_specific_messages(self, decoded_message: DecodedMessage) -> None:
         if decoded_message.message_number == 192 and self.action_set_content_decoder:
-            actions_field = cast(str, decoded_message.decoded_fields["Actions"])
+            actions_field = cast(str, decoded_message.decoded_fields_flat_directory["Actions"])
             action_set_decoded = self.action_set_content_decoder.decode_actions_bitfield(bitfield=actions_field)
-            decoded_message.decoded_fields.update(action_set_decoded.action_set_id_with_value)
+            decoded_message.decoded_fields_flat_directory.update(action_set_decoded.action_set_id_with_value)
 
 
 @dataclass
@@ -163,8 +163,8 @@ class XmlMessageDecoder:
         trigger_field = trigger_value_trigger_element.get("case")
         trigger_value = int(cast(str, trigger_value_trigger_element.get("value")))
 
-        assert trigger_field in decoded_message.decoded_fields
-        if decoded_message.decoded_fields[trigger_field] == trigger_value:
+        assert trigger_field in decoded_message.decoded_fields_flat_directory
+        if decoded_message.decoded_fields_flat_directory[trigger_field] == trigger_value:
             elements_to_decode = record[1:]
             assert len(elements_to_decode) == 1
             element_to_decode = elements_to_decode[0]
@@ -176,67 +176,75 @@ class XmlMessageDecoder:
 
         decoded_message = cast(DecodedMessage, self.decoded_message)
 
-        for element in record:
-            # logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
+        record_dim = int(record.get("dim", 1))
+        for recordIt in range(0, record_dim):
 
-            if element.tag == "record" or element.tag == "layer":
-                # logger_config.print_and_log_info(f"{element.tag} found: {element.get("id")}, current_bit_index:{current_bit_index}")
-                # Recursive call to process nested records
-                self._parse_record(element)
-            elif element.tag == "selector":
-                self._parse_selector(element)
-            elif element.tag == "field":
-                field_name = cast(str, element.get("id"))
+            record_prefix = "" if record_dim == 1 else f"{record.get("id")}_{recordIt}"
 
-                field_size_bits = int(element.get("size", 0))  # Bits
-                field_dim = int(element.get("dim", 1))
+            for element in record:
+                # logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
 
-                # logger_config.print_and_log_info(f"Field {field_name} with size {field_size_bits} bits and dim {field_dim}")
+                if element.tag == "record" or element.tag == "layer":
+                    # logger_config.print_and_log_info(f"{element.tag} found: {element.get("id")}, current_bit_index:{current_bit_index}")
+                    # Recursive call to process nested records
+                    self._parse_record(element)
+                elif element.tag == "selector":
+                    self._parse_selector(element)
+                elif element.tag == "field":
+                    raw_field_name = cast(str, element.get("id"))
 
-                field_table_values: List[str | int] = []
+                    field_size_bits = int(element.get("size", 0))  # Bits
+                    field_dim = int(element.get("dim", 1))
 
-                for i in range(0, field_dim):
-                    field_name_with_dim = field_name if field_dim == 1 else field_name + f"_{i}"
-                    # logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
+                    # logger_config.print_and_log_info(f"Field {field_name} with size {field_size_bits} bits and dim {field_dim}")
 
-                    bits_extracted = self.extract_bits(decoded_message.hex_bytes, decoded_message.current_bit_index, field_size_bits)
-                    field_type = element.get("class")
+                    field_table_values: List[str | int] = []
 
-                    field_value: str | int = ""
+                    for fieldIt in range(0, field_dim):
+                        field_name_with_record_prefix = record_prefix + raw_field_name
+                        field_name_with_dim = raw_field_name if field_dim == 1 else raw_field_name + f"_{fieldIt}"
+                        field_name_with_dim_and_record_prefix = record_prefix + field_name_with_dim
 
-                    try:
-                        if field_type == "BigEndianInteger":
-                            field_value = self.extract_bits_int(bits_extracted, decoded_message.current_bit_index, field_size_bits)
-                            decoded_message.decoded_fields[field_name_with_dim] = field_value
-                        elif field_type == "BigEndianBitSet":
-                            # field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
-                            field_value = self.extract_bits_bitfield(bits_extracted, decoded_message.current_bit_index, field_size_bits)
-                            decoded_message.decoded_fields[field_name_with_dim] = field_value
-                        elif field_type == "BigEndianASCIIChar":
-                            field_value = self.extract_bits_ascii_char(bits_extracted, decoded_message.current_bit_index, field_size_bits)
-                            decoded_message.decoded_fields[field_name_with_dim] = field_value
-                            # decoded_fields[field_name_with_dim + "_raw"] = field_value
+                        # logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
+
+                        bits_extracted = self.extract_bits(decoded_message.hex_bytes, decoded_message.current_bit_index, field_size_bits)
+                        field_type = element.get("class")
+
+                        field_value: str | int = ""
+
+                        try:
+                            if field_type == "BigEndianInteger":
+                                field_value = self.extract_bits_int(bits_extracted, decoded_message.current_bit_index, field_size_bits)
+                                decoded_message.decoded_fields_flat_directory[field_name_with_dim_and_record_prefix] = field_value
+                            elif field_type == "BigEndianBitSet":
+                                # field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
+                                field_value = self.extract_bits_bitfield(bits_extracted, decoded_message.current_bit_index, field_size_bits)
+                                decoded_message.decoded_fields_flat_directory[field_name_with_dim_and_record_prefix] = field_value
+                            elif field_type == "BigEndianASCIIChar":
+                                field_value = self.extract_bits_ascii_char(bits_extracted, decoded_message.current_bit_index, field_size_bits)
+                                decoded_message.decoded_fields_flat_directory[field_name_with_dim_and_record_prefix] = field_value
+                                # decoded_fields[field_name_with_dim + "_raw"] = field_value
+                            else:
+                                logger_config.print_and_log_error(f"Field {field_name_with_dim_and_record_prefix} has unsupported type {field_type}")
+                        except Exception as ex:
+                            logger_config.print_and_log_exception(ex)
+                            logger_config.print_and_log_error(f"Error when decoding field {raw_field_name} {field_name_with_dim_and_record_prefix}")
+                            # decoded_message.decoded_fields[field_name] = CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR
+                            decoded_message.not_decoded_because_error_fields_names.append(raw_field_name)
+                            pass
+
+                        field_table_values.append(field_value)
+                        # logger_config.print_and_log_info(f"Field {field_name_with_dim_and_record_prefix} is {field_value}")
+                        decoded_message.current_bit_index += field_size_bits
+                        # logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
+
+                    if field_dim > 1:
+                        if field_type == "BigEndianASCIIChar":
+                            decoded_message.decoded_fields_flat_directory[field_name_with_record_prefix] = "".join(cast(str, field_table_values)).rstrip()
+                            # logger_config.print_and_log_info(f"Field {field_name} is {decoded_fields[field_name]}")
+                            decoded_message.decoded_fields_flat_directory[field_name_with_record_prefix + "_list"] = field_table_values
                         else:
-                            logger_config.print_and_log_error(f"Field {field_name_with_dim} has unsupported type {field_type}")
-                    except Exception as ex:
-                        logger_config.print_and_log_exception(ex)
-                        logger_config.print_and_log_error(f"Error when decoding field {field_name}")
-                        # decoded_message.decoded_fields[field_name] = CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR
-                        decoded_message.not_decoded_fields_names.append(field_name)
-                        pass
-
-                    field_table_values.append(field_value)
-                    # logger_config.print_and_log_info(f"Field {field_name_with_dim} is {field_value}")
-                    decoded_message.current_bit_index += field_size_bits
-                    # logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
-
-                if field_dim > 1:
-                    if field_type == "BigEndianASCIIChar":
-                        decoded_message.decoded_fields[field_name] = "".join(cast(str, field_table_values)).rstrip()
-                        # logger_config.print_and_log_info(f"Field {field_name} is {decoded_fields[field_name]}")
-                        decoded_message.decoded_fields[field_name + "_list"] = field_table_values
-                    else:
-                        decoded_message.decoded_fields[field_name] = field_table_values
+                            decoded_message.decoded_fields_flat_directory[field_name_with_record_prefix] = field_table_values
 
     def decode_xml_fields_in_message_hexadecimal(self, message_number: int, hexadecimal_content: str) -> Optional[DecodedMessage]:
         # Open the corresponding XML file based on message_id

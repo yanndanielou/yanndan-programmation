@@ -49,9 +49,9 @@ class TestDecodeOneLine:
         assert invariant_message
         decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
-        assert decoded_message.decoded_fields["InitLCStatus"] == 1
-        assert decoded_message.decoded_fields["SSOLineVersion"] == 0
-        assert decoded_message.decoded_fields["Time"] == 8
+        assert decoded_message.decoded_fields_flat_directory["InitLCStatus"] == 1
+        assert decoded_message.decoded_fields_flat_directory["SSOLineVersion"] == 0
+        assert decoded_message.decoded_fields_flat_directory["Time"] == 8
 
     def test_get_archive_line_fields_message_ats_pae_action_set(self) -> None:
         archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_action_set)
@@ -64,17 +64,17 @@ class TestDecodeOneLine:
         assert invariant_message
         decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
-        assert decoded_message.decoded_fields["LineId"] == 1
-        assert decoded_message.decoded_fields["ActionSetId"] == 1
-        assert decoded_message.decoded_fields["AllStationsSkip"] == 0
-        assert decoded_message.decoded_fields["RunDirectionRefSegId"] == 391
-        assert decoded_message.decoded_fields["RunDirection"] == 1
-        assert decoded_message.decoded_fields["PartStopDestination"] == 1
-        assert decoded_message.decoded_fields["FinalStopPlatform"] == 3
-        assert decoded_message.decoded_fields["FinalStopStaIdPis"] == 7
-        assert decoded_message.decoded_fields["ExchZoneTypeTdI"] == "0000000000000000000000000000000000000000000000000000000000000000"
+        assert decoded_message.decoded_fields_flat_directory["LineId"] == 1
+        assert decoded_message.decoded_fields_flat_directory["ActionSetId"] == 1
+        assert decoded_message.decoded_fields_flat_directory["AllStationsSkip"] == 0
+        assert decoded_message.decoded_fields_flat_directory["RunDirectionRefSegId"] == 391
+        assert decoded_message.decoded_fields_flat_directory["RunDirection"] == 1
+        assert decoded_message.decoded_fields_flat_directory["PartStopDestination"] == 1
+        assert decoded_message.decoded_fields_flat_directory["FinalStopPlatform"] == 3
+        assert decoded_message.decoded_fields_flat_directory["FinalStopStaIdPis"] == 7
+        assert decoded_message.decoded_fields_flat_directory["ExchZoneTypeTdI"] == "0000000000000000000000000000000000000000000000000000000000000000"
         assert (
-            decoded_message.decoded_fields["Actions"]
+            decoded_message.decoded_fields_flat_directory["Actions"]
             == "010100010010100010110010010010010010010100010010010010010010010010010001000100010001001011011000001001000100010001000100010001001000010010001000010001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010100101011111111010111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
         )
 
@@ -85,11 +85,11 @@ class TestDecodeOneLine:
         assert invariant_message
         decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
-        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1"]).startswith("PAE__NEXT_PAE_CUCP_V10_0")
-        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1"]) == "PAE__NEXT_PAE_CUCP_V10_0"
-        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1_0"]) == "P"
-        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1_1"]) == "A"
-        assert cast(str, decoded_message.decoded_fields["SoftVersionPart1_2"]) == "E"
+        assert cast(str, decoded_message.decoded_fields_flat_directory["SoftVersionPart1"]).startswith("PAE__NEXT_PAE_CUCP_V10_0")
+        assert cast(str, decoded_message.decoded_fields_flat_directory["SoftVersionPart1"]) == "PAE__NEXT_PAE_CUCP_V10_0"
+        assert cast(str, decoded_message.decoded_fields_flat_directory["SoftVersionPart1_0"]) == "P"
+        assert cast(str, decoded_message.decoded_fields_flat_directory["SoftVersionPart1_1"]) == "A"
+        assert cast(str, decoded_message.decoded_fields_flat_directory["SoftVersionPart1_2"]) == "E"
 
     def test_incomplete_hexadecimal_message(self) -> None:
         archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_pae_ats_spe_oper)
@@ -98,10 +98,10 @@ class TestDecodeOneLine:
         assert invariant_message
         decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
-        assert decoded_message.decoded_fields["CriticalSectStop"] == 0
-        assert decoded_message.decoded_fields["UnexpectedTransponderId"] == 0
-        assert "Time" in decoded_message.not_decoded_fields_names
-        assert "Time" not in decoded_message.decoded_fields
+        assert decoded_message.decoded_fields_flat_directory["CriticalSectStop"] == 0
+        assert decoded_message.decoded_fields_flat_directory["UnexpectedTransponderId"] == 0
+        assert "Time" in decoded_message.not_decoded_because_error_fields_names
+        assert "Time" not in decoded_message.decoded_fields_flat_directory
 
     def test_decode_when_selector_rc_type(self) -> None:
         archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_spe_remote_ctrl)
@@ -109,9 +109,9 @@ class TestDecodeOneLine:
         assert invariant_message
         decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
-        assert "TrainNumber" not in decoded_message.decoded_fields
-        assert cast(str, decoded_message.decoded_fields["RestrEnd1SegId"]) == 8390
-        assert cast(str, decoded_message.decoded_fields["RestrEnd1SegId"]) == 8390
-        assert cast(str, decoded_message.decoded_fields["RestrEnd1Offset"]) == 60103
-        assert cast(str, decoded_message.decoded_fields["RestrEnd1Stationning"]) == 454
-        assert cast(str, decoded_message.decoded_fields["DownRestrReason"]) == 0
+        assert "TrainNumber" not in decoded_message.decoded_fields_flat_directory
+        assert cast(str, decoded_message.decoded_fields_flat_directory["RestrEnd1SegId"]) == 8390
+        assert cast(str, decoded_message.decoded_fields_flat_directory["RestrEnd1SegId"]) == 8390
+        assert cast(str, decoded_message.decoded_fields_flat_directory["RestrEnd1Offset"]) == 60103
+        assert cast(str, decoded_message.decoded_fields_flat_directory["RestrEnd1Stationning"]) == 454
+        assert cast(str, decoded_message.decoded_fields_flat_directory["DownRestrReason"]) == 0

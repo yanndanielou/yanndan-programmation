@@ -23,8 +23,8 @@ class TestDecodeCbtcMessages:
         xml_message_decoder = decode_message.XmlMessageDecoder(xml_directory_path=r"D:\NEXT\Data\Xml")
         decoded_message = xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=205, hexadecimal_content=hexa_content_as_str)
         assert decoded_message
-        assert decoded_message.decoded_fields["UtoTrainReversingMode"] == 4
-        assert decoded_message.decoded_fields["TimeOffset"] == 72000
+        assert decoded_message.decoded_fields_flat_directory["UtoTrainReversingMode"] == 4
+        assert decoded_message.decoded_fields_flat_directory["TimeOffset"] == 72000
 
 
 class TestDecodeHlf:
