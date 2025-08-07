@@ -47,7 +47,7 @@ DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
 
 DML_FILE_DOWNLOADED_PATTERN = "DML_NEXTEO_ATS+_V*.xlsm"
 DML_FILE_WITHOUT_USELESS_SHEETS_PATH = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_useless_sheets.xlsm"
-DML_FILE_WITHOUT_USELESS_COLUMNS = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_useless_columns.xlsm"
+DML_FILE_CLEANED_FINAL = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_cleaned_light.xlsm"
 DML_FILE_WITH_USELESS_COLUMNS_CLEANED = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_with_useless_columns_cleaned.xlsm"
 DML_FILE_WITHOUT_FORMULA_REPLACED_BY_VALUE = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_formula.xlsm"
 DML_FILE_WITHOUT_LINKS = f"{DEFAULT_DOWNLOAD_DIRECTORY}\\DML_NEXTEO_ATS+_V14_without_links.xlsm"
@@ -154,10 +154,13 @@ class DownloadAndCleanDMLApplication:
     def run(self) -> None:
 
         dml_file_path = self.download_dml_file()
-        dml_file_path = self.remove_useless_tabs_with_xlwings(dml_file_path)
-        dml_file_path = self.remove_excel_external_links_with_xlwings(dml_file_path)
-        dml_file_path = self.remove_useless_columns_with_xlwings(dml_file_path)
-        # dml_file_path = self.replace_formulas_with_values_with_xlwings(dml_file_path)
+        if dml_file_path:
+            dml_file_path = self.remove_useless_tabs_with_xlwings(dml_file_path)
+            dml_file_path = self.remove_excel_external_links_with_xlwings(dml_file_path)
+            dml_file_path = self.remove_useless_columns_with_xlwings(dml_file_path)
+            # dml_file_path = self.replace_formulas_with_values_with_xlwings(dml_file_path)
+        else:
+            logger_config.print_and_log_error("Aborted")
 
     def remove_useless_tabs_with_xlwings(self, dml_file_path: str) -> str:
         file_to_create_path = DML_FILE_WITHOUT_USELESS_SHEETS_PATH
@@ -254,7 +257,7 @@ class DownloadAndCleanDMLApplication:
         return save_and_close_workbook(workbook_dml, file_to_create_path)
 
     def remove_useless_columns_with_xlwings(self, dml_file_path: str) -> str:
-        file_to_create_path = DML_FILE_WITHOUT_USELESS_COLUMNS
+        file_to_create_path = DML_FILE_CLEANED_FINAL
 
         if not REMOVE_USELESS_COLUMNS_ENABLED:
             logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
@@ -389,7 +392,7 @@ class DownloadAndCleanDMLApplication:
             # Delete the column
             sheet.delete_cols(column_number)
 
-        return save_and_close_workbook(workbook_dml, DML_FILE_WITHOUT_USELESS_COLUMNS)
+        return save_and_close_workbook(workbook_dml, DML_FILE_CLEANED_FINAL)
 
     @deprecated("Does not work")
     def not_working_clean_useless_columns_with_openpyxl(self, dml_file_path: str) -> None:
