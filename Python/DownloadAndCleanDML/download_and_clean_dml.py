@@ -1,46 +1,30 @@
 # Standard
 
-from warnings import deprecated
-
-from enum import Enum, auto
-import argparse
-import fnmatch
 import inspect
-import logging
 import os
-import pickle
-import queue
 import shutil
-import threading
 import time
-from contextlib import contextmanager
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set
-
-import pywintypes
-
+from dataclasses import dataclass
+from typing import Optional
+from warnings import deprecated
 
 import openpyxl
 import xlwings
-
-from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
-
-import selenium.webdriver.chrome.options
-import selenium.webdriver.firefox.options
-from common import download_utils, file_utils
+from common import download_utils
 
 # Other libraries
 from logger import logger_config
 
 # Third Party
 from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver import ActionChains
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.support.ui import Select, WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait
+import pywintypes
+
+# import pywintypes
+
 
 DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
 
@@ -136,13 +120,18 @@ def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file
     success = False
 
     while not success:
-        with logger_config.stopwatch_with_label(label=f"Save:{file_path}"):
-            workbook_dml.save(file_path)
+        try:
+            with logger_config.stopwatch_with_label(label=f"Save:{file_path}"):
+                workbook_dml.save(file_path)
 
-        with logger_config.stopwatch_with_label(label="Close workbook"):
-            workbook_dml.close()
+            with logger_config.stopwatch_with_label(label="Close workbook"):
+                workbook_dml.close()
 
-        success = True
+            success = True
+        except Exception as e:
+            logger_config.print_and_log_exception(e)
+            logger_config.print_and_log_error(f"Could not save:{file_path}, must be locked")
+            time.sleep(1)
 
     return file_path
 
@@ -181,21 +170,25 @@ class DownloadAndCleanDMLApplication:
 
         workbook_dml.app.calculation = "manual"
         sheets_names = workbook_dml.sheet_names
-        logger_config.print_and_log_info(f"{len(sheets_names)} Sheets found: {sheets_names}")
+        number_of_initial_sheets_names = len(sheets_names)
+        logger_config.print_and_log_info(f"{number_of_initial_sheets_names} Sheets found: {sheets_names}")
 
-        for sheet_name in sheets_names:
+        for sheet_number, sheet_name in enumerate(sheets_names):
             if sheet_name in ALLOWED_DML_SHEETS_NAMES:
                 logger_config.print_and_log_info(f"Allowed sheet:{sheet_name}")
             elif sheet_name in EXCEL_INTERNAL_RESERVED_SHEETS_NAMES:
                 logger_config.print_and_log_info(f"ignore Excel internal reserved sheet:{sheet_name}")
             else:
-                with logger_config.stopwatch_with_label(label=f"Removing sheet:{sheet_name}", inform_beginning=True):
+                with logger_config.stopwatch_with_label(
+                    label=f"Removing {sheet_number+1}/{number_of_initial_sheets_names}th sheet:{sheet_name} : {round(sheet_number+1/number_of_initial_sheets_names*100,2)}%", inform_beginning=True
+                ):
                     try:
                         # Accéder à la feuille que l'on veut supprimer
                         sheet_to_remove = xlwings.sheets[sheet_name]
                         # Supprimer la feuille
                         sheet_to_remove.delete()
                     except Exception as exc:
+                        logger_config.print_and_log_exception(type(exc))
                         logger_config.print_and_log_exception(exc)
             pass
 
@@ -340,15 +333,16 @@ class DownloadAndCleanDMLApplication:
 
         logger_config.print_and_log_info(f"File downloaded : {file_downloaded_path}, will be moved to {DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH}")
 
-        time.sleep(5)
+        with logger_config.stopwatch_with_label(label="Additional waiting time", inform_beginning=True):
+            time.sleep(1)
 
         move_success = False
 
-        while move_success == False:
+        while not move_success:
             try:
                 shutil.move(file_downloaded_path, file_to_create_path)
                 move_success = True
-            except PermissionError as permErr:
+            except PermissionError as perm_error:
                 # logger_config.print_and_log_exception(permErr)
                 logger_config.print_and_log_error("File " + file_to_create_path + " is used. Relase it")
                 time.sleep(1)
