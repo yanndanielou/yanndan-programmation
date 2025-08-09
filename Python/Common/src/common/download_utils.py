@@ -64,6 +64,30 @@ class DownloadFileDetector:
         logger_config.print_and_log_info(f"differences:{differences}")
         return differences
 
+    def wait_for_file_size_is_stable(self, file_path: str) -> None:
+        # initial_file_modification_time = os.path.getmtime(file_path)
+        initial_file_size = os.path.getsize(file_path)
+        logger_config.print_and_log_info(f"Initial size of {file_path} is {initial_file_size }")
+
+        while os.path.getsize(file_path) == 0:
+            logger_config.print_and_log_info(f"Size of {file_path} is still null. Keep waiting")
+            time.sleep(1)
+
+        if initial_file_size == 0:
+            logger_config.print_and_log_info(f"Size of {file_path} is no more null")
+
+        previous_file_size = os.path.getsize(file_path)
+
+        while True:
+            time.sleep(1)
+            current_file_size = os.path.getsize(file_path)
+            if current_file_size == previous_file_size:
+                logger_config.print_and_log_info(f"Size of {file_path} is stable to {current_file_size}. Do not wait anymore")
+                return
+
+            logger_config.print_and_log_info(f"Size of {file_path} changed from {previous_file_size} to {current_file_size}. Keep waiting")
+            previous_file_size = current_file_size
+
     def monitor_download(self) -> Optional[str]:
         download_event_handler = DownloadEventHandler(self.filename_pattern)
         observer = Observer()
@@ -82,6 +106,8 @@ class DownloadFileDetector:
                     file_detected: Tuple[str, float] = manual_scan_files_modified_name_and_timestamp[0]
                     file_detected_name = file_detected[0]
                     logger_config.print_and_log_info(f"File download found after manual scan:{file_detected_name}")
+                    self.wait_for_file_size_is_stable(file_path=file_detected_name)
+
                     return file_detected_name
         except KeyboardInterrupt:
             observer.stop()
