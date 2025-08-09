@@ -185,10 +185,10 @@ class DownloadAndCleanDMLApplication:
                 logger_config.print_and_log_info(f"ignore Excel internal reserved sheet:{sheet_name}")
             else:
                 with logger_config.stopwatch_with_label(label=f"Removing sheet:{sheet_name}", inform_beginning=True):
-                    # Accéder à la feuille que l'on veut supprimer
-                    sheet_to_remove = xlwings.sheets[sheet_name]
-                    # Supprimer la feuille
                     try:
+                        # Accéder à la feuille que l'on veut supprimer
+                        sheet_to_remove = xlwings.sheets[sheet_name]
+                        # Supprimer la feuille
                         sheet_to_remove.delete()
                     except Exception as exc:
                         logger_config.print_and_log_exception(exc)
@@ -329,6 +329,9 @@ class DownloadAndCleanDMLApplication:
         if not file_downloaded_path:
             logger_config.print_and_log_error("No downloaded file found")
             return None
+
+        # with logger_config.stopwatch_with_label(label="Additional waiting time", inform_beginning=True):
+        #    time.sleep(20)
 
         logger_config.print_and_log_info(f"File downloaded : {file_downloaded_path}, will be moved to {DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH}")
 
