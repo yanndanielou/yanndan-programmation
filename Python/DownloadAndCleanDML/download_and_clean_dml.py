@@ -174,7 +174,7 @@ class DownloadAndCleanDMLApplication:
             logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
-        with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(label=f"Open {dml_file_path}", inform_beginning=True):
             workbook_dml = xlwings.Book(dml_file_path)
 
         logger_config.print_and_log_info("set formulas calculations to manual to improve speed")
@@ -231,7 +231,7 @@ class DownloadAndCleanDMLApplication:
             logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
-        with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(label=f"Open: {dml_file_path}", inform_beginning=True):
             workbook_dml = xlwings.Book(dml_file_path)
 
         number_of_cells_updated = 0
@@ -268,7 +268,7 @@ class DownloadAndCleanDMLApplication:
             logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
-        with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(label=f"Open: {dml_file_path}", inform_beginning=True):
             workbook_dml = xlwings.Book(dml_file_path)
 
         for range_to_remove in FIRST_LINE_TO_REMOVE_RANGES:
@@ -364,7 +364,7 @@ class DownloadAndCleanDMLApplication:
         with logger_config.stopwatch_with_label(label=f"Open workbook_data_only:{dml_file_path}", inform_beginning=True):
             workbook_data_only = openpyxl.load_workbook(dml_file_path, data_only=True)
 
-        with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(label=f"Open: {dml_file_path}", inform_beginning=True):
             # Read the workbook again to write values (data_only doesn't write back)
             writable_workbook = openpyxl.load_workbook(dml_file_path)
 
@@ -394,7 +394,7 @@ class DownloadAndCleanDMLApplication:
 
     @deprecated("Does not work")
     def not_working_remove_useless_columns_with_openpyxl(self, dml_file_path: str) -> str:
-        with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(label=f"Open: {dml_file_path}", inform_beginning=True):
             workbook_dml = openpyxl.load_workbook(dml_file_path)
 
         sheet = workbook_dml[USEFUL_DML_SHEET_NAME]
@@ -413,7 +413,7 @@ class DownloadAndCleanDMLApplication:
 
     @deprecated("Does not work")
     def not_working_clean_useless_columns_with_openpyxl(self, dml_file_path: str) -> None:
-        with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(label=f"Open: {dml_file_path}", inform_beginning=True):
             workbook_dml = openpyxl.load_workbook(dml_file_path)
 
         sheet = workbook_dml[USEFUL_DML_SHEET_NAME]
@@ -433,7 +433,7 @@ class DownloadAndCleanDMLApplication:
 
     @deprecated("Does not work")
     def not_working_remove_useless_tabs_with_openpyxl(self, dml_file_path: str) -> None:
-        logger_config.print_and_log_info(f"Open:{dml_file_path}")
+        logger_config.print_and_log_info(f"Open: {dml_file_path}")
         workbook_dml = openpyxl.load_workbook(dml_file_path)
         sheets_names = workbook_dml.sheetnames
         logger_config.print_and_log_info(f"{len(sheets_names)} Sheets found: {sheets_names}")
