@@ -118,11 +118,20 @@ REPLACE_FORMULA_BY_VALUE_ENABLED = False
 def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file_path: str) -> str:
 
     success = False
-
     while not success:
         try:
             with logger_config.stopwatch_with_label(label=f"Save:{file_path}"):
                 workbook_dml.save(file_path)
+
+            success = True
+        except Exception as e:
+            logger_config.print_and_log_exception(e)
+            logger_config.print_and_log_error(f"Could not save:{file_path}, must be locked")
+            time.sleep(1)
+
+    success = False
+    while not success:
+        try:
 
             with logger_config.stopwatch_with_label(label="Close workbook"):
                 workbook_dml.close()
@@ -130,7 +139,7 @@ def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file
             success = True
         except Exception as e:
             logger_config.print_and_log_exception(e)
-            logger_config.print_and_log_error(f"Could not save:{file_path}, must be locked")
+            logger_config.print_and_log_error(f"Could not close:{file_path}, must be locked")
             time.sleep(1)
 
     return file_path
@@ -201,7 +210,7 @@ class DownloadAndCleanDMLApplication:
             logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
-        with logger_config.stopwatch_with_label(label=f"Open:{dml_file_path}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(label=f"Open: {dml_file_path}", inform_beginning=True):
             workbook_dml = xlwings.Book(dml_file_path)
 
         logger_config.print_and_log_info("set formulas calculations to manual to improve speed")
