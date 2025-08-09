@@ -133,13 +133,19 @@ REPLACE_FORMULA_BY_VALUE_ENABLED = False
 
 def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file_path: str) -> str:
 
-    with logger_config.stopwatch_with_label(label=f"Save:{file_path}"):
-        workbook_dml.save(file_path)
+    success = False
 
-    with logger_config.stopwatch_with_label(label="Close workbook"):
-        workbook_dml.close()
+    while success == False:
 
-    return file_path
+        with logger_config.stopwatch_with_label(label=f"Save:{file_path}"):
+            workbook_dml.save(file_path)
+
+        with logger_config.stopwatch_with_label(label="Close workbook"):
+            workbook_dml.close()
+
+        success = True
+
+    return file_pat
 
 
 @dataclass
@@ -337,7 +343,16 @@ class DownloadAndCleanDMLApplication:
 
         time.sleep(5)
 
-        shutil.move(file_downloaded_path, file_to_create_path)
+        move_success = False
+
+        while move_success == False:
+            try:
+                shutil.move(file_downloaded_path, file_to_create_path)
+                move_success = True
+            except PermissionError as permErr:
+                # logger_config.print_and_log_exception(permErr)
+                logger_config.print_and_log_error("File " + file_to_create_path + " is used. Relase it")
+                time.sleep(1)
 
         time.sleep(5)
 
