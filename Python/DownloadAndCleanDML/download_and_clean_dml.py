@@ -135,8 +135,7 @@ def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file
 
     success = False
 
-    while success == False:
-
+    while not success:
         with logger_config.stopwatch_with_label(label=f"Save:{file_path}"):
             workbook_dml.save(file_path)
 
@@ -145,7 +144,7 @@ def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file
 
         success = True
 
-    return file_pat
+    return file_path
 
 
 @dataclass
