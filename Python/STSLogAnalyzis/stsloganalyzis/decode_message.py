@@ -41,25 +41,35 @@ class InvariantMessagesManager:
 
 class DecodedMessage:
 
-    class XmlMessageRecord:
+    class XmlMessageRecordMacro:
         def __init__(self, raw_class: str, raw_id: str, raw_offset: str, raw_dim: Optional[str]):
             self._class_name = raw_class
             self.identifier = raw_id
             self.offset = int(raw_offset)
             self.dim = int(raw_dim) if raw_dim else 1
-            self.records: List[DecodedMessage.XmlMessageRecord] = []
-            self.fields: List[DecodedMessage.XmlMessageField] = []
 
-    class XmlMessageField:
-        def __init__(self, raw_class: str, raw_id: str, size_bits: int, parent_record: "DecodedMessage.XmlMessageRecord", raw_dim: Optional[int]):
+    class XmlMessageRecordUnit:
+        def __init__(self, record: "DecodedMessage.XmlMessageRecordMacro"):
+            self.record = record
+            self.fields: List[DecodedMessage.XmlMessageFieldMacro] = []
+            self.records: List[DecodedMessage.XmlMessageRecordMacro] = []
+
+    class XmlMessageFieldMacro:
+        def __init__(self, raw_class: str, raw_id: str, size_bits: int, parent_record: "DecodedMessage.XmlMessageRecordUnit", raw_dim: Optional[int]):
             self._class_name = raw_class
             self.identifier = raw_id
             self.size_bits = size_bits
             self.dim = int(raw_dim) if raw_dim else 1
             self.parent_record = parent_record
-            self.fields: List[DecodedMessage.XmlMessageField] = []
+            self.unit_fields: List[DecodedMessage.XmlMessageFieldUnit] = []
 
             parent_record.fields.append(self)
+
+    class XmlMessageFieldUnit:
+        def __init__(self, field_macro: "DecodedMessage.XmlMessageFieldMacro"):
+            self.field_macro = field_macro
+            field_macro.unit_fields.append(self)
+            self.value: Optional[int | bool | str | List[int | str | bool]] = None
 
     @dataclass
     class XmlMessageEnumerationValue:
@@ -79,7 +89,7 @@ class DecodedMessage:
         self.hlf_decoded: Optional[datetime.datetime] = None
         self.current_bit_index = 0
         self.hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
-        self.root_record: Optional[DecodedMessage.XmlMessageRecord] = None
+        self.root_record: Optional[DecodedMessage.XmlMessageRecordMacro] = None
 
 
 class HLFDecoder:
@@ -187,7 +197,7 @@ class XmlMessageDecoder:
         bit_segment = combined_bits[start_bit % 8 : start_bit % 8 + bit_length]
         return int(bit_segment, 2)
 
-    def _parse_selector(self, record: ET.Element) -> None:
+    def _parse_selector(self, record: ET.Element, parent_record: DecodedMessage.XmlMessageRecordUnit) -> None:
 
         decoded_message = cast(DecodedMessage, self.decoded_message)
 
@@ -202,7 +212,7 @@ class XmlMessageDecoder:
             assert len(elements_to_decode) == 1
             element_to_decode = elements_to_decode[0]
             assert element_to_decode.tag == "record"
-            self._parse_record(record=element_to_decode)
+            self._parse_record(record=element_to_decode, parent_record=parent_record)
 
     def _parse_root(self, root: ET.Element) -> None:
         assert len(root) == 1
@@ -212,7 +222,7 @@ class XmlMessageDecoder:
         assert len(layer) == 1
         self._parse_record(layer[0])
 
-    def _parse_record(self, record: ET.Element, parent_record: Optional[DecodedMessage.XmlMessageRecord] = None) -> None:
+    def _parse_record(self, record: ET.Element, parent_record: Optional[DecodedMessage.XmlMessageRecordUnit] = None) -> None:
         """Recursively parse records to decode fields."""
 
         raw_class = record.get("class")
@@ -223,17 +233,18 @@ class XmlMessageDecoder:
         raw_offset = record.get("offset")
         assert raw_offset
 
-        xml_message_record = DecodedMessage.XmlMessageRecord(raw_class=raw_class, raw_dim=raw_dim, raw_id=raw_id, raw_offset=raw_offset)
+        xml_message_record_macro = DecodedMessage.XmlMessageRecordMacro(raw_class=raw_class, raw_dim=raw_dim, raw_id=raw_id, raw_offset=raw_offset)
         assert self.decoded_message
 
         if parent_record is None:
-            self.decoded_message.root_record = xml_message_record
+            self.decoded_message.root_record = xml_message_record_macro
         else:
-            parent_record.records.append(xml_message_record)
+            parent_record.records.append(xml_message_record_macro)
 
         record_dim = int(record.get("dim", 1))
         for recordIt in range(0, record_dim):
 
+            xml_message_record_unit = DecodedMessage.XmlMessageRecordUnit(xml_message_record_macro)
             record_prefix = "" if record_dim == 1 else f"{record.get("id")}_{recordIt}"
 
             for element in record:
@@ -242,9 +253,9 @@ class XmlMessageDecoder:
                 if element.tag == "record":
                     # logger_config.print_and_log_info(f"{element.tag} found: {element.get("id")}, current_bit_index:{current_bit_index}")
                     # Recursive call to process nested records
-                    self._parse_record(record=element, parent_record=xml_message_record)
+                    self._parse_record(record=element, parent_record=xml_message_record_unit)
                 elif element.tag == "selector":
-                    self._parse_selector(element)
+                    self._parse_selector(element, parent_record=xml_message_record_unit)
                 elif element.tag == "field":
                     raw_field_name = cast(str, element.get("id"))
 
@@ -254,15 +265,20 @@ class XmlMessageDecoder:
                     field_type = element.get("class")
                     assert field_type
 
-                    xml_decoded_field = DecodedMessage.XmlMessageField(raw_class=field_type, parent_record=xml_message_record, raw_dim=field_dim, raw_id=raw_field_name, size_bits=field_size_bits)
+                    xml_decoded_field_macro = DecodedMessage.XmlMessageFieldMacro(
+                        raw_class=field_type, parent_record=xml_message_record_unit, raw_dim=field_dim, raw_id=raw_field_name, size_bits=field_size_bits
+                    )
 
                     # logger_config.print_and_log_info(f"Field {field_name} with size {field_size_bits} bits and dim {field_dim}")
 
                     field_table_values: List[str | int] = []
 
-                    for fieldIt in range(0, xml_decoded_field.dim):
+                    for field_it in range(0, xml_decoded_field_macro.dim):
+
+                        xml_decoded_field_unit = DecodedMessage.XmlMessageFieldUnit(field_macro=xml_decoded_field_macro)
+
                         field_name_with_record_prefix = record_prefix + raw_field_name
-                        field_name_with_dim = raw_field_name if field_dim == 1 else raw_field_name + f"_{fieldIt}"
+                        field_name_with_dim = raw_field_name if field_dim == 1 else raw_field_name + f"_{field_it}"
                         field_name_with_dim_and_record_prefix = record_prefix + field_name_with_dim
 
                         # logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
