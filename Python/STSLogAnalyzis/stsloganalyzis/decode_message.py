@@ -49,10 +49,11 @@ class DecodedMessage:
             self.dim = int(raw_dim) if raw_dim else 1
 
     class XmlMessageRecordUnit:
-        def __init__(self, record: "DecodedMessage.XmlMessageRecordMacro"):
+        def __init__(self, record: "DecodedMessage.XmlMessageRecordMacro", index: int):
             self.record = record
             self.fields: List[DecodedMessage.XmlMessageFieldMacro] = []
             self.records: List[DecodedMessage.XmlMessageRecordMacro] = []
+            self.index = index
 
     class XmlMessageFieldMacro:
         def __init__(self, raw_class: str, raw_id: str, size_bits: int, parent_record: "DecodedMessage.XmlMessageRecordUnit", raw_dim: Optional[int]):
@@ -66,10 +67,13 @@ class DecodedMessage:
             parent_record.fields.append(self)
 
     class XmlMessageFieldUnit:
-        def __init__(self, field_macro: "DecodedMessage.XmlMessageFieldMacro"):
+        def __init__(self, field_macro: "DecodedMessage.XmlMessageFieldMacro", index: int):
             self.field_macro = field_macro
-            field_macro.unit_fields.append(self)
             self.value: Optional[int | bool | str | List[int | str | bool]] = None
+            self.human_readable_value: Optional[int | bool | str] = None
+            self.index = index
+
+            field_macro.unit_fields.append(self)
 
     @dataclass
     class XmlMessageEnumerationValue:
@@ -242,10 +246,10 @@ class XmlMessageDecoder:
             parent_record.records.append(xml_message_record_macro)
 
         record_dim = int(record.get("dim", 1))
-        for recordIt in range(0, record_dim):
+        for record_it in range(0, record_dim):
 
-            xml_message_record_unit = DecodedMessage.XmlMessageRecordUnit(xml_message_record_macro)
-            record_prefix = "" if record_dim == 1 else f"{record.get("id")}_{recordIt}"
+            xml_message_record_unit = DecodedMessage.XmlMessageRecordUnit(xml_message_record_macro, index=record_it)
+            record_prefix = "" if record_dim == 1 else f"{record.get("id")}_{record_it}"
 
             for element in record:
                 # logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
@@ -275,11 +279,11 @@ class XmlMessageDecoder:
 
                     for field_it in range(0, xml_decoded_field_macro.dim):
 
-                        xml_decoded_field_unit = DecodedMessage.XmlMessageFieldUnit(field_macro=xml_decoded_field_macro)
-
                         field_name_with_record_prefix = record_prefix + raw_field_name
                         field_name_with_dim = raw_field_name if field_dim == 1 else raw_field_name + f"_{field_it}"
                         field_name_with_dim_and_record_prefix = record_prefix + field_name_with_dim
+
+                        xml_decoded_field_unit = DecodedMessage.XmlMessageFieldUnit(field_macro=xml_decoded_field_macro, index=field_it)
 
                         # logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
 
@@ -301,13 +305,14 @@ class XmlMessageDecoder:
                                 # decoded_fields[field_name_with_dim + "_raw"] = field_value
                             else:
                                 logger_config.print_and_log_error(f"Field {field_name_with_dim_and_record_prefix} has unsupported type {field_type}")
-                        except Exception as ex:
-                            logger_config.print_and_log_exception(ex)
+                        except ValueError as val_err:
+                            logger_config.print_and_log_exception(val_err)
                             logger_config.print_and_log_error(f"Error when decoding field {raw_field_name} {field_name_with_dim_and_record_prefix}")
                             # decoded_message.decoded_fields[field_name] = CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR
                             self.decoded_message.not_decoded_because_error_fields_names.append(raw_field_name)
                             pass
 
+                        xml_decoded_field_unit.value = field_value
                         field_table_values.append(field_value)
                         # logger_config.print_and_log_info(f"Field {field_name_with_dim_and_record_prefix} is {field_value}")
                         self.decoded_message.current_bit_index += field_size_bits
