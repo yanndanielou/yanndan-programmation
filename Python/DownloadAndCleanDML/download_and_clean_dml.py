@@ -289,8 +289,8 @@ class DownloadAndCleanDMLApplication:
             logger_config.print_and_log_error(f"removing column '{column_name_to_remove}'")
             try:
                 col_index = headers.index(column_name_to_remove) + 1  # Ajouter 1 car Excel utilise des index de base 1
-                logger_config.print_and_log_info(f"index of column {column_name_to_remove} is {col_index}")
-                sht.range((1, col_index), (sht.cells.last_cell.row, col_index)).delete()  # Supprimer la colonne
+                with logger_config.stopwatch_with_label(label=f"Removing column {column_name_to_remove} with index {col_index}", inform_beginning=True):
+                    sht.range((1, col_index), (sht.cells.last_cell.row, col_index)).delete()  # Supprimer la colonne
 
             except ValueError as e:
                 logger_config.print_and_log_exception(e)
