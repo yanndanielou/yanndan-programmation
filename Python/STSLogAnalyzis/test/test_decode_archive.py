@@ -31,7 +31,7 @@ class TestDecodeOneArchiveFile:
         pass
 
 
-class TestDecodeOneLine:
+class TestDecodeOneLineWithoutXml:
     def test_decode_basic_fields_zc_ats_tracking_status(self) -> None:
         archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_zc_ats_tracking_status)
         assert archive_line.get_date_raw_str() == "2025-07-21T10:54:18.440+02:00"
@@ -41,6 +41,8 @@ class TestDecodeOneLine:
             == "14 09 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 E4 44 00 01 19 40 27 EC "
         )
 
+
+class TestDecodeOneLineWithXml:
     def test_decode_basic_fields_lc_ats_sso_versions(self) -> None:
         archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_lc_ats_sso_versions)
         assert archive_line.get_id() == "M_PAL_01_LC_ATS_SSO_VERSIONS"
