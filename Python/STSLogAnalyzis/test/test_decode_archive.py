@@ -41,6 +41,10 @@ class TestDecodeOneLineWithoutXml:
             == "14 09 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 04 E4 44 00 01 19 40 27 EC "
         )
 
+    def test_get_archive_line_fields_message_ats_pae_action_set(self) -> None:
+        archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_action_set)
+        assert archive_line.get_id() == "M_TRAIN_CC_9_ATS_CC_ACTION_SET"
+
 
 class TestDecodeOneLineWithXml:
     def test_decode_basic_fields_lc_ats_sso_versions(self) -> None:
@@ -54,10 +58,6 @@ class TestDecodeOneLineWithXml:
         assert decoded_message.decoded_fields_flat_directory["InitLCStatus"] == 1
         assert decoded_message.decoded_fields_flat_directory["SSOLineVersion"] == 0
         assert decoded_message.decoded_fields_flat_directory["Time"] == 8
-
-    def test_get_archive_line_fields_message_ats_pae_action_set(self) -> None:
-        archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_action_set)
-        assert archive_line.get_id() == "M_TRAIN_CC_9_ATS_CC_ACTION_SET"
 
     def test_decode_message_fields_with_xml_ats_pae_action_set(self) -> None:
         archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_action_set)

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<message class="DataMessage">
+  <layer class="DataTransformer">
+    <record class="Record" id="RecordOfTheMessage" offset="0">
+      <record class="Record" id="Information" offset="0">
+        <field class="BigEndianASCIIChar" id="TheStringField" size="8" dim="2"/>
+      </record>
+    </record>
+  </layer>
+</message>
