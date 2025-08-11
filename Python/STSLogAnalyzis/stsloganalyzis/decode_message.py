@@ -1,7 +1,7 @@
 import csv
 import datetime
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, cast
 
 from logger import logger_config
@@ -42,7 +42,7 @@ class InvariantMessagesManager:
 class DecodedMessage:
 
     class XmlMessageRecord:
-        def __init__(self, raw_class: str, raw_id: str, raw_offset: str, raw_dim: Optional[int]):
+        def __init__(self, raw_class: str, raw_id: str, raw_offset: str, raw_dim: Optional[str]):
             self._class_name = raw_class
             self.identifier = raw_id
             self.offset = int(raw_offset)
@@ -51,13 +51,15 @@ class DecodedMessage:
             self.fields: List[DecodedMessage.XmlMessageField] = []
 
     class XmlMessageField:
-        def __init__(self, raw_class: str, raw_id: str, raw_size: str, parent_record: "DecodedMessage.XmlMessageRecord", raw_dim: Optional[int]):
+        def __init__(self, raw_class: str, raw_id: str, size_bits: int, parent_record: "DecodedMessage.XmlMessageRecord", raw_dim: Optional[int]):
             self._class_name = raw_class
             self.identifier = raw_id
-            self.size = int(raw_size)
+            self.size_bits = size_bits
             self.dim = int(raw_dim) if raw_dim else 1
             self.parent_record = parent_record
             self.fields: List[DecodedMessage.XmlMessageField] = []
+
+            parent_record.fields.append(self)
 
     @dataclass
     class XmlMessageEnumerationValue:
@@ -77,6 +79,7 @@ class DecodedMessage:
         self.hlf_decoded: Optional[datetime.datetime] = None
         self.current_bit_index = 0
         self.hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
+        self.root_record: Optional[DecodedMessage.XmlMessageRecord] = None
 
 
 class HLFDecoder:
@@ -145,6 +148,7 @@ class MessageDecoder:
 class XmlMessageDecoder:
     xml_directory_path: str
     decoded_message: Optional[DecodedMessage] = None
+    cached_messages_by_id: Dict[int, "ET.Element[str]"] = field(default_factory=dict)
 
     @staticmethod
     def hex_to_int(hex_string: str) -> int:
@@ -200,10 +204,32 @@ class XmlMessageDecoder:
             assert element_to_decode.tag == "record"
             self._parse_record(record=element_to_decode)
 
-    def _parse_record(self, record: ET.Element) -> None:
+    def _parse_root(self, root: ET.Element) -> None:
+        assert len(root) == 1
+        self._parse_layer(root[0])
+
+    def _parse_layer(self, layer: ET.Element) -> None:
+        assert len(layer) == 1
+        self._parse_record(layer[0])
+
+    def _parse_record(self, record: ET.Element, parent_record: Optional[DecodedMessage.XmlMessageRecord] = None) -> None:
         """Recursively parse records to decode fields."""
 
-        decoded_message = cast(DecodedMessage, self.decoded_message)
+        raw_class = record.get("class")
+        assert raw_class
+        raw_dim = record.get("dim")
+        raw_id = record.get("id")
+        assert raw_id
+        raw_offset = record.get("offset")
+        assert raw_offset
+
+        xml_message_record = DecodedMessage.XmlMessageRecord(raw_class=raw_class, raw_dim=raw_dim, raw_id=raw_id, raw_offset=raw_offset)
+        assert self.decoded_message
+
+        if parent_record is None:
+            self.decoded_message.root_record = xml_message_record
+        else:
+            parent_record.records.append(xml_message_record)
 
         record_dim = int(record.get("dim", 1))
         for recordIt in range(0, record_dim):
@@ -213,10 +239,10 @@ class XmlMessageDecoder:
             for element in record:
                 # logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
 
-                if element.tag == "record" or element.tag == "layer":
+                if element.tag == "record":
                     # logger_config.print_and_log_info(f"{element.tag} found: {element.get("id")}, current_bit_index:{current_bit_index}")
                     # Recursive call to process nested records
-                    self._parse_record(element)
+                    self._parse_record(record=element, parent_record=xml_message_record)
                 elif element.tag == "selector":
                     self._parse_selector(element)
                 elif element.tag == "field":
@@ -225,33 +251,37 @@ class XmlMessageDecoder:
                     field_size_bits = int(element.get("size", 0))  # Bits
                     field_dim = int(element.get("dim", 1))
 
+                    field_type = element.get("class")
+                    assert field_type
+
+                    xml_decoded_field = DecodedMessage.XmlMessageField(raw_class=field_type, parent_record=xml_message_record, raw_dim=field_dim, raw_id=raw_field_name, size_bits=field_size_bits)
+
                     # logger_config.print_and_log_info(f"Field {field_name} with size {field_size_bits} bits and dim {field_dim}")
 
                     field_table_values: List[str | int] = []
 
-                    for fieldIt in range(0, field_dim):
+                    for fieldIt in range(0, xml_decoded_field.dim):
                         field_name_with_record_prefix = record_prefix + raw_field_name
                         field_name_with_dim = raw_field_name if field_dim == 1 else raw_field_name + f"_{fieldIt}"
                         field_name_with_dim_and_record_prefix = record_prefix + field_name_with_dim
 
                         # logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
 
-                        bits_extracted = self.extract_bits(decoded_message.hex_bytes, decoded_message.current_bit_index, field_size_bits)
-                        field_type = element.get("class")
+                        bits_extracted = self.extract_bits(self.decoded_message.hex_bytes, self.decoded_message.current_bit_index, field_size_bits)
 
                         field_value: str | int = ""
 
                         try:
                             if field_type == "BigEndianInteger":
-                                field_value = self.extract_bits_int(bits_extracted, decoded_message.current_bit_index, field_size_bits)
-                                decoded_message.decoded_fields_flat_directory[field_name_with_dim_and_record_prefix] = field_value
+                                field_value = self.extract_bits_int(bits_extracted, self.decoded_message.current_bit_index, field_size_bits)
+                                self.decoded_message.decoded_fields_flat_directory[field_name_with_dim_and_record_prefix] = field_value
                             elif field_type == "BigEndianBitSet":
                                 # field_value = self.extract_bits_int(bits_extracted, current_bit_index, field_size_bits)
-                                field_value = self.extract_bits_bitfield(bits_extracted, decoded_message.current_bit_index, field_size_bits)
-                                decoded_message.decoded_fields_flat_directory[field_name_with_dim_and_record_prefix] = field_value
+                                field_value = self.extract_bits_bitfield(bits_extracted, self.decoded_message.current_bit_index, field_size_bits)
+                                self.decoded_message.decoded_fields_flat_directory[field_name_with_dim_and_record_prefix] = field_value
                             elif field_type == "BigEndianASCIIChar":
-                                field_value = self.extract_bits_ascii_char(bits_extracted, decoded_message.current_bit_index, field_size_bits)
-                                decoded_message.decoded_fields_flat_directory[field_name_with_dim_and_record_prefix] = field_value
+                                field_value = self.extract_bits_ascii_char(bits_extracted, self.decoded_message.current_bit_index, field_size_bits)
+                                self.decoded_message.decoded_fields_flat_directory[field_name_with_dim_and_record_prefix] = field_value
                                 # decoded_fields[field_name_with_dim + "_raw"] = field_value
                             else:
                                 logger_config.print_and_log_error(f"Field {field_name_with_dim_and_record_prefix} has unsupported type {field_type}")
@@ -259,36 +289,47 @@ class XmlMessageDecoder:
                             logger_config.print_and_log_exception(ex)
                             logger_config.print_and_log_error(f"Error when decoding field {raw_field_name} {field_name_with_dim_and_record_prefix}")
                             # decoded_message.decoded_fields[field_name] = CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR
-                            decoded_message.not_decoded_because_error_fields_names.append(raw_field_name)
+                            self.decoded_message.not_decoded_because_error_fields_names.append(raw_field_name)
                             pass
 
                         field_table_values.append(field_value)
                         # logger_config.print_and_log_info(f"Field {field_name_with_dim_and_record_prefix} is {field_value}")
-                        decoded_message.current_bit_index += field_size_bits
+                        self.decoded_message.current_bit_index += field_size_bits
                         # logger_config.print_and_log_info(f"current_bit_index {current_bit_index} is {type(current_bit_index)}")
 
                     if field_dim > 1:
                         if field_type == "BigEndianASCIIChar":
-                            decoded_message.decoded_fields_flat_directory[field_name_with_record_prefix] = "".join(cast(str, field_table_values)).rstrip()
+                            self.decoded_message.decoded_fields_flat_directory[field_name_with_record_prefix] = "".join(cast(str, field_table_values)).rstrip()
                             # logger_config.print_and_log_info(f"Field {field_name} is {decoded_fields[field_name]}")
-                            decoded_message.decoded_fields_flat_directory[field_name_with_record_prefix + "_list"] = field_table_values
+                            self.decoded_message.decoded_fields_flat_directory[field_name_with_record_prefix + "_list"] = field_table_values
                         else:
-                            decoded_message.decoded_fields_flat_directory[field_name_with_record_prefix] = field_table_values
+                            self.decoded_message.decoded_fields_flat_directory[field_name_with_record_prefix] = field_table_values
 
-    def decode_xml_fields_in_message_hexadecimal(self, message_number: int, hexadecimal_content: str) -> Optional[DecodedMessage]:
+    @staticmethod
+    def get_xml_file_root(message_number: int, xml_directory_path: str) -> Optional["ET.Element[str]"]:
         # Open the corresponding XML file based on message_id
-        xml_file_path = self.xml_directory_path + "/" + f"MsgId{message_number}scheme.xml"
+        xml_file_path = xml_directory_path + "/" + f"MsgId{message_number}scheme.xml"
         try:
             # Load and parse the XML file
-            print(f"Load and parse file {xml_file_path}")
+            logger_config.print_and_log_info(f"Load and parse file {xml_file_path}")
             tree = ET.parse(xml_file_path)
             root = tree.getroot()
+            return root
         except FileNotFoundError:
-            print(f"File {xml_file_path} not found.")
+            logger_config.print_and_log_error(f"File {xml_file_path} not found.")
             return None
 
+    def decode_xml_fields_in_message_hexadecimal(self, message_number: int, hexadecimal_content: str) -> Optional[DecodedMessage]:
+
+        if message_number not in self.cached_messages_by_id:
+            xml_file_root = XmlMessageDecoder.get_xml_file_root(message_number=message_number, xml_directory_path=self.xml_directory_path)
+            if xml_file_root is None:
+                return None
+            self.cached_messages_by_id[message_number] = xml_file_root
+
+        root = self.cached_messages_by_id[message_number]
         # Traverse the root record and decode
         decoded_message = self.decoded_message = DecodedMessage(message_number=message_number, hex_string=hexadecimal_content)
-        self._parse_record(root)
+        self._parse_root(root)
         self.decoded_message = None
         return decoded_message
