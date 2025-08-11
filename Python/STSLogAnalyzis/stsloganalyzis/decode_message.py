@@ -75,6 +75,15 @@ class DecodedMessage:
 
             field_macro.unit_fields.append(self)
 
+    class XmlMessageFieldString:
+        def __init__(self, field_macro: "DecodedMessage.XmlMessageFieldMacro", index: int):
+            self.field_macro = field_macro
+            self.value: Optional[int | bool | str | List[int | str | bool]] = None
+            self.human_readable_value: Optional[int | bool | str] = None
+            self.index = index
+
+            field_macro.unit_fields.append(self)
+
     @dataclass
     class XmlMessageEnumerationValue:
         identifier: str
