@@ -66,11 +66,8 @@ class DecodedMessage:
 
     class XmlMessageEnumeration:
         def __init__(self, raw_id: str):
-            self._class_name = raw_class
             self.identifier = raw_id
-            self.size = int(raw_size)
-            self.dim = int(raw_dim) if raw_dim else 1
-            self.values: List[XmlMessageDecoder.XmlMessageEnumerationValue] = []
+            self.values: List[DecodedMessage.XmlMessageEnumerationValue] = []
 
     def __init__(self, message_number: int, hex_string: str) -> None:
         self.message_number = message_number
