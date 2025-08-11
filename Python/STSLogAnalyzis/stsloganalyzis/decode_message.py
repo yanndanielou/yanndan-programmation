@@ -40,6 +40,38 @@ class InvariantMessagesManager:
 
 
 class DecodedMessage:
+
+    class XmlMessageRecord:
+        def __init__(self, raw_class: str, raw_id: str, raw_offset: str, raw_dim: Optional[int]):
+            self._class_name = raw_class
+            self.identifier = raw_id
+            self.offset = int(raw_offset)
+            self.dim = int(raw_dim) if raw_dim else 1
+            self.records: List[DecodedMessage.XmlMessageRecord] = []
+            self.fields: List[DecodedMessage.XmlMessageField] = []
+
+    class XmlMessageField:
+        def __init__(self, raw_class: str, raw_id: str, raw_size: str, parent_record: "DecodedMessage.XmlMessageRecord", raw_dim: Optional[int]):
+            self._class_name = raw_class
+            self.identifier = raw_id
+            self.size = int(raw_size)
+            self.dim = int(raw_dim) if raw_dim else 1
+            self.parent_record = parent_record
+            self.fields: List[DecodedMessage.XmlMessageField] = []
+
+    @dataclass
+    class XmlMessageEnumerationValue:
+        identifier: str
+        value: int
+
+    class XmlMessageEnumeration:
+        def __init__(self, raw_id: str):
+            self._class_name = raw_class
+            self.identifier = raw_id
+            self.size = int(raw_size)
+            self.dim = int(raw_dim) if raw_dim else 1
+            self.values: List[XmlMessageDecoder.XmlMessageEnumerationValue] = []
+
     def __init__(self, message_number: int, hex_string: str) -> None:
         self.message_number = message_number
         self.decoded_fields_flat_directory: Dict[str, int | bool | str | List[int | str | bool]] = dict()
