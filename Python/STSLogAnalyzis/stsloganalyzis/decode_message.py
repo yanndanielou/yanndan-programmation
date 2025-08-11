@@ -223,7 +223,7 @@ class XmlMessageDecoder:
     @staticmethod
     def convert_bits_int(combined_bits: str, start_bit: int, bit_length: int) -> int:
         # Extract the substring of the combined bits and convert to an integer
-        bit_segment = combined_bits[(start_bit - bit_length) % 8 : (start_bit - bit_length) % 8 + bit_length]
+        bit_segment = XmlMessageDecoder.convert_bits_bitfield(combined_bits=combined_bits, start_bit=start_bit, bit_length=bit_length)
         return int(bit_segment, 2)
 
     def _parse_selector(self, record: ET.Element, parent_record: DecodedMessage.XmlMessageRecordUnit) -> None:
