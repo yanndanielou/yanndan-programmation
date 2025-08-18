@@ -47,7 +47,7 @@ class DecodedMessage:
             self._class_name = raw_class
             self.identifier = raw_id
             self.offset = int(raw_offset)
-            assert self.offset == 0, f"Not supportd offset {self.offset} for record {raw_class} {raw_id} {decoded_message.message_number}"
+            assert self.offset == 0, f"Not supported offset {self.offset} for record {raw_class} {raw_id} {decoded_message.message_number}"
             self.dim = int(raw_dim) if raw_dim else 1
             self.decoded_message = decoded_message
 

@@ -69,6 +69,12 @@ class TestDecodeSimpleFakeMessages:
         assert not decoded_message.not_decoded_because_error_fields_names
         assert decoded_message.decoded_fields_flat_directory["TheStringField"] == expected_value
 
+    def test_message_with_record_with_offset_not_supported(self) -> None:
+        hexa_content_as_str = "01"
+        xml_message_decoder = decode_message.XmlMessageDecoder(xml_directory_path=r"Input_for_tests\Xml")
+        with pytest.raises(AssertionError, match=r".*supported*"):
+            xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=995, hexadecimal_content=hexa_content_as_str)
+
 
 class TestDecodeCbtcMessageswithRecordWithDimension:
 
