@@ -59,6 +59,7 @@ class DecodedMessage:
             self.all_fields_unit_by_name: Dict[str, DecodedMessage.XmlMessageFieldUnit | List[DecodedMessage.XmlMessageFieldUnit]] = {}
             self.index = index
             record_macro.decoded_message.add_record_by_name(self)
+            self.long_name = self.record_macro.identifier if self.record_macro.dim == 1 else f"{self.record_macro.identifier}_{index}"
 
         def add_field_unit(self, field: "DecodedMessage.XmlMessageFieldUnit") -> None:
             self.fields.append(field)
@@ -103,6 +104,9 @@ class DecodedMessage:
             decoded_message.add_field_by_name(self)
 
             field_macro.parent_record.add_field_unit(self)
+            long_name_record_prefix = "" if self.field_macro.parent_record.record_macro.dim == 1 else f"{self.field_macro.parent_record.record_macro.identifier}_{index}_"
+            field_name = self.field_macro.identifier if self.field_macro.dim == 1 else f"{self.field_macro.identifier}_{index}"
+            self.long_name = long_name_record_prefix + field_name
 
     class XmlMessageFieldString(XmlMessageFieldUnit):
         def __init__(self, field_macro: "DecodedMessage.XmlMessageFieldMacro", value: str):
@@ -348,13 +352,12 @@ class XmlMessageDecoder:
         for _ in range(0, xml_decoded_field_macro.dim):
             bits_extracted = self.extract_bits(self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
             field_value = self.convert_bits_int(bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
-            self.decoded_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_value
+            # self.decoded_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_value
 
             all_values.append(field_value)
 
-        self.decoded_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = all_values
-
-        DecodedMessage.XmlMessageFieldInt(field_macro=xml_decoded_field_macro, value=all_values)
+        field = DecodedMessage.XmlMessageFieldInt(field_macro=xml_decoded_field_macro, value=all_values)
+        self.decoded_message.decoded_fields_flat_directory[field.long_name] = all_values
 
     def _parse_single_int_type_field(self, xml_decoded_field_macro: DecodedMessage.XmlMessageFieldMacro) -> None:
 
