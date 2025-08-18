@@ -1,23 +1,18 @@
 # Standard
 
-from enum import Enum, auto
-import argparse
-import fnmatch
 import inspect
 import logging
 import os
-import pickle
-import queue
 import shutil
 import threading
 import time
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set
+from enum import Enum, auto
+from typing import List, Optional, Set, cast
 
 import selenium.webdriver.chrome.options
-import selenium.webdriver.firefox.options
 from common import download_utils, file_utils
 
 # Other libraries
@@ -31,7 +26,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.support.ui import Select, WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.remote.remote_connection import RemoteConnection
 
 # Current programm
 import connexion_param
@@ -75,22 +71,22 @@ class QueryOutputFileType(Enum):
 
     def get_file_download_dropdown_menu_option_text(self) -> str:
         return "Exporter vers un fichier texte" if self == QueryOutputFileType.TXT_EXPORT else "Exporter vers un tableur Excel"
-
-
+  
+    
 @dataclass
 class ProjectsFieldFilter:
     projects_names: Set[str] | List[str]
     filter_type: FilterFieldType
-
-
+   
+  
 @dataclass
 class CfxQuery:
     output_file_name_without_extension: str
     query_id: int
     output_file_type: QueryOutputFileType
     projects_field_filters: Optional[ProjectsFieldFilter] = None
-    label: str = None
-    
+    label: str = ""
+     
     def __post_init__(self)->None:
         if self.label is None:
             self.label = self.output_file_name_without_extension
@@ -333,7 +329,7 @@ def stopwatch_with_label_and_surround_with_screenshots(label: str, remote_web_dr
     # pylint: disable=line-too-long
     print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
 
-    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
+    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}") # pylint: disable=logging-fstring-interpolation
 
 
 @contextmanager
@@ -342,7 +338,7 @@ def surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, scr
     yield 0.0
     remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/after {label}.png")
 
-
+ 
 @dataclass
 class SaveCfxRequestMultipagesResultsApplication:
     projects_to_handle_list: List[str]
@@ -383,7 +379,7 @@ class SaveCfxRequestMultipagesResultsApplication:
         # pylint: disable=line-too-long
         print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
 
-        logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
+        logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}") # pylint: disable=logging-fstring-interpolation
 
     def run(self) -> None:
 
@@ -564,7 +560,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                             change_state_cfx_query=change_state_cfx_query,
                             label=change_state_cfx_query.label,
                             file_to_create_path_without_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{TEXT_FILE_EXTENSION}",
-                        )
+                        )      
 
         except Exception as e:
 
@@ -572,10 +568,10 @@ class SaveCfxRequestMultipagesResultsApplication:
             logger_config.print_and_log_exception(e)
             logger_config.print_and_log_error(f"Exception  {self.number_of_exceptions_caught}  number_of_retry_if_failure:{number_of_retry_if_failure}")
             self.driver.get_screenshot_as_file(f"{self.screenshots_output_sub_directory_name}/{self.number_of_exceptions_caught} th Exception caught.png")
-            with logger_config.stopwatch_with_label(f"reset_driver :"):
+            with logger_config.stopwatch_with_label("Reset_driver :"):
                 self.reset_driver()
             if number_of_retry_if_failure > 0:
-                with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project"):
+                with logger_config.stopwatch_with_label("Generate_and_dowload_query_for_project"):
                     self.generate_and_download_query_results_for_project_filters(change_state_cfx_query=change_state_cfx_query, number_of_retry_if_failure=number_of_retry_if_failure - 1)
 
     def download_current_query_to_file(self, change_state_cfx_query: CfxQuery, label: str, file_to_create_path_without_extension: str) -> bool:
@@ -632,7 +628,7 @@ class SaveCfxRequestMultipagesResultsApplication:
         driver_service = Service(chrome_driver_path)
         self.driver = webdriver.Chrome(service=driver_service, options=chrome_options)
 
-        self.driver.command_executor.set_timeout(1000)
+        cast(RemoteConnection, self.driver.command_executor).set_timeout(1000)
 
     def create_webdriver_and_login(self) -> None:
         self.create_webdriver_chrome()
@@ -683,7 +679,8 @@ class SaveCfxRequestMultipagesResultsApplication:
         with stopwatch_with_label_and_surround_with_screenshots(
             label="Wait for the page to be fully loaded (JavaScript):: document.readyState now good", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
         ):
-            WebDriverWait(self.driver, 10).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")
+            WebDriverWait(self.driver, 10).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete") # mypy: disable=disallow-untyped-calls
+
 
         with stopwatch_with_label_and_surround_with_screenshots(label="Additional waiting time", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             time.sleep(0.8)
