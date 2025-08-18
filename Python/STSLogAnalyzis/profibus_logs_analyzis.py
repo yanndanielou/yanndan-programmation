@@ -121,7 +121,7 @@ def read_log_file(file_path: str, cab_log: CabLogs) -> List[ProfibusLogSession]:
     return log_sessions
 
 
-def detect_missing_logs(all_log_sessions: List[ProfibusLogSession]):
+def detect_missing_logs(all_log_sessions: List[ProfibusLogSession]) -> None:
     if not all_log_sessions:
         logger_config.print_and_log_error("No log session found.")
         return
