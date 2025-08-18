@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<message class="DataMessage">
+  <layer class="DataTransformer">
+    <record class="Record" id="RecordOfTheMessage" offset="0">
+      <record class="Record" id="Information" offset="1" dim="250">
+            <field class="BigEndianInteger" id="TvdArb" size="1"/>
+            <field class="BigEndianInteger" id="TvdNrb" size="1"/>
+            <field class="BigEndianInteger" id="TvdNrbAck" size="1"/>
+            <field class="BigEndianInteger" id="TvdRa1" size="1"/>
+            <field class="BigEndianInteger" id="TvdRa2" size="1"/>
+            <field class="BigEndianInteger" id="TvdCr" size="1"/>
+            <field class="BigEndianInteger" id="TvdShuntingAlaram" size="1"/>
+            <field class="BigEndianInteger" id="TvdVirtualVacant" size="1"/>
+      </record>
+      <record class="Record" id="Time" offset="0">
+        <field class="BigEndianInteger" id="Time" size="32"/>
+        <field class="BigEndianInteger" id="TimeOffset" size="32"/>
+        <field class="BigEndianInteger" id="Decade" size="4"/>
+        <field class="BigEndianInteger" id="DayOnDecade" size="12"/>
+      </record>
+    </record>
+  </layer>
+</message>
