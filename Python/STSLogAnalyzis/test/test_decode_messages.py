@@ -88,6 +88,13 @@ class TestDecodeCbtcMessageswithRecordWithDimension:
         assert decoded_message.decoded_fields_flat_directory["UtoTrainReversingMode"] == 4
         assert decoded_message.decoded_fields_flat_directory["TimeOffset"] == 72000
 
+    def test_access_fields_inside_record_by_long_name(self) -> None:
+        decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=205, hexadecimal_content=self.message_205_hexa_content_as_str)
+        assert decoded_message
+        assert not decoded_message.not_decoded_because_error_fields_names
+        assert decoded_message.is_correctly_and_completely_decoded()
+        assert decoded_message.decoded_fields_flat_directory["TvdOpData_0_TvdArb"]
+
     def test_access_fields_inside_record_by_field_name_and_index(self) -> None:
         decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=205, hexadecimal_content=self.message_205_hexa_content_as_str)
         assert decoded_message
