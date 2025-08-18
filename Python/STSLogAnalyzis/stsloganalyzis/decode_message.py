@@ -53,10 +53,16 @@ class DecodedMessage:
     class XmlMessageRecordUnit:
         def __init__(self, record_macro: "DecodedMessage.XmlMessageRecordMacro", index: int):
             self.record_macro = record_macro
-            self.fields: List[DecodedMessage.XmlMessageFieldMacro] = []
+            self.fields: List[DecodedMessage.XmlMessageFieldUnit] = []
             self.records: List[DecodedMessage.XmlMessageRecordMacro] = []
+            self.all_fields_unit_by_name: Dict[str, DecodedMessage.XmlMessageFieldUnit | List[DecodedMessage.XmlMessageFieldUnit]] = {}
             self.index = index
             record_macro.decoded_message.add_record_by_name(self)
+
+        def add_field_unit(self, field: "DecodedMessage.XmlMessageFieldUnit") -> None:
+            self.fields.append(field)
+            assert field.field_macro.identifier not in self.all_fields_unit_by_name
+            self.all_fields_unit_by_name[field.field_macro.identifier] = field
 
     class XmlMessageFieldMacro:
         def __init__(
@@ -78,8 +84,6 @@ class DecodedMessage:
             self.field_name_with_record_prefix = field_name_with_record_prefix
             self.decoded_message = decoded_message
 
-            parent_record.fields.append(self)
-
     class XmlMessageFieldUnit(ABC):
         @abstractmethod
         def __init__(
@@ -90,10 +94,14 @@ class DecodedMessage:
         ):
             self.field_macro = field_macro
             self.human_readable_value: Optional[int | bool | str] = None
+            self.value: Optional[int | bool | str | List[int] | List[bool]] = None
+
             self.index = index
             field_macro.unit_fields.append(self)
             self.decoded_message = decoded_message
             decoded_message.add_field_by_name(self)
+
+            field_macro.parent_record.add_field_unit(self)
 
     class XmlMessageFieldString(XmlMessageFieldUnit):
         def __init__(self, field_macro: "DecodedMessage.XmlMessageFieldMacro", value: str):
@@ -143,7 +151,7 @@ class DecodedMessage:
             self.all_fields_by_name[message_field.field_macro.identifier] = [previous_field, message_field]
 
     def add_record_by_name(self, record_field: XmlMessageRecordUnit) -> None:
-        if record_field.record_macro.identifier not in self.all_fields_by_name:
+        if record_field.record_macro.identifier not in self.all_records_by_name:
             self.all_records_by_name[record_field.record_macro.identifier] = record_field
         elif isinstance(self.all_records_by_name[record_field.record_macro.identifier], list):
             cast(list, self.all_records_by_name[record_field.record_macro.identifier]).append(record_field)
@@ -151,6 +159,13 @@ class DecodedMessage:
             # Convert to list
             previous_record = cast(DecodedMessage.XmlMessageRecordUnit, self.all_records_by_name[record_field.record_macro.identifier])
             self.all_records_by_name[record_field.record_macro.identifier] = [previous_record, record_field]
+
+    def is_correctly_and_completely_decoded(self) -> bool:
+        if self.not_decoded_because_error_fields_names:
+            return False
+
+        size_bits = len(self.hex_bytes) * 8
+        return self.current_bit_index == size_bits
 
 
 class HLFDecoder:

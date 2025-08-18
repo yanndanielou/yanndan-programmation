@@ -55,6 +55,7 @@ class TestDecodeOneLineWithXml:
         assert invariant_message
         decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
+        assert decoded_message.is_correctly_and_completely_decoded()
         assert decoded_message.decoded_fields_flat_directory["InitLCStatus"] == 1
         assert decoded_message.decoded_fields_flat_directory["SSOLineVersion"] == 0
         assert decoded_message.decoded_fields_flat_directory["Time"] == 8
@@ -66,6 +67,7 @@ class TestDecodeOneLineWithXml:
         assert invariant_message
         decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
+        assert decoded_message.is_correctly_and_completely_decoded()
         assert decoded_message.decoded_fields_flat_directory["LineId"] == 1
         assert decoded_message.decoded_fields_flat_directory["ActionSetId"] == 1
         assert decoded_message.decoded_fields_flat_directory["AllStationsSkip"] == 0
@@ -87,6 +89,7 @@ class TestDecodeOneLineWithXml:
         assert invariant_message
         decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
+        assert decoded_message.is_correctly_and_completely_decoded()
         assert cast(str, decoded_message.decoded_fields_flat_directory["SoftVersionPart1"]).startswith("PAE__NEXT_PAE_CUCP_V10_0")
         assert cast(str, decoded_message.decoded_fields_flat_directory["SoftVersionPart1"]) == "PAE__NEXT_PAE_CUCP_V10_0"
         assert cast(str, decoded_message.decoded_fields_flat_directory["SoftVersionPart1_0"]) == "P"
@@ -100,6 +103,8 @@ class TestDecodeOneLineWithXml:
         assert invariant_message
         decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
+        assert not decoded_message.is_correctly_and_completely_decoded()
+        assert decoded_message.not_decoded_because_error_fields_names
         assert decoded_message.decoded_fields_flat_directory["CriticalSectStop"] == 0
         assert decoded_message.decoded_fields_flat_directory["UnexpectedTransponderId"] == 0
         assert "Time" in decoded_message.not_decoded_because_error_fields_names
@@ -111,6 +116,7 @@ class TestDecodeOneLineWithXml:
         assert invariant_message
         decoded_message = message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=invariant_message.message_number, hexadecimal_content=archive_line.get_new_state_str())
         assert decoded_message
+        assert decoded_message.is_correctly_and_completely_decoded()
         assert "TrainNumber" not in decoded_message.decoded_fields_flat_directory
         assert cast(str, decoded_message.decoded_fields_flat_directory["RestrEnd1SegId"]) == 8390
         assert cast(str, decoded_message.decoded_fields_flat_directory["RestrEnd1SegId"]) == 8390
