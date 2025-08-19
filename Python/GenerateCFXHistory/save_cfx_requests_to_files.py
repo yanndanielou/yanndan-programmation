@@ -524,11 +524,11 @@ class SaveCfxRequestMultipagesResultsApplication:
                 WebDriverWait(self.driver, 100).until(expected_conditions.presence_of_element_located((By.ID, "unique_info_col")))
 
             with stopwatch_with_label_and_surround_with_screenshots(
-                label=f"{change_state_cfx_query.label} generate_and_dowload_query_for_all_projects_except - wait column CFXID",
+                label=f"{change_state_cfx_query.label} generate_and_dowload_query_for_all_projects_except - wait column id",
                 remote_web_driver=self.driver,
                 screenshots_directory_path=self.screenshots_output_relative_path,
             ):
-                WebDriverWait(self.driver, 100).until(expected_conditions.presence_of_element_located((By.XPATH, "//th/div[text()='CFXID']")))
+                WebDriverWait(self.driver, 100).until(expected_conditions.presence_of_element_located((By.XPATH, "//th/div[text()='id']")))
 
             with stopwatch_with_label_and_surround_with_screenshots(
                 label=f"{change_state_cfx_query.label} generate_and_dowload_query_for_all_projects_except - request execution additional waiting time",
