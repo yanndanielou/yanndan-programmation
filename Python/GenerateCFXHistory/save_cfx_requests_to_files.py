@@ -311,6 +311,19 @@ def stopwatch_with_label_and_surround_with_screenshots(label: str, remote_web_dr
     """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
     https://www.docstring.fr/glossaire/with/"""
     remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/before {label}.png")
+    
+    previous_stack = inspect.stack(0)[2]
+    file_name = previous_stack.filename
+    line_number = previous_stack.lineno
+    calling_file_name_and_line_number = file_name + ":" + str(line_number)
+    
+    to_print_and_log = f"{label} begin"
+    # pylint: disable=line-too-long
+    log_timestamp = time.asctime(time.localtime(time.time()))
+
+    print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
+    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}") # pylint: disable=logging-fstring-interpolation
+    
     debut = time.perf_counter()
     yield time.perf_counter() - debut
     fin = time.perf_counter()
@@ -321,10 +334,6 @@ def stopwatch_with_label_and_surround_with_screenshots(label: str, remote_web_dr
 
     log_timestamp = time.asctime(time.localtime(time.time()))
 
-    previous_stack = inspect.stack(0)[2]
-    file_name = previous_stack.filename
-    line_number = previous_stack.lineno
-    calling_file_name_and_line_number = file_name + ":" + str(line_number)
 
     # pylint: disable=line-too-long
     print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
@@ -476,7 +485,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                     input_element.send_keys(filter_text_to_type)
 
                 with stopwatch_with_label_and_surround_with_screenshots(
-                    label=f"{change_state_cfx_query.label} generate_and_dowload_query_for_all_projects_except element_to_be_clickable Sélectionner",
+                    label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters element_to_be_clickable Sélectionner",
                     remote_web_driver=self.driver,
                     screenshots_directory_path=self.screenshots_output_relative_path,
                 ):
@@ -509,7 +518,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                     ok_button.click()
 
                 with stopwatch_with_label_and_surround_with_screenshots(
-                    label=f"{change_state_cfx_query.label} generate_and_dowload_query_for_all_projects_except Exécuter la requête",
+                    label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters Exécuter la requête",
                     remote_web_driver=self.driver,
                     screenshots_directory_path=self.screenshots_output_relative_path,
                 ):
@@ -517,21 +526,21 @@ class SaveCfxRequestMultipagesResultsApplication:
                     executer_requete_button.click()
 
             with stopwatch_with_label_and_surround_with_screenshots(
-                label=f"{change_state_cfx_query.label} generate_and_dowload_query_for_all_projects_except - wait table result",
+                label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters - wait table result",
                 remote_web_driver=self.driver,
                 screenshots_directory_path=self.screenshots_output_relative_path,
             ):
-                WebDriverWait(self.driver, 100).until(expected_conditions.presence_of_element_located((By.ID, "unique_info_col")))
+                WebDriverWait(self.driver, 30).until(expected_conditions.presence_of_element_located((By.ID, "unique_info_col")))
 
             with stopwatch_with_label_and_surround_with_screenshots(
-                label=f"{change_state_cfx_query.label} generate_and_dowload_query_for_all_projects_except - wait column id",
+                label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters - wait column id",
                 remote_web_driver=self.driver,
                 screenshots_directory_path=self.screenshots_output_relative_path,
             ):
-                WebDriverWait(self.driver, 100).until(expected_conditions.presence_of_element_located((By.XPATH, "//th/div[text()='id']")))
+                WebDriverWait(self.driver, 30).until(expected_conditions.presence_of_element_located((By.XPATH, "//th/div[text()='id']")))
 
             with stopwatch_with_label_and_surround_with_screenshots(
-                label=f"{change_state_cfx_query.label} generate_and_dowload_query_for_all_projects_except - request execution additional waiting time",
+                label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters - request execution additional waiting time",
                 remote_web_driver=self.driver,
                 screenshots_directory_path=self.screenshots_output_relative_path,
             ):
@@ -567,7 +576,7 @@ class SaveCfxRequestMultipagesResultsApplication:
             self.number_of_exceptions_caught += 1
             logger_config.print_and_log_exception(e)
             logger_config.print_and_log_error(f"Exception  {self.number_of_exceptions_caught}  number_of_retry_if_failure:{number_of_retry_if_failure}")
-            self.driver.get_screenshot_as_file(f"{self.screenshots_output_sub_directory_name}/{self.number_of_exceptions_caught} th Exception caught.png")
+            self.driver.get_screenshot_as_file(f"{self.errors_output_relative_path}/{self.number_of_exceptions_caught} th Exception caught.png")
             with logger_config.stopwatch_with_label("Reset_driver :"):
                 self.reset_driver()
             if number_of_retry_if_failure > 0:
