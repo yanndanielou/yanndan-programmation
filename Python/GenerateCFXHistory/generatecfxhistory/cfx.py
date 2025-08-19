@@ -890,7 +890,7 @@ class ChampFXEntry:
 
         :type rejection_cause: RejectionCause
         """
-        self._submit_date = submit_date
+        self.submit_date = submit_date
         self._change_state_actions: list[ChangeStateAction] = []
         self._change_state_actions_by_date: Dict[datetime.datetime, ChangeStateAction] = dict()
 
@@ -927,7 +927,7 @@ class ChampFXEntry:
 
         self._category = category
 
-        if self._rejection_cause != RejectionCause.NONE:
+        if self._rejection_cause is not None and self._rejection_cause != RejectionCause.NONE:
             self._subsystem = self._system_structure_subsystem
         else:
             self._subsystem = self._fixed_implemented_in_subsystem if self._fixed_implemented_in_subsystem else self._current_owner_role
@@ -966,11 +966,11 @@ class ChampFXEntry:
         oldest_submit_date_state_change = self.get_oldest_change_state_action_by_new_state(State.SUBMITTED)
         if not oldest_submit_date_state_change:
             #logger_config.print_and_log_warning(f"{self.cfx_id} has no change state to submit state")
-            if not self._submit_date:
+            if not self.submit_date:
                 logger_config.print_and_log_error(f"{self._cfx_project_name} {self.cfx_id} has no submit date")
                 assert self.get_all_change_state_actions_sorted_chronologically()
                 return self.get_all_change_state_actions_sorted_chronologically()[0].timestamp
-            return self._submit_date
+            return self.submit_date
         return oldest_submit_date_state_change.timestamp
 
     def get_oldest_change_state_action_by_new_state(self, new_state: State) -> Optional[ChangeStateAction]:
@@ -981,6 +981,9 @@ class ChampFXEntry:
 
     def get_newest_current_owner_modification_that_is_before_date(self, reference_date: datetime.datetime) -> Optional[ChangeCurrentOwnerAction]:
         return next((action for action in self.get_all_current_owner_modifications_sorted_reversed_chronologically() if action.timestamp < reference_date), None)
+    
+    def get_oldest_current_owner_modification_that_is_after_date(self, reference_date: datetime.datetime) -> Optional[ChangeCurrentOwnerAction]:
+        return next((action for action in self.get_all_current_owner_modifications_sorted_chronologically() if action.timestamp > reference_date), None)
 
     def add_change_state_action(self, change_state_action: ChangeStateAction) -> None:
         self._change_state_actions.append(change_state_action)
@@ -1001,12 +1004,18 @@ class ChampFXEntry:
         return None if current_owner is None else current_owner.subsystem
 
     def get_current_owner_at_date(self, reference_date: datetime.datetime) -> Optional[role.CfxUser]:
-        if reference_date < self._submit_date:
+        if reference_date < self.submit_date:
             return None
 
         newest_current_owner_modification_action_that_is_before_date = self.get_newest_current_owner_modification_that_is_before_date(reference_date)
         if newest_current_owner_modification_action_that_is_before_date is not None:
             return newest_current_owner_modification_action_that_is_before_date.new_owner
+        
+        oldest_current_owner_modification_action_that_is_after_date = self.get_oldest_current_owner_modification_that_is_after_date(reference_date)
+        if oldest_current_owner_modification_action_that_is_after_date is not None:
+            if oldest_current_owner_modification_action_that_is_after_date.previous_owner is not None:
+                return oldest_current_owner_modification_action_that_is_after_date.previous_owner
+       
         return self._current_owner
 
     def get_state_at_date(self, reference_date: datetime.datetime) -> State:

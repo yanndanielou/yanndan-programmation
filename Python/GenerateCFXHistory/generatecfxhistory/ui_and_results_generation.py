@@ -50,6 +50,7 @@ def produce_results_and_displays(
     dump_all_cfx_ids_in_json: bool = True,
     generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
     project_in_case_of_generate_by_project_instruction_one_project: Optional[str] = None,
+    dates_generator:cfx.DatesGenerator=cfx.DecreasingIntervalDatesGenerator(),
 ) -> None:
 
     if cfx_filters is None:
@@ -76,6 +77,7 @@ def produce_results_and_displays(
                     generate_by_project_instruction=GenerateByProjectInstruction.ONLY_ONE_PROJECT,
                     project_in_case_of_generate_by_project_instruction_one_project=project,
                     display_output_plots=display_output_plots,
+                    dates_generator=dates_generator,
                 )
 
         case GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS:
@@ -90,6 +92,7 @@ def produce_results_and_displays(
                 dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
                 generate_by_project_instruction=GenerateByProjectInstruction.BY_PROJECT,
                 display_output_plots=display_output_plots,
+                    dates_generator=dates_generator,
             )
 
             produce_results_and_displays(
@@ -103,6 +106,7 @@ def produce_results_and_displays(
                 dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
                 generate_by_project_instruction=GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
                 display_output_plots=display_output_plots,
+                    dates_generator=dates_generator,
             )
             return
 
@@ -113,7 +117,7 @@ def produce_results_and_displays(
         generation_label += "All"
 
     with logger_config.stopwatch_with_label(label=f"{generation_label} Gather state counts for each date", inform_beginning=True):
-        all_results_to_display: cfx.AllResultsPerDates = cfx_library.gather_state_counts_for_each_date(cfx_filters=cfx_filters, dates_generator=cfx.DecreasingIntervalDatesGenerator())
+        all_results_to_display: cfx.AllResultsPerDates = cfx_library.gather_state_counts_for_each_date(cfx_filters=cfx_filters, dates_generator=dates_generator)
 
     with logger_config.stopwatch_alert_if_exceeds_duration("compute_cumulative_counts", duration_threshold_to_alert_info_in_s=0.1):
         all_results_to_display.compute_cumulative_counts()
@@ -245,8 +249,8 @@ def produce_displays_and_create_html(
                 html_file.write(html_content)
 
     # Close the figure to free up memory resources
-    #if display_output_plots:
-    plt.close(fig)
+    if not display_output_plots:
+        plt.close(fig)
 
 
 def produce_results_and_displays_for_libary( 
@@ -261,6 +265,7 @@ def produce_results_and_displays_for_libary(
     create_excel_file: bool = True,
     display_output_plots: bool = True,
     dump_all_cfx_ids_in_json: bool = True,
+    dates_generator:cfx.DatesGenerator=cfx.DecreasingIntervalDatesGenerator(),
 ) -> None:
 
     if cfx_filters is None:
@@ -278,6 +283,7 @@ def produce_results_and_displays_for_libary(
             generate_by_project_instruction=generate_by_project_instruction,
             display_output_plots=display_output_plots,
             dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
+            dates_generator=dates_generator,
         )
 
     if for_each_current_owner_per_date:
@@ -295,6 +301,7 @@ def produce_results_and_displays_for_libary(
                     generate_by_project_instruction=generate_by_project_instruction,
                     display_output_plots=display_output_plots,
                     dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
+                    dates_generator=dates_generator,
                 )
 
     if for_each_subsystem:
@@ -313,6 +320,7 @@ def produce_results_and_displays_for_libary(
                     generate_by_project_instruction=generate_by_project_instruction,
                     display_output_plots=display_output_plots,
                     dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
+                    dates_generator=dates_generator,
                 )
 
 
