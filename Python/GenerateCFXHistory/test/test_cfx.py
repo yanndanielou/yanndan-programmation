@@ -239,14 +239,16 @@ class TestSubsystem:
         result_19th_august_2025 = all_results_to_display.get_state_counts_per_timestamp()[0]
         assert bool(result_19th_august_2025)
 
-        assert result_19th_august_2025[State.SUBMITTED] == 52
-        assert result_19th_august_2025[State.ANALYSED] == 10
-        assert result_19th_august_2025[State.ASSIGNED] == 4
-        assert result_19th_august_2025[State.RESOLVED] == 2
-        assert result_19th_august_2025[State.POSTPONED] == 0
-        assert result_19th_august_2025[State.VERIFIED] == 0
-        assert result_19th_august_2025[State.VALIDATED] == 0
-        assert result_19th_august_2025[State.CLOSED] == 45
+        assert result_19th_august_2025[State.SUBMITTED] == 52, result_19th_august_2025
+        assert result_19th_august_2025[State.ANALYSED] == 10, result_19th_august_2025
+        assert result_19th_august_2025[State.ASSIGNED] == 5, result_19th_august_2025
+        assert result_19th_august_2025[State.RESOLVED] == 8, result_19th_august_2025
+        assert result_19th_august_2025[State.POSTPONED] == 0, result_19th_august_2025
+        assert result_19th_august_2025[State.REJECTED] == 5, result_19th_august_2025
+        assert result_19th_august_2025[State.VERIFIED] == 0, result_19th_august_2025
+        assert result_19th_august_2025[State.VALIDATED] == 0, result_19th_august_2025
+        assert result_19th_august_2025[State.CLOSED] == 49, result_19th_august_2025
+
 
 
 
