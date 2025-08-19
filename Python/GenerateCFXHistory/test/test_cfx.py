@@ -190,6 +190,43 @@ class TestSubsystem:
         cfx_entry = champfx_library.get_cfx_by_id("CFX00822357")
         assert cfx_entry._subsystem == role.SubSystem.ADONEM
 
+    def test_reseau_19th_august_2025(self, create_full_champfx_library_fixture:cfx.ChampFXLibrary)->None:
+        
+        all_cfx_to_check_ids = ["CFX00886383", "CFX00886386", "CFX00886390", "CFX00886391"]
+
+        champfx_library = create_full_champfx_library_fixture
+        cfx_filter = cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldSubsystem(field_accepted_values=[role.SubSystem.RESEAU])])
+        cfx_filters= [cfx_filter]
+        
+        
+        assert all_cfx_to_check_ids
+        for cfx_to_check_id in all_cfx_to_check_ids:
+            cfx_request = champfx_library.get_cfx_by_id(cfx_to_check_id)
+            assert cfx_request._subsystem == role.SubSystem.RESEAU
+            assert cfx_filter.match_cfx_entry(cfx_request)
+            
+        date_19th_august_2025 = datetime(year=int(2025), month=int(8), day=int(19))
+        dates_generator=cfx.SpecificForTestsDatesGenerator([date_19th_august_2025])
+        
+        all_results_to_display = champfx_library.gather_state_counts_for_each_date(cfx_filters=cfx_filters, dates_generator=dates_generator)
+        
+        intersection = all_results_to_display.all_cfx_ids_that_have_matched.intersection(all_cfx_to_check_ids)
+        assert len(intersection) == len(all_cfx_to_check_ids)
+        
+        result_19th_august_2025 = all_results_to_display.get_state_counts_per_timestamp()[0]
+        assert bool(result_19th_august_2025)
+
+        assert result_19th_august_2025[cfx.State.SUBMITTED] == 36
+        assert result_19th_august_2025[cfx.State.ANALYSED] == 3
+        assert result_19th_august_2025[cfx.State.ASSIGNED] == 4
+        assert result_19th_august_2025[cfx.State.RESOLVED] == 2
+        assert result_19th_august_2025[cfx.State.POSTPONED] == 0
+        assert result_19th_august_2025[cfx.State.VERIFIED] == 0
+        assert result_19th_august_2025[cfx.State.VALIDATED] == 0
+        assert result_19th_august_2025[cfx.State.CLOSED] == 45
+
+
+
 
 class TestRoleOnDate:
     def test_role_ats_CFX00862371(self) -> None:
