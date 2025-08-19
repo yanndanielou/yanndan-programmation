@@ -385,6 +385,11 @@ class TestFixedImplementedInToSubsystemConversion:
         assert cfx_users_library.get_subsystem_from_champfx_fixed_implemented_in(champfx_fixed_implemented_in)
 
 
+class TestSomeSubsystems:
+    def test_reseau(self)->None:
+        cfx_users_library: role.CfxUserLibrary = role.CfxUserLibrary( user_and_role_data_text_file_full_path="Input/role_data_next_ats.txt",   release_subsystem_mapping=release_role_mapping.next_atsp_release_subsystem_mapping)
+        assert cfx_users_library.get_subsystem_from_champfx_fixed_implemented_in("Réseau Sol ATS") == role.SubSystem.RESEAU
+        	
 
 class TestRoleConversion:
     def test_random(self) -> None:

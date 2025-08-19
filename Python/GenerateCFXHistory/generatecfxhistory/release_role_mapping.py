@@ -7,6 +7,7 @@ other_projects_release_subsystem_mapping: dict[SubSystem, list[str]] = {
 
 next_atsp_release_subsystem_mapping: dict[SubSystem, list[str]] = {
     SubSystem.TCR3: ["S003_Component TCR3", "TCR3"],
+    SubSystem.RESEAU: ["Réseau", "Commutateur", "pare-feu"],
     SubSystem.SW: [
         "Component MES",
         "Component PAE",
@@ -58,7 +59,6 @@ next_atsp_release_subsystem_mapping: dict[SubSystem, list[str]] = {
     SubSystem.TCM_TC: ["SIMECH", "Gumps", "Outils", "XT_OT", "S003_Component TU"],
     SubSystem.RADIO: ["RADIO", "Baie Centrale Radio"],
     SubSystem.ATS_EVIDEN: ["COEUR CK", "FGPT", "MES SIL2"],
-    SubSystem.RESEAU: ["Réseau", "Commutateur", "pare-feu"],
     SubSystem.ADONEM: ["ADONEM"],
     SubSystem.TCM_TM1: ["Plateforme", "Usine"],
     SubSystem.TCM_TM2: ["Site"],
