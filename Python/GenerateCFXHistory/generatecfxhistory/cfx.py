@@ -479,11 +479,16 @@ class ChampFXLibrary:
     def __init__(
         self,
         cfx_inputs: ChampFxInputs,
+        ignore_cfx_creation_errors:bool=False,
         champfx_filters: Optional[List["ChampFXtSaticCriteriaFilter"]] = None,
         label: Optional[str] = None,
     ):
         if champfx_filters is None:
             champfx_filters = []
+
+        self.failed_to_create_cfx_ids:List[str] = []
+
+        self.ignore_cfx_creation_errors = ignore_cfx_creation_errors
 
         self.cfx_inputs = cfx_inputs
 
@@ -548,11 +553,15 @@ class ChampFXLibrary:
                     cfx_id = row["CFXID"]
 
                     if cfx_id not in self._champfx_entry_by_id:
-                        try:
+                        if self.ignore_cfx_creation_errors:
+                            try:
+                                self.create_cfx_entry(cfx_id=cfx_id, row=row)
+                            except Exception as ex:
+                                logger_config.print_and_log_exception(ex)
+                                logger_config.print_and_log_error(f"Error when creating cfx {cfx_id}")
+                                self.failed_to_create_cfx_ids.append(cfx_id)
+                        else:
                             self.create_cfx_entry(cfx_id=cfx_id, row=row)
-                        except Exception as ex:
-                            logger_config.print_and_log_exception(ex)
-                            logger_config.print_and_log_error(f"Error when creating cfx {cfx_id}")
 
     def create_states_changes_action(
         self, cfx_request: "ChampFXEntry", cfx_id: str, history_raw_old_state: str, history_raw_new_state: str, history_raw_action_timestamp_str: str, history_raw_action_name: str

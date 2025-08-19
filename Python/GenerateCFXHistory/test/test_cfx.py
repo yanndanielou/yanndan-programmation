@@ -80,11 +80,26 @@ def get_cfx_closed_status_according_to_date_today(create_light_champfx_library_f
     return create_light_champfx_library_fixture.get_cfx_by_state_at_date(reference_date=datetime.now().replace(hour=23, minute=59, second=59, microsecond=0, tzinfo=None))[cfx.State.CLOSED]
 
 
-class TestConstruction:
+class TestConstructionLightLibrary:
     def test_no_error_at_init(self, create_light_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library_fixture
         assert len(champfx_library.get_all_cfx()) > 0
+        assert len(champfx_library.failed_to_create_cfx_ids) == 0
 
+
+class TestConstructionFullLibrary:
+    def test_no_error_at_init(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_full_champfx_library_fixture
+        assert len(champfx_library.get_all_cfx()) > 0
+        assert len(champfx_library.failed_to_create_cfx_ids) == 0
+
+    def test_no_cfx_creation_has_failed(self) -> None:
+        champfx_library = cfx.ChampFXLibrary(
+          cfx_inputs=DEFAULT_CFX_INPUTS_FOR_TESTS,
+          ignore_cfx_creation_errors=True
+        )
+        assert len(champfx_library.get_all_cfx()) > 0
+        assert len(champfx_library.failed_to_create_cfx_ids) == 0
 
 class TestStatus:
     def test_library_is_not_empty(self, create_light_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
@@ -244,10 +259,23 @@ class TestRoleOnDate:
 class TestCurrentRoleAtDate:
     def test_all_std_cfx_7th_june_2025(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_full_champfx_library_fixture
+                
+        date_5th_june_2025 = datetime(year=int(2025), month=int(6), day=int(5))
+        date_6th_june_2025 = datetime(year=int(2025), month=int(6), day=int(6))
+        date_7th_june_2025 = datetime(year=int(2025), month=int(6), day=int(7))
+        
+        cfx_reseau_7th_june = []
+        
+        role_depending_on_date_filter = cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=([role.SubSystem.RESEAU]))
+        for cfx_entry in champfx_library.get_all_cfx():
+            if role_depending_on_date_filter.match_cfx_entry(cfx_entry=cfx_entry, timestamp=date_7th_june_2025):
+                cfx_reseau_7th_june.append(cfx_entry)        
+        
+        
         all_results = champfx_library.gather_state_counts_for_each_date(
-            cfx_filters=[cfx.ChampFxFilter(cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=([role.SubSystem.RESEAU])))],
+            cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
             dates_generator=cfx.SpecificForTestsDatesGenerator(
-                [datetime(year=int(2025), month=int(6), day=int(5)), datetime(year=int(2025), month=int(6), day=int(6)), datetime(year=int(2025), month=int(6), day=int(7))]
+                [date_5th_june_2025, date_6th_june_2025, date_7th_june_2025]
             ),
         )
 
@@ -268,6 +296,12 @@ class TestCurrentRoleAtDate:
         assert result_7th_june_2025[cfx.State.SUBMITTED] == 61
         pass
 
+
+class TestAllCfxAreCreated:
+    def test_all_cfx_creation(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
+        champfx_library = create_full_champfx_library_fixture
+        assert "CFX00785515" in champfx_library.get_all_cfx_ids()
+                
 
 class TestCurrentOwner:
 
