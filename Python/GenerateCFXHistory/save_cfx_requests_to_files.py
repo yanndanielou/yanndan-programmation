@@ -480,7 +480,9 @@ class SaveCfxRequestMultipagesResultsApplication:
                     remote_web_driver=self.driver,
                     screenshots_directory_path=self.screenshots_output_relative_path,
                 ):
-                    input_element = self.driver.find_element(By.ID, "dijit_form_FilteringSelect_0")
+                    input_element = WebDriverWait(self.driver, 30).until(expected_conditions.presence_of_element_located((By.ID, "dijit_form_FilteringSelect_0")))
+
+                    #input_element = self.driver.find_element(By.ID, "dijit_form_FilteringSelect_0")
                     input_element.clear()  # Clear any pre-existing text
                     input_element.send_keys(filter_text_to_type)
 
@@ -530,7 +532,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                 remote_web_driver=self.driver,
                 screenshots_directory_path=self.screenshots_output_relative_path,
             ):
-                WebDriverWait(self.driver, 30).until(expected_conditions.presence_of_element_located((By.ID, "unique_info_col")))
+                WebDriverWait(self.driver, 60).until(expected_conditions.presence_of_element_located((By.ID, "unique_info_col")))
 
             with stopwatch_with_label_and_surround_with_screenshots(
                 label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters - wait column id",
@@ -575,8 +577,15 @@ class SaveCfxRequestMultipagesResultsApplication:
 
             self.number_of_exceptions_caught += 1
             logger_config.print_and_log_exception(e)
-            logger_config.print_and_log_error(f"Exception  {self.number_of_exceptions_caught}  number_of_retry_if_failure:{number_of_retry_if_failure}")
+            logger_config.print_and_log_error(f"{self.number_of_exceptions_caught}th Exception  {self.number_of_exceptions_caught}  number_of_retry_if_failure:{number_of_retry_if_failure}")
             self.driver.get_screenshot_as_file(f"{self.errors_output_relative_path}/{self.number_of_exceptions_caught} th Exception caught.png")
+            
+            with stopwatch_with_label_and_surround_with_screenshots(
+                label=f"Post mortem {self.number_of_exceptions_caught}th Exception delay", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+            ):
+                time.sleep(10)
+            self.driver.get_screenshot_as_file(f"{self.errors_output_relative_path}/{self.number_of_exceptions_caught} th Exception caught after post mortem delay.png")
+            
             with logger_config.stopwatch_with_label("Reset_driver :"):
                 self.reset_driver()
             if number_of_retry_if_failure > 0:
@@ -636,6 +645,7 @@ class SaveCfxRequestMultipagesResultsApplication:
         # Create a new instance of the Chrome self.driver
         driver_service = Service(chrome_driver_path)
         self.driver = webdriver.Chrome(service=driver_service, options=chrome_options)
+        self.driver.minimize_window()
 
         cast(RemoteConnection, self.driver.command_executor).set_timeout(1000)
 
