@@ -1,45 +1,45 @@
 from enum import auto
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, cast
 
 from common import enums_utils
 from abc import ABC, abstractmethod
 
 
 class SubSystem(enums_utils.NameBasedEnum):
-    SW = auto()
-    ATS = auto()
-    SSI = auto()
-    COC_DE = auto()
-    SAF = auto()
-    TCM_TC = auto()
-    SUBSYS = auto()
-    TRACY = auto()
-    QUALITE = auto()
-    SYSTEME = auto()
-    RIVS = auto()
-    ATS_EVIDEN = auto()
-    RADIO = auto()
-    INSTALLATION = auto()
-    TCM_TM1 = auto()
-    ADONEM = auto()
-    TCM_TM2 = auto()
-    SW_VAL = auto()
-    PROJET = auto()
-    SW_ANALYSES_SECU = auto()
-    CS = auto()
-    ATC_MANAGER = auto()
-    RESEAU = auto()
-    SCFT = auto()
-    ITF_MR = auto()
-    TBD = auto()
-    GUMPS = auto()
-    SW_TESTS_SECU = auto()
-    V3 = auto()
-    TCR3 = auto()
+    SW  = cast("SubSystem",auto()) 
+    ATS  = cast("SubSystem",auto()) 
+    SSI  = cast("SubSystem",auto()) 
+    COC_DE  = cast("SubSystem",auto()) 
+    SAF  = cast("SubSystem",auto()) 
+    TCM_TC  = cast("SubSystem",auto()) 
+    SUBSYS  = cast("SubSystem",auto()) 
+    TRACY  = cast("SubSystem",auto()) 
+    QUALITE  = cast("SubSystem",auto()) 
+    SYSTEME  = cast("SubSystem",auto()) 
+    RIVS  = cast("SubSystem",auto()) 
+    ATS_EVIDEN  = cast("SubSystem",auto()) 
+    RADIO  = cast("SubSystem",auto()) 
+    INSTALLATION  = cast("SubSystem",auto()) 
+    TCM_TM1  = cast("SubSystem",auto()) 
+    ADONEM  = cast("SubSystem",auto()) 
+    TCM_TM2  = cast("SubSystem",auto()) 
+    SW_VAL  = cast("SubSystem",auto()) 
+    PROJET  = cast("SubSystem",auto()) 
+    SW_ANALYSES_SECU  = cast("SubSystem",auto()) 
+    CS  = cast("SubSystem",auto()) 
+    ATC_MANAGER  = cast("SubSystem",auto()) 
+    RESEAU = cast("SubSystem",auto()) 
+    SCFT  = cast("SubSystem",auto()) 
+    ITF_MR  = cast("SubSystem",auto()) 
+    TBD  = cast("SubSystem",auto()) 
+    GUMPS  = cast("SubSystem",auto()) 
+    SW_TESTS_SECU  = cast("SubSystem",auto()) 
+    V3  = cast("SubSystem",auto()) 
+    TCR3  = cast("SubSystem",auto()) 
 
 
 class WorkPackage:
-    ADC_DC: "WorkPackage" = None
+    ADC_DC: "WorkPackage" = cast("WorkPackage",None)
 
     def __init__(self, sub_systems: List[SubSystem]):
         self._sub_systems = sub_systems
@@ -69,7 +69,6 @@ class CfxUser:
 
 class CfxLibraryBase(ABC):
 
-    @abstractmethod
     def __init__(self) -> None:
 
         self._cfx_user_by_full_name: Dict[str, CfxUser] = dict()
@@ -155,9 +154,6 @@ class CfxUserLibrary(CfxLibraryBase):
 
 
 class CfxEmptyUserLibrary(CfxLibraryBase):
-
-    def __init__(self) -> None:
-        super().__init__()
 
     def has_user_by_full_name(self, full_name: str) -> bool:
         return True

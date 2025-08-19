@@ -23,48 +23,48 @@ DEFAULT_USER_AND_ROLE_DATA_FILE_FULL_PATH: str = "Input/role_data_next_ats.txt"
 
 
 class RequestType(enums_utils.NameBasedEnum):
-    CHANGE_REQUEST_EXTERNAL = auto()
-    DEFECT = auto()
-    CHANGE_REQUEST_INTERNAL = auto()
-    DEVELOPMENT_REQUEST = auto()
-    HAZARD = auto()
-    ACTION_ITEM = auto()
-    OPEN_POINT = auto()
-    DEFECT_INTERNAL = auto()
-    CHANGE_REQUEST_PLM = auto()
-    CHANGE_REQUEST_PROJECTS = auto()
-    MPP = auto()
-    HINDERING_NOTICE = auto()
-    FCR = auto()
-    NCP = auto()
-    PRE_NC_NOTICE = auto()
-    TO_BE_ADDED_YDA = auto()
+    CHANGE_REQUEST_EXTERNAL  = cast("RequestType",auto()) 
+    DEFECT  = cast("RequestType",auto()) 
+    CHANGE_REQUEST_INTERNAL  = cast("RequestType",auto()) 
+    DEVELOPMENT_REQUEST  = cast("RequestType",auto()) 
+    HAZARD  = cast("RequestType",auto()) 
+    ACTION_ITEM  = cast("RequestType",auto()) 
+    OPEN_POINT  = cast("RequestType",auto()) 
+    DEFECT_INTERNAL  = cast("RequestType",auto()) 
+    CHANGE_REQUEST_PLM  = cast("RequestType",auto()) 
+    CHANGE_REQUEST_PROJECTS  = cast("RequestType",auto()) 
+    MPP  = cast("RequestType",auto()) 
+    HINDERING_NOTICE  = cast("RequestType",auto()) 
+    FCR  = cast("RequestType",auto()) 
+    NCP  = cast("RequestType",auto()) 
+    PRE_NC_NOTICE  = cast("RequestType",auto()) 
+    TO_BE_ADDED_YDA = cast("RequestType", auto())      
 
 
 class RejectionCause(Enum):
-    NONE = auto()
-    NO_FIX_CHANGE = auto()
-    DUPLICATE = auto()
-    NOT_A_BUG = auto()
-    NOT_PART_OF_CONTRACT = auto()
-    FORWARDED_TO_SAP_CS = auto()
-    NOT_REPRODUCIBLE = auto()
-    SOLVED_INDIRECTLY = auto()
-    OUT_OF_SCOPE = auto()
-    WILL_NOT_BE_FIXED = auto()
-    ALREADY_DONE = auto()
-    AFFECTED_PACKAGE_IS_NOT_INSTALLED = auto()
-    SOLVE_BY = auto()
-    SOLVED_BY = auto()
-    SOLVEDBY = auto()
-    SOVED_BY = auto()
-    NA = auto()
-    N_A_CHANGE_REQUEST = auto()
-    PATCH_WITHDREWN = auto()
-    SIMILAR = auto()
-    NO_DATA = auto()
-    WRONG_ASSIGNEMENT = auto()
-    TO_BE_ADDED_YDA = auto()
+    NONE  = cast("RejectionCause",auto()) 
+    NO_FIX_CHANGE  = cast("RejectionCause",auto()) 
+    DUPLICATE  = cast("RejectionCause",auto()) 
+    NOT_A_BUG  = cast("RejectionCause",auto()) 
+    NOT_PART_OF_CONTRACT  = cast("RejectionCause",auto()) 
+    FORWARDED_TO_SAP_CS  = cast("RejectionCause",auto()) 
+    NOT_REPRODUCIBLE  = cast("RejectionCause",auto()) 
+    SOLVED_INDIRECTLY  = cast("RejectionCause",auto()) 
+    OUT_OF_SCOPE  = cast("RejectionCause",auto()) 
+    WILL_NOT_BE_FIXED  = cast("RejectionCause",auto()) 
+    ALREADY_DONE  = cast("RejectionCause",auto()) 
+    AFFECTED_PACKAGE_IS_NOT_INSTALLED  = cast("RejectionCause",auto()) 
+    SOLVE_BY  = cast("RejectionCause",auto()) 
+    SOLVED_BY  = cast("RejectionCause",auto()) 
+    SOLVEDBY  = cast("RejectionCause",auto()) 
+    SOVED_BY  = cast("RejectionCause",auto()) 
+    NA  = cast("RejectionCause",auto()) 
+    N_A_CHANGE_REQUEST  = cast("RejectionCause",auto()) 
+    PATCH_WITHDREWN  = cast("RejectionCause",auto()) 
+    SIMILAR  = cast("RejectionCause",auto()) 
+    NO_DATA  = cast("RejectionCause",auto()) 
+    WRONG_ASSIGNEMENT  = cast("RejectionCause",auto()) 
+    TO_BE_ADDED_YDA  = cast("RejectionCause",auto()) 
 
     def __repr__(self) -> str:
         return self.name
@@ -74,35 +74,35 @@ class RejectionCause(Enum):
 
 
 class Category(Enum):
-    SYSTEM = auto()
-    SOFTWARE = auto()
-    HARDWARE = auto()
-    DOCUMENTATION = auto()
-    CONFIGURATION_DATA = auto()
-    PROCESS = auto()
-    TEST_CASE = auto()
-    CONSTRAINT_TO_3RD_PARTY = auto()
-    NO_CATEGORY_DEFINED = auto()
-    NONE = auto()
-    TBD = auto()
-    MONTAGE = auto()
-    NICHT_IM_LV = auto()
-    LIEFERUNG = auto()
-    BESCHRIFTUNG = auto()
-    RELEVANZ = auto()
-    DESIGN = auto()
-    TEST_AND_COMISSIONING = auto()
-    CHANGE_REQUEST = auto()
-    SUPPORT = auto()
-    DEVELOPMENT_REQUEST = auto()
-    MISSVERSTANDEN = auto()
-    TRACK_LAYOUT___TDB___IXL = auto()
-    PRODUCT = auto()
-    REQUIREMENT = auto()
-    POTENTIAL_CLAIM = auto()
-    TEST_SYSTEM_HANDLING = auto()
-    DOPPELT = auto()
-    TO_BE_ADDED_YDA = auto()
+    SYSTEM  = cast("Category",auto()) 
+    SOFTWARE  = cast("Category",auto()) 
+    HARDWARE  = cast("Category",auto()) 
+    DOCUMENTATION  = cast("Category",auto()) 
+    CONFIGURATION_DATA  = cast("Category",auto()) 
+    PROCESS  = cast("Category",auto()) 
+    TEST_CASE  = cast("Category",auto()) 
+    CONSTRAINT_TO_3RD_PARTY  = cast("Category",auto()) 
+    NO_CATEGORY_DEFINED  = cast("Category",auto()) 
+    NONE  = cast("Category",auto()) 
+    TBD  = cast("Category",auto()) 
+    MONTAGE  = cast("Category",auto()) 
+    NICHT_IM_LV  = cast("Category",auto()) 
+    LIEFERUNG  = cast("Category",auto()) 
+    BESCHRIFTUNG  = cast("Category",auto()) 
+    RELEVANZ  = cast("Category",auto()) 
+    DESIGN  = cast("Category",auto()) 
+    TEST_AND_COMISSIONING  = cast("Category",auto()) 
+    CHANGE_REQUEST  = cast("Category",auto()) 
+    SUPPORT  = cast("Category",auto()) 
+    DEVELOPMENT_REQUEST  = cast("Category",auto()) 
+    MISSVERSTANDEN  = cast("Category",auto()) 
+    TRACK_LAYOUT___TDB___IXL  = cast("Category",auto()) 
+    PRODUCT  = cast("Category",auto()) 
+    REQUIREMENT  = cast("Category",auto()) 
+    POTENTIAL_CLAIM  = cast("Category",auto()) 
+    TEST_SYSTEM_HANDLING  = cast("Category",auto()) 
+    DOPPELT  = cast("Category",auto()) 
+    TO_BE_ADDED_YDA  = cast("Category",auto()) 
 
     def __repr__(self) -> str:
         return self.name
@@ -117,24 +117,24 @@ class CfxProject:
 
 
 class SecurityRelevant(enums_utils.NameBasedEnum):
-    YES = auto()
-    NO = auto()
-    MITIGATED = auto()
-    UNDEFINED = auto()
+    YES  = cast("SecurityRelevant",auto()) 
+    NO  = cast("SecurityRelevant",auto()) 
+    MITIGATED  = cast("SecurityRelevant",auto()) 
+    UNDEFINED  = cast("SecurityRelevant",auto()) 
 
 
 class ActionType(enums_utils.NameBasedEnum):
-    IMPORT = auto()
-    RESUBMIT = auto()
-    SUBMIT = auto()
-    ASSIGN = auto()
-    ANALYSE = auto()
-    POSTPONE = auto()
-    REJECT = auto()
-    RESOLVE = auto()
-    VERIFY = auto()
-    VALIDATE = auto()
-    CLOSE = auto()
+    IMPORT  = cast("ActionType",auto()) 
+    RESUBMIT  = cast("ActionType",auto()) 
+    SUBMIT  = cast("ActionType",auto()) 
+    ASSIGN  = cast("ActionType",auto()) 
+    ANALYSE  = cast("ActionType",auto()) 
+    POSTPONE  = cast("ActionType",auto()) 
+    REJECT  = cast("ActionType",auto()) 
+    RESOLVE  = cast("ActionType",auto()) 
+    VERIFY  = cast("ActionType",auto()) 
+    VALIDATE  = cast("ActionType",auto()) 
+    CLOSE  = cast("ActionType",auto()) 
 
 
 class OneTimestampResult:
@@ -211,7 +211,7 @@ class DatesGenerator:
 
         # Add tomorrow  if not exist
         tomorrow_naive = get_tomorrow_naive()
-        if not tomorrow_naive in all_dates:
+        if tomorrow_naive not in all_dates:
             all_dates.append(tomorrow_naive)
 
         logger_config.print_and_log_info(f"Number of dates since:{start_date}: {len(all_dates)}")
@@ -250,9 +250,6 @@ class ConstantIntervalDatesGenerator(DatesGenerator):
 
 
 class DecreasingIntervalDatesGenerator(DatesGenerator):
-    def __init__(self) -> None:
-        super().__init__()
-
     def _compute_dates_since_until_today(self, start_date: datetime.datetime) -> List[datetime.datetime]:
 
         # Ensure 'beginning_of_next_month' is naive datetime.datetime
@@ -530,7 +527,7 @@ class ChampFXLibrary:
                 self.create_current_owner_modifications()
 
     @property
-    def cfx_users_library(self) -> role.CfxUserLibrary:
+    def cfx_users_library(self) -> role.CfxLibraryBase:
         return self._cfx_users_library
 
     def create_cfx_entry(self, cfx_id: str, row: pd.Series) -> "ChampFXEntry":
@@ -569,7 +566,9 @@ class ChampFXLibrary:
         old_state: State = conversions.convert_state(history_raw_old_state)
         new_state: State = conversions.convert_state(history_raw_new_state)
         action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
-        history_action = ActionType[history_raw_action_name.upper()]
+        assert action_timestamp
+        history_raw_action_name_upper = history_raw_action_name.upper()
+        history_action = ActionType[history_raw_action_name_upper] 
 
         change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
 
@@ -703,7 +702,7 @@ class ChampFXLibrary:
 
         logger_config.print_and_log_info(f"Number of CFX to consider:{len(all_cfx_to_consider)}")
         if len(all_cfx_to_consider) == 0:
-            logger_config.print_and_log_info(f"No data")
+            logger_config.print_and_log_info("No data")   
             return all_results_to_display
 
         earliest_submit_date = get_earliest_submit_date(all_cfx_to_consider)
@@ -739,9 +738,9 @@ class ChampFXLibrary:
 class ChampFXEntryBuilder:
 
     @staticmethod
-    def convert_champfx_security_relevant(raw_str_value: str) -> Optional[SecurityRelevant]:
+    def convert_champfx_security_relevant(raw_str_value: str) -> SecurityRelevant:
         if type(raw_str_value) is not str:
-            return None
+            return SecurityRelevant.UNDEFINED
         raw_security_relevant_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
         return SecurityRelevant.UNDEFINED if raw_security_relevant_valid_str_value is None else SecurityRelevant[raw_security_relevant_valid_str_value]
 
@@ -764,7 +763,7 @@ class ChampFXEntryBuilder:
         raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
 
         try:
-            return RequestType[raw_valid_str_value]
+            return cast(RequestType, RequestType[raw_valid_str_value])
         except KeyError as key_error:
             logger_config.print_and_log_exception(key_error)
             logger_config.print_and_log_error(f"RequestType {raw_valid_str_value} not supported")
@@ -804,21 +803,21 @@ class ChampFXEntryBuilder:
         safety_relevant: Optional[bool] = ChampFXEntryBuilder.to_optional_boolean(raw_safety_relevant)
 
         raw_security_relevant: str = row["SecurityRelevant"]
-        security_relevant: SecurityRelevant = ChampFXEntryBuilder.convert_champfx_security_relevant(raw_security_relevant)
+        security_relevant = ChampFXEntryBuilder.convert_champfx_security_relevant(raw_security_relevant)
 
         raw_rejection_cause: str = row["RejectionCause"]
-        rejection_cause: RejectionCause = ChampFXEntryBuilder.convert_champfx_rejection_cause(raw_rejection_cause)
+        rejection_cause = ChampFXEntryBuilder.convert_champfx_rejection_cause(raw_rejection_cause)
         if rejection_cause == RejectionCause.TO_BE_ADDED_YDA:
             logger_config.print_and_log_error(f"{cfx_id} project {raw_project}: RejectionCause {raw_rejection_cause} not supported")
 
         raw_request_type = row["RequestType"]
-        request_type: RequestType = ChampFXEntryBuilder.convert_champfx_request_type(raw_request_type)
+        request_type = ChampFXEntryBuilder.convert_champfx_request_type(raw_request_type)
         if request_type is None:
             logger_config.print_and_log_error(f"{cfx_id} project {raw_project}: Request Type {raw_request_type} not supported")
             request_type = RequestType.TO_BE_ADDED_YDA
 
         raw_category: str = row["Category"]
-        category: Category = ChampFXEntryBuilder.convert_champfx_category(raw_category) if raw_category else None
+        category = ChampFXEntryBuilder.convert_champfx_category(raw_category) if raw_category else None
         if category is None:
             logger_config.print_and_log_error(f"{cfx_id} project {raw_project}: Category {raw_category} not supported")
             category = Category.TO_BE_ADDED_YDA
@@ -1052,13 +1051,13 @@ class ChampFXWhitelistFilter(ChampFXtSaticCriteriaFilter, ABC):
 class ChampFXWhiteListBasedOnListFilter(ChampFXWhitelistFilter):
     def __init__(
         self,
-        cfx_to_treat_ids: Optional[Set | List[str]] = None,
+        cfx_to_treat_ids: Set[str] | List[str],
         label: Optional[str] = None,
     ):
         super().__init__(label=label)
 
         if label is None:
-            self._label = f"list {len(cfx_to_treat_ids)} white listed"  # type: ignore[no-redef]
+            self._label = f"list {len(cfx_to_treat_ids)} white listed"
 
         self._cfx_to_treat_whitelist_ids.update(cfx_to_treat_ids)
 
@@ -1131,12 +1130,12 @@ class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter, ABC):
         if self.field_accepted_values is not None:
             return attribute_entry in self.field_accepted_values
         elif self.field_forbidden_values:
-            return attribute_entry not in cast(List[Any], self.field_forbidden_values)
+            return attribute_entry not in  self.field_forbidden_values
         elif self.field_accepted_contained_texts:
-            match_found: bool = any(text in attribute_entry for text in self.field_accepted_contained_texts)
+            match_found = any(text in attribute_entry for text in self.field_accepted_contained_texts)
             return match_found
         elif self.field_forbidden_contained_texts:
-            match_found: bool = any(text in attribute_entry for text in self.field_forbidden_contained_texts)
+            match_found = any(text in attribute_entry for text in self.field_forbidden_contained_texts)
             return not match_found
         else:
             return False
@@ -1256,7 +1255,7 @@ class ChampFxFilter:
     def __init__(
         self,
         role_depending_on_date_filter: Optional[ChampFXRoleDependingOnDateFilter] = None,
-        field_filters: Optional[List[ChampFXFieldFilter]] = None,
+        field_filters: Optional[List[ChampFXtSaticCriteriaFilter]] = None,
         cfx_to_treat_whitelist_text_file_full_path: Optional[str] = None,
         whitelist_filter: Optional[ChampFXWhitelistFilter] = None,
         label: Optional[str] = None,
@@ -1265,12 +1264,12 @@ class ChampFxFilter:
             field_filters = []
 
         self.role_depending_on_date_filter: Optional[ChampFXRoleDependingOnDateFilter] = role_depending_on_date_filter
-        self._field_filters: List[ChampFXFieldFilter] = field_filters
+        self._field_filters: List[ChampFXtSaticCriteriaFilter] = field_filters
         self._cfx_to_treat_whitelist_text_file_full_path: Optional[str] = cfx_to_treat_whitelist_text_file_full_path
         self._cfx_to_treat_whitelist_ids: Optional[Set[str]] = None
         self.label: str = label if label is not None else ""
 
-        self._static_criteria_filters: List[ChampFXtSaticCriteriaFilter] = [] + self._field_filters
+        self._static_criteria_filters: List[ChampFXtSaticCriteriaFilter] = self._field_filters
 
         self._white_list_filter: Optional[ChampFXWhitelistFilter] = (
             ChampFXWhiteListBasedOnFileFilter(cfx_to_treat_whitelist_text_file_full_path) if cfx_to_treat_whitelist_text_file_full_path is not None else whitelist_filter
