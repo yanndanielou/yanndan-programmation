@@ -97,12 +97,10 @@ class TestConstructionFullLibrary:
         assert len(champfx_library.failed_to_create_cfx_ids) == 0
 
     def test_no_cfx_creation_has_failed(self) -> None:
-        champfx_library = cfx.ChampFXLibrary(
-          cfx_inputs=DEFAULT_CFX_INPUTS_FOR_TESTS,
-          ignore_cfx_creation_errors=True
-        )
+        champfx_library = cfx.ChampFXLibrary(cfx_inputs=DEFAULT_CFX_INPUTS_FOR_TESTS, ignore_cfx_creation_errors=True)
         assert len(champfx_library.get_all_cfx()) > 0
         assert len(champfx_library.failed_to_create_cfx_ids) == 0
+
 
 class TestStatus:
     def test_library_is_not_empty(self, create_light_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
@@ -213,29 +211,28 @@ class TestSubsystem:
         cfx_entry = champfx_library.get_cfx_by_id("CFX00826404")
         assert cfx_entry._subsystem == role.SubSystem.RESEAU
 
-    def test_reseau_19th_august_2025(self, create_full_champfx_library_fixture:cfx.ChampFXLibrary)->None:
-        
+    def test_reseau_19th_august_2025(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
+
         all_cfx_to_check_ids = ["CFX00886383", "CFX00886386", "CFX00886390", "CFX00886391"]
 
         champfx_library = create_full_champfx_library_fixture
         cfx_filter = cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldSubsystem(field_accepted_values=[role.SubSystem.RESEAU])])
-        cfx_filters= [cfx_filter]
-        
-        
+        cfx_filters = [cfx_filter]
+
         assert all_cfx_to_check_ids
         for cfx_to_check_id in all_cfx_to_check_ids:
             cfx_request = champfx_library.get_cfx_by_id(cfx_to_check_id)
             assert cfx_request._subsystem == role.SubSystem.RESEAU
             assert cfx_filter.match_cfx_entry(cfx_request)
-            
+
         date_19th_august_2025 = datetime(year=int(2025), month=int(8), day=int(19))
-        dates_generator=cfx.SpecificForTestsDatesGenerator([date_19th_august_2025])
-        
+        dates_generator = cfx.SpecificForTestsDatesGenerator([date_19th_august_2025])
+
         all_results_to_display = champfx_library.gather_state_counts_for_each_date(cfx_filters=cfx_filters, dates_generator=dates_generator)
-        
+
         intersection = all_results_to_display.all_cfx_ids_that_have_matched.intersection(all_cfx_to_check_ids)
         assert len(intersection) == len(all_cfx_to_check_ids)
-        
+
         result_19th_august_2025 = all_results_to_display.get_state_counts_per_timestamp()[0]
         assert bool(result_19th_august_2025)
 
@@ -248,9 +245,6 @@ class TestSubsystem:
         assert result_19th_august_2025[State.VERIFIED] == 0, result_19th_august_2025
         assert result_19th_august_2025[State.VALIDATED] == 0, result_19th_august_2025
         assert result_19th_august_2025[State.CLOSED] == 49, result_19th_august_2025
-
-
-
 
 
 class TestRoleOnDate:
@@ -267,122 +261,106 @@ class TestRoleOnDate:
 
 
 class TestCurrentRoleAtDate:
-    
+
     def test_all_std_cfx_7th_june_2025(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_full_champfx_library_fixture
-                
+
         date_4th_june_2025 = datetime(year=int(2025), month=int(6), day=int(4))
         date_5th_june_2025 = datetime(year=int(2025), month=int(6), day=int(5))
         date_6th_june_2025 = datetime(year=int(2025), month=int(6), day=int(6))
         date_7th_june_2025 = datetime(year=int(2025), month=int(6), day=int(7))
         date_8th_june_2025 = datetime(year=int(2025), month=int(6), day=int(8))
-        
+
         all_cfx_reseau_7th_june = []
-        
-        
-        current_owner_by_cfx_id_at_7th_june_2025 :Dict[str, role.CfxUser] = {}
-        current_owner_full_name_by_cfx_id_at_7th_june_2025 :Dict[str, str] = {}
-        current_owner_subsystem_by_cfx_id_at_7th_june_2025 :Dict[str, role.SubSystem] = {}
-        cfx_id_by_current_owner_at_7th_june_2025 :Dict[role.CfxUser,List[str]] = {}
-        cfx_id_by_current_owner_full_name_at_7th_june_2025 :Dict[str,List[str]] = {}
-        cfx_id_by_current_owner_subsystem_at_7th_june_2025 :Dict[role.SubSystem,List[str]] = {}
-        
-        all_cfx_that_were_not_created_at_that_time:List[cfx.ChampFXEntry] = []
-        
+
+        current_owner_by_cfx_id_at_7th_june_2025: Dict[str, role.CfxUser] = {}
+        current_owner_full_name_by_cfx_id_at_7th_june_2025: Dict[str, str] = {}
+        current_owner_subsystem_by_cfx_id_at_7th_june_2025: Dict[str, role.SubSystem] = {}
+        cfx_id_by_current_owner_at_7th_june_2025: Dict[role.CfxUser, List[str]] = {}
+        cfx_id_by_current_owner_full_name_at_7th_june_2025: Dict[str, List[str]] = {}
+        cfx_id_by_current_owner_subsystem_at_7th_june_2025: Dict[role.SubSystem, List[str]] = {}
+
+        all_cfx_that_were_not_created_at_that_time: List[cfx.ChampFXEntry] = []
+
         for cfx_entry in champfx_library.get_all_cfx():
-            current_owner_7th_june_2025  = cfx_entry.get_current_owner_at_date(date_7th_june_2025)
-            
+            current_owner_7th_june_2025 = cfx_entry.get_current_owner_at_date(date_7th_june_2025)
+
             if current_owner_7th_june_2025:
-                current_owner_by_cfx_id_at_7th_june_2025[cfx_entry.cfx_id] = current_owner_7th_june_2025
-                current_owner_full_name_by_cfx_id_at_7th_june_2025[cfx_entry.cfx_id] = current_owner_7th_june_2025.full_name
-                current_owner_subsystem_by_cfx_id_at_7th_june_2025[cfx_entry.cfx_id] = current_owner_7th_june_2025.subsystem.name
+                current_owner_by_cfx_id_at_7th_june_2025[cfx_entry.cfx_identifier] = current_owner_7th_june_2025
+                current_owner_full_name_by_cfx_id_at_7th_june_2025[cfx_entry.cfx_identifier] = current_owner_7th_june_2025.full_name
+                current_owner_subsystem_by_cfx_id_at_7th_june_2025[cfx_entry.cfx_identifier] = current_owner_7th_june_2025.subsystem.name
 
                 if current_owner_7th_june_2025 not in cfx_id_by_current_owner_at_7th_june_2025:
-                    cfx_id_by_current_owner_at_7th_june_2025[current_owner_7th_june_2025] = []                
-                cfx_id_by_current_owner_at_7th_june_2025[current_owner_7th_june_2025].append(cfx_entry.cfx_id)
-                
+                    cfx_id_by_current_owner_at_7th_june_2025[current_owner_7th_june_2025] = []
+                cfx_id_by_current_owner_at_7th_june_2025[current_owner_7th_june_2025].append(cfx_entry.cfx_identifier)
+
                 if current_owner_7th_june_2025.subsystem.name not in cfx_id_by_current_owner_subsystem_at_7th_june_2025:
-                    cfx_id_by_current_owner_subsystem_at_7th_june_2025[current_owner_7th_june_2025.subsystem.name] = []                
-                cfx_id_by_current_owner_subsystem_at_7th_june_2025[current_owner_7th_june_2025.subsystem.name].append(cfx_entry.cfx_id)
-                
-                
+                    cfx_id_by_current_owner_subsystem_at_7th_june_2025[current_owner_7th_june_2025.subsystem.name] = []
+                cfx_id_by_current_owner_subsystem_at_7th_june_2025[current_owner_7th_june_2025.subsystem.name].append(cfx_entry.cfx_identifier)
+
                 if current_owner_7th_june_2025.full_name not in cfx_id_by_current_owner_full_name_at_7th_june_2025:
-                    cfx_id_by_current_owner_full_name_at_7th_june_2025[current_owner_7th_june_2025.full_name] = []                
-                cfx_id_by_current_owner_full_name_at_7th_june_2025[current_owner_7th_june_2025.full_name].append(cfx_entry.cfx_id)
-                
+                    cfx_id_by_current_owner_full_name_at_7th_june_2025[current_owner_7th_june_2025.full_name] = []
+                cfx_id_by_current_owner_full_name_at_7th_june_2025[current_owner_7th_june_2025.full_name].append(cfx_entry.cfx_identifier)
+
             else:
-                print(f"{cfx_entry.cfx_id} was not created at that time, it was submitted {cfx_entry.submit_date}")
+                print(f"{cfx_entry.cfx_identifier} was not created at that time, it was submitted {cfx_entry.submit_date}")
                 assert cfx_entry.submit_date > date_7th_june_2025
                 all_cfx_that_were_not_created_at_that_time.append(cfx_entry)
-                
-            print(f"{len(all_cfx_that_were_not_created_at_that_time)} were not created at that time")
-                
-        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(current_owner_full_name_by_cfx_id_at_7th_june_2025,"current_owner_full_name_by_cfx_id_at_7th_june_2025.json")
-        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(current_owner_subsystem_by_cfx_id_at_7th_june_2025,"current_owner_subsystem_by_cfx_id_at_7th_june_2025.json")
-        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(cfx_id_by_current_owner_full_name_at_7th_june_2025,"cfx_id_by_current_owner_full_name_at_7th_june_2025.json")
-        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(cfx_id_by_current_owner_subsystem_at_7th_june_2025,"cfx_id_by_current_owner_subsystem_at_7th_june_2025.json")
 
-        
-        
+            print(f"{len(all_cfx_that_were_not_created_at_that_time)} were not created at that time")
+
+        # json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(current_owner_full_name_by_cfx_id_at_7th_june_2025, "output/current_owner_full_name_by_cfx_id_at_7th_june_2025.json")
+        # json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(current_owner_subsystem_by_cfx_id_at_7th_june_2025, "output/current_owner_subsystem_by_cfx_id_at_7th_june_2025.json")
+        # json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(cfx_id_by_current_owner_full_name_at_7th_june_2025, "output/cfx_id_by_current_owner_full_name_at_7th_june_2025.json")
+        # json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(cfx_id_by_current_owner_subsystem_at_7th_june_2025, "output/cfx_id_by_current_owner_subsystem_at_7th_june_2025.json")
+
         role_depending_on_date_filter = cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=([role.SubSystem.RESEAU]))
         for cfx_entry in champfx_library.get_all_cfx():
             if role_depending_on_date_filter.match_cfx_entry(cfx_entry=cfx_entry, timestamp=date_7th_june_2025):
-                all_cfx_reseau_7th_june.append(cfx_entry)        
-                
+                all_cfx_reseau_7th_june.append(cfx_entry)
+
         assert len(all_cfx_reseau_7th_june) == 90
-        
+
         all_results = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
-            dates_generator=cfx.SpecificForTestsDatesGenerator(
-                [date_4th_june_2025,date_5th_june_2025, date_6th_june_2025, date_7th_june_2025, date_8th_june_2025]
-            ),
+            dates_generator=cfx.SpecificForTestsDatesGenerator([date_4th_june_2025, date_5th_june_2025, date_6th_june_2025, date_7th_june_2025, date_8th_june_2025]),
         )
 
         assert not all_results.is_empty()
-        
+
         assert all_results.get_state_counts_per_timestamp()
 
         result_4th_june_2025: cfx.AllResultsPerDates = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
-            dates_generator=cfx.SpecificForTestsDatesGenerator(
-                [date_4th_june_2025]
-            ),
+            dates_generator=cfx.SpecificForTestsDatesGenerator([date_4th_june_2025]),
         )
         result_4th_june_2025_cfx_ids = result_4th_june_2025.all_cfx_ids_that_have_matched
 
         result_5th_june_2025: cfx.AllResultsPerDates = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
-            dates_generator=cfx.SpecificForTestsDatesGenerator(
-                [date_5th_june_2025]
-            ),
+            dates_generator=cfx.SpecificForTestsDatesGenerator([date_5th_june_2025]),
         )
         result_5th_june_2025_cfx_ids = result_5th_june_2025.all_cfx_ids_that_have_matched
 
         result_6th_june_2025: cfx.AllResultsPerDates = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
-            dates_generator=cfx.SpecificForTestsDatesGenerator(
-                [date_6th_june_2025]
-            ),
+            dates_generator=cfx.SpecificForTestsDatesGenerator([date_6th_june_2025]),
         )
         result_6th_june_2025_cfx_ids = result_6th_june_2025.all_cfx_ids_that_have_matched
 
         result_7th_june_2025: cfx.AllResultsPerDates = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
-            dates_generator=cfx.SpecificForTestsDatesGenerator(
-                [date_7th_june_2025]
-            ),
+            dates_generator=cfx.SpecificForTestsDatesGenerator([date_7th_june_2025]),
         )
         result_7th_june_2025_cfx_ids = result_7th_june_2025.all_cfx_ids_that_have_matched
 
         result_8th_june_2025: cfx.AllResultsPerDates = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
-            dates_generator=cfx.SpecificForTestsDatesGenerator(
-                [date_8th_june_2025]
-            ),
+            dates_generator=cfx.SpecificForTestsDatesGenerator([date_8th_june_2025]),
         )
         result_8th_june_2025_cfx_ids = result_8th_june_2025.all_cfx_ids_that_have_matched
-        
-        all_cfx_ids_of_concerned_days = result_4th_june_2025_cfx_ids.union(result_5th_june_2025_cfx_ids,result_6th_june_2025_cfx_ids,result_7th_june_2025_cfx_ids,result_8th_june_2025_cfx_ids)
+
+        all_cfx_ids_of_concerned_days = result_4th_june_2025_cfx_ids.union(result_5th_june_2025_cfx_ids, result_6th_june_2025_cfx_ids, result_7th_june_2025_cfx_ids, result_8th_june_2025_cfx_ids)
 
         print("all_cfx_ids_of_concerned_days:")
         print(all_cfx_ids_of_concerned_days)
@@ -391,37 +369,34 @@ class TestCurrentRoleAtDate:
         assert bool(result_5th_june_2025)
         assert bool(result_6th_june_2025)
         assert bool(result_7th_june_2025)
-        
+
         assert len(all_cfx_reseau_7th_june) == sum(result_7th_june_2025.get_state_counts_per_timestamp()[0].values())
-                
+
         assert result_4th_june_2025.get_state_counts_per_timestamp()[0][State.SUBMITTED] == 26
         assert result_5th_june_2025.get_state_counts_per_timestamp()[0][State.SUBMITTED] == 26
         assert result_6th_june_2025.get_state_counts_per_timestamp()[0][State.SUBMITTED] == 57
         assert result_7th_june_2025.get_state_counts_per_timestamp()[0][State.SUBMITTED] == 61
         assert result_8th_june_2025.get_state_counts_per_timestamp()[0][State.SUBMITTED] == 61
 
-
     def test_all_std_cfx_19th_august_2025(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_full_champfx_library_fixture
-                
+
         date_19th_august_2025 = datetime(year=int(2025), month=int(8), day=int(19))
 
         role_depending_on_date_filter = cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=([role.SubSystem.RESEAU]))
 
         all_results = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
-            dates_generator=cfx.SpecificForTestsDatesGenerator(
-                [date_19th_august_2025]
-            ),
+            dates_generator=cfx.SpecificForTestsDatesGenerator([date_19th_august_2025]),
         )
-        assert not all_results.is_empty()        
+        assert not all_results.is_empty()
 
         assert all_results.get_state_counts_per_timestamp()
 
         result_19th_august_2025 = all_results.get_state_counts_per_timestamp()[0]
 
         assert bool(result_19th_august_2025)
-                
+
         assert result_19th_august_2025[State.SUBMITTED] == 54
         assert result_19th_august_2025[State.ANALYSED] == 10
         assert result_19th_august_2025[State.ASSIGNED] == 5
@@ -430,11 +405,13 @@ class TestCurrentRoleAtDate:
         assert result_19th_august_2025[State.REJECTED] == 5
         assert result_19th_august_2025[State.POSTPONED] == 1
         assert result_19th_august_2025[State.CLOSED] == 4
+
+
 class TestAllCfxAreCreated:
     def test_all_cfx_creation(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_full_champfx_library_fixture
         assert "CFX00785515" in champfx_library.get_all_cfx_ids()
-                
+
 
 class TestCurrentOwner:
 
@@ -447,7 +424,6 @@ class TestCurrentOwner:
         assert current_owner_just_after_creation
         assert "livia" in current_owner_just_after_creation.full_name
         assert current_owner_just_after_creation.subsystem == role.SubSystem.RESEAU
-
 
     def test_cfx00427036_current_owner_by_date(self, create_light_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library_fixture
@@ -544,12 +520,12 @@ class TestFullDatabase:
     def test_all_cfx_have_submit_state_change(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_full_champfx_library_fixture
         for cfx_entry in champfx_library.get_all_cfx():
-            assert cfx_entry.get_oldest_change_state_action_by_new_state(State.SUBMITTED), cfx_entry.cfx_id
+            assert cfx_entry.get_oldest_change_state_action_by_new_state(State.SUBMITTED), cfx_entry.cfx_identifier
 
     def test_all_cfx_have_submit_date(self, create_full_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_full_champfx_library_fixture
         for cfx_entry in champfx_library.get_all_cfx():
-            assert cfx_entry.get_oldest_submit_date(), cfx_entry.cfx_id
+            assert cfx_entry.get_oldest_submit_date(), cfx_entry.cfx_identifier
 
 
 class TestStatisticsPreparation:
@@ -632,4 +608,4 @@ class TestCrashObservedOtherProjects:
         champfx_library = create_other_projects_partial_champfx_library_fixture
         assert champfx_library.get_all_cfx()
         for cfx_entry in champfx_library.get_all_cfx():
-            assert cfx_entry.get_oldest_submit_date(), cfx_entry.cfx_id
+            assert cfx_entry.get_oldest_submit_date(), cfx_entry.cfx_identifier

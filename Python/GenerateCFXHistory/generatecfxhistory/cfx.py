@@ -23,48 +23,48 @@ DEFAULT_USER_AND_ROLE_DATA_FILE_FULL_PATH: str = "Input/role_data_next_ats.txt"
 
 
 class RequestType(enums_utils.NameBasedEnum):
-    CHANGE_REQUEST_EXTERNAL  = cast("RequestType",auto()) 
-    DEFECT  = cast("RequestType",auto()) 
-    CHANGE_REQUEST_INTERNAL  = cast("RequestType",auto()) 
-    DEVELOPMENT_REQUEST  = cast("RequestType",auto()) 
-    HAZARD  = cast("RequestType",auto()) 
-    ACTION_ITEM  = cast("RequestType",auto()) 
-    OPEN_POINT  = cast("RequestType",auto()) 
-    DEFECT_INTERNAL  = cast("RequestType",auto()) 
-    CHANGE_REQUEST_PLM  = cast("RequestType",auto()) 
-    CHANGE_REQUEST_PROJECTS  = cast("RequestType",auto()) 
-    MPP  = cast("RequestType",auto()) 
-    HINDERING_NOTICE  = cast("RequestType",auto()) 
-    FCR  = cast("RequestType",auto()) 
-    NCP  = cast("RequestType",auto()) 
-    PRE_NC_NOTICE  = cast("RequestType",auto()) 
-    TO_BE_ADDED_YDA = cast("RequestType", auto())      
+    CHANGE_REQUEST_EXTERNAL = cast("RequestType", auto())
+    DEFECT = cast("RequestType", auto())
+    CHANGE_REQUEST_INTERNAL = cast("RequestType", auto())
+    DEVELOPMENT_REQUEST = cast("RequestType", auto())
+    HAZARD = cast("RequestType", auto())
+    ACTION_ITEM = cast("RequestType", auto())
+    OPEN_POINT = cast("RequestType", auto())
+    DEFECT_INTERNAL = cast("RequestType", auto())
+    CHANGE_REQUEST_PLM = cast("RequestType", auto())
+    CHANGE_REQUEST_PROJECTS = cast("RequestType", auto())
+    MPP = cast("RequestType", auto())
+    HINDERING_NOTICE = cast("RequestType", auto())
+    FCR = cast("RequestType", auto())
+    NCP = cast("RequestType", auto())
+    PRE_NC_NOTICE = cast("RequestType", auto())
+    TO_BE_ADDED_YDA = cast("RequestType", auto())
 
 
 class RejectionCause(Enum):
-    NONE  = cast("RejectionCause",auto()) 
-    NO_FIX_CHANGE  = cast("RejectionCause",auto()) 
-    DUPLICATE  = cast("RejectionCause",auto()) 
-    NOT_A_BUG  = cast("RejectionCause",auto()) 
-    NOT_PART_OF_CONTRACT  = cast("RejectionCause",auto()) 
-    FORWARDED_TO_SAP_CS  = cast("RejectionCause",auto()) 
-    NOT_REPRODUCIBLE  = cast("RejectionCause",auto()) 
-    SOLVED_INDIRECTLY  = cast("RejectionCause",auto()) 
-    OUT_OF_SCOPE  = cast("RejectionCause",auto()) 
-    WILL_NOT_BE_FIXED  = cast("RejectionCause",auto()) 
-    ALREADY_DONE  = cast("RejectionCause",auto()) 
-    AFFECTED_PACKAGE_IS_NOT_INSTALLED  = cast("RejectionCause",auto()) 
-    SOLVE_BY  = cast("RejectionCause",auto()) 
-    SOLVED_BY  = cast("RejectionCause",auto()) 
-    SOLVEDBY  = cast("RejectionCause",auto()) 
-    SOVED_BY  = cast("RejectionCause",auto()) 
-    NA  = cast("RejectionCause",auto()) 
-    N_A_CHANGE_REQUEST  = cast("RejectionCause",auto()) 
-    PATCH_WITHDREWN  = cast("RejectionCause",auto()) 
-    SIMILAR  = cast("RejectionCause",auto()) 
-    NO_DATA  = cast("RejectionCause",auto()) 
-    WRONG_ASSIGNEMENT  = cast("RejectionCause",auto()) 
-    TO_BE_ADDED_YDA  = cast("RejectionCause",auto()) 
+    NONE = cast("RejectionCause", auto())
+    NO_FIX_CHANGE = cast("RejectionCause", auto())
+    DUPLICATE = cast("RejectionCause", auto())
+    NOT_A_BUG = cast("RejectionCause", auto())
+    NOT_PART_OF_CONTRACT = cast("RejectionCause", auto())
+    FORWARDED_TO_SAP_CS = cast("RejectionCause", auto())
+    NOT_REPRODUCIBLE = cast("RejectionCause", auto())
+    SOLVED_INDIRECTLY = cast("RejectionCause", auto())
+    OUT_OF_SCOPE = cast("RejectionCause", auto())
+    WILL_NOT_BE_FIXED = cast("RejectionCause", auto())
+    ALREADY_DONE = cast("RejectionCause", auto())
+    AFFECTED_PACKAGE_IS_NOT_INSTALLED = cast("RejectionCause", auto())
+    SOLVE_BY = cast("RejectionCause", auto())
+    SOLVED_BY = cast("RejectionCause", auto())
+    SOLVEDBY = cast("RejectionCause", auto())
+    SOVED_BY = cast("RejectionCause", auto())
+    NA = cast("RejectionCause", auto())
+    N_A_CHANGE_REQUEST = cast("RejectionCause", auto())
+    PATCH_WITHDREWN = cast("RejectionCause", auto())
+    SIMILAR = cast("RejectionCause", auto())
+    NO_DATA = cast("RejectionCause", auto())
+    WRONG_ASSIGNEMENT = cast("RejectionCause", auto())
+    TO_BE_ADDED_YDA = cast("RejectionCause", auto())
 
     def __repr__(self) -> str:
         return self.name
@@ -74,35 +74,35 @@ class RejectionCause(Enum):
 
 
 class Category(Enum):
-    SYSTEM  = cast("Category",auto()) 
-    SOFTWARE  = cast("Category",auto()) 
-    HARDWARE  = cast("Category",auto()) 
-    DOCUMENTATION  = cast("Category",auto()) 
-    CONFIGURATION_DATA  = cast("Category",auto()) 
-    PROCESS  = cast("Category",auto()) 
-    TEST_CASE  = cast("Category",auto()) 
-    CONSTRAINT_TO_3RD_PARTY  = cast("Category",auto()) 
-    NO_CATEGORY_DEFINED  = cast("Category",auto()) 
-    NONE  = cast("Category",auto()) 
-    TBD  = cast("Category",auto()) 
-    MONTAGE  = cast("Category",auto()) 
-    NICHT_IM_LV  = cast("Category",auto()) 
-    LIEFERUNG  = cast("Category",auto()) 
-    BESCHRIFTUNG  = cast("Category",auto()) 
-    RELEVANZ  = cast("Category",auto()) 
-    DESIGN  = cast("Category",auto()) 
-    TEST_AND_COMISSIONING  = cast("Category",auto()) 
-    CHANGE_REQUEST  = cast("Category",auto()) 
-    SUPPORT  = cast("Category",auto()) 
-    DEVELOPMENT_REQUEST  = cast("Category",auto()) 
-    MISSVERSTANDEN  = cast("Category",auto()) 
-    TRACK_LAYOUT___TDB___IXL  = cast("Category",auto()) 
-    PRODUCT  = cast("Category",auto()) 
-    REQUIREMENT  = cast("Category",auto()) 
-    POTENTIAL_CLAIM  = cast("Category",auto()) 
-    TEST_SYSTEM_HANDLING  = cast("Category",auto()) 
-    DOPPELT  = cast("Category",auto()) 
-    TO_BE_ADDED_YDA  = cast("Category",auto()) 
+    SYSTEM = cast("Category", auto())
+    SOFTWARE = cast("Category", auto())
+    HARDWARE = cast("Category", auto())
+    DOCUMENTATION = cast("Category", auto())
+    CONFIGURATION_DATA = cast("Category", auto())
+    PROCESS = cast("Category", auto())
+    TEST_CASE = cast("Category", auto())
+    CONSTRAINT_TO_3RD_PARTY = cast("Category", auto())
+    NO_CATEGORY_DEFINED = cast("Category", auto())
+    NONE = cast("Category", auto())
+    TBD = cast("Category", auto())
+    MONTAGE = cast("Category", auto())
+    NICHT_IM_LV = cast("Category", auto())
+    LIEFERUNG = cast("Category", auto())
+    BESCHRIFTUNG = cast("Category", auto())
+    RELEVANZ = cast("Category", auto())
+    DESIGN = cast("Category", auto())
+    TEST_AND_COMISSIONING = cast("Category", auto())
+    CHANGE_REQUEST = cast("Category", auto())
+    SUPPORT = cast("Category", auto())
+    DEVELOPMENT_REQUEST = cast("Category", auto())
+    MISSVERSTANDEN = cast("Category", auto())
+    TRACK_LAYOUT___TDB___IXL = cast("Category", auto())
+    PRODUCT = cast("Category", auto())
+    REQUIREMENT = cast("Category", auto())
+    POTENTIAL_CLAIM = cast("Category", auto())
+    TEST_SYSTEM_HANDLING = cast("Category", auto())
+    DOPPELT = cast("Category", auto())
+    TO_BE_ADDED_YDA = cast("Category", auto())
 
     def __repr__(self) -> str:
         return self.name
@@ -117,24 +117,24 @@ class CfxProject:
 
 
 class SecurityRelevant(enums_utils.NameBasedEnum):
-    YES  = cast("SecurityRelevant",auto()) 
-    NO  = cast("SecurityRelevant",auto()) 
-    MITIGATED  = cast("SecurityRelevant",auto()) 
-    UNDEFINED  = cast("SecurityRelevant",auto()) 
+    YES = cast("SecurityRelevant", auto())
+    NO = cast("SecurityRelevant", auto())
+    MITIGATED = cast("SecurityRelevant", auto())
+    UNDEFINED = cast("SecurityRelevant", auto())
 
 
 class ActionType(enums_utils.NameBasedEnum):
-    IMPORT  = cast("ActionType",auto()) 
-    RESUBMIT  = cast("ActionType",auto()) 
-    SUBMIT  = cast("ActionType",auto()) 
-    ASSIGN  = cast("ActionType",auto()) 
-    ANALYSE  = cast("ActionType",auto()) 
-    POSTPONE  = cast("ActionType",auto()) 
-    REJECT  = cast("ActionType",auto()) 
-    RESOLVE  = cast("ActionType",auto()) 
-    VERIFY  = cast("ActionType",auto()) 
-    VALIDATE  = cast("ActionType",auto()) 
-    CLOSE  = cast("ActionType",auto()) 
+    IMPORT = cast("ActionType", auto())
+    RESUBMIT = cast("ActionType", auto())
+    SUBMIT = cast("ActionType", auto())
+    ASSIGN = cast("ActionType", auto())
+    ANALYSE = cast("ActionType", auto())
+    POSTPONE = cast("ActionType", auto())
+    REJECT = cast("ActionType", auto())
+    RESOLVE = cast("ActionType", auto())
+    VERIFY = cast("ActionType", auto())
+    VALIDATE = cast("ActionType", auto())
+    CLOSE = cast("ActionType", auto())
 
 
 class OneTimestampResult:
@@ -368,10 +368,9 @@ class ChampFxInputs:
         logger_config.print_and_log_info("All RejectionCause:" + str(all_possible_values_by_column["RejectionCause"]))
         logger_config.print_and_log_info("All history.old_state:" + str(all_possible_values_by_column["history.old_state"]))
         logger_config.print_and_log_info("All history.new_state:" + str(all_possible_values_by_column["history.new_state"]))
-        
-        all_kind_of_states = all_possible_values_by_column["State"] | all_possible_values_by_column["history.old_state"] |all_possible_values_by_column["history.new_state"]
+
+        all_kind_of_states = all_possible_values_by_column["State"] | all_possible_values_by_column["history.old_state"] | all_possible_values_by_column["history.new_state"]
         logger_config.print_and_log_info("all_kind_of_states:" + str(all_kind_of_states))
-        
 
         return all_possible_values_by_column
 
@@ -382,7 +381,7 @@ class ChampFxInputs:
         for _, cfx_details_data_frame in combined_data_frames_list.items():
             for col in cfx_details_data_frame.columns:
                 # Get the set of values for this column from the current DataFrame
-                values:Set[str] = set(cfx_details_data_frame[col])
+                values: Set[str] = set(cfx_details_data_frame[col])
                 if col in all_possible_values_by_column:
                     # Update the current set with the new values
                     all_possible_values_by_column[col].update(values)
@@ -479,14 +478,14 @@ class ChampFXLibrary:
     def __init__(
         self,
         cfx_inputs: ChampFxInputs,
-        ignore_cfx_creation_errors:bool=False,
+        ignore_cfx_creation_errors: bool = False,
         champfx_filters: Optional[List["ChampFXtSaticCriteriaFilter"]] = None,
         label: Optional[str] = None,
     ):
         if champfx_filters is None:
             champfx_filters = []
 
-        self.failed_to_create_cfx_ids:List[str] = []
+        self.failed_to_create_cfx_ids: List[str] = []
 
         self.ignore_cfx_creation_errors = ignore_cfx_creation_errors
 
@@ -550,7 +549,7 @@ class ChampFXLibrary:
                 label=f"Process {i+1}th / {len(cfx_inputs.champfx_details_excel_files_full_data_frames)} ({round((i+1)/len(cfx_inputs.champfx_details_excel_files_full_data_frames)*100,2)}%) cfx detail file {cfx_details_file_name} with length {len(cfx_details_data_frame)}"
             ):
                 for _, row in cfx_details_data_frame.iterrows():
-                    cfx_id = row["CFXID"]
+                    cfx_id = row["id"]
 
                     if cfx_id not in self._champfx_entry_by_id:
                         if self.ignore_cfx_creation_errors:
@@ -577,7 +576,7 @@ class ChampFXLibrary:
         action_timestamp = utils.convert_champfx_extract_date(history_raw_action_timestamp_str)
         assert action_timestamp
         history_raw_action_name_upper = history_raw_action_name.upper()
-        history_action = ActionType[history_raw_action_name_upper] 
+        history_action = ActionType[history_raw_action_name_upper]
 
         change_state_action = ChangeStateAction(_cfx_request=cfx_request, _old_state=old_state, _new_state=new_state, _timestamp=action_timestamp, _action=history_action)
 
@@ -597,7 +596,7 @@ class ChampFXLibrary:
                 logger_config.print_and_log_info(f"Process {cfx_states_changes_file_name} with size {len(cfx_states_changes_data_frame)}      {cfx_states_changes_data_frame.size}")
 
                 for _, row in cfx_states_changes_data_frame.iterrows():
-                    cfx_id = row["CFXID"]
+                    cfx_id = row["id"]
 
                     if self.is_cfx_with_id_exists(cfx_id=cfx_id):
                         cfx_request = self.get_cfx_by_id(cfx_id)
@@ -711,7 +710,7 @@ class ChampFXLibrary:
 
         logger_config.print_and_log_info(f"Number of CFX to consider:{len(all_cfx_to_consider)}")
         if len(all_cfx_to_consider) == 0:
-            logger_config.print_and_log_info("No data")   
+            logger_config.print_and_log_info("No data")
             return all_results_to_display
 
         earliest_submit_date = get_earliest_submit_date(all_cfx_to_consider)
@@ -726,7 +725,7 @@ class ChampFXLibrary:
                     True if cfx_filters is None else all(cfx_filter.match_role_depending_on_date_filter_if_filter_exists(cfx_entry, timestamp_to_display_data) for cfx_filter in cfx_filters)
                 )
                 if match_all_filters:
-                    all_results_to_display.all_cfx_ids_that_have_matched.add(cfx_entry.cfx_id)
+                    all_results_to_display.all_cfx_ids_that_have_matched.add(cfx_entry.cfx_identifier)
                     all_results_to_display.all_cfx_that_have_matched.add(cfx_entry)
 
                     state = cfx_entry.get_state_at_date(timestamp_to_display_data)
@@ -800,7 +799,8 @@ class ChampFXEntryBuilder:
 
     @staticmethod
     def build_with_row(row: pd.Series, cfx_library: ChampFXLibrary) -> "ChampFXEntry":
-        cfx_id = row["CFXID"]
+        cfx_identifier = row["id"]
+        alternative_cfx_identifier = row["CFXID"]
         state: State = conversions.convert_state(row["State"])
 
         raw_project: str = cast(str, row["Project"])
@@ -817,22 +817,22 @@ class ChampFXEntryBuilder:
         raw_rejection_cause: str = row["RejectionCause"]
         rejection_cause = ChampFXEntryBuilder.convert_champfx_rejection_cause(raw_rejection_cause)
         if rejection_cause == RejectionCause.TO_BE_ADDED_YDA:
-            logger_config.print_and_log_error(f"{cfx_id} project {raw_project}: RejectionCause {raw_rejection_cause} not supported")
+            logger_config.print_and_log_error(f"{cfx_identifier} project {raw_project}: RejectionCause {raw_rejection_cause} not supported")
 
         raw_request_type = row["RequestType"]
         request_type = ChampFXEntryBuilder.convert_champfx_request_type(raw_request_type)
         if request_type is None:
-            logger_config.print_and_log_error(f"{cfx_id} project {raw_project}: Request Type {raw_request_type} not supported")
+            logger_config.print_and_log_error(f"{cfx_identifier} project {raw_project}: Request Type {raw_request_type} not supported")
             request_type = RequestType.TO_BE_ADDED_YDA
 
         raw_category: str = row["Category"]
         category = ChampFXEntryBuilder.convert_champfx_category(raw_category) if raw_category else None
         if category is None:
-            logger_config.print_and_log_error(f"{cfx_id} project {raw_project}: Category {raw_category} not supported")
+            logger_config.print_and_log_error(f"{cfx_identifier} project {raw_project}: Category {raw_category} not supported")
             category = Category.TO_BE_ADDED_YDA
 
         current_owner_raw: str = row["CurrentOwner.FullName"]
-        assert cfx_library.cfx_users_library.has_user_by_full_name(current_owner_raw), cfx_id
+        assert cfx_library.cfx_users_library.has_user_by_full_name(current_owner_raw), cfx_identifier
         current_owner: role.CfxUser = cfx_library.cfx_users_library.get_cfx_user_by_full_name(current_owner_raw)
 
         fixed_implemented_in_config_unit: str = row["FixedImplementedIn"]
@@ -846,11 +846,12 @@ class ChampFXEntryBuilder:
         system_structure_config_unit: str = row["SystemStructure"]
         temptative_system_structure: Optional[role.SubSystem] = cfx_library.cfx_users_library.get_subsystem_from_champfx_fixed_implemented_in(system_structure_config_unit)
 
-        assert temptative_system_structure, f"{cfx_id} could not decode system structure {system_structure_config_unit}"
+        assert temptative_system_structure, f"{cfx_identifier} could not decode system structure {system_structure_config_unit}"
         system_structure: role.SubSystem = temptative_system_structure
 
         champfx_entry = ChampFXEntry(
-            cfx_id=cfx_id,
+            cfx_identifier=cfx_identifier,
+            alternative_cfx_identifier=alternative_cfx_identifier,
             state=state,
             fixed_implemented_in_subsystem=fixed_implemented_in_subsystem,
             system_structure_config_unit=system_structure_config_unit,
@@ -871,7 +872,8 @@ class ChampFXEntryBuilder:
 class ChampFXEntry:
     def __init__(
         self,
-        cfx_id: str,
+        cfx_identifier: str,
+        alternative_cfx_identifier: str,
         state: State,
         fixed_implemented_in_subsystem: Optional[role.SubSystem],
         fixed_implemented_in_config_unit: str,
@@ -881,7 +883,7 @@ class ChampFXEntry:
         cfx_project_name: str,
         safety_relevant: Optional[bool],
         security_relevant: SecurityRelevant,
-        rejection_cause: RejectionCause,
+        rejection_cause: Optional[RejectionCause],
         category: Category,
         current_owner: role.CfxUser,
         request_type: RequestType,
@@ -897,7 +899,8 @@ class ChampFXEntry:
         self._change_current_owner_actions: list[ChangeCurrentOwnerAction] = []
         self._change_current_owner_actions_by_date: Dict[datetime.datetime, ChangeCurrentOwnerAction] = dict()
 
-        self.cfx_id = cfx_id
+        self.cfx_identifier = cfx_identifier
+        self.alternative_cfx_identifier = alternative_cfx_identifier
         self._state: State = state
 
         self._fixed_implemented_in_config_unit = fixed_implemented_in_config_unit
@@ -935,7 +938,7 @@ class ChampFXEntry:
         self._config_unit: str = self._fixed_implemented_in_config_unit if self._fixed_implemented_in_subsystem else self._system_structure_config_unit
 
     def __repr__(self) -> str:
-        return f"<ChampFXEntry cfx_id={self.cfx_id} _raw_state={self._state} _current_owner_raw={self._current_owner.full_name}>"
+        return f"<ChampFXEntry cfx_id={self.cfx_identifier} _raw_state={self._state} _current_owner_raw={self._current_owner.full_name}>"
 
     def compute_all_actions_sorted_chronologically(self) -> list[ChangeStateAction]:
         self._all_change_state_actions_sorted_chronologically = [action for _, action in sorted(self._change_state_actions_by_date.items())]
@@ -965,9 +968,9 @@ class ChampFXEntry:
     def get_oldest_submit_date(self) -> datetime.datetime:
         oldest_submit_date_state_change = self.get_oldest_change_state_action_by_new_state(State.SUBMITTED)
         if not oldest_submit_date_state_change:
-            #logger_config.print_and_log_warning(f"{self.cfx_id} has no change state to submit state")
+            # logger_config.print_and_log_warning(f"{self.cfx_id} has no change state to submit state")
             if not self.submit_date:
-                logger_config.print_and_log_error(f"{self._cfx_project_name} {self.cfx_id} has no submit date")
+                logger_config.print_and_log_error(f"{self._cfx_project_name} {self.cfx_identifier} has no submit date")
                 assert self.get_all_change_state_actions_sorted_chronologically()
                 return self.get_all_change_state_actions_sorted_chronologically()[0].timestamp
             return self.submit_date
@@ -981,7 +984,7 @@ class ChampFXEntry:
 
     def get_newest_current_owner_modification_that_is_before_date(self, reference_date: datetime.datetime) -> Optional[ChangeCurrentOwnerAction]:
         return next((action for action in self.get_all_current_owner_modifications_sorted_reversed_chronologically() if action.timestamp < reference_date), None)
-    
+
     def get_oldest_current_owner_modification_that_is_after_date(self, reference_date: datetime.datetime) -> Optional[ChangeCurrentOwnerAction]:
         return next((action for action in self.get_all_current_owner_modifications_sorted_chronologically() if action.timestamp > reference_date), None)
 
@@ -1010,12 +1013,12 @@ class ChampFXEntry:
         newest_current_owner_modification_action_that_is_before_date = self.get_newest_current_owner_modification_that_is_before_date(reference_date)
         if newest_current_owner_modification_action_that_is_before_date is not None:
             return newest_current_owner_modification_action_that_is_before_date.new_owner
-        
+
         oldest_current_owner_modification_action_that_is_after_date = self.get_oldest_current_owner_modification_that_is_after_date(reference_date)
         if oldest_current_owner_modification_action_that_is_after_date is not None:
             if oldest_current_owner_modification_action_that_is_after_date.previous_owner is not None:
                 return oldest_current_owner_modification_action_that_is_after_date.previous_owner
-       
+
         return self._current_owner
 
     def get_state_at_date(self, reference_date: datetime.datetime) -> State:
@@ -1040,7 +1043,6 @@ class ChampFXtSaticCriteriaFilter(ABC):
     @abstractmethod
     def match_cfx_entry_without_cache(self, cfx_entry: ChampFXEntry) -> bool:
         """This method must be overridden in child classes."""
-        pass
 
     def match_cfx_entry_with_cache(self, cfx_entry: ChampFXEntry) -> bool:
         if cfx_entry in self._cache_result_by_cfx:
@@ -1063,7 +1065,7 @@ class ChampFXWhitelistFilter(ChampFXtSaticCriteriaFilter, ABC):
         self._label: str = "" if label is None else label
 
     def match_cfx_entry_without_cache(self, cfx_entry: ChampFXEntry) -> bool:
-        return cfx_entry.cfx_id in self._cfx_to_treat_whitelist_ids
+        return cfx_entry.cfx_identifier in self._cfx_to_treat_whitelist_ids
 
 
 class ChampFXWhiteListBasedOnListFilter(ChampFXWhitelistFilter):
@@ -1148,7 +1150,7 @@ class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter, ABC):
         if self.field_accepted_values is not None:
             return attribute_entry in self.field_accepted_values
         elif self.field_forbidden_values:
-            return attribute_entry not in  self.field_forbidden_values
+            return attribute_entry not in self.field_forbidden_values
         elif self.field_accepted_contained_texts:
             match_found = any(text in attribute_entry for text in self.field_accepted_contained_texts)
             return match_found

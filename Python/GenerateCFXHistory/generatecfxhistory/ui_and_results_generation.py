@@ -50,7 +50,7 @@ def produce_results_and_displays(
     dump_all_cfx_ids_in_json: bool = True,
     generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
     project_in_case_of_generate_by_project_instruction_one_project: Optional[str] = None,
-    dates_generator:cfx.DatesGenerator=cfx.DecreasingIntervalDatesGenerator(),
+    dates_generator: cfx.DatesGenerator = cfx.DecreasingIntervalDatesGenerator(),
 ) -> None:
 
     if cfx_filters is None:
@@ -92,7 +92,7 @@ def produce_results_and_displays(
                 dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
                 generate_by_project_instruction=GenerateByProjectInstruction.BY_PROJECT,
                 display_output_plots=display_output_plots,
-                    dates_generator=dates_generator,
+                dates_generator=dates_generator,
             )
 
             produce_results_and_displays(
@@ -106,7 +106,7 @@ def produce_results_and_displays(
                 dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
                 generate_by_project_instruction=GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
                 display_output_plots=display_output_plots,
-                    dates_generator=dates_generator,
+                dates_generator=dates_generator,
             )
             return
 
@@ -128,7 +128,7 @@ def produce_results_and_displays(
     if dump_all_cfx_ids_in_json:
         all_cfx_that_have_match_id_and_state = [
             (
-                champfx_entry.cfx_id,
+                champfx_entry.cfx_identifier,
                 champfx_entry._state.name,
                 champfx_entry._current_owner.full_name,
                 champfx_entry._request_type.name if champfx_entry._request_type else "unknown request type",
@@ -227,7 +227,7 @@ def produce_displays_and_create_html(
             (line,) = ax.plot(all_timestamps, counts, label=state.name, color=color)
             mplcursors.cursor(line, hover=HoverMode.Transient)
 
-    # Set axis labels and title 
+    # Set axis labels and title
     ax.set_xlabel("Month")
     ax.set_ylabel("Number of CFX Entries")
     ax.set_title(f"{generation_label} CFX States Over Time")
@@ -253,7 +253,7 @@ def produce_displays_and_create_html(
         plt.close(fig)
 
 
-def produce_results_and_displays_for_libary( 
+def produce_results_and_displays_for_libary(
     cfx_library: cfx.ChampFXLibrary,
     output_directory_name: str,
     for_global: bool,
@@ -265,7 +265,7 @@ def produce_results_and_displays_for_libary(
     create_excel_file: bool = True,
     display_output_plots: bool = True,
     dump_all_cfx_ids_in_json: bool = True,
-    dates_generator:cfx.DatesGenerator=cfx.DecreasingIntervalDatesGenerator(),
+    dates_generator: cfx.DatesGenerator = cfx.DecreasingIntervalDatesGenerator(),
 ) -> None:
 
     if cfx_filters is None:
