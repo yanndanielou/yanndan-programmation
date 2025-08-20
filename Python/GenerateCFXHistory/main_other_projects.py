@@ -32,7 +32,7 @@ def main() -> None:
             cfx_inputs.print_all_possible_values_by_column()
 
         all_champfx_library = cfx.ChampFXLibrary(
-            cfx_inputs=cfx_inputs, 
+            cfx_inputs=cfx_inputs,
             label="Other projects",
             ignore_cfx_creation_errors=False,
         )
