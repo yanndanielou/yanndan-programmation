@@ -19,4 +19,4 @@ output*.txt
 Output/
 Output*/
 Output*.7z
-generatecfxhistory\output\
+generatecfxhistory/output/
