@@ -19,7 +19,7 @@ YELLOW = (255, 255, 0)
 BLACK = (0, 0, 0)
 
 # Joueur
-player_width, player_height = 50, 30
+player_width, player_height = 70, 30
 player_x = screen_width // 2 - player_width // 2
 player_y = screen_height - player_height - 10
 player_speed = 7
@@ -34,7 +34,7 @@ last_shot_time = 0
 
 # Ennemis
 enemy_width, enemy_height = 40, 30
-enemy_rows = 4
+enemy_rows = 2
 enemy_cols = 8
 enemy_padding = 20
 enemy_offset_x = 60

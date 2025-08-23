@@ -1,13 +1,18 @@
 import pygame
 import sys
+import json
+from typing import List, Dict
 
 
 class CasseBrique:
-    def __init__(self):
+    def __init__(self) -> None:
         # Initialisation de Pygame
         pygame.init()
 
-        # Définition des paramètres
+        # Charger les niveaux depuis le fichier JSON
+        self.levels = self.load_levels()
+
+        # Définir les paramètres de la fenêtre
         self.screen_width = 800
         self.screen_height = 600
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
@@ -24,30 +29,35 @@ class CasseBrique:
         # Initialiser le jeu
         self.reset_game()
 
+    def load_levels(self) -> List[Dict]:
+        with open("casse_brique_levels.json", "r") as file:
+            return json.load(file)
+
     def reset_game(self):
-        # Etats de jeu
-        self.level = 1
+        self.level_index = 0
         self.score = 0
         self.lives = 3
+        self.setup_level(self.level_index)
 
-        # Joueur
-        self.paddle = pygame.Rect(self.screen_width // 2 - 50, self.screen_height - 30, 100, 10)
-        self.paddle_speed = 5
+    def setup_level(self, index: int):
+        level_data = self.levels[index]
+        self.paddle = pygame.Rect(self.screen_width // 2 - level_data["player_width"] // 2, self.screen_height - 30, level_data["player_width"], level_data["player_height"])
+        self.paddle_speed = level_data["player_speed"]
 
-        # Ball
-        self.ball = pygame.Rect(self.screen_width // 2, self.screen_height // 2, 10, 10)
-        self.ball_speed_x = 3
-        self.ball_speed_y = 3
+        self.ball = pygame.Rect(self.screen_width // 2, self.screen_height // 2, level_data["ball_size"], level_data["ball_size"])
+        self.ball_speed_x = level_data["ball_speed_x"]
+        self.ball_speed_y = level_data["ball_speed_y"]
 
-        # Briques
         self.bricks = []
-        self.create_bricks()
+        self.create_bricks(level_data["brick_configuration"])
 
-    def create_bricks(self):
-        for i in range(5):
-            for j in range(8):
-                brick = pygame.Rect(j * 100 + 10, i * 30 + 10, 80, 20)
-                self.bricks.append(brick)
+    def create_bricks(self, config: List[List[int]]):
+        self.bricks.clear()
+        for i, row in enumerate(config):
+            for j, brick_present in enumerate(row):
+                if brick_present:
+                    brick = pygame.Rect(j * 100 + 10, i * 30 + 10, 80, 20)
+                    self.bricks.append(brick)
 
     def run(self):
         while True:
@@ -105,10 +115,12 @@ class CasseBrique:
 
         # Passage au niveau suivant
         if not self.bricks:
-            self.level += 1
-            self.ball_speed_x *= 1.1
-            self.ball_speed_y *= 1.1
-            self.create_bricks()
+            self.level_index += 1
+            if self.level_index < len(self.levels):
+                self.setup_level(self.level_index)
+            else:
+                print("All Levels Complete! Total Score:", self.score)
+                self.reset_game()
 
     def draw_game(self):
         self.screen.fill((0, 0, 0))
@@ -120,7 +132,7 @@ class CasseBrique:
             pygame.draw.rect(self.screen, self.RED, brick)
 
         font = pygame.font.SysFont(None, 36)
-        score_text = font.render(f"Score: {self.score} Level: {self.level} Lives: {self.lives}", True, self.WHITE)
+        score_text = font.render(f"Score: {self.score} Level: {self.level_index + 1} Lives: {self.lives}", True, self.WHITE)
         self.screen.blit(score_text, (10, 10))
 
         pygame.display.flip()
