@@ -14,6 +14,7 @@ from generatecfxhistory import cfx, role
 
 state_colors = {
     cfx.State.SUBMITTED: "red",
+    cfx.State.UNKNOWN: "purple",
     cfx.State.ANALYSED: "orange",
     cfx.State.ASSIGNED: "blue",
     cfx.State.RESOLVED: "yellow",
@@ -81,19 +82,6 @@ def produce_results_and_displays(
                 )
 
         case GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS:
-            produce_results_and_displays(
-                cfx_library=cfx_library,
-                output_directory_name=output_directory_name,
-                create_excel_file=create_excel_file,
-                display_without_cumulative_eras=display_without_cumulative_eras,
-                display_with_cumulative_eras=display_with_cumulative_eras,
-                create_html_file=create_html_file,
-                cfx_filters=cfx_filters,
-                dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
-                generate_by_project_instruction=GenerateByProjectInstruction.BY_PROJECT,
-                display_output_plots=display_output_plots,
-                dates_generator=dates_generator,
-            )
 
             produce_results_and_displays(
                 cfx_library=cfx_library,
@@ -108,6 +96,20 @@ def produce_results_and_displays(
                 display_output_plots=display_output_plots,
                 dates_generator=dates_generator,
             )
+
+            produce_results_and_displays(
+                cfx_library=cfx_library,
+                output_directory_name=output_directory_name,
+                create_excel_file=create_excel_file,
+                display_without_cumulative_eras=display_without_cumulative_eras,
+                display_with_cumulative_eras=display_with_cumulative_eras,
+                create_html_file=create_html_file,
+                cfx_filters=cfx_filters,
+                dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
+                generate_by_project_instruction=GenerateByProjectInstruction.BY_PROJECT,
+                display_output_plots=display_output_plots,
+                dates_generator=dates_generator,
+            )
             return
 
     generation_label = cfx_library.label
@@ -117,7 +119,7 @@ def produce_results_and_displays(
         generation_label += "All"
 
     with logger_config.stopwatch_with_label(label=f"{generation_label} Gather state counts for each date", inform_beginning=True):
-        all_results_to_display: cfx.AllResultsPerDates = cfx_library.gather_state_counts_for_each_date(cfx_filters=cfx_filters, dates_generator=dates_generator)
+        all_results_to_display: cfx.AllResultsPerDatesWithDebugDetails = cfx_library.gather_state_counts_for_each_date(cfx_filters=cfx_filters, dates_generator=dates_generator)
 
     with logger_config.stopwatch_alert_if_exceeds_duration("compute_cumulative_counts", duration_threshold_to_alert_info_in_s=0.1):
         all_results_to_display.compute_cumulative_counts()
@@ -176,7 +178,7 @@ def produce_results_and_displays(
             )
 
 
-def produce_excel_output_file(output_excel_file: str, all_results_to_display: cfx.AllResultsPerDates) -> None:
+def produce_excel_output_file(output_excel_file: str, all_results_to_display: cfx.AllResultsPerDatesWithDebugDetails) -> None:
     # Convert data to DataFrame for Excel output
 
     state_counts_per_timestamp: List[dict[cfx.State, int]] = all_results_to_display.get_state_counts_per_timestamp()
@@ -194,7 +196,7 @@ def produce_excel_output_file(output_excel_file: str, all_results_to_display: cf
 
 def produce_displays_and_create_html(
     use_cumulative: bool,
-    all_results_to_display: cfx.AllResultsPerDates,
+    all_results_to_display: cfx.AllResultsPerDatesWithDebugDetails,
     create_html_file: bool,
     window_title: str,
     generation_label: str,

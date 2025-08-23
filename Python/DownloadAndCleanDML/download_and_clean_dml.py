@@ -283,7 +283,7 @@ class DownloadAndCleanDMLApplication:
 
             # Obtenir toutes les valeurs de la première ligne
             headers = sht.range("A1").expand("right").value
-            logger_config.print_and_log_info(f"{len(headers)} headers:{headers}")
+            logger_config.print_and_log_info(f"{len(headers)} headers:{headers}")  
 
             # Trouver l'index de la colonne à supprimer
             logger_config.print_and_log_error(f"removing column '{column_name_to_remove}'")

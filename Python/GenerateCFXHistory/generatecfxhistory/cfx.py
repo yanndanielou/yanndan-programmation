@@ -138,7 +138,7 @@ class ActionType(enums_utils.NameBasedEnum):
 
 
 class OneTimestampResult:
-    def __init__(self, all_results_to_display: "AllResultsPerDates", timestamp: datetime.datetime):
+    def __init__(self, all_results_to_display: "AllResultsPerDatesWithDebugDetails", timestamp: datetime.datetime):
         self._timestamp = timestamp
         self.count_by_state: dict[State, int] = defaultdict(int)
         self.all_results_to_display = all_results_to_display
@@ -158,7 +158,7 @@ class OneTimestampResult:
         return self._timestamp
 
 
-class AllResultsPerDates:
+class AllResultsPerDatesWithDebugDetails:
     def __init__(self) -> None:
         self.timestamp_results: List[OneTimestampResult] = []
         self.present_states: Set[State] = set()
@@ -348,7 +348,7 @@ def convert_cfx_history_element_to_valid_full_name(cfx_history_element_state: st
 
 
 def get_earliest_submit_date(cfx_list: List["ChampFXEntry"]) -> datetime.datetime:
-    earliest_date = min(entry.get_oldest_submit_date() for entry in cfx_list)
+    earliest_date = min(entry.get_oldest_submit_date(allow_identical_states=False) for entry in cfx_list)
     logger_config.print_and_log_info(f"Earliest submit date among {len(cfx_list)} CFX: {earliest_date}")
     return earliest_date
 
@@ -686,9 +686,9 @@ class ChampFXLibrary:
 
         return result
 
-    def gather_state_counts_for_each_date(self, dates_generator: DatesGenerator, cfx_filters: Optional[List["ChampFxFilter"]] = None) -> AllResultsPerDates:
+    def gather_state_counts_for_each_date(self, dates_generator: DatesGenerator, cfx_filters: Optional[List["ChampFxFilter"]] = None) -> AllResultsPerDatesWithDebugDetails:
 
-        all_results_to_display: AllResultsPerDates = AllResultsPerDates()
+        all_results_to_display: AllResultsPerDatesWithDebugDetails = AllResultsPerDatesWithDebugDetails()
 
         # First, filter CFX that will never match the filter
         all_cfx_to_consider: List[ChampFXEntry] = []
@@ -766,8 +766,8 @@ class ChampFXEntryBuilder:
 
     @staticmethod
     def convert_champfx_request_type(raw_str_value: str) -> Optional[RequestType]:
-        if type(raw_str_value) is not str:
-            return None
+        assert isinstance(raw_str_value, str), f"RequestType {raw_str_value} is not string"
+
         raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
 
         try:
@@ -842,6 +842,7 @@ class ChampFXEntryBuilder:
 
         submit_date_raw: str = row["SubmitDate"]
         submit_date: datetime.datetime = cast(datetime.datetime, utils.convert_champfx_extract_date(submit_date_raw))
+        assert submit_date is not None, f"{cfx_identifier} has invalid submit date {submit_date_raw}"
 
         system_structure_config_unit: str = row["SystemStructure"]
         temptative_system_structure: Optional[role.SubSystem] = cfx_library.cfx_users_library.get_subsystem_from_champfx_fixed_implemented_in(system_structure_config_unit)
@@ -965,8 +966,8 @@ class ChampFXEntry:
         # return sorted(self._change_state_actions_by_date.items())
         return self._all_current_owner_modifications_sorted_reversed_chronologically
 
-    def get_oldest_submit_date(self) -> datetime.datetime:
-        oldest_submit_date_state_change = self.get_oldest_change_state_action_by_new_state(State.SUBMITTED)
+    def get_oldest_submit_date(self, allow_identical_states: bool) -> datetime.datetime:
+        oldest_submit_date_state_change = self.get_oldest_change_state_action_by_new_state(new_state=State.SUBMITTED, allow_identical_states=allow_identical_states)
         if not oldest_submit_date_state_change:
             # logger_config.print_and_log_warning(f"{self.cfx_id} has no change state to submit state")
             if not self.submit_date:
@@ -976,11 +977,27 @@ class ChampFXEntry:
             return self.submit_date
         return oldest_submit_date_state_change.timestamp
 
-    def get_oldest_change_state_action_by_new_state(self, new_state: State) -> Optional[ChangeStateAction]:
-        return next((action for action in self.get_all_change_state_actions_sorted_chronologically() if action.new_state == new_state), None)
+    def get_oldest_change_state_action_by_new_state(self, new_state: State, allow_identical_states: bool) -> Optional[ChangeStateAction]:
+        return next(
+            (action for action in self.get_all_change_state_actions_sorted_chronologically() if action.new_state == new_state and (allow_identical_states or action.old_state != action.new_state)),
+            None,
+        )
 
-    def get_newest_change_action_that_is_before_date(self, reference_date: datetime.datetime) -> Optional[ChangeStateAction]:
-        return next((action for action in self.get_all_change_state_actions_sorted_reversed_chronologically() if action.timestamp < reference_date), None)
+    def get_newest_change_action_that_is_before_date(self, reference_date: datetime.datetime, allow_identical_states: bool) -> Optional[ChangeStateAction]:
+        return next(
+            (
+                action
+                for action in self.get_all_change_state_actions_sorted_reversed_chronologically()
+                if action.timestamp < reference_date and (allow_identical_states or action.old_state != action.new_state)
+            ),
+            None,
+        )
+
+    def get_oldest_change_action_that_is_after_date(self, reference_date: datetime.datetime, allow_identical_states: bool) -> Optional[ChangeStateAction]:
+        return next(
+            (action for action in self.get_all_change_state_actions_sorted_chronologically() if action.timestamp > reference_date and (allow_identical_states or action.old_state != action.new_state)),
+            None,
+        )
 
     def get_newest_current_owner_modification_that_is_before_date(self, reference_date: datetime.datetime) -> Optional[ChangeCurrentOwnerAction]:
         return next((action for action in self.get_all_current_owner_modifications_sorted_reversed_chronologically() if action.timestamp < reference_date), None)
@@ -1023,11 +1040,24 @@ class ChampFXEntry:
 
     def get_state_at_date(self, reference_date: datetime.datetime) -> State:
 
-        newest_change_action_that_is_before_date = self.get_newest_change_action_that_is_before_date(reference_date)
-        if newest_change_action_that_is_before_date is None:
-            return State.NOT_CREATED_YET
-        else:
+        newest_change_action_that_is_before_date = self.get_newest_change_action_that_is_before_date(reference_date, allow_identical_states=False)
+        if newest_change_action_that_is_before_date is not None:
             return newest_change_action_that_is_before_date.new_state
+
+        if reference_date > self.submit_date:
+            oldest_change_action_that_is_after_date = self.get_oldest_change_action_that_is_after_date(reference_date, allow_identical_states=False)
+            if oldest_change_action_that_is_after_date:
+                return oldest_change_action_that_is_after_date.old_state
+
+            if self._state == State.SUBMITTED:
+                return self._state
+            # Cas où l'on n'a pour seul historique qu'un changement d'état
+            newest_change_action_that_is_before_date = self.get_newest_change_action_that_is_before_date(reference_date, allow_identical_states=True)
+            if newest_change_action_that_is_before_date is not None:
+                return newest_change_action_that_is_before_date.new_state
+
+            return State.UNKNOWN
+        return State.NOT_CREATED_YET
 
     @property
     def all_history_current_owner_roles(self) -> set[role.SubSystem]:

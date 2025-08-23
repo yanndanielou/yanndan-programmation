@@ -1,8 +1,8 @@
 # -*-coding:Utf-8 -*
-import os
-
-from typing import List, Tuple
+from datetime import datetime
 import fnmatch
+import os
+from typing import List, Tuple
 
 from logger import logger_config
 
@@ -26,8 +26,8 @@ def get_files_by_directory_and_file_name_mask(directory_path: str, filename_patt
     return files_paths
 
 
-def get_files_modification_time(files_paths: List[str]) -> List[Tuple[str, float]]:
-    files_and_modified_time: List[Tuple[str, float]] = []
+def get_files_modification_time(files_paths: List[str]) -> List[Tuple[str, datetime]]:
+    files_and_modified_time: List[Tuple[str, datetime]] = []
     for file_path in files_paths:
-        files_and_modified_time.append((file_path, os.path.getmtime(file_path)))
+        files_and_modified_time.append((file_path, datetime.fromtimestamp(os.path.getmtime(file_path))))
     return files_and_modified_time

@@ -71,14 +71,14 @@ class QueryOutputFileType(Enum):
 
     def get_file_download_dropdown_menu_option_text(self) -> str:
         return "Exporter vers un fichier texte" if self == QueryOutputFileType.TXT_EXPORT else "Exporter vers un tableur Excel"
-  
-    
+
+
 @dataclass
 class ProjectsFieldFilter:
     projects_names: Set[str] | List[str]
     filter_type: FilterFieldType
-   
-  
+
+
 @dataclass
 class CfxQuery:
     output_file_name_without_extension: str
@@ -86,8 +86,8 @@ class CfxQuery:
     output_file_type: QueryOutputFileType
     projects_field_filters: Optional[ProjectsFieldFilter] = None
     label: str = ""
-     
-    def __post_init__(self)->None:
+
+    def __post_init__(self) -> None:
         if self.label is None:
             self.label = self.output_file_name_without_extension
 
@@ -311,19 +311,19 @@ def stopwatch_with_label_and_surround_with_screenshots(label: str, remote_web_dr
     """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
     https://www.docstring.fr/glossaire/with/"""
     remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/before {label}.png")
-    
+
     previous_stack = inspect.stack(0)[2]
     file_name = previous_stack.filename
     line_number = previous_stack.lineno
     calling_file_name_and_line_number = file_name + ":" + str(line_number)
-    
+
     to_print_and_log = f"{label} begin"
     # pylint: disable=line-too-long
     log_timestamp = time.asctime(time.localtime(time.time()))
 
     print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
-    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}") # pylint: disable=logging-fstring-interpolation
-    
+    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")  # pylint: disable=logging-fstring-interpolation
+
     debut = time.perf_counter()
     yield time.perf_counter() - debut
     fin = time.perf_counter()
@@ -334,11 +334,10 @@ def stopwatch_with_label_and_surround_with_screenshots(label: str, remote_web_dr
 
     log_timestamp = time.asctime(time.localtime(time.time()))
 
-
     # pylint: disable=line-too-long
     print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
 
-    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}") # pylint: disable=logging-fstring-interpolation
+    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")  # pylint: disable=logging-fstring-interpolation
 
 
 @contextmanager
@@ -347,7 +346,7 @@ def surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, scr
     yield 0.0
     remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/after {label}.png")
 
- 
+
 @dataclass
 class SaveCfxRequestMultipagesResultsApplication:
     projects_to_handle_list: List[str]
@@ -388,7 +387,7 @@ class SaveCfxRequestMultipagesResultsApplication:
         # pylint: disable=line-too-long
         print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
 
-        logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}") # pylint: disable=logging-fstring-interpolation
+        logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")  # pylint: disable=logging-fstring-interpolation
 
     def run(self) -> None:
 
@@ -482,7 +481,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                 ):
                     input_element = WebDriverWait(self.driver, 30).until(expected_conditions.presence_of_element_located((By.ID, "dijit_form_FilteringSelect_0")))
 
-                    #input_element = self.driver.find_element(By.ID, "dijit_form_FilteringSelect_0")
+                    # input_element = self.driver.find_element(By.ID, "dijit_form_FilteringSelect_0")
                     input_element.clear()  # Clear any pre-existing text
                     input_element.send_keys(filter_text_to_type)
 
@@ -571,7 +570,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                             change_state_cfx_query=change_state_cfx_query,
                             label=change_state_cfx_query.label,
                             file_to_create_path_without_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{TEXT_FILE_EXTENSION}",
-                        )      
+                        )
 
         except Exception as e:
 
@@ -579,13 +578,13 @@ class SaveCfxRequestMultipagesResultsApplication:
             logger_config.print_and_log_exception(e)
             logger_config.print_and_log_error(f"{self.number_of_exceptions_caught}th Exception  {self.number_of_exceptions_caught}  number_of_retry_if_failure:{number_of_retry_if_failure}")
             self.driver.get_screenshot_as_file(f"{self.errors_output_relative_path}/{self.number_of_exceptions_caught} th Exception caught.png")
-            
+
             with stopwatch_with_label_and_surround_with_screenshots(
                 label=f"Post mortem {self.number_of_exceptions_caught}th Exception delay", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
             ):
                 time.sleep(10)
             self.driver.get_screenshot_as_file(f"{self.errors_output_relative_path}/{self.number_of_exceptions_caught} th Exception caught after post mortem delay.png")
-            
+
             with logger_config.stopwatch_with_label("Reset_driver :"):
                 self.reset_driver()
             if number_of_retry_if_failure > 0:
@@ -698,8 +697,7 @@ class SaveCfxRequestMultipagesResultsApplication:
         with stopwatch_with_label_and_surround_with_screenshots(
             label="Wait for the page to be fully loaded (JavaScript):: document.readyState now good", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
         ):
-            WebDriverWait(self.driver, 10).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete") # mypy: disable=disallow-untyped-calls
-
+            WebDriverWait(self.driver, 10).until(lambda driver: self.driver.execute_script("return document.readyState") == "complete")  # mypy: disable=disallow-untyped-calls
 
         with stopwatch_with_label_and_surround_with_screenshots(label="Additional waiting time", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             time.sleep(0.8)

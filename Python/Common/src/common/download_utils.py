@@ -4,17 +4,12 @@ import fnmatch
 import os
 import time
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import List, Optional, Tuple
 from warnings import deprecated
 
 from logger import logger_config
-from watchdog.events import (
-    DirCreatedEvent,
-    DirModifiedEvent,
-    FileCreatedEvent,
-    FileModifiedEvent,
-    FileSystemEventHandler,
-)
+from watchdog.events import DirCreatedEvent, DirModifiedEvent, FileCreatedEvent, FileModifiedEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from common import file_utils
@@ -39,7 +34,7 @@ class DownloadEventHandler(FileSystemEventHandler):
             self.file_detected_path = event.src_path
 
 
-def get_files_and_modification_time(directory_path: str, filename_pattern: str) -> List[Tuple[str, float]]:
+def get_files_and_modification_time(directory_path: str, filename_pattern: str) -> List[Tuple[str, datetime]]:
     return file_utils.get_files_modification_time(file_utils.get_files_by_directory_and_file_name_mask(directory_path=directory_path, filename_pattern=filename_pattern))
 
 
@@ -49,14 +44,14 @@ class DownloadFileDetector:
     filename_pattern: str
     remaining_timeout_in_seconds: int = field(init=False)
     timeout_in_seconds: int = 100
-    initial_files_and_modified_time: List[Tuple[str, float]] = field(default_factory=list)
+    initial_files_and_modified_time: List[Tuple[str, datetime]] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.remaining_timeout_in_seconds = self.timeout_in_seconds
         self.initial_files_and_modified_time = get_files_and_modification_time(self.directory_path, self.filename_pattern)
         logger_config.print_and_log_info(f"At init, {len(self.initial_files_and_modified_time)} files detected:{self.initial_files_and_modified_time}")
 
-    def rescan_directory_for_changes(self) -> List[Tuple[str, float]]:
+    def rescan_directory_for_changes(self) -> List[Tuple[str, datetime]]:
         current_files_and_modified_time = get_files_and_modification_time(self.directory_path, self.filename_pattern)
         logger_config.print_and_log_info(f"Current {len(current_files_and_modified_time)} files detected:{current_files_and_modified_time}")
 
