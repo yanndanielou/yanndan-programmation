@@ -138,7 +138,7 @@ class ActionType(enums_utils.NameBasedEnum):
 
 
 class OneTimestampResult:
-    def __init__(self, all_results_to_display: "AllResultsPerDatesWithDebugDetails", timestamp: datetime.datetime):
+    def __init__(self, all_results_to_display: "AllResultsPerDates", timestamp: datetime.datetime):
         self._timestamp = timestamp
         self.count_by_state: dict[State, int] = defaultdict(int)
         self.all_results_to_display = all_results_to_display
@@ -158,18 +158,14 @@ class OneTimestampResult:
         return self._timestamp
 
 
-class AllResultsPerDatesWithDebugDetails:
+class AllResultsPerDates:
     def __init__(self) -> None:
         self.timestamp_results: List[OneTimestampResult] = []
         self.present_states: Set[State] = set()
 
         self.cumulative_counts: Dict[State, List[int]] = dict()
         self.all_cfx_ids_that_have_matched: set[str] = set()
-        self.all_cfx_that_have_matched: set[ChampFXEntry] = set()
         self.at_least_one_cfx_matching_filter_has_been_found = False
-
-    def is_empty(self) -> bool:
-        return not self.all_cfx_ids_that_have_matched
 
     def get_all_timestamps(self) -> List[datetime.datetime]:
         all_timestamps = [results.timestamp for results in self.timestamp_results]
@@ -186,6 +182,15 @@ class AllResultsPerDatesWithDebugDetails:
         for one_timestamp in self.timestamp_results:
             for state in self.present_states_ordered():
                 self.cumulative_counts[state].append(one_timestamp.count_by_state[state])
+
+
+class AllResultsPerDatesWithDebugDetails(AllResultsPerDates):
+    def __init__(self) -> None:
+        super().__init__()
+        self.all_cfx_that_have_matched: set[ChampFXEntry] = set()
+
+    def is_empty(self) -> bool:
+        return not self.all_cfx_ids_that_have_matched
 
 
 def get_tomorrow_naive() -> datetime.datetime:
