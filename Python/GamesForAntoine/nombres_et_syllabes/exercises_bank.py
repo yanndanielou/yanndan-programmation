@@ -1,22 +1,13 @@
-import threading
-import time
-import tkinter as tk
-from tkinter import Toplevel, messagebox, simpledialog, StringVar
-from typing import Callable, List, cast
-
-import pygame
-import pyttsx3, pyttsx3.voice
-from PIL import Image, ImageTk
-
-from common import text_to_speach, string_utils
-
-from enum import Enum, auto
-
 import random
-
-import labyrinthe
+import tkinter as tk
+from enum import Enum, auto
+from tkinter import StringVar
+from typing import TYPE_CHECKING, Callable
 
 from logger import logger_config
+
+if TYPE_CHECKING:
+    from nombres_et_syllabes.ui import GameMainWindow
 
 DEFAULT_PLAYER_NAME = "Carabistouille"
 
@@ -27,121 +18,8 @@ EXPECTED_LANGUAGE_IN_VOICE_NAME = "french"
 FRENCH_SYLLABES_SUFFIXES = [""]
 
 
-class GameMainWindow(tk.Tk):
-    def __init__(self) -> None:
-        super().__init__()
-
-        self.text_to_speech_manager = text_to_speach.TextToSpeechManager()
-        self.text_to_speech_manager.change_voice_to_language(language_long_name=text_to_speach.FRENCH_LANGUAGE_LONG_NAME, language_short_name=text_to_speach.FRENCH_LANGUAGE_SHORT_NAME)
-
-        self.title("Jeu éducatif")
-        self.geometry("400x300")
-
-        pygame.mixer.init()
-
-        self.felicitation_image = ImageTk.PhotoImage(Image.open("felicitation.png"))
-
-        self.child_name = ""
-        self.points = 0
-
-        self.prompt_for_name()
-        self.guess_to_enter_game()
-
-        self.header_frame = HeaderFrame(self)
-        self.header_frame.pack(fill=tk.X)
-
-        self.modes: List[ModexFrame] = [
-            ListenAndTypeExercise(self, self.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 10))),
-            ListenAndTypeExercise(self, self.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 20))),
-            ListenAndTypeExercise(self, self.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 30))),
-            DoubleExercise(self, switch_mode_callback=self.switch_mode, number=random.randint(0, 6)),
-            DoubleExercise(self, switch_mode_callback=self.switch_mode, number=random.randint(0, 8)),
-            AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 9), second_number=random.randint(0, 5)),
-            AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 10), second_number=random.randint(0, 8)),
-            SoustractionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(3, 9), second_number=random.randint(0, 2)),
-            AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
-            AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
-            AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
-            AdditionExercise(self, switch_mode_callback=self.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
-            RecognizeSyllabeInChoiceWithVoiceExercise(self, self.switch_mode),
-        ]
-
-        self.current_mode_index = 0
-        self.show_current_mode()
-
-    def prompt_for_name(self) -> None:
-        self.synthetise_and_play_sentence("Comment t'appelles-tu?", blocking=False)
-        child_name_entered = simpledialog.askstring("Bienvenue", "Entrez votre prénom :")
-        self.child_name = child_name_entered if child_name_entered else DEFAULT_PLAYER_NAME
-        self.synthetise_and_play_sentence(f"Tu t'appelles {self.child_name}", blocking=False)
-
-    def guess_to_enter_game(self) -> None:
-
-        devinette, expected_answer = DEVINETTES_QUESTION_REPONSE[random.randint(0, len(DEVINETTES_QUESTION_REPONSE) - 1)]
-        expected_answer_used = string_utils.without_diacritics(expected_answer.lower())
-        logger_config.print_and_log_info(f"expected_answer_used:{expected_answer_used}")
-
-        answer_given_used = ""
-        while answer_given_used != expected_answer_used:
-            self.synthetise_and_play_sentence(devinette, blocking=False)
-            answer_given = simpledialog.askstring("Devinette", devinette)
-            logger_config.print_and_log_info(f"answer_given:{answer_given}")
-            answer_given_used = string_utils.without_diacritics(answer_given.lower())
-            logger_config.print_and_log_info(f"answer_given_used:{answer_given_used}")
-
-            if answer_given_used == expected_answer_used:
-                self.synthetise_and_play_sentence(f"Bonne réponse champion! {self.child_name}", blocking=False)
-
-            else:
-                self.synthetise_and_play_sentence(f"Mauvaise réponse (tu as entré {answer_given}). Recommence. La bonne réponse est {expected_answer}", blocking=False)
-
-    def update_header(self) -> None:
-        self.header_frame.update_info(self.child_name, self.points)
-
-    def show_current_mode(self) -> None:
-        self.update_header()
-
-        for mode in self.modes:
-            mode.pack_forget()
-
-        self.modes[self.current_mode_index].start_exercise()
-
-    def switch_mode(self) -> None:
-        self.current_mode_index = (self.current_mode_index + 1) % len(self.modes)
-        self.show_current_mode()
-
-    def congrats_player(self) -> None:
-        popup = Toplevel(self)
-        popup.title("Bravo champion!")
-
-        felicitation_label = tk.Label(popup, image=self.felicitation_image)
-        felicitation_label.pack(pady=10)
-
-        congrats_text = f"Bonne réponse {self.child_name} ! Tu as {self.points} points champion!!"
-        message_label = tk.Label(popup, text=congrats_text, font=("Arial", 12))
-
-        self.synthetise_and_play_sentence(sentence=congrats_text, blocking=False)
-
-        message_label.pack(pady=10)
-
-        popup.after(2000, popup.destroy)
-        popup.bind("<Return>", lambda _: popup.destroy())
-        popup.focus()
-
-        popup.wait_window(popup)
-
-    def exercise_won(self) -> None:
-        self.points += 1
-        self.update_header()
-        self.congrats_player()
-        # labyrinthe.MazeGame(root=self, size=self.points + 3, embedded_in_other_application=True)
-
-    def synthetise_and_play_sentence(self, sentence: str, blocking: bool) -> None:
-        self.text_to_speech_manager.synthetise_and_play_sentence(sentence=sentence, blocking=blocking)
-
-
 class HeaderFrame(tk.Frame):
-    def __init__(self, master: GameMainWindow) -> None:
+    def __init__(self, master: "GameMainWindow") -> None:
         super().__init__(master, bg="lightblue")
         self.name_label = tk.Label(self, text="", bg="lightblue", font=("Arial", 14, "bold"))
         self.name_label.pack(side=tk.LEFT, padx=10)
@@ -155,7 +33,7 @@ class HeaderFrame(tk.Frame):
 
 
 class ModexFrame(tk.Frame):
-    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None]) -> None:
+    def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None]) -> None:
         super().__init__(game_main_window)
         self.game_main_window = game_main_window
         self.switch_mode_callback = switch_mode_callback
@@ -180,7 +58,7 @@ class ModexFrame(tk.Frame):
 
 
 class TextAnswerInEntryExercise(ModexFrame):
-    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], expected_result: str, give_answer_on_error: bool) -> None:
+    def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None], expected_result: str, give_answer_on_error: bool) -> None:
         super().__init__(game_main_window, switch_mode_callback)
 
         self.answer_entry = tk.Entry(self)
@@ -215,7 +93,7 @@ class TextAnswerInEntryExercise(ModexFrame):
 
 
 class AdditionExercise(TextAnswerInEntryExercise):
-    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], first_number: int = random.randint(0, 20), second_number: int = random.randint(0, 10)) -> None:
+    def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None], first_number: int = random.randint(0, 20), second_number: int = random.randint(0, 10)) -> None:
         super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback, expected_result=f"{first_number + second_number}", give_answer_on_error=True)
 
         self.consigne_label_value.set(f"{first_number} + {second_number}")
@@ -230,7 +108,7 @@ class AdditionExercise(TextAnswerInEntryExercise):
 
 
 class SoustractionExercise(TextAnswerInEntryExercise):
-    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], first_number: int = random.randint(0, 20), second_number: int = random.randint(0, 10)) -> None:
+    def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None], first_number: int = random.randint(0, 20), second_number: int = random.randint(0, 10)) -> None:
         super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback, expected_result=f"{first_number - second_number}", give_answer_on_error=True)
 
         self.consigne_label_value.set(f"{first_number} - {second_number}")
@@ -245,7 +123,7 @@ class SoustractionExercise(TextAnswerInEntryExercise):
 
 
 class DoubleExercise(AdditionExercise):
-    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], number: int = random.randint(0, 20)) -> None:
+    def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None], number: int = random.randint(0, 20)) -> None:
         super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback, first_number=number, second_number=number)
 
 
@@ -287,7 +165,7 @@ class ListenAndTypeExercise(ModexFrame):
         def answer_label(self) -> str:
             return f"{self.word}"
 
-    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None], item_to_listen_and_learn: ItemToListenAndType) -> None:
+    def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None], item_to_listen_and_learn: ItemToListenAndType) -> None:
         super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback)
 
         self.consigne_label_value.set(f"Ecoute et écris {item_to_listen_and_learn.type_label()}")
@@ -329,7 +207,7 @@ class ListenAndTypeExercise(ModexFrame):
 
 
 class RecognizeSyllabeInChoiceWithVoiceExercise(ModexFrame):
-    def __init__(self, game_main_window: GameMainWindow, switch_mode_callback: Callable[[], None]) -> None:
+    def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None]) -> None:
         super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback)
 
         self.syllabes = ["pa", "ma", "la"]
@@ -359,9 +237,3 @@ class RecognizeSyllabeInChoiceWithVoiceExercise(ModexFrame):
             self.exercise_won()
         else:
             self.game_main_window.synthetise_and_play_sentence(sentence=f"Mauvaise réponse. Tu as choisit {answer_given}, il fallait écrire {self.expected_answer}. Recommence!", blocking=False)
-
-
-if __name__ == "__main__":
-    with logger_config.application_logger("nombres_et_syllabes"):
-        jeu = GameMainWindow()
-        jeu.mainloop()

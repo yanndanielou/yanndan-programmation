@@ -6,7 +6,7 @@ EXIT_CASE_CONTENT = "E"
 
 
 class MazeGame:
-    def __init__(self, root: tk.Tk, embedded_in_other_application: bool, size: int = 14) -> None:
+    def __init__(self, root: tk.Tk, embedded_in_other_application: bool, size: int = 15) -> None:
         self.embedded_in_other_application = embedded_in_other_application
         self.size = size
         self.root = root
