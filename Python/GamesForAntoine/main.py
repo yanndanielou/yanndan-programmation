@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
         modes: List[ModexFrame] = [
             ListenAndTypeExercise(game_main_window, game_main_window.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 10))),
-            ListenAndTypeExercise(game_main_window, game_main_window.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(0, 20))),
+            ListenAndTypeExercise(game_main_window, game_main_window.switch_mode, ListenAndTypeExercise.NumberToListenAndType(number=random.randint(10, 20))),
             DoubleExercise(game_main_window, switch_mode_callback=game_main_window.switch_mode, number=random.randint(0, 5)),
             DoubleExercise(game_main_window, switch_mode_callback=game_main_window.switch_mode, number=random.randint(4, 8)),
             AdditionExercise(game_main_window, switch_mode_callback=game_main_window.switch_mode, first_number=random.randint(0, 20), second_number=random.randint(0, 10)),
