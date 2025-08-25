@@ -586,8 +586,8 @@ class TestIncompleteCFXAreNotCreated:
         assert champfx_library.failed_to_create_cfx_ids
         for expected_incomplete_cfx_id in expected_incomplete_cfx_ids:
             assert expected_incomplete_cfx_id in champfx_library.failed_to_create_cfx_ids
-  
-  def test_cfx_with_no_submit_date(self) -> None:
+
+    def test_cfx_with_no_submit_date(self) -> None:
         "details_project_CHAMP"
         expected_incomplete_cfx_ids = [
             "CFX00651637",
@@ -632,7 +632,21 @@ class TestFullDatabase:
             assert cfx_entry.get_oldest_submit_date(allow_identical_states=False), cfx_entry.cfx_identifier
 
 
+class TestConstantIntervalDatesGenerator:
+
+    def test_with_one_day_interval(self) -> None:
+        dates_generator = cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=1))
+        all_dates = dates_generator._compute_dates_since_until_today(datetime(year=2025, month=7, day=1))
+        assert all_dates
+
+    def test_with_no_interval(self) -> None:
+        dates_generator = cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(day=1))
+        with pytest.raises(AssertionError):
+            dates_generator._compute_dates_since_until_today(datetime(year=2025, month=7, day=1))
+
+
 class TestStatisticsPreparation:
+
     @pytest.mark.timeout(120)
     def test_gather_state_counts_for_each_date_whithout_filter(self, create_light_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library_fixture
