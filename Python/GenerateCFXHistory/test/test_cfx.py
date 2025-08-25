@@ -698,6 +698,22 @@ class TestStatisticsPreparationRoleDependingOnDate:
         assert not all_results_per_date.is_empty()
 
 
+class TestBugCFX00882153CoreshieldObSeenUnknownState:
+    def test_has_not_unknown_state(self) -> None:
+        cfx_inputs = (
+            cfx.ChampFxInputsBuilder()
+            .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_other_projects.xlsx")
+            .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_other_projects.xlsx")
+            .build()
+        )
+        champfx_library = cfx.ChampFXLibrary(
+            cfx_inputs=cfx_inputs,
+            champfx_filters=[cfx.ChampFXWhiteListBasedOnListFilter(cfx_to_treat_ids=["CFX00882153"])],
+        )
+        cfx_entry = champfx_library.get_cfx_by_id("CFX00882153")
+        # Submit 18/07/2025 14:54:32
+
+
 class TestDecreasingIntervalDatesGenerator:
 
     def test_now(self) -> None:
