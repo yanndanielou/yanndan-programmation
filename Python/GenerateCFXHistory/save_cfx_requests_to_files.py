@@ -534,11 +534,11 @@ class SaveCfxRequestMultipagesResultsApplication:
                 WebDriverWait(self.driver, 60).until(expected_conditions.presence_of_element_located((By.ID, "unique_info_col")))
 
             with stopwatch_with_label_and_surround_with_screenshots(
-                label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters - wait column id",
+                label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters - wait column CFXID",
                 remote_web_driver=self.driver,
                 screenshots_directory_path=self.screenshots_output_relative_path,
             ):
-                WebDriverWait(self.driver, 30).until(expected_conditions.presence_of_element_located((By.XPATH, "//th/div[text()='id']")))
+                WebDriverWait(self.driver, 30).until(expected_conditions.presence_of_element_located((By.XPATH, "//th/div[text()='CFXID']")))
 
             with stopwatch_with_label_and_surround_with_screenshots(
                 label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters - request execution additional waiting time",
@@ -616,7 +616,7 @@ class SaveCfxRequestMultipagesResultsApplication:
         with stopwatch_with_label_and_surround_with_screenshots(
             label="Downloading file - Additional waiting time for antivirus", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
         ):
-            time.sleep(5)
+            time.sleep(1)
 
         logger_config.print_and_log_info(
             f"File downloaded : {file_downloaded_path}, will be moved to {file_to_create_path_without_extension}{change_state_cfx_query.output_file_type.get_file_extension()}"
