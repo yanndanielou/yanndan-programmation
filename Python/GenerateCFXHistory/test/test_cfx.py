@@ -712,6 +712,9 @@ class TestBugCFX00882153CoreshieldObSeenUnknownState:
         )
         cfx_entry = champfx_library.get_cfx_by_id("CFX00882153")
         # Submit 18/07/2025 14:54:32
+        assert cfx_entry.get_state_at_date(datetime(2011, 5, 1, 0, 0)) == State.NOT_CREATED_YET
+        assert cfx_entry.get_state_at_date(datetime(2025, 7, 19)) != State.UNKNOWN
+        assert cfx_entry.get_state_at_date(datetime(2025, 8, 19)) != State.UNKNOWN
 
 
 class TestDecreasingIntervalDatesGenerator:
