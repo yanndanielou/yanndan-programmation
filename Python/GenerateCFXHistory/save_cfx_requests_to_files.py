@@ -479,7 +479,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                     remote_web_driver=self.driver,
                     screenshots_directory_path=self.screenshots_output_relative_path,
                 ):
-                    input_element = WebDriverWait(self.driver, 30).until(expected_conditions.presence_of_element_located((By.ID, "dijit_form_FilteringSelect_0")))
+                    input_element = WebDriverWait(self.driver, 100).until(expected_conditions.presence_of_element_located((By.ID, "dijit_form_FilteringSelect_0")))
 
                     # input_element = self.driver.find_element(By.ID, "dijit_form_FilteringSelect_0")
                     input_element.clear()  # Clear any pre-existing text
