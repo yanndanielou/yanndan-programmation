@@ -196,7 +196,7 @@ def produce_excel_output_file(output_excel_file: str, all_results_to_display: cf
 
 def produce_displays_and_create_html(
     use_cumulative: bool,
-    all_results_to_display: cfx.AllResultsPerDatesWithDebugDetails,
+    all_results_to_display: cfx.AllResultsPerDates,
     create_html_file: bool,
     window_title: str,
     generation_label: str,
