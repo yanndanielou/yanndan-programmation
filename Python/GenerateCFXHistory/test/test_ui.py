@@ -19,9 +19,8 @@ def prepare_data(year: int, all_results_to_display: cfx.AllResultsPerDates) -> L
 
     dates_generator = cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=1))
 
-    print("Generate dates")
     all_dates = dates_generator.get_dates_since(datetime(year=year, month=1, day=1))
-    print(f"{len(all_dates)} dates for tests generated")
+    print(f"{len(all_dates)} dates for tests generated since {year}")
 
     for index, one_date in enumerate(all_dates):
         one_result_timestamp = cfx.OneTimestampResult(all_results_to_display=all_results_to_display, timestamp=one_date)
@@ -46,7 +45,6 @@ class TestNoMemoryLeakWhenDisplay:
         all_dates = prepare_data(2024, all_results_to_display)
         initial_ram_rss = psutil.Process(os.getpid()).memory_info().rss
         previous_ram_rss = initial_ram_rss
-        print("ALl timestamp data for tests generated")
         for iter in range(1, 1):
             ui_and_results_generation.produce_displays_and_create_html(
                 use_cumulative=True,
@@ -67,8 +65,7 @@ class TestNoMemoryLeakWhenDisplay:
             previous_ram_rss = current_ram_rss
             assert current_ram_rss < (2 * initial_ram_rss)
 
-        ui_and_results_generation.block_execution_and_keep_all_windows_open()
-        print("produce_displays_and_create_html done")
+        # ui_and_results_generation.block_execution_and_keep_all_windows_open()
 
 
 class TestNoMemoryLeakWhenNoDisplay:
@@ -79,7 +76,6 @@ class TestNoMemoryLeakWhenNoDisplay:
         all_dates = prepare_data(initial_year, all_results_to_display)
         initial_ram_rss = psutil.Process(os.getpid()).memory_info().rss
         previous_ram_rss = initial_ram_rss
-        print("ALl timestamp data for tests generated")
         for iter in range(1, 20):
             ui_and_results_generation.produce_displays_and_create_html(
                 use_cumulative=True,
@@ -99,5 +95,3 @@ class TestNoMemoryLeakWhenNoDisplay:
             )
             previous_ram_rss = current_ram_rss
             assert current_ram_rss < (2 * initial_ram_rss)
-
-        print("produce_displays_and_create_html done")
