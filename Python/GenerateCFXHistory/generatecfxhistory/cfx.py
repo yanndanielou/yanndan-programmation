@@ -149,7 +149,7 @@ class OneTimestampResult:
     def is_empty(self) -> bool:
         return len(self.count_by_state) > 0
 
-    def consolidate(self) -> None:
+    def consolidate_present_states(self) -> None:
         all_states_found = list(self.count_by_state.keys())
         self.all_results_to_display.present_states.update(all_states_found)
 
@@ -249,7 +249,9 @@ class ConstantIntervalDatesGenerator(DatesGenerator):
         current_date_iter = start_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
         while current_date_iter <= today_naive:
             dates.append(current_date_iter)
-            current_date_iter = current_date_iter + self._time_delta
+            next_date = current_date_iter + self._time_delta
+            assert next_date != current_date_iter
+            current_date_iter = next_date
 
         return dates
 
@@ -743,7 +745,7 @@ class ChampFXLibrary:
                 all_results_to_display.timestamp_results.append(timestamp_results)
 
             with logger_config.stopwatch_alert_if_exceeds_duration("consolidate", duration_threshold_to_alert_info_in_s=0.1):
-                timestamp_results.consolidate()
+                timestamp_results.consolidate_present_states()
 
         return all_results_to_display
 
