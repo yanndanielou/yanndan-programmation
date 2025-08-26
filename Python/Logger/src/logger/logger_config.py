@@ -274,11 +274,17 @@ def get_logger(name: str, rotating_file_name_without_extension: str, level: int 
 
 @contextmanager
 def stopwatch_with_label(
-    label: str, enable_print: bool = True, enable_log: bool = True, enabled: bool = True, inform_beginning: bool = False
+    label: str,
+    enable_print: bool = True,
+    enable_log: bool = True,
+    enabled: bool = True,
+    inform_beginning: bool = False,
+    monitor_ram_usage: bool = False,
 ) -> Generator[float, None, None]:
     """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
     https://www.docstring.fr/glossaire/with/"""
     if enabled:
+        initial_ram_rss = cast(int, psutil.Process(os.getpid()).memory_info().rss)
 
         previous_stack = inspect.stack(0)[2]
         file_name = previous_stack.filename
@@ -287,7 +293,11 @@ def stopwatch_with_label(
 
         if inform_beginning:
             at_beginning_log_timestamp = time.asctime(time.localtime(time.time()))
-            to_print_and_log = f"{label} : begin"
+
+            if monitor_ram_usage:
+                to_print_and_log = f"{label} : begin. Initial ram usage {humanize.naturalsize(initial_ram_rss)}"
+            else:
+                to_print_and_log = f"{label} : begin"
 
             if enable_print:
                 print(at_beginning_log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
@@ -297,9 +307,15 @@ def stopwatch_with_label(
 
         debut = time.perf_counter()
         yield time.perf_counter() - debut
+
+        final_ram_rss = cast(int, psutil.Process(os.getpid()).memory_info().rss)
+        delta_rss_since_reference = final_ram_rss - initial_ram_rss
         fin = time.perf_counter()
         elapsed_time_seconds = fin - debut
-        to_print_and_log = f"{label} Elapsed: {date_time_formats.format_duration_to_string(elapsed_time_seconds)}"
+        if monitor_ram_usage:
+            to_print_and_log = f"{label} Elapsed: {date_time_formats.format_duration_to_string(elapsed_time_seconds)}. Final ram {humanize.naturalsize(final_ram_rss)}. Delta ram : {humanize.naturalsize(delta_rss_since_reference)}"
+        else:
+            to_print_and_log = f"{label} Elapsed: {date_time_formats.format_duration_to_string(elapsed_time_seconds)}"
 
         end_log_timestamp = time.asctime(time.localtime(time.time()))
 
@@ -419,7 +435,7 @@ def print_and_log_current_ram_usage(
             f". Evolution since {previous_reference_rss_label} : {humanize.naturalsize(delta_rss_since_reference)}"
         )
 
-    to_print_and_log = f"{prefix} current ram usage:{humanize.naturalsize(current_ram_rss)} {comparison_text} {suffix}"
+    to_print_and_log = f"{prefix} current ram:{humanize.naturalsize(current_ram_rss)} {comparison_text} {suffix}"
 
     log_timestamp = time.asctime(time.localtime(time.time()))
 
