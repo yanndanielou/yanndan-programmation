@@ -6,6 +6,9 @@ import datetime
 # from inspect import currentframe, getframeinfo
 import inspect
 
+import humanize
+import psutil
+
 # -*-coding:Utf-8 -*
 import logging
 import os
@@ -17,7 +20,7 @@ from contextlib import contextmanager
 
 # from warnings import deprecated
 from logging.handlers import RotatingFileHandler
-from typing import Optional
+from typing import Optional, cast, Tuple
 
 from common import date_time_formats
 
@@ -400,3 +403,28 @@ def stopwatch_alert_if_exceeds_duration(
 
 def datetime_convenient_log_format(datetime_to_log: datetime.datetime, number_of_caracters_to_keep: int = 22) -> str:
     return str(datetime_to_log)[:number_of_caracters_to_keep]
+
+
+def print_and_log_current_ram_usage(
+    prefix: str = "", suffix: str = "", previous_reference_rss_value_and_label: Optional[Tuple[int, str]] = None
+) -> int:
+    current_ram_rss = cast(int, psutil.Process(os.getpid()).memory_info().rss)
+
+    comparison_text = ""
+    if previous_reference_rss_value_and_label:
+        previous_reference_rss_value = previous_reference_rss_value_and_label[0]
+        previous_reference_rss_label = previous_reference_rss_value_and_label[1]
+        delta_rss_since_reference = current_ram_rss - previous_reference_rss_value
+        comparison_text = (
+            f". Evolution since {previous_reference_rss_label} : {humanize.naturalsize(delta_rss_since_reference)}"
+        )
+
+    to_print_and_log = f"{prefix} current ram usage:{humanize.naturalsize(current_ram_rss)} {comparison_text} {suffix}"
+
+    log_timestamp = time.asctime(time.localtime(time.time()))
+
+    # pylint: disable=line-too-long
+    print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + to_print_and_log)
+    logging.info(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
+
+    return current_ram_rss
