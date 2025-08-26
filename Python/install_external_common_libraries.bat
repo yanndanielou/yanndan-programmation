@@ -1,6 +1,7 @@
 @CALL SET_PYTHON_HOME.bat
 
 
+@call :INSTALL_PYTHON_LIB Spire.Doc
 @call :INSTALL_PYTHON_LIB psutil
 @call :INSTALL_PYTHON_LIB pyttsx3  
 @call :INSTALL_PYTHON_LIB pygame 
