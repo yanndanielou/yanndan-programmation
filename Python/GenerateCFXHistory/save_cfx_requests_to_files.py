@@ -531,14 +531,14 @@ class SaveCfxRequestMultipagesResultsApplication:
                 remote_web_driver=self.driver,
                 screenshots_directory_path=self.screenshots_output_relative_path,
             ):
-                WebDriverWait(self.driver, 60).until(expected_conditions.presence_of_element_located((By.ID, "unique_info_col")))
+                WebDriverWait(self.driver, 150).until(expected_conditions.presence_of_element_located((By.ID, "unique_info_col")))
 
             with stopwatch_with_label_and_surround_with_screenshots(
                 label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters - wait column CFXID",
                 remote_web_driver=self.driver,
                 screenshots_directory_path=self.screenshots_output_relative_path,
             ):
-                WebDriverWait(self.driver, 30).until(expected_conditions.presence_of_element_located((By.XPATH, "//th/div[text()='CFXID']")))
+                WebDriverWait(self.driver, 100).until(expected_conditions.presence_of_element_located((By.XPATH, "//th/div[text()='CFXID']")))
 
             with stopwatch_with_label_and_surround_with_screenshots(
                 label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters - request execution additional waiting time",
@@ -579,10 +579,12 @@ class SaveCfxRequestMultipagesResultsApplication:
             logger_config.print_and_log_error(f"{self.number_of_exceptions_caught}th Exception  {self.number_of_exceptions_caught}  number_of_retry_if_failure:{number_of_retry_if_failure}")
             self.driver.get_screenshot_as_file(f"{self.errors_output_relative_path}/{self.number_of_exceptions_caught} th Exception caught.png")
 
-            with stopwatch_with_label_and_surround_with_screenshots(
-                label=f"Post mortem {self.number_of_exceptions_caught}th Exception delay", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
-            ):
-                time.sleep(10)
+            for i in range(1, 15):
+                with stopwatch_with_label_and_surround_with_screenshots(
+                    label=f"Post mortem {self.number_of_exceptions_caught}th Exception delay {i}", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+                ):
+                    time.sleep(i)
+
             self.driver.get_screenshot_as_file(f"{self.errors_output_relative_path}/{self.number_of_exceptions_caught} th Exception caught after post mortem delay.png")
 
             with logger_config.stopwatch_with_label("Reset_driver :"):
