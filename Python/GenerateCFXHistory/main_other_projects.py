@@ -1,12 +1,10 @@
 import os
 
-from typing import Set, Dict, Any
 
-from dateutil import relativedelta
 from logger import logger_config
 
 from generatecfxhistory import cfx
-from generatecfxhistory import ui_and_results_generation, release_role_mapping, role
+from generatecfxhistory import ui_and_results_generation
 
 OUTPUT_DIRECTORY_NAME = "output_all_projects"
 
