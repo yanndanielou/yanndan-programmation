@@ -451,6 +451,8 @@ class ChampFxInputsBuilder:
         cfx_extended_history_files_contents: List[str] = []
 
         with logger_config.stopwatch_with_label("Build cfx inputs"):
+
+            logger_config.print_and_log_current_ram_usage(prefix="before cfx inputs opening")
             with logger_config.stopwatch_with_label(f"Open {len(self.champfx_details_excel_files_full_paths)} cfx details files"):
                 for i, champfx_details_excel_file_full_path in enumerate(self.champfx_details_excel_files_full_paths):
                     with logger_config.stopwatch_with_label(
@@ -477,6 +479,7 @@ class ChampFxInputsBuilder:
                 cfx_extended_history_files_contents=cfx_extended_history_files_contents,
                 user_and_role_data_text_file_full_path=self.user_and_role_data_text_file_full_path,
             )
+            logger_config.print_and_log_current_ram_usage(prefix="After cfx inputs opened")
             return cfx_inputs
 
 
@@ -536,6 +539,8 @@ class ChampFXLibrary:
 
             with logger_config.stopwatch_with_label("create current owner modifications"):
                 self.create_current_owner_modifications()
+
+        logger_config.print_and_log_current_ram_usage(prefix="After cfx library created")
 
     @property
     def cfx_users_library(self) -> role.CfxLibraryBase:
