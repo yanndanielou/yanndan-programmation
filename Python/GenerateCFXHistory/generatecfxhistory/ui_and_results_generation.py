@@ -1,11 +1,14 @@
 import datetime
-from enum import auto, Enum
-from typing import Set, List, Optional, cast
+import os
+from enum import Enum, auto
+from typing import List, Optional, Set, cast
 
+import humanize
 import matplotlib.pyplot as plt
 import mplcursors
 import mpld3
 import pandas as pd
+import psutil
 from common import enums_utils, json_encoders, string_utils
 from logger import logger_config
 from mplcursors._mplcursors import HoverMode
@@ -204,6 +207,8 @@ def produce_displays_and_create_html(
     output_directory_name: str,
     display_output_plots: bool,
 ) -> None:
+    before_plots_computation_ram_rss = psutil.Process(os.getpid()).memory_info().rss
+
     # Create a figure and axis
     fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -253,6 +258,12 @@ def produce_displays_and_create_html(
     # Close the figure to free up memory resources
     if not display_output_plots:
         plt.close(fig)
+
+    final_ram_rss = psutil.Process(os.getpid()).memory_info().rss
+    ram_rss_increase_for_this_display = final_ram_rss - before_plots_computation_ram_rss
+    logger_config.print_and_log_info(
+        f"memory rss:{humanize.naturalsize(final_ram_rss)}. Ram increase for this UI display:{humanize.naturalsize(ram_increase_since_beginning)}. Ram increase since last ui computation:{humanize.naturalsize(ram_rss_increase_for_this_display)}"
+    )
 
 
 def produce_results_and_displays_for_libary(
