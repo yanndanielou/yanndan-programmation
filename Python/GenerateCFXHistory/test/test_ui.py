@@ -1,18 +1,14 @@
 import os
-import psutil
-import pytest
-
 from datetime import datetime
-from dateutil import relativedelta
-
-from typing import List, Dict
+from typing import List
 
 import humanize
+import psutil
+import pytest
+from dateutil import relativedelta
 
-from generatecfxhistory import cfx, role, ui_and_results_generation
+from generatecfxhistory import cfx, ui_and_results_generation
 from generatecfxhistory.constants import State
-
-from common import json_encoders
 
 
 def prepare_data(year: int, all_results_to_display: cfx.AllResultsPerDates) -> List[datetime]:
