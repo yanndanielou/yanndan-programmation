@@ -156,7 +156,7 @@ def produce_results_and_displays(
             produce_excel_output_file(output_excel_file=f"{generic_output_files_path_without_suffix_and_extension}.xlsx", all_results_to_display=all_results_to_display)
 
     if display_with_cumulative_eras:
-        with logger_config.stopwatch_with_label(label=f"produce_displays cumulative,  {generation_label}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(label=f"produce_displays cumulative,  {generation_label}", inform_beginning=True, monitor_ram_usage=True):
             produce_displays_and_create_html(
                 output_directory_name=output_directory_name,
                 use_cumulative=True,
@@ -168,7 +168,7 @@ def produce_results_and_displays(
                 display_output_plots=display_output_plots,
             )
     if display_without_cumulative_eras:
-        with logger_config.stopwatch_with_label(label=f"produce_displays numbers, filter {generation_label} library {cfx_library.label}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(label=f"produce_displays numbers, filter {generation_label} library {cfx_library.label}", inform_beginning=True, monitor_ram_usage=True):
             produce_displays_and_create_html(
                 output_directory_name=output_directory_name,
                 use_cumulative=False,
@@ -207,7 +207,7 @@ def produce_displays_and_create_html(
     output_directory_name: str,
     display_output_plots: bool,
 ) -> None:
-    before_plots_computation_ram_rss = psutil.Process(os.getpid()).memory_info().rss
+    before_plots_computation_ram_rss = cast(int, psutil.Process(os.getpid()).memory_info().rss)
 
     # Create a figure and axis
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -218,6 +218,9 @@ def produce_displays_and_create_html(
     # Retrieve all timestamps
     all_timestamps = all_results_to_display.get_all_timestamps()
 
+    # Store cursor objects for cleanup
+    cursors: List[mplcursors.Cursor] = []
+
     # Plot data
     if use_cumulative:
         bottom = [0] * len(all_timestamps)
@@ -225,14 +228,16 @@ def produce_displays_and_create_html(
             color = state_colors.get(state, None)
             upper = [bottom[i] + all_results_to_display.cumulative_counts[state][i] for i in range(len(all_timestamps))]
             line = ax.fill_between(all_timestamps, bottom, upper, label=state.name, color=color)
-            mplcursors.cursor(line, hover=True)
+            cursor = mplcursors.cursor(line, hover=True)
+            cursors.append(cursor)
             bottom = upper
     else:
         for state in all_results_to_display.present_states_ordered():
             color = state_colors.get(state, None)
             counts = [state_counts[state] for state_counts in all_results_to_display.get_state_counts_per_timestamp()]
             (line,) = ax.plot(all_timestamps, counts, label=state.name, color=color)
-            mplcursors.cursor(line, hover=HoverMode.Transient)
+            cursor = mplcursors.cursor(line, hover=HoverMode.Transient)
+            cursors.append(cursor)
 
     # Set axis labels and title
     ax.set_xlabel("Month")
@@ -256,14 +261,18 @@ def produce_displays_and_create_html(
                 html_file.write(html_content)
 
     # Close the figure to free up memory resources
+    # Cleanup to avoid memory leaks
+
     if not display_output_plots:
+        for cursor in cursors:
+            try:
+                cursor.remove()
+            except Exception:
+                pass
+        plt.clf()
         plt.close(fig)
 
-    final_ram_rss = psutil.Process(os.getpid()).memory_info().rss
-    ram_rss_increase_for_this_display = final_ram_rss - before_plots_computation_ram_rss
-    logger_config.print_and_log_info(
-        f"memory rss:{humanize.naturalsize(final_ram_rss)}. Ram increase for this UI display:{humanize.naturalsize(ram_increase_since_beginning)}. Ram increase since last ui computation:{humanize.naturalsize(ram_rss_increase_for_this_display)}"
-    )
+    logger_config.print_and_log_current_ram_usage(prefix="After UI computation", previous_reference_rss_value_and_label=[before_plots_computation_ram_rss, "Compared to before UI computation"])
 
 
 def produce_results_and_displays_for_libary(
@@ -301,7 +310,7 @@ def produce_results_and_displays_for_libary(
 
     if for_each_current_owner_per_date:
         for subsystem in role.SubSystem:
-            with logger_config.stopwatch_with_label(label=f"{cfx_library.label} produce_results_and_displays for {subsystem.name}", inform_beginning=True):
+            with logger_config.stopwatch_with_label(label=f"{cfx_library.label} produce_results_and_displays for {subsystem.name}", inform_beginning=True, monitor_ram_usage=True):
                 produce_results_and_displays(
                     cfx_library=cfx_library,
                     output_directory_name=output_directory_name,
@@ -319,7 +328,7 @@ def produce_results_and_displays_for_libary(
 
     if for_each_subsystem:
         for subsystem in role.SubSystem:
-            with logger_config.stopwatch_with_label(label=f"{cfx_library.label} produce_results_and_displays for {subsystem.name}", inform_beginning=True):
+            with logger_config.stopwatch_with_label(label=f"{cfx_library.label} produce_results_and_displays for {subsystem.name}", inform_beginning=True, monitor_ram_usage=True):
 
                 produce_results_and_displays(
                     cfx_library=cfx_library,
