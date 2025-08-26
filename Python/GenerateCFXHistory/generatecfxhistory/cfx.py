@@ -450,9 +450,9 @@ class ChampFxInputsBuilder:
         champfx_states_changes_excel_files_data_frames: Dict[str, pd.DataFrame] = dict()
         cfx_extended_history_files_contents: List[str] = []
 
-        with logger_config.stopwatch_with_label("Build cfx inputs"):
+        with logger_config.stopwatch_with_label("Build cfx inputs", monitor_ram_usage=True):
 
-            logger_config.print_and_log_current_ram_usage(prefix="before cfx inputs opening")
+            before_cfx_inputs_opening_ram_rss = logger_config.print_and_log_current_ram_usage(prefix="before cfx inputs opening")
             with logger_config.stopwatch_with_label(f"Open {len(self.champfx_details_excel_files_full_paths)} cfx details files"):
                 for i, champfx_details_excel_file_full_path in enumerate(self.champfx_details_excel_files_full_paths):
                     with logger_config.stopwatch_with_label(
@@ -479,7 +479,9 @@ class ChampFxInputsBuilder:
                 cfx_extended_history_files_contents=cfx_extended_history_files_contents,
                 user_and_role_data_text_file_full_path=self.user_and_role_data_text_file_full_path,
             )
-            logger_config.print_and_log_current_ram_usage(prefix="After cfx inputs opened")
+            logger_config.print_and_log_current_ram_usage(
+                prefix="After cfx inputs opened", previous_reference_rss_value_and_label=[before_cfx_inputs_opening_ram_rss, "Delta compared to before cfx inputs"]
+            )
             return cfx_inputs
 
 
@@ -518,26 +520,26 @@ class ChampFXLibrary:
             else role.CfxEmptyUserLibrary()
         )
 
-        with logger_config.stopwatch_with_label("ChampFXLibrary creation and initialisation"):
+        with logger_config.stopwatch_with_label("ChampFXLibrary creation and initialisation", monitor_ram_usage=True):
 
-            with logger_config.stopwatch_with_label("Create ChampFXEntry objects"):
+            with logger_config.stopwatch_with_label("Create ChampFXEntry objects", monitor_ram_usage=True):
                 self.create_or_fill_champfx_entry_with_dataframe(cfx_inputs)
                 logger_config.print_and_log_info(f"{len(self.get_all_cfx())} ChampFXEntry objects created")
 
-            with logger_config.stopwatch_with_label("Create state changes objects"):
+            with logger_config.stopwatch_with_label("Create state changes objects", monitor_ram_usage=True):
                 change_state_actions_created = self.create_states_changes_with_dataframe(cfx_inputs)
                 logger_config.print_and_log_info(f"{len(change_state_actions_created)} ChangeStateAction objects created")
 
-            with logger_config.stopwatch_with_label("compute_all_actions_sorted_chronologically"):
+            with logger_config.stopwatch_with_label("compute_all_actions_sorted_chronologically", monitor_ram_usage=True):
                 for cfx_entry in self.get_all_cfx():
                     cfx_entry.compute_all_actions_sorted_chronologically()
 
-            with logger_config.stopwatch_with_label("Process cfx_extended_histories"):
+            with logger_config.stopwatch_with_label("Process cfx_extended_histories", monitor_ram_usage=True):
                 self._all_cfx_complete_extended_histories: List[cfx_extended_history.CFXEntryCompleteHistory] = (
                     cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_files_contents(cfx_inputs.cfx_extended_history_files_contents, self.get_all_cfx_ids())
                 )
 
-            with logger_config.stopwatch_with_label("create current owner modifications"):
+            with logger_config.stopwatch_with_label("create current owner modifications", monitor_ram_usage=True):
                 self.create_current_owner_modifications()
 
         logger_config.print_and_log_current_ram_usage(prefix="After cfx library created")
@@ -558,7 +560,8 @@ class ChampFXLibrary:
 
         for i, (cfx_details_file_name, cfx_details_data_frame) in enumerate(cfx_inputs.champfx_details_excel_files_full_data_frames.items()):
             with logger_config.stopwatch_with_label(
-                label=f"Process {i+1}th / {len(cfx_inputs.champfx_details_excel_files_full_data_frames)} ({round((i+1)/len(cfx_inputs.champfx_details_excel_files_full_data_frames)*100,2)}%) cfx detail file {cfx_details_file_name} with length {len(cfx_details_data_frame)}"
+                label=f"Process {i+1}th / {len(cfx_inputs.champfx_details_excel_files_full_data_frames)} ({round((i+1)/len(cfx_inputs.champfx_details_excel_files_full_data_frames)*100,2)}%) cfx detail file {cfx_details_file_name} with length {len(cfx_details_data_frame)}",
+                monitor_ram_usage=True,
             ):
                 for _, row in cfx_details_data_frame.iterrows():
                     cfx_id = row["id"]
@@ -603,7 +606,8 @@ class ChampFXLibrary:
 
         for i, (cfx_states_changes_file_name, cfx_states_changes_data_frame) in enumerate(cfx_inputs.champfx_states_changes_excel_files_data_frames.items()):
             with logger_config.stopwatch_with_label(
-                label=f"Process {i+1}th / {len(cfx_inputs.champfx_states_changes_excel_files_data_frames)} ({round((i+1)/len(cfx_inputs.champfx_states_changes_excel_files_data_frames)*100,2)}%) state change file {cfx_states_changes_file_name} with length {len(cfx_states_changes_data_frame)}"
+                label=f"Process {i+1}th / {len(cfx_inputs.champfx_states_changes_excel_files_data_frames)} ({round((i+1)/len(cfx_inputs.champfx_states_changes_excel_files_data_frames)*100,2)}%) state change file {cfx_states_changes_file_name} with length {len(cfx_states_changes_data_frame)}",
+                monitor_ram_usage=True,
             ):
                 logger_config.print_and_log_info(f"Process {cfx_states_changes_file_name} with size {len(cfx_states_changes_data_frame)}      {cfx_states_changes_data_frame.size}")
 
