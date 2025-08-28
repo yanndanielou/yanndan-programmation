@@ -28,6 +28,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.remote.remote_connection import RemoteConnection
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.chrome.options import Options as ChromeOptions
 
 # Current programm
 import connexion_param
@@ -353,6 +355,7 @@ class SaveCfxRequestMultipagesResultsApplication:
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
     output_downloaded_files_final_directory_path: str = DOWNLOADED_FILES_FINAL_DIRECTORY
     web_browser_download_directory = DEFAULT_DOWNLOAD_DIRECTORY
+    headless: bool = False  # <--- Add this option
 
     errors_output_sub_directory_name = "errors"
     screenshots_output_sub_directory_name = "screenshots"
@@ -629,11 +632,9 @@ class SaveCfxRequestMultipagesResultsApplication:
 
     def create_webdriver_chrome(self) -> None:
         logger_config.print_and_log_info("create_webdriver_chrome")
-        # Path to the ChromeDriver
         chrome_driver_path = "C:\\Users\\fr232487\\Downloads\\chromedriver-win64\\chromedriver.exe"
 
-        # Set up the Chrome options
-        chrome_options = selenium.webdriver.chrome.options.Options()
+        chrome_options = ChromeOptions()
         prefs = {
             "download.default_directory": OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME,
             "savefile.default_directory": OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME,
@@ -642,16 +643,51 @@ class SaveCfxRequestMultipagesResultsApplication:
             "safebrowsing.enabled": True,
         }
         chrome_options.add_experimental_option("prefs", prefs)
+        if self.headless:
+            chrome_options.add_argument("--headless=new")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--disable-software-rasterizer")
+            chrome_options.add_argument("--disable-extensions")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--no-sandbox")
+        else:
+            chrome_options.add_argument("--start-minimized")
 
-        # Create a new instance of the Chrome self.driver
         driver_service = Service(chrome_driver_path)
         self.driver = webdriver.Chrome(service=driver_service, options=chrome_options)
-        self.driver.minimize_window()
+        if not self.headless:
+            try:
+                self.driver.minimize_window()
+            except Exception:
+                pass
 
         cast(RemoteConnection, self.driver.command_executor).set_timeout(1000)
 
+    def create_webdriver_firefox(self) -> None:
+        logger_config.print_and_log_info("create_webdriver_firefox")
+        firefox_options = FirefoxOptions()
+        if self.headless:
+            firefox_options.add_argument("--headless")
+        else:
+            firefox_options.add_argument("--width=800")
+            firefox_options.add_argument("--height=600")
+        profile = webdriver.FirefoxProfile()
+        profile.set_preference("browser.download.folderList", 2)
+        profile.set_preference("browser.download.dir", OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME)
+        profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel,text/plain,application/octet-stream")
+        profile.set_preference("pdfjs.disabled", True)
+        self.driver = webdriver.Firefox(options=firefox_options, firefox_profile=profile)
+        if not self.headless:
+            try:
+                self.driver.minimize_window()
+            except Exception:
+                pass
+
     def create_webdriver_and_login(self) -> None:
+        # Use Chrome by default, switch to Firefox if you want
         self.create_webdriver_chrome()
+        # self.create_webdriver_firefox()  # Uncomment to use Firefox instead
         self.login_champfx()
 
     def reset_driver(self) -> None:
@@ -713,7 +749,9 @@ def main() -> None:
         logger_config.print_and_log_info(f"output_parent_directory_name: {output_parent_directory_name}")
 
         application: SaveCfxRequestMultipagesResultsApplication = SaveCfxRequestMultipagesResultsApplication(
-            output_parent_directory_name=output_parent_directory_name, projects_to_handle_list=INTERESTED_IN_PROJECTS_NAMES + BIGGEST_PROJECTS_NAMES
+            output_parent_directory_name=output_parent_directory_name,
+            projects_to_handle_list=INTERESTED_IN_PROJECTS_NAMES + BIGGEST_PROJECTS_NAMES,
+            headless=True,  # <--- Set to True for completely hidden, False for minimized
         )
         application.run()
 
