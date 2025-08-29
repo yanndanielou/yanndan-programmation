@@ -1,9 +1,8 @@
 import random
-from typing import Callable, List, cast
+from typing import List
 
 from logger import logger_config
 
-from nombres_et_syllabes.ui import GameMainWindow
 from nombres_et_syllabes.exercises_bank import (
     AdditionExercise,
     DoubleExercise,
@@ -14,6 +13,7 @@ from nombres_et_syllabes.exercises_bank import (
     SoustractionExercise,
     TextAnswerInEntryExercise,
 )
+from nombres_et_syllabes.ui import GameMainWindow
 
 if __name__ == "__main__":
     with logger_config.application_logger("nombres_et_syllabes"):
