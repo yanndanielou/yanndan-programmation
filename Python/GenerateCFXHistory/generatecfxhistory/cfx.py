@@ -938,9 +938,8 @@ class ChampFXLibrary:
         return all_results_to_display
 
 
-
 class ChampFXEntryBuilder:
-    
+
     @staticmethod
     def convert_champfx_security_relevant(raw_str_value: str) -> SecurityRelevant:
         if type(raw_str_value) is not str:
@@ -948,7 +947,6 @@ class ChampFXEntryBuilder:
         raw_security_relevant_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
         return SecurityRelevant.UNDEFINED if raw_security_relevant_valid_str_value is None else SecurityRelevant[raw_security_relevant_valid_str_value]
 
-    
     @staticmethod
     def convert_champfx_rejection_cause(raw_str_value: str) -> Optional[RejectionCause]:
         if type(raw_str_value) is not str:
@@ -961,7 +959,6 @@ class ChampFXEntryBuilder:
             logger_config.print_and_log_error(f"RejectionCause {raw_valid_str_value} not supported")
             return RejectionCause.TO_BE_ADDED_YDA
 
-    
     @staticmethod
     def convert_champfx_request_type(raw_str_value: str) -> Optional[RequestType]:
         assert isinstance(raw_str_value, str), f"RequestType {raw_str_value} is not string"
@@ -975,7 +972,6 @@ class ChampFXEntryBuilder:
             logger_config.print_and_log_error(f"RequestType {raw_valid_str_value} not supported")
             return None
 
-    
     @staticmethod
     def convert_champfx_category(raw_str_value: str) -> Optional[Category]:
         if type(raw_str_value) is not str:
@@ -988,7 +984,6 @@ class ChampFXEntryBuilder:
             logger_config.print_and_log_error(f"Category {raw_valid_str_value} not supported")
             return None
 
-    
     @staticmethod
     def to_optional_boolean(raw_value: str) -> Optional[bool]:
         if raw_value == "Yes":
@@ -997,7 +992,6 @@ class ChampFXEntryBuilder:
             return False
         return None
 
-    
     @staticmethod
     def build_with_row(row: pd.Series, cfx_library: ChampFXLibrary) -> "ChampFXEntry":
         cfx_identifier = row["id"]
