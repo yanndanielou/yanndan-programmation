@@ -32,7 +32,7 @@ def main() -> None:
         all_champfx_library = cfx.ChampFXLibrary(
             cfx_inputs=cfx_inputs,
             label="Other projects",
-            ignore_cfx_creation_errors=True,
+            allow_cfx_creation_errors=True,
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(

@@ -84,7 +84,7 @@ class ChampFXLibrary:
     def __init__(
         self,
         cfx_inputs: ChampFxInputs,
-        ignore_cfx_creation_errors: bool = False,
+        allow_cfx_creation_errors: bool = False,
         champfx_filters: Optional[List["ChampFXtSaticCriteriaFilter"]] = None,
         label: Optional[str] = None,
     ):
@@ -93,7 +93,7 @@ class ChampFXLibrary:
 
         self.failed_to_create_cfx_ids: List[str] = []
 
-        self.ignore_cfx_creation_errors = ignore_cfx_creation_errors
+        self.ignore_cfx_creation_errors = allow_cfx_creation_errors
 
         self.cfx_inputs = cfx_inputs
 

@@ -349,7 +349,7 @@ class ChampFxInputsWithFilesBuilder:
         self.set_user_and_role_data_text_file_full_path(DEFAULT_USER_AND_ROLE_DATA_FILE_FULL_PATH)
         return self
 
-    def build(self) -> ChampFxInputsWithFiles:
+    def build(self) -> ChampFxInputs:
         champfx_details_excel_files_full_data_frames: Dict[str, pd.DataFrame] = dict()
         champfx_states_changes_excel_files_data_frames: Dict[str, pd.DataFrame] = dict()
         cfx_extended_history_files_contents: List[str] = []
