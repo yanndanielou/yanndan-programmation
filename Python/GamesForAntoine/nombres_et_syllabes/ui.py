@@ -1,33 +1,19 @@
-import threading
-import time
+import random
 import tkinter as tk
-from tkinter import Toplevel, messagebox, simpledialog, StringVar
-from typing import Callable, List, cast
+from tkinter import Toplevel, simpledialog
+from typing import List
 
 import pygame
-import pyttsx3, pyttsx3.voice
+
+from common import string_utils, text_to_speach
+from logger import logger_config
 from PIL import Image, ImageTk
 
-from common import text_to_speach, string_utils
-
+import labyrinthe
 from nombres_et_syllabes.exercises_bank import (
-    AdditionExercise,
-    SoustractionExercise,
-    RecognizeSyllabeInChoiceWithVoiceExercise,
-    DoubleExercise,
-    ListenAndTypeExercise,
-    TextAnswerInEntryExercise,
     HeaderFrame,
     ModexFrame,
 )
-
-from enum import Enum, auto
-
-import random
-
-import labyrinthe
-
-from logger import logger_config
 
 DEFAULT_PLAYER_NAME = "Carabistouille"
 
