@@ -635,12 +635,12 @@ class TestFullDatabase:
 class TestConstantIntervalDatesGenerator:
 
     def test_with_one_day_interval(self) -> None:
-        dates_generator = dates_generator.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=1))
+        dates_generator = dates_generators.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=1))
         all_dates = dates_generator._compute_dates_since_until_today(datetime(year=2025, month=7, day=1))
         assert all_dates
 
     def test_with_no_interval(self) -> None:
-        dates_generator = dates_generator.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(day=1))
+        dates_generator = dates_generators.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(day=1))
         with pytest.raises(AssertionError):
             dates_generator._compute_dates_since_until_today(datetime(year=2025, month=7, day=1))
 
