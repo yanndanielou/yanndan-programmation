@@ -1,12 +1,12 @@
 import random
 import tkinter as tk
 from enum import Enum, auto
-from tkinter import StringVar
+from tkinter import NO, StringVar
 from typing import TYPE_CHECKING, Callable
 
 from logger import logger_config
 
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 
 if TYPE_CHECKING:
     from nombres_et_syllabes.ui import GameMainWindow
@@ -36,10 +36,10 @@ class HeaderFrame(tk.Frame):
 
 class ModexFrame(tk.Frame):
     @abstractmethod
-    def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None]) -> None:
+    def __init__(self, game_main_window: "GameMainWindow") -> None:
         super().__init__(game_main_window)
         self.game_main_window = game_main_window
-        self.switch_mode_callback = switch_mode_callback
+        self.switch_mode_callback = game_main_window.switch_mode
 
         self.consigne_label_value = StringVar()
         self.consigne_label_value.set("Consigne")
@@ -62,8 +62,8 @@ class ModexFrame(tk.Frame):
 
 class TextAnswerInEntryExercise(ModexFrame):
     @abstractmethod
-    def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None], expected_result: str, give_answer_on_error: bool) -> None:
-        super().__init__(game_main_window, switch_mode_callback)
+    def __init__(self, game_main_window: "GameMainWindow", expected_result: str, give_answer_on_error: bool) -> None:
+        super().__init__(game_main_window)
 
         self.answer_entry = tk.Entry(self)
         self.answer_entry.pack(pady=5)
@@ -97,8 +97,8 @@ class TextAnswerInEntryExercise(ModexFrame):
 
 
 class AdditionExercise(TextAnswerInEntryExercise):
-    def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None], first_number: int = random.randint(0, 20), second_number: int = random.randint(0, 10)) -> None:
-        super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback, expected_result=f"{first_number + second_number}", give_answer_on_error=True)
+    def __init__(self, game_main_window: "GameMainWindow", first_number: int = random.randint(0, 20), second_number: int = random.randint(0, 10)) -> None:
+        super().__init__(game_main_window=game_main_window, expected_result=f"{first_number + second_number}", give_answer_on_error=True)
 
         self.consigne_label_value.set(f"{first_number} + {second_number}")
         logger_config.print_and_log_info(f"Consigne:{self.consigne_label_value.get()}")
@@ -112,8 +112,8 @@ class AdditionExercise(TextAnswerInEntryExercise):
 
 
 class SoustractionExercise(TextAnswerInEntryExercise):
-    def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None], first_number: int = random.randint(0, 20), second_number: int = random.randint(0, 10)) -> None:
-        super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback, expected_result=f"{first_number - second_number}", give_answer_on_error=True)
+    def __init__(self, game_main_window: "GameMainWindow", first_number: int = random.randint(0, 20), second_number: int = random.randint(0, 10)) -> None:
+        super().__init__(game_main_window=game_main_window, expected_result=f"{first_number - second_number}", give_answer_on_error=True)
 
         self.consigne_label_value.set(f"{first_number} - {second_number}")
         logger_config.print_and_log_info(f"Consigne:{self.consigne_label_value.get()}")
@@ -127,11 +127,11 @@ class SoustractionExercise(TextAnswerInEntryExercise):
 
 
 class DoubleExercise(AdditionExercise):
-    def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None], number: int = random.randint(0, 20)) -> None:
-        super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback, first_number=number, second_number=number)
+    def __init__(self, game_main_window: "GameMainWindow", number: int = random.randint(0, 20)) -> None:
+        super().__init__(game_main_window=game_main_window, first_number=number, second_number=number)
 
 
-class ListenAndTypeExercise(ModexFrame):
+class ListenAndTypeExercise(ModexFrame, ABC):
 
     class ExerciseType(Enum):
         WORD = auto()
@@ -169,8 +169,9 @@ class ListenAndTypeExercise(ModexFrame):
         def answer_label(self) -> str:
             return f"{self.word}"
 
-    def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None], item_to_listen_and_learn: ItemToListenAndType) -> None:
-        super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback)
+    @abstractmethod
+    def __init__(self, game_main_window: "GameMainWindow", item_to_listen_and_learn: ItemToListenAndType) -> None:
+        super().__init__(game_main_window=game_main_window)
 
         self.consigne_label_value.set(f"Ecoute et écris {item_to_listen_and_learn.type_label()}")
 
@@ -210,9 +211,19 @@ class ListenAndTypeExercise(ModexFrame):
         self.game_main_window.synthetise_and_play_sentence(sentence=f"Ecrire le {self.item_to_listen_and_learn.type_label()}  {self.item_to_listen_and_learn.answer_label()}", blocking=False)
 
 
+class ListenAndTypeNumberExercise(ListenAndTypeExercise):
+    def __init__(self, game_main_window: "GameMainWindow", number: int) -> None:
+        super().__init__(game_main_window, ListenAndTypeExercise.NumberToListenAndType(number=number))
+
+
+class ListenAndTypeWordExercise(ListenAndTypeExercise):
+    def __init__(self, game_main_window: "GameMainWindow", word: str) -> None:
+        super().__init__(game_main_window, ListenAndTypeExercise.WordToListenAndType(word=word))
+
+
 class RecognizeSyllabeInChoiceWithVoiceExercise(ModexFrame):
-    def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None]) -> None:
-        super().__init__(game_main_window=game_main_window, switch_mode_callback=switch_mode_callback)
+    def __init__(self, game_main_window: "GameMainWindow") -> None:
+        super().__init__(game_main_window=game_main_window)
 
         self.syllabes = ["pa", "ma", "la"]
         self.expected_answer = "ma"
