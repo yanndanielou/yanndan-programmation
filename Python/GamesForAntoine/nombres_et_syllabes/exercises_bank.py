@@ -87,9 +87,10 @@ class TextAnswerInEntryExercise(ModexFrame):
         if answer_given == self.expected_result:
             self.exercise_won()
         else:
-            self.exercise_retry(self.give_answer_on_error)
+            self.exercise_lost_retry(self.give_answer_on_error)
 
-    def exercise_retry(self, give_answer: bool) -> None:
+    def exercise_lost_retry(self, give_answer: bool) -> None:
+        self.answer_entry.delete(0)
         if give_answer:
             self.game_main_window.synthetise_and_play_sentence(f"Mauvaise réponse. Il fallait écrire {self.expected_result}. Recommence!", blocking=False)
         else:
@@ -200,11 +201,12 @@ class ListenAndTypeExercise(ModexFrame, ABC):
         if answer_given.lower() == self.item_to_listen_and_learn.answer_label().lower():
             self.exercise_won()
         else:
-            self.exercise_retry()
+            self.exercise_lost_retry()
 
-    def exercise_retry(self) -> None:
+    def exercise_lost_retry(self) -> None:
         answer_given = self.answer_entry.get()
 
+        self.answer_entry.delete(0)
         self.game_main_window.synthetise_and_play_sentence(
             sentence=f"Mauvaise réponse. Tu as écrit {answer_given}, il fallait écrire {self.item_to_listen_and_learn.answer_label()}. Recommence!", blocking=False
         )
