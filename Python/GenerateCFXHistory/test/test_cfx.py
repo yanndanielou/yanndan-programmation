@@ -5,16 +5,16 @@ from dateutil import relativedelta
 
 from typing import List, Dict
 
-from generatecfxhistory import cfx, role
+from generatecfxhistory import cfx, role, inputs, filters, dates_generators, constants
 from generatecfxhistory.constants import State
 
-from common import json_encoders
+# from common import json_encoders
 
 
 DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH: str = "Input/extended_history_nextats.txt"
 
 DEFAULT_CFX_INPUTS_FOR_TESTS = (
-    cfx.ChampFxInputsBuilder()
+    inputs.ChampFxInputsWithFilesBuilder()
     .add_champfx_details_excel_file_full_path("Input/details_project_FR_NEXTEO.xlsx")
     .add_champfx_details_excel_file_full_path("Input/details_project_ATSP.xlsx")
     .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_FR_NEXTEO.xlsx")
@@ -29,21 +29,21 @@ DEFAULT_CFX_INPUTS_FOR_TESTS = (
 def create_champfx_library_only_cfx_closed_by_yda_in_whitelist() -> cfx.ChampFXLibrary:
     champfx_library = cfx.ChampFXLibrary(
         cfx_inputs=DEFAULT_CFX_INPUTS_FOR_TESTS,
-        champfx_filters=[cfx.ChampFXWhiteListBasedOnFileFilter("Input_for_Tests/CFX_list_ids_closed_yda.txt")],
+        champfx_filters=[filters.ChampFXWhiteListBasedOnFileFilter("Input_for_Tests/CFX_list_ids_closed_yda.txt")],
     )
     return champfx_library
 
 
 @pytest.fixture(scope="session", name="create_path_champfx_library_fixture")
 def create_path_champfx_library() -> cfx.ChampFXLibrary:
-    inputs = (
-        cfx.ChampFxInputsBuilder()
+    cfx_inputs = (
+        inputs.ChampFxInputsWithFilesBuilder()
         .add_champfx_details_excel_file_full_path("Input/details_project_FR_PATH.xlsx")
         .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_FR_PATH.xlsx")
         .build()
     )
 
-    champfx_library = cfx.ChampFXLibrary(cfx_inputs=inputs)
+    champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
     return champfx_library
 
 
@@ -52,7 +52,7 @@ def create_light_champfx_library() -> cfx.ChampFXLibrary:
 
     champfx_library = cfx.ChampFXLibrary(
         cfx_inputs=DEFAULT_CFX_INPUTS_FOR_TESTS,
-        champfx_filters=[cfx.ChampFXWhiteListBasedOnFileFilter(cfx_to_treat_whitelist_text_file_full_path="Input_for_Tests/sample_cfx_ids.txt")],
+        champfx_filters=[filters.ChampFXWhiteListBasedOnFileFilter(cfx_to_treat_whitelist_text_file_full_path="Input_for_Tests/sample_cfx_ids.txt")],
     )
     return champfx_library
 
@@ -68,14 +68,14 @@ def create_full_champfx_library() -> cfx.ChampFXLibrary:
 @pytest.fixture(scope="session", name="create_other_projects_partial_champfx_library_fixture")
 def create_other_projects_partial_champfx_library() -> cfx.ChampFXLibrary:
     cfx_inputs = (
-        cfx.ChampFxInputsBuilder()
+        inputs.ChampFxInputsWithFilesBuilder()
         .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_other_projects.xlsx")
         .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_other_projects.xlsx")
         .build()
     )
     champfx_library = cfx.ChampFXLibrary(
         cfx_inputs=cfx_inputs,
-        champfx_filters=[cfx.ChampFXWhiteListBasedOnListFilter(cfx_to_treat_ids=["CFX00708313", "CFX00388493", "CFX00388494", "CFX00388495", "CFX00388496", "CFX00388497", "CFX00388498"])],
+        champfx_filters=[filters.ChampFXWhiteListBasedOnListFilter(cfx_to_treat_ids=["CFX00708313", "CFX00388493", "CFX00388494", "CFX00388495", "CFX00388496", "CFX00388497", "CFX00388498"])],
     )
     return champfx_library
 
@@ -83,7 +83,7 @@ def create_other_projects_partial_champfx_library() -> cfx.ChampFXLibrary:
 @pytest.fixture(scope="session", name="create_other_projects_full_champfx_library_fixture")
 def create_other_projects_full_champfx_library() -> cfx.ChampFXLibrary:
     cfx_inputs = (
-        cfx.ChampFxInputsBuilder()
+        inputs.ChampFxInputsWithFilesBuilder()
         .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_other_projects.xlsx")
         .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_other_projects.xlsx")
         .build()
@@ -263,7 +263,7 @@ class TestSubsystem:
         all_cfx_to_check_ids = ["CFX00886383", "CFX00886386", "CFX00886390", "CFX00886391"]
 
         champfx_library = create_full_champfx_library_fixture
-        cfx_filter = cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldSubsystem(field_accepted_values=[role.SubSystem.RESEAU])])
+        cfx_filter = cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSubsystem(field_accepted_values=[role.SubSystem.RESEAU])])
         cfx_filters = [cfx_filter]
 
         assert all_cfx_to_check_ids
@@ -273,7 +273,7 @@ class TestSubsystem:
             assert cfx_filter.match_cfx_entry(cfx_request)
 
         date_19th_august_2025 = datetime(year=int(2025), month=int(8), day=int(19))
-        dates_generator = cfx.SpecificForTestsDatesGenerator([date_19th_august_2025])
+        dates_generator = dates_generators.SpecificForTestsDatesGenerator([date_19th_august_2025])
 
         all_results_to_display = champfx_library.gather_state_counts_for_each_date(cfx_filters=cfx_filters, dates_generator=dates_generator)
 
@@ -298,7 +298,7 @@ class TestRoleOnDate:
     def test_role_ats_CFX00862371(self) -> None:
         champfx_library = cfx.ChampFXLibrary(
             cfx_inputs=DEFAULT_CFX_INPUTS_FOR_TESTS,
-            champfx_filters=[cfx.ChampFXWhiteListBasedOnListFilter(cfx_to_treat_ids=["CFX00862371"])],
+            champfx_filters=[filters.ChampFXWhiteListBasedOnListFilter(cfx_to_treat_ids=["CFX00862371"])],
         )
         cfx_entry = champfx_library.get_cfx_by_id("CFX00862371")
         assert cfx_entry.get_current_role_at_date(datetime(int(2025), int(3), int(22))) == role.SubSystem.ATS
@@ -361,7 +361,7 @@ class TestCurrentRoleAtDate:
         # json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(cfx_id_by_current_owner_full_name_at_7th_june_2025, "output/cfx_id_by_current_owner_full_name_at_7th_june_2025.json")
         # json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(cfx_id_by_current_owner_subsystem_at_7th_june_2025, "output/cfx_id_by_current_owner_subsystem_at_7th_june_2025.json")
 
-        role_depending_on_date_filter = cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=([role.SubSystem.RESEAU]))
+        role_depending_on_date_filter = filters.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=([role.SubSystem.RESEAU]))
         for cfx_entry in champfx_library.get_all_cfx():
             if role_depending_on_date_filter.match_cfx_entry(cfx_entry=cfx_entry, timestamp=date_7th_june_2025):
                 all_cfx_reseau_7th_june.append(cfx_entry)
@@ -370,7 +370,7 @@ class TestCurrentRoleAtDate:
 
         all_results = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
-            dates_generator=cfx.SpecificForTestsDatesGenerator([date_4th_june_2025, date_5th_june_2025, date_6th_june_2025, date_7th_june_2025, date_8th_june_2025]),
+            dates_generator=dates_generators.SpecificForTestsDatesGenerator([date_4th_june_2025, date_5th_june_2025, date_6th_june_2025, date_7th_june_2025, date_8th_june_2025]),
         )
 
         assert not all_results.is_empty()
@@ -379,31 +379,31 @@ class TestCurrentRoleAtDate:
 
         result_4th_june_2025: cfx.AllResultsPerDatesWithDebugDetails = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
-            dates_generator=cfx.SpecificForTestsDatesGenerator([date_4th_june_2025]),
+            dates_generator=dates_generators.SpecificForTestsDatesGenerator([date_4th_june_2025]),
         )
         result_4th_june_2025_cfx_ids = result_4th_june_2025.all_cfx_ids_that_have_matched
 
         result_5th_june_2025: cfx.AllResultsPerDatesWithDebugDetails = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
-            dates_generator=cfx.SpecificForTestsDatesGenerator([date_5th_june_2025]),
+            dates_generator=dates_generators.SpecificForTestsDatesGenerator([date_5th_june_2025]),
         )
         result_5th_june_2025_cfx_ids = result_5th_june_2025.all_cfx_ids_that_have_matched
 
         result_6th_june_2025: cfx.AllResultsPerDatesWithDebugDetails = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
-            dates_generator=cfx.SpecificForTestsDatesGenerator([date_6th_june_2025]),
+            dates_generator=dates_generators.SpecificForTestsDatesGenerator([date_6th_june_2025]),
         )
         result_6th_june_2025_cfx_ids = result_6th_june_2025.all_cfx_ids_that_have_matched
 
         result_7th_june_2025: cfx.AllResultsPerDatesWithDebugDetails = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
-            dates_generator=cfx.SpecificForTestsDatesGenerator([date_7th_june_2025]),
+            dates_generator=dates_generators.SpecificForTestsDatesGenerator([date_7th_june_2025]),
         )
         result_7th_june_2025_cfx_ids = result_7th_june_2025.all_cfx_ids_that_have_matched
 
         result_8th_june_2025: cfx.AllResultsPerDatesWithDebugDetails = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
-            dates_generator=cfx.SpecificForTestsDatesGenerator([date_8th_june_2025]),
+            dates_generator=dates_generators.SpecificForTestsDatesGenerator([date_8th_june_2025]),
         )
         result_8th_june_2025_cfx_ids = result_8th_june_2025.all_cfx_ids_that_have_matched
 
@@ -430,11 +430,11 @@ class TestCurrentRoleAtDate:
 
         date_19th_august_2025 = datetime(year=int(2025), month=int(8), day=int(19))
 
-        role_depending_on_date_filter = cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=([role.SubSystem.RESEAU]))
+        role_depending_on_date_filter = filters.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=([role.SubSystem.RESEAU]))
 
         all_results = champfx_library.gather_state_counts_for_each_date(
             cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter)],
-            dates_generator=cfx.SpecificForTestsDatesGenerator([date_19th_august_2025]),
+            dates_generator=dates_generators.SpecificForTestsDatesGenerator([date_19th_august_2025]),
         )
         assert not all_results.is_empty()
 
@@ -515,12 +515,12 @@ class TestCurrentOwner:
         def test_next_project_field_filter(self) -> None:
             nexteo_only_champfx_library = cfx.ChampFXLibrary(
                 cfx_inputs=DEFAULT_CFX_INPUTS_FOR_TESTS,
-                champfx_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[cfx.CfxProject.FR_NEXTEO])],
+                champfx_filters=[filters.ChampFxFilterFieldProject(field_accepted_values=[constants.CfxProject.FR_NEXTEO])],
             )
 
             assert len(nexteo_only_champfx_library.get_all_cfx()) > 0
             for cfx_entry in nexteo_only_champfx_library.get_all_cfx():
-                assert cfx_entry._cfx_project_name == cfx.CfxProject.FR_NEXTEO
+                assert cfx_entry._cfx_project_name == constants.CfxProject.FR_NEXTEO
 
         def test_two_field_filters(self, create_light_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
             security_and_ats = cfx.ChampFxFilter
@@ -528,14 +528,14 @@ class TestCurrentOwner:
 
             ats_non_security_filter = cfx.ChampFxFilter(
                 field_filters=[
-                    cfx.ChampFxFilterFieldSecurityRelevant(field_forbidden_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED]),
-                    cfx.ChampFxFilterFieldSubsystem(field_accepted_values=[role.SubSystem.ATS]),
+                    filters.ChampFxFilterFieldSecurityRelevant(field_forbidden_values=[constants.SecurityRelevant.YES, constants.SecurityRelevant.MITIGATED]),
+                    filters.ChampFxFilterFieldSubsystem(field_accepted_values=[role.SubSystem.ATS]),
                 ],
             )
             ats_security_filter = cfx.ChampFxFilter(
                 field_filters=[
-                    cfx.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED]),
-                    cfx.ChampFxFilterFieldSubsystem(field_accepted_values=[role.SubSystem.ATS]),
+                    filters.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[constants.SecurityRelevant.YES, constants.SecurityRelevant.MITIGATED]),
+                    filters.ChampFxFilterFieldSubsystem(field_accepted_values=[role.SubSystem.ATS]),
                 ],
             )
 
@@ -551,7 +551,7 @@ class TestCurrentOwner:
         def test_security_relevant_only_field_filter(self) -> None:
             security_relevant_only_champfx_library = cfx.ChampFXLibrary(
                 cfx_inputs=DEFAULT_CFX_INPUTS_FOR_TESTS,
-                champfx_filters=[cfx.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])],
+                champfx_filters=[filters.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[constants.SecurityRelevant.YES, constants.SecurityRelevant.MITIGATED])],
             )
 
             assert len(security_relevant_only_champfx_library.get_all_cfx()) > 0
@@ -572,8 +572,8 @@ class TestIncompleteCFXAreNotCreated:
             "CFX00886160",
             "CFX00864282",
         ]
-        inputs = (
-            cfx.ChampFxInputsBuilder()
+        cfx_inputs = (
+            inputs.ChampFxInputsWithFilesBuilder()
             .add_champfx_details_excel_file_full_path("Input/details_project_CHAMP.xlsx")
             .add_champfx_details_excel_file_full_path("Input/details_project_TrashCan.xlsx")
             .add_champfx_details_excel_file_full_path("Input/details_project_UK_Freight.xlsx")
@@ -581,7 +581,7 @@ class TestIncompleteCFXAreNotCreated:
             .build()
         )
 
-        champfx_library = cfx.ChampFXLibrary(cfx_inputs=inputs, ignore_cfx_creation_errors=True)
+        champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs, ignore_cfx_creation_errors=True)
         assert champfx_library.get_all_cfx()
         assert champfx_library.failed_to_create_cfx_ids
         for expected_incomplete_cfx_id in expected_incomplete_cfx_ids:
@@ -599,8 +599,8 @@ class TestIncompleteCFXAreNotCreated:
             "CFX00886160",
             "CFX00864282",
         ]
-        inputs = (
-            cfx.ChampFxInputsBuilder()
+        cfx_inputs = (
+            inputs.ChampFxInputsWithFilesBuilder()
             .add_champfx_details_excel_file_full_path("Input/details_project_DE_FPTS.xlsx")
             .add_champfx_details_excel_file_full_path("Input/details_project_TrashCan.xlsx")
             .add_champfx_details_excel_file_full_path("Input/details_project_UK_Freight.xlsx")
@@ -608,7 +608,7 @@ class TestIncompleteCFXAreNotCreated:
             .build()
         )
 
-        champfx_library = cfx.ChampFXLibrary(cfx_inputs=inputs, ignore_cfx_creation_errors=True)
+        champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs, ignore_cfx_creation_errors=True)
         assert champfx_library.get_all_cfx()
         assert champfx_library.failed_to_create_cfx_ids
         for expected_incomplete_cfx_id in expected_incomplete_cfx_ids:
@@ -635,12 +635,12 @@ class TestFullDatabase:
 class TestConstantIntervalDatesGenerator:
 
     def test_with_one_day_interval(self) -> None:
-        dates_generator = cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=1))
+        dates_generator = dates_generator.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=1))
         all_dates = dates_generator._compute_dates_since_until_today(datetime(year=2025, month=7, day=1))
         assert all_dates
 
     def test_with_no_interval(self) -> None:
-        dates_generator = cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(day=1))
+        dates_generator = dates_generator.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(day=1))
         with pytest.raises(AssertionError):
             dates_generator._compute_dates_since_until_today(datetime(year=2025, month=7, day=1))
 
@@ -650,15 +650,15 @@ class TestStatisticsPreparation:
     @pytest.mark.timeout(120)
     def test_gather_state_counts_for_each_date_whithout_filter(self, create_light_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library_fixture
-        champfx_library.gather_state_counts_for_each_date(cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)))
+        champfx_library.gather_state_counts_for_each_date(dates_generators.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)))
 
     @pytest.mark.timeout(120)
     def test_gather_state_counts_for_each_date_whith_filter(self, create_light_champfx_library_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_light_champfx_library_fixture
-        champfx_library.gather_state_counts_for_each_date(cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)))
+        champfx_library.gather_state_counts_for_each_date(dates_generators.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)))
         champfx_library.gather_state_counts_for_each_date(
-            cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
-            cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.ATS]))],
+            dates_generators.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
+            cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=filters.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.ATS]))],
         )
 
 
@@ -668,11 +668,11 @@ class TestStatisticsPreparationRoleDependingOnDate:
     def test_role_sw_constant_interval(self, create_champfx_library_only_cfx_closed_by_yda_in_whitelist_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_champfx_library_only_cfx_closed_by_yda_in_whitelist_fixture
         all_results_per_date = champfx_library.gather_state_counts_for_each_date(
-            cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
+            dates_generators.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=10)),
             cfx_filters=[
                 cfx.ChampFxFilter(
-                    role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.SW]),
-                    whitelist_filter=cfx.ChampFXWhiteListBasedOnListFilter(cfx_to_treat_ids=set(["CFX00398968"])),
+                    role_depending_on_date_filter=filters.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.SW]),
+                    whitelist_filter=filters.ChampFXWhiteListBasedOnListFilter(cfx_to_treat_ids=set(["CFX00398968"])),
                 )
             ],
         )
@@ -681,19 +681,19 @@ class TestStatisticsPreparationRoleDependingOnDate:
     def test_role_sw_decreasing_interval(self, create_champfx_library_only_cfx_closed_by_yda_in_whitelist_fixture: cfx.ChampFXLibrary) -> None:
         champfx_library = create_champfx_library_only_cfx_closed_by_yda_in_whitelist_fixture
         all_results_per_date = champfx_library.gather_state_counts_for_each_date(
-            cfx.DecreasingIntervalDatesGenerator(),
-            cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.SW]))],
+            dates_generators.DecreasingIntervalDatesGenerator(),
+            cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=filters.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.SW]))],
         )
         assert not all_results_per_date.is_empty()
 
     def test_role_ats_CFX00862371(self) -> None:
         champfx_library = cfx.ChampFXLibrary(
             cfx_inputs=DEFAULT_CFX_INPUTS_FOR_TESTS,
-            champfx_filters=[cfx.ChampFXWhiteListBasedOnListFilter(cfx_to_treat_ids=["CFX00862371"])],
+            champfx_filters=[filters.ChampFXWhiteListBasedOnListFilter(cfx_to_treat_ids=["CFX00862371"])],
         )
         all_results_per_date = champfx_library.gather_state_counts_for_each_date(
-            cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=2)),
-            cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.ATS]))],
+            dates_generators.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=2)),
+            cfx_filters=[cfx.ChampFxFilter(role_depending_on_date_filter=filters.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[role.SubSystem.ATS]))],
         )
         assert not all_results_per_date.is_empty()
 
@@ -701,14 +701,14 @@ class TestStatisticsPreparationRoleDependingOnDate:
 class TestBugCFX00882153CoreshieldObSeenUnknownState:
     def test_has_not_unknown_state(self) -> None:
         cfx_inputs = (
-            cfx.ChampFxInputsBuilder()
+            inputs.ChampFxInputsWithFilesBuilder()
             .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_other_projects.xlsx")
             .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_other_projects.xlsx")
             .build()
         )
         champfx_library = cfx.ChampFXLibrary(
             cfx_inputs=cfx_inputs,
-            champfx_filters=[cfx.ChampFXWhiteListBasedOnListFilter(cfx_to_treat_ids=["CFX00882153"])],
+            champfx_filters=[filters.ChampFXWhiteListBasedOnListFilter(cfx_to_treat_ids=["CFX00882153"])],
         )
         cfx_entry = champfx_library.get_cfx_by_id("CFX00882153")
         # Submit 18/07/2025 14:54:32
@@ -721,11 +721,11 @@ class TestDecreasingIntervalDatesGenerator:
 
     def test_now(self) -> None:
 
-        list_dates: List[datetime] = cfx.DecreasingIntervalDatesGenerator().get_dates_since(datetime.now())
+        list_dates: List[datetime] = dates_generators.DecreasingIntervalDatesGenerator().get_dates_since(datetime.now())
         assert len(list_dates) > 1
 
     def test_few_values(self) -> None:
-        assert len(cfx.DecreasingIntervalDatesGenerator().get_dates_since(datetime(int(2000), int(1), int(4)))) > 100
+        assert len(dates_generators.DecreasingIntervalDatesGenerator().get_dates_since(datetime(int(2000), int(1), int(4)))) > 100
 
 
 class TestCrashObservedOtherProjects:

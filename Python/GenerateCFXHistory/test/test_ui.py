@@ -7,13 +7,13 @@ import psutil
 import pytest
 from dateutil import relativedelta
 
-from generatecfxhistory import cfx, ui_and_results_generation
+from generatecfxhistory import cfx, ui_and_results_generation, results, dates_generators
 from generatecfxhistory.constants import State
 
 
-def prepare_data(year: int, all_results_to_display: cfx.AllResultsPerDates) -> List[datetime]:
+def prepare_data(year: int, all_results_to_display: results.AllResultsPerDates) -> List[datetime]:
 
-    dates_generator = cfx.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=1))
+    dates_generator = dates_generators.ConstantIntervalDatesGenerator(time_delta=relativedelta.relativedelta(days=1))
 
     all_dates = dates_generator.get_dates_since(datetime(year=year, month=1, day=1))
     print(f"{len(all_dates)} dates for tests generated since {year}")
@@ -36,12 +36,12 @@ def prepare_data(year: int, all_results_to_display: cfx.AllResultsPerDates) -> L
 
 class TestNoMemoryLeakWhenDisplay:
     def ignore_test_use_cumulative_only_and_no_html(self) -> None:
-        all_results_to_display = cfx.AllResultsPerDates()
+        all_results_to_display = results.AllResultsPerDates()
 
         all_dates = prepare_data(2024, all_results_to_display)
         initial_ram_rss = psutil.Process(os.getpid()).memory_info().rss
         previous_ram_rss = initial_ram_rss
-        for iter in range(1, 1):
+        for iter_number in range(1, 1):
             ui_and_results_generation.produce_displays_and_create_html(
                 use_cumulative=True,
                 all_results_to_display=all_results_to_display,
@@ -56,7 +56,7 @@ class TestNoMemoryLeakWhenDisplay:
             ram_increase_since_beginning = current_ram_rss - initial_ram_rss
             ram_increase_since_last_ui_display = current_ram_rss - previous_ram_rss
             print(
-                f"{len(all_dates)} dates, iter {iter} process {os.getpid()} memory rss:{humanize.naturalsize(current_ram_rss)}. Ram increase since beginning:{humanize.naturalsize(ram_increase_since_beginning)}. Ram increase since last ui computation:{humanize.naturalsize(ram_increase_since_last_ui_display)}"
+                f"{len(all_dates)} dates, iter {iter_number} process {os.getpid()} memory rss:{humanize.naturalsize(current_ram_rss)}. Ram increase since beginning:{humanize.naturalsize(ram_increase_since_beginning)}. Ram increase since last ui computation:{humanize.naturalsize(ram_increase_since_last_ui_display)}"
             )
             previous_ram_rss = current_ram_rss
             assert current_ram_rss < (2 * initial_ram_rss)
@@ -67,12 +67,12 @@ class TestNoMemoryLeakWhenDisplay:
 class TestNoMemoryLeakWhenNoDisplay:
     @pytest.mark.parametrize("initial_year", [(2000), (2010), (2020)])
     def test_use_cumulative_only_and_no_html(self, initial_year: int) -> None:
-        all_results_to_display = cfx.AllResultsPerDates()
+        all_results_to_display = results.AllResultsPerDates()
 
         all_dates = prepare_data(initial_year, all_results_to_display)
         initial_ram_rss = psutil.Process(os.getpid()).memory_info().rss
         previous_ram_rss = initial_ram_rss
-        for iter in range(1, 20):
+        for iter_number in range(1, 20):
             ui_and_results_generation.produce_displays_and_create_html(
                 use_cumulative=True,
                 all_results_to_display=all_results_to_display,
@@ -87,7 +87,7 @@ class TestNoMemoryLeakWhenNoDisplay:
             ram_increase_since_beginning = current_ram_rss - initial_ram_rss
             ram_increase_since_last_ui_display = current_ram_rss - previous_ram_rss
             print(
-                f"{len(all_dates)} dates, iter {iter} process {os.getpid()} memory rss:{humanize.naturalsize(current_ram_rss)}. Ram increase since beginning:{humanize.naturalsize(ram_increase_since_beginning)}. Ram increase since last ui computation:{humanize.naturalsize(ram_increase_since_last_ui_display)}"
+                f"{len(all_dates)} dates, iter {iter_number} process {os.getpid()} memory rss:{humanize.naturalsize(current_ram_rss)}. Ram increase since beginning:{humanize.naturalsize(ram_increase_since_beginning)}. Ram increase since last ui computation:{humanize.naturalsize(ram_increase_since_last_ui_display)}"
             )
             previous_ram_rss = current_ram_rss
             assert current_ram_rss < (2 * initial_ram_rss)

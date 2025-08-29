@@ -3,7 +3,7 @@ import os
 
 from logger import logger_config
 
-from generatecfxhistory import cfx
+from generatecfxhistory import cfx, inputs, filters, constants
 from generatecfxhistory import ui_and_results_generation
 
 OUTPUT_DIRECTORY_NAME = "output_all_projects"
@@ -20,7 +20,7 @@ def main() -> None:
             os.mkdir(OUTPUT_DIRECTORY_NAME)
 
         cfx_inputs = (
-            cfx.ChampFxInputsBuilder()
+            inputs.ChampFxInputsWithFilesBuilder()
             .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_*.xlsx")
             .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_project_*.xlsx")
             .build()
@@ -54,7 +54,7 @@ def main() -> None:
             for_each_subsystem=False,
             for_each_current_owner_per_date=False,
             cfx_filters=[
-                cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[cfx.SecurityRelevant.YES, cfx.SecurityRelevant.MITIGATED])]),
+                cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[constants.SecurityRelevant.YES, constants.SecurityRelevant.MITIGATED])]),
             ],
             create_excel_file=True,
             create_html_file=True,
@@ -69,7 +69,7 @@ def main() -> None:
             for_each_subsystem=False,
             for_each_current_owner_per_date=False,
             cfx_filters=[
-                cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldSafetyRelevant(field_accepted_value=True)]),
+                cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSafetyRelevant(field_accepted_value=True)]),
             ],
             create_excel_file=True,
             create_html_file=True,
@@ -84,7 +84,10 @@ def main() -> None:
             display_with_cumulative_eras=True,
             cfx_filters=[
                 cfx.ChampFxFilter(
-                    field_filters=[cfx.ChampFxFilterFieldCategory(field_accepted_values=[cfx.Category.SOFTWARE]), cfx.ChampFxFilterFieldType(field_accepted_values=[cfx.RequestType.DEFECT])]
+                    field_filters=[
+                        filters.ChampFxFilterFieldCategory(field_accepted_values=[constants.Category.SOFTWARE]),
+                        filters.ChampFxFilterFieldType(field_accepted_values=[constants.RequestType.DEFECT]),
+                    ]
                 ),
             ],
             create_excel_file=True,
@@ -100,7 +103,10 @@ def main() -> None:
             display_with_cumulative_eras=True,
             cfx_filters=[
                 cfx.ChampFxFilter(
-                    field_filters=[cfx.ChampFxFilterFieldCategory(field_accepted_values=[cfx.Category.CONFIGURATION_DATA]), cfx.ChampFxFilterFieldType(field_accepted_values=[cfx.RequestType.DEFECT])]
+                    field_filters=[
+                        filters.ChampFxFilterFieldCategory(field_accepted_values=[constants.Category.CONFIGURATION_DATA]),
+                        filters.ChampFxFilterFieldType(field_accepted_values=[constants.RequestType.DEFECT]),
+                    ]
                 ),
             ],
             create_excel_file=True,

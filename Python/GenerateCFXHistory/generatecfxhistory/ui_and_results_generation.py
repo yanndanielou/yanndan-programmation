@@ -13,19 +13,36 @@ from common import enums_utils, json_encoders, string_utils
 from logger import logger_config
 from mplcursors._mplcursors import HoverMode
 
-from generatecfxhistory import cfx, role
+from generatecfxhistory.cfx import ChampFXLibrary
+from generatecfxhistory.role import SubSystem
+from generatecfxhistory.constants import State
+from generatecfxhistory.dates_generators import (
+    DatesGenerator,
+    DecreasingIntervalDatesGenerator,
+)
+from generatecfxhistory.filters import (
+    ChampFxFilter,
+    ChampFxFilterFieldProject,
+    ChampFXRoleDependingOnDateFilter,
+    ChampFxFilterFieldSubsystem,
+)
+from generatecfxhistory.results import (
+    AllResultsPerDates,
+    AllResultsPerDatesWithDebugDetails,
+    OneTimestampResult,
+)
 
 state_colors = {
-    cfx.State.SUBMITTED: "red",
-    cfx.State.UNKNOWN: "purple",
-    cfx.State.ANALYSED: "orange",
-    cfx.State.ASSIGNED: "blue",
-    cfx.State.RESOLVED: "yellow",
-    cfx.State.POSTPONED: "grey",
-    cfx.State.REJECTED: "black",
-    cfx.State.VERIFIED: "lightgreen",
-    cfx.State.VALIDATED: "green",
-    cfx.State.CLOSED: "darkgreen",
+    State.SUBMITTED: "red",
+    State.UNKNOWN: "purple",
+    State.ANALYSED: "orange",
+    State.ASSIGNED: "blue",
+    State.RESOLVED: "yellow",
+    State.POSTPONED: "grey",
+    State.REJECTED: "black",
+    State.VERIFIED: "lightgreen",
+    State.VALIDATED: "green",
+    State.CLOSED: "darkgreen",
     # Add additional states and their respective colors
 }
 
@@ -43,18 +60,18 @@ class RepresentationType(enums_utils.NameBasedEnum):
 
 
 def produce_results_and_displays(
-    cfx_library: cfx.ChampFXLibrary,
+    cfx_library: ChampFXLibrary,
     output_directory_name: str,
     create_excel_file: bool,
     display_without_cumulative_eras: bool,
     display_with_cumulative_eras: bool,
     create_html_file: bool,
     display_output_plots: bool,
-    cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
+    cfx_filters: Optional[List[ChampFxFilter]] = None,
     dump_all_cfx_ids_in_json: bool = True,
     generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
     project_in_case_of_generate_by_project_instruction_one_project: Optional[str] = None,
-    dates_generator: cfx.DatesGenerator = cfx.DecreasingIntervalDatesGenerator(),
+    dates_generator: DatesGenerator = DecreasingIntervalDatesGenerator(),
 ) -> None:
 
     if cfx_filters is None:
@@ -64,7 +81,7 @@ def produce_results_and_displays(
 
     match generate_by_project_instruction:
         case GenerateByProjectInstruction.ONLY_ONE_PROJECT:
-            cfx_filters.append(cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldProject(field_accepted_values=[cast(str, project_in_case_of_generate_by_project_instruction_one_project)])]))
+            cfx_filters.append(ChampFxFilter(field_filters=[ChampFxFilterFieldProject(field_accepted_values=[cast(str, project_in_case_of_generate_by_project_instruction_one_project)])]))
         case GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS:
             pass
         case GenerateByProjectInstruction.BY_PROJECT:
@@ -122,7 +139,7 @@ def produce_results_and_displays(
         generation_label += "All"
 
     with logger_config.stopwatch_with_label(label=f"{generation_label} Gather state counts for each date", inform_beginning=True):
-        all_results_to_display: cfx.AllResultsPerDatesWithDebugDetails = cfx_library.gather_state_counts_for_each_date(cfx_filters=cfx_filters, dates_generator=dates_generator)
+        all_results_to_display: AllResultsPerDatesWithDebugDetails = cfx_library.gather_state_counts_for_each_date(cfx_filters=cfx_filters, dates_generator=dates_generator)
 
     with logger_config.stopwatch_alert_if_exceeds_duration("compute_cumulative_counts", duration_threshold_to_alert_info_in_s=0.1):
         all_results_to_display.compute_cumulative_counts()
@@ -181,10 +198,10 @@ def produce_results_and_displays(
             )
 
 
-def produce_excel_output_file(output_excel_file: str, all_results_to_display: cfx.AllResultsPerDatesWithDebugDetails) -> None:
+def produce_excel_output_file(output_excel_file: str, all_results_to_display: AllResultsPerDatesWithDebugDetails) -> None:
     # Convert data to DataFrame for Excel output
 
-    state_counts_per_timestamp: List[dict[cfx.State, int]] = all_results_to_display.get_state_counts_per_timestamp()
+    state_counts_per_timestamp: List[dict[State, int]] = all_results_to_display.get_state_counts_per_timestamp()
     all_timestamps: List[datetime.datetime] = all_results_to_display.get_all_timestamps()
 
     # Convert state enumerations to their names for DataFrame columns
@@ -199,7 +216,7 @@ def produce_excel_output_file(output_excel_file: str, all_results_to_display: cf
 
 def produce_displays_and_create_html(
     use_cumulative: bool,
-    all_results_to_display: cfx.AllResultsPerDates,
+    all_results_to_display: AllResultsPerDates,
     create_html_file: bool,
     window_title: str,
     generation_label: str,
@@ -213,6 +230,7 @@ def produce_displays_and_create_html(
     fig, ax = plt.subplots(figsize=(10, 6))
 
     # Set the window title
+    assert fig.canvas.manager
     fig.canvas.manager.set_window_title(window_title)
 
     # Retrieve all timestamps
@@ -276,18 +294,18 @@ def produce_displays_and_create_html(
 
 
 def produce_results_and_displays_for_libary(
-    cfx_library: cfx.ChampFXLibrary,
+    cfx_library: ChampFXLibrary,
     output_directory_name: str,
     for_global: bool,
     for_each_subsystem: bool,
     for_each_current_owner_per_date: bool,
     generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
-    cfx_filters: Optional[List[cfx.ChampFxFilter]] = None,
+    cfx_filters: Optional[List[ChampFxFilter]] = None,
     create_html_file: bool = True,
     create_excel_file: bool = True,
     display_output_plots: bool = True,
     dump_all_cfx_ids_in_json: bool = True,
-    dates_generator: cfx.DatesGenerator = cfx.DecreasingIntervalDatesGenerator(),
+    dates_generator: DatesGenerator = DecreasingIntervalDatesGenerator(),
 ) -> None:
 
     if cfx_filters is None:
@@ -309,7 +327,7 @@ def produce_results_and_displays_for_libary(
         )
 
     if for_each_current_owner_per_date:
-        for subsystem in role.SubSystem:
+        for subsystem in SubSystem:
             with logger_config.stopwatch_with_label(label=f"{cfx_library.label} produce_results_and_displays for {subsystem.name}", inform_beginning=True, monitor_ram_usage=True):
                 produce_results_and_displays(
                     cfx_library=cfx_library,
@@ -319,7 +337,7 @@ def produce_results_and_displays_for_libary(
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     create_html_file=create_html_file,
-                    cfx_filters=cfx_filters + [cfx.ChampFxFilter(role_depending_on_date_filter=cfx.ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))],
+                    cfx_filters=cfx_filters + [ChampFxFilter(role_depending_on_date_filter=ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))],
                     generate_by_project_instruction=generate_by_project_instruction,
                     display_output_plots=display_output_plots,
                     dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
@@ -327,7 +345,7 @@ def produce_results_and_displays_for_libary(
                 )
 
     if for_each_subsystem:
-        for subsystem in role.SubSystem:
+        for subsystem in SubSystem:
             with logger_config.stopwatch_with_label(label=f"{cfx_library.label} produce_results_and_displays for {subsystem.name}", inform_beginning=True, monitor_ram_usage=True):
 
                 produce_results_and_displays(
@@ -338,7 +356,7 @@ def produce_results_and_displays_for_libary(
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
                     create_html_file=create_html_file,
-                    cfx_filters=cfx_filters + [cfx.ChampFxFilter(field_filters=[cfx.ChampFxFilterFieldSubsystem(field_accepted_values=[subsystem])])],
+                    cfx_filters=cfx_filters + [ChampFxFilter(field_filters=[ChampFxFilterFieldSubsystem(field_accepted_values=[subsystem])])],
                     generate_by_project_instruction=generate_by_project_instruction,
                     display_output_plots=display_output_plots,
                     dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
