@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Callable
 
 from logger import logger_config
 
+from abc import abstractmethod
+
 if TYPE_CHECKING:
     from nombres_et_syllabes.ui import GameMainWindow
 
@@ -33,6 +35,7 @@ class HeaderFrame(tk.Frame):
 
 
 class ModexFrame(tk.Frame):
+    @abstractmethod
     def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None]) -> None:
         super().__init__(game_main_window)
         self.game_main_window = game_main_window
@@ -58,6 +61,7 @@ class ModexFrame(tk.Frame):
 
 
 class TextAnswerInEntryExercise(ModexFrame):
+    @abstractmethod
     def __init__(self, game_main_window: "GameMainWindow", switch_mode_callback: Callable[[], None], expected_result: str, give_answer_on_error: bool) -> None:
         super().__init__(game_main_window, switch_mode_callback)
 
