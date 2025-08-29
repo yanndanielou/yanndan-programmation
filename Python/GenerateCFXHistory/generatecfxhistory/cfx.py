@@ -1,3 +1,6 @@
+from warnings import deprecated
+
+
 import datetime
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -361,6 +364,25 @@ def get_earliest_submit_date(cfx_list: List["ChampFXEntry"]) -> datetime.datetim
 
 
 @dataclass
+class ChampFxCreationData:
+    cfx_identifier: str
+    alternative_cfx_identifier: str
+    state: State
+    fixed_implemented_in_subsystem: Optional[role.SubSystem]
+    fixed_implemented_in_config_unit: str
+    system_structure_subsystem: role.SubSystem
+    system_structure_config_unit: str
+    submit_date: datetime.datetime
+    cfx_project_name: str
+    safety_relevant: Optional[bool]
+    security_relevant: SecurityRelevant
+    rejection_cause: Optional[RejectionCause]
+    category: Category
+    current_owner: role.CfxUser
+    request_type: RequestType
+
+
+@dataclass
 class ChampFxInputs:
     champfx_details_excel_files_full_data_frames: Dict[str, pd.DataFrame]
     champfx_states_changes_excel_files_data_frames: Dict[str, pd.DataFrame]
@@ -397,6 +419,155 @@ class ChampFxInputs:
                     all_possible_values_by_column[col] = values
 
         return all_possible_values_by_column
+
+    @staticmethod
+    def convert_champfx_security_relevant(raw_str_value: str) -> SecurityRelevant:
+        if type(raw_str_value) is not str:
+            return SecurityRelevant.UNDEFINED
+        raw_security_relevant_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
+        return SecurityRelevant.UNDEFINED if raw_security_relevant_valid_str_value is None else SecurityRelevant[raw_security_relevant_valid_str_value]
+
+    @staticmethod
+    def convert_champfx_rejection_cause(raw_str_value: str) -> Optional[RejectionCause]:
+        if type(raw_str_value) is not str:
+            return None
+        raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
+        try:
+            return RejectionCause.NONE if raw_valid_str_value is None else RejectionCause[raw_valid_str_value]
+        except KeyError as key_error:
+            logger_config.print_and_log_exception(key_error)
+            logger_config.print_and_log_error(f"RejectionCause {raw_valid_str_value} not supported")
+            return RejectionCause.TO_BE_ADDED_YDA
+
+    @staticmethod
+    def convert_champfx_request_type(raw_str_value: str) -> Optional[RequestType]:
+        assert isinstance(raw_str_value, str), f"RequestType {raw_str_value} is not string"
+
+        raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
+
+        try:
+            return cast(RequestType, RequestType[raw_valid_str_value])
+        except KeyError as key_error:
+            logger_config.print_and_log_exception(key_error)
+            logger_config.print_and_log_error(f"RequestType {raw_valid_str_value} not supported")
+            return None
+
+    @staticmethod
+    def convert_champfx_category(raw_str_value: str) -> Optional[Category]:
+        if type(raw_str_value) is not str:
+            return Category.NO_CATEGORY_DEFINED
+        raw_valid_str_value: str = string_utils.text_to_valid_enum_value_text(raw_str_value)
+        try:
+            return Category[raw_valid_str_value]
+        except KeyError as key_error:
+            logger_config.print_and_log_exception(key_error)
+            logger_config.print_and_log_error(f"Category {raw_valid_str_value} not supported")
+            return None
+
+    @staticmethod
+    def to_optional_boolean(raw_value: str) -> Optional[bool]:
+        if raw_value == "Yes":
+            return True
+        elif raw_value == "No":
+            return False
+        return None
+
+    @staticmethod
+    def build_champfx_entry_creation_data_with_row(row: pd.Series, cfx_library: "ChampFXLibrary") -> ChampFxCreationData:
+        cfx_identifier = row["id"]
+        alternative_cfx_identifier = row["CFXID"]
+        state: State = conversions.convert_state(row["State"])
+
+        raw_project: str = cast(str, row["Project"])
+        project_name = string_utils.text_to_valid_enum_value_text(raw_project)
+
+        cfx_project_name = project_name
+
+        raw_safety_relevant: str = row["SafetyRelevant"]
+        safety_relevant: Optional[bool] = ChampFxInputs.to_optional_boolean(raw_safety_relevant)
+
+        raw_security_relevant: str = row["SecurityRelevant"]
+        security_relevant = ChampFxInputs.convert_champfx_security_relevant(raw_security_relevant)
+
+        raw_rejection_cause: str = row["RejectionCause"]
+        rejection_cause = ChampFxInputs.convert_champfx_rejection_cause(raw_rejection_cause)
+        if rejection_cause == RejectionCause.TO_BE_ADDED_YDA:
+            logger_config.print_and_log_error(f"{cfx_identifier} project {raw_project}: RejectionCause {raw_rejection_cause} not supported")
+
+        raw_request_type = row["RequestType"]
+        request_type = ChampFxInputs.convert_champfx_request_type(raw_request_type)
+        if request_type is None:
+            logger_config.print_and_log_error(f"{cfx_identifier} project {raw_project}: Request Type {raw_request_type} not supported")
+            request_type = RequestType.TO_BE_ADDED_YDA
+
+        raw_category: str = row["Category"]
+        category = ChampFxInputs.convert_champfx_category(raw_category) if raw_category else None
+        if category is None:
+            logger_config.print_and_log_error(f"{cfx_identifier} project {raw_project}: Category {raw_category} not supported")
+            category = Category.TO_BE_ADDED_YDA
+
+        current_owner_raw: str = row["CurrentOwner.FullName"]
+        assert cfx_library.cfx_users_library.has_user_by_full_name(current_owner_raw), cfx_identifier
+        current_owner: role.CfxUser = cfx_library.cfx_users_library.get_cfx_user_by_full_name(current_owner_raw)
+
+        fixed_implemented_in_config_unit: str = row["FixedImplementedIn"]
+        fixed_implemented_in_subsystem: Optional[role.SubSystem] = (
+            cfx_library.cfx_users_library.get_subsystem_from_champfx_fixed_implemented_in(fixed_implemented_in_config_unit) if fixed_implemented_in_config_unit else None
+        )
+
+        submit_date_raw: str = row["SubmitDate"]
+        submit_date: datetime.datetime = cast(datetime.datetime, utils.convert_champfx_extract_date(submit_date_raw))
+        assert submit_date is not None, f"{cfx_identifier} has invalid submit date {submit_date_raw}"
+
+        system_structure_config_unit: str = row["SystemStructure"]
+        temptative_system_structure: Optional[role.SubSystem] = cfx_library.cfx_users_library.get_subsystem_from_champfx_fixed_implemented_in(system_structure_config_unit)
+
+        assert temptative_system_structure, f"{cfx_identifier} could not decode system structure {system_structure_config_unit}"
+        system_structure: role.SubSystem = temptative_system_structure
+
+        champfx_creational_data = ChampFxCreationData(
+            cfx_identifier=cfx_identifier,
+            alternative_cfx_identifier=alternative_cfx_identifier,
+            state=state,
+            fixed_implemented_in_subsystem=fixed_implemented_in_subsystem,
+            system_structure_config_unit=system_structure_config_unit,
+            fixed_implemented_in_config_unit=fixed_implemented_in_config_unit,
+            system_structure_subsystem=system_structure,
+            submit_date=submit_date,
+            cfx_project_name=cfx_project_name,
+            safety_relevant=safety_relevant,
+            security_relevant=security_relevant,
+            rejection_cause=rejection_cause,
+            category=category,
+            current_owner=current_owner,
+            request_type=request_type,
+        )
+        return champfx_creational_data
+
+    def get_all_champfx_entry_creation_data(self, cfx_library: "ChampFXLibrary") -> List["ChampFxCreationData"]:
+        all_champfx_creation_data: List["ChampFxCreationData"] = []
+        for i, (cfx_details_file_name, cfx_details_data_frame) in enumerate(self.champfx_details_excel_files_full_data_frames.items()):
+            with logger_config.stopwatch_with_label(
+                label=f"Process {i+1}th / {len(self.champfx_details_excel_files_full_data_frames)} ({round((i+1)/len(self.champfx_details_excel_files_full_data_frames)*100,2)}%) cfx detail file {cfx_details_file_name} with length {len(cfx_details_data_frame)}",
+                monitor_ram_usage=True,
+            ):
+                for _, row in cfx_details_data_frame.iterrows():
+                    cfx_id = row["id"]
+
+                    if cfx_id not in cfx_library.champfx_entry_by_id:
+                        if cfx_library.ignore_cfx_creation_errors:
+                            try:
+                                champfx_creation_data = ChampFxInputs.build_champfx_entry_creation_data_with_row(row=row, cfx_library=cfx_library)
+                                all_champfx_creation_data.append(champfx_creation_data)
+                            except Exception as ex:
+                                logger_config.print_and_log_exception(ex)
+                                logger_config.print_and_log_error(f"Error when creating cfx {cfx_id}")
+                                cfx_library.failed_to_create_cfx_ids.append(cfx_id)
+                        else:
+                            champfx_creation_data = ChampFxInputs.build_champfx_entry_creation_data_with_row(row=row, cfx_library=cfx_library)
+                            all_champfx_creation_data.append(champfx_creation_data)
+
+        return all_champfx_creation_data
 
 
 class ChampFxInputsBuilder:
@@ -523,7 +694,7 @@ class ChampFXLibrary:
         with logger_config.stopwatch_with_label("ChampFXLibrary creation and initialisation", monitor_ram_usage=True):
 
             with logger_config.stopwatch_with_label("Create ChampFXEntry objects", monitor_ram_usage=True):
-                self.create_or_fill_champfx_entry_with_dataframe(cfx_inputs)
+                self.create_or_fill_champfx_entry_with_inputs(cfx_inputs)
                 logger_config.print_and_log_info(f"{len(self.get_all_cfx())} ChampFXEntry objects created")
 
             with logger_config.stopwatch_with_label("Create state changes objects", monitor_ram_usage=True):
@@ -548,7 +719,15 @@ class ChampFXLibrary:
     def cfx_users_library(self) -> role.CfxLibraryBase:
         return self._cfx_users_library
 
-    def create_cfx_entry(self, cfx_id: str, row: pd.Series) -> "ChampFXEntry":
+    def create_cfx_entry(self, champfx_creation_data: ChampFxCreationData) -> "ChampFXEntry":
+        cfx_entry = ChampFXEntry(champfx_creational_data=champfx_creation_data)
+        if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
+            self._champfx_entry_by_id[cfx_entry.cfx_identifier] = cfx_entry
+            self._champfx_entries.append(cfx_entry)
+            self._all_projects.add(cfx_entry._cfx_project_name)
+        return cfx_entry
+
+    def create_cfx_entry_with_serie(self, cfx_id: str, row: pd.Series) -> "ChampFXEntry":
         cfx_entry = ChampFXEntryBuilder.build_with_row(row, self)
         if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
             self._champfx_entry_by_id[cfx_id] = cfx_entry
@@ -556,26 +735,22 @@ class ChampFXLibrary:
             self._all_projects.add(cfx_entry._cfx_project_name)
         return cfx_entry
 
-    def create_or_fill_champfx_entry_with_dataframe(self, cfx_inputs: ChampFxInputs) -> None:
+    def create_or_fill_champfx_entry_with_inputs(self, cfx_inputs: ChampFxInputs) -> None:
 
-        for i, (cfx_details_file_name, cfx_details_data_frame) in enumerate(cfx_inputs.champfx_details_excel_files_full_data_frames.items()):
-            with logger_config.stopwatch_with_label(
-                label=f"Process {i+1}th / {len(cfx_inputs.champfx_details_excel_files_full_data_frames)} ({round((i+1)/len(cfx_inputs.champfx_details_excel_files_full_data_frames)*100,2)}%) cfx detail file {cfx_details_file_name} with length {len(cfx_details_data_frame)}",
-                monitor_ram_usage=True,
-            ):
-                for _, row in cfx_details_data_frame.iterrows():
-                    cfx_id = row["id"]
+        all_champfx_creation_data = cfx_inputs.get_all_champfx_entry_creation_data(cfx_library=self)
+        for champfx_creation_data in all_champfx_creation_data:
+            cfx_id = champfx_creation_data.cfx_identifier
 
-                    if cfx_id not in self._champfx_entry_by_id:
-                        if self.ignore_cfx_creation_errors:
-                            try:
-                                self.create_cfx_entry(cfx_id=cfx_id, row=row)
-                            except Exception as ex:
-                                logger_config.print_and_log_exception(ex)
-                                logger_config.print_and_log_error(f"Error when creating cfx {cfx_id}")
-                                self.failed_to_create_cfx_ids.append(cfx_id)
-                        else:
-                            self.create_cfx_entry(cfx_id=cfx_id, row=row)
+            if cfx_id not in self._champfx_entry_by_id:
+                if self.ignore_cfx_creation_errors:
+                    try:
+                        self.create_cfx_entry(champfx_creation_data=champfx_creation_data)
+                    except Exception as ex:
+                        logger_config.print_and_log_exception(ex)
+                        logger_config.print_and_log_error(f"Error when creating cfx {cfx_id}")
+                        self.failed_to_create_cfx_ids.append(cfx_id)
+                else:
+                    self.create_cfx_entry(champfx_creation_data=champfx_creation_data)
 
     def create_states_changes_action(
         self, cfx_request: "ChampFXEntry", cfx_id: str, history_raw_old_state: str, history_raw_new_state: str, history_raw_action_timestamp_str: str, history_raw_action_name: str
@@ -680,6 +855,10 @@ class ChampFXLibrary:
     def get_all_cfx_by_id_dict(self) -> Dict[str, "ChampFXEntry"]:
         return self._champfx_entry_by_id
 
+    @property
+    def champfx_entry_by_id(self) -> Dict[str, "ChampFXEntry"]:
+        return self._champfx_entry_by_id
+
     def get_all_cfx(self) -> List["ChampFXEntry"]:
         return self._champfx_entries
 
@@ -759,8 +938,9 @@ class ChampFXLibrary:
         return all_results_to_display
 
 
-class ChampFXEntryBuilder:
 
+class ChampFXEntryBuilder:
+    
     @staticmethod
     def convert_champfx_security_relevant(raw_str_value: str) -> SecurityRelevant:
         if type(raw_str_value) is not str:
@@ -768,6 +948,7 @@ class ChampFXEntryBuilder:
         raw_security_relevant_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
         return SecurityRelevant.UNDEFINED if raw_security_relevant_valid_str_value is None else SecurityRelevant[raw_security_relevant_valid_str_value]
 
+    
     @staticmethod
     def convert_champfx_rejection_cause(raw_str_value: str) -> Optional[RejectionCause]:
         if type(raw_str_value) is not str:
@@ -780,6 +961,7 @@ class ChampFXEntryBuilder:
             logger_config.print_and_log_error(f"RejectionCause {raw_valid_str_value} not supported")
             return RejectionCause.TO_BE_ADDED_YDA
 
+    
     @staticmethod
     def convert_champfx_request_type(raw_str_value: str) -> Optional[RequestType]:
         assert isinstance(raw_str_value, str), f"RequestType {raw_str_value} is not string"
@@ -793,6 +975,7 @@ class ChampFXEntryBuilder:
             logger_config.print_and_log_error(f"RequestType {raw_valid_str_value} not supported")
             return None
 
+    
     @staticmethod
     def convert_champfx_category(raw_str_value: str) -> Optional[Category]:
         if type(raw_str_value) is not str:
@@ -805,6 +988,7 @@ class ChampFXEntryBuilder:
             logger_config.print_and_log_error(f"Category {raw_valid_str_value} not supported")
             return None
 
+    
     @staticmethod
     def to_optional_boolean(raw_value: str) -> Optional[bool]:
         if raw_value == "Yes":
@@ -813,6 +997,7 @@ class ChampFXEntryBuilder:
             return False
         return None
 
+    
     @staticmethod
     def build_with_row(row: pd.Series, cfx_library: ChampFXLibrary) -> "ChampFXEntry":
         cfx_identifier = row["id"]
@@ -866,7 +1051,7 @@ class ChampFXEntryBuilder:
         assert temptative_system_structure, f"{cfx_identifier} could not decode system structure {system_structure_config_unit}"
         system_structure: role.SubSystem = temptative_system_structure
 
-        champfx_entry = ChampFXEntry(
+        champfx_creational_data = ChampFxCreationData(
             cfx_identifier=cfx_identifier,
             alternative_cfx_identifier=alternative_cfx_identifier,
             state=state,
@@ -883,59 +1068,43 @@ class ChampFXEntryBuilder:
             current_owner=current_owner,
             request_type=request_type,
         )
+        champfx_entry = ChampFXEntry(champfx_creational_data=champfx_creational_data)
         return champfx_entry
 
 
 class ChampFXEntry:
     def __init__(
         self,
-        cfx_identifier: str,
-        alternative_cfx_identifier: str,
-        state: State,
-        fixed_implemented_in_subsystem: Optional[role.SubSystem],
-        fixed_implemented_in_config_unit: str,
-        system_structure_subsystem: role.SubSystem,
-        system_structure_config_unit: str,
-        submit_date: datetime.datetime,
-        cfx_project_name: str,
-        safety_relevant: Optional[bool],
-        security_relevant: SecurityRelevant,
-        rejection_cause: Optional[RejectionCause],
-        category: Category,
-        current_owner: role.CfxUser,
-        request_type: RequestType,
+        champfx_creational_data: ChampFxCreationData,
     ):
-        """
 
-        :type rejection_cause: RejectionCause
-        """
-        self.submit_date = submit_date
+        self.submit_date = champfx_creational_data.submit_date
         self._change_state_actions: list[ChangeStateAction] = []
         self._change_state_actions_by_date: Dict[datetime.datetime, ChangeStateAction] = dict()
 
         self._change_current_owner_actions: list[ChangeCurrentOwnerAction] = []
         self._change_current_owner_actions_by_date: Dict[datetime.datetime, ChangeCurrentOwnerAction] = dict()
 
-        self.cfx_identifier = cfx_identifier
-        self.alternative_cfx_identifier = alternative_cfx_identifier
-        self._state: State = state
+        self.cfx_identifier = champfx_creational_data.cfx_identifier
+        self.alternative_cfx_identifier = champfx_creational_data.alternative_cfx_identifier
+        self._state: State = champfx_creational_data.state
 
-        self._fixed_implemented_in_config_unit = fixed_implemented_in_config_unit
-        self._fixed_implemented_in_subsystem = fixed_implemented_in_subsystem
-        self._system_structure_subsystem = system_structure_subsystem
-        self._system_structure_config_unit = system_structure_config_unit
-        self._request_type = request_type
+        self._fixed_implemented_in_config_unit = champfx_creational_data.fixed_implemented_in_config_unit
+        self._fixed_implemented_in_subsystem = champfx_creational_data.fixed_implemented_in_subsystem
+        self._system_structure_subsystem = champfx_creational_data.system_structure_subsystem
+        self._system_structure_config_unit = champfx_creational_data.system_structure_config_unit
+        self._request_type = champfx_creational_data.request_type
 
-        self._current_owner: role.CfxUser = current_owner
+        self._current_owner: role.CfxUser = champfx_creational_data.current_owner
         self._current_owner_role: role.SubSystem = self._current_owner.subsystem
 
-        self._rejection_cause = rejection_cause
+        self._rejection_cause = champfx_creational_data.rejection_cause
 
-        self._current_owner_role = current_owner.subsystem
+        self._current_owner_role = champfx_creational_data.current_owner.subsystem
 
-        self._cfx_project_name = cfx_project_name
-        self._safety_relevant = safety_relevant
-        self._security_relevant = security_relevant
+        self._cfx_project_name = champfx_creational_data.cfx_project_name
+        self._safety_relevant = champfx_creational_data.safety_relevant
+        self._security_relevant = champfx_creational_data.security_relevant
         self._all_change_state_actions_sorted_chronologically: List[ChangeStateAction] = []
         self._all_change_state_actions_sorted_reversed_chronologically: List[ChangeStateAction] = []
 
@@ -945,7 +1114,7 @@ class ChampFXEntry:
         self._all_current_owner_modifications_sorted_chronologically: list[ChangeCurrentOwnerAction] = []
         self._all_current_owner_modifications_sorted_reversed_chronologically: list[ChangeCurrentOwnerAction] = []
 
-        self._category = category
+        self._category = champfx_creational_data.category
 
         if self._rejection_cause is not None and self._rejection_cause != RejectionCause.NONE:
             self._subsystem = self._system_structure_subsystem
