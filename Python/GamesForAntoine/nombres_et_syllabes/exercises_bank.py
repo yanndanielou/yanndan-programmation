@@ -90,7 +90,7 @@ class TextAnswerInEntryExercise(ModexFrame):
             self.exercise_lost_retry(self.give_answer_on_error)
 
     def exercise_lost_retry(self, give_answer: bool) -> None:
-        self.answer_entry.delete(0)
+        self.answer_entry.delete(0, tk.END)
         if give_answer:
             self.game_main_window.synthetise_and_play_sentence(f"Mauvaise réponse. Il fallait écrire {self.expected_result}. Recommence!", blocking=False)
         else:
@@ -206,11 +206,11 @@ class ListenAndTypeExercise(ModexFrame, ABC):
     def exercise_lost_retry(self) -> None:
         answer_given = self.answer_entry.get()
 
-        self.answer_entry.delete(0)
+        self.answer_entry.delete(0, tk.END)
         self.game_main_window.synthetise_and_play_sentence(
             sentence=f"Mauvaise réponse. Tu as écrit {answer_given}, il fallait écrire {self.item_to_listen_and_learn.answer_label()}. Recommence!", blocking=False
         )
-        self.game_main_window.synthetise_and_play_sentence(sentence=f"Ecrire le {self.item_to_listen_and_learn.type_label()}  {self.item_to_listen_and_learn.answer_label()}", blocking=False)
+        self.game_main_window.synthetise_and_play_sentence(sentence=f"Ecrire {self.item_to_listen_and_learn.type_label()}  {self.item_to_listen_and_learn.answer_label()}", blocking=False)
 
 
 class ListenAndTypeNumberExercise(ListenAndTypeExercise):
