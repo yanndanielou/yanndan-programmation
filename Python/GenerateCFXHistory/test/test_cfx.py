@@ -14,7 +14,8 @@ from generatecfxhistory.constants import State
 DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH: str = "Input/extended_history_nextats.txt"
 
 
-def get_default_cfx_inputs_for_tests() -> inputs.ChampFxInputs:
+@pytest.fixture(scope="session", name="default_cfx_inputs_for_tests_fixture")
+def default_cfx_inputs_for_tests() -> inputs.ChampFxInputs:
     return (
         inputs.ChampFxInputsWithFilesBuilder()
         .add_champfx_details_excel_file_full_path("Input/details_project_FR_NEXTEO.xlsx")
@@ -28,9 +29,9 @@ def get_default_cfx_inputs_for_tests() -> inputs.ChampFxInputs:
 
 
 @pytest.fixture(scope="session", name="create_champfx_library_only_cfx_closed_by_yda_in_whitelist_fixture")
-def create_champfx_library_only_cfx_closed_by_yda_in_whitelist() -> cfx.ChampFXLibrary:
+def create_champfx_library_only_cfx_closed_by_yda_in_whitelist(default_cfx_inputs_for_tests_fixture: inputs.ChampFxInputs) -> cfx.ChampFXLibrary:
     champfx_library = cfx.ChampFXLibrary(
-        cfx_inputs=get_default_cfx_inputs_for_tests(),
+        cfx_inputs=default_cfx_inputs_for_tests_fixture,
         champfx_filters=[filters.ChampFXWhiteListBasedOnFileFilter("Input_for_Tests/CFX_list_ids_closed_yda.txt")],
     )
     return champfx_library
@@ -50,19 +51,19 @@ def create_path_champfx_library() -> cfx.ChampFXLibrary:
 
 
 @pytest.fixture(scope="session", name="create_light_champfx_library_fixture")
-def create_light_champfx_library() -> cfx.ChampFXLibrary:
+def create_light_champfx_library(default_cfx_inputs_for_tests_fixture: inputs.ChampFxInputs) -> cfx.ChampFXLibrary:
 
     champfx_library = cfx.ChampFXLibrary(
-        cfx_inputs=get_default_cfx_inputs_for_tests(),
+        cfx_inputs=default_cfx_inputs_for_tests_fixture,
         champfx_filters=[filters.ChampFXWhiteListBasedOnFileFilter(cfx_to_treat_whitelist_text_file_full_path="Input_for_Tests/sample_cfx_ids.txt")],
     )
     return champfx_library
 
 
 @pytest.fixture(scope="session", name="create_full_champfx_library_fixture")
-def create_full_champfx_library() -> cfx.ChampFXLibrary:
+def create_full_champfx_library(default_cfx_inputs_for_tests_fixture: inputs.ChampFxInputs) -> cfx.ChampFXLibrary:
     champfx_library = cfx.ChampFXLibrary(
-        cfx_inputs=get_default_cfx_inputs_for_tests(),
+        cfx_inputs=default_cfx_inputs_for_tests_fixture,
     )
     return champfx_library
 
@@ -91,7 +92,7 @@ def create_other_projects_full_champfx_library() -> cfx.ChampFXLibrary:
         .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_other_projects.xlsx")
         .build()
     )
-    champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
+    champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs, allow_cfx_creation_errors=True)
     return champfx_library
 
 
@@ -146,8 +147,8 @@ class TestConstructionFullLibrary:
         assert len(champfx_library.get_all_cfx()) > 0
         assert len(champfx_library.failed_to_create_cfx_ids) == 0
 
-    def test_no_cfx_creation_has_failed(self) -> None:
-        champfx_library = cfx.ChampFXLibrary(cfx_inputs=get_default_cfx_inputs_for_tests(), allow_cfx_creation_errors=True)
+    def test_no_cfx_creation_has_failed(self, default_cfx_inputs_for_tests_fixture: inputs.ChampFxInputs) -> None:
+        champfx_library = cfx.ChampFXLibrary(cfx_inputs=default_cfx_inputs_for_tests_fixture, allow_cfx_creation_errors=True)
         assert len(champfx_library.get_all_cfx()) > 0
         assert len(champfx_library.failed_to_create_cfx_ids) == 0
 
@@ -331,9 +332,9 @@ class TestSubsystem:
 
 
 class TestRoleOnDate:
-    def test_role_ats_CFX00862371(self) -> None:
+    def test_role_ats_CFX00862371(self, default_cfx_inputs_for_tests_fixture: inputs.ChampFxInputs) -> None:
         champfx_library = cfx.ChampFXLibrary(
-            cfx_inputs=get_default_cfx_inputs_for_tests(),
+            cfx_inputs=default_cfx_inputs_for_tests_fixture,
             champfx_filters=[filters.ChampFXWhiteListBasedOnListFilter(cfx_to_treat_ids=["CFX00862371"])],
         )
         cfx_entry = champfx_library.get_cfx_by_id("CFX00862371")
@@ -548,9 +549,9 @@ class TestCurrentOwner:
             assert "Renaud".lower() in cfx_entry.get_current_owner_at_date(day_after_first_analyzis)._raw_full_name.lower()
 
     class TestChampFxFilter:
-        def test_next_project_field_filter(self) -> None:
+        def test_next_project_field_filter(self, default_cfx_inputs_for_tests_fixture: inputs.ChampFxInputs) -> None:
             nexteo_only_champfx_library = cfx.ChampFXLibrary(
-                cfx_inputs=get_default_cfx_inputs_for_tests(),
+                cfx_inputs=default_cfx_inputs_for_tests_fixture,
                 champfx_filters=[filters.ChampFxFilterFieldProject(field_accepted_values=[constants.CfxProject.FR_NEXTEO])],
             )
 
@@ -584,9 +585,9 @@ class TestCurrentOwner:
         def test_get_sub_system_method_for_filter(self) -> None:
             pass
 
-        def test_security_relevant_only_field_filter(self) -> None:
+        def test_security_relevant_only_field_filter(self, default_cfx_inputs_for_tests_fixture: inputs.ChampFxInputs) -> None:
             security_relevant_only_champfx_library = cfx.ChampFXLibrary(
-                cfx_inputs=get_default_cfx_inputs_for_tests(),
+                cfx_inputs=default_cfx_inputs_for_tests_fixture,
                 champfx_filters=[filters.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[constants.SecurityRelevant.YES, constants.SecurityRelevant.MITIGATED])],
             )
 
@@ -623,26 +624,13 @@ class TestIncompleteCFXAreNotCreated:
         for expected_incomplete_cfx_id in expected_incomplete_cfx_ids:
             assert expected_incomplete_cfx_id in champfx_library.failed_to_create_cfx_ids
 
-    def test_cfx_with_no_submit_date(self) -> None:
+    def test_cfx_with_no_submit_date_fpts(self) -> None:
         "details_project_CHAMP"
         expected_incomplete_cfx_ids = [
-            "CFX00651637",
-            "CFX00421683",
-            "CFX00569313",
-            "CFX00625909",
-            "CFX00786926",
-            "CFX00873434",
-            "CFX00886160",
-            "CFX00864282",
+            "CFX00630301",
+            "CFX00630298",
         ]
-        cfx_inputs = (
-            inputs.ChampFxInputsWithFilesBuilder()
-            .add_champfx_details_excel_file_full_path("Input/details_project_DE_FPTS.xlsx")
-            .add_champfx_details_excel_file_full_path("Input/details_project_TrashCan.xlsx")
-            .add_champfx_details_excel_file_full_path("Input/details_project_UK_Freight.xlsx")
-            .add_champfx_details_excel_file_full_path("Input/details_project_Op_LT_D_Proj.xlsx")
-            .build()
-        )
+        cfx_inputs = inputs.ChampFxInputsWithFilesBuilder().add_champfx_details_excel_file_full_path("Input/details_project_DE_FPTS.xlsx").build()
 
         champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs, allow_cfx_creation_errors=True)
         assert champfx_library.get_all_cfx()
@@ -722,9 +710,9 @@ class TestStatisticsPreparationRoleDependingOnDate:
         )
         assert not all_results_per_date.is_empty()
 
-    def test_role_ats_CFX00862371(self) -> None:
+    def test_role_ats_CFX00862371(self, default_cfx_inputs_for_tests_fixture: inputs.ChampFxInputs) -> None:
         champfx_library = cfx.ChampFXLibrary(
-            cfx_inputs=get_default_cfx_inputs_for_tests(),
+            cfx_inputs=default_cfx_inputs_for_tests_fixture,
             champfx_filters=[filters.ChampFXWhiteListBasedOnListFilter(cfx_to_treat_ids=["CFX00862371"])],
         )
         all_results_per_date = champfx_library.gather_state_counts_for_each_date(

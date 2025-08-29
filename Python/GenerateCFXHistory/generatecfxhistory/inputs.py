@@ -6,7 +6,7 @@ import pandas as pd
 from common import file_utils, string_utils
 from logger import logger_config
 
-from generatecfxhistory import conversions, role, utils
+from generatecfxhistory import conversions, role, utils, filters
 from generatecfxhistory.constants import (
     ActionType,
     Category,
@@ -126,8 +126,6 @@ class ChampFxInputsWithFiles(ChampFxInputs):
 
     @staticmethod
     def convert_champfx_request_type(raw_str_value: str) -> Optional[RequestType]:
-        assert isinstance(raw_str_value, str), f"RequestType {raw_str_value} is not string"
-
         raw_valid_str_value: Optional[str] = string_utils.text_to_valid_enum_value_text(raw_str_value)
 
         try:
@@ -180,6 +178,7 @@ class ChampFxInputsWithFiles(ChampFxInputs):
             logger_config.print_and_log_error(f"{cfx_identifier} project {raw_project}: RejectionCause {raw_rejection_cause} not supported")
 
         raw_request_type = row["RequestType"]
+        assert isinstance(raw_request_type, str), f"{project_name} {cfx_identifier} RequestType {raw_request_type} is not string"
         request_type = ChampFxInputsWithFiles.convert_champfx_request_type(raw_request_type)
         if request_type is None:
             logger_config.print_and_log_error(f"{cfx_identifier} project {raw_project}: Request Type {raw_request_type} not supported")
@@ -188,11 +187,11 @@ class ChampFxInputsWithFiles(ChampFxInputs):
         raw_category: str = row["Category"]
         category = ChampFxInputsWithFiles.convert_champfx_category(raw_category) if raw_category else None
         if category is None:
-            logger_config.print_and_log_error(f"{cfx_identifier} project {raw_project}: Category {raw_category} not supported")
+            logger_config.print_and_log_error(f"{project_name} {cfx_identifier} project {raw_project}: Category {raw_category} not supported")
             category = Category.TO_BE_ADDED_YDA
 
         current_owner_raw: str = row["CurrentOwner.FullName"]
-        assert cfx_library.cfx_users_library.has_user_by_full_name(current_owner_raw), cfx_identifier
+        assert cfx_library.cfx_users_library.has_user_by_full_name(current_owner_raw), f"{project_name} {cfx_identifier} {current_owner_raw}"
         current_owner: role.CfxUser = cfx_library.cfx_users_library.get_cfx_user_by_full_name(current_owner_raw)
 
         fixed_implemented_in_config_unit: str = row["FixedImplementedIn"]
@@ -202,12 +201,12 @@ class ChampFxInputsWithFiles(ChampFxInputs):
 
         submit_date_raw: str = row["SubmitDate"]
         submit_date: datetime.datetime = cast(datetime.datetime, utils.convert_champfx_extract_date(submit_date_raw))
-        assert submit_date is not None, f"{cfx_identifier} has invalid submit date {submit_date_raw}"
+        assert submit_date is not None, f"{project_name} {cfx_identifier} has invalid submit date {submit_date_raw}"
 
         system_structure_config_unit: str = row["SystemStructure"]
         temptative_system_structure: Optional[role.SubSystem] = cfx_library.cfx_users_library.get_subsystem_from_champfx_fixed_implemented_in(system_structure_config_unit)
 
-        assert temptative_system_structure, f"{cfx_identifier} could not decode system structure {system_structure_config_unit}"
+        assert temptative_system_structure, f"{project_name} {cfx_identifier} could not decode system structure {system_structure_config_unit}"
         system_structure: role.SubSystem = temptative_system_structure
 
         champfx_creational_data = ChampFxCreationData(
@@ -237,20 +236,29 @@ class ChampFxInputsWithFiles(ChampFxInputs):
                 monitor_ram_usage=True,
             ):
                 for _, row in cfx_details_data_frame.iterrows():
-                    cfx_id = row["id"]
+                    cfx_id = cast(str, row["id"])
 
                     if cfx_id not in cfx_library.champfx_entry_by_id:
-                        if cfx_library.ignore_cfx_creation_errors:
-                            try:
+
+                        cfx_absent_of_whitelists = True
+                        for champfx_filter in cfx_library.champfx_filters:
+                            if isinstance(champfx_filter, filters.ChampFXWhitelistFilter):
+                                if not champfx_filter.match_cfx_identifier(cfx_id):
+                                    cfx_absent_of_whitelists = False
+
+                        if cfx_absent_of_whitelists:
+
+                            if cfx_library.ignore_cfx_creation_errors:
+                                try:
+                                    champfx_creation_data = ChampFxInputsWithFiles.build_champfx_entry_creation_data_with_row(row=row, cfx_library=cfx_library)
+                                    all_champfx_creation_data.append(champfx_creation_data)
+                                except Exception as ex:
+                                    logger_config.print_and_log_exception(ex)
+                                    logger_config.print_and_log_error(f"{cfx_details_file_name} Error when creating cfx {cfx_id}")
+                                    cfx_library.failed_to_create_cfx_ids.append(cfx_id)
+                            else:
                                 champfx_creation_data = ChampFxInputsWithFiles.build_champfx_entry_creation_data_with_row(row=row, cfx_library=cfx_library)
                                 all_champfx_creation_data.append(champfx_creation_data)
-                            except Exception as ex:
-                                logger_config.print_and_log_exception(ex)
-                                logger_config.print_and_log_error(f"Error when creating cfx {cfx_id}")
-                                cfx_library.failed_to_create_cfx_ids.append(cfx_id)
-                        else:
-                            champfx_creation_data = ChampFxInputsWithFiles.build_champfx_entry_creation_data_with_row(row=row, cfx_library=cfx_library)
-                            all_champfx_creation_data.append(champfx_creation_data)
 
         return all_champfx_creation_data
 

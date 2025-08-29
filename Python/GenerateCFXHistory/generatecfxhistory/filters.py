@@ -47,7 +47,10 @@ class ChampFXWhitelistFilter(ChampFXtSaticCriteriaFilter, ABC):
         self._label: str = "" if label is None else label
 
     def match_cfx_entry_without_cache(self, cfx_entry: "ChampFXEntry") -> bool:
-        return cfx_entry.cfx_identifier in self._cfx_to_treat_whitelist_ids
+        return self.match_cfx_identifier(cfx_entry.cfx_identifier)
+
+    def match_cfx_identifier(self, cfx_identifier: str) -> bool:
+        return cfx_identifier in self._cfx_to_treat_whitelist_ids
 
 
 class ChampFXWhiteListBasedOnListFilter(ChampFXWhitelistFilter):
