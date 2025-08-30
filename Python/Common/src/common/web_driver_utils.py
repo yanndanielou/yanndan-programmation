@@ -62,23 +62,7 @@ def create_webdriver_firefox(browser_visibility_type: BrowserVisibilityType) -> 
     if browser_visibility_type == BrowserVisibilityType.NOT_VISIBLE_AKA_HEADLESS:
         firefox_options.add_argument("--headless")
     driver = webdriver.Firefox(options=firefox_options)
-    driver.minimize_window()
-
-    firefox_options = FirefoxOptions()
-        firefox_options.add_argument("--headless")
-    else:
-        firefox_options.add_argument("--width=800")
-        firefox_options.add_argument("--height=600")
-    profile = webdriver.FirefoxProfile()
-    profile.set_preference("browser.download.folderList", 2)
-    profile.set_preference("browser.download.dir", download_directory_path)
-    profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel,text/plain,application/octet-stream")
-    profile.set_preference("pdfjs.disabled", True)
-    driver = webdriver.Firefox(options=firefox_options, firefox_profile=profile)
-
     if browser_visibility_type == BrowserVisibilityType.MINIMIZED:
-        try:
-            driver.minimize_window()
-        except Exception:
-            pass
+        driver.minimize_window()
+
     return driver
