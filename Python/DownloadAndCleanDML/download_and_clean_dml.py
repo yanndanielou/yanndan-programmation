@@ -189,7 +189,7 @@ class DownloadAndCleanDMLApplication:
                 logger_config.print_and_log_info(f"ignore Excel internal reserved sheet:{sheet_name}")
             else:
                 with logger_config.stopwatch_with_label(
-                    label=f"Removing {sheet_number+1}/{number_of_initial_sheets_names}th sheet:{sheet_name} : {round(sheet_number+1/number_of_initial_sheets_names*100,2)}%", inform_beginning=True
+                    label=f"Removing {sheet_number+1}/{number_of_initial_sheets_names}th sheet:{sheet_name} : {round((sheet_number+1)/number_of_initial_sheets_names*100,2)}%", inform_beginning=True
                 ):
                     try:
                         # Accéder à la feuille que l'on veut supprimer
@@ -317,7 +317,7 @@ class DownloadAndCleanDMLApplication:
 
         time.sleep(0.5)
 
-        wait = WebDriverWait(driver, 10)
+        wait = WebDriverWait(driver, 100)
         more_providers_button = wait.until(expected_conditions.element_to_be_clickable((By.ID, "moreProviders")))
         more_providers_button.click()
 
