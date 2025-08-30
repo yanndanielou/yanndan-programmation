@@ -55,10 +55,16 @@ def create_webdriver_chrome(browser_visibility_type: BrowserVisibilityType, down
     return driver
 
 
-def create_webdriver_firefox(browser_visibility_type: BrowserVisibilityType, download_directory_path: str, global_timeout_in_seconds: int = 1000) -> webdriver.Firefox:
+def create_webdriver_firefox(browser_visibility_type: BrowserVisibilityType) -> webdriver.Firefox:
     logger_config.print_and_log_info("create_webdriver_firefox")
+
     firefox_options = FirefoxOptions()
     if browser_visibility_type == BrowserVisibilityType.NOT_VISIBLE_AKA_HEADLESS:
+        firefox_options.add_argument("--headless")
+    driver = webdriver.Firefox(options=firefox_options)
+    driver.minimize_window()
+
+    firefox_options = FirefoxOptions()
         firefox_options.add_argument("--headless")
     else:
         firefox_options.add_argument("--width=800")
