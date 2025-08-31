@@ -13,7 +13,7 @@ from enum import Enum, auto
 from typing import List, Optional, Set, cast
 
 import selenium.webdriver.chrome.options
-from common import download_utils, file_utils
+from common import download_utils, file_utils, web_driver_utils
 
 # Other libraries
 from logger import logger_config
@@ -631,58 +631,9 @@ class SaveCfxRequestMultipagesResultsApplication:
         return True
 
     def create_webdriver_chrome(self) -> None:
-        logger_config.print_and_log_info("create_webdriver_chrome")
-        chrome_driver_path = "C:\\Users\\fr232487\\Downloads\\chromedriver-win64\\chromedriver.exe"
-
-        chrome_options = ChromeOptions()
-        prefs = {
-            "download.default_directory": OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME,
-            "savefile.default_directory": OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME,
-            "download.prompt_for_download": False,
-            "download.directory_upgrade": True,
-            "safebrowsing.enabled": True,
-        }
-        chrome_options.add_experimental_option("prefs", prefs)
-        if self.headless:
-            chrome_options.add_argument("--headless=new")
-            chrome_options.add_argument("--window-size=1920,1080")
-            chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument("--disable-software-rasterizer")
-            chrome_options.add_argument("--disable-extensions")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.add_argument("--no-sandbox")
-        else:
-            chrome_options.add_argument("--start-minimized")
-
-        driver_service = Service(chrome_driver_path)
-        self.driver = webdriver.Chrome(service=driver_service, options=chrome_options)
-        if not self.headless:
-            try:
-                self.driver.minimize_window()
-            except Exception:
-                pass
-
-        cast(RemoteConnection, self.driver.command_executor).set_timeout(1000)
-
-    def create_webdriver_firefox(self) -> None:
-        logger_config.print_and_log_info("create_webdriver_firefox")
-        firefox_options = FirefoxOptions()
-        if self.headless:
-            firefox_options.add_argument("--headless")
-        else:
-            firefox_options.add_argument("--width=800")
-            firefox_options.add_argument("--height=600")
-        profile = webdriver.FirefoxProfile()
-        profile.set_preference("browser.download.folderList", 2)
-        profile.set_preference("browser.download.dir", OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME)
-        profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel,text/plain,application/octet-stream")
-        profile.set_preference("pdfjs.disabled", True)
-        self.driver = webdriver.Firefox(options=firefox_options, firefox_profile=profile)
-        if not self.headless:
-            try:
-                self.driver.minimize_window()
-            except Exception:
-                pass
+        self.driver = web_driver_utils.create_webdriver_chrome(
+            browser_visibility_type=web_driver_utils.BrowserVisibilityType.NOT_VISIBLE_AKA_HEADLESS, download_directory_path=DEFAULT_DOWNLOAD_DIRECTORY, global_timeout_in_seconds=1000
+        )
 
     def create_webdriver_and_login(self) -> None:
         # Use Chrome by default, switch to Firefox if you want
