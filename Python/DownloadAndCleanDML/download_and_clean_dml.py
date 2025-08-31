@@ -16,12 +16,14 @@ from common import download_utils
 from logger import logger_config
 
 # Third Party
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
-import pywintypes
+
+# import pywintypes
+
+from common import web_driver_utils
+
 
 # import pywintypes
 
@@ -309,10 +311,9 @@ class DownloadAndCleanDMLApplication:
             logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
-        driver: RemoteWebDriver = webdriver.Firefox()
+        driver = web_driver_utils.create_webdriver_firefox(web_driver_utils.BrowserVisibilityType.NOT_VISIBLE_AKA_HEADLESS)
 
         dml_download_url = "https://rhapsody.siemens.net/livelink/livelink.exe?func=ll&objId=79329709&objAction=Download"
-
         driver.get(dml_download_url)
 
         time.sleep(0.5)
