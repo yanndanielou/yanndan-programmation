@@ -1,11 +1,13 @@
 from dataclasses import dataclass, field
 
 
-from typing import List, Optional, Any, cast
+from typing import List, Optional, Any, cast, Set
 
 import ipaddress
 
 from pandas import Series
+
+all_equipments_names: Set[str] = set()
 
 
 class SubSystem:
@@ -27,7 +29,7 @@ class Equipment:
 @dataclass
 class FlowEndPoint:
     subsystem_raw: str
-    equipment_raw: str
+    equipment_cell_raw: str
     detail_raw: str
     quantity_raw: str
     vlan_bord_raw: str
@@ -42,6 +44,10 @@ class FlowEndPoint:
 
         self.raw_ip_addresses = self.ip_raw.split("\n") if self.ip_raw else []
         # self.ip_address = [ipaddress.IPv4Address(raw_ip_raw) for raw_ip_raw in self.raw_ip_addresses]
+
+        self.equipments_names = self.equipment_cell_raw.split("\n")
+        for equipments_name in self.equipments_names:
+            all_equipments_names.add(equipments_name)
 
 
 @dataclass
@@ -63,7 +69,7 @@ class FlowSource(FlowEndPoint):
 
             return FlowSource(
                 detail_raw=detail_raw,
-                equipment_raw=equipment_raw,
+                equipment_cell_raw=equipment_raw,
                 ip_raw=ip_raw,
                 nat_raw=nat_raw,
                 port_raw=port_raw,
@@ -85,7 +91,7 @@ class FlowDestination(FlowEndPoint):
         @staticmethod
         def build_with_row(row: Series) -> "FlowDestination":
             subsystem_raw = row["dst \nss-système"]
-            equipment_raw = row["dst \nÉquipement"]
+            equipments_raw = row["dst \nÉquipement"]
             detail_raw = row["dst\nDétail"]
             quantity_raw = row["dst \nQté"]
             vlan_bord_raw = row["dst \nVLAN Bord"]
@@ -98,7 +104,7 @@ class FlowDestination(FlowEndPoint):
 
             return FlowDestination(
                 detail_raw=detail_raw,
-                equipment_raw=equipment_raw,
+                equipment_cell_raw=equipments_raw,
                 ip_raw=ip_raw,
                 nat_raw=nat_raw,
                 port_raw=port_raw,
