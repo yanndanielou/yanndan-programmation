@@ -78,6 +78,7 @@ class FlowSource(FlowEndPoint):
 class FlowDestination(FlowEndPoint):
 
     group_multicast_raw: str
+    cast_raw: str
 
     class Builder:
 
@@ -93,6 +94,7 @@ class FlowDestination(FlowEndPoint):
             nat_raw = row["dst NAT"]
             group_multicast_raw = row["dst Groupe\nMCast"]
             port_raw = row["dst\nPort"]
+            cast_raw = row["dst\ncast"]
 
             return FlowDestination(
                 detail_raw=detail_raw,
@@ -105,6 +107,7 @@ class FlowDestination(FlowEndPoint):
                 vlan_bord_raw=vlan_bord_raw,
                 vlan_sol_raw=vlan_sol_raw,
                 group_multicast_raw=group_multicast_raw,
+                cast_raw=cast_raw,
             )
 
 
@@ -118,6 +121,11 @@ class NetworkFlowMatrixLine:
     identifier_raw: str
     name_raw: str
     sol_bord_raw: str
+    seclab_raw: str
+    traffic_direction_raw: str
+    type_raw: str
+    protocole_applicative_raw: str
+    protocole_transport_raw: str
 
     source: FlowSource
     destination: FlowDestination
@@ -130,10 +138,27 @@ class NetworkFlowMatrixLine:
             name_raw = cast(str, row["Lien de com."])
             sol_bord_raw = cast(str, row["S/B"])
 
+            protocole_applicative_raw = row["Protocole\nApplicatif"]
+            protocole_transport_raw = row["Protocole \nde Transport"]
+            type_raw = row["Type flux\n(Fonc/Admin)"]
+            traffic_direction_raw = row["Sens du Trafic\n(uni, bidir)"]
+            seclab_raw = row["Seclab"]
+
             source = FlowSource.Builder.build_with_row(row)
             destination = FlowDestination.Builder.build_with_row(row)
 
-            return NetworkFlowMatrixLine(destination=destination, identifier_raw=identifier_raw, name_raw=name_raw, sol_bord_raw=sol_bord_raw, source=source)
+            return NetworkFlowMatrixLine(
+                destination=destination,
+                identifier_raw=identifier_raw,
+                name_raw=name_raw,
+                sol_bord_raw=sol_bord_raw,
+                source=source,
+                seclab_raw=seclab_raw,
+                protocole_applicative_raw=protocole_applicative_raw,
+                protocole_transport_raw=protocole_transport_raw,
+                traffic_direction_raw=traffic_direction_raw,
+                type_raw=type_raw,
+            )
 
 
 class NetworkFlowMacro:
