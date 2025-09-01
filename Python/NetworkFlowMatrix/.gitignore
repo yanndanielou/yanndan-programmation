@@ -1,0 +1,14 @@
+/.mypy_cache/
+/Input/*.xls*
+test*.json
+test*.xlsx
+role_data.*
+*.html
+output_save_cfx_webpage*/
+connexion_param.py
+*.pkl
+cfx_extended_history.txt
+output*.txt
+Output/
+Output*/
+Output*.7z
