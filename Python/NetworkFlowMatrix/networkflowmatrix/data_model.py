@@ -1,3 +1,6 @@
+from dataclasses import dataclass, field
+
+
 from typing import List, Optional, Any, cast
 
 import ipaddress
@@ -21,54 +24,88 @@ class Equipment:
         self.subsystem = subsystem
 
 
-class EndPoint:
-    def __init__(self) -> None:
-        pass
+@dataclass
+class FlowEndPoint:
+    subsystem_raw: str
+    equipment_raw: str
+    detail_raw: str
+    quantity_raw: str
+    vlan_bord_raw: str
+    vlan_sol_raw: str
+    ip_raw: Optional[str]
+    nat_raw: str
+    port_raw: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.ip_raw, str):
+            self.ip_raw = None
+
+        self.raw_ip_addresses = self.ip_raw.split("\n") if self.ip_raw else []
+        # self.ip_address = [ipaddress.IPv4Address(raw_ip_raw) for raw_ip_raw in self.raw_ip_addresses]
 
 
-class Source(EndPoint):
+@dataclass
+class FlowSource(FlowEndPoint):
 
     class Builder:
 
         @staticmethod
-        def build_with_row(row: Series) -> "NetworkFlowMatrixLine":
-            subsystem_raw = row["src\nss-système"]
-            equipment_raw = row["src\nÉquipement"]
+        def build_with_row(row: Series) -> "FlowSource":
+            subsystem_raw = row["src \nss-système"]
+            equipment_raw = row["src \nÉquipement"]
             detail_raw = row["src Détail"]
-            quantity_raw = row["src Qté	"]
-            vlan_bord_raw = row["src VLAN Bord"]
-            vlan_sol_raw = row["src VLAN Sol"]
-            ip_raw = row["src IP"]
-            nat_raw = row["src NAT	"]
+            quantity_raw = row["src Qté"]
+            vlan_bord_raw = row["src \nVLAN Bord"]
+            vlan_sol_raw = row["src \nVLAN Sol"]
+            ip_raw = row["src \nIP"]
+            nat_raw = row["src NAT"]
             port_raw = row["src Port"]
 
-            return NetworkFlowMatrixLine()
+            return FlowSource(
+                detail_raw=detail_raw,
+                equipment_raw=equipment_raw,
+                ip_raw=ip_raw,
+                nat_raw=nat_raw,
+                port_raw=port_raw,
+                quantity_raw=quantity_raw,
+                subsystem_raw=subsystem_raw,
+                vlan_bord_raw=vlan_bord_raw,
+                vlan_sol_raw=vlan_sol_raw,
+            )
 
-    def __init__(self) -> None:
 
-        pass
+@dataclass
+class FlowDestination(FlowEndPoint):
 
-
-class Destination(EndPoint):
+    group_multicast_raw: str
 
     class Builder:
 
         @staticmethod
-        def build_with_row(row: Series) -> "NetworkFlowMatrixLine":
-            subsystem_raw = row["dst\nss-système"]
-            equipment_raw = row["dst\nÉquipement"]
-            detail_raw = row["dst Détail"]
-            quantity_raw = row["dst Qté	"]
-            vlan_bord_raw = row["dst VLAN Bord"]
-            vlan_sol_raw = row["dst VLAN Sol"]
-            ip_raw = row["dst IP"]
-            nat_raw = row["dst NAT	"]
-            port_raw = row["dst Port"]
+        def build_with_row(row: Series) -> "FlowDestination":
+            subsystem_raw = row["dst \nss-système"]
+            equipment_raw = row["dst \nÉquipement"]
+            detail_raw = row["dst\nDétail"]
+            quantity_raw = row["dst \nQté"]
+            vlan_bord_raw = row["dst \nVLAN Bord"]
+            vlan_sol_raw = row["dst \nVLAN Sol"]
+            ip_raw = row["Dst \nIP"]
+            nat_raw = row["dst NAT"]
+            group_multicast_raw = row["dst Groupe\nMCast"]
+            port_raw = row["dst\nPort"]
 
-            return NetworkFlowMatrixLine()
-
-    def __init__(self) -> None:
-        pass
+            return FlowDestination(
+                detail_raw=detail_raw,
+                equipment_raw=equipment_raw,
+                ip_raw=ip_raw,
+                nat_raw=nat_raw,
+                port_raw=port_raw,
+                quantity_raw=quantity_raw,
+                subsystem_raw=subsystem_raw,
+                vlan_bord_raw=vlan_bord_raw,
+                vlan_sol_raw=vlan_sol_raw,
+                group_multicast_raw=group_multicast_raw,
+            )
 
 
 class NetworkFlowMatrix:
@@ -76,7 +113,14 @@ class NetworkFlowMatrix:
         self.lines: List[NetworkFlowMatrixLine] = []
 
 
+@dataclass
 class NetworkFlowMatrixLine:
+    identifier_raw: str
+    name_raw: str
+    sol_bord_raw: str
+
+    source: FlowSource
+    destination: FlowDestination
 
     class Builder:
 
@@ -86,13 +130,10 @@ class NetworkFlowMatrixLine:
             name_raw = cast(str, row["Lien de com."])
             sol_bord_raw = cast(str, row["S/B"])
 
-            source = Source.Builder.build_with_row(row)
-            destination = Destination.Builder.build_with_row(row)
+            source = FlowSource.Builder.build_with_row(row)
+            destination = FlowDestination.Builder.build_with_row(row)
 
-            return NetworkFlowMatrixLine()
-
-    def __init__(self) -> None:
-        pass
+            return NetworkFlowMatrixLine(destination=destination, identifier_raw=identifier_raw, name_raw=name_raw, sol_bord_raw=sol_bord_raw, source=source)
 
 
 class NetworkFlowMacro:
