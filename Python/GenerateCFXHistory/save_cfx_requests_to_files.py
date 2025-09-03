@@ -3,7 +3,7 @@
 import inspect
 import logging
 import os
-import shutil
+
 import threading
 import time
 from collections.abc import Generator
@@ -560,7 +560,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                         self.download_current_query_to_file(
                             change_state_cfx_query=change_state_cfx_query,
                             label=change_state_cfx_query.label,
-                            file_to_create_path_without_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{EXCEL_FILE_EXTENSION}",
+                            file_to_create_path_with_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{EXCEL_FILE_EXTENSION}",
                         )
                 case QueryOutputFileType.TXT_EXPORT:
 
@@ -572,7 +572,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                         self.download_current_query_to_file(
                             change_state_cfx_query=change_state_cfx_query,
                             label=change_state_cfx_query.label,
-                            file_to_create_path_without_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{TEXT_FILE_EXTENSION}",
+                            file_to_create_path_with_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{TEXT_FILE_EXTENSION}",
                         )
 
         except Exception as e:
@@ -596,7 +596,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                 with logger_config.stopwatch_with_label("Generate_and_dowload_query_for_project"):
                     self.generate_and_download_query_results_for_project_filters(change_state_cfx_query=change_state_cfx_query, number_of_retry_if_failure=number_of_retry_if_failure - 1)
 
-    def download_current_query_to_file(self, change_state_cfx_query: CfxQuery, label: str, file_to_create_path_without_extension: str) -> bool:
+    def download_current_query_to_file(self, change_state_cfx_query: CfxQuery, label: str, file_to_create_path_with_extension: str) -> bool:
 
         with surround_with_screenshots(label=f"{label} arrow_to_acces_export element_to_be_clickable", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             arrow_to_acces_export = WebDriverWait(self.driver, 100).until(expected_conditions.element_to_be_clickable((By.ID, "dijit_form_ComboButton_1_arrow")))
@@ -610,6 +610,7 @@ class SaveCfxRequestMultipagesResultsApplication:
             directory_path=self.web_browser_download_directory,
             filename_pattern=CFX_FILES_DOWNLOADED_PATTERN_WITHOUT_EXTENSION + change_state_cfx_query.output_file_type.get_file_extension(),
             timeout_in_seconds=1000,
+            file_move_after_download_action=download_utils.DownloadFileDetector.FileMoveAfterDownloadAction(final_path=file_to_create_path_with_extension),
         )
         export_button.click()
 
@@ -617,16 +618,6 @@ class SaveCfxRequestMultipagesResultsApplication:
         if not file_downloaded_path:
             logger_config.print_and_log_error(f"No downloaded file found for {label}")
             return False
-
-        with stopwatch_with_label_and_surround_with_screenshots(
-            label="Downloading file - Additional waiting time for antivirus", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
-        ):
-            time.sleep(1)
-
-        logger_config.print_and_log_info(
-            f"File downloaded : {file_downloaded_path}, will be moved to {file_to_create_path_without_extension}{change_state_cfx_query.output_file_type.get_file_extension()}"
-        )
-        shutil.move(file_downloaded_path, file_to_create_path_without_extension)
 
         return True
 
