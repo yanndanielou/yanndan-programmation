@@ -122,7 +122,7 @@ def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file
     success = False
     while not success:
         try:
-            with logger_config.stopwatch_with_label(label=f"Save:{file_path}"):
+            with logger_config.stopwatch_with_label(label=f"Save:{file_path}", monitor_ram_usage=True):
                 workbook_dml.save(file_path)
 
             success = True
@@ -191,7 +191,9 @@ class DownloadAndCleanDMLApplication:
                 logger_config.print_and_log_info(f"ignore Excel internal reserved sheet:{sheet_name}")
             else:
                 with logger_config.stopwatch_with_label(
-                    label=f"Removing {sheet_number+1}/{number_of_initial_sheets_names}th sheet:{sheet_name} : {round((sheet_number+1)/number_of_initial_sheets_names*100,2)}%", inform_beginning=True
+                    label=f"Removing {sheet_number+1}/{number_of_initial_sheets_names}th sheet:{sheet_name} : {round((sheet_number+1)/number_of_initial_sheets_names*100,2)}%",
+                    inform_beginning=True,
+                    monitor_ram_usage=True,
                 ):
                     try:
                         # Accéder à la feuille que l'on veut supprimer
@@ -212,7 +214,7 @@ class DownloadAndCleanDMLApplication:
             logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
-        with logger_config.stopwatch_with_label(label=f"Open: {dml_file_path}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(label=f"Open: {dml_file_path}", inform_beginning=True, monitor_ram_usage=True):
             workbook_dml = xlwings.Book(dml_file_path)
 
         logger_config.print_and_log_info("set formulas calculations to manual to improve speed")
@@ -223,7 +225,7 @@ class DownloadAndCleanDMLApplication:
         logger_config.print_and_log_info(f"{len(external_links_sources)} links found: {external_links_sources}")
 
         for external_links_source_name in external_links_sources:
-            with logger_config.stopwatch_with_label(label=f"Removing link:{external_links_source_name}"):
+            with logger_config.stopwatch_with_label(label=f"Removing link:{external_links_source_name}", monitor_ram_usage=True):
                 workbook_dml.api.BreakLink(Name=external_links_source_name, Type=1)  # Type=1 pour les liaisons de type Excel
 
         return save_and_close_workbook(workbook_dml, file_to_create_path)
@@ -235,7 +237,7 @@ class DownloadAndCleanDMLApplication:
             logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
-        with logger_config.stopwatch_with_label(label=f"Open: {dml_file_path}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(label=f"Open: {dml_file_path}", inform_beginning=True, monitor_ram_usage=True):
             workbook_dml = xlwings.Book(dml_file_path)
 
         number_of_cells_updated = 0
@@ -245,7 +247,7 @@ class DownloadAndCleanDMLApplication:
         for sheet in workbook_dml.sheets:
             sheet: xlwings.Sheet = sheet
             number_of_cells_to_parse = len(sheet.used_range)
-            with logger_config.stopwatch_with_label(label=f"Handle sheet:{sheet.name} with {number_of_cells_to_parse} cells to parse", inform_beginning=True):
+            with logger_config.stopwatch_with_label(label=f"Handle sheet:{sheet.name} with {number_of_cells_to_parse} cells to parse", inform_beginning=True, monitor_ram_usage=True):
                 # Parcourir toutes les cellules dans la zone utilisée de la feuille
                 for cell in sheet.used_range:
 
@@ -272,33 +274,36 @@ class DownloadAndCleanDMLApplication:
             logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
-        with logger_config.stopwatch_with_label(label=f"Open: {dml_file_path}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(label=f"Open: {dml_file_path}", inform_beginning=True, monitor_ram_usage=True):
             workbook_dml = xlwings.Book(dml_file_path)
 
         for range_to_remove in FIRST_LINE_TO_REMOVE_RANGES:
-            with logger_config.stopwatch_with_label(label=f"Remove:{range_to_remove}", inform_beginning=True):
+            with logger_config.stopwatch_with_label(label=f"Remove:{range_to_remove}", inform_beginning=True, monitor_ram_usage=True):
                 xlwings.Range(range_to_remove).delete()
 
         sht = workbook_dml.sheets[USEFUL_DML_SHEET_NAME]
 
-        for column_name_to_remove in COLUMNS_NAMES_TO_REMOVE:
+        NUMBER_OF_COLUMNS_TO_REMOVE = len(COLUMNS_NAMES_TO_REMOVE)
+        for number_of_colomns_removed, column_name_to_remove in enumerate(COLUMNS_NAMES_TO_REMOVE):
 
             # Obtenir toutes les valeurs de la première ligne
             headers = sht.range("A1").expand("right").value
             logger_config.print_and_log_info(f"{len(headers)} headers:{headers}")
 
             # Trouver l'index de la colonne à supprimer
-            logger_config.print_and_log_error(f"removing column '{column_name_to_remove}'")
+            logger_config.print_and_log_info(
+                f"removing {number_of_colomns_removed+1}th / {NUMBER_OF_COLUMNS_TO_REMOVE} ({round((number_of_colomns_removed+1)/ NUMBER_OF_COLUMNS_TO_REMOVE*100,2)}%) column '{column_name_to_remove}'"
+            )
             try:
                 col_index = headers.index(column_name_to_remove) + 1  # Ajouter 1 car Excel utilise des index de base 1
-                with logger_config.stopwatch_with_label(label=f"Removing column {column_name_to_remove} with index {col_index}", inform_beginning=True):
+                with logger_config.stopwatch_with_label(label=f"Removing column {column_name_to_remove} with index {col_index}", inform_beginning=True, monitor_ram_usage=True):
                     sht.range((1, col_index), (sht.cells.last_cell.row, col_index)).delete()  # Supprimer la colonne
 
             except ValueError as e:
                 logger_config.print_and_log_exception(e)
                 logger_config.print_and_log_error(f"La colonne '{column_name_to_remove}' n'a pas été trouvée.")
                 for range_to_remove in FIRST_LINE_TO_REMOVE_RANGES:
-                    with logger_config.stopwatch_with_label(label=f"Remove:{range_to_remove}", inform_beginning=True):
+                    with logger_config.stopwatch_with_label(label=f"Remove:{range_to_remove}", inform_beginning=True, monitor_ram_usage=True):
                         xlwings.Range(range_to_remove).delete()
 
         return save_and_close_workbook(workbook_dml, file_to_create_path)
@@ -352,7 +357,7 @@ class DownloadAndCleanDMLApplication:
             try:
                 shutil.move(file_downloaded_path, file_to_create_path)
                 move_success = True
-            except PermissionError as perm_error:
+            except PermissionError:
                 # logger_config.print_and_log_exception(permErr)
                 logger_config.print_and_log_error("File " + file_to_create_path + " is used. Relase it")
                 time.sleep(1)
