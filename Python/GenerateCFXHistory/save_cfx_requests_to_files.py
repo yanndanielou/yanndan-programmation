@@ -9,7 +9,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import List, Optional, Set, cast
+from typing import List, Optional, Set
 
 from common import download_utils, file_utils, web_driver_utils
 
