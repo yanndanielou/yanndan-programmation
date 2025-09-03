@@ -3,7 +3,6 @@
 import inspect
 import logging
 import os
-
 import threading
 import time
 from collections.abc import Generator
@@ -12,24 +11,18 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import List, Optional, Set, cast
 
-import selenium.webdriver.chrome.options
 from common import download_utils, file_utils, web_driver_utils
 
 # Other libraries
 from logger import logger_config
 
 # Third Party
-from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import ActionChains
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.remote.remote_connection import RemoteConnection
-from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.webdriver.chrome.options import Options as ChromeOptions
 
 # Current programm
 import connexion_param
