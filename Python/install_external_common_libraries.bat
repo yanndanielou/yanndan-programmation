@@ -1,5 +1,7 @@
 @CALL SET_PYTHON_HOME.bat
 
+@call :UPDATE_PYTHON_LIB pip
+
 @call :INSTALL_PYTHON_LIB types-python-dateutil
 @call :INSTALL_PYTHON_LIB Spire.Doc
 @call :INSTALL_PYTHON_LIB psutil
@@ -57,10 +59,26 @@ rem does not work @call :INSTALL_PYTHON_LIB lazyxml
 @GOTO :END_OF_FILE
 
 
+
+:INSTALL_AND_UPDATE_PYTHON_LIB
+@Title install and update python library %1
+@Echo install and update python library %1
+@call :INSTALL_PYTHON_LIB  %1
+@call :UPDATE_PYTHON_LIB  %1
+@EXIT /B 0
+
+
 :INSTALL_PYTHON_LIB
 @Title install python library %1
 @Echo install python library %1
 call %PYTHON_HOME%\python.exe -m pip install %1
+@EXIT /B 0
+
+
+:UPDATE_PYTHON_LIB
+@Title Update python library %1
+@Echo Update python library %1
+call %PYTHON_HOME%\python.exe -m pip install --upgrade %1
 @EXIT /B 0
 
 
