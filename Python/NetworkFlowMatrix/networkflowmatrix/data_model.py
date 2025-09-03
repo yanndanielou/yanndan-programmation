@@ -1,13 +1,12 @@
-from dataclasses import dataclass, field
-
-
-from typing import List, Optional, Any, cast, Set
-
 import ipaddress
+from dataclasses import dataclass, field
+from typing import Any, List, Optional, Set, Tuple, cast
 
-from pandas import Series
+import pandas
+from logger import logger_config
 
 all_equipments_names: Set[str] = set()
+all_equipments_names_with_subsystem: set[Tuple[str, str]] = set()
 
 
 class SubSystem:
@@ -46,8 +45,15 @@ class FlowEndPoint:
         # self.ip_address = [ipaddress.IPv4Address(raw_ip_raw) for raw_ip_raw in self.raw_ip_addresses]
 
         self.equipments_names = self.equipment_cell_raw.split("\n")
+
         for equipments_name in self.equipments_names:
             all_equipments_names.add(equipments_name)
+        self.equipments_names = [equipment_name.lstrip().rstrip() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.lstrip().rstrip() != ""]
+        # self.equipments_names.remove("\n")
+        for equipment_name in self.equipments_names:
+            all_equipments_names_with_subsystem.add((equipment_name, self.subsystem_raw))
+            assert equipment_name
+            assert len(equipment_name.split()) > 0
 
 
 @dataclass
@@ -56,7 +62,7 @@ class FlowSource(FlowEndPoint):
     class Builder:
 
         @staticmethod
-        def build_with_row(row: Series) -> "FlowSource":
+        def build_with_row(row: pandas.Series) -> "FlowSource":
             subsystem_raw = row["src \nss-système"]
             equipment_raw = row["src \nÉquipement"]
             detail_raw = row["src Détail"]
@@ -89,7 +95,7 @@ class FlowDestination(FlowEndPoint):
     class Builder:
 
         @staticmethod
-        def build_with_row(row: Series) -> "FlowDestination":
+        def build_with_row(row: pandas.Series) -> "FlowDestination":
             subsystem_raw = row["dst \nss-système"]
             equipments_raw = row["dst \nÉquipement"]
             detail_raw = row["dst\nDétail"]
@@ -117,9 +123,25 @@ class FlowDestination(FlowEndPoint):
             )
 
 
+@dataclass
 class NetworkFlowMatrix:
-    def __init__(self) -> None:
-        self.lines: List[NetworkFlowMatrixLine] = []
+    network_flow_matrix_lines: List["NetworkFlowMatrixLine"]
+
+    class Builder:
+
+        @staticmethod
+        def build_with_excel_file(excel_file_full_path: str, sheet_name: str = "Matrice_de_Flux_SITE") -> "NetworkFlowMatrix":
+            main_data_frame = pandas.read_excel(excel_file_full_path, skiprows=[0, 1, 2, 3, 4], sheet_name=sheet_name)
+            logger_config.print_and_log_info(f"Flow matrix {excel_file_full_path} has {len(main_data_frame)} items")
+            logger_config.print_and_log_info(f"Flow matrix {excel_file_full_path} columns  {main_data_frame.columns[:4]} ...")
+
+            network_flow_matrix_lines: List[NetworkFlowMatrixLine] = []
+
+            for _, row in main_data_frame.iterrows():
+                network_flow_matrix_line = NetworkFlowMatrixLine.Builder.build_with_row(row=row)
+                network_flow_matrix_lines.append(network_flow_matrix_line)
+
+            return NetworkFlowMatrix(network_flow_matrix_lines)
 
 
 @dataclass
@@ -139,7 +161,7 @@ class NetworkFlowMatrixLine:
     class Builder:
 
         @staticmethod
-        def build_with_row(row: Series) -> "NetworkFlowMatrixLine":
+        def build_with_row(row: pandas.Series) -> "NetworkFlowMatrixLine":
             identifier_raw = cast(str, row["ID"])
             name_raw = cast(str, row["Lien de com."])
             sol_bord_raw = cast(str, row["S/B"])
@@ -153,7 +175,7 @@ class NetworkFlowMatrixLine:
             source = FlowSource.Builder.build_with_row(row)
             destination = FlowDestination.Builder.build_with_row(row)
 
-            return NetworkFlowMatrixLine(
+            network_flow_matrix_line = NetworkFlowMatrixLine(
                 destination=destination,
                 identifier_raw=identifier_raw,
                 name_raw=name_raw,
@@ -165,6 +187,8 @@ class NetworkFlowMatrixLine:
                 traffic_direction_raw=traffic_direction_raw,
                 type_raw=type_raw,
             )
+
+            return network_flow_matrix_line
 
 
 class NetworkFlowMacro:
