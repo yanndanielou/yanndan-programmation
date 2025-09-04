@@ -71,7 +71,21 @@ class TestEquipmentAndSubystemCreationOnTheFlowOfFlowMatrixParsing:
             assert isinstance(equipment.name, str)
             assert equipment.name != ""
 
-    def test_equipment_with_several_susbystems(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
+    def test_existance_of_equipment_with_several_susbystems(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
         network_flow_matrix = parse_flow_matrix_file_and_build_objects_fixture
         equipments_with_several_subsystems = [equipment for equipment in EquipmentInFLowMatrix.all_instances if len(equipment.all_subsystems_detected_in_flow_matrix) > 1]
         assert equipments_with_several_subsystems
+
+    def test_all_equipments_of_each_subsystem_has_the_subsystem(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
+        network_flow_matrix = parse_flow_matrix_file_and_build_objects_fixture
+        for subsystem in SubSystemInFlowMatrix.all_instances:
+            for equipment in subsystem.all_equipments_detected_in_flow_matrix:
+                assert subsystem in equipment.all_subsystems_detected_in_flow_matrix
+
+    def test_all_subsystem_of_each_equipment_has_the_equipment(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
+        network_flow_matrix = parse_flow_matrix_file_and_build_objects_fixture
+        for equipment in EquipmentInFLowMatrix.all_instances:
+            for subsystem in equipment.all_subsystems_detected_in_flow_matrix:
+                assert (
+                    equipment in subsystem.all_equipments_detected_in_flow_matrix
+                ), f"{equipment.name} not found in list of equipments {[eqpt.name for eqpt in subsystem.all_equipments_detected_in_flow_matrix]} of subsystem {subsystem.name}"
