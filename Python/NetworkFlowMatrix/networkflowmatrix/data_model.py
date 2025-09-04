@@ -1,6 +1,6 @@
 import ipaddress
-from dataclasses import dataclass, field
-from typing import Any, List, Optional, Set, Tuple, cast, Dict
+from dataclasses import dataclass
+from typing import List, Optional, Set, Tuple, cast, Dict
 
 import pandas
 from logger import logger_config
@@ -34,7 +34,7 @@ class SubSystemInFlowMatrix:
         return subsystem
 
     def __init__(self, name: str) -> None:
-        self.all_equipments: List["EquipmentInFLoxMatrix"] = []
+        self.all_equipments_detected_in_flow_matrix: List["EquipmentInFLowMatrix"] = []
         self.name = name
 
 
@@ -43,32 +43,36 @@ class PortInFLowMatrix:
         pass
 
 
-class EquipmentInFLoxMatrix:
-    all_instances: List["EquipmentInFLoxMatrix"] = []
-    all_instances_by_name: Dict[str, "EquipmentInFLoxMatrix"] = {}
+class EquipmentInFLowMatrix:
+    all_instances: List["EquipmentInFLowMatrix"] = []
+    all_instances_by_name: Dict[str, "EquipmentInFLowMatrix"] = {}
 
     @staticmethod
     def is_existing_by_name(name: str) -> bool:
-        return name in EquipmentInFLoxMatrix.all_instances_by_name
+        return name in EquipmentInFLowMatrix.all_instances_by_name
 
     @staticmethod
-    def get_existing_by_name(name: str) -> Optional["EquipmentInFLoxMatrix"]:
-        if EquipmentInFLoxMatrix.is_existing_by_name(name):
-            return EquipmentInFLoxMatrix.all_instances_by_name[name]
+    def get_existing_by_name(name: str) -> Optional["EquipmentInFLowMatrix"]:
+        if EquipmentInFLowMatrix.is_existing_by_name(name):
+            return EquipmentInFLowMatrix.all_instances_by_name[name]
         return None
 
     @staticmethod
-    def get_or_create_if_not_exist_by_name(name: str) -> "EquipmentInFLoxMatrix":
-        if EquipmentInFLoxMatrix.is_existing_by_name(name):
-            return EquipmentInFLoxMatrix.all_instances_by_name[name]
-        equipment = EquipmentInFLoxMatrix(name=name)
-        EquipmentInFLoxMatrix.all_instances_by_name[name] = equipment
-        EquipmentInFLoxMatrix.all_instances.append(equipment)
+    def get_or_create_if_not_exist_by_name(name: str, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix) -> "EquipmentInFLowMatrix":
+        if EquipmentInFLowMatrix.is_existing_by_name(name):
+            equipment = EquipmentInFLowMatrix.all_instances_by_name[name]
+            if subsystem_detected_in_flow_matrix not in equipment.all_subsystems_detected_in_flow_matrix:
+                equipment.all_subsystems_detected_in_flow_matrix.append(subsystem_detected_in_flow_matrix)
+            return equipment
+        equipment = EquipmentInFLowMatrix(name=name, subsystem_detected_in_flow_matrix=subsystem_detected_in_flow_matrix)
+        EquipmentInFLowMatrix.all_instances_by_name[name] = equipment
+        EquipmentInFLowMatrix.all_instances.append(equipment)
+        subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix.append(equipment)
         return equipment
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix) -> None:
         self.ip_addresses: List[ipaddress.IPv4Address] = []
-        self.all_subsystems: List[SubSystemInFlowMatrix] = []
+        self.all_subsystems_detected_in_flow_matrix: List[SubSystemInFlowMatrix] = [subsystem_detected_in_flow_matrix]
         self.name = name
 
 
@@ -91,20 +95,19 @@ class FlowEndPoint:
         self.raw_ip_addresses = self.ip_raw.split("\n") if self.ip_raw else []
         # self.ip_address = [ipaddress.IPv4Address(raw_ip_raw) for raw_ip_raw in self.raw_ip_addresses]
 
-        self.subsystem_detected_in_flow_matrix = SubSystemInFlowMatrix.get_or_create_if_not_exist_by_name(self.subsystem_raw.strip())
-        self.equipment_detected_in_flow_matrix: List[EquipmentInFLoxMatrix] = []
+        self.subsystem_detected_in_flow_matrix = SubSystemInFlowMatrix.get_or_create_if_not_exist_by_name(self.subsystem_raw.strip().upper())
+        self.equipment_detected_in_flow_matrix: List[EquipmentInFLowMatrix] = []
 
-        self.equipments_names = self.equipment_cell_raw.split("\n")
+        self.equipments_names = [equipment_name.lstrip().rstrip().upper() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.lstrip().rstrip() != ""]
 
-        for equipments_name in self.equipments_names:
-            all_equipments_names.add(equipments_name)
-            self.equipment_detected_in_flow_matrix.append(EquipmentInFLoxMatrix.get_or_create_if_not_exist_by_name(name=equipments_name))
-        self.equipments_names = [equipment_name.lstrip().rstrip() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.lstrip().rstrip() != ""]
-        # self.equipments_names.remove("\n")
         for equipment_name in self.equipments_names:
-            all_equipments_names_with_subsystem.add((equipment_name, self.subsystem_raw))
             assert equipment_name
             assert len(equipment_name.split()) > 0
+            all_equipments_names.add(equipment_name)
+            self.equipment_detected_in_flow_matrix.append(
+                EquipmentInFLowMatrix.get_or_create_if_not_exist_by_name(name=equipment_name, subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix)
+            )
+            all_equipments_names_with_subsystem.add((equipment_name, self.subsystem_raw))
 
 
 @dataclass
