@@ -1,6 +1,6 @@
 import ipaddress
 from dataclasses import dataclass, field
-from typing import Any, List, Optional, Set, Tuple, cast
+from typing import Any, List, Optional, Set, Tuple, cast, Dict
 
 import pandas
 from logger import logger_config
@@ -9,20 +9,68 @@ all_equipments_names: Set[str] = set()
 all_equipments_names_with_subsystem: set[Tuple[str, str]] = set()
 
 
-class SubSystem:
-    def __init__(self) -> None:
-        pass
+class SubSystemInFlowMatrix:
+    all_instances: List["SubSystemInFlowMatrix"] = []
+    all_instances_by_name: Dict[str, "SubSystemInFlowMatrix"] = {}
+
+    @staticmethod
+    def is_existing_by_name(name: str) -> bool:
+        return name in SubSystemInFlowMatrix.all_instances_by_name
+
+    @staticmethod
+    def get_existing_by_name(name: str) -> Optional["SubSystemInFlowMatrix"]:
+        if SubSystemInFlowMatrix.is_existing_by_name(name):
+            return SubSystemInFlowMatrix.all_instances_by_name[name]
+        return None
+
+    @staticmethod
+    def get_or_create_if_not_exist_by_name(name: str) -> "SubSystemInFlowMatrix":
+        if SubSystemInFlowMatrix.is_existing_by_name(name):
+            return SubSystemInFlowMatrix.all_instances_by_name[name]
+        subsystem = SubSystemInFlowMatrix(name=name)
+        SubSystemInFlowMatrix.all_instances_by_name[name] = subsystem
+        SubSystemInFlowMatrix.all_instances.append(subsystem)
+
+        return subsystem
+
+    def __init__(self, name: str) -> None:
+        self.all_equipments: List["EquipmentInFLoxMatrix"] = []
+        self.name = name
+        SubSystemInFlowMatrix.all_instances.append(self)
 
 
-class Port:
+class PortInFLowMatrix:
     def __init__(self, raw_port: Optional[str | int]) -> None:
         pass
 
 
-class Equipment:
-    def __init__(self, subsystem: SubSystem) -> None:
+class EquipmentInFLoxMatrix:
+    all_instances: List["EquipmentInFLoxMatrix"] = []
+    all_instances_by_name: Dict[str, "EquipmentInFLoxMatrix"] = {}
+
+    @staticmethod
+    def is_existing_by_name(name: str) -> bool:
+        return name in EquipmentInFLoxMatrix.all_instances_by_name
+
+    @staticmethod
+    def get_existing_by_name(name: str) -> Optional["EquipmentInFLoxMatrix"]:
+        if EquipmentInFLoxMatrix.is_existing_by_name(name):
+            return EquipmentInFLoxMatrix.all_instances_by_name[name]
+        return None
+
+    @staticmethod
+    def get_or_create_if_not_exist_by_name(name: str) -> "EquipmentInFLoxMatrix":
+        if EquipmentInFLoxMatrix.is_existing_by_name(name):
+            return EquipmentInFLoxMatrix.all_instances_by_name[name]
+        equipment = EquipmentInFLoxMatrix(name=name)
+        EquipmentInFLoxMatrix.all_instances_by_name[name] = equipment
+        EquipmentInFLoxMatrix.all_instances.append(equipment)
+        return equipment
+
+    def __init__(self, name: str) -> None:
         self.ip_addresses: List[ipaddress.IPv4Address] = []
-        self.subsystem = subsystem
+        self.all_subsystems: List[SubSystemInFlowMatrix] = []
+        self.name = name
 
 
 @dataclass
@@ -44,10 +92,14 @@ class FlowEndPoint:
         self.raw_ip_addresses = self.ip_raw.split("\n") if self.ip_raw else []
         # self.ip_address = [ipaddress.IPv4Address(raw_ip_raw) for raw_ip_raw in self.raw_ip_addresses]
 
+        self.subsystem_detected_in_flow_matrix = SubSystemInFlowMatrix.get_or_create_if_not_exist_by_name(self.subsystem_raw)
+        self.equipment_detected_in_flow_matrix: List[EquipmentInFLoxMatrix] = []
+
         self.equipments_names = self.equipment_cell_raw.split("\n")
 
         for equipments_name in self.equipments_names:
             all_equipments_names.add(equipments_name)
+            self.equipment_detected_in_flow_matrix.append(EquipmentInFLoxMatrix.get_or_create_if_not_exist_by_name(name=equipments_name))
         self.equipments_names = [equipment_name.lstrip().rstrip() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.lstrip().rstrip() != ""]
         # self.equipments_names.remove("\n")
         for equipment_name in self.equipments_names:
