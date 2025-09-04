@@ -63,6 +63,9 @@ class EquipmentInFLowMatrix:
             equipment = EquipmentInFLowMatrix.all_instances_by_name[name]
             if subsystem_detected_in_flow_matrix not in equipment.all_subsystems_detected_in_flow_matrix:
                 equipment.all_subsystems_detected_in_flow_matrix.append(subsystem_detected_in_flow_matrix)
+
+            if equipment not in subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix:
+                subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix.append(equipment)
             return equipment
         equipment = EquipmentInFLowMatrix(name=name, subsystem_detected_in_flow_matrix=subsystem_detected_in_flow_matrix)
         EquipmentInFLowMatrix.all_instances_by_name[name] = equipment
@@ -73,6 +76,7 @@ class EquipmentInFLowMatrix:
     def __init__(self, name: str, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix) -> None:
         self.ip_addresses: List[ipaddress.IPv4Address] = []
         self.all_subsystems_detected_in_flow_matrix: List[SubSystemInFlowMatrix] = [subsystem_detected_in_flow_matrix]
+
         self.name = name
 
 
@@ -96,18 +100,23 @@ class FlowEndPoint:
         # self.ip_address = [ipaddress.IPv4Address(raw_ip_raw) for raw_ip_raw in self.raw_ip_addresses]
 
         self.subsystem_detected_in_flow_matrix = SubSystemInFlowMatrix.get_or_create_if_not_exist_by_name(self.subsystem_raw.strip().upper())
-        self.equipment_detected_in_flow_matrix: List[EquipmentInFLowMatrix] = []
+        self.equipments_detected_in_flow_matrix: List[EquipmentInFLowMatrix] = []
 
-        self.equipments_names = [equipment_name.lstrip().rstrip().upper() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.lstrip().rstrip() != ""]
+        self.equipments_names = [equipment_name.strip().upper() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.strip() != ""]
 
         for equipment_name in self.equipments_names:
             assert equipment_name
             assert len(equipment_name.split()) > 0
             all_equipments_names.add(equipment_name)
-            self.equipment_detected_in_flow_matrix.append(
-                EquipmentInFLowMatrix.get_or_create_if_not_exist_by_name(name=equipment_name, subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix)
-            )
+            equipment_detected_in_flow_matrix = EquipmentInFLowMatrix.get_or_create_if_not_exist_by_name(name=equipment_name, subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix)
+            self.equipments_detected_in_flow_matrix.append(equipment_detected_in_flow_matrix)
             all_equipments_names_with_subsystem.add((equipment_name, self.subsystem_raw))
+            if equipment_detected_in_flow_matrix not in self.subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix:
+                pass
+            assert equipment_detected_in_flow_matrix in self.subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix
+            if self.subsystem_detected_in_flow_matrix not in equipment_detected_in_flow_matrix.all_subsystems_detected_in_flow_matrix:
+                pass
+            assert self.subsystem_detected_in_flow_matrix in equipment_detected_in_flow_matrix.all_subsystems_detected_in_flow_matrix
 
 
 @dataclass
@@ -180,6 +189,7 @@ class FlowDestination(FlowEndPoint):
 @dataclass
 class NetworkFlowMatrix:
     network_flow_matrix_lines: List["NetworkFlowMatrixLine"]
+    network_flow_matrix_lines_by_identifier: Dict[int, "NetworkFlowMatrixLine"]
 
     class Builder:
 
@@ -190,12 +200,17 @@ class NetworkFlowMatrix:
             logger_config.print_and_log_info(f"Flow matrix {excel_file_full_path} columns  {main_data_frame.columns[:4]} ...")
 
             network_flow_matrix_lines: List[NetworkFlowMatrixLine] = []
+            network_flow_matrix_lines_by_identifier: Dict[int, "NetworkFlowMatrixLine"] = {}
 
             for _, row in main_data_frame.iterrows():
                 network_flow_matrix_line = NetworkFlowMatrixLine.Builder.build_with_row(row=row)
                 network_flow_matrix_lines.append(network_flow_matrix_line)
+                network_flow_matrix_lines_by_identifier[network_flow_matrix_line.identifier] = network_flow_matrix_line
 
-            return NetworkFlowMatrix(network_flow_matrix_lines)
+            return NetworkFlowMatrix(network_flow_matrix_lines=network_flow_matrix_lines, network_flow_matrix_lines_by_identifier=network_flow_matrix_lines_by_identifier)
+
+    def get_line_by_identifier(self, identifier: int) -> Optional["NetworkFlowMatrixLine"]:
+        return self.network_flow_matrix_lines_by_identifier[identifier]
 
 
 @dataclass
@@ -243,6 +258,9 @@ class NetworkFlowMatrixLine:
             )
 
             return network_flow_matrix_line
+
+    def __post_init__(self) -> None:
+        self.identifier = int(self.identifier_raw)
 
 
 class NetworkFlowMacro:
