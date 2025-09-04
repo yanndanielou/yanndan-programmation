@@ -91,7 +91,7 @@ class FlowEndPoint:
         self.raw_ip_addresses = self.ip_raw.split("\n") if self.ip_raw else []
         # self.ip_address = [ipaddress.IPv4Address(raw_ip_raw) for raw_ip_raw in self.raw_ip_addresses]
 
-        self.subsystem_detected_in_flow_matrix = SubSystemInFlowMatrix.get_or_create_if_not_exist_by_name(self.subsystem_raw)
+        self.subsystem_detected_in_flow_matrix = SubSystemInFlowMatrix.get_or_create_if_not_exist_by_name(self.subsystem_raw.strip())
         self.equipment_detected_in_flow_matrix: List[EquipmentInFLoxMatrix] = []
 
         self.equipments_names = self.equipment_cell_raw.split("\n")

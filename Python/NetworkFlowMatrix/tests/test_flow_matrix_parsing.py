@@ -28,3 +28,15 @@ class TestEquipmentAndSubystemCreationOnTheFlowOfFlowMatrixParsing:
             assert equipment.name not in all_equipment_names
             all_equipment_names.add(equipment.name)
         assert len(all_equipment_names) == len(EquipmentInFLoxMatrix.all_instances)
+
+    def test_all_subsystem_names_trimmed(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
+        network_flow_matrix = parse_flow_matrix_file_and_build_objects_fixture
+        assert network_flow_matrix
+        for subsystem in SubSystemInFlowMatrix.all_instances:
+            assert subsystem.name == subsystem.name.strip()
+
+    def test_all_equipment_names_trimmed(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
+        network_flow_matrix = parse_flow_matrix_file_and_build_objects_fixture
+        assert network_flow_matrix
+        for equipment in EquipmentInFLoxMatrix.all_instances:
+            assert equipment.name == equipment.name.strip()
