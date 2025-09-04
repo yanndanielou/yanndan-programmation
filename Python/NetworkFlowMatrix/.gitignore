@@ -1,5 +1,7 @@
 /.mypy_cache/
 /Input/*.xls*
+Intput/Downloaded/*.xls*
+Input_Downloaded/
 test*.json
 test*.xlsx
 role_data.*
