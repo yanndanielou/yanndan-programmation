@@ -36,7 +36,6 @@ class SubSystemInFlowMatrix:
     def __init__(self, name: str) -> None:
         self.all_equipments: List["EquipmentInFLoxMatrix"] = []
         self.name = name
-        SubSystemInFlowMatrix.all_instances.append(self)
 
 
 class PortInFLowMatrix:
