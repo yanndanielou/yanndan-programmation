@@ -3,7 +3,7 @@ from typing import Set
 import pytest
 
 from networkflowmatrix.data_model import (
-    EquipmentInFLoxMatrix,
+    EquipmentInFLowMatrix,
     NetworkFlowMatrix,
     SubSystemInFlowMatrix,
 )
@@ -35,10 +35,10 @@ class TestEquipmentAndSubystemCreationOnTheFlowOfFlowMatrixParsing:
         network_flow_matrix = parse_flow_matrix_file_and_build_objects_fixture
         assert network_flow_matrix
         all_equipment_names: Set[str] = set()
-        for equipment in EquipmentInFLoxMatrix.all_instances:
+        for equipment in EquipmentInFLowMatrix.all_instances:
             assert equipment.name not in all_equipment_names
             all_equipment_names.add(equipment.name)
-        assert len(all_equipment_names) == len(EquipmentInFLoxMatrix.all_instances)
+        assert len(all_equipment_names) == len(EquipmentInFLowMatrix.all_instances)
 
     def test_all_subsystem_names_trimmed(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
         network_flow_matrix = parse_flow_matrix_file_and_build_objects_fixture
@@ -49,13 +49,13 @@ class TestEquipmentAndSubystemCreationOnTheFlowOfFlowMatrixParsing:
     def test_all_equipment_names_trimmed(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
         network_flow_matrix = parse_flow_matrix_file_and_build_objects_fixture
         assert network_flow_matrix
-        for equipment in EquipmentInFLoxMatrix.all_instances:
+        for equipment in EquipmentInFLowMatrix.all_instances:
             assert equipment.name == equipment.name.strip()
 
     def test_all_equipment_names_capital_letter_to_ensure_uniqueness(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
         network_flow_matrix = parse_flow_matrix_file_and_build_objects_fixture
         assert network_flow_matrix
-        for equipment in EquipmentInFLoxMatrix.all_instances:
+        for equipment in EquipmentInFLowMatrix.all_instances:
             assert equipment.name == equipment.name.upper()
 
     def test_all_subsystem_names_capital_letter_to_ensure_uniqueness(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
@@ -64,6 +64,14 @@ class TestEquipmentAndSubystemCreationOnTheFlowOfFlowMatrixParsing:
         for subsystem in SubSystemInFlowMatrix.all_instances:
             assert subsystem.name == subsystem.name.upper()
 
-    def test_equipment_with_several_susbystems(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
+    def test_all_equipments_have_name(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
         network_flow_matrix = parse_flow_matrix_file_and_build_objects_fixture
         assert network_flow_matrix
+        for equipment in EquipmentInFLowMatrix.all_instances:
+            assert isinstance(equipment.name, str)
+            assert equipment.name != ""
+
+    def test_equipment_with_several_susbystems(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
+        network_flow_matrix = parse_flow_matrix_file_and_build_objects_fixture
+        equipments_with_several_subsystems = [equipment for equipment in EquipmentInFLowMatrix.all_instances if len(equipment.all_subsystems_detected_in_flow_matrix) > 1]
+        assert equipments_with_several_subsystems
