@@ -1,6 +1,6 @@
 /.mypy_cache/
 /Input/*.xls*
-Intput/Downloaded/*.xls*
+Intput/Downloaded/
 Input_Downloaded/
 test*.json
 test*.xlsx
