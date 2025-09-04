@@ -1,10 +1,9 @@
-from typing import List, Optional
+from typing import List
+
+import pandas
+from logger import logger_config
 
 from networkflowmatrix import data_model
-import ipaddress
-import pandas
-
-from logger import logger_config
 
 
 def load_network_flow_matrix_excel_file(excel_file_full_path: str, sheet_name: str = "Matrice_de_Flux_SITE") -> None:
