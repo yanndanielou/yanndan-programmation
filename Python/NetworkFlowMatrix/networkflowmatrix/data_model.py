@@ -9,6 +9,9 @@ all_equipments_names: Set[str] = set()
 all_equipments_names_with_subsystem: set[Tuple[str, str]] = set()
 
 
+INVALID_IP_ADDRESS = "INVALID_IP_ADDRESS"
+
+
 class SubSystemInFlowMatrix:
     all_instances: List["SubSystemInFlowMatrix"] = []
     all_instances_by_name: Dict[str, "SubSystemInFlowMatrix"] = {}
@@ -104,10 +107,14 @@ class FlowEndPoint:
 
         self.equipments_names = [equipment_name.strip().upper() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.strip() != ""]
 
-        for equipment_name in self.equipments_names:
+        for index_eqpt, equipment_name in enumerate(self.equipments_names):
             assert equipment_name
             assert len(equipment_name.split()) > 0
             all_equipments_names.add(equipment_name)
+            try:
+                ip_address_raw = self.raw_ip_addresses[index_eqpt] if len(self.raw_ip_addresses) > 1 else self.raw_ip_addresses[0] if self.equipments_detected_in_flow_matrix else None
+            except IndexError:
+                ip_address_raw = INVALID_IP_ADDRESS
             equipment_detected_in_flow_matrix = EquipmentInFLowMatrix.get_or_create_if_not_exist_by_name(name=equipment_name, subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix)
             self.equipments_detected_in_flow_matrix.append(equipment_detected_in_flow_matrix)
             all_equipments_names_with_subsystem.add((equipment_name, self.subsystem_raw))
