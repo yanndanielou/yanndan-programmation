@@ -1,13 +1,24 @@
+from typing import Set
+
 import pytest
 
-from networkflowmatrix.data_model import NetworkFlowMatrix, SubSystemInFlowMatrix, EquipmentInFLoxMatrix
-from typing import Set, List
+from networkflowmatrix.data_model import (
+    EquipmentInFLoxMatrix,
+    NetworkFlowMatrix,
+    SubSystemInFlowMatrix,
+)
 
 
 @pytest.fixture(scope="session", name="parse_flow_matrix_file_and_build_objects_fixture")
 def parse_flow_matrix_file_and_build_objects() -> NetworkFlowMatrix:
     network_flow_matrix = NetworkFlowMatrix.Builder.build_with_excel_file(excel_file_full_path="Input/Matrice_next.xlsm", sheet_name="Matrice_de_Flux_SITE")
     return network_flow_matrix
+
+
+class TestNoErrorAtBUild:
+    def test_parse_flow_matrix_file_and_build_objects(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
+        assert parse_flow_matrix_file_and_build_objects_fixture
+        assert parse_flow_matrix_file_and_build_objects_fixture.network_flow_matrix_lines
 
 
 class TestEquipmentAndSubystemCreationOnTheFlowOfFlowMatrixParsing:
@@ -40,3 +51,19 @@ class TestEquipmentAndSubystemCreationOnTheFlowOfFlowMatrixParsing:
         assert network_flow_matrix
         for equipment in EquipmentInFLoxMatrix.all_instances:
             assert equipment.name == equipment.name.strip()
+
+    def test_all_equipment_names_capital_letter_to_ensure_uniqueness(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
+        network_flow_matrix = parse_flow_matrix_file_and_build_objects_fixture
+        assert network_flow_matrix
+        for equipment in EquipmentInFLoxMatrix.all_instances:
+            assert equipment.name == equipment.name.upper()
+
+    def test_all_subsystem_names_capital_letter_to_ensure_uniqueness(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
+        network_flow_matrix = parse_flow_matrix_file_and_build_objects_fixture
+        assert network_flow_matrix
+        for subsystem in SubSystemInFlowMatrix.all_instances:
+            assert subsystem.name == subsystem.name.upper()
+
+    def test_equipment_with_several_susbystems(self, parse_flow_matrix_file_and_build_objects_fixture: NetworkFlowMatrix) -> None:
+        network_flow_matrix = parse_flow_matrix_file_and_build_objects_fixture
+        assert network_flow_matrix
