@@ -1,6 +1,6 @@
-import ipaddress
+# import ipaddress
 from dataclasses import dataclass, field
-from typing import List, Optional, Set, Tuple, cast, Dict
+from typing import List, Optional, Set, cast, Dict
 
 import pandas
 from logger import logger_config
@@ -71,6 +71,7 @@ class EquipmentsLibrary:
 class NetworkConfFile:
     excel_file_full_path: str
     all_equipments: List[NetworkConfFilesDefinedEquipment]
+    equipments_library: EquipmentsLibrary
 
 
 @dataclass
@@ -105,9 +106,13 @@ class RadioStdNetworkConfFile(NetworkConfFile):
                     ip_address = NetworkConfFilesDefinedIpAddress(ip_raw=equipment_raw_ip_address, gateway=equipment_raw_gateway, vlan_name=equipment_vlan, mask=equipment_raw_mask, label="Anneau A")
                     equipment.ip_addresses.append(ip_address)
 
+                    assert len(equipment.ip_addresses) < 3
+
                     equipment.alternative_identifiers.add(equipment_alternative_identifier)
 
-                radio_std_conf_file = RadioStdNetworkConfFile(excel_file_full_path=excel_file_full_path, ip_definitions_sheet_name=ip_definitions_sheet_name, all_equipments=all_equipments_found)
+                radio_std_conf_file = RadioStdNetworkConfFile(
+                    equipments_library=equipments_library, excel_file_full_path=excel_file_full_path, ip_definitions_sheet_name=ip_definitions_sheet_name, all_equipments=all_equipments_found
+                )
 
                 logger_config.print_and_log_info(f"{excel_file_full_path}: {len(all_equipments_found)} equipment found")
 
@@ -142,6 +147,7 @@ class SolStdNetworkConfFile(NetworkConfFile):
                                 equipment_mask_column_name="Masque A",
                                 equipment_gateway_column_name="Passerelle A",
                                 forced_label="Anneau A",
+                                can_be_empty=True,
                             ),
                             IpDefinitionColumnsInTab(
                                 equipment_vlan_column_name="VLAN ID B",
@@ -150,6 +156,27 @@ class SolStdNetworkConfFile(NetworkConfFile):
                                 equipment_gateway_column_name="Passerelle B",
                                 forced_label="Anneau B",
                                 can_be_empty=True,
+                            ),
+                        ],
+                    ),
+                    EquipmentDefinitionTab(
+                        tab_name="IP CBTC",
+                        equipment_name_column_name="Equipement",
+                        rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+                        equipment_ip_definitions=[
+                            IpDefinitionColumnsInTab(
+                                equipment_vlan_column_name="VLAN ID A",
+                                equipment_ip_address_column_name="Anneau A",
+                                equipment_mask_column_name="Masque A",
+                                equipment_gateway_column_name="Passerelle A",
+                                forced_label="Anneau A",
+                            ),
+                            IpDefinitionColumnsInTab(
+                                equipment_vlan_column_name="VLAN ID B",
+                                equipment_ip_address_column_name="Anneau A",
+                                equipment_mask_column_name="Masque B",
+                                equipment_gateway_column_name="Passerelle B",
+                                forced_label="Anneau B",
                             ),
                         ],
                     ),
@@ -186,30 +213,38 @@ class SolStdNetworkConfFile(NetworkConfFile):
                         equipment_alternative_identifier = cast(str, row[equipment_definition_tab.equipment_alternative_name_column_name])
                         equipment.alternative_identifiers.add(equipment_alternative_identifier)
 
-                        for _, row in main_data_frame.iterrows():
-                            for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
-                                equipment_vlan = cast(int, row[ip_address_definition.equipment_vlan_column_name])
-                                assert equipment_vlan
+                        for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
 
-                                equipment_raw_ip_label = cast(str, row[ip_address_definition.label_column_name]) if ip_address_definition.label_column_name else None
+                            equipment_raw_ip_address = cast(str, row[ip_address_definition.equipment_ip_address_column_name])
+                            if not isinstance(equipment_raw_ip_address, str) and ip_address_definition.can_be_empty:
+                                continue
 
-                                equipment_raw_ip_address = cast(str, row[ip_address_definition.equipment_ip_address_column_name])
-                                assert equipment_raw_ip_address
+                            equipment_vlan = cast(int, row[ip_address_definition.equipment_vlan_column_name])
 
-                                equipment_raw_mask = cast(str, row[ip_address_definition.equipment_mask_column_name])
-                                assert equipment_raw_mask
+                            assert equipment_vlan
+                            assert (
+                                isinstance(equipment_vlan, str) or isinstance(equipment_vlan, int) or isinstance(equipment_vlan, float)
+                            ), f"{equipment_name} {ip_address_definition.equipment_gateway_column_name} column {ip_address_definition.equipment_vlan_column_name} is {equipment_vlan} "
 
-                                equipment_raw_gateway = cast(str, row[ip_address_definition.equipment_gateway_column_name])
-                                assert equipment_raw_gateway
+                            assert equipment_raw_ip_address and isinstance(equipment_raw_ip_address, str)
 
-                                ip_address = NetworkConfFilesDefinedIpAddress(
-                                    ip_raw=equipment_raw_ip_address, gateway=equipment_raw_gateway, vlan_name=equipment_vlan, mask=equipment_raw_mask, label=equipment_raw_ip_label
-                                )
-                                equipment.ip_addresses.append(ip_address)
+                            equipment_ip_label = cast(str, row[ip_address_definition.label_column_name]) if ip_address_definition.label_column_name else None
+
+                            equipment_raw_mask = cast(str, row[ip_address_definition.equipment_mask_column_name])
+                            assert equipment_raw_mask and isinstance(equipment_raw_mask, str)
+
+                            equipment_raw_gateway = cast(str, row[ip_address_definition.equipment_gateway_column_name])
+                            assert equipment_raw_gateway and isinstance(equipment_raw_gateway, str)
+
+                            ip_address = NetworkConfFilesDefinedIpAddress(
+                                ip_raw=equipment_raw_ip_address, gateway=equipment_raw_gateway, vlan_name=equipment_vlan, mask=equipment_raw_mask, label=equipment_ip_label
+                            )
+                            equipment.ip_addresses.append(ip_address)
+                            assert len(equipment.ip_addresses) < 5
 
                     logger_config.print_and_log_info(f"{excel_file_full_path} {equipment_definition_tab.tab_name}: {len(all_equipments_found)} equipment found")
 
-            radio_std_conf_file = SolStdNetworkConfFile(excel_file_full_path=excel_file_full_path, all_equipments=all_equipments_found)
+            radio_std_conf_file = SolStdNetworkConfFile(equipments_library=equipments_library, excel_file_full_path=excel_file_full_path, all_equipments=all_equipments_found)
 
             logger_config.print_and_log_info(f"{excel_file_full_path}: {len(all_equipments_found)} equipment found")
 
