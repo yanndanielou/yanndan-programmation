@@ -2,6 +2,8 @@ from typing import List, Set
 
 import pytest
 
+from tests import secret_tests_data
+
 from networkflowmatrix.network_conf_files import (
     EquipmentsLibrary,
     RadioStdNetworkConfFile,
@@ -27,10 +29,7 @@ class TestSolStdNetworkConfFile:
                 assert ip_address.gateway
                 assert ip_address.ip_raw
 
-    @pytest.mark.parametrize(
-        "equipment_name",
-        ["HSL-P81C1-SW-L2-A", "HSL-P81C1-SW-L2-B"],
-    )
+    @pytest.mark.parametrize("equipment_name", secret_tests_data.test_equipments_naùes_with_only_one_ip)
     def test_equipment_with_only_one_ip(self, equipment_name: str, parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture: SolStdNetworkConfFile) -> None:
         network_conf_files_defined_equipment = parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture.equipments_library.get_existing_by_name(equipment_name)
         assert network_conf_files_defined_equipment

@@ -14,3 +14,4 @@ output*.txt
 Output/
 Output*/
 Output*.7z
+tests/secret_tests_data.py
