@@ -8,6 +8,7 @@ from logger import logger_config
 
 @dataclass
 class IpDefinitionColumnsInTab:
+    can_be_empty: bool = False
     equipment_vlan_column_name: str = "VLAN ID"
     equipment_ip_address_column_name: str = "Adresse IP"
     equipment_mask_column_name: str = "Masque"
@@ -141,6 +142,7 @@ class SolStdNetworkConfFile(NetworkConfFile):
                             equipment_mask_column_name="Masque B",
                             equipment_gateway_column_name="Passerelle B",
                             forced_label="Anneau B",
+                            can_be_empty=True,
                         ),
                     ],
                 ),
@@ -180,11 +182,18 @@ class SolStdNetworkConfFile(NetworkConfFile):
                     for _, row in main_data_frame.iterrows():
                         for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
                             equipment_vlan = cast(int, row[ip_address_definition.equipment_vlan_column_name])
+                            assert equipment_vlan
 
                             equipment_raw_ip_label = cast(str, row[ip_address_definition.label_column_name]) if ip_address_definition.label_column_name else None
+
                             equipment_raw_ip_address = cast(str, row[ip_address_definition.equipment_ip_address_column_name])
+                            assert equipment_raw_ip_address
+
                             equipment_raw_mask = cast(str, row[ip_address_definition.equipment_mask_column_name])
+                            assert equipment_raw_mask
+
                             equipment_raw_gateway = cast(str, row[ip_address_definition.equipment_gateway_column_name])
+                            assert equipment_raw_gateway
 
                             ip_address = NetworkConfFilesDefinedIpAddress(
                                 ip_raw=equipment_raw_ip_address, gateway=equipment_raw_gateway, vlan_name=equipment_vlan, mask=equipment_raw_mask, label=equipment_raw_ip_label
