@@ -4,7 +4,7 @@ from common import json_encoders, file_utils
 from typing import Dict
 
 import json
-from networkflowmatrix import data_model
+from networkflowmatrix import data_model, network_conf_files
 
 OUTPUT_PARENT_DIRECTORY_NAME = "Output"
 
@@ -48,6 +48,12 @@ def dump_equipments_to_json(filepath: str) -> None:
 
 if __name__ == "__main__":
     with logger_config.application_logger("networkflowmatrix"):
+        equipments_library = network_conf_files.EquipmentsLibrary()
+
+        radio_std_conf_file = network_conf_files.RadioStdNetworkConfFile.build_with_excel_file(
+            equipments_library=equipments_library, excel_file_full_path="Input_Downloaded/NExTEO-S-273000-02-0125-01 Dossier de Configuration Réseau STD Radio - V02-00 Annexe A_diffa.xlsx"
+        )
+        logger_config.print_and_log_info(f"After radio_std_conf_file, {len(equipments_library.network_conf_files_defined_equipments)} equipments")
 
         with logger_config.stopwatch_with_label("Build matrix", inform_beginning=True, monitor_ram_usage=True):
             network_flow_matrix = data_model.NetworkFlowMatrix.Builder.build_with_excel_file(excel_file_full_path="Input/Matrice_next.xlsm", sheet_name="Matrice_de_Flux_SITE")
