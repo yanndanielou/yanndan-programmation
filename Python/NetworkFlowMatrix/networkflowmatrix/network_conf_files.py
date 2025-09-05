@@ -13,6 +13,7 @@ class IpDefinitionColumnsInTab:
     equipment_mask_column_name: str = "Masque"
     equipment_gateway_column_name: str = "Passerelle"
     label_column_name: Optional[str] = None
+    forced_label: Optional[str] = None
 
 
 @dataclass
@@ -113,7 +114,7 @@ class RadioStdNetworkConfFile(NetworkConfFile):
 @dataclass
 class SolStdNetworkConfFile(NetworkConfFile):
     @staticmethod
-    def build_with_excel_file(equipments_library: EquipmentsLibrary, excel_file_full_path: str, equipment_definition_tabs: Optional[List[EquipmentDefinitionTab]] = None) -> "RadioStdNetworkConfFile":
+    def build_with_excel_file(equipments_library: EquipmentsLibrary, excel_file_full_path: str, equipment_definition_tabs: Optional[List[EquipmentDefinitionTab]] = None) -> "SolStdNetworkConfFile":
         if equipment_definition_tabs is None:
             equipment_definition_tabs = [
                 EquipmentDefinitionTab(
@@ -122,8 +123,29 @@ class SolStdNetworkConfFile(NetworkConfFile):
                     rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
                     equipment_ip_definitions=[IpDefinitionColumnsInTab(equipment_ip_address_column_name="Adresse IP")],
                 ),
+                EquipmentDefinitionTab(
+                    tab_name="IP RESEAU STD",
+                    equipment_name_column_name="Equipement",
+                    rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+                    equipment_ip_definitions=[
+                        IpDefinitionColumnsInTab(
+                            equipment_vlan_column_name="VLAN ID A",
+                            equipment_ip_address_column_name="Anneau A",
+                            equipment_mask_column_name="Masque A",
+                            equipment_gateway_column_name="Passerelle A",
+                            forced_label="Anneau A",
+                        ),
+                        IpDefinitionColumnsInTab(
+                            equipment_vlan_column_name="VLAN ID B",
+                            equipment_ip_address_column_name="Anneau B",
+                            equipment_mask_column_name="Masque B",
+                            equipment_gateway_column_name="Passerelle B",
+                            forced_label="Anneau B",
+                        ),
+                    ],
+                ),
             ]
-        """                SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="IP RESEAU STD", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
+        """                SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
                 SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="IP CBTC", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
                 SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="IP MATS", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
                 SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="IP RESEAU PCC", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
