@@ -7,11 +7,31 @@ from logger import logger_config
 
 
 @dataclass
+class IpDefinitionColumnsInTab:
+    equipment_vlan_column_name: str = "VLAN ID"
+    equipment_ip_address_column_name: str = "Adresse IP"
+    equipment_mask_column_name: str = "Masque"
+    equipment_gateway_column_name: str = "Passerelle"
+    label_column_name: Optional[str] = None
+
+
+@dataclass
+class EquipmentDefinitionTab:
+    tab_name: str
+    rows_to_ignore: List[int]
+    equipment_type_column_name: str = "Type"
+    equipment_ip_definitions: List["IpDefinitionColumnsInTab"] = field(default_factory=list)
+    equipment_name_column_name: str = "Equipement"
+    equipment_alternative_name_column_name: str = "Equip_ID"
+
+
+@dataclass
 class NetworkConfFilesDefinedIpAddress:
     ip_raw: str
     mask: str
     gateway: str
-    vlan_name: str
+    vlan_name: str | int
+    label: Optional[str]
 
 
 @dataclass
@@ -78,7 +98,7 @@ class RadioStdNetworkConfFile(NetworkConfFile):
 
                 equipment.equipment_types.add(equipment_type)
 
-                ip_address = NetworkConfFilesDefinedIpAddress(ip_raw=equipment_raw_ip_address, gateway=equipment_raw_gateway, vlan_name=equipment_vlan, mask=equipment_raw_mask)
+                ip_address = NetworkConfFilesDefinedIpAddress(ip_raw=equipment_raw_ip_address, gateway=equipment_raw_gateway, vlan_name=equipment_vlan, mask=equipment_raw_mask, label="Anneau A")
                 equipment.ip_addresses.append(ip_address)
 
                 equipment.alternative_identifiers.add(equipment_alternative_identifier)
@@ -92,32 +112,15 @@ class RadioStdNetworkConfFile(NetworkConfFile):
 
 @dataclass
 class SolStdNetworkConfFile(NetworkConfFile):
-    @dataclass
-    class IpDefinitionColumnsInTab:
-        equipment_vlan_column_name: str = "VLAN ID"
-        equipment_ip_address_column_name: str = "Adresse IP"
-        equipment_mask_column_name: str = "Masque"
-        equipment_gateway_column_name: str = "Passerelle"
-        label_column_name: Optional[str] = None
-
-    @dataclass
-    class EquipmentDefinitionTab:
-        tab_name: str
-        row_to_ignore: List[int]
-        equipment_type_column_name = "Type"
-        equipment_name_column_name = "Equipement"
-        equipment_alternative_name_column_name = "Equip_ID"
-        equipment_ip_definitions: List["SolStdNetworkConfFile.IpDefinitionColumnsInTab"] = field(default_factory=list)
-
     @staticmethod
     def build_with_excel_file(equipments_library: EquipmentsLibrary, excel_file_full_path: str, equipment_definition_tabs: Optional[List[EquipmentDefinitionTab]] = None) -> "RadioStdNetworkConfFile":
         if equipment_definition_tabs is None:
             equipment_definition_tabs = [
-                SolStdNetworkConfFile.EquipmentDefinitionTab(
+                EquipmentDefinitionTab(
                     tab_name="IP ATS",
-                    row_to_ignore=[0, 1, 2, 3, 4, 6, 7],
                     equipment_name_column_name="Equipement",
-                    equipment_ip_definitions=[SolStdNetworkConfFile.IpDefinitionColumnsInTab(equipment_ip_address_column_name="Adresse IP")],
+                    rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+                    equipment_ip_definitions=[IpDefinitionColumnsInTab(equipment_ip_address_column_name="Adresse IP")],
                 ),
             ]
         """                SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="IP RESEAU STD", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
@@ -131,35 +134,45 @@ class SolStdNetworkConfFile(NetworkConfFile):
         Returns:
             _type_: _description_
         """
+        for equipment_definition_tab in equipment_definition_tabs:
 
-        with logger_config.stopwatch_with_label(f"Load {excel_file_full_path}", monitor_ram_usage=True, inform_beginning=True):
-            main_data_frame = pandas.read_excel(excel_file_full_path, skiprows=[0, 1, 2, 3, 4, 6, 7], sheet_name=ip_definitions_sheet_name)
-            logger_config.print_and_log_info(f"{excel_file_full_path} has {len(main_data_frame)} items")
-            logger_config.print_and_log_info(f" {excel_file_full_path} columns  {main_data_frame.columns[:4]} ...")
+            with logger_config.stopwatch_with_label(f"Load {excel_file_full_path}", monitor_ram_usage=True, inform_beginning=True):
+                main_data_frame = pandas.read_excel(excel_file_full_path, skiprows=equipment_definition_tab.rows_to_ignore, sheet_name=equipment_definition_tab.tab_name)
+                logger_config.print_and_log_info(f"{excel_file_full_path} {equipment_definition_tab.tab_name} has {len(main_data_frame)} items")
+                logger_config.print_and_log_info(f" {excel_file_full_path} {equipment_definition_tab.tab_name} columns  {main_data_frame.columns[:4]} ...")
 
-            all_equipments_found: List[NetworkConfFilesDefinedEquipment] = []
+                all_equipments_found: List[NetworkConfFilesDefinedEquipment] = []
 
-            for _, row in main_data_frame.iterrows():
-                equipment_type = cast(str, row["Type"])
-                equipment_name = cast(str, row["Equipement"])
-                equipment_alternative_identifier = cast(str, row["Equip_ID"])
-                equipment_vlan = cast(int, row["VLAN ID A"])
-                equipment_raw_ip_address = cast(str, row["Anneau A"])
-                equipment_raw_mask = cast(str, row["Masque A"])
-                equipment_raw_gateway = cast(str, row["Passerelle A"])
+                for _, row in main_data_frame.iterrows():
 
-                equipment = equipments_library.get_or_create_if_not_exist_by_name(name=equipment_name)
-                all_equipments_found.append(equipment)
+                    equipment_name = cast(str, row[equipment_definition_tab.equipment_name_column_name])
+                    equipment = equipments_library.get_or_create_if_not_exist_by_name(name=equipment_name)
+                    all_equipments_found.append(equipment)
 
-                equipment.equipment_types.add(equipment_type)
+                    equipment_type = cast(str, row[equipment_definition_tab.equipment_type_column_name])
+                    equipment.equipment_types.add(equipment_type)
 
-                ip_address = NetworkConfFilesDefinedIpAddress(ip_raw=equipment_raw_ip_address, gateway=equipment_raw_gateway, vlan_name=equipment_vlan, mask=equipment_raw_mask)
-                equipment.ip_addresses.append(ip_address)
+                    equipment_alternative_identifier = cast(str, row[equipment_definition_tab.equipment_alternative_name_column_name])
+                    equipment.alternative_identifiers.add(equipment_alternative_identifier)
 
-                equipment.alternative_identifiers.add(equipment_alternative_identifier)
+                    for _, row in main_data_frame.iterrows():
+                        for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
+                            equipment_vlan = cast(int, row[ip_address_definition.equipment_vlan_column_name])
 
-            radio_std_conf_file = RadioStdNetworkConfFile(excel_file_full_path=excel_file_full_path, ip_definitions_sheet_name=ip_definitions_sheet_name, all_equipments=all_equipments_found)
+                            equipment_raw_ip_label = cast(str, row[ip_address_definition.label_column_name]) if ip_address_definition.label_column_name else None
+                            equipment_raw_ip_address = cast(str, row[ip_address_definition.equipment_ip_address_column_name])
+                            equipment_raw_mask = cast(str, row[ip_address_definition.equipment_mask_column_name])
+                            equipment_raw_gateway = cast(str, row[ip_address_definition.equipment_gateway_column_name])
 
-            logger_config.print_and_log_info(f"{excel_file_full_path}: {len(all_equipments_found)} equipment found")
+                            ip_address = NetworkConfFilesDefinedIpAddress(
+                                ip_raw=equipment_raw_ip_address, gateway=equipment_raw_gateway, vlan_name=equipment_vlan, mask=equipment_raw_mask, label=equipment_raw_ip_label
+                            )
+                            equipment.ip_addresses.append(ip_address)
 
-            return radio_std_conf_file
+                logger_config.print_and_log_info(f"{excel_file_full_path} {equipment_definition_tab.tab_name}: {len(all_equipments_found)} equipment found")
+
+        radio_std_conf_file = SolStdNetworkConfFile(excel_file_full_path=excel_file_full_path, all_equipments=all_equipments_found)
+
+        logger_config.print_and_log_info(f"{excel_file_full_path}: {len(all_equipments_found)} equipment found")
+
+        return radio_std_conf_file
