@@ -35,13 +35,19 @@ def equipment_to_dict(equipment: data_model.EquipmentInFLowMatrix, with_subsyste
 
 
 def dump_subsystems_to_json(filepath: str) -> None:
-    data = [subsystem_to_dict(subsystem, with_equipment=True) for subsystem in sorted(data_model.SubSystemInFlowMatrix.all_instances, key=lambda subsystem: subsystem.name)]
+    data = [
+        subsystem_to_dict(subsystem, with_equipment=True)
+        for subsystem in sorted(data_model.SubSystemInFlowMatrix.all_matrix_flow_subsystems_definitions_instances, key=lambda subsystem: subsystem.name)
+    ]
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
 def dump_equipments_to_json(filepath: str) -> None:
-    data = [equipment_to_dict(equipment, with_subsystem=True) for equipment in sorted(data_model.EquipmentInFLowMatrix.all_instances, key=lambda subsystem: subsystem.name)]
+    data = [
+        equipment_to_dict(equipment, with_subsystem=True)
+        for equipment in sorted(data_model.EquipmentInFLowMatrix.all_matrix_flow_equipments_definitions_instances, key=lambda subsystem: subsystem.name)
+    ]
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
