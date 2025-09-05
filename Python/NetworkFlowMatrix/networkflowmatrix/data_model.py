@@ -118,11 +118,9 @@ class FlowEndPoint:
             )
             self.equipments_detected_in_flow_matrix.append(equipment_detected_in_flow_matrix)
             self.network_flow_matrix.all_equipments_names_with_subsystem.add((equipment_name, self.subsystem_raw))
-            if equipment_detected_in_flow_matrix not in self.subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix:
-                pass
+
             assert equipment_detected_in_flow_matrix in self.subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix
-            if self.subsystem_detected_in_flow_matrix not in equipment_detected_in_flow_matrix.all_subsystems_detected_in_flow_matrix:
-                pass
+
             assert self.subsystem_detected_in_flow_matrix in equipment_detected_in_flow_matrix.all_subsystems_detected_in_flow_matrix
 
 
