@@ -44,6 +44,7 @@ class DownloadFileDetector:
     @dataclass
     class FileMoveAfterDownloadAction:
         final_path: str
+        retry_in_case_of_error: bool = False
 
     directory_path: str
     filename_pattern: str
@@ -113,7 +114,20 @@ class DownloadFileDetector:
 
                     if self.file_move_after_download_action:
                         logger_config.print_and_log_info(f"File downloaded : {file_detected_path}, will be moved to {self.file_move_after_download_action.final_path}")
-                        shutil.move(file_detected_path, self.file_move_after_download_action.final_path)
+                        move_success = False
+
+                        if self.file_move_after_download_action.retry_in_case_of_error:
+                            while not move_success:
+                                try:
+                                    shutil.move(file_detected_path, self.file_move_after_download_action.final_path)
+                                    move_success = True
+                                except PermissionError as perm_error:
+                                    # logger_config.print_and_log_exception(permErr)
+                                    logger_config.print_and_log_error("File " + file_detected_path + " is used. Relase it")
+                                    time.sleep(1)
+                        else:
+                            shutil.move(file_detected_path, self.file_move_after_download_action.final_path)
+
                         return self.file_move_after_download_action.final_path
 
                     return file_detected_path
