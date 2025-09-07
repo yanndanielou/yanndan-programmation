@@ -1,3 +1,4 @@
+import os
 from enum import Enum, auto
 from typing import cast
 
@@ -10,6 +11,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.remote.remote_connection import RemoteConnection
 
+DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
+
 
 class BrowserVisibilityType(Enum):
     REGULAR = auto()
@@ -19,7 +22,7 @@ class BrowserVisibilityType(Enum):
 
 def create_webdriver_chrome(browser_visibility_type: BrowserVisibilityType, download_directory_path: str, global_timeout_in_seconds: int = 1000) -> webdriver.Chrome:
     logger_config.print_and_log_info("create_webdriver_chrome")
-    chrome_driver_path = "C:\\Users\\fr232487\\Downloads\\chromedriver-win64\\chromedriver.exe"
+    chrome_driver_path = "%userprofile%\\downloads\\chromedriver-win64\\chromedriver.exe"
 
     chrome_options = ChromeOptions()
     prefs = {
