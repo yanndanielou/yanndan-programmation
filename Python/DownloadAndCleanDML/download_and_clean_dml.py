@@ -13,8 +13,6 @@ from rhapsody import rhapsody_utils
 
 from param import COLUMNS_NAMES_TO_REMOVE
 
-# import pywintypes
-
 DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
 
 DML_FILE_DOWNLOADED_PATTERN = "DML_NEXTEO_ATS+_V*.xlsm"
@@ -44,15 +42,11 @@ REMOVE_USELESS_COLUMNS_ENABLED = True
 class DownloadAndCleanDMLApplication:
 
     def run(self) -> None:
-
         dml_file_path = self.download_dml_file()
-        if dml_file_path:
-            dml_file_path = self.remove_useless_tabs(dml_file_path)
-            dml_file_path = self.remove_excel_external_links(dml_file_path)
-            dml_file_path = self.remove_useless_ranges(dml_file_path)
-            dml_file_path = self.remove_useless_columns(dml_file_path)
-        else:
-            logger_config.print_and_log_error("Aborted")
+        dml_file_path = self.remove_useless_tabs(dml_file_path)
+        dml_file_path = self.remove_excel_external_links(dml_file_path)
+        dml_file_path = self.remove_useless_ranges(dml_file_path)
+        dml_file_path = self.remove_useless_columns(dml_file_path)
 
     def remove_useless_tabs(self, dml_file_path: str) -> str:
         file_to_create_path = DML_FILE_WITHOUT_USELESS_SHEETS_PATH
@@ -102,7 +96,7 @@ class DownloadAndCleanDMLApplication:
         )
         return final_excel_file_path
 
-    def download_dml_file(self) -> Optional[str]:
+    def download_dml_file(self) -> str:
         file_to_create_path = DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH
 
         if not DOWNLOAD_FROM_RHAPSODY_ENABLED:
@@ -110,13 +104,14 @@ class DownloadAndCleanDMLApplication:
             return file_to_create_path
 
         dml_download_url = "https://rhapsody.siemens.net/livelink/livelink.exe?func=ll&objId=79329709&objAction=Download"
-        rhapsody_utils.download_file_from_rhapsody(
+        file_downloaded: Optional[str] = rhapsody_utils.download_file_from_rhapsody(
             file_to_download_pattern=DML_FILE_DOWNLOADED_PATTERN,
             file_to_download_url=dml_download_url,
             file_move_after_download_action=download_utils.DownloadFileDetector.FileMoveAfterDownloadAction(final_path=DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH, retry_in_case_of_error=True),
         )
+        assert file_downloaded
 
-        return file_to_create_path
+        return file_downloaded
 
 
 if __name__ == "__main__":
