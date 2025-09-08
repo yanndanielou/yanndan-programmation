@@ -47,7 +47,7 @@ def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file
     return file_path
 
 
-def remove_useless_tabs_with_xlwings(input_excel_file_path: str, file_to_create_path: str, sheets_to_keep_names: List[str]) -> str:
+def remove_tabs_with_xlwings(input_excel_file_path: str, file_to_create_path: str, sheets_to_keep_names: List[str]) -> str:
 
     with logger_config.stopwatch_with_label(label=f"Open {input_excel_file_path}", inform_beginning=True):
         workbook_dml = xlwings.Book(input_excel_file_path)
