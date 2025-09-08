@@ -226,7 +226,9 @@ class SolStdNetworkConfFile(NetworkConfFile):
                                 isinstance(equipment_vlan, str) or isinstance(equipment_vlan, int) or isinstance(equipment_vlan, float)
                             ), f"{equipment_name} {ip_address_definition.equipment_gateway_column_name} column {ip_address_definition.equipment_vlan_column_name} is {equipment_vlan} "
 
-                            assert equipment_raw_ip_address and isinstance(equipment_raw_ip_address, str)
+                            assert equipment_raw_ip_address and isinstance(
+                                equipment_raw_ip_address, str
+                            ), f"\n Ip address: {equipment_raw_ip_address}\n tab:{equipment_definition_tab}\n Equipment: {equipment}\nRow: {row}"
 
                             equipment_ip_label = cast(str, row[ip_address_definition.label_column_name]) if ip_address_definition.label_column_name else None
 
@@ -240,7 +242,7 @@ class SolStdNetworkConfFile(NetworkConfFile):
                                 ip_raw=equipment_raw_ip_address, gateway=equipment_raw_gateway, vlan_name=equipment_vlan, mask=equipment_raw_mask, label=equipment_ip_label
                             )
                             equipment.ip_addresses.append(ip_address)
-                            assert len(equipment.ip_addresses) < 5
+                            assert len(equipment.ip_addresses) < 7, f"{equipment_name} {equipment} {equipment.ip_addresses}"
 
                     logger_config.print_and_log_info(f"{excel_file_full_path} {equipment_definition_tab.tab_name}: {len(all_equipments_found)} equipment found")
 
