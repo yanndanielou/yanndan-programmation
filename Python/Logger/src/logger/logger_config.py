@@ -6,9 +6,6 @@ import datetime
 # from inspect import currentframe, getframeinfo
 import inspect
 
-import humanize
-import psutil
-
 # -*-coding:Utf-8 -*
 import logging
 import os
@@ -20,8 +17,10 @@ from contextlib import contextmanager
 
 # from warnings import deprecated
 from logging.handlers import RotatingFileHandler
-from typing import Optional, cast, Tuple
+from typing import Optional, Tuple, cast
 
+import humanize
+import psutil
 from common import date_time_formats
 
 # pylint: enable=logging-not-lazy
