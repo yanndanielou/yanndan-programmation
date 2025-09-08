@@ -8,6 +8,8 @@ from datetime import datetime
 from typing import List, Optional, Tuple
 from warnings import deprecated
 
+import humanize
+
 from logger import logger_config
 from watchdog.events import DirCreatedEvent, DirModifiedEvent, FileCreatedEvent, FileModifiedEvent, FileSystemEventHandler
 from watchdog.observers import Observer
@@ -69,14 +71,14 @@ class DownloadFileDetector:
     def wait_for_file_size_is_stable(self, file_path: str) -> None:
         # initial_file_modification_time = os.path.getmtime(file_path)
         initial_file_size = os.path.getsize(file_path)
-        logger_config.print_and_log_info(f"Initial size of {file_path} is {initial_file_size }")
+        logger_config.print_and_log_info(f"Initial size of {file_path} is {humanize.naturalsize(initial_file_size)}")
 
         while os.path.getsize(file_path) == 0:
             logger_config.print_and_log_info(f"Size of {file_path} is still null. Keep waiting")
             time.sleep(1)
 
         if initial_file_size == 0:
-            logger_config.print_and_log_info(f"Size of {file_path} is no more null")
+            logger_config.print_and_log_info(f"Size of {file_path} is no more null ({humanize.naturalsize(os.path.getsize(file_path))})")
 
         previous_file_size = os.path.getsize(file_path)
 
@@ -84,10 +86,10 @@ class DownloadFileDetector:
             time.sleep(1)
             current_file_size = os.path.getsize(file_path)
             if current_file_size == previous_file_size:
-                logger_config.print_and_log_info(f"Size of {file_path} is stable to {current_file_size}. Do not wait anymore")
+                logger_config.print_and_log_info(f"Size of {file_path} is stable to {humanize.naturalsize(current_file_size)}. Do not wait anymore")
                 return
 
-            logger_config.print_and_log_info(f"Size of {file_path} changed from {previous_file_size} to {current_file_size}. Keep waiting")
+            logger_config.print_and_log_info(f"Size of {file_path} changed from {humanize.naturalsize(previous_file_size)} to {humanize.naturalsize(current_file_size)}. Keep waiting")
             previous_file_size = current_file_size
 
     def monitor_download(self) -> Optional[str]:
@@ -121,7 +123,7 @@ class DownloadFileDetector:
                                 try:
                                     shutil.move(file_detected_path, self.file_move_after_download_action.final_path)
                                     move_success = True
-                                except PermissionError as perm_error:
+                                except PermissionError:
                                     # logger_config.print_and_log_exception(permErr)
                                     logger_config.print_and_log_error("File " + file_detected_path + " is used. Relase it")
                                     time.sleep(1)
