@@ -22,7 +22,7 @@ class BrowserVisibilityType(Enum):
 
 def create_webdriver_chrome(browser_visibility_type: BrowserVisibilityType, download_directory_path: str, global_timeout_in_seconds: int = 1000) -> webdriver.Chrome:
     logger_config.print_and_log_info("create_webdriver_chrome")
-    chrome_driver_path = "%userprofile%\\downloads\\chromedriver-win64\\chromedriver.exe"
+    chrome_driver_path = DEFAULT_DOWNLOAD_DIRECTORY + "\\chromedriver-win64\\chromedriver.exe"
 
     chrome_options = ChromeOptions()
     prefs = {
