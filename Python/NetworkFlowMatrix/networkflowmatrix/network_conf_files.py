@@ -2,6 +2,8 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Set, cast, Dict
 
+from abc import ABC, abstractmethod
+
 import pandas
 from logger import logger_config
 
@@ -72,6 +74,38 @@ class NetworkConfFile:
     excel_file_full_path: str
     all_equipments: List[NetworkConfFilesDefinedEquipment]
     equipments_library: EquipmentsLibrary
+
+
+class ExcelColumnDefinition(ABC):
+
+    @abstractmethod
+    def get_value(self, row: pandas.Series) -> str | int:
+        pass
+
+
+@dataclass
+class ExcelColumnDefinitionByColumnExcelId(ExcelColumnDefinition):
+    column_excel_identifier: str
+
+    def get_value(self, row: pandas.Series) -> str | int:
+        return cast(str | int, row[self.column_excel_identifier])
+
+
+@dataclass
+class ExcelColumnDefinitionByColumnNumber(ExcelColumnDefinition):
+    column_number: int
+
+    def get_value(self, row: pandas.Series) -> str | int:
+        pass
+        return cast(str | int, row.get(self.column_number))
+
+
+@dataclass
+class ExcelColumnDefinitionByColumnTitle(ExcelColumnDefinition):
+    column_title: str
+
+    def get_value(self, row: pandas.Series) -> str | int:
+        return cast(str | int, row[self.column_title])
 
 
 @dataclass
