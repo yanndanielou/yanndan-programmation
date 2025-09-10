@@ -10,6 +10,7 @@ import xlwings
 from logger import logger_config
 
 # import pywintypes
+from xlsxwriter.utility import xl_cell_to_rowcol
 
 
 EXCEL_INTERNAL_RESERVED_SHEETS_NAMES = ["Register"]
@@ -188,3 +189,9 @@ def remove_columns_with_xlwings(input_excel_file_path: str, sheet_name: str, fil
                 sht.range((1, col_index), (sht.cells.last_cell.row, col_index)).delete()  # Supprimer la colonne
 
         return save_and_close_workbook(workbook_dml, file_to_create_path)
+
+
+def xl_column_name_to_index(column_name: str) -> int:
+    """Index starts 0"""
+    _, col = xl_cell_to_rowcol(column_name + "1")
+    return col
