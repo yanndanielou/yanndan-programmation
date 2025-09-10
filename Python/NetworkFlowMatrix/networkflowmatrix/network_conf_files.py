@@ -1,6 +1,8 @@
 # import ipaddress
 from dataclasses import dataclass, field
 from typing import List, Optional, Set, cast, Dict
+from common import excel_utils
+
 
 from abc import ABC, abstractmethod
 
@@ -20,16 +22,19 @@ class ExcelColumnDefinitionByColumnExcelId(ExcelColumnDefinition):
     column_excel_identifier: str
 
     def get_value(self, row: pandas.Series) -> str | int:
-        return cast(str | int, row[self.column_excel_identifier])
+        column_index = excel_utils.xl_column_name_to_index(self.column_excel_identifier)
+        return cast(str | int, row.values[column_index])
 
 
 @dataclass
 class ExcelColumnDefinitionByColumnNumber(ExcelColumnDefinition):
-    column_number: int
+    """Index starts at 0"""
+
+    column_index: int
 
     def get_value(self, row: pandas.Series) -> str | int:
         pass
-        return cast(str | int, row.get(self.column_number))
+        return cast(str | int, row.values[self.column_index])
 
 
 @dataclass
@@ -153,8 +158,58 @@ class RadioStdNetworkConfFile(NetworkConfFile):
                 return radio_std_conf_file
 
 
-@dataclass
 class SolStdNetworkConfFile(NetworkConfFile):
+    IP_ATS_TAB = EquipmentDefinitionTab(
+        tab_name="IP ATS",
+        equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
+        rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+        equipment_ip_definitions=[IpDefinitionColumnsInTab(equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Adresse IP"))],
+    )
+
+    IP_RESEAU_STD_TAB = EquipmentDefinitionTab(
+        tab_name="IP RESEAU STD",
+        equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
+        rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+        equipment_ip_definitions=[
+            IpDefinitionColumnsInTab(
+                equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                forced_label="Anneau A",
+                can_be_empty=True,
+            ),
+            IpDefinitionColumnsInTab(
+                equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau B"),
+                equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
+                forced_label="Anneau B",
+                can_be_empty=True,
+            ),
+        ],
+    )
+    IP_CBTC_TAB = EquipmentDefinitionTab(
+        tab_name="IP CBTC",
+        equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
+        rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+        equipment_ip_definitions=[
+            IpDefinitionColumnsInTab(
+                equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                forced_label="Anneau A",
+            ),
+            IpDefinitionColumnsInTab(
+                equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("H"),
+                equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                forced_label="Anneau B",
+            ),
+        ],
+    )
 
     class Builder:
 
@@ -163,57 +218,11 @@ class SolStdNetworkConfFile(NetworkConfFile):
             equipments_library: EquipmentsLibrary, excel_file_full_path: str, equipment_definition_tabs: Optional[List[EquipmentDefinitionTab]] = None
         ) -> "SolStdNetworkConfFile":
             if equipment_definition_tabs is None:
+
                 equipment_definition_tabs = [
-                    EquipmentDefinitionTab(
-                        tab_name="IP ATS",
-                        equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
-                        rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
-                        equipment_ip_definitions=[IpDefinitionColumnsInTab(equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Adresse IP"))],
-                    ),
-                    EquipmentDefinitionTab(
-                        tab_name="IP RESEAU STD",
-                        equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
-                        rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
-                        equipment_ip_definitions=[
-                            IpDefinitionColumnsInTab(
-                                equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
-                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
-                                equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
-                                equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
-                                forced_label="Anneau A",
-                                can_be_empty=True,
-                            ),
-                            IpDefinitionColumnsInTab(
-                                equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
-                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau B"),
-                                equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
-                                equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
-                                forced_label="Anneau B",
-                                can_be_empty=True,
-                            ),
-                        ],
-                    ),
-                    EquipmentDefinitionTab(
-                        tab_name="IP CBTC",
-                        equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
-                        rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
-                        equipment_ip_definitions=[
-                            IpDefinitionColumnsInTab(
-                                equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
-                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
-                                equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
-                                equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
-                                forced_label="Anneau A",
-                            ),
-                            IpDefinitionColumnsInTab(
-                                equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
-                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
-                                equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
-                                equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
-                                forced_label="Anneau B",
-                            ),
-                        ],
-                    ),
+                    SolStdNetworkConfFile.IP_ATS_TAB,
+                    SolStdNetworkConfFile.IP_RESEAU_STD_TAB,
+                    SolStdNetworkConfFile.IP_CBTC_TAB,
                 ]
             """                SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
                     SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="IP CBTC", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
