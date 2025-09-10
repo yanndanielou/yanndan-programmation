@@ -2,6 +2,7 @@
 
 @call :UPDATE_PYTHON_LIB pip
 
+@call :INSTALL_AND_UPDATE_PYTHON_LIB xlsxwriter
 @call :INSTALL_AND_UPDATE_PYTHON_LIB pyxlsb
 @call :INSTALL_AND_UPDATE_PYTHON_LIB types-python-dateutil
 @call :INSTALL_AND_UPDATE_PYTHON_LIB Spire.Doc
