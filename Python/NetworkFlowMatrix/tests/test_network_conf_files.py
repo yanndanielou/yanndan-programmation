@@ -12,15 +12,26 @@ from networkflowmatrix.network_conf_files import (
 
 
 @pytest.fixture(scope="session", name="parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture")
-def parse_flow_matrix_file_and_build_objects() -> SolStdNetworkConfFile:
+def parse_std_sol_dossier_conf_v10_file_and_build_objects() -> SolStdNetworkConfFile:
     equipments_library = EquipmentsLibrary()
-    network_flow_matrix = SolStdNetworkConfFile.Builder.build_with_excel_file(
+    std_sol_dossier_conf = SolStdNetworkConfFile.Builder.build_with_excel_file(
         equipments_library=equipments_library, excel_file_full_path="Input_Downloaded/NExTEO-S-271000-02-0125-02  Dossier de Configuration Réseau Sol - V10-00 Annexe A.xlsb"
     )
-    return network_flow_matrix
+    return std_sol_dossier_conf
 
 
-class TestSolStdNetworkConfFile:
+class TestSolStdNetworkV10ConfFileTabIpCbtcOnly:
+    def test_no_error(self) -> None:
+        equipments_library = EquipmentsLibrary()
+        std_sol_dossier_conf = SolStdNetworkConfFile.Builder.build_with_excel_file(
+            equipments_library=equipments_library,
+            excel_file_full_path="Input_Downloaded/NExTEO-S-271000-02-0125-02  Dossier de Configuration Réseau Sol - V10-00 Annexe A.xlsb",
+            equipment_definition_tabs=[SolStdNetworkConfFile.IP_CBTC_TAB],
+        )
+        assert std_sol_dossier_conf
+
+
+class TestSolStdNetworkV10FullConfFile:
     def test_no_empty_ip_address(self, parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture: SolStdNetworkConfFile) -> None:
         for network_conf_files_defined_equipment in parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture.equipments_library.network_conf_files_defined_equipments:
             for ip_address in network_conf_files_defined_equipment.ip_addresses:
