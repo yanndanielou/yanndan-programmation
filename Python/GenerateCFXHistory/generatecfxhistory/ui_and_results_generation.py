@@ -1,5 +1,7 @@
+import copy
 import datetime
 import os
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import List, Optional, Set, cast
 
@@ -14,7 +16,6 @@ from logger import logger_config
 from mplcursors._mplcursors import HoverMode
 
 from generatecfxhistory.cfx import ChampFXLibrary
-from generatecfxhistory.role import SubSystem
 from generatecfxhistory.constants import State
 from generatecfxhistory.dates_generators import (
     DatesGenerator,
@@ -23,14 +24,15 @@ from generatecfxhistory.dates_generators import (
 from generatecfxhistory.filters import (
     ChampFxFilter,
     ChampFxFilterFieldProject,
-    ChampFXRoleDependingOnDateFilter,
     ChampFxFilterFieldSubsystem,
+    ChampFXRoleDependingOnDateFilter,
 )
 from generatecfxhistory.results import (
     AllResultsPerDates,
     AllResultsPerDatesWithDebugDetails,
     OneTimestampResult,
 )
+from generatecfxhistory.role import SubSystem
 
 state_colors = {
     State.SUBMITTED: "red",
@@ -59,95 +61,95 @@ class RepresentationType(enums_utils.NameBasedEnum):
     CUMULATIVE_ERAS = auto()
 
 
+@dataclass
+class GenerationInstructions:
+    output_directory_name: str
+    generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS
+    project_in_case_of_generate_by_project_instruction_one_project: Optional[str] = None
+    cfx_filters: List[ChampFxFilter] = field(default_factory=list)
+    create_html_file: bool = True
+    create_excel_file: bool = True
+    display_output_plots: bool = True
+    dump_all_cfx_ids_in_json: bool = True
+    dates_generator: DatesGenerator = DecreasingIntervalDatesGenerator()
+
+
+@dataclass
+class GenerationInstructionsForLibary(GenerationInstructions):
+    for_global: bool = True
+    for_each_subsystem: bool = False
+    for_each_current_owner_per_date: bool = False
+
+
 def produce_results_and_displays(
     cfx_library: ChampFXLibrary,
-    output_directory_name: str,
-    create_excel_file: bool,
+    generation_instructions: GenerationInstructions,
     display_without_cumulative_eras: bool,
     display_with_cumulative_eras: bool,
-    create_html_file: bool,
-    display_output_plots: bool,
-    cfx_filters: Optional[List[ChampFxFilter]] = None,
-    dump_all_cfx_ids_in_json: bool = True,
-    generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
-    project_in_case_of_generate_by_project_instruction_one_project: Optional[str] = None,
-    dates_generator: DatesGenerator = DecreasingIntervalDatesGenerator(),
 ) -> None:
 
-    if cfx_filters is None:
-        cfx_filters = []
-    else:
-        cfx_filters = cfx_filters.copy()
-
-    match generate_by_project_instruction:
+    generation_instructions.cfx_filters = generation_instructions.cfx_filters.copy()
+    match generation_instructions.generate_by_project_instruction:
         case GenerateByProjectInstruction.ONLY_ONE_PROJECT:
-            cfx_filters.append(ChampFxFilter(field_filters=[ChampFxFilterFieldProject(field_accepted_values=[cast(str, project_in_case_of_generate_by_project_instruction_one_project)])]))
+            generation_instructions_copy = copy.deepcopy(generation_instructions)
+            generation_instructions_copy.cfx_filters.append(
+                ChampFxFilter(field_filters=[ChampFxFilterFieldProject(field_accepted_values=[cast(str, generation_instructions.project_in_case_of_generate_by_project_instruction_one_project)])])
+            )
         case GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS:
             pass
         case GenerateByProjectInstruction.BY_PROJECT:
             for project in sorted(cfx_library._all_projects):
+                generation_instructions_copy = copy.deepcopy(generation_instructions)
+                generation_instructions_copy.generate_by_project_instruction = GenerateByProjectInstruction.ONLY_ONE_PROJECT
+                generation_instructions_copy.project_in_case_of_generate_by_project_instruction_one_project = project
+
                 produce_results_and_displays(
                     cfx_library=cfx_library,
-                    output_directory_name=output_directory_name,
-                    create_excel_file=create_excel_file,
+                    generation_instructions=generation_instructions_copy,
                     display_without_cumulative_eras=display_without_cumulative_eras,
                     display_with_cumulative_eras=display_with_cumulative_eras,
-                    create_html_file=create_html_file,
-                    cfx_filters=cfx_filters,
-                    dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
-                    generate_by_project_instruction=GenerateByProjectInstruction.ONLY_ONE_PROJECT,
-                    project_in_case_of_generate_by_project_instruction_one_project=project,
-                    display_output_plots=display_output_plots,
-                    dates_generator=dates_generator,
                 )
 
         case GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS:
 
+            generation_instructions_copy = copy.deepcopy(generation_instructions)
+            generation_instructions_copy.generate_by_project_instruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS
             produce_results_and_displays(
                 cfx_library=cfx_library,
-                output_directory_name=output_directory_name,
-                create_excel_file=create_excel_file,
+                generation_instructions=generation_instructions_copy,
                 display_without_cumulative_eras=display_without_cumulative_eras,
                 display_with_cumulative_eras=display_with_cumulative_eras,
-                create_html_file=create_html_file,
-                cfx_filters=cfx_filters,
-                dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
-                generate_by_project_instruction=GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
-                display_output_plots=display_output_plots,
-                dates_generator=dates_generator,
             )
 
+            generation_instructions_copy = copy.deepcopy(generation_instructions)
+            generation_instructions_copy.generate_by_project_instruction = GenerateByProjectInstruction.BY_PROJECT
             produce_results_and_displays(
                 cfx_library=cfx_library,
-                output_directory_name=output_directory_name,
-                create_excel_file=create_excel_file,
+                generation_instructions=generation_instructions_copy,
                 display_without_cumulative_eras=display_without_cumulative_eras,
                 display_with_cumulative_eras=display_with_cumulative_eras,
-                create_html_file=create_html_file,
-                cfx_filters=cfx_filters,
-                dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
-                generate_by_project_instruction=GenerateByProjectInstruction.BY_PROJECT,
-                display_output_plots=display_output_plots,
-                dates_generator=dates_generator,
             )
+
             return
 
     generation_label = cfx_library.label
-    if len(cfx_filters) > 0:
-        generation_label += "".join([filt.label for filt in cfx_filters])
+    if len(generation_instructions.cfx_filters) > 0:
+        generation_label += "".join([filt.label for filt in generation_instructions.cfx_filters])
     else:
         generation_label += "All"
 
     with logger_config.stopwatch_with_label(label=f"{generation_label} Gather state counts for each date", inform_beginning=True):
-        all_results_to_display: AllResultsPerDatesWithDebugDetails = cfx_library.gather_state_counts_for_each_date(cfx_filters=cfx_filters, dates_generator=dates_generator)
+        all_results_to_display: AllResultsPerDatesWithDebugDetails = cfx_library.gather_state_counts_for_each_date(
+            cfx_filters=generation_instructions.cfx_filters, dates_generator=generation_instructions.dates_generator
+        )
 
     with logger_config.stopwatch_alert_if_exceeds_duration("compute_cumulative_counts", duration_threshold_to_alert_info_in_s=0.1):
         all_results_to_display.compute_cumulative_counts()
 
     generation_label_for_valid_file_name = string_utils.format_filename(generation_label).lstrip()
-    generic_output_files_path_without_suffix_and_extension = f"{output_directory_name}/{generation_label_for_valid_file_name}"
+    generic_output_files_path_without_suffix_and_extension = f"{generation_instructions.output_directory_name}/{generation_label_for_valid_file_name}"
 
-    if dump_all_cfx_ids_in_json:
+    if generation_instructions.dump_all_cfx_ids_in_json:
         all_cfx_that_have_match_id_and_state = [
             (
                 champfx_entry.cfx_identifier,
@@ -168,33 +170,29 @@ def produce_results_and_displays(
         logger_config.print_and_log_info(f"No data for {generation_label}")
         return
 
-    if create_excel_file:
+    if generation_instructions.create_excel_file:
         with logger_config.stopwatch_with_label(label=f"produce_excel_output_file,  {generation_label}", inform_beginning=True):
             produce_excel_output_file(output_excel_file=f"{generic_output_files_path_without_suffix_and_extension}.xlsx", all_results_to_display=all_results_to_display)
 
     if display_with_cumulative_eras:
         with logger_config.stopwatch_with_label(label=f"produce_displays cumulative,  {generation_label}", inform_beginning=True, monitor_ram_usage=True):
             produce_displays_and_create_html(
-                output_directory_name=output_directory_name,
+                generation_instructions=generation_instructions,
                 use_cumulative=True,
                 all_results_to_display=all_results_to_display,
-                create_html_file=create_html_file,
                 window_title=f"Filter {generation_label}, CFX States Over Time (Cumulative)",
                 generation_label=generation_label,
                 generation_label_for_valid_file_name=generation_label_for_valid_file_name,
-                display_output_plots=display_output_plots,
             )
     if display_without_cumulative_eras:
         with logger_config.stopwatch_with_label(label=f"produce_displays numbers, filter {generation_label} library {cfx_library.label}", inform_beginning=True, monitor_ram_usage=True):
             produce_displays_and_create_html(
-                output_directory_name=output_directory_name,
+                generation_instructions=generation_instructions,
                 use_cumulative=False,
                 all_results_to_display=all_results_to_display,
-                create_html_file=create_html_file,
                 window_title=f"Filter {generation_label}, CFX States Over Time (Values)",
                 generation_label=generation_label,
                 generation_label_for_valid_file_name=generation_label_for_valid_file_name,
-                display_output_plots=display_output_plots,
             )
 
 
@@ -215,14 +213,12 @@ def produce_excel_output_file(output_excel_file: str, all_results_to_display: Al
 
 
 def produce_displays_and_create_html(
+    generation_instructions: GenerationInstructions,
     use_cumulative: bool,
     all_results_to_display: AllResultsPerDates,
-    create_html_file: bool,
     window_title: str,
     generation_label: str,
     generation_label_for_valid_file_name: str,
-    output_directory_name: str,
-    display_output_plots: bool,
 ) -> None:
     before_plots_computation_ram_rss = cast(int, psutil.Process(os.getpid()).memory_info().rss)
 
@@ -266,12 +262,12 @@ def produce_displays_and_create_html(
     plt.tight_layout()
 
     # Display plot if required
-    if display_output_plots:
+    if generation_instructions.display_output_plots:
         plt.show(block=False)
 
     # Generate and save HTML file if required
-    if create_html_file:
-        output_html_file = output_directory_name + "/" + generation_label_for_valid_file_name + " cumulative " + str(use_cumulative) + ".html"
+    if generation_instructions.create_html_file:
+        output_html_file = generation_instructions.output_directory_name + "/" + generation_label_for_valid_file_name + " cumulative " + str(use_cumulative) + ".html"
 
         with logger_config.stopwatch_with_label(label=f"html {output_html_file} creation", inform_beginning=True):
             html_content = mpld3.fig_to_html(fig)
@@ -281,7 +277,7 @@ def produce_displays_and_create_html(
     # Close the figure to free up memory resources
     # Cleanup to avoid memory leaks
 
-    if not display_output_plots:
+    if not generation_instructions.display_output_plots:
         for cursor in cursors:
             try:
                 cursor.remove()
@@ -295,72 +291,44 @@ def produce_displays_and_create_html(
 
 def produce_results_and_displays_for_libary(
     cfx_library: ChampFXLibrary,
-    output_directory_name: str,
-    for_global: bool,
-    for_each_subsystem: bool,
-    for_each_current_owner_per_date: bool,
-    generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS,
-    cfx_filters: Optional[List[ChampFxFilter]] = None,
-    create_html_file: bool = True,
-    create_excel_file: bool = True,
-    display_output_plots: bool = True,
-    dump_all_cfx_ids_in_json: bool = True,
-    dates_generator: DatesGenerator = DecreasingIntervalDatesGenerator(),
+    generation_instructions: GenerationInstructionsForLibary,
 ) -> None:
 
-    if cfx_filters is None:
-        cfx_filters = []
+    if generation_instructions.for_global:
 
-    if for_global:
         produce_results_and_displays(
             cfx_library=cfx_library,
-            output_directory_name=output_directory_name,
-            create_excel_file=create_excel_file,
+            generation_instructions=generation_instructions,
             display_without_cumulative_eras=True,
             display_with_cumulative_eras=True,
-            create_html_file=create_html_file,
-            cfx_filters=cfx_filters,
-            generate_by_project_instruction=generate_by_project_instruction,
-            display_output_plots=display_output_plots,
-            dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
-            dates_generator=dates_generator,
         )
 
-    if for_each_current_owner_per_date:
+    if generation_instructions.for_each_current_owner_per_date:
         for subsystem in SubSystem:
+
+            generation_instructions_copy = copy.deepcopy(generation_instructions)
+            generation_instructions_copy.cfx_filters = generation_instructions_copy.cfx_filters + [
+                ChampFxFilter(role_depending_on_date_filter=ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))
+            ]
             with logger_config.stopwatch_with_label(label=f"{cfx_library.label} produce_results_and_displays for {subsystem.name}", inform_beginning=True, monitor_ram_usage=True):
                 produce_results_and_displays(
                     cfx_library=cfx_library,
-                    output_directory_name=output_directory_name,
-                    # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
-                    create_excel_file=create_excel_file,
+                    generation_instructions=generation_instructions_copy,
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
-                    create_html_file=create_html_file,
-                    cfx_filters=cfx_filters + [ChampFxFilter(role_depending_on_date_filter=ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))],
-                    generate_by_project_instruction=generate_by_project_instruction,
-                    display_output_plots=display_output_plots,
-                    dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
-                    dates_generator=dates_generator,
                 )
 
-    if for_each_subsystem:
+    if generation_instructions.for_each_subsystem:
         for subsystem in SubSystem:
             with logger_config.stopwatch_with_label(label=f"{cfx_library.label} produce_results_and_displays for {subsystem.name}", inform_beginning=True, monitor_ram_usage=True):
+                generation_instructions_copy = copy.deepcopy(generation_instructions)
+                generation_instructions_copy.cfx_filters = generation_instructions_copy.cfx_filters + [ChampFxFilter(field_filters=[ChampFxFilterFieldSubsystem(field_accepted_values=[subsystem])])]
 
                 produce_results_and_displays(
                     cfx_library=cfx_library,
-                    output_directory_name=output_directory_name,
-                    # output_excel_file=f"{output_directory_name}/subsystem_{subsystem.name}.xlsx",
-                    create_excel_file=create_excel_file,
+                    generation_instructions=generation_instructions_copy,
                     display_without_cumulative_eras=False,
                     display_with_cumulative_eras=True,
-                    create_html_file=create_html_file,
-                    cfx_filters=cfx_filters + [ChampFxFilter(field_filters=[ChampFxFilterFieldSubsystem(field_accepted_values=[subsystem])])],
-                    generate_by_project_instruction=generate_by_project_instruction,
-                    display_output_plots=display_output_plots,
-                    dump_all_cfx_ids_in_json=dump_all_cfx_ids_in_json,
-                    dates_generator=dates_generator,
                 )
 
 

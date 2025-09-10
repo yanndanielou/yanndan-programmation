@@ -3,33 +3,26 @@
 import inspect
 import logging
 import os
-import shutil
 import threading
 import time
 from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import List, Optional, Set, cast
+from typing import List, Optional, Set
 
-import selenium.webdriver.chrome.options
-from common import download_utils, file_utils
+from common import download_utils, file_utils, web_driver_utils
 
 # Other libraries
 from logger import logger_config
 
 # Third Party
-from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver import ActionChains
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.remote.remote_connection import RemoteConnection
-from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.webdriver.chrome.options import Options as ChromeOptions
 
 # Current programm
 import connexion_param
@@ -560,7 +553,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                         self.download_current_query_to_file(
                             change_state_cfx_query=change_state_cfx_query,
                             label=change_state_cfx_query.label,
-                            file_to_create_path_without_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{EXCEL_FILE_EXTENSION}",
+                            file_to_create_path_with_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{EXCEL_FILE_EXTENSION}",
                         )
                 case QueryOutputFileType.TXT_EXPORT:
 
@@ -572,7 +565,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                         self.download_current_query_to_file(
                             change_state_cfx_query=change_state_cfx_query,
                             label=change_state_cfx_query.label,
-                            file_to_create_path_without_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{TEXT_FILE_EXTENSION}",
+                            file_to_create_path_with_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{TEXT_FILE_EXTENSION}",
                         )
 
         except Exception as e:
@@ -596,7 +589,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                 with logger_config.stopwatch_with_label("Generate_and_dowload_query_for_project"):
                     self.generate_and_download_query_results_for_project_filters(change_state_cfx_query=change_state_cfx_query, number_of_retry_if_failure=number_of_retry_if_failure - 1)
 
-    def download_current_query_to_file(self, change_state_cfx_query: CfxQuery, label: str, file_to_create_path_without_extension: str) -> bool:
+    def download_current_query_to_file(self, change_state_cfx_query: CfxQuery, label: str, file_to_create_path_with_extension: str) -> bool:
 
         with surround_with_screenshots(label=f"{label} arrow_to_acces_export element_to_be_clickable", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             arrow_to_acces_export = WebDriverWait(self.driver, 100).until(expected_conditions.element_to_be_clickable((By.ID, "dijit_form_ComboButton_1_arrow")))
@@ -610,6 +603,7 @@ class SaveCfxRequestMultipagesResultsApplication:
             directory_path=self.web_browser_download_directory,
             filename_pattern=CFX_FILES_DOWNLOADED_PATTERN_WITHOUT_EXTENSION + change_state_cfx_query.output_file_type.get_file_extension(),
             timeout_in_seconds=1000,
+            file_move_after_download_action=download_utils.DownloadFileDetector.FileMoveAfterDownloadAction(final_path=file_to_create_path_with_extension),
         )
         export_button.click()
 
@@ -618,71 +612,12 @@ class SaveCfxRequestMultipagesResultsApplication:
             logger_config.print_and_log_error(f"No downloaded file found for {label}")
             return False
 
-        with stopwatch_with_label_and_surround_with_screenshots(
-            label="Downloading file - Additional waiting time for antivirus", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
-        ):
-            time.sleep(1)
-
-        logger_config.print_and_log_info(
-            f"File downloaded : {file_downloaded_path}, will be moved to {file_to_create_path_without_extension}{change_state_cfx_query.output_file_type.get_file_extension()}"
-        )
-        shutil.move(file_downloaded_path, file_to_create_path_without_extension)
-
         return True
 
     def create_webdriver_chrome(self) -> None:
-        logger_config.print_and_log_info("create_webdriver_chrome")
-        chrome_driver_path = "C:\\Users\\fr232487\\Downloads\\chromedriver-win64\\chromedriver.exe"
-
-        chrome_options = ChromeOptions()
-        prefs = {
-            "download.default_directory": OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME,
-            "savefile.default_directory": OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME,
-            "download.prompt_for_download": False,
-            "download.directory_upgrade": True,
-            "safebrowsing.enabled": True,
-        }
-        chrome_options.add_experimental_option("prefs", prefs)
-        if self.headless:
-            chrome_options.add_argument("--headless=new")
-            chrome_options.add_argument("--window-size=1920,1080")
-            chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument("--disable-software-rasterizer")
-            chrome_options.add_argument("--disable-extensions")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.add_argument("--no-sandbox")
-        else:
-            chrome_options.add_argument("--start-minimized")
-
-        driver_service = Service(chrome_driver_path)
-        self.driver = webdriver.Chrome(service=driver_service, options=chrome_options)
-        if not self.headless:
-            try:
-                self.driver.minimize_window()
-            except Exception:
-                pass
-
-        cast(RemoteConnection, self.driver.command_executor).set_timeout(1000)
-
-    def create_webdriver_firefox(self) -> None:
-        logger_config.print_and_log_info("create_webdriver_firefox")
-        firefox_options = FirefoxOptions()
-        if self.headless:
-            firefox_options.add_argument("--headless")
-        else:
-            firefox_options.add_argument("--width=800")
-            firefox_options.add_argument("--height=600")
-        profile = webdriver.FirefoxProfile()
-        profile.set_preference("browser.download.folderList", 2)
-        profile.set_preference("browser.download.dir", OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME)
-        profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/vnd.ms-excel,text/plain,application/octet-stream")
-        profile.set_preference("pdfjs.disabled", True)
-        self.driver = webdriver.Firefox(options=firefox_options, firefox_profile=profile)
-        if not self.headless:
-            try:
-                self.driver.minimize_window()
-            except Exception:
-                pass
+        self.driver = web_driver_utils.create_webdriver_chrome(
+            browser_visibility_type=web_driver_utils.BrowserVisibilityType.NOT_VISIBLE_AKA_HEADLESS, download_directory_path=DEFAULT_DOWNLOAD_DIRECTORY, global_timeout_in_seconds=1000
+        )
 
     def create_webdriver_and_login(self) -> None:
         # Use Chrome by default, switch to Firefox if you want

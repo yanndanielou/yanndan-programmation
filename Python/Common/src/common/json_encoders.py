@@ -8,6 +8,8 @@ from datetime import datetime
 
 from common import singleton
 
+from logger import logger_config
+
 
 class ListOfObjectsEncoder(JSONEncoder):
     def default(self, o: Any) -> list | Any:
@@ -22,13 +24,13 @@ class ListOfObjectsEncoder(JSONEncoder):
 class JsonEncodersUtils(metaclass=singleton.Singleton):
 
     @staticmethod
-    def serialize_list_objects_in_json(
-        list_objects: list[Any], json_file_full_path: str
-    ) -> None:
-        json_file = open(json_file_full_path, "w", encoding="utf-8")
+    def serialize_list_objects_in_json(list_objects: list[Any], json_file_full_path: str) -> None:
 
-        result_json_dump = json.dumps(list_objects, indent=4, cls=ListOfObjectsEncoder)
+        with logger_config.stopwatch_with_label(f"Serialize {len(list_objects)} in {json_file_full_path}"):
+            json_file = open(json_file_full_path, "w", encoding="utf-8")
 
-        json_file.write(result_json_dump)
+            result_json_dump = json.dumps(list_objects, indent=4, cls=ListOfObjectsEncoder)
 
-        json_file.close()
+            json_file.write(result_json_dump)
+
+            json_file.close()

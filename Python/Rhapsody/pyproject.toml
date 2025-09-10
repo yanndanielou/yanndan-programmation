@@ -1,22 +1,25 @@
-
 [project]
-name = "downloadandclaeandml" # REQUIRED, is the only field that cannot be marked as dynamic.
+name = "rhapsody" # REQUIRED, is the only field that cannot be marked as dynamic.
+
+
 version = "0.0.0" # REQUIRED, although can be dynamic
-description = "Download DML and clean it"
 
-[project.optional-dependencies]
-dev = ["check-manifest"]
-test = ["coverage"]
 
-[tool.pylint.'MESSAGES CONTROL']
+description = "Rhapsody utilities library"
+
+
+
+
 [tool.pylint]
 disable = ["C0114", "C0115", "C0116"]  # Désactivation de certaines règles
 #missing-function-docstring
 #missing-module-docstring
 #Missing class docstringPylintC0115:missing-class-docstring
-max-line-length = 210
+max-line-length = 200  # Longueur maximale des lignes
 
 [tool.mypy]
+# Specify files or directories to analyze
+files = "src"
 # Disallow functions or methods without type annotations
 disallow_untyped_defs = true
 # Disallow calls to functions or methods without type annotations
@@ -38,6 +41,6 @@ warn_redundant_casts = true
 # Warn about unnecessary "type: ignore" comments
 warn_unused_ignores = true
 
-
 [tool.black]
 line-length = 200
+

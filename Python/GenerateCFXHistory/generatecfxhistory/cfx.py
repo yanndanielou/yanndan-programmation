@@ -16,7 +16,7 @@ from generatecfxhistory.constants import (
     RejectionCause,
     State,
 )
-from generatecfxhistory.filters import ChampFxFilter, ChampFXtSaticCriteriaFilter
+from generatecfxhistory.filters import ChampFxFilter, ChampFXtSaticCriteriaFilter, ChampFXWhitelistFilter
 from generatecfxhistory.inputs import ChampFxInputs, ChampFxCreationData
 from generatecfxhistory.dates_generators import DatesGenerator
 from generatecfxhistory.results import AllResultsPerDatesWithDebugDetails, OneTimestampResult
@@ -142,6 +142,10 @@ class ChampFXLibrary:
     def cfx_users_library(self) -> role.CfxLibraryBase:
         return self._cfx_users_library
 
+    @property
+    def champfx_filters(self) -> List[ChampFXtSaticCriteriaFilter]:
+        return self._champfx_filters
+
     def create_cfx_entry(self, champfx_creation_data: "ChampFxCreationData") -> "ChampFXEntry":
         cfx_entry = ChampFXEntry(champfx_creational_data=champfx_creation_data)
         if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
@@ -157,6 +161,7 @@ class ChampFXLibrary:
             cfx_id = champfx_creation_data.cfx_identifier
 
             if cfx_id not in self._champfx_entry_by_id:
+
                 if self.ignore_cfx_creation_errors:
                     try:
                         self.create_cfx_entry(champfx_creation_data=champfx_creation_data)

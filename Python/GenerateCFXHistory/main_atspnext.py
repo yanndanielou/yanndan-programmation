@@ -37,241 +37,267 @@ def main() -> None:
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=nextatsp_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                filters.ChampFxFilter(
-                    field_filters=[
-                        filters.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                        filters.ChampFxFilterFieldType(field_accepted_values=[constants.RequestType.DEFECT]),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                for_global=True,
+                for_each_subsystem=False,
+                for_each_current_owner_per_date=False,
+                cfx_filters=[
+                    filters.ChampFxFilter(
+                        field_filters=[
+                            filters.ChampFxFilterFieldSubsystem(
+                                field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
+                            ),
+                            filters.ChampFxFilterFieldType(field_accepted_values=[constants.RequestType.DEFECT]),
+                        ]
+                    ),
+                ],
+                create_excel_file=True,
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+                dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            ),
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=nextatsp_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        filters.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                        filters.ChampFxFilterFieldType(field_forbidden_values=[constants.RequestType.DEFECT]),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                for_global=True,
+                for_each_subsystem=False,
+                for_each_current_owner_per_date=False,
+                cfx_filters=[
+                    cfx.ChampFxFilter(
+                        field_filters=[
+                            filters.ChampFxFilterFieldSubsystem(
+                                field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
+                            ),
+                            filters.ChampFxFilterFieldType(field_forbidden_values=[constants.RequestType.DEFECT]),
+                        ]
+                    ),
+                ],
+                create_excel_file=True,
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+                dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            ),
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=nextatsp_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        filters.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                for_global=True,
+                for_each_subsystem=False,
+                for_each_current_owner_per_date=False,
+                cfx_filters=[
+                    cfx.ChampFxFilter(
+                        field_filters=[
+                            filters.ChampFxFilterFieldSubsystem(
+                                field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
+                            ),
+                        ]
+                    ),
+                ],
+                create_excel_file=True,
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+                dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            ),
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=nextatsp_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        filters.ChampFxFilterFieldSafetyRelevant(field_accepted_value=True),
-                        filters.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                for_global=True,
+                for_each_subsystem=False,
+                for_each_current_owner_per_date=False,
+                cfx_filters=[
+                    cfx.ChampFxFilter(
+                        field_filters=[
+                            filters.ChampFxFilterFieldSafetyRelevant(field_accepted_value=True),
+                            filters.ChampFxFilterFieldSubsystem(
+                                field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
+                            ),
+                        ]
+                    ),
+                ],
+                create_excel_file=True,
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+                dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            ),
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=nextatsp_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        filters.ChampFxFilterFieldSafetyRelevant(field_accepted_value=False),
-                        filters.ChampFxFilterFieldSubsystem(
-                            field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
-                        ),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                for_global=True,
+                for_each_subsystem=False,
+                for_each_current_owner_per_date=False,
+                cfx_filters=[
+                    cfx.ChampFxFilter(
+                        field_filters=[
+                            filters.ChampFxFilterFieldSafetyRelevant(field_accepted_value=False),
+                            filters.ChampFxFilterFieldSubsystem(
+                                field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
+                            ),
+                        ]
+                    ),
+                ],
+                create_excel_file=True,
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+                dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            ),
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=nextatsp_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[constants.SecurityRelevant.YES, constants.SecurityRelevant.MITIGATED])]),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
+            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                for_global=True,
+                for_each_subsystem=False,
+                for_each_current_owner_per_date=False,
+                cfx_filters=[
+                    cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[constants.SecurityRelevant.YES, constants.SecurityRelevant.MITIGATED])]),
+                ],
+                create_excel_file=True,
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+            ),
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=nextatsp_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input/CFX_list_cyber_aio.txt"),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                for_global=True,
+                for_each_subsystem=False,
+                for_each_current_owner_per_date=False,
+                cfx_filters=[
+                    cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input/CFX_list_cyber_aio.txt"),
+                ],
+                create_excel_file=True,
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+                dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            ),
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=nextatsp_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=True,
-            for_each_current_owner_per_date=True,
-            cfx_filters=[
-                cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input/CFX_usine_site.txt"),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                for_global=True,
+                for_each_subsystem=True,
+                for_each_current_owner_per_date=True,
+                cfx_filters=[
+                    cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input/CFX_usine_site.txt"),
+                ],
+                create_excel_file=True,
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+                dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            ),
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=nextatsp_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=False,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[constants.SecurityRelevant.YES, constants.SecurityRelevant.MITIGATED])]),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                for_global=True,
+                for_each_subsystem=False,
+                for_each_current_owner_per_date=False,
+                cfx_filters=[
+                    cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[constants.SecurityRelevant.YES, constants.SecurityRelevant.MITIGATED])]),
+                ],
+                create_excel_file=True,
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+                dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            ),
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=nextatsp_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=True,
-            for_each_current_owner_per_date=False,
-            cfx_filters=[
-                cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSafetyRelevant(field_accepted_value=True)]),
-            ],
-            create_excel_file=False,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
-            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
+            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                for_global=True,
+                for_each_subsystem=True,
+                for_each_current_owner_per_date=False,
+                cfx_filters=[
+                    cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSafetyRelevant(field_accepted_value=True)]),
+                ],
+                create_excel_file=False,
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+                dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+                generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
+            ),
         )
 
         ui_and_results_generation.produce_results_and_displays(
             cfx_library=nextatsp_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
             display_without_cumulative_eras=False,
             display_with_cumulative_eras=True,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        filters.ChampFxFilterFieldCategory(field_accepted_values=[constants.Category.SOFTWARE]),
-                        filters.ChampFxFilterFieldType(field_accepted_values=[constants.RequestType.DEFECT]),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
-            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.ONLY_ONE_PROJECT,
-            project_in_case_of_generate_by_project_instruction_one_project=constants.CfxProject.ATSP,
+            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                cfx_filters=[
+                    cfx.ChampFxFilter(
+                        field_filters=[
+                            filters.ChampFxFilterFieldCategory(field_accepted_values=[constants.Category.SOFTWARE]),
+                            filters.ChampFxFilterFieldType(field_accepted_values=[constants.RequestType.DEFECT]),
+                        ]
+                    ),
+                ],
+                create_excel_file=True,
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+                dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+                generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.ONLY_ONE_PROJECT,
+                project_in_case_of_generate_by_project_instruction_one_project=constants.CfxProject.ATSP,
+            ),
         )
 
         ui_and_results_generation.produce_results_and_displays(
             cfx_library=nextatsp_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
             display_without_cumulative_eras=False,
             display_with_cumulative_eras=True,
-            cfx_filters=[
-                cfx.ChampFxFilter(
-                    field_filters=[
-                        filters.ChampFxFilterFieldCategory(field_accepted_values=[constants.Category.CONFIGURATION_DATA]),
-                        filters.ChampFxFilterFieldType(field_accepted_values=[constants.RequestType.DEFECT]),
-                    ]
-                ),
-            ],
-            create_excel_file=True,
-            create_html_file=True,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
-            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.ONLY_ONE_PROJECT,
-            project_in_case_of_generate_by_project_instruction_one_project=constants.CfxProject.ATSP,
+            generation_instructions=ui_and_results_generation.GenerationInstructions(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                cfx_filters=[
+                    cfx.ChampFxFilter(
+                        field_filters=[
+                            filters.ChampFxFilterFieldCategory(field_accepted_values=[constants.Category.CONFIGURATION_DATA]),
+                            filters.ChampFxFilterFieldType(field_accepted_values=[constants.RequestType.DEFECT]),
+                        ]
+                    ),
+                ],
+                create_excel_file=True,
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+                dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+                generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.ONLY_ONE_PROJECT,
+                project_in_case_of_generate_by_project_instruction_one_project=constants.CfxProject.ATSP,
+            ),
         )
 
         ui_and_results_generation.produce_results_and_displays_for_libary(
             cfx_library=nextatsp_champfx_library,
-            output_directory_name=OUTPUT_DIRECTORY_NAME,
-            for_global=True,
-            for_each_subsystem=True,
-            for_each_current_owner_per_date=True,
-            create_excel_file=True,
-            create_html_file=True,
-            generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
-            display_output_plots=DISPLAY_OUTPUT,
-            dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                for_global=True,
+                for_each_subsystem=True,
+                for_each_current_owner_per_date=True,
+                create_excel_file=True,
+                create_html_file=True,
+                generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
+                display_output_plots=DISPLAY_OUTPUT,
+                dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+            ),
         )
 
         if DISPLAY_OUTPUT:
