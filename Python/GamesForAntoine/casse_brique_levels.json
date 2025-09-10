@@ -1,6 +1,6 @@
 [
     {
-        "player_width": 100,
+        "player_width": 200,
         "player_height": 10,
         "player_speed": 5,
         "ball_size": 10,
