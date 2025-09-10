@@ -8,14 +8,46 @@ import pandas
 from logger import logger_config
 
 
+class ExcelColumnDefinition(ABC):
+
+    @abstractmethod
+    def get_value(self, row: pandas.Series) -> str | int:
+        pass
+
+
+@dataclass
+class ExcelColumnDefinitionByColumnExcelId(ExcelColumnDefinition):
+    column_excel_identifier: str
+
+    def get_value(self, row: pandas.Series) -> str | int:
+        return cast(str | int, row[self.column_excel_identifier])
+
+
+@dataclass
+class ExcelColumnDefinitionByColumnNumber(ExcelColumnDefinition):
+    column_number: int
+
+    def get_value(self, row: pandas.Series) -> str | int:
+        pass
+        return cast(str | int, row.get(self.column_number))
+
+
+@dataclass
+class ExcelColumnDefinitionByColumnTitle(ExcelColumnDefinition):
+    column_title: str
+
+    def get_value(self, row: pandas.Series) -> str | int:
+        return cast(str | int, row[self.column_title])
+
+
 @dataclass
 class IpDefinitionColumnsInTab:
     can_be_empty: bool = False
-    equipment_vlan_column_name: str = "VLAN ID"
-    equipment_ip_address_column_name: str = "Adresse IP"
-    equipment_mask_column_name: str = "Masque"
-    equipment_gateway_column_name: str = "Passerelle"
-    label_column_name: Optional[str] = None
+    equipment_vlan_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("VLAN ID"))
+    equipment_ip_address_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Adresse IP"))
+    equipment_mask_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Masque"))
+    equipment_gateway_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Passerelle"))
+    # label_column_name: Optional[str] = None
     forced_label: Optional[str] = None
 
 
@@ -23,10 +55,10 @@ class IpDefinitionColumnsInTab:
 class EquipmentDefinitionTab:
     tab_name: str
     rows_to_ignore: List[int]
-    equipment_type_column_name: str = "Type"
+    equipment_type_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Type"))
     equipment_ip_definitions: List["IpDefinitionColumnsInTab"] = field(default_factory=list)
-    equipment_name_column_name: str = "Equipement"
-    equipment_alternative_name_column_name: str = "Equip_ID"
+    equipment_name_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equipement"))
+    equipment_alternative_name_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equip_ID"))
 
 
 @dataclass
@@ -74,38 +106,6 @@ class NetworkConfFile:
     excel_file_full_path: str
     all_equipments: List[NetworkConfFilesDefinedEquipment]
     equipments_library: EquipmentsLibrary
-
-
-class ExcelColumnDefinition(ABC):
-
-    @abstractmethod
-    def get_value(self, row: pandas.Series) -> str | int:
-        pass
-
-
-@dataclass
-class ExcelColumnDefinitionByColumnExcelId(ExcelColumnDefinition):
-    column_excel_identifier: str
-
-    def get_value(self, row: pandas.Series) -> str | int:
-        return cast(str | int, row[self.column_excel_identifier])
-
-
-@dataclass
-class ExcelColumnDefinitionByColumnNumber(ExcelColumnDefinition):
-    column_number: int
-
-    def get_value(self, row: pandas.Series) -> str | int:
-        pass
-        return cast(str | int, row.get(self.column_number))
-
-
-@dataclass
-class ExcelColumnDefinitionByColumnTitle(ExcelColumnDefinition):
-    column_title: str
-
-    def get_value(self, row: pandas.Series) -> str | int:
-        return cast(str | int, row[self.column_title])
 
 
 @dataclass
@@ -166,28 +166,28 @@ class SolStdNetworkConfFile(NetworkConfFile):
                 equipment_definition_tabs = [
                     EquipmentDefinitionTab(
                         tab_name="IP ATS",
-                        equipment_name_column_name="Equipement",
+                        equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
                         rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
-                        equipment_ip_definitions=[IpDefinitionColumnsInTab(equipment_ip_address_column_name="Adresse IP")],
+                        equipment_ip_definitions=[IpDefinitionColumnsInTab(equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Adresse IP"))],
                     ),
                     EquipmentDefinitionTab(
                         tab_name="IP RESEAU STD",
-                        equipment_name_column_name="Equipement",
+                        equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
                         rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
                         equipment_ip_definitions=[
                             IpDefinitionColumnsInTab(
-                                equipment_vlan_column_name="VLAN ID A",
-                                equipment_ip_address_column_name="Anneau A",
-                                equipment_mask_column_name="Masque A",
-                                equipment_gateway_column_name="Passerelle A",
+                                equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                                equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                                equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
                                 forced_label="Anneau A",
                                 can_be_empty=True,
                             ),
                             IpDefinitionColumnsInTab(
-                                equipment_vlan_column_name="VLAN ID B",
-                                equipment_ip_address_column_name="Anneau B",
-                                equipment_mask_column_name="Masque B",
-                                equipment_gateway_column_name="Passerelle B",
+                                equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau B"),
+                                equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                                equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
                                 forced_label="Anneau B",
                                 can_be_empty=True,
                             ),
@@ -195,21 +195,21 @@ class SolStdNetworkConfFile(NetworkConfFile):
                     ),
                     EquipmentDefinitionTab(
                         tab_name="IP CBTC",
-                        equipment_name_column_name="Equipement",
+                        equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
                         rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
                         equipment_ip_definitions=[
                             IpDefinitionColumnsInTab(
-                                equipment_vlan_column_name="VLAN ID A",
-                                equipment_ip_address_column_name="Anneau A",
-                                equipment_mask_column_name="Masque A",
-                                equipment_gateway_column_name="Passerelle A",
+                                equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                                equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                                equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
                                 forced_label="Anneau A",
                             ),
                             IpDefinitionColumnsInTab(
-                                equipment_vlan_column_name="VLAN ID B",
-                                equipment_ip_address_column_name="Anneau A",
-                                equipment_mask_column_name="Masque B",
-                                equipment_gateway_column_name="Passerelle B",
+                                equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                                equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                                equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
                                 forced_label="Anneau B",
                             ),
                         ],
@@ -237,39 +237,40 @@ class SolStdNetworkConfFile(NetworkConfFile):
 
                     for _, row in main_data_frame.iterrows():
 
-                        equipment_name = cast(str, row[equipment_definition_tab.equipment_name_column_name])
+                        equipment_name = cast(str, equipment_definition_tab.equipment_name_column_definition.get_value(row))
                         equipment = equipments_library.get_or_create_if_not_exist_by_name(name=equipment_name)
                         all_equipments_found.append(equipment)
 
-                        equipment_type = cast(str, row[equipment_definition_tab.equipment_type_column_name])
+                        equipment_type = cast(str, equipment_definition_tab.equipment_type_column_definition.get_value(row))
                         equipment.equipment_types.add(equipment_type)
 
-                        equipment_alternative_identifier = cast(str, row[equipment_definition_tab.equipment_alternative_name_column_name])
+                        equipment_alternative_identifier = cast(str, equipment_definition_tab.equipment_alternative_name_column_definition.get_value(row))
                         equipment.alternative_identifiers.add(equipment_alternative_identifier)
 
                         for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
 
-                            equipment_raw_ip_address = cast(str, row[ip_address_definition.equipment_ip_address_column_name])
+                            equipment_raw_ip_address = cast(str, ip_address_definition.equipment_ip_address_column_definition.get_value(row))
                             if not isinstance(equipment_raw_ip_address, str) and ip_address_definition.can_be_empty:
                                 continue
 
-                            equipment_vlan = cast(int, row[ip_address_definition.equipment_vlan_column_name])
+                            equipment_vlan = cast(int, ip_address_definition.equipment_vlan_column_definition.get_value(row))
 
                             assert equipment_vlan
                             assert (
                                 isinstance(equipment_vlan, str) or isinstance(equipment_vlan, int) or isinstance(equipment_vlan, float)
-                            ), f"{equipment_name} {ip_address_definition.equipment_gateway_column_name} column {ip_address_definition.equipment_vlan_column_name} is {equipment_vlan} "
+                            ), f"{equipment_name} {ip_address_definition.equipment_gateway_column_definition} column {ip_address_definition.equipment_vlan_column_definition} is {equipment_vlan} "
 
                             assert equipment_raw_ip_address and isinstance(
                                 equipment_raw_ip_address, str
                             ), f"\n Ip address: {equipment_raw_ip_address}\n tab:{equipment_definition_tab}\n Equipment: {equipment}\nRow: {row}"
 
-                            equipment_ip_label = cast(str, row[ip_address_definition.label_column_name]) if ip_address_definition.label_column_name else None
+                            equipment_ip_label = ip_address_definition.forced_label
+                            # cast(str, row[ip_address_definition.label_column_name]) if ip_address_definition.label_column_name else None
 
-                            equipment_raw_mask = cast(str, row[ip_address_definition.equipment_mask_column_name])
+                            equipment_raw_mask = cast(str, ip_address_definition.equipment_mask_column_definition.get_value(row))
                             assert equipment_raw_mask and isinstance(equipment_raw_mask, str)
 
-                            equipment_raw_gateway = cast(str, row[ip_address_definition.equipment_gateway_column_name])
+                            equipment_raw_gateway = cast(str, ip_address_definition.equipment_gateway_column_definition.get_value(row))
                             assert equipment_raw_gateway and isinstance(equipment_raw_gateway, str)
 
                             ip_address = NetworkConfFilesDefinedIpAddress(
