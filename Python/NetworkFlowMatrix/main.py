@@ -4,7 +4,7 @@ from common import json_encoders, file_utils
 from typing import Dict
 
 import json
-from networkflowmatrix import data_model, network_conf_files
+from networkflowmatrix import data_model, network_conf_files, network_conf_files_descriptions_data
 
 OUTPUT_PARENT_DIRECTORY_NAME = "Output"
 
@@ -52,14 +52,14 @@ if __name__ == "__main__":
 
         radio_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_file(
             equipments_library=equipments_library,
-            excel_file_full_path=network_conf_files.StdRadioNetworkConfV2Description().excel_file_full_path,
-            equipment_definition_tabs=network_conf_files.StdRadioNetworkConfV2Description().all_tabs_definition,
+            excel_file_full_path=network_conf_files_descriptions_data.StdRadioNetworkConfV2Description().excel_file_full_path,
+            equipment_definition_tabs=network_conf_files_descriptions_data.StdRadioNetworkConfV2Description().all_tabs_definition,
         )
 
         sol_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_file(
             equipments_library=equipments_library,
-            excel_file_full_path=network_conf_files.SolStdNetworkConfV10Description().excel_file_full_path,
-            equipment_definition_tabs=network_conf_files.SolStdNetworkConfV10Description().all_tabs_definition,
+            excel_file_full_path=network_conf_files_descriptions_data.SolStdNetworkConfV10Description().excel_file_full_path,
+            equipment_definition_tabs=network_conf_files_descriptions_data.SolStdNetworkConfV10Description().all_tabs_definition,
         )
 
         logger_config.print_and_log_info(f"After radio_std_conf_file, {len(equipments_library.network_conf_files_defined_equipments)} equipments")
