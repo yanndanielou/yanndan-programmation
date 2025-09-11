@@ -300,8 +300,50 @@ class SolStdNetworkConfV10Description:
                 ),
             ],
         )
+        self.ip_mats: EquipmentDefinitionTab = EquipmentDefinitionTab(
+            tab_name="IP MATS",
+            equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
+            rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+            equipment_ip_definitions=[
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("G"),
+                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                    forced_label="Anneau A Unite A",
+                    can_be_empty=True,
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("H"),
+                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                    forced_label="Anneau A Unite B",
+                    can_be_empty=True,
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("M"),
+                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
+                    forced_label="Anneau B Unite A",
+                    can_be_empty=True,
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("N"),
+                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
+                    forced_label="Anneau B Unite B",
+                    can_be_empty=True,
+                ),
+                MulticastIpDefinitionColumnsInTab(
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("R"), forced_label="Anneau B Unite B", can_be_empty=True, group_multicast="239.192.0.0"
+                ),
+            ],
+        )
 
-        self.all_tabs_definition = [self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab]
+        self.all_tabs_definition = [self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab, self.ip_mats]
 
 
 @dataclass
