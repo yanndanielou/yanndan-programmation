@@ -72,3 +72,4 @@ class TestSolStdNetworkV10FullConfFile:
             assert equipment_definition_tab.equipment_ip_definitions
             for equipment_ip_definition in equipment_definition_tab.equipment_ip_definitions:
                 assert equipment_ip_definition.all_ip_addresses_found
+                assert len(equipment_ip_definition.all_ip_addresses_found) > 5
