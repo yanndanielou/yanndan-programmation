@@ -50,13 +50,15 @@ if __name__ == "__main__":
     with logger_config.application_logger("networkflowmatrix"):
         equipments_library = network_conf_files.EquipmentsLibrary()
 
-        radio_std_conf_file = network_conf_files.RadioStdNetworkConfFile.Builder.build_with_excel_file(
-            equipments_library=equipments_library, excel_file_full_path="Input_Downloaded/NExTEO-S-273000-02-0125-01 Dossier de Configuration Réseau STD Radio - V02-00 Annexe A_diffa.xlsx"
+        radio_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_file(
+            equipments_library=equipments_library,
+            excel_file_full_path=network_conf_files.StdRadioNetworkConfV2Description().excel_file_full_path,
+            equipment_definition_tabs=network_conf_files.StdRadioNetworkConfV2Description().all_tabs_definition,
         )
 
-        sol_std_conf_file = network_conf_files.SolStdNetworkConfFile.Builder.build_with_excel_file(
+        sol_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_file(
             equipments_library=equipments_library,
-            excel_file_full_path="Input_Downloaded/NExTEO-S-271000-02-0125-02  Dossier de Configuration Réseau Sol - V10-00 Annexe A.xlsb",
+            excel_file_full_path=network_conf_files.SolStdNetworkConfV10Description().excel_file_full_path,
             equipment_definition_tabs=network_conf_files.SolStdNetworkConfV10Description().all_tabs_definition,
         )
 
