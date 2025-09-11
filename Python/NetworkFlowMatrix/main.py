@@ -55,7 +55,9 @@ if __name__ == "__main__":
         )
 
         sol_std_conf_file = network_conf_files.SolStdNetworkConfFile.Builder.build_with_excel_file(
-            equipments_library=equipments_library, excel_file_full_path="Input_Downloaded/NExTEO-S-271000-02-0125-02  Dossier de Configuration Réseau Sol - V10-00 Annexe A.xlsb"
+            equipments_library=equipments_library,
+            excel_file_full_path="Input_Downloaded/NExTEO-S-271000-02-0125-02  Dossier de Configuration Réseau Sol - V10-00 Annexe A.xlsb",
+            equipment_definition_tabs=network_conf_files.SolStdNetworkConfV10Description().all_tabs_definition,
         )
 
         logger_config.print_and_log_info(f"After radio_std_conf_file, {len(equipments_library.network_conf_files_defined_equipments)} equipments")
