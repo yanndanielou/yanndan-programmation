@@ -374,7 +374,29 @@ class SolStdNetworkConfV10Description:
                 ),
             ],
         )
-        self.all_tabs_definition = [self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab, self.ip_mats, self.ip_reseau_pcc, self.ip_csr_tab]
+        self.ip_pmb_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
+            tab_name="IP PMB",
+            rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+            equipment_ip_definitions=[
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                    forced_label="Anneau A",
+                    can_be_empty=True,
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau B"),
+                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
+                    forced_label="Anneau B",
+                    can_be_empty=True,
+                ),
+            ],
+        )
+        self.all_tabs_definition = [self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab, self.ip_mats, self.ip_reseau_pcc, self.ip_csr_tab, self.ip_pmb_tab]
 
 
 @dataclass
