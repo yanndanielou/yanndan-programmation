@@ -113,5 +113,5 @@ if __name__ == "__main__":
             with logger_config.stopwatch_with_label(label=f"Handling input file {input_file_path}", inform_beginning=True):
                 output_dir = f"{OUTPUT_PARENT_DIRECTORY}/{input_file_name_without_extension}"
                 os.makedirs(output_dir, exist_ok=True)
-                simply_unzip_embedded_files(input_file_path, output_dir)
-                extract_embedded_files(input_file_path, output_dir)
+                simply_unzip_embedded_files(input_file_path, f"{output_dir}/simply_unzip_embedded_files")
+                extract_embedded_files(input_file_path, f"{output_dir}/extract_embedded_files")
