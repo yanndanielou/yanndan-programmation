@@ -87,6 +87,7 @@ class UnicastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
     equipment_mask_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Masque"))
     equipment_gateway_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Passerelle"))
     gateway_is_optional: bool = False
+    mask_is_optional: bool = False
 
     def build_with_row(self, row: pandas.Series) -> NetworkConfFilesDefinedIpAddress:
         equipment_raw_ip_address = cast(str, self.equipment_ip_address_column_definition.get_value(row))
@@ -104,7 +105,7 @@ class UnicastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
         equipment_ip_label = self.forced_label
 
         equipment_raw_mask = cast(str, self.equipment_mask_column_definition.get_value(row))
-        assert equipment_raw_mask and isinstance(equipment_raw_mask, str)
+        assert self.mask_is_optional or equipment_raw_mask and isinstance(equipment_raw_mask, str)
 
         equipment_raw_gateway: Optional[str] = cast(str, self.equipment_gateway_column_definition.get_value(row))
         if not isinstance(equipment_raw_gateway, str):
@@ -233,13 +234,11 @@ class SolStdNetworkConfV10Description:
 
         self.ip_ats_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP ATS",
-            equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_ip_definitions=[UnicastIpDefinitionColumnsInTab(equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Adresse IP"))],
         )
         self.ip_reseau_std_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP RESEAU STD",
-            equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
@@ -262,7 +261,6 @@ class SolStdNetworkConfV10Description:
         )
         self.ip_cbtc_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP CBTC",
-            equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
@@ -304,7 +302,6 @@ class SolStdNetworkConfV10Description:
         )
         self.ip_mats: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP MATS",
-            equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
@@ -350,7 +347,6 @@ class SolStdNetworkConfV10Description:
         )
         self.ip_csr_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP CSR",
-            equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
@@ -396,7 +392,34 @@ class SolStdNetworkConfV10Description:
                 ),
             ],
         )
-        self.all_tabs_definition = [self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab, self.ip_mats, self.ip_reseau_pcc, self.ip_csr_tab, self.ip_pmb_tab]
+        self.ip_pai_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
+            tab_name="IP PAI",
+            equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipment"),
+            rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+            equipment_ip_definitions=[
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                    forced_label="Anneau A",
+                    can_be_empty=True,
+                    gateway_is_optional=True,
+                    mask_is_optional=True,
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau B"),
+                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
+                    forced_label="Anneau B",
+                    can_be_empty=True,
+                    gateway_is_optional=True,
+                    mask_is_optional=True,
+                ),
+            ],
+        )
+        self.all_tabs_definition = [self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab, self.ip_mats, self.ip_reseau_pcc, self.ip_csr_tab, self.ip_pmb_tab, self.ip_pai_tab]
 
 
 @dataclass
