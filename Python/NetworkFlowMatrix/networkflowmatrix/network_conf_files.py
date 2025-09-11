@@ -18,23 +18,20 @@ class ExcelColumnDefinition(ABC):
 
 
 @dataclass
-class ExcelColumnDefinitionByColumnExcelId(ExcelColumnDefinition):
-    column_excel_identifier: str
-
-    def get_value(self, row: pandas.Series) -> str | int:
-        column_index = excel_utils.xl_column_name_to_index(self.column_excel_identifier)
-        return cast(str | int, row.values[column_index])
-
-
-@dataclass
 class ExcelColumnDefinitionByColumnNumber(ExcelColumnDefinition):
     """Index starts at 0"""
 
     column_index: int
 
     def get_value(self, row: pandas.Series) -> str | int:
-        pass
         return cast(str | int, row.values[self.column_index])
+
+
+class ExcelColumnDefinitionByColumnExcelId(ExcelColumnDefinitionByColumnNumber):
+
+    def __init__(self, column_excel_identifier: str) -> None:
+        super().__init__(column_index=excel_utils.xl_column_name_to_index(column_excel_identifier))
+        self.column_excel_identifier = column_excel_identifier
 
 
 @dataclass
@@ -200,6 +197,7 @@ class SolStdNetworkConfFile(NetworkConfFile):
                 equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
                 equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
                 forced_label="Anneau A",
+                can_be_empty=True,
             ),
             IpDefinitionColumnsInTab(
                 equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
@@ -207,6 +205,7 @@ class SolStdNetworkConfFile(NetworkConfFile):
                 equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
                 equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
                 forced_label="Anneau B",
+                can_be_empty=True,
             ),
         ],
     )
