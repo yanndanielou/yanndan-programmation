@@ -3,7 +3,12 @@ import sys
 import xml.etree.ElementTree as ET
 import zipfile
 
+from common import file_utils, file_name_utils
+
+
 from logger import logger_config
+
+OUTPUT_PARENT_DIRECTORY = "output"
 
 
 def simply_unzip_embedded_files(docx_path: str, output_dir: str) -> None:
@@ -97,8 +102,16 @@ def extract_embedded_files(docx_path: str, output_dir: str) -> None:
 
 if __name__ == "__main__":
     with logger_config.application_logger("extract_embedded_from_word_documnts"):
-        logger_config.print_and_log_info("Starting embedded file extraction test with Input_for_tests/main_word.docx...")
-        simply_unzip_embedded_files("Input_for_tests/main_word.docx", "output")
-        simply_unzip_embedded_files("Input_for_tests/main_word.docx", "output")
-        extract_embedded_files("Input_for_tests/main_word.docx", "output")
-        logger_config.print_and_log_info("Extraction complete.")
+
+        os.makedirs(OUTPUT_PARENT_DIRECTORY, exist_ok=True)
+
+        input_files_paths = file_utils.get_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="*.doc*") + file_utils.get_files_by_directory_and_file_name_mask(
+            directory_path="Input_for_tests", filename_pattern="*.doc*"
+        )
+        for input_file_path in input_files_paths:
+            input_file_name_without_extension = file_name_utils.get_file_name_without_extension_from_full_path(input_file_path)
+            with logger_config.stopwatch_with_label(label=f"Handling input file {input_file_path}", inform_beginning=True):
+                output_dir = f"{OUTPUT_PARENT_DIRECTORY}/{input_file_name_without_extension}"
+                os.makedirs(output_dir, exist_ok=True)
+                simply_unzip_embedded_files(input_file_path, output_dir)
+                extract_embedded_files(input_file_path, output_dir)
