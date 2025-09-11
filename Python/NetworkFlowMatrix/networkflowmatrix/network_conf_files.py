@@ -338,9 +338,6 @@ class SolStdNetworkConfV10Description:
                     forced_label="Anneau B Unite B",
                     can_be_empty=True,
                 ),
-                MulticastIpDefinitionColumnsInTab(
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("R"), forced_label="Anneau B Unite B", can_be_empty=True, group_multicast="239.192.0.0"
-                ),
             ],
         )
         self.ip_reseau_pcc: EquipmentDefinitionTab = EquipmentDefinitionTab(
