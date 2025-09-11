@@ -180,16 +180,88 @@ class NetworkConfFile:
     excel_file_full_path: str
     all_equipments: List[NetworkConfFilesDefinedEquipment]
     equipments_library: EquipmentsLibrary
-
-
-@dataclass
-class RadioStdNetworkConfFile(NetworkConfFile):
-    ip_definitions_sheet_name: str
+    equipment_definition_tabs: List[EquipmentDefinitionTab]
 
     class Builder:
 
         @staticmethod
-        def build_with_excel_file(equipments_library: EquipmentsLibrary, excel_file_full_path: str, ip_definitions_sheet_name: str = "IP RESEAU STD RADIO") -> "RadioStdNetworkConfFile":
+        def build_with_excel_file(equipments_library: EquipmentsLibrary, excel_file_full_path: str, equipment_definition_tabs: List[EquipmentDefinitionTab]) -> "NetworkConfFile":
+
+            for equipment_definition_tab in equipment_definition_tabs:
+
+                with logger_config.stopwatch_with_label(f"Load {excel_file_full_path} sheet {equipment_definition_tab.tab_name}", monitor_ram_usage=True, inform_beginning=True):
+                    main_data_frame = pandas.read_excel(excel_file_full_path, skiprows=equipment_definition_tab.rows_to_ignore, sheet_name=equipment_definition_tab.tab_name)
+                    logger_config.print_and_log_info(f"{excel_file_full_path} {equipment_definition_tab.tab_name} has {len(main_data_frame)} items")
+                    logger_config.print_and_log_info(f" {excel_file_full_path} {equipment_definition_tab.tab_name} columns  {main_data_frame.columns[:4]} ...")
+
+                    all_equipments_found: List[NetworkConfFilesDefinedEquipment] = []
+
+                    for _, row in main_data_frame.iterrows():
+
+                        equipment_name = cast(str, equipment_definition_tab.equipment_name_column_definition.get_value(row))
+                        equipment = equipments_library.get_or_create_if_not_exist_by_name(name=equipment_name)
+                        all_equipments_found.append(equipment)
+
+                        equipment_type = cast(str, equipment_definition_tab.equipment_type_column_definition.get_value(row))
+                        equipment.equipment_types.add(equipment_type)
+
+                        equipment_alternative_identifier = cast(str, equipment_definition_tab.equipment_alternative_name_column_definition.get_value(row))
+                        equipment.alternative_identifiers.add(equipment_alternative_identifier)
+
+                        for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
+
+                            equipment_raw_ip_address = cast(str, ip_address_definition.equipment_ip_address_column_definition.get_value(row))
+                            if not isinstance(equipment_raw_ip_address, str) and ip_address_definition.can_be_empty:
+                                continue
+
+                            ip_address = ip_address_definition.build_with_row(row)
+
+                            equipment.ip_addresses.append(ip_address)
+                            assert len(equipment.ip_addresses) < 10, f"{equipment_name}\n{[ip.ip_raw for ip in equipment.ip_addresses]}\n\n{equipment}"
+
+                    for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
+                        assert ip_address_definition.all_ip_addresses_found
+                        assert len(ip_address_definition.all_ip_addresses_found) > 1
+
+                    logger_config.print_and_log_info(f"{excel_file_full_path} tab {equipment_definition_tab.tab_name}: {len(all_equipments_found)} equipment found")
+
+            conf_file = NetworkConfFile(
+                equipments_library=equipments_library, excel_file_full_path=excel_file_full_path, all_equipments=all_equipments_found, equipment_definition_tabs=equipment_definition_tabs
+            )
+
+            logger_config.print_and_log_info(f"{excel_file_full_path}: {len(all_equipments_found)} equipment found")
+
+            return conf_file
+
+
+class StdRadioNetworkConfV2Description:
+    def __init__(self) -> None:
+
+        self.ip_reseau_std_radio_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
+            tab_name="IP RESEAU STD RADIO",
+            rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+            equipment_ip_definitions=[
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                    forced_label="Anneau A",
+                    can_be_empty=True,
+                ),
+            ],
+        )
+        self.all_tabs_definition = [self.ip_reseau_std_radio_tab]
+        self.excel_file_full_path = "Input_Downloaded/NExTEO-S-273000-02-0125-01 Dossier de Configuration Réseau STD Radio - V02-00 Annexe A_diffa.xlsx"
+
+
+@dataclass
+class RadioStdNetworkConfFile(NetworkConfFile):
+
+    class Builder:
+
+        @staticmethod
+        def build_with_excel_file_old(equipments_library: EquipmentsLibrary, excel_file_full_path: str, ip_definitions_sheet_name: str = "IP RESEAU STD RADIO") -> "RadioStdNetworkConfFile":
             with logger_config.stopwatch_with_label(f"Load {excel_file_full_path}", monitor_ram_usage=True, inform_beginning=True):
                 main_data_frame = pandas.read_excel(excel_file_full_path, skiprows=[0, 1, 2, 3, 4, 6, 7], sheet_name=ip_definitions_sheet_name)
                 logger_config.print_and_log_info(f"{excel_file_full_path} has {len(main_data_frame)} items")
@@ -221,7 +293,10 @@ class RadioStdNetworkConfFile(NetworkConfFile):
                     equipment.alternative_identifiers.add(equipment_alternative_identifier)
 
                 radio_std_conf_file = RadioStdNetworkConfFile(
-                    equipments_library=equipments_library, excel_file_full_path=excel_file_full_path, ip_definitions_sheet_name=ip_definitions_sheet_name, all_equipments=all_equipments_found
+                    equipments_library=equipments_library,
+                    excel_file_full_path=excel_file_full_path,
+                    all_equipments=all_equipments_found,
+                    equipment_definition_tabs=[],
                 )
 
                 logger_config.print_and_log_info(f"{excel_file_full_path}: {len(all_equipments_found)} equipment found")
@@ -420,28 +495,16 @@ class SolStdNetworkConfV10Description:
             ],
         )
         self.all_tabs_definition = [self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab, self.ip_mats, self.ip_reseau_pcc, self.ip_csr_tab, self.ip_pmb_tab, self.ip_pai_tab]
+        self.excel_file_full_path = "Input_Downloaded/NExTEO-S-271000-02-0125-02  Dossier de Configuration Réseau Sol - V10-00 Annexe A.xlsb"
 
 
 @dataclass
 class SolStdNetworkConfFile(NetworkConfFile):
 
-    equipment_definition_tabs: List[EquipmentDefinitionTab]
-
     class Builder:
 
         @staticmethod
-        def build_with_excel_file(equipments_library: EquipmentsLibrary, excel_file_full_path: str, equipment_definition_tabs: List[EquipmentDefinitionTab]) -> "SolStdNetworkConfFile":
-            """SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
-                    SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="IP CBTC", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
-                    SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="IP MATS", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
-                    SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="IP RESEAU PCC", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
-                    SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="IP CSR", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
-                    SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="IP PMB", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
-                    SolStdNetworkConfFile.EquipmentDefinitionTab(tab_name="IP PAI", row_to_ignore=[0, 1, 2, 3, 4, 6, 7]),
-
-            Returns:
-                _type_: _description_
-            """
+        def build_with_excel_file_std_sol(equipments_library: EquipmentsLibrary, excel_file_full_path: str, equipment_definition_tabs: List[EquipmentDefinitionTab]) -> "SolStdNetworkConfFile":
 
             for equipment_definition_tab in equipment_definition_tabs:
 
