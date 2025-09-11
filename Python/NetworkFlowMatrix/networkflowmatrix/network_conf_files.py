@@ -65,6 +65,7 @@ class ExcelColumnDefinitionByColumnTitle(ExcelColumnDefinition):
     column_title: str
 
     def get_value(self, row: pandas.Series) -> str | int:
+        assert self.column_title in row, f"Cannot find column with title {self.column_title} among {row.keys}"
         return cast(str | int, row[self.column_title])
 
 
@@ -282,7 +283,7 @@ class SolStdNetworkConfV10Description:
                 ),
                 UnicastIpDefinitionColumnsInTab(
                     equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("O"),
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("M"),
                     equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
                     equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
                     forced_label="Anneau B Unite A",
@@ -290,14 +291,14 @@ class SolStdNetworkConfV10Description:
                 ),
                 UnicastIpDefinitionColumnsInTab(
                     equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("P"),
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("N"),
                     equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
                     equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
                     forced_label="Anneau B Unite B",
                     can_be_empty=True,
                 ),
                 MulticastIpDefinitionColumnsInTab(
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("R"), forced_label="Anneau B Unite B", can_be_empty=True, group_multicast="239.192.0.0"
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("R"), forced_label="Multicast", can_be_empty=True, group_multicast="239.192.0.0"
                 ),
             ],
         )
@@ -347,8 +348,33 @@ class SolStdNetworkConfV10Description:
                 UnicastIpDefinitionColumnsInTab(can_be_empty=True, gateway_is_optional=True),
             ],
         )
-
-        self.all_tabs_definition = [self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab, self.ip_mats, self.ip_reseau_pcc]
+        self.ip_csr_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
+            tab_name="IP CSR",
+            equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipement"),
+            rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+            equipment_ip_definitions=[
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                    forced_label="Anneau A Unite A",
+                    can_be_empty=True,
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau B"),
+                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
+                    forced_label="Anneau B Unite A",
+                    can_be_empty=True,
+                ),
+                MulticastIpDefinitionColumnsInTab(
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("@IP multicast"), forced_label="Multicast", can_be_empty=True, group_multicast="239.192.0.0"
+                ),
+            ],
+        )
+        self.all_tabs_definition = [self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab, self.ip_mats, self.ip_reseau_pcc, self.ip_csr_tab]
 
 
 @dataclass
@@ -402,7 +428,11 @@ class SolStdNetworkConfFile(NetworkConfFile):
                             ip_address = ip_address_definition.build_with_row(row)
 
                             equipment.ip_addresses.append(ip_address)
-                            assert len(equipment.ip_addresses) < 10, f"{equipment_name} {equipment} {equipment.ip_addresses}"
+                            assert len(equipment.ip_addresses) < 10, f"{equipment_name}\n{[ip.ip_raw for ip in equipment.ip_addresses]}\n\n{equipment}"
+
+                    for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
+                        assert ip_address_definition.all_ip_addresses_found
+                        assert len(ip_address_definition.all_ip_addresses_found) > 1
 
                     logger_config.print_and_log_info(f"{excel_file_full_path} tab {equipment_definition_tab.tab_name}: {len(all_equipments_found)} equipment found")
 
