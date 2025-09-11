@@ -135,7 +135,7 @@ def print_and_log_error(
 @contextmanager
 def application_logger(application_name: str, logger_level: int = logging.INFO) -> Generator[float, None, None]:
 
-    configure_logger_with_random_log_file_suffix(log_file_name_prefix=application_name, logger_level=logger_level)
+    configure_logger_with_timestamp_log_file_suffix(log_file_name_prefix=application_name, logger_level=logger_level)
     previous_stack = inspect.stack(0)[2]
     file_name = previous_stack.filename
     line_number = previous_stack.lineno
@@ -154,6 +154,13 @@ def application_logger(application_name: str, logger_level: int = logging.INFO) 
     to_print_and_log = f"{application_name} : application end. Elapsed: {format(elapsed_time, '.2f')} s"
     print(at_beginning_log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
     logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
+
+
+def configure_logger_with_timestamp_log_file_suffix(
+    log_file_name_prefix: str, log_file_extension: str = "log", logger_level: int = logging.INFO
+) -> None:
+    log_file_name = f"{log_file_name_prefix}_{datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d-%H-%M-%S")}.{log_file_extension}"
+    configure_logger_with_exact_file_name(log_file_name, logger_level)
 
 
 def configure_logger_with_random_log_file_suffix(
