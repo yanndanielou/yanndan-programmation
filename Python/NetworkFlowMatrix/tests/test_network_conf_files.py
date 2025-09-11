@@ -42,11 +42,7 @@ class TestSolStdNetworkV10FullConfFile:
     def test_no_empty_ip_address(self, parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture: SolStdNetworkConfFile) -> None:
         for network_conf_files_defined_equipment in parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture.equipments_library.network_conf_files_defined_equipments:
             for ip_address in network_conf_files_defined_equipment.ip_addresses:
-                ip_address = cast(NetworkConfFilesDefinedUnicastIpAddress, ip_address)
-                assert ip_address.vlan_name
-                assert ip_address.mask
-                assert ip_address.gateway
-                assert ip_address.ip_raw
+                ip_address.check_valid_and_raise_if_error()
 
     @pytest.mark.parametrize("equipment_name", secret_tests_data.test_equipments_naùes_with_only_one_ip)
     def test_equipment_with_only_one_ip(self, equipment_name: str, parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture: SolStdNetworkConfFile) -> None:
@@ -54,11 +50,7 @@ class TestSolStdNetworkV10FullConfFile:
         assert network_conf_files_defined_equipment
         assert len(network_conf_files_defined_equipment.ip_addresses) == 1
         for ip_address in network_conf_files_defined_equipment.ip_addresses:
-            ip_address = cast(NetworkConfFilesDefinedUnicastIpAddress, ip_address)
-            assert ip_address.vlan_name
-            assert ip_address.mask
-            assert ip_address.gateway
-            assert ip_address.ip_raw
+            ip_address.check_valid_and_raise_if_error()
 
     def all_ip_definitions_have_decoded_ip_addresses(self, parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture: SolStdNetworkConfFile) -> None:
         equipments_library = EquipmentsLibrary()
