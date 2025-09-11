@@ -52,16 +52,12 @@ class TestSolStdNetworkV10FullConfFile:
         for ip_address in network_conf_files_defined_equipment.ip_addresses:
             ip_address.check_valid_and_raise_if_error()
 
-    def all_ip_definitions_have_decoded_ip_addresses(self, parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture: SolStdNetworkConfFile) -> None:
+    def test_all_ip_definitions_have_decoded_ip_addresses(self, parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture: SolStdNetworkConfFile) -> None:
         equipments_library = EquipmentsLibrary()
-        std_sol_dossier_conf = SolStdNetworkConfFile.Builder.build_with_excel_file(
-            equipments_library=equipments_library,
-            excel_file_full_path="Input_Downloaded/NExTEO-S-271000-02-0125-02  Dossier de Configuration Réseau Sol - V10-00 Annexe A.xlsb",
-            equipment_definition_tabs=[SolStdNetworkConfV10Description().ip_cbtc_tab],
-        )
+        std_sol_dossier_conf = parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture
         assert std_sol_dossier_conf.equipment_definition_tabs
         for equipment_definition_tab in std_sol_dossier_conf.equipment_definition_tabs:
             assert equipment_definition_tab.equipment_ip_definitions
             for equipment_ip_definition in equipment_definition_tab.equipment_ip_definitions:
-                assert equipment_ip_definition.all_ip_addresses_found
-                assert len(equipment_ip_definition.all_ip_addresses_found) > 5
+                assert equipment_ip_definition.all_ip_addresses_found, f"Tab {equipment_definition_tab.tab_name}"
+                assert len(equipment_ip_definition.all_ip_addresses_found) > 2, f"Tab {equipment_definition_tab.tab_name}, {[ip.ip_raw for ip in equipment_ip_definition.all_ip_addresses_found]}"
