@@ -6,8 +6,11 @@ from tests import secret_tests_data
 
 from networkflowmatrix.network_conf_files import (
     EquipmentsLibrary,
-    SolStdNetworkConfV10Description,
     NetworkConfFile,
+)
+
+from networkflowmatrix.network_conf_files_descriptions_data import (
+    SolStdNetworkConfV10Description,
 )
 
 
