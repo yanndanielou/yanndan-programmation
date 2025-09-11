@@ -21,14 +21,12 @@ class NetworkConfFilesDefinedIpAddress(ABC):
 @dataclass
 class NetworkConfFilesDefinedUnicastIpAddress(NetworkConfFilesDefinedIpAddress):
     mask: str
-    gateway: str
+    gateway: Optional[str]
     vlan_name: str | int
 
     def check_valid_and_raise_if_error(self) -> None:
         assert self.mask
         assert isinstance(self.mask, str)
-        assert self.gateway
-        assert isinstance(self.gateway, str)
         assert self.vlan_name
         assert isinstance(self.vlan_name, str) or isinstance(self.vlan_name, int) or isinstance(self.vlan_name, float)
 
@@ -87,6 +85,7 @@ class UnicastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
     equipment_vlan_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("VLAN ID"))
     equipment_mask_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Masque"))
     equipment_gateway_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Passerelle"))
+    gateway_is_optional: bool = False
 
     def build_with_row(self, row: pandas.Series) -> NetworkConfFilesDefinedIpAddress:
         equipment_raw_ip_address = cast(str, self.equipment_ip_address_column_definition.get_value(row))
@@ -106,8 +105,10 @@ class UnicastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
         equipment_raw_mask = cast(str, self.equipment_mask_column_definition.get_value(row))
         assert equipment_raw_mask and isinstance(equipment_raw_mask, str)
 
-        equipment_raw_gateway = cast(str, self.equipment_gateway_column_definition.get_value(row))
-        assert equipment_raw_gateway and isinstance(equipment_raw_gateway, str)
+        equipment_raw_gateway: Optional[str] = cast(str, self.equipment_gateway_column_definition.get_value(row))
+        if not isinstance(equipment_raw_gateway, str):
+            equipment_raw_gateway = None
+        assert self.gateway_is_optional or equipment_raw_gateway and isinstance(equipment_raw_gateway, str), f"{equipment_raw_ip_address} has no gateway"
 
         ip_address = NetworkConfFilesDefinedUnicastIpAddress(
             ip_raw=equipment_raw_ip_address, gateway=equipment_raw_gateway, vlan_name=equipment_vlan, mask=equipment_raw_mask, label=equipment_ip_label
@@ -342,8 +343,15 @@ class SolStdNetworkConfV10Description:
                 ),
             ],
         )
+        self.ip_reseau_pcc: EquipmentDefinitionTab = EquipmentDefinitionTab(
+            tab_name="IP RESEAU PCC",
+            rows_to_ignore=[0, 1, 2, 4, 5],
+            equipment_ip_definitions=[
+                UnicastIpDefinitionColumnsInTab(can_be_empty=True, gateway_is_optional=True),
+            ],
+        )
 
-        self.all_tabs_definition = [self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab, self.ip_mats]
+        self.all_tabs_definition = [self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab, self.ip_mats, self.ip_reseau_pcc]
 
 
 @dataclass
