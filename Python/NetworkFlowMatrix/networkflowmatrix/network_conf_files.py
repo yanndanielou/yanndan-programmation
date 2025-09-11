@@ -13,12 +13,24 @@ class NetworkConfFilesDefinedIpAddress(ABC):
     ip_raw: str
     label: Optional[str]
 
+    def check_valid_and_raise_if_error(self) -> None:
+        assert self.ip_raw
+        assert isinstance(self.ip_raw, str)
+
 
 @dataclass
 class NetworkConfFilesDefinedUnicastIpAddress(NetworkConfFilesDefinedIpAddress):
     mask: str
     gateway: str
     vlan_name: str | int
+
+    def check_valid_and_raise_if_error(self) -> None:
+        assert self.mask
+        assert isinstance(self.mask, str)
+        assert self.gateway
+        assert isinstance(self.gateway, str)
+        assert self.vlan_name
+        assert isinstance(self.vlan_name, str) or isinstance(self.vlan_name, int) or isinstance(self.vlan_name, float)
 
 
 @dataclass
@@ -283,6 +295,9 @@ class SolStdNetworkConfV10Description:
                     forced_label="Anneau B Unite B",
                     can_be_empty=True,
                 ),
+                MulticastIpDefinitionColumnsInTab(
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("R"), forced_label="Anneau B Unite B", can_be_empty=True, group_multicast="239.192.0.0"
+                ),
             ],
         )
 
@@ -340,7 +355,7 @@ class SolStdNetworkConfFile(NetworkConfFile):
                             ip_address = ip_address_definition.build_with_row(row)
 
                             equipment.ip_addresses.append(ip_address)
-                            assert len(equipment.ip_addresses) < 9, f"{equipment_name} {equipment} {equipment.ip_addresses}"
+                            assert len(equipment.ip_addresses) < 10, f"{equipment_name} {equipment} {equipment.ip_addresses}"
 
                     logger_config.print_and_log_info(f"{excel_file_full_path} tab {equipment_definition_tab.tab_name}: {len(all_equipments_found)} equipment found")
 
