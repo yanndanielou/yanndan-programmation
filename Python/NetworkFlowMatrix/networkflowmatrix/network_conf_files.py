@@ -23,10 +23,14 @@ class NetworkConfFilesDefinedUnicastIpAddress(NetworkConfFilesDefinedIpAddress):
     mask: str
     gateway: Optional[str]
     vlan_name: str | int
+    gateway_is_optional: bool
+    mask_is_optional: bool
 
     def check_valid_and_raise_if_error(self) -> None:
-        assert self.mask
-        assert isinstance(self.mask, str)
+        assert self.mask_is_optional or self.mask
+        assert self.mask_is_optional or isinstance(self.mask, str)
+        assert self.gateway_is_optional or self.gateway
+        assert self.gateway_is_optional or isinstance(self.gateway, str)
         assert self.vlan_name
         assert isinstance(self.vlan_name, str) or isinstance(self.vlan_name, int) or isinstance(self.vlan_name, float)
 
@@ -113,7 +117,13 @@ class UnicastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
         assert self.gateway_is_optional or equipment_raw_gateway and isinstance(equipment_raw_gateway, str), f"{equipment_raw_ip_address} has no gateway"
 
         ip_address = NetworkConfFilesDefinedUnicastIpAddress(
-            ip_raw=equipment_raw_ip_address, gateway=equipment_raw_gateway, vlan_name=equipment_vlan, mask=equipment_raw_mask, label=equipment_ip_label
+            ip_raw=equipment_raw_ip_address,
+            gateway=equipment_raw_gateway,
+            vlan_name=equipment_vlan,
+            mask=equipment_raw_mask,
+            label=equipment_ip_label,
+            gateway_is_optional=self.gateway_is_optional,
+            mask_is_optional=self.mask_is_optional,
         )
         self.all_ip_addresses_found.append(ip_address)
         return ip_address
