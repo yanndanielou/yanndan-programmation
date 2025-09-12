@@ -48,15 +48,14 @@ def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file
         return file_path
 
 
-def remove_tabs_with_xlwings(input_excel_file_path: str, file_to_create_path: str, sheets_to_keep_names: List[str]) -> str:
+def remove_tabs_with_openpyxl(input_excel_file_path: str, file_to_create_path: str, sheets_to_keep_names: List[str]) -> str:
     with logger_config.stopwatch_with_label(
         f"remove_tabs_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}, sheets_to_keep_names:{sheets_to_keep_names}", inform_beginning=True
     ):
-
         with logger_config.stopwatch_with_label(label=f"Open {input_excel_file_path}", inform_beginning=True):
-            workbook_dml = xlwings.Book(input_excel_file_path)
+            workbook = openpyxl.load_workbook(input_excel_file_path)
 
-        sheets_names = workbook_dml.sheet_names
+        sheets_names = workbook.sheetnames
         number_of_initial_sheets_names = len(sheets_names)
         logger_config.print_and_log_info(f"{number_of_initial_sheets_names} Sheets found: {sheets_names}")
 
@@ -73,14 +72,55 @@ def remove_tabs_with_xlwings(input_excel_file_path: str, file_to_create_path: st
                 ):
                     try:
                         # Accéder à la feuille que l'on veut supprimer
-                        sheet_to_remove = xlwings.sheets[sheet_name]
+                        sheet_to_remove = workbook[sheet_name]
                         # Supprimer la feuille
-                        sheet_to_remove.delete()
+                        workbook.remove(sheet_to_remove)
+
+                        workbook.save(file_to_create_path + "_without_" + sheet_name)
                     except Exception as exc:
                         logger_config.print_and_log_exception(type(exc))
                         logger_config.print_and_log_exception(exc)
 
-        return save_and_close_workbook(workbook_dml, file_to_create_path)
+        workbook.save(file_to_create_path)
+        workbook.close()
+        return file_to_create_path
+
+
+def remove_tabs_with_xlwings(input_excel_file_path: str, file_to_create_path: str, sheets_to_keep_names: List[str], excel_visibility: bool = False) -> str:
+    with logger_config.stopwatch_with_label(
+        f"remove_tabs_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}, sheets_to_keep_names:{sheets_to_keep_names}", inform_beginning=True
+    ):
+
+        with logger_config.stopwatch_with_label(label=f"Open {input_excel_file_path}", inform_beginning=True):
+
+            with xlwings.App(visible=False) as app:  # <-- Set visible to False
+                workbook_dml = xlwings.Book(input_excel_file_path)
+
+                sheets_names = workbook_dml.sheet_names
+                number_of_initial_sheets_names = len(sheets_names)
+                logger_config.print_and_log_info(f"{number_of_initial_sheets_names} Sheets found: {sheets_names}")
+
+                for sheet_number, sheet_name in enumerate(sheets_names):
+                    if sheet_name in sheets_to_keep_names:
+                        logger_config.print_and_log_info(f"Allowed sheet:{sheet_name}")
+                    elif sheet_name in EXCEL_INTERNAL_RESERVED_SHEETS_NAMES:
+                        logger_config.print_and_log_info(f"ignore Excel internal reserved sheet:{sheet_name}")
+                    else:
+                        with logger_config.stopwatch_with_label(
+                            label=f"Removing {sheet_number+1}/{number_of_initial_sheets_names}th sheet:{sheet_name} : {round((sheet_number+1)/number_of_initial_sheets_names*100,2)}%",
+                            inform_beginning=True,
+                            monitor_ram_usage=True,
+                        ):
+                            try:
+                                # Accéder à la feuille que l'on veut supprimer
+                                sheet_to_remove = xlwings.sheets[sheet_name]
+                                # Supprimer la feuille
+                                sheet_to_remove.delete()
+                            except Exception as exc:
+                                logger_config.print_and_log_exception(type(exc))
+                                logger_config.print_and_log_exception(exc)
+
+                return save_and_close_workbook(workbook_dml, file_to_create_path)
 
 
 def set_excel_formulas_calculation_to_manual(input_excel_file_path: str, file_to_create_path: str) -> str:
