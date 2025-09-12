@@ -45,6 +45,7 @@ def create_webdriver_chrome(browser_visibility_type: BrowserVisibilityType, down
     elif browser_visibility_type == BrowserVisibilityType.MINIMIZED:
         chrome_options.add_argument("--start-minimized")
 
+    # chrome_options.add_argument("--remote-debugging-pipe")  # https://issues.chromium.org/issues/42323434#comment36
     driver_service = Service(chrome_driver_path)
     driver = webdriver.Chrome(service=driver_service, options=chrome_options)
 
