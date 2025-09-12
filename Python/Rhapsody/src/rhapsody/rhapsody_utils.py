@@ -19,31 +19,38 @@ def download_file_from_rhapsody(
     file_to_download_pattern: str, file_to_download_url: str, file_move_after_download_action: Optional[download_utils.DownloadFileDetector.FileMoveAfterDownloadAction] = None
 ) -> Optional[str]:
 
-    driver = web_driver_utils.create_webdriver_firefox(web_driver_utils.BrowserVisibilityType.NOT_VISIBLE_AKA_HEADLESS)
+    with logger_config.stopwatch_with_label(f"download_file_from_rhapsody file {file_to_download_pattern}"):
 
-    driver.get(file_to_download_url)
+        driver = web_driver_utils.create_webdriver_firefox(web_driver_utils.BrowserVisibilityType.NOT_VISIBLE_AKA_HEADLESS)
 
-    time.sleep(0.5)
+        driver.get(file_to_download_url)
 
-    wait = WebDriverWait(driver, 10)
-    more_providers_button = wait.until(expected_conditions.element_to_be_clickable((By.ID, "moreProviders")))
-    more_providers_button.click()
+        with logger_config.stopwatch_with_label("download_file_from_rhapsody: additional waiting time:"):
+            time.sleep(0.5)
 
-    # Wait until the Azure option is visible and then click it
-    azure_option = wait.until(expected_conditions.visibility_of_element_located((By.XPATH, "//li[@class='secondary-menu-item authprovider-choice' and @data-authhandler='Azure']")))
+        wait = WebDriverWait(driver, 10)
+        more_providers_button = wait.until(expected_conditions.element_to_be_clickable((By.ID, "moreProviders")))
+        more_providers_button.click()
 
-    download_file_detector = download_utils.DownloadFileDetector(
-        directory_path=web_driver_utils.DEFAULT_DOWNLOAD_DIRECTORY, filename_pattern=file_to_download_pattern, timeout_in_seconds=30, file_move_after_download_action=file_move_after_download_action
-    )
+        # Wait until the Azure option is visible and then click it
+        azure_option = wait.until(expected_conditions.visibility_of_element_located((By.XPATH, "//li[@class='secondary-menu-item authprovider-choice' and @data-authhandler='Azure']")))
 
-    azure_option.click()
+        download_file_detector = download_utils.DownloadFileDetector(
+            directory_path=web_driver_utils.DEFAULT_DOWNLOAD_DIRECTORY,
+            filename_pattern=file_to_download_pattern,
+            timeout_in_seconds=30,
+            file_move_after_download_action=file_move_after_download_action,
+        )
 
-    file_downloaded_path: Optional[str] = download_file_detector.monitor_download()
-    if not file_downloaded_path:
-        logger_config.print_and_log_error("No downloaded file found")
-        return None
+        azure_option.click()
 
-    time.sleep(5)
+        file_downloaded_path: Optional[str] = download_file_detector.monitor_download()
+        if not file_downloaded_path:
+            logger_config.print_and_log_error("No downloaded file found")
+            return None
 
-    driver.quit()
-    return file_downloaded_path
+        with logger_config.stopwatch_with_label("download_file_from_rhapsody: additional waiting time:"):
+            time.sleep(1)
+
+        driver.quit()
+        return file_downloaded_path
