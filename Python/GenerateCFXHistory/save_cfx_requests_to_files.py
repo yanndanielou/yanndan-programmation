@@ -619,10 +619,13 @@ class SaveCfxRequestMultipagesResultsApplication:
             browser_visibility_type=web_driver_utils.BrowserVisibilityType.NOT_VISIBLE_AKA_HEADLESS, download_directory_path=DEFAULT_DOWNLOAD_DIRECTORY, global_timeout_in_seconds=1000
         )
 
+    def create_webdriver_firefox(self) -> None:
+        self.driver = web_driver_utils.create_webdriver_firefox(browser_visibility_type=web_driver_utils.BrowserVisibilityType.NOT_VISIBLE_AKA_HEADLESS)
+
     def create_webdriver_and_login(self) -> None:
         # Use Chrome by default, switch to Firefox if you want
-        self.create_webdriver_chrome()
-        # self.create_webdriver_firefox()  # Uncomment to use Firefox instead
+        # self.create_webdriver_chrome()
+        self.create_webdriver_firefox()
         self.login_champfx()
 
     def reset_driver(self) -> None:
