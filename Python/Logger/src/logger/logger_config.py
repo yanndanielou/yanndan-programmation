@@ -139,7 +139,7 @@ def application_logger(application_name: str, logger_level: int = logging.INFO) 
     previous_stack = inspect.stack(0)[2]
     file_name = previous_stack.filename
     line_number = previous_stack.lineno
-    start_time = time.time()
+    application_start_time = time.time()
 
     calling_file_name_and_line_number = file_name + ":" + str(line_number)
 
@@ -150,9 +150,14 @@ def application_logger(application_name: str, logger_level: int = logging.INFO) 
 
     yield 0.0
 
-    elapsed_time = time.time() - start_time
-    to_print_and_log = f"{application_name} : application end. Elapsed: {format(elapsed_time, '.2f')} s"
-    print(at_beginning_log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
+    application_end_time = time.time()
+    application_end_timestamp = time.asctime(time.localtime(time.time()))
+
+    elapsed_time = application_end_time - application_start_time
+    to_print_and_log = (
+        f"{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s"
+    )
+    print(application_end_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
     logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
 
 
