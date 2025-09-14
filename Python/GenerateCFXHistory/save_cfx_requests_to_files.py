@@ -500,11 +500,27 @@ class SaveCfxRequestMultipagesResultsApplication:
                 for project_name in projects_field_filter.projects_names:
 
                     with stopwatch_with_label_and_surround_with_screenshots(
+                        label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters - search input_project_name_to_type",
+                        remote_web_driver=self.driver,
+                        screenshots_directory_path=self.screenshots_output_relative_path,
+                    ):
+                        input_project_name_to_type = WebDriverWait(self.driver, 100).until(expected_conditions.presence_of_element_located((By.ID, "cq_widget_CqDoubleListBox_0_textBox")))
+
+                    with stopwatch_with_label_and_surround_with_screenshots(
+                        label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters - type {project_name} in input_project_name_to_type",
+                        remote_web_driver=self.driver,
+                        screenshots_directory_path=self.screenshots_output_relative_path,
+                    ):
+                        input_project_name_to_type.clear()
+                        input_project_name_to_type.send_keys(project_name)
+
+                    with stopwatch_with_label_and_surround_with_screenshots(
                         label=f"{project_name}  project_option_element find_element", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
                     ):
                         project_option_element = self.driver.find_element(By.XPATH, f"//select[@id='cq_widget_CqDoubleListBox_0_choiceList']//option[text()='{project_name}']")
 
                     actions = ActionChains(self.driver)
+
                     with stopwatch_with_label_and_surround_with_screenshots(
                         label=f"{project_name} project_option_element double_click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
                     ):
@@ -620,7 +636,7 @@ class SaveCfxRequestMultipagesResultsApplication:
         )
 
     def create_webdriver_firefox(self) -> None:
-        self.driver = web_driver_utils.create_webdriver_firefox(browser_visibility_type=web_driver_utils.BrowserVisibilityType.NOT_VISIBLE_AKA_HEADLESS)
+        self.driver = web_driver_utils.create_webdriver_firefox(browser_visibility_type=web_driver_utils.BrowserVisibilityType.REGULAR)
 
     def create_webdriver_and_login(self) -> None:
         # Use Chrome by default, switch to Firefox if you want
