@@ -40,15 +40,27 @@ class NetworkConfFilesDefinedMulticastIpAddress(NetworkConfFilesDefinedIpAddress
     multicast_group: str
 
 
-class ExcelColumnDefinition(ABC):
-
+class InformationDefinitionBase(ABC):
     @abstractmethod
-    def get_value(self, row: pandas.Series) -> str | int:
+    def get_value(self, row: pandas.Series) -> Optional[str] | Optional[int]:
         pass
 
 
 @dataclass
-class ExcelColumnDefinitionByColumnNumber(ExcelColumnDefinition):
+class ForcedIntValueInformationDefinition(InformationDefinitionBase):
+    value: Optional[int]
+
+    def get_value(self, row: pandas.Series) -> Optional[str] | Optional[int]:
+        return self.value
+
+
+@dataclass
+class ForcedStrValueInformationDefinition(InformationDefinitionBase):
+    value: Optional[str]
+
+
+@dataclass
+class ExcelColumnDefinitionByColumnNumber(InformationDefinitionBase):
     """Index starts at 0"""
 
     column_index: int
@@ -65,7 +77,7 @@ class ExcelColumnDefinitionByColumnExcelId(ExcelColumnDefinitionByColumnNumber):
 
 
 @dataclass
-class ExcelColumnDefinitionByColumnTitle(ExcelColumnDefinition):
+class ExcelColumnDefinitionByColumnTitle(InformationDefinitionBase):
     column_title: str
 
     def get_value(self, row: pandas.Series) -> str | int:
@@ -76,7 +88,7 @@ class ExcelColumnDefinitionByColumnTitle(ExcelColumnDefinition):
 @dataclass
 class IpDefinitionColumnsInTab(ABC):
     can_be_empty: bool = False
-    equipment_ip_address_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Adresse IP"))
+    equipment_ip_address_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Adresse IP"))
     forced_label: Optional[str] = None
     all_ip_addresses_found: List[NetworkConfFilesDefinedIpAddress] = field(default_factory=list)
 
@@ -87,9 +99,9 @@ class IpDefinitionColumnsInTab(ABC):
 
 @dataclass
 class UnicastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
-    equipment_vlan_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("VLAN ID"))
-    equipment_mask_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Masque"))
-    equipment_gateway_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Passerelle"))
+    equipment_vlan_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("VLAN ID"))
+    equipment_mask_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Masque"))
+    equipment_gateway_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Passerelle"))
     gateway_is_optional: bool = False
     mask_is_optional: bool = False
 
@@ -148,10 +160,17 @@ class MulticastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
 class EquipmentDefinitionTab:
     tab_name: str
     rows_to_ignore: List[int]
-    equipment_type_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Type"))
+    equipment_type_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Type"))
     equipment_ip_definitions: List["IpDefinitionColumnsInTab"] = field(default_factory=list)
-    equipment_name_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equipement"))
-    equipment_alternative_name_column_definition: ExcelColumnDefinition = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equip_ID"))
+    equipment_name_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equipement"))
+    equipment_alternative_name_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equip_ID"))
+
+
+@dataclass
+class InsideTrainEquipmentDefinitionTab(EquipmentDefinitionTab):
+
+    cc_id_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("CC_ID"))
+    emu_id_definitions: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("EMU_ID"))
 
 
 @dataclass
