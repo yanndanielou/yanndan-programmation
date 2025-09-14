@@ -531,6 +531,13 @@ class SaveCfxRequestMultipagesResultsApplication:
                     ok_button.click()
 
                 with stopwatch_with_label_and_surround_with_screenshots(
+                    label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters - wait popup closed to allow request execution",
+                    remote_web_driver=self.driver,
+                    screenshots_directory_path=self.screenshots_output_relative_path,
+                ):
+                    WebDriverWait(self.driver, 10).until(expected_conditions.invisibility_of_element((By.ID, "cq_widget_CqDoubleListBox_0_choiceList")))
+
+                with stopwatch_with_label_and_surround_with_screenshots(
                     label=f"{change_state_cfx_query.label} generate_and_download_query_results_for_project_filters Exécuter la requête",
                     remote_web_driver=self.driver,
                     screenshots_directory_path=self.screenshots_output_relative_path,
@@ -593,7 +600,7 @@ class SaveCfxRequestMultipagesResultsApplication:
 
             for i in range(1, 15):
                 with stopwatch_with_label_and_surround_with_screenshots(
-                    label=f"Post mortem {self.number_of_exceptions_caught}th Exception delay {i}", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+                    label=f"Post mortem {self.number_of_exceptions_caught}th Exception delay {i}", remote_web_driver=self.driver, screenshots_directory_path=self.errors_output_relative_path
                 ):
                     time.sleep(i)
 
