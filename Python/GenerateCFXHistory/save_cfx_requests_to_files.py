@@ -80,11 +80,9 @@ class CfxQuery:
     query_id: int
     output_file_type: QueryOutputFileType
     projects_field_filters: Optional[ProjectsFieldFilter] = None
-    label: str = ""
 
     def __post_init__(self) -> None:
-        if self.label is None:
-            self.label = self.output_file_name_without_extension
+        self.label = self.output_file_name_without_extension
 
 
 BIGGEST_PROJECTS_NAMES: List[str] = [
@@ -348,7 +346,6 @@ class SaveCfxRequestMultipagesResultsApplication:
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
     output_downloaded_files_final_directory_path: str = DOWNLOADED_FILES_FINAL_DIRECTORY
     web_browser_download_directory = DEFAULT_DOWNLOAD_DIRECTORY
-    headless: bool = False  # <--- Add this option
 
     errors_output_sub_directory_name = "errors"
     screenshots_output_sub_directory_name = "screenshots"
@@ -414,14 +411,12 @@ class SaveCfxRequestMultipagesResultsApplication:
                 projects_field_filters=projects_field_filter,
                 query_id=PROJECT_MANUAL_SELECTION_CHANGE_STATE_QUERY_ID,
                 output_file_name_without_extension=f"states_changes_project_{project_name}",
-                label=project_name,
                 output_file_type=QueryOutputFileType.EXCEL_EXPORT,
             )
             extended_history_cfx_query = CfxQuery(
                 projects_field_filters=projects_field_filter,
                 query_id=PROJECT_MANUAL_SELECTION_DETAIL_QUERY_ID,
                 output_file_name_without_extension=f"details_project_{project_name}",
-                label=project_name,
                 output_file_type=QueryOutputFileType.EXCEL_EXPORT,
             )
             logger_config.print_and_log_info(f"Handling project {project_name}")
@@ -447,7 +442,6 @@ class SaveCfxRequestMultipagesResultsApplication:
                     projects_field_filters=projects_field_filters,
                     query_id=PROJECT_MANUAL_SELECTION_CHANGE_STATE_QUERY_ID,
                     output_file_name_without_extension="states_changes_other_projects",
-                    label="other_projects",
                     output_file_type=QueryOutputFileType.EXCEL_EXPORT,
                 )
             )
@@ -457,7 +451,6 @@ class SaveCfxRequestMultipagesResultsApplication:
                     projects_field_filters=projects_field_filters,
                     query_id=PROJECT_MANUAL_SELECTION_DETAIL_QUERY_ID,
                     output_file_name_without_extension="details_project_other_projects",
-                    label="other_projects",
                     output_file_type=QueryOutputFileType.EXCEL_EXPORT,
                 )
             )
@@ -527,7 +520,9 @@ class SaveCfxRequestMultipagesResultsApplication:
                         actions.double_click(project_option_element).perform()
 
                 ok_button = self.driver.find_element(By.XPATH, "//span[@class='dijitReset dijitInline dijitButtonText' and text()='OK']")
-                with stopwatch_with_label_and_surround_with_screenshots(label="ok_button.click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+                with stopwatch_with_label_and_surround_with_screenshots(
+                    label=f"{change_state_cfx_query.label} ok_button.click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+                ):
                     ok_button.click()
 
                 with stopwatch_with_label_and_surround_with_screenshots(
@@ -575,7 +570,6 @@ class SaveCfxRequestMultipagesResultsApplication:
                     ):
                         self.download_current_query_to_file(
                             change_state_cfx_query=change_state_cfx_query,
-                            label=change_state_cfx_query.label,
                             file_to_create_path_with_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{EXCEL_FILE_EXTENSION}",
                         )
                 case QueryOutputFileType.TXT_EXPORT:
@@ -587,7 +581,6 @@ class SaveCfxRequestMultipagesResultsApplication:
                     ):
                         self.download_current_query_to_file(
                             change_state_cfx_query=change_state_cfx_query,
-                            label=change_state_cfx_query.label,
                             file_to_create_path_with_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{TEXT_FILE_EXTENSION}",
                         )
 
@@ -612,12 +605,16 @@ class SaveCfxRequestMultipagesResultsApplication:
                 with logger_config.stopwatch_with_label("Generate_and_dowload_query_for_project"):
                     self.generate_and_download_query_results_for_project_filters(change_state_cfx_query=change_state_cfx_query, number_of_retry_if_failure=number_of_retry_if_failure - 1)
 
-    def download_current_query_to_file(self, change_state_cfx_query: CfxQuery, label: str, file_to_create_path_with_extension: str) -> bool:
+    def download_current_query_to_file(self, change_state_cfx_query: CfxQuery, file_to_create_path_with_extension: str) -> bool:
 
-        with surround_with_screenshots(label=f"{label} arrow_to_acces_export element_to_be_clickable", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+        with surround_with_screenshots(
+            label=f"{change_state_cfx_query.label} arrow_to_acces_export element_to_be_clickable", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+        ):
             arrow_to_acces_export = WebDriverWait(self.driver, 100).until(expected_conditions.element_to_be_clickable((By.ID, "dijit_form_ComboButton_1_arrow")))
 
-        with surround_with_screenshots(label=f"{label} arrow_to_acces_export click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+        with surround_with_screenshots(
+            label=f"{change_state_cfx_query.label} arrow_to_acces_export click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+        ):
             arrow_to_acces_export.click()
 
         export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'" + change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text() + "')]")
@@ -627,12 +624,13 @@ class SaveCfxRequestMultipagesResultsApplication:
             filename_pattern=CFX_FILES_DOWNLOADED_PATTERN_WITHOUT_EXTENSION + change_state_cfx_query.output_file_type.get_file_extension(),
             timeout_in_seconds=1000,
             file_move_after_download_action=download_utils.DownloadFileDetector.FileMoveAfterDownloadAction(final_path=file_to_create_path_with_extension),
+            label=change_state_cfx_query.label,
         )
         export_button.click()
 
         file_downloaded_path: Optional[str] = download_file_detector.monitor_download()
         if not file_downloaded_path:
-            logger_config.print_and_log_error(f"No downloaded file found for {label}")
+            logger_config.print_and_log_error(f"No downloaded file found for {change_state_cfx_query.label}")
             return False
 
         return True
@@ -643,7 +641,7 @@ class SaveCfxRequestMultipagesResultsApplication:
         )
 
     def create_webdriver_firefox(self) -> None:
-        self.driver = web_driver_utils.create_webdriver_firefox(browser_visibility_type=web_driver_utils.BrowserVisibilityType.REGULAR)
+        self.driver = web_driver_utils.create_webdriver_firefox(browser_visibility_type=web_driver_utils.BrowserVisibilityType.NOT_VISIBLE_AKA_HEADLESS)
 
     def create_webdriver_and_login(self) -> None:
         # Use Chrome by default, switch to Firefox if you want
@@ -712,7 +710,6 @@ def main() -> None:
         application: SaveCfxRequestMultipagesResultsApplication = SaveCfxRequestMultipagesResultsApplication(
             output_parent_directory_name=output_parent_directory_name,
             projects_to_handle_list=INTERESTED_IN_PROJECTS_NAMES + BIGGEST_PROJECTS_NAMES,
-            headless=True,  # <--- Set to True for completely hidden, False for minimized
         )
         application.run()
 
