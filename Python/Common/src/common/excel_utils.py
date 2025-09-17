@@ -54,7 +54,7 @@ class XlWingsSaveWorkbookOperation(XlWingOperationBase):
 
     @staticmethod
     def save_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file_path: str) -> str:
-        with logger_config.stopwatch_with_label(f"save_and_close_workbook {file_path}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(f"save_workbook {file_path}", inform_beginning=True):
             success = False
             while not success:
                 try:
