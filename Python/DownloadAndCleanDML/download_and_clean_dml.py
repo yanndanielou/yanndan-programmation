@@ -25,7 +25,7 @@ class DownloadAndCleanDMLApplication:
         operations_batch.add_operation(excel_utils.XlWingsSaveWorkbookOperation(file_to_create_path=param.DML_FILE_WITHOUT_LINKS))
         operations_batch.add_operation(excel_utils.XlWingsRemoveRangesOperation(ranges_to_remove=param.RANGES_TO_REMOVE))
         operations_batch.add_operation(excel_utils.XlWingsSaveWorkbookOperation(file_to_create_path=param.DML_FILE_WITH_USELESS_RANGES))
-        operations_batch.add_operation(excel_utils.XlWingsRemoveColumnsOperation(columns_to_remove_names=param.DML_FILE_WITH_USELESS_COLUMNS_CLEANED, sheet_name=param.USEFUL_DML_SHEET_NAME))
+        operations_batch.add_operation(excel_utils.XlWingsRemoveColumnsOperation(columns_to_remove_names=param.COLUMNS_NAMES_TO_REMOVE, sheet_name=param.USEFUL_DML_SHEET_NAME))
 
         operations_batch.do()
 
