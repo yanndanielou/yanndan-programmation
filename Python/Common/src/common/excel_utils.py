@@ -36,19 +36,46 @@ class XlWingsOpenWorkbookOperation:
 
     @staticmethod
     def open_workbook(input_excel_file_path: str, excel_visibility: bool) -> xlwings.Book:
-        with logger_config.stopwatch_with_label(label=f"Open {input_excel_file_path}", inform_beginning=True):
+        logger_config.print_and_log_info(f"Open {input_excel_file_path}")
+        xlwings.App(visible=excel_visibility)
+        workbook_dml = xlwings.Book(input_excel_file_path)
 
-            with xlwings.App(visible=excel_visibility):
-                workbook_dml = xlwings.Book(input_excel_file_path)
+        # with logger_config.stopwatch_with_label(label=f"Open {input_excel_file_path}", inform_beginning=True):
+
         return workbook_dml
 
 
 @dataclass
-class XlWingsSaveAndCloseWorkbookOperation:
-    file_path: str
+class XlWingsSaveWorkbookOperation(XlWingOperationBase):
+    file_to_create_path: str
 
-    def do(self, workbook_dml: xlwings.Book | openpyxl.Workbook) -> str:
-        return XlWingsSaveAndCloseWorkbookOperation.save_and_close_workbook(workbook_dml, self.file_path)
+    def do(self, workbook_dml: xlwings.Book | openpyxl.Workbook) -> None:
+        XlWingsSaveWorkbookOperation.save_workbook(workbook_dml, self.file_to_create_path)
+
+    @staticmethod
+    def save_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file_path: str) -> str:
+        with logger_config.stopwatch_with_label(f"save_and_close_workbook {file_path}", inform_beginning=True):
+            success = False
+            while not success:
+                try:
+                    with logger_config.stopwatch_with_label(label=f"Save:{file_path}"):
+                        workbook_dml.save(file_path)
+
+                    success = True
+                except Exception as e:
+                    logger_config.print_and_log_exception(e)
+                    logger_config.print_and_log_error(f"Could not save:{file_path}, must be locked")
+                    time.sleep(1)
+
+            return file_path
+
+
+@dataclass
+class XlWingsSaveAndCloseWorkbookOperation(XlWingOperationBase):
+    file_to_create_path: str
+
+    def do(self, workbook_dml: xlwings.Book | openpyxl.Workbook) -> None:
+        XlWingsSaveAndCloseWorkbookOperation.save_and_close_workbook(workbook_dml, self.file_to_create_path)
 
     @staticmethod
     def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file_path: str) -> str:
@@ -130,7 +157,6 @@ class XlWingsSetExcelFormulasCalculationToManualOperation(XlWingOperationBase):
             workbook_dml.app.calculation = "manual"
 
 
-@dataclass
 class XlWingsRemoveExcelExternalLinksOperation(XlWingOperationBase):
 
     def do(self, workbook_dml: xlwings.Book) -> None:
@@ -255,13 +281,12 @@ class XlWingsOperationsBatch:
         self.operations.append(operation)
         return self
 
-    def do(self) -> str:
+    def do(self) -> None:
         workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=self.input_excel_file_path, excel_visibility=self.excel_visibility).do()
         for operation in self.operations:
             operation.do(workbook_dml=workbook_dml)
 
-        save_and_close_workbook_operation = XlWingsSaveAndCloseWorkbookOperation(file_path=self.file_to_create_path)
-        return save_and_close_workbook_operation.do(workbook_dml)
+        XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=self.file_to_create_path).do(workbook_dml)
 
 
 def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file_path: str) -> None:
@@ -269,10 +294,11 @@ def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file
     XlWingsSaveAndCloseWorkbookOperation(file_path).do(workbook_dml)
 
 
-def remove_tabs_with_openpyxl(input_excel_file_path: str, file_to_create_path: str, sheets_to_keep_names: List[str], excel_visibility: bool = False) -> str:
+def remove_tabs_with_openpyxl(input_excel_file_path: str, file_to_create_path: str, sheets_to_keep_names: List[str]) -> str:
     with logger_config.stopwatch_with_label(
         f"remove_tabs_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}, sheets_to_keep_names:{sheets_to_keep_names}", inform_beginning=True
     ):
+
         with logger_config.stopwatch_with_label(label=f"Open {input_excel_file_path}", inform_beginning=True):
             workbook = openpyxl.load_workbook(input_excel_file_path)
 
@@ -313,7 +339,7 @@ def remove_tabs_with_xlwings(input_excel_file_path: str, file_to_create_path: st
     ):
         workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
         XlWingsRemoveTabsOperation(sheets_to_keep_names=sheets_to_keep_names).do(workbook_dml)
-        XlWingsSaveAndCloseWorkbookOperation(file_path=file_to_create_path).do(workbook_dml)
+        XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
         return file_to_create_path
 
 
@@ -323,7 +349,7 @@ def set_excel_formulas_calculation_to_manual_xlwings(input_excel_file_path: str,
     ):
         workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
         XlWingsSetExcelFormulasCalculationToManualOperation().do(workbook_dml)
-        XlWingsSaveAndCloseWorkbookOperation(file_path=file_to_create_path).do(workbook_dml)
+        XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
         return file_to_create_path
 
 
@@ -333,7 +359,7 @@ def remove_excel_external_links_with_xlwings(input_excel_file_path: str, file_to
     ):
         workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
         XlWingsRemoveExcelExternalLinksOperation().do(workbook_dml)
-        XlWingsSaveAndCloseWorkbookOperation(file_path=file_to_create_path).do(workbook_dml)
+        XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
         return file_to_create_path
 
 
@@ -343,7 +369,7 @@ def replace_formulas_with_values_with_xlwings(input_excel_file_path: str, file_t
     ):
         workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
         XlWingsReplaceFormulasWithCurrentValueOperation().do(workbook_dml)
-        XlWingsSaveAndCloseWorkbookOperation(file_path=file_to_create_path).do(workbook_dml)
+        XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
         return file_to_create_path
 
 
@@ -353,7 +379,7 @@ def remove_ranges_with_xlwings(input_excel_file_path: str, file_to_create_path: 
     ):
         workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
         XlWingsRemoveRangesOperation(ranges_to_remove=ranges_to_remove).do(workbook_dml)
-        XlWingsSaveAndCloseWorkbookOperation(file_path=file_to_create_path).do(workbook_dml)
+        XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
         return file_to_create_path
 
 
@@ -365,7 +391,7 @@ def remove_columns_with_xlwings(input_excel_file_path: str, sheet_name: str, fil
     ):
         workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
         XlWingsRemoveColumnsOperation(sheet_name=sheet_name, columns_to_remove_names=columns_to_remove_names).do(workbook_dml)
-        XlWingsSaveAndCloseWorkbookOperation(file_path=file_to_create_path).do(workbook_dml)
+        XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
         return file_to_create_path
 
 
