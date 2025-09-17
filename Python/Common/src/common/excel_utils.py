@@ -1,6 +1,8 @@
 # Standard
 
 import time
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from typing import List, cast
 
 import openpyxl
@@ -8,13 +10,9 @@ import xlwings
 
 # Other libraries
 from logger import logger_config
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-
 
 # import pywintypes
 from xlsxwriter.utility import xl_cell_to_rowcol
-
 
 EXCEL_INTERNAL_RESERVED_SHEETS_NAMES = ["Register"]
 
@@ -22,11 +20,9 @@ EXCEL_FILE_EXTENSION = ".xlsx"
 
 
 class XlWingOperationBase(ABC):
-    def __init__(self) -> None:
-        pass
 
     @abstractmethod
-    def do(self) -> None:
+    def do(self, workbook_dml: xlwings.Book) -> None:
         pass
 
 
@@ -48,12 +44,11 @@ class XlWingsOpenWorkbookOperation:
 
 
 @dataclass
-class XlWingsSaveAndCloseWorkbookOperation(XlWingOperationBase):
-    workbook_dml: xlwings.Book | openpyxl.Workbook
+class XlWingsSaveAndCloseWorkbookOperation:
     file_path: str
 
-    def do(self) -> None:
-        XlWingsSaveAndCloseWorkbookOperation.save_and_close_workbook(self.workbook_dml, self.file_path)
+    def do(self, workbook_dml: xlwings.Book | openpyxl.Workbook) -> str:
+        return XlWingsSaveAndCloseWorkbookOperation.save_and_close_workbook(workbook_dml, self.file_path)
 
     @staticmethod
     def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file_path: str) -> str:
@@ -88,15 +83,14 @@ class XlWingsSaveAndCloseWorkbookOperation(XlWingOperationBase):
 
 @dataclass
 class XlWingsRemoveTabsOperation(XlWingOperationBase):
-    workbook_dml: xlwings.Book
     sheets_to_keep_names: List[str]
 
-    def do(self) -> None:
-        XlWingsRemoveTabsOperation.remove_tabs_with_xlwings(self.workbook_dml, self.sheets_to_keep_names)
+    def do(self, workbook_dml: xlwings.Book) -> None:
+        XlWingsRemoveTabsOperation.remove_tabs_with_xlwings(workbook_dml, self.sheets_to_keep_names)
 
     @staticmethod
     def remove_tabs_with_xlwings(workbook_dml: xlwings.Book, sheets_to_keep_names: List[str]) -> None:
-        with logger_config.stopwatch_with_label(f"remove_tabs_with_xlwings input_excel_file_path:{workbook_dml.name}, sheets_to_keep_names:{sheets_to_keep_names}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(f"remove_tabs_with_xlwings , sheets_to_keep_names:{sheets_to_keep_names}", inform_beginning=True):
 
             sheets_names = workbook_dml.sheet_names
             number_of_initial_sheets_names = len(sheets_names)
@@ -125,10 +119,9 @@ class XlWingsRemoveTabsOperation(XlWingOperationBase):
 
 @dataclass
 class XlWingsSetExcelFormulasCalculationToManualOperation(XlWingOperationBase):
-    workbook_dml: xlwings.Book
 
-    def do(self) -> None:
-        XlWingsSetExcelFormulasCalculationToManualOperation.set_excel_formulas_calculation_to_manual_xlwings(self.workbook_dml)
+    def do(self, workbook_dml: xlwings.Book) -> None:
+        XlWingsSetExcelFormulasCalculationToManualOperation.set_excel_formulas_calculation_to_manual_xlwings(workbook_dml)
 
     @staticmethod
     def set_excel_formulas_calculation_to_manual_xlwings(workbook_dml: xlwings.Book) -> None:
@@ -139,10 +132,9 @@ class XlWingsSetExcelFormulasCalculationToManualOperation(XlWingOperationBase):
 
 @dataclass
 class XlWingsRemoveExcelExternalLinksOperation(XlWingOperationBase):
-    workbook_dml: xlwings.Book
 
-    def do(self) -> None:
-        XlWingsRemoveExcelExternalLinksOperation.remove_excel_external_links_with_xlwings(self.workbook_dml)
+    def do(self, workbook_dml: xlwings.Book) -> None:
+        XlWingsRemoveExcelExternalLinksOperation.remove_excel_external_links_with_xlwings(workbook_dml)
 
     @staticmethod
     def remove_excel_external_links_with_xlwings(workbook_dml: xlwings.Book) -> None:
@@ -158,10 +150,9 @@ class XlWingsRemoveExcelExternalLinksOperation(XlWingOperationBase):
 
 @dataclass
 class XlWingsReplaceFormulasWithCurrentValueOperation(XlWingOperationBase):
-    workbook_dml: xlwings.Book
 
-    def do(self) -> None:
-        XlWingsReplaceFormulasWithCurrentValueOperation.replace_formulas_with_values_with_xlwings(self.workbook_dml)
+    def do(self, workbook_dml: xlwings.Book) -> None:
+        XlWingsReplaceFormulasWithCurrentValueOperation.replace_formulas_with_values_with_xlwings(workbook_dml)
 
     @staticmethod
     def replace_formulas_with_values_with_xlwings(workbook_dml: xlwings.Book) -> None:
@@ -194,11 +185,10 @@ class XlWingsReplaceFormulasWithCurrentValueOperation(XlWingOperationBase):
 
 @dataclass
 class XlWingsRemoveRangesOperation(XlWingOperationBase):
-    workbook_dml: xlwings.Book
     ranges_to_remove: List[str] = field(default_factory=list)
 
-    def do(self) -> None:
-        XlWingsRemoveRangesOperation.remove_ranges_with_xlwings(self.workbook_dml, self.ranges_to_remove)
+    def do(self, workbook_dml: xlwings.Book) -> None:
+        XlWingsRemoveRangesOperation.remove_ranges_with_xlwings(workbook_dml, self.ranges_to_remove)
 
     @staticmethod
     def remove_ranges_with_xlwings(workbook_dml: xlwings.Book, ranges_to_remove: List[str]) -> None:
@@ -212,12 +202,11 @@ class XlWingsRemoveRangesOperation(XlWingOperationBase):
 
 @dataclass
 class XlWingsRemoveColumnsOperation(XlWingOperationBase):
-    workbook_dml: xlwings.Book
     sheet_name: str
     columns_to_remove_names: List[str]
 
-    def do(self) -> None:
-        XlWingsRemoveColumnsOperation.remove_columns_with_xlwings(self.workbook_dml, self.sheet_name, self.columns_to_remove_names)
+    def do(self, workbook_dml: xlwings.Book) -> None:
+        XlWingsRemoveColumnsOperation.remove_columns_with_xlwings(workbook_dml, self.sheet_name, self.columns_to_remove_names)
 
     @staticmethod
     def remove_columns_with_xlwings(workbook_dml: xlwings.Book, sheet_name: str, columns_to_remove_names: List[str]) -> None:
@@ -246,9 +235,38 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
                     sht.range((1, col_index), (sht.cells.last_cell.row, col_index)).delete()  # Supprimer la colonne
 
 
+@dataclass
+class XlWingsOperationsBatch:
+
+    excel_visibility: bool
+    input_excel_file_path: str
+    file_to_create_path: str
+    operations: List[XlWingOperationBase] = field(default_factory=list)
+
+    def hide_excel(self) -> "XlWingsOperationsBatch":
+        self.excel_visibility = False
+        return self
+
+    def show_excel(self) -> "XlWingsOperationsBatch":
+        self.excel_visibility = True
+        return self
+
+    def add_operation(self, operation: XlWingOperationBase) -> "XlWingsOperationsBatch":
+        self.operations.append(operation)
+        return self
+
+    def do(self) -> str:
+        workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=self.input_excel_file_path, excel_visibility=self.excel_visibility).do()
+        for operation in self.operations:
+            operation.do(workbook_dml=workbook_dml)
+
+        save_and_close_workbook_operation = XlWingsSaveAndCloseWorkbookOperation(file_path=self.file_to_create_path)
+        return save_and_close_workbook_operation.do(workbook_dml)
+
+
 def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file_path: str) -> None:
 
-    XlWingsSaveAndCloseWorkbookOperation(workbook_dml, file_path).do()
+    XlWingsSaveAndCloseWorkbookOperation(file_path).do(workbook_dml)
 
 
 def remove_tabs_with_openpyxl(input_excel_file_path: str, file_to_create_path: str, sheets_to_keep_names: List[str], excel_visibility: bool = False) -> str:
@@ -294,8 +312,8 @@ def remove_tabs_with_xlwings(input_excel_file_path: str, file_to_create_path: st
         f"remove_tabs_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}, sheets_to_keep_names:{sheets_to_keep_names}", inform_beginning=True
     ):
         workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
-        XlWingsRemoveTabsOperation(workbook_dml=workbook_dml, sheets_to_keep_names=sheets_to_keep_names).do()
-        XlWingsSaveAndCloseWorkbookOperation(workbook_dml=workbook_dml, file_path=file_to_create_path).do()
+        XlWingsRemoveTabsOperation(sheets_to_keep_names=sheets_to_keep_names).do(workbook_dml)
+        XlWingsSaveAndCloseWorkbookOperation(file_path=file_to_create_path).do(workbook_dml)
         return file_to_create_path
 
 
@@ -304,8 +322,8 @@ def set_excel_formulas_calculation_to_manual_xlwings(input_excel_file_path: str,
         f"set_excel_formulas_calculation_to_manual input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}", inform_beginning=True
     ):
         workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
-        XlWingsSetExcelFormulasCalculationToManualOperation(workbook_dml=workbook_dml).do()
-        XlWingsSaveAndCloseWorkbookOperation(workbook_dml=workbook_dml, file_path=file_to_create_path).do()
+        XlWingsSetExcelFormulasCalculationToManualOperation().do(workbook_dml)
+        XlWingsSaveAndCloseWorkbookOperation(file_path=file_to_create_path).do(workbook_dml)
         return file_to_create_path
 
 
@@ -314,8 +332,8 @@ def remove_excel_external_links_with_xlwings(input_excel_file_path: str, file_to
         f"remove_excel_external_links_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}", inform_beginning=True
     ):
         workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
-        XlWingsRemoveExcelExternalLinksOperation(workbook_dml=workbook_dml).do()
-        XlWingsSaveAndCloseWorkbookOperation(workbook_dml=workbook_dml, file_path=file_to_create_path).do()
+        XlWingsRemoveExcelExternalLinksOperation().do(workbook_dml)
+        XlWingsSaveAndCloseWorkbookOperation(file_path=file_to_create_path).do(workbook_dml)
         return file_to_create_path
 
 
@@ -324,8 +342,8 @@ def replace_formulas_with_values_with_xlwings(input_excel_file_path: str, file_t
         f"replace_formulas_with_values_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}", inform_beginning=True
     ):
         workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
-        XlWingsReplaceFormulasWithCurrentValueOperation(workbook_dml=workbook_dml).do()
-        XlWingsSaveAndCloseWorkbookOperation(workbook_dml=workbook_dml, file_path=file_to_create_path).do()
+        XlWingsReplaceFormulasWithCurrentValueOperation().do(workbook_dml)
+        XlWingsSaveAndCloseWorkbookOperation(file_path=file_to_create_path).do(workbook_dml)
         return file_to_create_path
 
 
@@ -334,8 +352,8 @@ def remove_ranges_with_xlwings(input_excel_file_path: str, file_to_create_path: 
         f"remove_ranges_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}, ranges_to_remove:{ranges_to_remove}", inform_beginning=True
     ):
         workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
-        XlWingsRemoveRangesOperation(workbook_dml=workbook_dml, ranges_to_remove=ranges_to_remove).do()
-        XlWingsSaveAndCloseWorkbookOperation(workbook_dml=workbook_dml, file_path=file_to_create_path).do()
+        XlWingsRemoveRangesOperation(ranges_to_remove=ranges_to_remove).do(workbook_dml)
+        XlWingsSaveAndCloseWorkbookOperation(file_path=file_to_create_path).do(workbook_dml)
         return file_to_create_path
 
 
@@ -346,8 +364,8 @@ def remove_columns_with_xlwings(input_excel_file_path: str, sheet_name: str, fil
         inform_beginning=True,
     ):
         workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
-        XlWingsRemoveColumnsOperation(workbook_dml=workbook_dml, sheet_name=sheet_name, columns_to_remove_names=columns_to_remove_names).do()
-        XlWingsSaveAndCloseWorkbookOperation(workbook_dml=workbook_dml, file_path=file_to_create_path).do()
+        XlWingsRemoveColumnsOperation(sheet_name=sheet_name, columns_to_remove_names=columns_to_remove_names).do(workbook_dml)
+        XlWingsSaveAndCloseWorkbookOperation(file_path=file_to_create_path).do(workbook_dml)
         return file_to_create_path
 
 
