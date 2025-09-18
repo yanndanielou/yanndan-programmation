@@ -17,6 +17,8 @@ class DownloadAndCleanDMLApplication:
 
     def run(self) -> None:
         dml_file_path = self.download_dml_file()
+
+        dml_file_path = excel_utils.convert_xlsx_file_to_xls_with_win32com_dispatch(dml_file_path)
         self.run_step_by_step(dml_file_path)
 
     def run_in_one_batch(self, dml_file_path: str) -> None:
@@ -42,7 +44,7 @@ class DownloadAndCleanDMLApplication:
         file_to_create_path = param.DML_FILE_WITHOUT_USELESS_SHEETS_PATH
 
         if not param.REMOVE_USELESS_SHEETS_ENABLED:
-            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
+            logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
         final_excel_file_path: str = excel_utils.remove_tabs_with_xlwings(
@@ -57,7 +59,7 @@ class DownloadAndCleanDMLApplication:
         file_to_create_path = param.DML_FILE_WITHOUT_LINKS
 
         if not param.REMOVE_LINKS_SHEETS_ENABLED:
-            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
+            logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
         final_excel_file_path: str = excel_utils.remove_excel_external_links_with_xlwings(input_excel_file_path=dml_file_path, file_to_create_path=file_to_create_path)
@@ -68,7 +70,7 @@ class DownloadAndCleanDMLApplication:
         file_to_create_path = param.DML_FILE_WITH_USELESS_RANGES
 
         if not param.REMOVE_USELESS_RANGES_ENABLED:
-            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
+            logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
         final_excel_file_path: str = excel_utils.remove_ranges_with_xlwings(input_excel_file_path=dml_file_path, ranges_to_remove=param.RANGES_TO_REMOVE, file_to_create_path=file_to_create_path)
@@ -78,7 +80,7 @@ class DownloadAndCleanDMLApplication:
         file_to_create_path = param.DML_FILE_CLEANED_FINAL
 
         if not param.REMOVE_USELESS_COLUMNS_ENABLED:
-            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
+            logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
         final_excel_file_path: str = excel_utils.remove_columns_with_xlwings(
@@ -90,7 +92,7 @@ class DownloadAndCleanDMLApplication:
         file_to_create_path = param.DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH
 
         if not param.DOWNLOAD_FROM_RHAPSODY_ENABLED:
-            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} Disabled: pass")
+            logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
         dml_download_url = "https://rhapsody.siemens.net/livelink/livelink.exe?func=ll&objId=79329709&objAction=Download"
