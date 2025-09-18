@@ -1,15 +1,19 @@
-from logger import logger_config
-from common import json_encoders, file_utils
-
+import json
 from typing import Dict
 
-import json
-from networkflowmatrix import data_model, network_conf_files, network_conf_files_descriptions_data
+from common import file_utils, json_encoders
+from logger import logger_config
+
+from networkflowmatrix import (
+    network_conf_files,
+    network_conf_files_descriptions_data,
+    network_matrix_data_model,
+)
 
 OUTPUT_PARENT_DIRECTORY_NAME = "Output"
 
 
-def subsystem_to_dict(subsystem: data_model.SubSystemInFlowMatrix, with_equipment: bool) -> Dict:
+def subsystem_to_dict(subsystem: network_matrix_data_model.SubSystemInFlowMatrix, with_equipment: bool) -> Dict:
     if with_equipment:
         return {
             "subsystem_name": subsystem.name,
@@ -20,7 +24,7 @@ def subsystem_to_dict(subsystem: data_model.SubSystemInFlowMatrix, with_equipmen
         return {"subsystem_name": subsystem.name}
 
 
-def equipment_to_dict(equipment: data_model.EquipmentInFLowMatrix, with_subsystem: bool) -> Dict:
+def equipment_to_dict(equipment: network_matrix_data_model.EquipmentInFLowMatrix, with_subsystem: bool) -> Dict:
     if with_subsystem:
         new_var = {
             "equipment_name": equipment.name,
@@ -34,21 +38,25 @@ def equipment_to_dict(equipment: data_model.EquipmentInFLowMatrix, with_subsyste
     return new_var
 
 
-def dump_subsystems_to_json(network_flow_matrix: data_model.NetworkFlowMatrix, filepath: str) -> None:
-    data = [subsystem_to_dict(subsystem, with_equipment=True) for subsystem in sorted(network_flow_matrix.all_matrix_flow_subsystems_definitions_instances, key=lambda subsystem: subsystem.name)]
+def dump_subsystems_to_json(network_flow_matrix_to_dump: network_matrix_data_model.NetworkFlowMatrix, filepath: str) -> None:
+    data = [
+        subsystem_to_dict(subsystem, with_equipment=True) for subsystem in sorted(network_flow_matrix_to_dump.all_matrix_flow_subsystems_definitions_instances, key=lambda subsystem: subsystem.name)
+    ]
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
-def dump_equipments_to_json(network_flow_matrix: data_model.NetworkFlowMatrix, filepath: str) -> None:
-    data = [equipment_to_dict(equipment, with_subsystem=True) for equipment in sorted(network_flow_matrix.all_matrix_flow_equipments_definitions_instances, key=lambda subsystem: subsystem.name)]
+def dump_equipments_to_json(network_flow_matrix_to_dump: network_matrix_data_model.NetworkFlowMatrix, filepath: str) -> None:
+    data = [
+        equipment_to_dict(equipment, with_subsystem=True) for equipment in sorted(network_flow_matrix_to_dump.all_matrix_flow_equipments_definitions_instances, key=lambda subsystem: subsystem.name)
+    ]
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
 if __name__ == "__main__":
     with logger_config.application_logger("networkflowmatrix"):
-        equipments_library = network_conf_files.EquipmentsLibrary()
+        equipments_library = network_conf_files.NetworkConfFilesEquipmentsLibrary()
 
         radio_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_file(
             equipments_library=equipments_library,
@@ -65,7 +73,7 @@ if __name__ == "__main__":
         logger_config.print_and_log_info(f"After radio_std_conf_file, {len(equipments_library.network_conf_files_defined_equipments)} equipments")
 
         with logger_config.stopwatch_with_label("Build matrix", inform_beginning=True, monitor_ram_usage=True):
-            network_flow_matrix = data_model.NetworkFlowMatrix.Builder.build_with_excel_file(excel_file_full_path="Input/Matrice_next.xlsm", sheet_name="Matrice_de_Flux_SITE")
+            network_flow_matrix = network_matrix_data_model.NetworkFlowMatrix.Builder.build_with_excel_file(excel_file_full_path="Input/Matrice_next.xlsm", sheet_name="Matrice_de_Flux_SITE")
 
         for directory_path in [OUTPUT_PARENT_DIRECTORY_NAME]:
             file_utils.create_folder_if_not_exist(directory_path)

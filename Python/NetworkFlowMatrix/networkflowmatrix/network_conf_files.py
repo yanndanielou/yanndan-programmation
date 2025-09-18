@@ -1,11 +1,15 @@
 # import ipaddress
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, cast
-
+from typing import TYPE_CHECKING, List, Optional, cast
 import pandas
+
 from common import excel_utils
 from logger import logger_config
+
+
+if TYPE_CHECKING:
+    from networkflowmatrix.equipments import TrainUnbreakableSingleUnit, Equipment, NetworkConfFilesEquipmentsLibrary, NetworkConfFilesDefinedEquipment
 
 
 @dataclass
@@ -44,6 +48,12 @@ class InformationDefinitionBase(ABC):
     @abstractmethod
     def get_value(self, row: pandas.Series) -> Optional[str] | Optional[int]:
         pass
+
+
+class ForcedNoneValueInformationDefinition(InformationDefinitionBase):
+
+    def get_value(self, row: pandas.Series) -> Optional[str] | Optional[int]:
+        return None
 
 
 @dataclass
@@ -166,55 +176,57 @@ class EquipmentDefinitionTab:
     equipment_alternative_name_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equip_ID"))
 
 
+class TrainIdentifierDefinition(ABC):
+
+    @abstractmethod
+    def get_train(self, row: pandas.Series, equipment_library: "NetworkConfFilesEquipmentsLibrary") -> "TrainUnbreakableSingleUnit":
+        pass
+
+
+class TrainByCcIdColumnDefinition(TrainIdentifierDefinition):
+
+    def __init__(self) -> None:
+        self.cc_id_column_definition: InformationDefinitionBase = ExcelColumnDefinitionByColumnTitle("Type")
+
+    def get_train(self, row: pandas.Series, equipment_library: "NetworkConfFilesEquipmentsLibrary") -> "TrainUnbreakableSingleUnit":
+        cc_id = self.cc_id_column_definition.get_value(row)
+        assert cc_id
+        assert isinstance(cc_id, int)
+        train = equipment_library.get_existing_train_unbreakable_unit_by_cc_id(cc_id=cc_id)
+        assert train
+        return train
+
+
+class TrainByEmuIdColumnDefinition(TrainIdentifierDefinition):
+
+    def __init__(self) -> None:
+        self.emu_id_column_definition: InformationDefinitionBase = ExcelColumnDefinitionByColumnTitle("Type")
+
+    def get_train(self, row: pandas.Series, equipment_library: "NetworkConfFilesEquipmentsLibrary") -> "TrainUnbreakableSingleUnit":
+        emu_id = self.emu_id_column_definition.get_value(row)
+        assert emu_id
+        assert isinstance(emu_id, int)
+        train = equipment_library.get_existing_train_unbreakable_unit_by_emu_id(emu_id=emu_id)
+        assert train
+        return train
+
+
 @dataclass
 class InsideTrainEquipmentDefinitionTab(EquipmentDefinitionTab):
-
-    cc_id_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("CC_ID"))
-    emu_id_definitions: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("EMU_ID"))
-
-
-@dataclass
-class NetworkConfFilesDefinedEquipment:
-    name: str
-    equipment_types: Set[str] = field(default_factory=set)
-    alternative_identifiers: Set[str] = field(default_factory=set)
-    ip_addresses: List[NetworkConfFilesDefinedIpAddress] = field(default_factory=list)
-
-
-class EquipmentsLibrary:
-    def __init__(self) -> None:
-        self.network_conf_files_defined_equipments: List[NetworkConfFilesDefinedEquipment] = []
-        self.network_conf_files_defined_equipments_by_id: Dict[str, NetworkConfFilesDefinedEquipment] = {}
-
-    def is_existing_by_name(self, name: str) -> bool:
-        return name in self.network_conf_files_defined_equipments_by_id
-
-    def get_existing_by_name(self, name: str) -> Optional["NetworkConfFilesDefinedEquipment"]:
-        if self.is_existing_by_name(name):
-            return self.network_conf_files_defined_equipments_by_id[name]
-        return None
-
-    def get_or_create_if_not_exist_by_name(self, name: str) -> "NetworkConfFilesDefinedEquipment":
-        if self.is_existing_by_name(name):
-            return self.network_conf_files_defined_equipments_by_id[name]
-        equipment = NetworkConfFilesDefinedEquipment(name=name)
-        self.network_conf_files_defined_equipments_by_id[name] = equipment
-        self.network_conf_files_defined_equipments.append(equipment)
-
-        return equipment
+    train_identifier_definition: TrainIdentifierDefinition = field(default_factory=TrainByCcIdColumnDefinition)
 
 
 @dataclass
 class NetworkConfFile:
     excel_file_full_path: str
-    all_equipments: List[NetworkConfFilesDefinedEquipment]
-    equipments_library: EquipmentsLibrary
+    all_equipments: List["NetworkConfFilesDefinedEquipment"]
+    equipments_library: "NetworkConfFilesEquipmentsLibrary"
     equipment_definition_tabs: List[EquipmentDefinitionTab]
 
     class Builder:
 
         @staticmethod
-        def build_with_excel_file(equipments_library: EquipmentsLibrary, excel_file_full_path: str, equipment_definition_tabs: List[EquipmentDefinitionTab]) -> "NetworkConfFile":
+        def build_with_excel_file(equipments_library: "NetworkConfFilesEquipmentsLibrary", excel_file_full_path: str, equipment_definition_tabs: List[EquipmentDefinitionTab]) -> "NetworkConfFile":
 
             for equipment_definition_tab in equipment_definition_tabs:
 
@@ -228,7 +240,7 @@ class NetworkConfFile:
                     for _, row in main_data_frame.iterrows():
 
                         equipment_name = cast(str, equipment_definition_tab.equipment_name_column_definition.get_value(row))
-                        equipment = equipments_library.get_or_create_if_not_exist_by_name(name=equipment_name)
+                        equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(name=equipment_name)
                         all_equipments_found.append(equipment)
 
                         equipment_type = cast(str, equipment_definition_tab.equipment_type_column_definition.get_value(row))
