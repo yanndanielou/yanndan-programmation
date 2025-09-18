@@ -277,8 +277,10 @@ def produce_displays_and_create_html(
     # Close the figure to free up memory resources
     # Cleanup to avoid memory leaks
     if generation_instructions.create_screenshot:
-        screenshot_file_path = generation_instructions.output_directory_name + "/" + generation_label_for_valid_file_name + " cumulative " + str(use_cumulative) + ".png"
-        fig.savefig(screenshot_file_path)
+        screenshot_file_path_without_extension = generation_instructions.output_directory_name + "/" + generation_label_for_valid_file_name + " cumulative " + str(use_cumulative)
+        fig.savefig(screenshot_file_path_without_extension + ".png")
+        fig.savefig(screenshot_file_path_without_extension + ".svg")
+        # fig.savefig(screenshot_file_path_without_extension + ".pdf")
 
     if not generation_instructions.display_output_plots:
         for cursor in cursors:
