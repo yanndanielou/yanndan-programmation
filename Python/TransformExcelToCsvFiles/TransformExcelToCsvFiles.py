@@ -1,42 +1,14 @@
 ﻿# -*-coding:Utf-8 -*
 
-# parse folder
 import glob
-
-# For Excel to Csv
-import pandas
-
-
-# For Excel
-from openpyxl import load_workbook
-
-# For logs
-import random
-import logging
 import os
-import sys
 
-import param
-
-# To get line number for logs
-from inspect import currentframe, getframeinfo
-import inspect
-
-# Dates
-import datetime
-import time
-
-# For args
-import argparse
-
-import getopt
-
-# Regex
-import re
-
+import pandas
 from logger import logger_config
 
-# wordContainingUnderscoreToTranformRegexCompiledPattern = re.compile(wordContainingUnderscoreToTranformRegexPatternAsString)
+from openpyxl import load_workbook
+
+import param
 
 
 def transform_text_to_valid_excel_date(initial_text: str) -> str:
@@ -53,26 +25,34 @@ def get_list_of_excel_files_names() -> list[str]:
 
 
 def transform_excel_file_to_csv_files(excel_file_name_with_extension: str) -> None:
-
-    logger_config.print_and_log_info("Load workbook:" + excel_file_name_with_extension)
-    workbook = load_workbook(filename=excel_file_name_with_extension)
-
     excel_file_name_without_extension = excel_file_name_with_extension.split(".")[0]
 
-    workbook_sheetnames = workbook.sheetnames
-    logger_config.print_and_log_info(
-        "Workbook:" + excel_file_name_without_extension + " has following sheets:" + str(workbook_sheetnames)
-    )
+    with logger_config.stopwatch_with_label(f"transform_excel_file_to_csv_files: {excel_file_name_with_extension}"):
+        with logger_config.stopwatch_with_label(
+            "Load workbook:" + excel_file_name_with_extension, inform_beginning=True
+        ):
+            workbook = load_workbook(filename=excel_file_name_with_extension)
 
-    if not os.path.exists(excel_file_name_without_extension):
-        logger_config.print_and_log_info("Create folder " + excel_file_name_without_extension)
-        os.makedirs(excel_file_name_without_extension)
+        workbook_sheetnames = workbook.sheetnames
+        logger_config.print_and_log_info(
+            "Workbook:" + excel_file_name_without_extension + " has following sheets:" + str(workbook_sheetnames)
+        )
 
-    for workbookSheetName in workbook_sheetnames:
-        read_file = pandas.read_excel(excel_file_name_with_extension, sheet_name=workbookSheetName)
-        output_csv_file = excel_file_name_without_extension + "/" + workbookSheetName + ".csv"
-        logger_config.print_and_log_info("Extract sheet " + workbookSheetName + " to " + output_csv_file)
-        read_file.to_csv(output_csv_file, sep=param.csv_separator, index=None, header=True)
+        if not os.path.exists(excel_file_name_without_extension):
+            logger_config.print_and_log_info("Create folder " + excel_file_name_without_extension)
+            os.makedirs(excel_file_name_without_extension)
+
+        for sheet_name in workbook_sheetnames:
+            with logger_config.stopwatch_with_label(
+                f"transform_excel_file_to_csv_files: {excel_file_name_with_extension} sheet {sheet_name}"
+            ):
+                with logger_config.stopwatch_with_label(
+                    f"read_excel {excel_file_name_with_extension} sheet {sheet_name}"
+                ):
+                    read_file = pandas.read_excel(excel_file_name_with_extension, sheet_name=sheet_name)
+                output_csv_file = excel_file_name_without_extension + "/" + sheet_name + ".csv"
+                with logger_config.stopwatch_with_label("Extract sheet " + sheet_name + " to " + output_csv_file):
+                    read_file.to_csv(output_csv_file, sep=param.csv_separator, index=None, header=True)
 
 
 def transform_all_excel_files_to_csv_files() -> None:
@@ -87,16 +67,7 @@ def transform_all_excel_files_to_csv_files() -> None:
         transform_excel_file_to_csv_files(excel_file_name)
 
 
-def main() -> None:
-    log_file_name = "TransformExcelToCsvFiles" + "_" + str(random.randrange(100000)) + ".log"
-
-    # log_file_name = 'TransformCodeToCamelCase' + "." +  str(random.randrange(10000)) + ".log"
-    logger_config.configure_logger_with_random_log_file_suffix(log_file_name)
-
-    logger_config.print_and_log_info("Start application. Log file name: " + log_file_name)
-    transform_all_excel_files_to_csv_files()
-    logger_config.print_and_log_info("End application")
-
-
 if __name__ == "__main__":
-    main()
+
+    with logger_config.application_logger("TransformExcelToCsvFiles"):
+        transform_all_excel_files_to_csv_files()
