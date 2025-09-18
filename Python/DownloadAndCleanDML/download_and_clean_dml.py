@@ -17,7 +17,9 @@ class DownloadAndCleanDMLApplication:
 
     def run(self) -> None:
         dml_file_path = self.download_dml_file()
+        self.run_step_by_step(dml_file_path)
 
+    def run_in_one_batch(self, dml_file_path: str) -> None:
         operations_batch = excel_utils.XlWingsOperationsBatch(excel_visibility=False, input_excel_file_path=dml_file_path, file_to_create_path=param.DML_FILE_CLEANED_FINAL)
         operations_batch.add_operation(excel_utils.XlWingsRemoveTabsOperation(sheets_to_keep_names=param.ALLOWED_DML_SHEETS_NAMES))
         operations_batch.add_operation(excel_utils.XlWingsSaveWorkbookOperation(file_to_create_path=param.DML_FILE_WITHOUT_USELESS_SHEETS_PATH))
@@ -29,11 +31,12 @@ class DownloadAndCleanDMLApplication:
 
         operations_batch.do()
 
-        #
-        # dml_file_path = self.remove_useless_tabs(dml_file_path)
-        # dml_file_path = self.remove_excel_external_links(dml_file_path)
-        # dml_file_path = self.remove_useless_ranges(dml_file_path)
-        # dml_file_path = self.remove_useless_columns(dml_file_path)
+    def run_step_by_step(self, dml_file_path: str) -> None:
+
+        dml_file_path = self.remove_useless_tabs(dml_file_path)
+        dml_file_path = self.remove_excel_external_links(dml_file_path)
+        dml_file_path = self.remove_useless_ranges(dml_file_path)
+        dml_file_path = self.remove_useless_columns(dml_file_path)
 
     def remove_useless_tabs(self, dml_file_path: str) -> str:
         file_to_create_path = param.DML_FILE_WITHOUT_USELESS_SHEETS_PATH
