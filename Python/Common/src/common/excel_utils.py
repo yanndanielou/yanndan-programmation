@@ -8,6 +8,9 @@ from typing import List, cast
 import openpyxl
 import xlwings
 
+from win32com.client import Dispatch
+
+
 # Other libraries
 from logger import logger_config
 
@@ -17,6 +20,42 @@ from xlsxwriter.utility import xl_cell_to_rowcol
 EXCEL_INTERNAL_RESERVED_SHEETS_NAMES = ["Register"]
 
 EXCEL_FILE_EXTENSION = ".xlsx"
+
+# cf    https://learn.microsoft.com/fr-fr/office/vba/api/Excel.XlFileFormat
+EXCEL_8_XLS_FORMAT_XL_FILE_FORMAT_VALUE = 56
+
+
+def convert_xlsx_file_to_xls_with_win32com_dispatch(xlsx_file_full_path: str) -> str:
+    with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls: {xlsx_file_full_path}"):
+        xls_output_file_path = xlsx_file_full_path[:-1]
+        with logger_config.stopwatch_with_label("convert_xlsx_file_to_xls: open excel application"):
+            xl = Dispatch("Excel.Application")
+        with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls: open {xlsx_file_full_path}"):
+            wb = xl.Workbooks.Add(xlsx_file_full_path)
+
+        xl.DisplayAlerts = False
+        wb.CheckCompatibility = False
+        wb.DoNotPromptForConvert = True
+
+        with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls: save {xls_output_file_path}"):
+            wb.SaveAs(xls_output_file_path, FileFormat=EXCEL_8_XLS_FORMAT_XL_FILE_FORMAT_VALUE)
+        with logger_config.stopwatch_with_label("convert_xlsx_file_to_xls: quit excel"):
+            xl.Quit()
+        return xls_output_file_path
+
+
+def convert_xlsx_file_to_xls_with_openpyxl(xlsx_file_full_path: str) -> str:
+    xls_output_file_path = xlsx_file_full_path[:-1]
+    with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls_with_openpyxl: {xlsx_file_full_path}", inform_beginning=True):
+
+        with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls_with_openpyxl: open {xlsx_file_full_path}"):
+            workbook = openpyxl.load_workbook(xlsx_file_full_path)
+        with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls_with_openpyxl: save {xls_output_file_path}"):
+            workbook.save(xls_output_file_path)
+        with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls_with_openpyxl: close {xls_output_file_path}"):
+            workbook.close()
+
+    return xls_output_file_path
 
 
 class XlWingOperationBase(ABC):
