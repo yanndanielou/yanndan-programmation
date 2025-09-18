@@ -30,10 +30,12 @@ def convert_xlsx_file_to_xls_with_win32com_dispatch(xlsx_file_full_path: str) ->
         xls_output_file_path = xlsx_file_full_path[:-1]
         with logger_config.stopwatch_with_label("convert_xlsx_file_to_xls: open excel application"):
             xl = Dispatch("Excel.Application")
+        
+        xl.DisplayAlerts = False
+        
         with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls: open {xlsx_file_full_path}"):
             wb = xl.Workbooks.Add(xlsx_file_full_path)
 
-        xl.DisplayAlerts = False
         wb.CheckCompatibility = False
         wb.DoNotPromptForConvert = True
 
