@@ -24,11 +24,11 @@ def main() -> None:
 
         cfx_inputs = (
             inputs.ChampFxInputsWithFilesBuilder()
-            .add_champfx_details_excel_file_full_path("Input/details_project_FR_NEXTEO.xlsx")
-            .add_champfx_details_excel_file_full_path("Input/details_project_ATSP.xlsx")
-            .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_FR_NEXTEO.xlsx")
-            .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_ATSP.xlsx")
-            .add_cfx_extended_history_file_full_path("Input/extended_history_nextats.txt")
+            .add_champfx_details_excel_file_full_path("Input_Downloaded/details_project_FR_NEXTEO.xlsx")
+            .add_champfx_details_excel_file_full_path("Input_Downloaded/details_project_ATSP.xlsx")
+            .add_champfx_states_changes_excel_file_full_path("Input_Downloaded/states_changes_project_FR_NEXTEO.xlsx")
+            .add_champfx_states_changes_excel_file_full_path("Input_Downloaded/states_changes_project_ATSP.xlsx")
+            .add_cfx_extended_history_file_full_path("Input_Downloaded/extended_history_nextats.txt")
             .set_user_and_role_data_text_file_full_path("Input/role_data_next_ats.txt")
             .build()
         )

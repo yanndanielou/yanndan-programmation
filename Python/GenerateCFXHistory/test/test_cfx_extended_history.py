@@ -14,7 +14,7 @@ class TestDecodeTime:
 class TestAllCFXCompleteHistoryExport:
 
     def test_very_slow_to_process_CFX00543992(self) -> None:
-        all_cfx_complete_extended_histories_text_file_path = "Input/extended_history_nextats.txt"
+        all_cfx_complete_extended_histories_text_file_path = "Input_Downloaded/extended_history_nextats.txt"
         all_cfx_complete_history: List[cfx_extended_history.CFXEntryCompleteHistory] = cfx_extended_history.AllCFXCompleteHistoryExport.parse_full_complete_extended_histories_text_file(
             all_cfx_complete_extended_histories_text_file_path=all_cfx_complete_extended_histories_text_file_path, cfx_to_treat_whitelist_ids=["CFX00543992"]
         )

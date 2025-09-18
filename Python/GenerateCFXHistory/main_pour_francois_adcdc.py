@@ -56,11 +56,11 @@ def main() -> None:
 
         cfx_inputs = (
             cfx.ChampFxInputsBuilder()
-            .add_champfx_details_excel_file_full_path("Input/details_project_FR_NEXTEO.xlsx")
-            .add_champfx_details_excel_file_full_path("Input/details_project_ATSP.xlsx")
-            .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_FR_NEXTEO.xlsx")
-            .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_ATSP.xlsx")
-            .add_cfx_extended_history_file_full_path("Input/extended_history_nextats.txt")
+            .add_champfx_details_excel_file_full_path("InInput_Downloadedput/details_project_FR_NEXTEO.xlsx")
+            .add_champfx_details_excel_file_full_path("Input_Downloaded/details_project_ATSP.xlsx")
+            .add_champfx_states_changes_excel_file_full_path("Input_Downloaded/states_changes_project_FR_NEXTEO.xlsx")
+            .add_champfx_states_changes_excel_file_full_path("Input_Downloaded/states_changes_project_ATSP.xlsx")
+            .add_cfx_extended_history_file_full_path("Input_Downloaded/extended_history_nextats.txt")
             .build()
         )
 

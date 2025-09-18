@@ -5,10 +5,11 @@
 /.mypy_cache/
 /Input__/
 Input_Downloaded/
-/Input/*.txt
-Input - Copie/
-Input/CFX_kown_by_customer.txt
+/Input/role_data_next_ats*
+/Input/CFX_usine_site.txt
+/Input/CFX_list_cyber_aio.txt
 /Input_for_Tests/*.json
+Input */
 test*.json
 test*.xlsx
 role_data.*

@@ -29,7 +29,7 @@ import connexion_param
 
 CFX_FILES_DOWNLOADED_PATTERN_WITHOUT_EXTENSION = "QueryResult*"
 
-DOWNLOADED_FILES_FINAL_DIRECTORY = "Input"
+DOWNLOADED_FILES_FINAL_DIRECTORY = "Input_Downloaded"
 OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME = "output_save_cfx_request_results"
 
 DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")

@@ -11,17 +11,17 @@ from generatecfxhistory.constants import State
 # from common import json_encoders
 
 
-DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH: str = "Input/extended_history_nextats.txt"
+DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH: str = "Input_Downloaded/extended_history_nextats.txt"
 
 
 @pytest.fixture(scope="session", name="default_cfx_inputs_for_tests_fixture")
 def default_cfx_inputs_for_tests() -> inputs.ChampFxInputs:
     return (
         inputs.ChampFxInputsWithFilesBuilder()
-        .add_champfx_details_excel_file_full_path("Input/details_project_FR_NEXTEO.xlsx")
-        .add_champfx_details_excel_file_full_path("Input/details_project_ATSP.xlsx")
-        .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_FR_NEXTEO.xlsx")
-        .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_ATSP.xlsx")
+        .add_champfx_details_excel_file_full_path("Input_Downloaded/details_project_FR_NEXTEO.xlsx")
+        .add_champfx_details_excel_file_full_path("Input_Downloaded/details_project_ATSP.xlsx")
+        .add_champfx_states_changes_excel_file_full_path("Input_Downloaded/states_changes_project_FR_NEXTEO.xlsx")
+        .add_champfx_states_changes_excel_file_full_path("InInput_Downloadedput/states_changes_project_ATSP.xlsx")
         .add_cfx_extended_history_file_full_path(DEFAULT_CHAMPFX_EXTENDED_HISTORY_FILE_FULL_PATH)
         .set_user_and_role_data_text_file_full_path("Input/role_data_next_ats.txt")
         .build()
@@ -41,8 +41,8 @@ def create_champfx_library_only_cfx_closed_by_yda_in_whitelist(default_cfx_input
 def create_path_champfx_library() -> cfx.ChampFXLibrary:
     cfx_inputs = (
         inputs.ChampFxInputsWithFilesBuilder()
-        .add_champfx_details_excel_file_full_path("Input/details_project_FR_PATH.xlsx")
-        .add_champfx_states_changes_excel_file_full_path("Input/states_changes_project_FR_PATH.xlsx")
+        .add_champfx_details_excel_file_full_path("Input_Downloaded/details_project_FR_PATH.xlsx")
+        .add_champfx_states_changes_excel_file_full_path("Input_Downloaded/states_changes_project_FR_PATH.xlsx")
         .build()
     )
 
@@ -72,8 +72,8 @@ def create_full_champfx_library(default_cfx_inputs_for_tests_fixture: inputs.Cha
 def create_other_projects_partial_champfx_library() -> cfx.ChampFXLibrary:
     cfx_inputs = (
         inputs.ChampFxInputsWithFilesBuilder()
-        .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_other_projects.xlsx")
-        .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_other_projects.xlsx")
+        .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input_Downloaded", filename_pattern="details_project_other_projects.xlsx")
+        .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input_Downloaded", filename_pattern="states_changes_other_projects.xlsx")
         .build()
     )
     champfx_library = cfx.ChampFXLibrary(
@@ -88,8 +88,8 @@ def create_other_projects_partial_champfx_library() -> cfx.ChampFXLibrary:
 def create_other_projects_full_champfx_library() -> cfx.ChampFXLibrary:
     cfx_inputs = (
         inputs.ChampFxInputsWithFilesBuilder()
-        .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_other_projects.xlsx")
-        .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_other_projects.xlsx")
+        .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input_Downloaded", filename_pattern="details_project_other_projects.xlsx")
+        .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input_Downloaded", filename_pattern="states_changes_other_projects.xlsx")
         .build()
     )
     champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs, allow_cfx_creation_errors=True)
@@ -105,7 +105,7 @@ class TestConstructLibraryWithChampFXWhiteListBasedOnListFilter:
     def test_only_expected_cfx_are_created(self) -> None:
         cfx_inputs = (
             inputs.ChampFxInputsWithFilesBuilder()
-            .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_other_projects.xlsx")
+            .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input_Downloaded", filename_pattern="details_project_other_projects.xlsx")
             .build()
         )
         cfx_ids_to_keep = ["CFX00708313", "CFX00388493", "CFX00388494", "CFX00388495", "CFX00388496", "CFX00388497", "CFX00388498"]
@@ -122,7 +122,7 @@ class TestConstructLibraryWithChampFXWhiteListBasedOnListFilter:
     def test_other_cfx_that_produce_exception_are_not_even_treated_for_speed(self) -> None:
         cfx_inputs = (
             inputs.ChampFxInputsWithFilesBuilder()
-            .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_other_projects.xlsx")
+            .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input_Downloaded", filename_pattern="details_project_other_projects.xlsx")
             .build()
         )
         cfx_ids_to_keep = ["CFX00708313"]
@@ -611,10 +611,10 @@ class TestIncompleteCFXAreNotCreated:
         ]
         cfx_inputs = (
             inputs.ChampFxInputsWithFilesBuilder()
-            .add_champfx_details_excel_file_full_path("Input/details_project_CHAMP.xlsx")
-            .add_champfx_details_excel_file_full_path("Input/details_project_TrashCan.xlsx")
-            .add_champfx_details_excel_file_full_path("Input/details_project_UK_Freight.xlsx")
-            .add_champfx_details_excel_file_full_path("Input/details_project_Op_LT_D_Proj.xlsx")
+            .add_champfx_details_excel_file_full_path("Input_Downloaded/details_project_CHAMP.xlsx")
+            .add_champfx_details_excel_file_full_path("Input_Downloaded/details_project_TrashCan.xlsx")
+            .add_champfx_details_excel_file_full_path("Input_Downloaded/details_project_UK_Freight.xlsx")
+            .add_champfx_details_excel_file_full_path("Input_Downloaded/details_project_Op_LT_D_Proj.xlsx")
             .build()
         )
 
@@ -630,7 +630,7 @@ class TestIncompleteCFXAreNotCreated:
             "CFX00630301",
             "CFX00630298",
         ]
-        cfx_inputs = inputs.ChampFxInputsWithFilesBuilder().add_champfx_details_excel_file_full_path("Input/details_project_DE_FPTS.xlsx").build()
+        cfx_inputs = inputs.ChampFxInputsWithFilesBuilder().add_champfx_details_excel_file_full_path("Input_Downloaded/details_project_DE_FPTS.xlsx").build()
 
         champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs, allow_cfx_creation_errors=True)
         assert champfx_library.get_all_cfx()
@@ -726,8 +726,8 @@ class TestBugCFX00882153CoreshieldObSeenUnknownState:
     def test_has_not_unknown_state(self) -> None:
         cfx_inputs = (
             inputs.ChampFxInputsWithFilesBuilder()
-            .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="details_project_other_projects.xlsx")
-            .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="states_changes_other_projects.xlsx")
+            .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input_Downloaded", filename_pattern="details_project_other_projects.xlsx")
+            .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input_Downloaded", filename_pattern="states_changes_other_projects.xlsx")
             .build()
         )
         champfx_library = cfx.ChampFXLibrary(
