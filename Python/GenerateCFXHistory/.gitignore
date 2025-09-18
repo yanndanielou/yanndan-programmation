@@ -1,8 +1,10 @@
 *.zip
+*.7z
 *.xls*
 *.png
 /.mypy_cache/
 /Input__/
+Input_Downloaded/
 /Input/*.txt
 Input - Copie/
 Input/CFX_kown_by_customer.txt
