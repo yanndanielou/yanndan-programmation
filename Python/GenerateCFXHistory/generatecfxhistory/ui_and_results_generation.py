@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import List, Optional, Set, cast
 
-import humanize
 import matplotlib.pyplot as plt
 import mplcursors
 import mpld3
@@ -71,6 +70,7 @@ class GenerationInstructions:
     create_excel_file: bool = True
     display_output_plots: bool = True
     dump_all_cfx_ids_in_json: bool = True
+    create_screenshot: bool = True
     dates_generator: DatesGenerator = DecreasingIntervalDatesGenerator()
 
 
@@ -276,6 +276,9 @@ def produce_displays_and_create_html(
 
     # Close the figure to free up memory resources
     # Cleanup to avoid memory leaks
+    if generation_instructions.create_screenshot:
+        screenshot_file_path = generation_instructions.output_directory_name + "/" + generation_label_for_valid_file_name + " cumulative " + str(use_cumulative) + ".png"
+        fig.savefig(screenshot_file_path)
 
     if not generation_instructions.display_output_plots:
         for cursor in cursors:
