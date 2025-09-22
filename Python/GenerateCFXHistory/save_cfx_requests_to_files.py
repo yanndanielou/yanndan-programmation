@@ -622,7 +622,7 @@ class SaveCfxRequestMultipagesResultsApplication:
         download_file_detector = download_utils.DownloadFileDetector(
             directory_path=self.web_browser_download_directory,
             filename_pattern=CFX_FILES_DOWNLOADED_PATTERN_WITHOUT_EXTENSION + change_state_cfx_query.output_file_type.get_file_extension(),
-            timeout_in_seconds=1000,
+            timeout_in_seconds=150,
             file_move_after_download_action=download_utils.DownloadFileDetector.FileMoveAfterDownloadAction(final_path=file_to_create_path_with_extension),
             label=change_state_cfx_query.label,
         )
