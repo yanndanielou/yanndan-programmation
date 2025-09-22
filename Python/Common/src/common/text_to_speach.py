@@ -79,7 +79,9 @@ class TextToSpeechManager:
                 else:
                     logging.info(f"{language_long_name} not found in {voice_name}")
 
-        logger_config.print_and_log_error(f"could not find voicee {language_long_name} {language_short_name} among {self.pyttsx3_engine.getProperty("voices")}")
+            logger_config.print_and_log_error(
+                f"could not find voice {language_long_name} {language_short_name} among \n{[f"{voice.name} {voice.id} {voice.languages} {voice.gender} \\n" for voice in  self.pyttsx3_engine.getProperty("voices")]}"
+            )
 
         return False
 
