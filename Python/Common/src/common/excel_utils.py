@@ -7,6 +7,7 @@ from typing import List, cast
 
 import openpyxl
 import xlwings
+from xlwings.constants import DeleteShiftDirection
 
 from win32com.client import Dispatch
 
@@ -15,7 +16,7 @@ from win32com.client import Dispatch
 from logger import logger_config
 
 # import pywintypes
-from xlsxwriter.utility import xl_cell_to_rowcol
+from xlsxwriter.utility import xl_cell_to_rowcol, xl_col_to_name
 
 EXCEL_INTERNAL_RESERVED_SHEETS_NAMES = ["Register"]
 
@@ -30,9 +31,9 @@ def convert_xlsx_file_to_xls_with_win32com_dispatch(xlsx_file_full_path: str) ->
         xls_output_file_path = xlsx_file_full_path[:-1]
         with logger_config.stopwatch_with_label("convert_xlsx_file_to_xls: open excel application"):
             xl = Dispatch("Excel.Application")
-        
+
         xl.DisplayAlerts = False
-        
+
         with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls: open {xlsx_file_full_path}"):
             wb = xl.Workbooks.Add(xlsx_file_full_path)
 
@@ -271,35 +272,68 @@ class XlWingsRemoveRangesOperation(XlWingOperationBase):
 class XlWingsRemoveColumnsOperation(XlWingOperationBase):
     sheet_name: str
     columns_to_remove_names: List[str]
+    remove_one_by_one_intead_of_all_at_once: bool = False
 
     def do(self, workbook_dml: xlwings.Book) -> None:
-        XlWingsRemoveColumnsOperation.remove_columns_with_xlwings(workbook_dml, self.sheet_name, self.columns_to_remove_names)
+        XlWingsRemoveColumnsOperation.remove_columns_with_xlwings(workbook_dml, self.sheet_name, self.columns_to_remove_names, self.remove_one_by_one_intead_of_all_at_once)
 
     @staticmethod
-    def remove_columns_with_xlwings(workbook_dml: xlwings.Book, sheet_name: str, columns_to_remove_names: List[str]) -> None:
+    def remove_columns_with_xlwings(workbook_dml: xlwings.Book, sheet_name: str, columns_to_remove_names: List[str], remove_one_by_one_intead_of_all_at_once: bool = True) -> None:
 
         with logger_config.stopwatch_with_label(
             f"remove_columns_with_xlwings input_excel_file_path:{workbook_dml.name}, sheet_name:{sheet_name}, columns_to_remove_names:{columns_to_remove_names}",
             inform_beginning=True,
         ):
 
-            sht = workbook_dml.sheets[sheet_name]
+            sht: xlwings.Sheet = workbook_dml.sheets(sheet_name)
+
+            # Obtenir toutes les valeurs de la première ligne
+            at_beginning_headers: List[str] = sht.range("A1").expand("right").value
+            logger_config.print_and_log_info(f"At beginning, {len(at_beginning_headers)} headers: {at_beginning_headers}")
+
+            all_col_initial_index_to_remove: List[int] = []
+            for colum_it, column_name_to_remove in enumerate(columns_to_remove_names):
+                col_index = at_beginning_headers.index(column_name_to_remove) + 1  # Ajouter 1 car Excel utilise des index de base 1
+                all_col_initial_index_to_remove.append(col_index)
+            logger_config.print_and_log_info(f"all_col_initial_index_to_remove: {all_col_initial_index_to_remove}")
+
+            all_col_initial_index_to_remove_sorted = list(reversed(sorted(all_col_initial_index_to_remove)))
+            logger_config.print_and_log_info(f"all_col_initial_index_to_remove_sorted: {all_col_initial_index_to_remove_sorted}")
+
+            all_columns_letters_to_remove = [xl_col_to_name(col_index) for col_index in all_col_initial_index_to_remove]
+            logger_config.print_and_log_info(f"all_columns_letters_to_remove: {all_columns_letters_to_remove}")
+
+            all_columns_letters_to_remove_range = ",".join([f"{letter}:{letter}" for letter in all_columns_letters_to_remove])
+            logger_config.print_and_log_info(f"all_columns_letters_to_remove_range: {all_columns_letters_to_remove_range}")
 
             number_of_columns_to_remove = len(columns_to_remove_names)
-            for colum_it, column_name_to_remove in enumerate(columns_to_remove_names):
 
-                # Obtenir toutes les valeurs de la première ligne
-                headers = sht.range("A1").expand("right").value
-                logger_config.print_and_log_info(f"{len(headers)} headers:{headers}")
+            if remove_one_by_one_intead_of_all_at_once:
+                for colum_it, column_name_to_remove in enumerate(columns_to_remove_names):
 
-                # Trouver l'index de la colonne à supprimer
-                logger_config.print_and_log_info(f"removing {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}%")
-                col_index = headers.index(column_name_to_remove) + 1  # Ajouter 1 car Excel utilise des index de base 1
+                    # Obtenir toutes les valeurs de la première ligne
+                    headers = sht.range("A1").expand("right").value
+                    logger_config.print_and_log_info(f"{len(headers)} headers:{headers}")
+
+                    # Trouver l'index de la colonne à supprimer
+                    logger_config.print_and_log_info(f"removing {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}%")
+                    col_index = headers.index(column_name_to_remove) + 1  # Ajouter 1 car Excel utilise des index de base 1
+                    with logger_config.stopwatch_with_label(
+                        label=f"Removing {colum_it+1}/{number_of_columns_to_remove}th column {column_name_to_remove} with index {col_index}.  {round((colum_it+1)/number_of_columns_to_remove*100,2)}%",
+                        inform_beginning=False,
+                    ):
+                        sht.range((1, col_index), (sht.cells.last_cell.row, col_index)).delete()  # Supprimer la colonne
+                        # sht.range(f"{}:{}").api.Delete(DeleteShiftDirection.xlShiftToLeft)
+
+            else:
                 with logger_config.stopwatch_with_label(
-                    label=f"Removing {colum_it+1}/{number_of_columns_to_remove}th column {column_name_to_remove} with index {col_index}.  {round((colum_it+1)/number_of_columns_to_remove*100,2)}%",
-                    inform_beginning=False,
+                    label=f"Removing columns {all_columns_letters_to_remove}",
+                    inform_beginning=True,
                 ):
-                    sht.range((1, col_index), (sht.cells.last_cell.row, col_index)).delete()  # Supprimer la colonne
+                    sht.range(all_columns_letters_to_remove_range).api.Delete(DeleteShiftDirection.xlShiftToLeft)
+
+            at_end_headers: List[str] = sht.range("A1").expand("right").value
+            logger_config.print_and_log_info(f"At the end, {len(at_end_headers)} headers: {at_end_headers}")
 
 
 @dataclass
