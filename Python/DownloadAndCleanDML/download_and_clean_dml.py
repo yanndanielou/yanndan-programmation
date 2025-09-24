@@ -18,7 +18,7 @@ class DownloadAndCleanDMLApplication:
     def run(self) -> None:
         dml_file_path = self.download_dml_file()
 
-        dml_file_path = excel_utils.convert_xlsx_file_to_xls_with_win32com_dispatch(dml_file_path)
+        # dml_file_path = excel_utils.convert_xlsx_file_to_xls_with_win32com_dispatch(dml_file_path)
         self.run_step_by_step(dml_file_path)
 
     def run_in_one_batch(self, dml_file_path: str) -> None:
