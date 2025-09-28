@@ -272,7 +272,7 @@ class XlWingsRemoveRangesOperation(XlWingOperationBase):
 class XlWingsRemoveColumnsOperation(XlWingOperationBase):
     sheet_name: str
     columns_to_remove_names: List[str]
-    remove_one_by_one_intead_of_all_at_once: bool = False
+    remove_one_by_one_intead_of_all_at_once: bool = True
 
     def do(self, workbook_dml: xlwings.Book) -> None:
         XlWingsRemoveColumnsOperation.remove_columns_with_xlwings(workbook_dml, self.sheet_name, self.columns_to_remove_names, self.remove_one_by_one_intead_of_all_at_once)
