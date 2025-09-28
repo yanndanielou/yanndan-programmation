@@ -8,10 +8,11 @@ from typing import Dict, List, Optional, cast
 import dpkt
 from pcapng import FileScanner
 
+import pyshark
+from pyshark.packet.packet import Packet
+import pyshark.packet.layers
 
 from logger import logger_config
-
-from stsloganalyzis import decode_action_set_content
 
 # CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR = "!!! Decoding Error !!!"
 
@@ -22,11 +23,78 @@ class InvariantMessage:
     message_number: int
 
 
+# Load the packet capture using the Lua dissector
+
+import pyshark
+from typing import List
+
+
+class PcapDissector:
+    def __init__(self, pcap_file: str, lua_scripts: List[str], tshark_path: str = "/usr/bin/tshark"):
+        self.pcap_file = pcap_file
+        self.lua_scripts = lua_scripts
+        self.tshark_path = tshark_path
+        self.capture = None
+
+    def load_capture(self) -> None:
+        """
+        Loads the pcap file with the given Lua scripts using Tshark.
+        """
+        lua_script_params = " ".join([f" -X lua_script:{script}" for script in self.lua_scripts])
+
+        self.capture = pyshark.FileCapture(self.pcap_file, tshark_path=r"C:\Program Files\Wireshark")
+        # self.capture = pyshark.FileCapture(self.pcap_file, tshark_path=r"C:\Program Files\Wireshark", custom_parameters={"-X": lua_script_params.strip()})
+
+    def parse_packet(self, packet: Packet) -> None:
+        """
+        Parses a packet and prints the layers and fields.
+        """
+        try:
+            for layer in packet.layers:
+                print(f"Layer: {layer.layer_name}")
+                print(f"fields_names = {layer.field_names}")
+                for field in layer.field_names:
+                    print(f"    {field}: {getattr(layer, field)}")
+        except AttributeError as e:
+            print(f"An error occurred: {e}")
+
+    def process_packets(self) -> None:
+        """
+        Processes all packets in the capture to extract and display data.
+        """
+        if self.capture is None:
+            raise ValueError("Capture not loaded. Call 'load_capture()' first.")
+
+        for packet in self.capture:
+            self.parse_packet(packet)
+
+        self.capture.close()
+
+
+# Example of using the class
+if __name__ == "__main__":
+    pcap_file_path = r"Input_for_tests\pcap\2_trames_with_17_messages_each.pcapng"
+    lua_scripts = [
+        r"C:\Program Files\Wireshark\siemensWcn.lua",
+        r"C:\Program Files\Wireshark\siemensDataBase.lua",
+        r"C:\Program Files\Wireshark\siemensItf.lua",
+        r"C:\Program Files\Wireshark\siemensTypeDecoder.lua",
+    ]
+    lua_scripts = [
+        r"C:\Program Files\Wireshark\siemensWcn.lua",
+    ]
+
+    dissect = PcapDissector(pcap_file_path, lua_scripts)
+    dissect.load_capture()
+    dissect.process_packets()
+
+
 def read_pcap_pcapng(pcap_path: str) -> None:
     with open(pcap_path, "rb") as fp:
         scanner = FileScanner(fp)
         block_number = 0
         for block in scanner:
+            print(block)
             block_number += 1
             pass  # do something with the block...
         logger_config.print_and_log_info(f"block_number:  {block_number}")
@@ -63,4 +131,5 @@ def read_pcap_dpkt(pcap_path: str) -> None:
 
 # read_pcap_dpkt("C:\\D_Drive\\temp\\tests_ar_ppn\\PAE PPN modif désactivation ar sur CAB 1A mais CAB2B intouchée.pcapng")
 # read_pcap_dpkt(r"C:\D_Drive\temp\tests_ar_ppn\PAE PPN modif désactivation ar sur CAB 1A mais CAB2B intouchée.pcapng")
-read_pcap_pcapng(r"C:\D_Drive\temp\tests_ar_ppn\PAE PPN modif désactivation ar sur CAB 1A mais CAB2B intouchée.pcapng")
+# read_pcap_pcapng(r"C:\D_Drive\temp\tests_ar_ppn\PAE PPN modif désactivation ar sur CAB 1A mais CAB2B intouchée.pcapng")
+# read_pcap_pcapng(r"C:\D_Drive\temp\tests_ar_ppn\PAE PPN modif désactivation ar sur CAB 1A mais CAB2B intouchée.pcapng")
