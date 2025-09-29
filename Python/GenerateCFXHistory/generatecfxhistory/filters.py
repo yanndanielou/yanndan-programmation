@@ -299,9 +299,6 @@ class ChampFxFilter:
         if len(self._field_filters) > 0:
             label = f"{label}{[field_filter.label for field_filter in self._field_filters]}"
 
-        if self._white_list_filter:
-            label = f"{label}{self._white_list_filter.label}"
-
         label = label.translate({ord(i): None for i in "'[]"})
 
         self.label = label
