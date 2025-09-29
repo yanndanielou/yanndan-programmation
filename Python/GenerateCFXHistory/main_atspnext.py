@@ -196,7 +196,11 @@ def main() -> None:
                 for_each_subsystem=False,
                 for_each_current_owner_per_date=True,
                 cfx_filters=[
-                    cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[constants.SecurityRelevant.YES, constants.SecurityRelevant.MITIGATED])]),
+                    cfx.ChampFxFilter(
+                        field_filters=[
+                            filters.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[constants.SecurityRelevant.YES, constants.SecurityRelevant.MITIGATED], forced_label="Security relevant")
+                        ]
+                    ),
                 ],
                 create_excel_file=True,
                 create_html_file=True,
