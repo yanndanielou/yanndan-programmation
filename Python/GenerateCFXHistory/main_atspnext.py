@@ -162,22 +162,6 @@ def main() -> None:
                 for_each_subsystem=False,
                 for_each_current_owner_per_date=False,
                 cfx_filters=[
-                    cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[constants.SecurityRelevant.YES, constants.SecurityRelevant.MITIGATED])]),
-                ],
-                create_excel_file=True,
-                create_html_file=True,
-                display_output_plots=DISPLAY_OUTPUT,
-            ),
-        )
-
-        ui_and_results_generation.produce_results_and_displays_for_libary(
-            cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
-                output_directory_name=OUTPUT_DIRECTORY_NAME,
-                for_global=True,
-                for_each_subsystem=False,
-                for_each_current_owner_per_date=False,
-                cfx_filters=[
                     cfx.ChampFxFilter(cfx_to_treat_whitelist_text_file_full_path="Input/CFX_list_cyber_aio.txt"),
                 ],
                 create_excel_file=True,
@@ -210,7 +194,7 @@ def main() -> None:
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 for_global=True,
                 for_each_subsystem=False,
-                for_each_current_owner_per_date=False,
+                for_each_current_owner_per_date=True,
                 cfx_filters=[
                     cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSecurityRelevant(field_accepted_values=[constants.SecurityRelevant.YES, constants.SecurityRelevant.MITIGATED])]),
                 ],
@@ -227,7 +211,7 @@ def main() -> None:
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 for_global=True,
                 for_each_subsystem=True,
-                for_each_current_owner_per_date=False,
+                for_each_current_owner_per_date=True,
                 cfx_filters=[
                     cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSafetyRelevant(field_accepted_value=True)]),
                 ],
