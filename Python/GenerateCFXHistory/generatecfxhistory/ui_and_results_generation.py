@@ -91,8 +91,7 @@ def produce_results_and_displays(
     generation_instructions.cfx_filters = generation_instructions.cfx_filters.copy()
     match generation_instructions.generate_by_project_instruction:
         case GenerateByProjectInstruction.ONLY_ONE_PROJECT:
-            generation_instructions_copy = copy.deepcopy(generation_instructions)
-            generation_instructions_copy.cfx_filters.append(
+            generation_instructions.cfx_filters.append(
                 ChampFxFilter(field_filters=[ChampFxFilterFieldProject(field_accepted_values=[cast(str, generation_instructions.project_in_case_of_generate_by_project_instruction_one_project)])])
             )
         case GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS:
@@ -110,6 +109,7 @@ def produce_results_and_displays(
                     display_with_cumulative_eras=display_with_cumulative_eras,
                 )
 
+            return
         case GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS:
 
             generation_instructions_copy = copy.deepcopy(generation_instructions)
