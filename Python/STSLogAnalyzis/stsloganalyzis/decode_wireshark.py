@@ -9,7 +9,7 @@ import dpkt
 from pcapng import FileScanner
 
 import pyshark
-from pyshark.packet.packet import Packet
+import pyshark.packet.packet
 import pyshark.packet.layers
 
 from logger import logger_config
@@ -42,7 +42,7 @@ class PcapDissector:
         self.capture = pyshark.FileCapture(self.pcap_file, tshark_path=self.tshark_path)
         # self.capture = pyshark.FileCapture(self.pcap_file, tshark_path=r"C:\Program Files\Wireshark", custom_parameters={"-X": lua_script_params.strip()})
 
-    def parse_packet(self, packet: Packet) -> None:
+    def parse_packet(self, packet: pyshark.packet.packet.Packet) -> None:
         """
         Parses a packet and prints the layers and fields.
         """
@@ -73,8 +73,23 @@ class PcapDissector:
 
         for packet in self.capture:
             self.parse_packet(packet)
+            self.parse_wcn_packet(packet)
 
         self.capture.close()
+
+    def parse_wcn_packet(self, packet: pyshark.packet.packet.Packet) -> None:
+        wcn_layer = packet.wcn
+        all_fields = wcn_layer._all_fields
+        all_fields_with_alternates = wcn_layer._get_all_fields_with_alternates()
+        number_of_fields = len(all_fields_with_alternates)
+
+        for field in all_fields_with_alternates:
+            field_key = field.showname_key
+            field_value = field.showname_value
+            logger_config.print_and_log_info(f"{field_key} = {field_value}")
+            # print(field)
+
+        pass
 
 
 def read_pcap_pcapng(pcap_path: str) -> None:
