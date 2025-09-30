@@ -1,0 +1,48 @@
+{
+    "terminal.integrated.env.linux": {
+        "PYTHONPATH": "${workspaceFolder}"
+    },
+    "terminal.integrated.env.windows": {
+        "PYTHONPATH": "${workspaceFolder}"
+    },
+    "terminal.integrated.env.osx": {
+        "PYTHONPATH": "${workspaceFolder}"
+    },
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}"
+    ],
+    "python.testing.pytestArgs": [
+        "-s"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    // Activer le linting
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.mypyEnabled": true,
+    "python.linting.lintOnSave": true,
+    // Configurer pylint
+    "python.linting.pylintArgs": [
+        "--rcfile=${workspaceFolder}/pyproject.toml"
+    ],
+    // Configurer mypy
+    "python.linting.mypyArgs": [
+        "--config-file=${workspaceFolder}/pyproject.toml"
+    ], // Activer l'exécution des tests à la sauvegarde
+    "python.sortImports.args": [
+        "--profile",
+        "black"
+    ],
+    "python.sortImports.path": "isort",
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+    // Formater automatiquement le code à la sauvegarde
+    "editor.formatOnSave": true,
+    // Activer les snippets Python
+    "editor.snippetSuggestions": "top",
+    // Configurer l'indentation pour Python
+    "[python]": {
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.defaultFormatter": "ms-python.black-formatter" // Configurer Black comme formateur de code
+    }
+}
