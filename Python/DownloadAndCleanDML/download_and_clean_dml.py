@@ -11,6 +11,8 @@ from rhapsody import rhapsody_utils
 
 import param
 
+from pywintypes import com_error
+
 
 @dataclass
 class DownloadAndCleanDMLApplication:
@@ -38,7 +40,21 @@ class DownloadAndCleanDMLApplication:
         dml_file_path = self.remove_useless_tabs(dml_file_path)
         dml_file_path = self.remove_excel_external_links(dml_file_path)
         dml_file_path = self.remove_useless_ranges(dml_file_path)
-        dml_file_path = self.remove_useless_columns(dml_file_path)
+        try:
+            dml_file_path = self.remove_useless_columns(dml_file_path)
+        except com_error as e:
+            logger_config.print_and_log_exception(e)
+            logger_config.print_and_log_error("Error when remove_useless_columns, will retry")
+            except_info_error_code_5 = e.excepinfo[5]
+            logger_config.print_and_log_error(f"Exception info: {except_info_error_code_5}")
+            if except_info_error_code_5 == -2147220464:
+                logger_config.print_and_log_error("Please change the Quickbooks mode to Multi-user Mode.")
+
+            elif except_info_error_code_5 == -2147220472:
+                logger_config.print_and_log_error("Please start Quickbooks.")
+
+            logger_config.print_and_log_info("remove_useless_columns: retry")
+            dml_file_path = self.remove_useless_columns(dml_file_path)
 
     def remove_useless_tabs(self, dml_file_path: str) -> str:
         file_to_create_path = param.DML_FILE_WITHOUT_USELESS_SHEETS_PATH
