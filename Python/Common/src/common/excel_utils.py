@@ -1,15 +1,18 @@
 # Standard
-
+import tempfile
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import List, cast
+import shutil
 
 import openpyxl
 import xlwings
 from xlwings.constants import DeleteShiftDirection
 
 from win32com.client import Dispatch
+
+from common import file_utils
 
 
 # Other libraries
@@ -72,9 +75,18 @@ class XlWingOperationBase(ABC):
 class XlWingsOpenWorkbookOperation:
     input_excel_file_path: str
     excel_visibility: bool
+    work_on_temp_copy_of_input_file: bool = False
+
+    def __post_init__(self) -> None:
+        self.temp_copy_file_path = ""
+        self.temp_copy_directory_path = ""
 
     def do(self) -> xlwings.Book:
-        return XlWingsOpenWorkbookOperation.open_workbook(self.input_excel_file_path, self.excel_visibility)
+        if self.work_on_temp_copy_of_input_file:
+            self.temp_copy_directory_path, self.temp_copy_file_path = file_utils.get_temporary_copy_of_file(self.input_excel_file_path)
+            return XlWingsOpenWorkbookOperation.open_workbook(self.temp_copy_file_path, self.excel_visibility)
+        else:
+            return XlWingsOpenWorkbookOperation.open_workbook(self.input_excel_file_path, self.excel_visibility)
 
     @staticmethod
     def open_workbook(input_excel_file_path: str, excel_visibility: bool) -> xlwings.Book:
@@ -370,104 +382,117 @@ def save_and_close_workbook(workbook_dml: xlwings.Book | openpyxl.Workbook, file
 
 
 def remove_tabs_with_openpyxl(input_excel_file_path: str, file_to_create_path: str, sheets_to_keep_names: List[str]) -> str:
-    with logger_config.stopwatch_with_label(
-        f"remove_tabs_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}, sheets_to_keep_names:{sheets_to_keep_names}", inform_beginning=True
-    ):
+    with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
 
-        with logger_config.stopwatch_with_label(label=f"Open {input_excel_file_path}", inform_beginning=True):
-            workbook = openpyxl.load_workbook(input_excel_file_path)
+        with logger_config.stopwatch_with_label(
+            f"remove_tabs_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}, sheets_to_keep_names:{sheets_to_keep_names}", inform_beginning=True
+        ):
 
-        sheets_names = workbook.sheetnames
-        number_of_initial_sheets_names = len(sheets_names)
-        logger_config.print_and_log_info(f"{number_of_initial_sheets_names} Sheets found: {sheets_names}")
+            with logger_config.stopwatch_with_label(label=f"Open {temp_file_full_path}", inform_beginning=True):
+                workbook = openpyxl.load_workbook(temp_file_full_path)
 
-        for sheet_number, sheet_name in enumerate(sheets_names):
-            if sheet_name in sheets_to_keep_names:
-                logger_config.print_and_log_info(f"Allowed sheet:{sheet_name}")
-            elif sheet_name in EXCEL_INTERNAL_RESERVED_SHEETS_NAMES:
-                logger_config.print_and_log_info(f"ignore Excel internal reserved sheet:{sheet_name}")
-            else:
-                with logger_config.stopwatch_with_label(
-                    label=f"Removing {sheet_number+1}/{number_of_initial_sheets_names}th sheet:{sheet_name} : {round((sheet_number+1)/number_of_initial_sheets_names*100,2)}%",
-                    inform_beginning=True,
-                    monitor_ram_usage=True,
-                ):
-                    try:
-                        # Accéder à la feuille que l'on veut supprimer
-                        sheet_to_remove = workbook[sheet_name]
-                        # Supprimer la feuille
-                        workbook.remove(sheet_to_remove)
+            sheets_names = workbook.sheetnames
+            number_of_initial_sheets_names = len(sheets_names)
+            logger_config.print_and_log_info(f"{number_of_initial_sheets_names} Sheets found: {sheets_names}")
 
-                        workbook.save(file_to_create_path + "_without_" + sheet_name)
-                    except Exception as exc:
-                        logger_config.print_and_log_exception(type(exc))
-                        logger_config.print_and_log_exception(exc)
+            for sheet_number, sheet_name in enumerate(sheets_names):
+                if sheet_name in sheets_to_keep_names:
+                    logger_config.print_and_log_info(f"Allowed sheet:{sheet_name}")
+                elif sheet_name in EXCEL_INTERNAL_RESERVED_SHEETS_NAMES:
+                    logger_config.print_and_log_info(f"ignore Excel internal reserved sheet:{sheet_name}")
+                else:
+                    with logger_config.stopwatch_with_label(
+                        label=f"Removing {sheet_number+1}/{number_of_initial_sheets_names}th sheet:{sheet_name} : {round((sheet_number+1)/number_of_initial_sheets_names*100,2)}%",
+                        inform_beginning=True,
+                        monitor_ram_usage=True,
+                    ):
+                        try:
+                            # Accéder à la feuille que l'on veut supprimer
+                            sheet_to_remove = workbook[sheet_name]
+                            # Supprimer la feuille
+                            workbook.remove(sheet_to_remove)
 
-        workbook.save(file_to_create_path)
-        workbook.close()
-        return file_to_create_path
+                            workbook.save(file_to_create_path + "_without_" + sheet_name)
+                        except Exception as exc:
+                            logger_config.print_and_log_exception(type(exc))
+                            logger_config.print_and_log_exception(exc)
+
+            workbook.save(file_to_create_path)
+            workbook.close()
+            return file_to_create_path
 
 
 def remove_tabs_with_xlwings(input_excel_file_path: str, file_to_create_path: str, sheets_to_keep_names: List[str], excel_visibility: bool = False) -> str:
-    with logger_config.stopwatch_with_label(
-        f"remove_tabs_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}, sheets_to_keep_names:{sheets_to_keep_names}", inform_beginning=True
-    ):
-        workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
-        XlWingsRemoveTabsOperation(sheets_to_keep_names=sheets_to_keep_names).do(workbook_dml)
-        XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
-        return file_to_create_path
+    with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
+        with logger_config.stopwatch_with_label(
+            f"remove_tabs_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}, sheets_to_keep_names:{sheets_to_keep_names}", inform_beginning=True
+        ):
+            workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=temp_file_full_path, excel_visibility=excel_visibility).do()
+            XlWingsRemoveTabsOperation(sheets_to_keep_names=sheets_to_keep_names).do(workbook_dml)
+            XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
+            return file_to_create_path
 
 
 def set_excel_formulas_calculation_to_manual_xlwings(input_excel_file_path: str, file_to_create_path: str, excel_visibility: bool = False) -> str:
-    with logger_config.stopwatch_with_label(
-        f"set_excel_formulas_calculation_to_manual input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}", inform_beginning=True
-    ):
-        workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
-        XlWingsSetExcelFormulasCalculationToManualOperation().do(workbook_dml)
-        XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
-        return file_to_create_path
+    with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
+
+        with logger_config.stopwatch_with_label(
+            f"set_excel_formulas_calculation_to_manual input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}", inform_beginning=True
+        ):
+            workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=temp_file_full_path, excel_visibility=excel_visibility).do()
+            XlWingsSetExcelFormulasCalculationToManualOperation().do(workbook_dml)
+            XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
+            return file_to_create_path
 
 
 def remove_excel_external_links_with_xlwings(input_excel_file_path: str, file_to_create_path: str, excel_visibility: bool = False) -> str:
-    with logger_config.stopwatch_with_label(
-        f"remove_excel_external_links_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}", inform_beginning=True
-    ):
-        workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
-        XlWingsRemoveExcelExternalLinksOperation().do(workbook_dml)
-        XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
-        return file_to_create_path
+    with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
+
+        with logger_config.stopwatch_with_label(
+            f"remove_excel_external_links_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}", inform_beginning=True
+        ):
+            workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=temp_file_full_path, excel_visibility=excel_visibility).do()
+            XlWingsRemoveExcelExternalLinksOperation().do(workbook_dml)
+            XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
+            return file_to_create_path
 
 
 def replace_formulas_with_values_with_xlwings(input_excel_file_path: str, file_to_create_path: str, excel_visibility: bool = False) -> str:
-    with logger_config.stopwatch_with_label(
-        f"replace_formulas_with_values_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}", inform_beginning=True
-    ):
-        workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
-        XlWingsReplaceFormulasWithCurrentValueOperation().do(workbook_dml)
-        XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
-        return file_to_create_path
+    with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
+
+        with logger_config.stopwatch_with_label(
+            f"replace_formulas_with_values_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}", inform_beginning=True
+        ):
+            workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=temp_file_full_path, excel_visibility=excel_visibility).do()
+            XlWingsReplaceFormulasWithCurrentValueOperation().do(workbook_dml)
+            XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
+            return file_to_create_path
 
 
 def remove_ranges_with_xlwings(input_excel_file_path: str, file_to_create_path: str, ranges_to_remove: List[str], excel_visibility: bool = False) -> str:
-    with logger_config.stopwatch_with_label(
-        f"remove_ranges_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}, ranges_to_remove:{ranges_to_remove}", inform_beginning=True
-    ):
-        workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
-        XlWingsRemoveRangesOperation(ranges_to_remove=ranges_to_remove).do(workbook_dml)
-        XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
-        return file_to_create_path
+    with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
+
+        with logger_config.stopwatch_with_label(
+            f"remove_ranges_with_xlwings input_excel_file_path:{input_excel_file_path}, file_to_create_path:{file_to_create_path}, ranges_to_remove:{ranges_to_remove}", inform_beginning=True
+        ):
+            workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=temp_file_full_path, excel_visibility=excel_visibility).do()
+            XlWingsRemoveRangesOperation(ranges_to_remove=ranges_to_remove).do(workbook_dml)
+            XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
+            return file_to_create_path
 
 
-def remove_columns_with_xlwings(input_excel_file_path: str, sheet_name: str, file_to_create_path: str, columns_to_remove_names: List[str], excel_visibility: bool = False) -> str:
-
-    with logger_config.stopwatch_with_label(
-        f"remove_columns_with_xlwings input_excel_file_path:{input_excel_file_path}, sheet_name:{sheet_name}, file_to_create_path:{file_to_create_path}, columns_to_remove_names:{columns_to_remove_names}",
-        inform_beginning=True,
-    ):
-        workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=input_excel_file_path, excel_visibility=excel_visibility).do()
-        XlWingsRemoveColumnsOperation(sheet_name=sheet_name, columns_to_remove_names=columns_to_remove_names).do(workbook_dml)
-        XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
-        return file_to_create_path
+def remove_columns_with_xlwings(
+    input_excel_file_path: str, sheet_name: str, file_to_create_path: str, columns_to_remove_names: List[str], excel_visibility: bool = False, copy_file_before_modif: bool = False
+) -> str:
+    with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
+        with logger_config.stopwatch_with_label(
+            f"remove_columns_with_xlwings input_excel_file_path:{input_excel_file_path}, sheet_name:{sheet_name}, file_to_create_path:{file_to_create_path}, columns_to_remove_names:{columns_to_remove_names}",
+            inform_beginning=True,
+        ):
+            workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=temp_file_full_path, excel_visibility=excel_visibility).do()
+            XlWingsRemoveColumnsOperation(sheet_name=sheet_name, columns_to_remove_names=columns_to_remove_names).do(workbook_dml)
+            XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
+            return file_to_create_path
 
 
 def xl_column_name_to_index(column_name: str) -> int:
