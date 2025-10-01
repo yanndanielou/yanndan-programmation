@@ -305,8 +305,8 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
 
             all_col_initial_index_to_remove: List[int] = []
             for colum_it, column_name_to_remove in enumerate(columns_to_remove_names):
-                col_index = at_beginning_headers.index(column_name_to_remove) + 1  # Ajouter 1 car Excel utilise des index de base 1
-                all_col_initial_index_to_remove.append(col_index)
+                col_index_starting_0 = at_beginning_headers.index(column_name_to_remove)
+                all_col_initial_index_to_remove.append(col_index_starting_0)
             logger_config.print_and_log_info(f"all_col_initial_index_to_remove: {all_col_initial_index_to_remove}")
 
             all_col_initial_index_to_remove_sorted = list(reversed(sorted(all_col_initial_index_to_remove)))
@@ -321,6 +321,7 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
             number_of_columns_to_remove = len(columns_to_remove_names)
 
             if remove_one_by_one_intead_of_all_at_once:
+
                 for colum_it, column_name_to_remove in enumerate(columns_to_remove_names):
 
                     # Obtenir toutes les valeurs de la première ligne
@@ -329,12 +330,20 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
 
                     # Trouver l'index de la colonne à supprimer
                     logger_config.print_and_log_info(f"removing {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}%")
-                    col_index = headers.index(column_name_to_remove) + 1  # Ajouter 1 car Excel utilise des index de base 1
+                    col_index_starting_0 = headers.index(column_name_to_remove)
+                    col_index_starting_1 = headers.index(column_name_to_remove) + 1
+                    col_letter = xl_col_to_name(col_index_starting_0)
+                    col_range = f"{col_letter}:{col_letter}"
+                    logger_config.print_and_log_info(f"col_index:{col_index_starting_0}, col_letter:{col_letter}, col_range:{col_range}")
                     with logger_config.stopwatch_with_label(
-                        label=f"Removing {colum_it+1}/{number_of_columns_to_remove}th column {column_name_to_remove} with index {col_index}.  {round((colum_it+1)/number_of_columns_to_remove*100,2)}%",
+                        label=f"Removing {colum_it+1}/{number_of_columns_to_remove}th column {column_name_to_remove} with index {col_index_starting_0}.  {round((colum_it+1)/number_of_columns_to_remove*100,2)}%",
                         inform_beginning=False,
                     ):
-                        sht.range((1, col_index), (sht.cells.last_cell.row, col_index)).delete()  # Supprimer la colonne
+                        if sht.range(col_range).column_width == 0:
+                            logger_config.print_and_log_info(f"Attempting to delete hidden column {col_range}: show it")
+                            sht.range(col_range).column_width = 10
+                        sht.range(col_range).delete()
+                        # sht.range((1, col_index_starting_1), (sht.cells.last_cell.row, col_index)).delete()  # Supprimer la colonne
                         # sht.range(f"{}:{}").api.Delete(DeleteShiftDirection.xlShiftToLeft)
 
             else:
