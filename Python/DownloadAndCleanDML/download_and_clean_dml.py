@@ -46,7 +46,8 @@ class DownloadAndCleanDMLApplication:
             logger_config.print_and_log_exception(e)
             logger_config.print_and_log_error("Error when remove_useless_columns, will retry")
             except_info_error_code_5 = e.excepinfo[5]
-            logger_config.print_and_log_error(f"Exception info: {except_info_error_code_5}")
+            logger_config.print_and_log_error(f"Exception except_info_error_codes: {e.excepinfo}")
+            logger_config.print_and_log_error(f"Exception except_info_error_code_5: {except_info_error_code_5}")
             if except_info_error_code_5 == -2147220464:
                 logger_config.print_and_log_error("Please change the Quickbooks mode to Multi-user Mode.")
 
