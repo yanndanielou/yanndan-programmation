@@ -284,16 +284,18 @@ class XlWingsRemoveRangesOperation(XlWingOperationBase):
 
 @dataclass
 class XlWingsRemoveColumnsOperation(XlWingOperationBase):
-    sheet_name: str
-    columns_to_remove_names: List[str]
 
     class RemovalOperationType(Enum):
         ALL_COLUMNS_AT_ONCE = auto()
         COLUMN_ONE_BY_ONE_USING_LETTER = auto()
         COLUMN_ONE_BY_ONE_USING_INDEX = auto()
 
+    sheet_name: str
+    columns_to_remove_names: List[str]
+    removal_operation_type: RemovalOperationType = RemovalOperationType.COLUMN_ONE_BY_ONE_USING_LETTER
+
     def do(self, workbook_dml: xlwings.Book) -> None:
-        XlWingsRemoveColumnsOperation.remove_columns_with_xlwings(workbook_dml, self.sheet_name, self.columns_to_remove_names)
+        XlWingsRemoveColumnsOperation.remove_columns_with_xlwings(workbook_dml, self.sheet_name, self.columns_to_remove_names, self.removal_operation_type)
 
     @staticmethod
     def remove_columns_with_xlwings(
@@ -331,7 +333,7 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
                 logger_config.print_and_log_info(f"all_columns_letters_to_remove_range: {all_columns_letters_to_remove_range}")
 
                 with logger_config.stopwatch_with_label(
-                    label=f"Removing columns {all_columns_letters_to_remove}",
+                    label=f"Removing range {all_columns_letters_to_remove_range} columns {all_columns_letters_to_remove}",
                     inform_beginning=True,
                 ):
                     sht.range(all_columns_letters_to_remove_range).api.Delete(DeleteShiftDirection.xlShiftToLeft)
@@ -503,7 +505,12 @@ def remove_ranges_with_xlwings(input_excel_file_path: str, file_to_create_path: 
 
 
 def remove_columns_with_xlwings(
-    input_excel_file_path: str, sheet_name: str, file_to_create_path: str, columns_to_remove_names: List[str], excel_visibility: bool = False, copy_file_before_modif: bool = False
+    input_excel_file_path: str,
+    sheet_name: str,
+    file_to_create_path: str,
+    columns_to_remove_names: List[str],
+    removal_operation_type=XlWingsRemoveColumnsOperation.RemovalOperationType,
+    excel_visibility: bool = False,
 ) -> str:
     with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
         with logger_config.stopwatch_with_label(
@@ -511,7 +518,9 @@ def remove_columns_with_xlwings(
             inform_beginning=True,
         ):
             workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=temp_file_full_path, excel_visibility=excel_visibility).do()
-            XlWingsRemoveColumnsOperation(sheet_name=sheet_name, columns_to_remove_names=columns_to_remove_names).do(workbook_dml)
+            XlWingsRemoveColumnsOperation(
+                sheet_name=sheet_name, columns_to_remove_names=columns_to_remove_names, removal_operation_type=XlWingsRemoveColumnsOperation.RemovalOperationType.ALL_COLUMNS_AT_ONCE
+            ).do(workbook_dml)
             XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
             return file_to_create_path
 
