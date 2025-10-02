@@ -101,7 +101,11 @@ class DownloadAndCleanDMLApplication:
             return file_to_create_path
 
         final_excel_file_path: str = excel_utils.remove_columns_with_xlwings(
-            input_excel_file_path=dml_file_path, columns_to_remove_names=param.COLUMNS_NAMES_TO_REMOVE, file_to_create_path=file_to_create_path, sheet_name=param.USEFUL_DML_SHEET_NAME
+            input_excel_file_path=dml_file_path,
+            columns_to_remove_names=param.COLUMNS_NAMES_TO_REMOVE,
+            file_to_create_path=file_to_create_path,
+            sheet_name=param.USEFUL_DML_SHEET_NAME,
+            removal_operation_type=excel_utils.XlWingsRemoveColumnsOperation.RemovalOperationType.ALL_COLUMNS_AT_ONCE,
         )
         return final_excel_file_path
 
