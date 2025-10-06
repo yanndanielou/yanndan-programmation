@@ -55,13 +55,28 @@ class PcapDissector:
         except AttributeError as e:
             print(f"An error occurred: {e}")
 
-    def print_packets(self) -> None:
+    def print_packets_with_pretty_print(self) -> None:
 
         if self.capture is None:
             raise ValueError("Capture not loaded. Call 'load_capture()' first.")
 
         for packet in self.capture:
             print(packet.pretty_print())
+
+    def fill_dictionnary_for_each_packet(self) -> None:
+
+        if self.capture is None:
+            raise ValueError("Capture not loaded. Call 'load_capture()' first.")
+
+        for packet in self.capture:
+
+            for layer in packet.layers:
+                all_fields_with_alternates = layer._get_all_fields_with_alternates()
+
+                for field in all_fields_with_alternates:
+                    field_key = field.showname_key
+                    field_value = field.showname_value
+                    print(f"layer {layer.layer_name}, {field_key} = {field_value}")
 
     def process_packets(self) -> None:
         """
