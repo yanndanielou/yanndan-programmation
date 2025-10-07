@@ -7,11 +7,11 @@
 @CALL :UNINSTALL_INTERNAL_PYTHON_LIB Common
 @CALL :UNINSTALL_INTERNAL_PYTHON_LIB Game
 
-@timeout /t 5
+@timeout /t 1
 
 CALL :UNINSTALL_UNKNWOWN_LIBS
-rem exit
-@timeout /t 5
+@rem exit
+@timeout /t 1
 
 
 @CALL :INSTALL_INTERNAL_PYTHON_LIB Common
