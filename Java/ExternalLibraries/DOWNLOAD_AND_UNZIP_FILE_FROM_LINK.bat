@@ -16,7 +16,10 @@ IF .zip == %fileNameLast4Digits% set fileNameWithoutExtension=%fileName:~0,-4% &
 @echo FULL_LINK %FULL_LINK% 
 @echo fileNameWithoutExtension %fileNameWithoutExtension% 
 
-timeout /t 30
+timeout /t 1
 
 @CALL DOWNLOAD_FILE_FROM_LINK %1
 powershell -command "Expand-Archive -Force '%fileName%' '%fileNameWithoutExtension%'"
+
+
+timeout /t 1

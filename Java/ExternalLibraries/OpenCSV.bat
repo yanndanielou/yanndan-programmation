@@ -6,4 +6,4 @@ CALL DOWNLOAD_FILE_FROM_LINK "https://repo1.maven.org/maven2/commons-beanutils/c
 
 
 
-timeout /t 15
+timeout /t 1

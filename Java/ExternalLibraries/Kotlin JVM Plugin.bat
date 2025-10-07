@@ -12,4 +12,4 @@ powershell -command "Expand-Archive -Force 'pdfbox_trunk.zip' 'pdfbox_trunk'"
 
 
 
-timeout /t 15
+timeout /t 1

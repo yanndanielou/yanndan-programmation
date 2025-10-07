@@ -8,4 +8,4 @@ echo read https://jogamp.org/wiki/index.php/Downloading_and_installing_JOGL
 CALL DOWNLOAD_AND_UNZIP_FILE_FROM_LINK "https://jogamp.org/deployment/jogamp-current/archive/jogamp-all-platforms.7z"
 
 
-timeout /t 15
+timeout /t 1

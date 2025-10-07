@@ -12,4 +12,4 @@ CALL DOWNLOAD_FILE_FROM_LINK "https://repo1.maven.org/maven2/com/github/almasb/f
 CALL DOWNLOAD_FILE_FROM_LINK "https://repo1.maven.org/maven2/com/github/almasb/fxgl-scene/21.1/fxgl-scene-21.1.jar"
 CALL DOWNLOAD_FILE_FROM_LINK "https://repo1.maven.org/maven2/com/github/almasb/fxgl-gameplay/21.1/fxgl-gameplay-21.1.jar"
 
-timeout /t 15
+timeout /t 1

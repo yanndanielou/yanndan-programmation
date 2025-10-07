@@ -25,4 +25,4 @@ rem start DOWNLOAD_AND_UNZIP_FILE_FROM_LINK.bat "https://dlcdn.apache.org/jena/s
 rem call DOWNLOAD_AND_UNZIP_FILE_FROM_LINK.bat "https://dlcdn.apache.org/jena/binaries/apache-jena-4.10.0.zip"
 
 
-timeout /t 15
+timeout /t 1

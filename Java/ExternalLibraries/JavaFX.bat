@@ -14,4 +14,4 @@ powershell -command "Expand-Archive -Force 'src.zip' 'src'"
 
 
 
-timeout /t 15
+timeout /t 1
