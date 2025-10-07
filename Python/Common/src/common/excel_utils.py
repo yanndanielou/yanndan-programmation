@@ -222,12 +222,15 @@ class XlWingsRemoveExcelExternalLinksOperation(XlWingOperationBase):
     def remove_excel_external_links_with_xlwings(workbook_dml: xlwings.Book) -> None:
         with logger_config.stopwatch_with_label(f"remove_excel_external_links_with_xlwings input_excel_file_path:{workbook_dml.name}", inform_beginning=True):
             external_links_sources = workbook_dml.api.LinkSources()
+            
+            if external_links_sources:
+                logger_config.print_and_log_info(f"{len(external_links_sources)} links found: {external_links_sources}")
 
-            logger_config.print_and_log_info(f"{len(external_links_sources)} links found: {external_links_sources}")
-
-            for external_links_source_name in external_links_sources:
-                with logger_config.stopwatch_with_label(label=f"Removing link:{external_links_source_name}"):
-                    workbook_dml.api.BreakLink(Name=external_links_source_name, Type=1)  # Type=1 pour les liaisons de type Excel
+                for external_links_source_name in external_links_sources:
+                    with logger_config.stopwatch_with_label(label=f"Removing link:{external_links_source_name}"):
+                        workbook_dml.api.BreakLink(Name=external_links_source_name, Type=1)  # Type=1 pour les liaisons de type Excel
+            else:
+                logger_config.print_and_log_info(f"No external link found (pass)")
 
 
 @dataclass
