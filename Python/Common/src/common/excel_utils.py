@@ -92,11 +92,9 @@ class XlWingsOpenWorkbookOperation:
 
     @staticmethod
     def open_workbook(input_excel_file_path: str, excel_visibility: bool) -> xlwings.Book:
-        logger_config.print_and_log_info(f"Open {input_excel_file_path}")
-        xlwings.App(visible=excel_visibility)
-        workbook_dml = xlwings.Book(input_excel_file_path)
-
-        # with logger_config.stopwatch_with_label(label=f"Open {input_excel_file_path}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(label=f"Open {input_excel_file_path}", inform_beginning=True):
+            xlwings.App(visible=excel_visibility)
+            workbook_dml = xlwings.Book(input_excel_file_path)
 
         return workbook_dml
 
@@ -522,7 +520,7 @@ def remove_columns_with_xlwings(
         ):
             workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=temp_file_full_path, excel_visibility=excel_visibility).do()
             XlWingsRemoveColumnsOperation(
-                sheet_name=sheet_name, columns_to_remove_names=columns_to_remove_names, removal_operation_type=XlWingsRemoveColumnsOperation.RemovalOperationType.ALL_COLUMNS_AT_ONCE
+                sheet_name=sheet_name, columns_to_remove_names=columns_to_remove_names, removal_operation_type=removal_operation_type
             ).do(workbook_dml)
             XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
             return file_to_create_path
