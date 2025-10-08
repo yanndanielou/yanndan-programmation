@@ -1,8 +1,8 @@
 # Standard
-
-
 import time
-from typing import Optional
+from dataclasses import dataclass
+from typing import List, Optional
+from warnings import deprecated
 
 from common import download_utils, web_driver_utils
 
@@ -14,8 +14,84 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
+RHAPSODY_HOME_PAGE_LINK = "https://rhapsody.siemens.net/livelink/livelink.exe?func=ll&objId=74106517&objAction=browse"
 
-def download_file_from_rhapsody(
+
+@dataclass
+class DownloadFileInstruction:
+    file_to_download_pattern: str
+    file_to_download_url: str
+    file_move_after_download_action: Optional[download_utils.DownloadFileDetector.FileMoveAfterDownloadAction] = None
+    download_timeout_in_seconds: int = 30
+
+
+def download_files_from_rhapsody(download_files_instructions: List[DownloadFileInstruction]) -> List[str]:
+    files_downloaded_paths: List[str] = []
+
+    with logger_config.stopwatch_with_label(f"download_files_from_rhapsody {len(download_files_instructions)} files"):
+
+        driver = web_driver_utils.create_webdriver_firefox(web_driver_utils.BrowserVisibilityType.REGULAR)
+        driver.get(RHAPSODY_HOME_PAGE_LINK)
+
+        with logger_config.stopwatch_with_label("download_file_from_rhapsody: additional waiting time:"):
+            time.sleep(0.5)
+
+        wait = WebDriverWait(driver, 10)
+        more_providers_button = wait.until(expected_conditions.element_to_be_clickable((By.ID, "moreProviders")))
+        more_providers_button.click()
+
+        # Wait until the Azure option is visible and then click it
+        azure_option = wait.until(expected_conditions.visibility_of_element_located((By.XPATH, "//li[@class='secondary-menu-item authprovider-choice' and @data-authhandler='Azure']")))
+        azure_option.click()
+
+        with logger_config.stopwatch_with_label("download_file_from_rhapsody: additional waiting time:"):
+            time.sleep(10)
+
+        for download_file_instruction in download_files_instructions:
+            with logger_config.stopwatch_with_label(f"download_file_from_rhapsody: {download_file_instruction}"):
+
+                download_file_detector = download_utils.DownloadFileDetector(
+                    directory_path=web_driver_utils.DEFAULT_DOWNLOAD_DIRECTORY,
+                    filename_pattern=download_file_instruction.file_to_download_pattern,
+                    timeout_in_seconds=30,
+                    file_move_after_download_action=download_file_instruction.file_move_after_download_action,
+                )
+
+                with logger_config.stopwatch_with_label("download_file_from_rhapsody: open link {download_file_instruction.file_to_download_url} to launch download:"):
+                    driver.get(download_file_instruction.file_to_download_url)
+
+                file_downloaded_path: Optional[str] = download_file_detector.monitor_download_by_polling()
+                if not file_downloaded_path:
+                    logger_config.print_and_log_error(f"No downloaded file found for {download_file_instruction.file_to_download_pattern}")
+
+                with logger_config.stopwatch_with_label("download_file_from_rhapsody: additional waiting time:"):
+                    time.sleep(1)
+
+                files_downloaded_paths.append(file_downloaded_path)
+
+        driver.quit()
+        return files_downloaded_paths
+
+
+def download_one_file_from_rhapsody(
+    file_to_download_pattern: str, file_to_download_url: str, file_move_after_download_action: Optional[download_utils.DownloadFileDetector.FileMoveAfterDownloadAction] = None
+) -> Optional[str]:
+
+    files_downloaded_paths = download_files_from_rhapsody(
+        [
+            DownloadFileInstruction(
+                file_to_download_pattern=file_to_download_pattern,
+                file_to_download_url=file_to_download_url,
+                file_move_after_download_action=file_move_after_download_action,
+            )
+        ]
+    )
+    file_downloaded_path = files_downloaded_paths[0] if files_downloaded_paths else None
+    return file_downloaded_path
+
+
+@deprecated("Use download_one_file_from_rhapsody instead")
+def download_file_from_rhapsody_old(
     file_to_download_pattern: str, file_to_download_url: str, file_move_after_download_action: Optional[download_utils.DownloadFileDetector.FileMoveAfterDownloadAction] = None
 ) -> Optional[str]:
 
@@ -44,7 +120,7 @@ def download_file_from_rhapsody(
 
         azure_option.click()
 
-        file_downloaded_path: Optional[str] = download_file_detector.monitor_download()
+        file_downloaded_path: Optional[str] = download_file_detector.monitor_download_automatically_with_event_handler()
         if not file_downloaded_path:
             logger_config.print_and_log_error("No downloaded file found")
             return None
