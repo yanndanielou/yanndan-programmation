@@ -626,9 +626,13 @@ class SaveCfxRequestMultipagesResultsApplication:
             file_move_after_download_action=download_utils.DownloadFileDetector.FileMoveAfterDownloadAction(final_path=file_to_create_path_with_extension),
             label=change_state_cfx_query.label,
         )
-        export_button.click()
 
-        file_downloaded_path: Optional[str] = download_file_detector.monitor_download()
+        with stopwatch_with_label_and_surround_with_screenshots(
+            label=f"{change_state_cfx_query.label} export_button click", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
+        ):
+            export_button.click()
+
+        file_downloaded_path: Optional[str] = download_file_detector.monitor_download_automatically_with_event_handler()
         if not file_downloaded_path:
             logger_config.print_and_log_error(f"No downloaded file found for {change_state_cfx_query.label}")
             return False
