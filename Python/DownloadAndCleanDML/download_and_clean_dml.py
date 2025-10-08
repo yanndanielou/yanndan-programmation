@@ -117,7 +117,7 @@ class DownloadAndCleanDMLApplication:
             return file_to_create_path
 
         dml_download_url = "https://rhapsody.siemens.net/livelink/livelink.exe?func=ll&objId=79329709&objAction=Download"
-        file_downloaded: Optional[str] = rhapsody_utils.download_file_from_rhapsody(
+        file_downloaded: Optional[str] = rhapsody_utils.download_file_from_rhapsody_old(
             file_to_download_pattern=param.DML_FILE_DOWNLOADED_PATTERN,
             file_to_download_url=dml_download_url,
             file_move_after_download_action=download_utils.DownloadFileDetector.FileMoveAfterDownloadAction(final_path=param.DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH, retry_in_case_of_error=True),
