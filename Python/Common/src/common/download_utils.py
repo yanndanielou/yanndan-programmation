@@ -99,7 +99,44 @@ class DownloadFileDetector:
             )
             previous_file_size = current_file_size
 
-    def monitor_download(self) -> Optional[str]:
+    def monitor_download_by_polling(self) -> Optional[str]:
+
+        logger_config.print_and_log_info(f"{self.label_with_separator}Waiting download {self.filename_pattern}...")
+        while self.remaining_timeout_in_seconds > 0:
+            time.sleep(1)
+            self.remaining_timeout_in_seconds -= 1
+            manual_scan_files_modified_name_and_timestamp = self.rescan_directory_for_changes()
+            logger_config.print_and_log_info(
+                f"{self.label_with_separator}{self.remaining_timeout_in_seconds} remaining seconds (already {self.timeout_in_seconds-self.remaining_timeout_in_seconds} s waited): Files downloaded found after manual scan:{manual_scan_files_modified_name_and_timestamp}"
+            )
+
+            if len(manual_scan_files_modified_name_and_timestamp) == 1:
+                file_detected = manual_scan_files_modified_name_and_timestamp[0]
+                file_detected_path = file_detected[0]
+                logger_config.print_and_log_info(f"{self.label_with_separator}File download found after manual scan:{file_detected_path}")
+                self.wait_for_file_size_is_stable(file_path=file_detected_path)
+
+                if self.file_move_after_download_action:
+                    logger_config.print_and_log_info(f"{self.label_with_separator}File downloaded : {file_detected_path}, will be moved to {self.file_move_after_download_action.final_path}")
+                    move_success = False
+
+                    if self.file_move_after_download_action.retry_in_case_of_error:
+                        while not move_success:
+                            try:
+                                shutil.move(file_detected_path, self.file_move_after_download_action.final_path)
+                                move_success = True
+                            except PermissionError:
+                                # logger_config.print_and_log_exception(permErr)
+                                logger_config.print_and_log_error("{self.label_with_separator}File " + file_detected_path + " is used. Relase it")
+                                time.sleep(1)
+                    else:
+                        shutil.move(file_detected_path, self.file_move_after_download_action.final_path)
+
+                    return self.file_move_after_download_action.final_path
+
+                return file_detected_path
+
+    def monitor_download_automatically_with_event_handler(self) -> Optional[str]:
         download_event_handler = DownloadEventHandler(self.filename_pattern)
         observer = Observer()
         observer.schedule(download_event_handler, self.directory_path, recursive=False)
