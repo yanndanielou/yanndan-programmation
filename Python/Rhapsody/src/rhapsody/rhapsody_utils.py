@@ -13,6 +13,7 @@ from logger import logger_config
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException
 
 RHAPSODY_HOME_PAGE_LINK = "https://rhapsody.siemens.net/livelink/livelink.exe?func=ll&objId=74106517&objAction=browse"
 
@@ -44,8 +45,16 @@ def download_files_from_rhapsody(download_files_instructions: List[DownloadFileI
         azure_option = wait.until(expected_conditions.visibility_of_element_located((By.XPATH, "//li[@class='secondary-menu-item authprovider-choice' and @data-authhandler='Azure']")))
         azure_option.click()
 
-        with logger_config.stopwatch_with_label("download_file_from_rhapsody: additional waiting time:"):
-            time.sleep(10)
+        with logger_config.stopwatch_with_label(label="login_champfx - document.readyState complete", inform_beginning=True):
+            WebDriverWait(driver, 40).until(lambda driver: driver.execute_script("return document.readyState") == "complete")
+
+        with logger_config.stopwatch_with_label(label="login_champfx - document.readyState complete", inform_beginning=True):
+            WebDriverWait(driver, 40).until(expected_conditions.title_contains("Espace de travail"))
+
+        with logger_config.stopwatch_with_label("download_file_from_rhapsody: additional waiting time:", inform_beginning=True):
+            time.sleep(3)
+
+        driver.set_page_load_timeout(13)
 
         for download_file_instruction in download_files_instructions:
             with logger_config.stopwatch_with_label(f"download_file_from_rhapsody: {download_file_instruction}"):
@@ -57,8 +66,12 @@ def download_files_from_rhapsody(download_files_instructions: List[DownloadFileI
                     file_move_after_download_action=download_file_instruction.file_move_after_download_action,
                 )
 
-                with logger_config.stopwatch_with_label("download_file_from_rhapsody: open link {download_file_instruction.file_to_download_url} to launch download:"):
-                    driver.get(download_file_instruction.file_to_download_url)
+                with logger_config.stopwatch_with_label(f"download_file_from_rhapsody: open link {download_file_instruction.file_to_download_url} to launch download:", inform_beginning=True):
+                    try:
+                        driver.get(download_file_instruction.file_to_download_url)
+                    except TimeoutException as timeout:
+                        logger_config.print_and_log_info("Normal timeout (not understood)")
+                        pass
 
                 file_downloaded_path: Optional[str] = download_file_detector.monitor_download_by_polling()
                 if not file_downloaded_path:
