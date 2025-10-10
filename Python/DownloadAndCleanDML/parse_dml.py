@@ -43,24 +43,14 @@ class LotWbsLibrary(ElementGenericLibrary):
         return cast(LotWbsLibrary.LotWbs, self.get_element_by_name(lot_wbs_name))
 
 
-class ResponsibleCoreTeamLibrary:
+class ResponsibleCoreTeamLibrary(ElementGenericLibrary):
 
     @dataclass
-    class ResponsibleCoreTeam:
-        full_name: str
-
-    def __init__(self) -> None:
-        self.responsibles_core_team: List[ResponsibleCoreTeamLibrary.ResponsibleCoreTeam] = []
-        self.responsibles_core_team_by_name: Dict[str, ResponsibleCoreTeamLibrary.ResponsibleCoreTeam] = {}
+    class ResponsibleCoreTeam(ElementGenericLibrary.Element):
+        pass
 
     def get_responsible_core_team_by_name(self, responsible_core_team_name: str) -> "ResponsibleCoreTeamLibrary.ResponsibleCoreTeam":
-        if responsible_core_team_name in self.responsibles_core_team_by_name:
-            return self.responsibles_core_team_by_name[responsible_core_team_name]
-
-        else:
-            responsible_core_team = ResponsibleCoreTeamLibrary.ResponsibleCoreTeam(responsible_core_team_name)
-            self.responsibles_core_team.append(responsible_core_team)
-            self.responsibles_core_team_by_name[responsible_core_team_name] = responsible_core_team
+        return cast(ResponsibleCoreTeamLibrary.ResponsibleCoreTeam, self.get_element_by_name(responsible_core_team_name))
 
 
 class GuideValue(Enum):
@@ -166,7 +156,7 @@ class DmlFileContent:
                     all_lines_found.append(dml_line)
 
             logger_config.print_and_log_info(f"{len(all_lines_found)} lines found")
-            logger_config.print_and_log_info(f"{len(responsible_core_team_library.responsibles_core_team)} responsibles core team found")
+            logger_config.print_and_log_info(f"{len(responsible_core_team_library.elements)} responsibles core team found")
             logger_config.print_and_log_info(f"{len(lot_wbs_library.elements)} lots wbs found")
             dml_file_content = DmlFileContent(dml_lines=all_lines_found, responsible_core_team_library=responsible_core_team_library, lot_wbs_library=lot_wbs_library)
 
