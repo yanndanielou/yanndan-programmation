@@ -1,17 +1,14 @@
-import numpy
-
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional, cast, Dict
-import pandas
-from enum import Enum, auto
-from datetime import datetime
-
-from common import string_utils
-import param
-
-from logger import logger_config
 import math
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum, auto
+from typing import Dict, List, Optional, cast
+
+import pandas
+from common import string_utils
+from logger import logger_config
+
+import param
 
 
 class ElementGenericLibrary:
@@ -32,6 +29,7 @@ class ElementGenericLibrary:
             responsible_core_team = ElementGenericLibrary.Element(element_name)
             self.elements.append(responsible_core_team)
             self.elements_by_name[element_name] = responsible_core_team
+            return responsible_core_team
 
 
 class LotWbsLibrary(ElementGenericLibrary):
@@ -88,21 +86,37 @@ class DmlLine:
     version: int
     revision: int
     status: DmlStatus
-    guide: bool
+    guide: GuideValue
     actual_livraison: Optional[datetime]
     reference_fa: Optional[ReferenceFaPa]
     reference_pa: Optional[ReferenceFaPa]
     reference_rpa: Optional[ReferenceFaPa]
     reference_rrpa: Optional[ReferenceFaPa]
-    responsible_core_team: str
-    lot_wbs: str
+    responsible_core_team: ResponsibleCoreTeamLibrary.ResponsibleCoreTeam
+    lot_wbs: LotWbsLibrary.LotWbs
     be_number: str
+    produit: Optional[bool]
 
 
-def dml_date_to_datetime(dml_date: str) -> Optional[datetime]:
+def convert_dml_date_to_datetime(dml_date: str) -> Optional[datetime]:
     if dml_date == "NaT":
         return None
     return datetime.strptime(dml_date, "%Y-%m-%d %H:%M:%S")
+
+
+def convert_doc_produit(raw_doc_produit: str) -> Optional[bool]:
+    if raw_doc_produit == "nan":
+        return None
+
+    raw_doc_produit = raw_doc_produit.strip()
+    if raw_doc_produit == "No":
+        return False
+    elif raw_doc_produit == "Yes":
+        return True
+    elif raw_doc_produit == "Oui":
+        return True
+
+    assert False, f"convert_doc_produit, Unsupported {raw_doc_produit}"
 
 
 @dataclass
@@ -141,7 +155,7 @@ class DmlFileContent:
                     revision = int(raw_revision)
                     status = DmlStatus[string_utils.text_to_valid_enum_value_text(str(row["Statut"]))]
                     guide = GuideValue[string_utils.text_to_valid_enum_value_text(str(row["GUIDE"]))]
-                    actual_livraison = dml_date_to_datetime(str(row["Actual Livraison"]))
+                    actual_livraison = convert_dml_date_to_datetime(str(row["Actual Livraison"]))
                     reference_fa: Optional[ReferenceFaPa] = ReferenceFaPa(row["Référence FA"])
                     reference_pa: Optional[ReferenceFaPa] = ReferenceFaPa(row["Référence PA"])
                     reference_rpa: Optional[ReferenceFaPa] = ReferenceFaPa(row["Référence RPA"])
@@ -149,9 +163,24 @@ class DmlFileContent:
                     responsible_core_team = responsible_core_team_library.get_responsible_core_team_by_name(str(row["ResponsableCoreTeam"]))
                     lot_wbs = lot_wbs_library.get_lot_wbs_by_name(str(row["Lot WBS"]))
                     be_number = str(row["Numéro du BE"])
+                    produit = convert_doc_produit(str(row["Document Produit\n(Yes/No)"]))
 
                     dml_line = DmlLine(
-                        code_ged_moe, title, version, revision, status, guide, actual_livraison, reference_fa, reference_pa, reference_rpa, reference_rrpa, responsible_core_team, lot_wbs, be_number
+                        code_ged_moe,
+                        title,
+                        version,
+                        revision,
+                        status,
+                        guide,
+                        actual_livraison,
+                        reference_fa,
+                        reference_pa,
+                        reference_rpa,
+                        reference_rrpa,
+                        responsible_core_team,
+                        lot_wbs,
+                        be_number,
+                        produit,
                     )
                     all_lines_found.append(dml_line)
 
@@ -159,11 +188,10 @@ class DmlFileContent:
             logger_config.print_and_log_info(f"{len(responsible_core_team_library.elements)} responsibles core team found")
             logger_config.print_and_log_info(f"{len(lot_wbs_library.elements)} lots wbs found")
             dml_file_content = DmlFileContent(dml_lines=all_lines_found, responsible_core_team_library=responsible_core_team_library, lot_wbs_library=lot_wbs_library)
-
             return dml_file_content
 
 
 if __name__ == "__main__":
 
     with logger_config.application_logger("ParseDML"):
-        dml_file_content = DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path=param.DML_FILE_CLEANED_FINAL)
+        dml_file_content2 = DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path=param.DML_FILE_CLEANED_FINAL)
