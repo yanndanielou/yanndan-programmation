@@ -45,7 +45,7 @@ class DownloadFileDetector:
 
     @dataclass
     class RetryInCaseOfErrorAction:
-        max_number_of_retry: Optional[int]
+        max_number_of_retry: Optional[int] = None
 
     @dataclass
     class FileMoveAfterDownloadAction:
