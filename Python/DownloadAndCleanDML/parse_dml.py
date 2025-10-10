@@ -80,6 +80,17 @@ class ReferenceFaPa:
 
 
 @dataclass
+class FaPa:
+    reference: ReferenceFaPa
+    actual_delivery: Optional[datetime]
+
+
+@dataclass
+class Rpa(FaPa):
+    status: Optional[DmlStatus]
+
+
+@dataclass
 class DmlLine:
     code_ged_moe: str
     title: str
@@ -88,10 +99,10 @@ class DmlLine:
     status: DmlStatus
     guide: GuideValue
     actual_livraison: Optional[datetime]
-    reference_fa: Optional[ReferenceFaPa]
-    reference_pa: Optional[ReferenceFaPa]
-    reference_rpa: Optional[ReferenceFaPa]
-    reference_rrpa: Optional[ReferenceFaPa]
+    fa: Optional[FaPa]
+    pa: Optional[FaPa]
+    rpa: Optional[Rpa]
+    rrpa: Optional[FaPa]
     responsible_core_team: ResponsibleCoreTeamLibrary.ResponsibleCoreTeam
     lot_wbs: LotWbsLibrary.LotWbs
     be_number: str
@@ -156,10 +167,26 @@ class DmlFileContent:
                     status = DmlStatus[string_utils.text_to_valid_enum_value_text(str(row["Statut"]))]
                     guide = GuideValue[string_utils.text_to_valid_enum_value_text(str(row["GUIDE"]))]
                     actual_livraison = convert_dml_date_to_datetime(str(row["Actual Livraison"]))
-                    reference_fa: Optional[ReferenceFaPa] = ReferenceFaPa(row["Référence FA"])
-                    reference_pa: Optional[ReferenceFaPa] = ReferenceFaPa(row["Référence PA"])
-                    reference_rpa: Optional[ReferenceFaPa] = ReferenceFaPa(row["Référence RPA"])
-                    reference_rrpa: Optional[ReferenceFaPa] = ReferenceFaPa(row["Référence RRPA"])
+
+                    fa = (
+                        FaPa(reference=ReferenceFaPa(row["Référence FA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual FA"])))
+                        if str(row["Actual FA"]) not in ["NaT", "nan", "na"]
+                        else None
+                    )
+                    pa = (
+                        FaPa(reference=ReferenceFaPa(row["Référence PA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual Emission PA"]))) if row["Actual Emission PA"] != "NaT" else None
+                    )
+                    rpa = (
+                        Rpa(
+                            reference=ReferenceFaPa(row["Référence RPA"]),
+                            status=DmlStatus[string_utils.text_to_valid_enum_value_text(str(row["Statut RPA"]))] if str(row["Statut RPA"]) not in ["nan", " "] else None,
+                            actual_delivery=convert_dml_date_to_datetime(str(row["Actual Retour PA"])),
+                        )
+                        if str(row["Actual Retour PA"]) != "NaT"
+                        else None
+                    )
+                    rrpa = FaPa(reference=ReferenceFaPa(row["Référence RRPA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual RRPA"]))) if row["Actual RRPA"] != "NaT" else None
+
                     responsible_core_team = responsible_core_team_library.get_responsible_core_team_by_name(str(row["ResponsableCoreTeam"]))
                     lot_wbs = lot_wbs_library.get_lot_wbs_by_name(str(row["Lot WBS"]))
                     be_number = str(row["Numéro du BE"])
@@ -173,10 +200,10 @@ class DmlFileContent:
                         status,
                         guide,
                         actual_livraison,
-                        reference_fa,
-                        reference_pa,
-                        reference_rpa,
-                        reference_rrpa,
+                        fa,
+                        pa,
+                        rpa,
+                        rrpa,
                         responsible_core_team,
                         lot_wbs,
                         be_number,
