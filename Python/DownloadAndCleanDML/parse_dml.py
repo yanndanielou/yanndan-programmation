@@ -1,6 +1,8 @@
+import numpy
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional, cast
+from typing import TYPE_CHECKING, List, Optional, cast, Dict
 import pandas
 from enum import Enum, auto
 from datetime import datetime
@@ -10,6 +12,55 @@ import param
 
 from logger import logger_config
 import math
+
+
+class ElementGenericLibrary:
+
+    @dataclass
+    class Element:
+        full_name: str
+
+    def __init__(self) -> None:
+        self.elements: List[ElementGenericLibrary.Element] = []
+        self.elements_by_name: Dict[str, ElementGenericLibrary.Element] = {}
+
+    def get_element_by_name(self, element_name: str) -> "ElementGenericLibrary.Element":
+        if element_name in self.elements_by_name:
+            return self.elements_by_name[element_name]
+
+        else:
+            responsible_core_team = ElementGenericLibrary.Element(element_name)
+            self.elements.append(responsible_core_team)
+            self.elements_by_name[element_name] = responsible_core_team
+
+
+class LotWbsLibrary(ElementGenericLibrary):
+
+    class LotWbs(ElementGenericLibrary.Element):
+        pass
+
+    def get_lot_wbs_by_name(self, lot_wbs_name: str) -> "LotWbsLibrary.LotWbs":
+        return cast(LotWbsLibrary.LotWbs, self.get_element_by_name(lot_wbs_name))
+
+
+class ResponsibleCoreTeamLibrary:
+
+    @dataclass
+    class ResponsibleCoreTeam:
+        full_name: str
+
+    def __init__(self) -> None:
+        self.responsibles_core_team: List[ResponsibleCoreTeamLibrary.ResponsibleCoreTeam] = []
+        self.responsibles_core_team_by_name: Dict[str, ResponsibleCoreTeamLibrary.ResponsibleCoreTeam] = {}
+
+    def get_responsible_core_team_by_name(self, responsible_core_team_name: str) -> "ResponsibleCoreTeamLibrary.ResponsibleCoreTeam":
+        if responsible_core_team_name in self.responsibles_core_team_by_name:
+            return self.responsibles_core_team_by_name[responsible_core_team_name]
+
+        else:
+            responsible_core_team = ResponsibleCoreTeamLibrary.ResponsibleCoreTeam(responsible_core_team_name)
+            self.responsibles_core_team.append(responsible_core_team)
+            self.responsibles_core_team_by_name[responsible_core_team_name] = responsible_core_team
 
 
 class GuideValue(Enum):
@@ -59,12 +110,16 @@ class DmlLine:
 
 
 def dml_date_to_datetime(dml_date: str) -> Optional[datetime]:
-    pass
+    if dml_date == "NaT":
+        return None
+    return datetime.strptime(dml_date, "%Y-%m-%d %H:%M:%S")
 
 
 @dataclass
 class DmlFileContent:
     dml_lines: List[DmlLine]
+    responsible_core_team_library: ResponsibleCoreTeamLibrary
+    lot_wbs_library: LotWbsLibrary
 
     class Builder:
 
@@ -77,6 +132,8 @@ class DmlFileContent:
             logger_config.print_and_log_info(f" {dml_excel_file_full_path} columns  {main_data_frame.columns[:10]} ...")
 
             all_lines_found: List[DmlLine] = []
+            responsible_core_team_library = ResponsibleCoreTeamLibrary()
+            lot_wbs_library = LotWbsLibrary()
 
             with logger_config.stopwatch_with_label(f"Load and parse {len(main_data_frame)} DML lines"):
 
@@ -99,9 +156,9 @@ class DmlFileContent:
                     reference_pa: Optional[ReferenceFaPa] = ReferenceFaPa(row["Référence PA"])
                     reference_rpa: Optional[ReferenceFaPa] = ReferenceFaPa(row["Référence RPA"])
                     reference_rrpa: Optional[ReferenceFaPa] = ReferenceFaPa(row["Référence RRPA"])
-                    responsible_core_team = str(row["Code GED MOE"])
-                    lot_wbs = str(row["Code GED MOE"])
-                    be_number = str(row["Code GED MOE"])
+                    responsible_core_team = responsible_core_team_library.get_responsible_core_team_by_name(str(row["ResponsableCoreTeam"]))
+                    lot_wbs = lot_wbs_library.get_lot_wbs_by_name(str(row["Lot WBS"]))
+                    be_number = str(row["Numéro du BE"])
 
                     dml_line = DmlLine(
                         code_ged_moe, title, version, revision, status, guide, actual_livraison, reference_fa, reference_pa, reference_rpa, reference_rrpa, responsible_core_team, lot_wbs, be_number
@@ -109,7 +166,9 @@ class DmlFileContent:
                     all_lines_found.append(dml_line)
 
             logger_config.print_and_log_info(f"{len(all_lines_found)} lines found")
-            dml_file_content = DmlFileContent(dml_lines=all_lines_found)
+            logger_config.print_and_log_info(f"{len(responsible_core_team_library.responsibles_core_team)} responsibles core team found")
+            logger_config.print_and_log_info(f"{len(lot_wbs_library.elements)} lots wbs found")
+            dml_file_content = DmlFileContent(dml_lines=all_lines_found, responsible_core_team_library=responsible_core_team_library, lot_wbs_library=lot_wbs_library)
 
             return dml_file_content
 
