@@ -87,6 +87,8 @@ class TestTextToValidEnumValueText:
         CHANGE_INTERNAL = auto()
         N_A_CHANGE_REQUEST = auto()
         AFFECTED_PACKAGE_IS_NOT_INSTALLED = auto()
+        NON_EXAMINE = auto()
+        PAS_DE_FA = auto()
 
     # fmt: off
     text_to_valid_enum_value_text = ["no fix change",
@@ -94,7 +96,10 @@ class TestTextToValidEnumValueText:
     "not-A-bug",
     "Change, internal",
     "Affected package is not installed.",
-    "N/A (Change Request)"] 
+    "N/A (Change Request)",
+    "pas de FA ",
+    "Non examiné ",
+    "Non examiné",] 
     # fmt: on
 
     @pytest.mark.parametrize("raw_text", text_to_valid_enum_value_text)

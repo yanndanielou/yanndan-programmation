@@ -70,4 +70,4 @@ def text_to_valid_enum_value_text(raw_text: str) -> Optional[str]:
         logger_config.print_and_log_error(f"text_to_valid_enum_value_text: Could not treat {raw_text}")
         return None
 
-    return raw_text.replace("/", "_").replace(", ", "_").replace(".", "").replace(" ", "_").replace("-", "_").replace(",", "_").replace("(", "").replace(")", "").upper()
+    return raw_text.strip().replace("/", "_").replace(", ", "_").replace(".", "").replace(" ", "_").replace("-", "_").replace(",", "_").replace("(", "").replace(")", "").replace("é", "e").upper()
