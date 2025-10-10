@@ -623,7 +623,9 @@ class SaveCfxRequestMultipagesResultsApplication:
             directory_path=self.web_browser_download_directory,
             filename_pattern=CFX_FILES_DOWNLOADED_PATTERN_WITHOUT_EXTENSION + change_state_cfx_query.output_file_type.get_file_extension(),
             timeout_in_seconds=150,
-            file_move_after_download_action=download_utils.DownloadFileDetector.FileMoveAfterDownloadAction(final_path=file_to_create_path_with_extension),
+            file_move_after_download_action=download_utils.DownloadFileDetector.FileMoveAfterDownloadAction(
+                final_path=file_to_create_path_with_extension, retry_in_case_of_error=download_utils.DownloadFileDetector.RetryInCaseOfErrorAction(max_number_of_retry=100)
+            ),
             label=change_state_cfx_query.label,
         )
 
