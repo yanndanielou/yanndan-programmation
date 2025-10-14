@@ -519,7 +519,6 @@ def remove_columns_with_xlwings(
             inform_beginning=True,
         ):
             workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=temp_file_full_path, excel_visibility=excel_visibility).do()
-            XlWingsRemoveColumnsOperation(
                 sheet_name=sheet_name, columns_to_remove_names=columns_to_remove_names, removal_operation_type=removal_operation_type
             ).do(workbook_dml)
             XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
