@@ -1,18 +1,42 @@
-# import ipaddress
+import os
+from dataclasses import dataclass
+from typing import List
+
+from common import file_name_utils
 
 from networkflowmatrix.network_conf_files import (
     EquipmentDefinitionTab,
-    UnicastIpDefinitionColumnsInTab,
-    ExcelColumnDefinitionByColumnTitle,
     ExcelColumnDefinitionByColumnExcelId,
+    ExcelColumnDefinitionByColumnTitle,
     ForcedNoneValueInformationDefinition,
-    MulticastIpDefinitionColumnsInTab,
     InsideTrainEquipmentDefinitionTab,
+    MulticastIpDefinitionColumnsInTab,
     TrainByCcIdColumnDefinition,
+    UnicastIpDefinitionColumnsInTab,
 )
 
+# import ipaddress
 
-class StdRadioNetworkConfV2Description:
+
+INPUT_DOWNLOAD_FOLDER = "Input_Downloaded"
+
+
+@dataclass
+class ExcelInputFileDescription:
+    all_tabs_definition: List[EquipmentDefinitionTab]
+    excel_file_full_name: str
+    rhapsody_id: int
+
+    def __post_init__(self) -> None:
+        self.rhapsody_download_link = f"https://rhapsody.siemens.net/livelink/livelink.exe?func=ll&objId={self.rhapsody_id}&objAction=Download"
+        self.excel_file_full_path = f"{INPUT_DOWNLOAD_FOLDER}/{self.excel_file_full_name}"
+        self.excel_file_name_without_extension, self.excel_file_extension = os.path.splitext(self.excel_file_full_name)
+        self.excel_file_name_without_extension = file_name_utils.get_file_name_without_extension_from_full_path(self.excel_file_full_name)
+        self.file_name_mask_downloaded = f"{self.excel_file_name_without_extension}*{self.excel_file_extension}"
+        pass
+
+
+class StdRadioNetworkConfV2Description(ExcelInputFileDescription):
     def __init__(self) -> None:
 
         self.ip_reseau_std_radio_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
@@ -29,11 +53,14 @@ class StdRadioNetworkConfV2Description:
                 ),
             ],
         )
-        self.all_tabs_definition = [self.ip_reseau_std_radio_tab]
-        self.excel_file_full_path = "Input_Downloaded/NExTEO-S-273000-02-0125-01 Dossier de Configuration Réseau STD Radio - V02-00 Annexe A_diffa.xlsx"
+        super().__init__(
+            all_tabs_definition=[self.ip_reseau_std_radio_tab],
+            excel_file_full_name="NExTEO-S-273000-02-0125-01 Dossier de Configuration Réseau STD Radio - V01-00 Annexe A.xlsx",
+            rhapsody_id=90870046,
+        )
 
 
-class SolStdNetworkConfV10Description:
+class SolStdNetworkConfV10Description(ExcelInputFileDescription):
     def __init__(self) -> None:
 
         self.ip_ats_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
@@ -223,11 +250,14 @@ class SolStdNetworkConfV10Description:
                 ),
             ],
         )
-        self.all_tabs_definition = [self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab, self.ip_mats, self.ip_reseau_pcc, self.ip_csr_tab, self.ip_pmb_tab, self.ip_pai_tab]
-        self.excel_file_full_path = "Input_Downloaded/NExTEO-S-271000-02-0125-02  Dossier de Configuration Réseau Sol - V10-00 Annexe A.xlsb"
+        super().__init__(
+            all_tabs_definition=[self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab, self.ip_mats, self.ip_reseau_pcc, self.ip_csr_tab, self.ip_pmb_tab, self.ip_pai_tab],
+            excel_file_full_name="NExTEO-S-271000-02-0125-02  Dossier de Configuration Réseau Sol - V10-00 Annexe A.xlsb",
+            rhapsody_id=91311347,
+        )
 
 
-class BordAdressPlanV9Description:
+class BordAddressPlanV9Description(ExcelInputFileDescription):
     def __init__(self) -> None:
 
         self.ip_tu_tab: InsideTrainEquipmentDefinitionTab = InsideTrainEquipmentDefinitionTab(
@@ -245,5 +275,5 @@ class BordAdressPlanV9Description:
                 )
             ],
         )
-        self.all_tabs_definition = [self.ip_tu_tab]
-        self.excel_file_full_path = "Input_Downloaded/NExTEO-B-272000-02-0125-00 Plan d adressage NExTEO Bord  V09-00 (1).xlsm"
+
+        super().__init__(all_tabs_definition=[self.ip_tu_tab], excel_file_full_name="NExTEO-B-272000-02-0125-00 Plan d adressage NExTEO Bord  V09-00 (1).xlsm", rhapsody_id=91211232)

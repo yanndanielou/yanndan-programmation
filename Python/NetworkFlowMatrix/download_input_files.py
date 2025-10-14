@@ -31,13 +31,13 @@ if __name__ == "__main__":
 
         std_radio_network_conf = network_conf_files_descriptions_data.StdRadioNetworkConfV2Description()
 
-        file_downloaded: Optional[str] = rhapsody_utils.download_files_from_rhapsody(
-            [
-                get_download_instruction(network_conf_files_descriptions_data.StdRadioNetworkConfV2Description()),
-                get_download_instruction(network_conf_files_descriptions_data.SolStdNetworkConfV10Description()),
-                get_download_instruction(network_conf_files_descriptions_data.BordAddressPlanV9Description()),
-            ]
-        )
+        download_instructions = [
+            get_download_instruction(std_radio_network_conf),
+            get_download_instruction(network_conf_files_descriptions_data.SolStdNetworkConfV10Description()),
+            get_download_instruction(network_conf_files_descriptions_data.BordAddressPlanV9Description()),
+        ]
+        file_downloaded: Optional[str] = rhapsody_utils.download_files_from_rhapsody(download_instructions)
+        pass
 
 
 if __name__ == "__main_old__":

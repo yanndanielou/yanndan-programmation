@@ -60,13 +60,13 @@ if __name__ == "__main__":
 
         radio_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_file(
             equipments_library=equipments_library,
-            excel_file_full_path=network_conf_files_descriptions_data.StdRadioNetworkConfV2Description().excel_file_full_path,
+            excel_file_full_path=network_conf_files_descriptions_data.StdRadioNetworkConfV2Description().excel_file_full_name,
             equipment_definition_tabs=network_conf_files_descriptions_data.StdRadioNetworkConfV2Description().all_tabs_definition,
         )
 
         sol_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_file(
             equipments_library=equipments_library,
-            excel_file_full_path=network_conf_files_descriptions_data.SolStdNetworkConfV10Description().excel_file_full_path,
+            excel_file_full_path=network_conf_files_descriptions_data.SolStdNetworkConfV10Description().excel_file_full_name,
             equipment_definition_tabs=network_conf_files_descriptions_data.SolStdNetworkConfV10Description().all_tabs_definition,
         )
 
