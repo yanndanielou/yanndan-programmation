@@ -17,6 +17,8 @@ import param
 class DownloadAndCleanDMLApplication:
 
     def run(self) -> None:
+
+        excel_utils.close_all_xlwings()
         dml_file_path = self.download_dml_file()
 
         # dml_file_path = excel_utils.convert_xlsx_file_to_xls_with_win32com_dispatch(dml_file_path)
@@ -52,6 +54,8 @@ class DownloadAndCleanDMLApplication:
 
             elif except_info_error_code_5 == -2147220472:
                 logger_config.print_and_log_error("Please start Quickbooks.")
+
+            excel_utils.close_all_xlwings()
 
             logger_config.print_and_log_info("remove_useless_columns: retry")
             dml_file_path = self.remove_useless_columns(dml_file_path)
