@@ -1,0 +1,202 @@
+import math
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum, auto
+from typing import Dict, List, Optional, cast
+
+import pandas
+from common import string_utils
+from logger import logger_config
+
+
+class ElementGenericLibrary:
+
+    @dataclass
+    class Element:
+        full_name: str
+
+    def __init__(self) -> None:
+        self.elements: List[ElementGenericLibrary.Element] = []
+        self.elements_by_name: Dict[str, ElementGenericLibrary.Element] = {}
+
+    def get_element_by_name(self, element_name: str) -> "ElementGenericLibrary.Element":
+        if element_name in self.elements_by_name:
+            return self.elements_by_name[element_name]
+
+        else:
+            responsible_core_team = ElementGenericLibrary.Element(element_name)
+            self.elements.append(responsible_core_team)
+            self.elements_by_name[element_name] = responsible_core_team
+            return responsible_core_team
+
+
+class LotWbsLibrary(ElementGenericLibrary):
+
+    class LotWbs(ElementGenericLibrary.Element):
+        pass
+
+    def get_lot_wbs_by_name(self, lot_wbs_name: str) -> "LotWbsLibrary.LotWbs":
+        return cast(LotWbsLibrary.LotWbs, self.get_element_by_name(lot_wbs_name))
+
+
+class ResponsibleCoreTeamLibrary(ElementGenericLibrary):
+
+    @dataclass
+    class ResponsibleCoreTeam(ElementGenericLibrary.Element):
+        pass
+
+    def get_responsible_core_team_by_name(self, responsible_core_team_name: str) -> "ResponsibleCoreTeamLibrary.ResponsibleCoreTeam":
+        return cast(ResponsibleCoreTeamLibrary.ResponsibleCoreTeam, self.get_element_by_name(responsible_core_team_name))
+
+
+class GuideValue(Enum):
+    OUI = auto()
+    NON = auto()
+    TBD = auto()
+
+
+class DmlStatus(Enum):
+    FAVORABLE = auto()
+    ARPCPA = auto()
+    ARAC = auto()
+    DEFAVORABLE = auto()
+    SUPPRIME = auto()
+    NON_LIVRE = auto()
+    PAS_DE_FA = auto()
+    EN_ATTENTE_FA = auto()
+    LIVRE_POUR_INFORMATION = auto()
+    NON_EXAMINE = auto()
+    DOCUMENT_INTERNE = auto()
+    ABANDONNE = auto()
+
+
+class ReferenceFaPa:
+    NO_FA = "Pas de FA"
+
+    def __init__(self, full_reference: str) -> None:
+        self.full_reference = full_reference
+
+
+@dataclass
+class FaPa:
+    reference: ReferenceFaPa
+    actual_delivery: Optional[datetime]
+
+
+@dataclass
+class Rpa(FaPa):
+    status: Optional[DmlStatus]
+
+
+@dataclass
+class DmlLine:
+    code_ged_moe: str
+    title: str
+    version: int
+    revision: int
+    status: DmlStatus
+    guide: GuideValue
+    actual_livraison: Optional[datetime]
+    fa: Optional[FaPa]
+    pa: Optional[FaPa]
+    rpa: Optional[Rpa]
+    rrpa: Optional[FaPa]
+    responsible_core_team: ResponsibleCoreTeamLibrary.ResponsibleCoreTeam
+    lot_wbs: LotWbsLibrary.LotWbs
+    be_number: str
+    produit: Optional[bool]
+    doc_deleted: bool
+
+
+def convert_dml_date_to_datetime(dml_date: str) -> Optional[datetime]:
+    if dml_date == "NaT":
+        return None
+    return datetime.strptime(dml_date, "%Y-%m-%d %H:%M:%S")
+
+
+def convert_boolean_column(raw_doc_produit: str) -> Optional[bool]:
+    if raw_doc_produit == "nan":
+        return None
+
+    raw_doc_produit = raw_doc_produit.strip()
+    if raw_doc_produit == "No":
+        return False
+    elif raw_doc_produit == "Yes":
+        return True
+    elif raw_doc_produit == "Oui":
+        return True
+
+    assert False, f"convert_doc_produit, Unsupported {raw_doc_produit}"
+
+
+@dataclass
+class DmlFileContent:
+    dml_lines: List[DmlLine]
+    responsible_core_team_library: ResponsibleCoreTeamLibrary
+    lot_wbs_library: LotWbsLibrary
+
+    class Builder:
+
+        @staticmethod
+        def build_with_excel_file(dml_excel_file_full_path: str) -> "DmlFileContent":
+
+            with logger_config.stopwatch_with_label(f"Load {dml_excel_file_full_path}", monitor_ram_usage=True, inform_beginning=True):
+                main_data_frame = pandas.read_excel(dml_excel_file_full_path, sheet_name="Database")
+            logger_config.print_and_log_info(f"{dml_excel_file_full_path} has {len(main_data_frame)} items")
+            logger_config.print_and_log_info(f" {dml_excel_file_full_path} columns  {main_data_frame.columns[:10]} ...")
+
+            all_lines_found: List[DmlLine] = []
+            responsible_core_team_library = ResponsibleCoreTeamLibrary()
+            lot_wbs_library = LotWbsLibrary()
+
+            with logger_config.stopwatch_with_label(f"Load and parse {len(main_data_frame)} DML lines"):
+
+                for _, row in main_data_frame.iterrows():
+
+                    code_ged_moe = str(row["Code GED MOE"])
+                    title = str(row["Titre Document"])
+                    raw_version = row["Version"]
+                    if type(raw_version) is not str and math.isnan(raw_version):
+                        raw_version = "-1"
+                    version = int(raw_version)
+                    raw_revision = row["Révision"]
+                    if type(raw_revision) is not str and math.isnan(raw_revision):
+                        raw_revision = "-1"
+                    revision = int(raw_revision)
+                    status = DmlStatus[string_utils.text_to_valid_enum_value_text(str(row["Statut"]))]
+                    guide = GuideValue[string_utils.text_to_valid_enum_value_text(str(row["GUIDE"]))]
+                    actual_livraison = convert_dml_date_to_datetime(str(row["Actual Livraison"]))
+
+                    fa = (
+                        FaPa(reference=ReferenceFaPa(row["Référence FA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual FA"])))
+                        if str(row["Actual FA"]) not in ["NaT", "nan", "na"]
+                        else None
+                    )
+                    pa = (
+                        FaPa(reference=ReferenceFaPa(row["Référence PA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual Emission PA"]))) if row["Actual Emission PA"] != "NaT" else None
+                    )
+                    rpa = (
+                        Rpa(
+                            reference=ReferenceFaPa(row["Référence RPA"]),
+                            status=DmlStatus[string_utils.text_to_valid_enum_value_text(str(row["Statut RPA"]))] if str(row["Statut RPA"]) not in ["nan", " "] else None,
+                            actual_delivery=convert_dml_date_to_datetime(str(row["Actual Retour PA"])),
+                        )
+                        if str(row["Actual Retour PA"]) != "NaT"
+                        else None
+                    )
+                    rrpa = FaPa(reference=ReferenceFaPa(row["Référence RRPA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual RRPA"]))) if row["Actual RRPA"] != "NaT" else None
+
+                    responsible_core_team = responsible_core_team_library.get_responsible_core_team_by_name(str(row["ResponsableCoreTeam"]))
+                    lot_wbs = lot_wbs_library.get_lot_wbs_by_name(str(row["Lot WBS"]))
+                    be_number = str(row["Numéro du BE"])
+                    produit = convert_boolean_column(str(row["Document Produit\n(Yes/No)"]))
+                    doc_deleted = convert_boolean_column(str(row["Document Supprimé"]))
+
+                    dml_line = DmlLine(code_ged_moe, title, version, revision, status, guide, actual_livraison, fa, pa, rpa, rrpa, responsible_core_team, lot_wbs, be_number, produit, doc_deleted)
+                    all_lines_found.append(dml_line)
+
+            logger_config.print_and_log_info(f"{len(all_lines_found)} lines found")
+            logger_config.print_and_log_info(f"{len(responsible_core_team_library.elements)} responsibles core team found")
+            logger_config.print_and_log_info(f"{len(lot_wbs_library.elements)} lots wbs found")
+            dml_file_content = DmlFileContent(dml_lines=all_lines_found, responsible_core_team_library=responsible_core_team_library, lot_wbs_library=lot_wbs_library)
+            return dml_file_content
