@@ -7,11 +7,10 @@ from typing import Optional
 # Other libraries
 from common import download_utils, excel_utils
 from logger import logger_config
+from pywintypes import com_error
 from rhapsody import rhapsody_utils
 
 import param
-
-from pywintypes import com_error
 
 
 @dataclass
@@ -120,7 +119,9 @@ class DownloadAndCleanDMLApplication:
         file_downloaded: Optional[str] = rhapsody_utils.download_file_from_rhapsody_old(
             file_to_download_pattern=param.DML_FILE_DOWNLOADED_PATTERN,
             file_to_download_url=dml_download_url,
-            file_move_after_download_action=download_utils.DownloadFileDetector.FileMoveAfterDownloadAction(final_path=param.DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH, retry_in_case_of_error=True),
+            file_move_after_download_action=download_utils.DownloadFileDetector.FileMoveAfterDownloadAction(
+                final_path=param.DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH, retry_in_case_of_error=download_utils.DownloadFileDetector.RetryInCaseOfErrorAction()
+            ),
         )
         assert file_downloaded
 
