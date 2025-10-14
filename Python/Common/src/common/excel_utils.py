@@ -66,6 +66,13 @@ def convert_xlsx_file_to_xls_with_openpyxl(xlsx_file_full_path: str) -> str:
     return xls_output_file_path
 
 
+def close_all_xlwings() -> None:
+    app = xlwings.apps.add()
+    wb = xlwings.Book()
+    wb.close()
+    app.quit()
+
+
 class XlWingOperationBase(ABC):
 
     @abstractmethod
@@ -220,7 +227,7 @@ class XlWingsRemoveExcelExternalLinksOperation(XlWingOperationBase):
     def remove_excel_external_links_with_xlwings(workbook_dml: xlwings.Book) -> None:
         with logger_config.stopwatch_with_label(f"remove_excel_external_links_with_xlwings input_excel_file_path:{workbook_dml.name}", inform_beginning=True):
             external_links_sources = workbook_dml.api.LinkSources()
-            
+
             if external_links_sources:
                 logger_config.print_and_log_info(f"{len(external_links_sources)} links found: {external_links_sources}")
 
@@ -510,7 +517,7 @@ def remove_columns_with_xlwings(
     sheet_name: str,
     file_to_create_path: str,
     columns_to_remove_names: List[str],
-    removal_operation_type=XlWingsRemoveColumnsOperation.RemovalOperationType,
+    removal_operation_type: XlWingsRemoveColumnsOperation.RemovalOperationType,
     excel_visibility: bool = False,
 ) -> str:
     with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
@@ -519,8 +526,7 @@ def remove_columns_with_xlwings(
             inform_beginning=True,
         ):
             workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=temp_file_full_path, excel_visibility=excel_visibility).do()
-                sheet_name=sheet_name, columns_to_remove_names=columns_to_remove_names, removal_operation_type=removal_operation_type
-            ).do(workbook_dml)
+            XlWingsRemoveColumnsOperation(sheet_name=sheet_name, columns_to_remove_names=columns_to_remove_names, removal_operation_type=removal_operation_type).do(workbook_dml)
             XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
             return file_to_create_path
 
