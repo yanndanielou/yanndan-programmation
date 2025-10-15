@@ -276,4 +276,4 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
             ],
         )
 
-        super().__init__(all_tabs_definition=[self.ip_tu_tab], excel_file_full_name="NExTEO-B-272000-02-0125-00 Plan d adressage NExTEO Bord  V09-00 (1).xlsm", rhapsody_id=91211232)
+        super().__init__(all_tabs_definition=[self.ip_tu_tab], excel_file_full_name="NExTEO-B-272000-02-0125-00 Plan d adressage NExTEO Bord V09-00.xlsm", rhapsody_id=91211232)
