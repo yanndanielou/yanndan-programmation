@@ -252,7 +252,7 @@ class SolStdNetworkConfV10Description(ExcelInputFileDescription):
         )
         super().__init__(
             all_tabs_definition=[self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab, self.ip_mats, self.ip_reseau_pcc, self.ip_csr_tab, self.ip_pmb_tab, self.ip_pai_tab],
-            excel_file_full_name="NExTEO-S-271000-02-0125-02  Dossier de Configuration Réseau Sol - V10-00 Annexe A.xlsb",
+            excel_file_full_name="NExTEO-S-271000-02-0125-02 Dossier de Configuration Réseau Sol - V10-00 Annexe A.xlsb",
             rhapsody_id=91311347,
         )
 
