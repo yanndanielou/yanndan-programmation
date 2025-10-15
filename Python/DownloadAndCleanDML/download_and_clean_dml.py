@@ -108,7 +108,7 @@ class DownloadAndCleanDMLApplication:
             columns_to_remove_names=param.COLUMNS_NAMES_TO_REMOVE,
             file_to_create_path=file_to_create_path,
             sheet_name=param.USEFUL_DML_SHEET_NAME,
-            removal_operation_type=excel_utils.XlWingsRemoveColumnsOperation.RemovalOperationType.COLUMN_ONE_BY_ONE_USING_INDEX,
+            removal_operation_type=excel_utils.XlWingsRemoveColumnsOperation.RemovalOperationType.COLUMN_ONE_BY_ONE_USING_LETTER,
         )
         return final_excel_file_path
 
