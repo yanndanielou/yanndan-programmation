@@ -18,8 +18,14 @@ class TestWithoutDiacritics:
 
 
 class TestSeparators:
-    def test_right_part_after_last_occurence(self) -> None:
-        assert string_utils.right_part_after_last_occurence("abcde", "d") == "e"
+
+    @pytest.mark.parametrize("input_string, separator, expected_result", [("abcde", "d", "e")])
+    def test_right_part_after_last_occurence(self, input_string: str, separator: str, expected_result: str) -> None:
+        assert string_utils.right_part_after_last_occurence(input_string, separator) == expected_result
+
+    @pytest.mark.parametrize("input_string, separator, expected_result", [("abc", "b", "a"), ("abcde", "d", "abc"), ("abcdeabcde", "d", "abcdeabc")])
+    def test_left_part_after_last_occurence(self, input_string: str, separator: str, expected_result: str) -> None:
+        assert string_utils.left_part_after_last_occurence(input_string, separator) == expected_result
 
 
 class TestApplicationWithoutHmi:
