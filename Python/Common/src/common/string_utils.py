@@ -60,6 +60,12 @@ def right_part_after_last_occurence(input_string: str, separator: str) -> str:
     return splitted_tab[len(splitted_tab) - 1]
 
 
+def left_part_after_last_occurence(input_string: str, separator: str) -> str:
+    """return the left_part_after_last_occurence"""
+    last_index = input_string.rindex(separator)
+    return input_string[:last_index]
+
+
 def without_diacritics(input_string: str) -> str:
     """return string without diacritics (accents, etc)"""
     return unidecode(input_string)
