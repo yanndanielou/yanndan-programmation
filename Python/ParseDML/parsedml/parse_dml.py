@@ -79,17 +79,17 @@ class ReferenceFaPa:
 
         self.empty_by_error = not isinstance(full_raw_reference, str)
 
-        # self.number = None
+        self.number = None
         self.index = None
         self.name = None
         self.full_cleaned_reference = None
 
         if not self.empty_by_error:
             self.full_cleaned_reference = full_raw_reference.replace(" ", "_").upper()
-            if self.full_raw_reference != ReferenceFaPa.NO_FA:
+            if self.full_cleaned_reference != ReferenceFaPa.NO_FA:
 
                 self.name = string_utils.left_part_after_last_occurence(input_string=self.full_cleaned_reference, separator="-")
-                # self.number = int(self.full_cleaned_reference.replace("FA", "").split("-")[0])
+                self.number = int(self.full_cleaned_reference.replace("FA", "").split("-")[0])
                 self.index = string_utils.right_part_after_last_occurence(input_string=self.full_cleaned_reference, separator="-")
 
     def is_no_fa(self) -> bool:
@@ -128,6 +128,14 @@ class DmlLine:
     doc_deleted: bool
 
     def __post_init__(self) -> None:
+        self.all_unique_fa_numbers: Set[int] = set()
+        if self.fa and not self.fa.reference.is_no_fa() and not self.fa.reference.empty_by_error:
+            assert self.fa.reference.number
+            self.all_unique_fa_numbers.add(self.fa.reference.number)
+        if self.rpa and not self.rpa.reference.is_no_fa() and not self.rpa.reference.empty_by_error:
+            assert self.rpa.reference.number
+            self.all_unique_fa_numbers.add(self.rpa.reference.number)
+
         self.all_unique_fa_names: Set[int] = set()
         if self.fa and not self.fa.reference.is_no_fa() and not self.fa.reference.empty_by_error:
             assert self.fa.reference.name
@@ -148,6 +156,11 @@ class DmlDocument:
     def get_all_titles(self) -> set[str]:
         all_titles = {dml_line.title for dml_line in self.dml_lines}
         return all_titles
+
+    def get_all_fa_numbers(self) -> set[int]:
+        all_fa_numbers: Set[int] = set()
+        all_fa_numbers.union({dml_line.all_unique_fa_numbers for dml_line in self.dml_lines})
+        return all_fa_numbers
 
     def get_all_fa_names(self) -> set[str]:
         all_fa_names: Set[str] = set()
@@ -199,8 +212,8 @@ def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], 
 
     # Document has changed reference and title, search by FA
     if fa:
-        fa_name = fa.reference.name
-        documents_found_by_fa = [document for document in dml_documents if fa_name in document.get_all_fa_names()]
+        fa_number = fa.reference.number
+        documents_found_by_fa = [document for document in dml_documents if fa_number in document.get_all_fa_numbers()]
         if documents_found_by_fa:
             assert len(documents_found_by_fa) == 1
             return documents_found_by_fa[0]
