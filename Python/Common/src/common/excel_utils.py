@@ -67,6 +67,7 @@ def convert_xlsx_file_to_xls_with_openpyxl(xlsx_file_full_path: str) -> str:
 
 
 def close_all_xlwings() -> None:
+    logger_config.print_and_log_info("close_all_xlwings")
     app = xlwings.apps.add()
     wb = xlwings.Book()
     wb.close()
