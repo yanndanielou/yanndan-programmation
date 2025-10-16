@@ -92,7 +92,7 @@ class ReferenceFaPa:
                 self.index = string_utils.right_part_after_last_occurence(input_string=self.full_cleaned_reference, separator="-")
 
     def is_no_fa(self) -> bool:
-        return self.full_raw_reference == ReferenceFaPa.NO_FA
+        return self.full_raw_reference.lower() == ReferenceFaPa.NO_FA.lower() if not self.empty_by_error else False
 
 
 @dataclass
@@ -128,10 +128,10 @@ class DmlLine:
 
     def __post_init__(self) -> None:
         self.all_unique_fa_numbers: Set[int] = set()
-        if self.fa and not self.fa.reference.is_no_fa() and not self.fa.reference.empty_by_error:
+        if self.fa and not self.fa.reference.empty_by_error and not self.fa.reference.is_no_fa():
             assert self.fa.reference.number
             self.all_unique_fa_numbers.add(self.fa.reference.number)
-        if self.rpa and not self.rpa.reference.is_no_fa() and not self.rpa.reference.empty_by_error:
+        if self.rpa and not self.rpa.reference.empty_by_error and not self.rpa.reference.is_no_fa():
             assert self.rpa.reference.number
             self.all_unique_fa_numbers.add(self.rpa.reference.number)
 
