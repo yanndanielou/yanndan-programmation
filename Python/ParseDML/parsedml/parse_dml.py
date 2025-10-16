@@ -86,7 +86,7 @@ class ReferenceFaPa:
 
         if not self.empty_by_error:
             self.full_cleaned_reference = full_raw_reference.replace(" ", "_").replace("FA-", "FA").upper()
-            if full_raw_reference != ReferenceFaPa.NO_FA and full_raw_reference != ReferenceFaPa.REFUSE:
+            if full_raw_reference.lower() != ReferenceFaPa.NO_FA.lower() and full_raw_reference != ReferenceFaPa.REFUSE:
                 self.name = string_utils.left_part_after_last_occurence(input_string=self.full_cleaned_reference, separator="-")
                 self.number = int(self.full_cleaned_reference.replace("FA", "").split("_")[0].split("-")[0])
                 self.index = string_utils.right_part_after_last_occurence(input_string=self.full_cleaned_reference, separator="-")

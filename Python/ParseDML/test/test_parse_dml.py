@@ -17,7 +17,7 @@ class TestLineDeleted:
 
 class TestReferenceFaPa:
 
-    @pytest.mark.parametrize("full_raw_reference", ["FA014 CoT-1", "FA-014-3-COT-2", parse_dml.ReferenceFaPa.NO_FA, parse_dml.ReferenceFaPa.REFUSE, math.nan])
+    @pytest.mark.parametrize("full_raw_reference", ["FA014 CoT-1", "FA-014-3-COT-2", parse_dml.ReferenceFaPa.NO_FA, parse_dml.ReferenceFaPa.REFUSE, math.nan, "pas de FA"])
     def test_weird_names_are_accepted(self, full_raw_reference: str) -> None:
         parse_dml.ReferenceFaPa(full_raw_reference)
 
