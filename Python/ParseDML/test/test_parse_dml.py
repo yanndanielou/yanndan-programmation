@@ -2,6 +2,7 @@ import pytest
 
 from parsedml import parse_dml
 import param
+import math
 
 
 @pytest.fixture(scope="session", name="full_dml_content")
@@ -12,6 +13,13 @@ def full_dml_content_fixture() -> parse_dml.DmlFileContent:
 class TestLineDeleted:
     def test_with_status_deleted(self, full_dml_content: parse_dml.DmlFileContent) -> None:
         pass
+
+
+class TestReferenceFaPa:
+
+    @pytest.mark.parametrize("full_raw_reference", ["FA014 CoT-1", "FA-014-3-COT-2", parse_dml.ReferenceFaPa.NO_FA, parse_dml.ReferenceFaPa.REFUSE, math.nan])
+    def test_weird_names_are_accepted(self, full_raw_reference: str) -> None:
+        parse_dml.ReferenceFaPa(full_raw_reference)
 
 
 class TestDocumentRenamedAndReferenceChanged:

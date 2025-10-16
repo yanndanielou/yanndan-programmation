@@ -85,11 +85,10 @@ class ReferenceFaPa:
         self.full_cleaned_reference = None
 
         if not self.empty_by_error:
-            self.full_cleaned_reference = full_raw_reference.replace(" ", "_").upper()
-            if self.full_cleaned_reference != ReferenceFaPa.NO_FA:
-
+            self.full_cleaned_reference = full_raw_reference.replace(" ", "_").replace("FA-", "FA").upper()
+            if full_raw_reference != ReferenceFaPa.NO_FA and full_raw_reference != ReferenceFaPa.REFUSE:
                 self.name = string_utils.left_part_after_last_occurence(input_string=self.full_cleaned_reference, separator="-")
-                self.number = int(self.full_cleaned_reference.replace("FA", "").split("-")[0])
+                self.number = int(self.full_cleaned_reference.replace("FA", "").split("_")[0].split("-")[0])
                 self.index = string_utils.right_part_after_last_occurence(input_string=self.full_cleaned_reference, separator="-")
 
     def is_no_fa(self) -> bool:
@@ -212,8 +211,8 @@ def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], 
 
     # Document has changed reference and title, search by FA
     if fa:
-        fa_number = fa.reference.number
-        documents_found_by_fa = [document for document in dml_documents if fa_number in document.get_all_fa_numbers()]
+        fa_name = fa.reference.name
+        documents_found_by_fa = [document for document in dml_documents if fa_name in document.get_all_fa_names()]
         if documents_found_by_fa:
             assert len(documents_found_by_fa) == 1
             return documents_found_by_fa[0]
