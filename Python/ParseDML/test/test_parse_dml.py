@@ -24,7 +24,7 @@ class TestReferenceFaPa:
     def test_weird_names_are_accepted(self, full_raw_reference: str) -> None:
         parse_dml.ReferenceFaPa(full_raw_reference)
 
-    @pytest.mark.parametrize("full_raw_reference,expected_result", [(parse_dml.ReferenceFaPa.NO_FA, True), ("pas de FA", True), ("FA014 CoT-1", False), (math.nan, False)])
+    @pytest.mark.parametrize("full_raw_reference,expected_result", [(parse_dml.ReferenceFaPa.NO_FA, True), ("pas de FA", True), ("FA014 CoT-1", False), (math.nan, False), ("Pas de  FA", True)])
     def test_is_no_fa(self, full_raw_reference: str, expected_result: bool) -> None:
         reference_fapa = parse_dml.ReferenceFaPa(full_raw_reference)
         assert reference_fapa

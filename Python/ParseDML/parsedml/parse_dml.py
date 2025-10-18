@@ -87,7 +87,7 @@ class ReferenceFaPa:
         self.empty_by_error = not isinstance(full_raw_reference, str)
 
         if not self.empty_by_error:
-            full_raw_reference = full_raw_reference.strip()
+            full_raw_reference = full_raw_reference.strip().replace("  ", " ")
             if full_raw_reference in PATCHED_FA_NAMES:
                 full_raw_reference = PATCHED_FA_NAMES[full_raw_reference]
 
@@ -283,55 +283,79 @@ class DmlFileContent:
 
                 for _, row in main_data_frame.iterrows():
 
-                    code_ged_moe = str(row["Code GED MOE"])
-                    title = str(row["Titre Document"])
-                    raw_version = row["Version"]
-                    if type(raw_version) is not str and math.isnan(raw_version):
-                        raw_version = "-1"
-                    version = int(raw_version)
-                    raw_revision = row["Révision"]
-                    if type(raw_revision) is not str and math.isnan(raw_revision):
-                        raw_revision = "-1"
-                    revision = int(raw_revision)
-                    status = DmlStatus[string_utils.text_to_valid_enum_value_text(str(row["Statut"]))]
-                    guide = GuideValue[string_utils.text_to_valid_enum_value_text(str(row["GUIDE"]))]
-                    actual_livraison = convert_dml_date_to_datetime(str(row["Actual Livraison"]))
+                    try:
 
-                    fa = (
-                        FaPa(reference=ReferenceFaPa(row["Référence FA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual FA"])))
-                        if str(row["Actual FA"]) not in ["NaT", "nan", "na"]
-                        else None
-                    )
-                    pa = (
-                        FaPa(reference=ReferenceFaPa(row["Référence PA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual Emission PA"])))
-                        if str(row["Actual Emission PA"]) != "NaT"
-                        else None
-                    )
-                    rpa = (
-                        Rpa(
-                            reference=ReferenceFaPa(row["Référence RPA"]),
-                            status=DmlStatus[string_utils.text_to_valid_enum_value_text(str(row["Statut RPA"]))] if str(row["Statut RPA"]) not in ["nan", " "] else None,
-                            actual_delivery=convert_dml_date_to_datetime(str(row["Actual Retour PA"])),
+                        code_ged_moe = str(row["Code GED MOE"])
+                        title = str(row["Titre Document"])
+                        raw_version = row["Version"]
+                        if type(raw_version) is not str and math.isnan(raw_version):
+                            raw_version = "-1"
+                        version = int(raw_version)
+                        raw_revision = row["Révision"]
+                        if type(raw_revision) is not str and math.isnan(raw_revision):
+                            raw_revision = "-1"
+                        revision = int(raw_revision)
+                        status = DmlStatus[string_utils.text_to_valid_enum_value_text(str(row["Statut"]))]
+                        guide = GuideValue[string_utils.text_to_valid_enum_value_text(str(row["GUIDE"]))]
+                        actual_livraison = convert_dml_date_to_datetime(str(row["Actual Livraison"]))
+
+                        fa = (
+                            FaPa(reference=ReferenceFaPa(row["Référence FA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual FA"])))
+                            if str(row["Actual FA"]) not in ["NaT", "nan", "na"]
+                            else None
                         )
-                        if str(row["Actual Retour PA"]) != "NaT"
-                        else None
-                    )
-                    rrpa = FaPa(reference=ReferenceFaPa(row["Référence RRPA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual RRPA"]))) if str(row["Actual RRPA"]) != "NaT" else None
+                        pa = (
+                            FaPa(reference=ReferenceFaPa(row["Référence PA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual Emission PA"])))
+                            if str(row["Actual Emission PA"]) != "NaT"
+                            else None
+                        )
+                        rpa = (
+                            Rpa(
+                                reference=ReferenceFaPa(row["Référence RPA"]),
+                                status=DmlStatus[string_utils.text_to_valid_enum_value_text(str(row["Statut RPA"]))] if str(row["Statut RPA"]) not in ["nan", " "] else None,
+                                actual_delivery=convert_dml_date_to_datetime(str(row["Actual Retour PA"])),
+                            )
+                            if str(row["Actual Retour PA"]) != "NaT"
+                            else None
+                        )
+                        rrpa = FaPa(reference=ReferenceFaPa(row["Référence RRPA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual RRPA"]))) if str(row["Actual RRPA"]) != "NaT" else None
 
-                    responsible_core_team = responsible_core_team_library.get_responsible_core_team_by_name(str(row["ResponsableCoreTeam"]))
-                    lot_wbs = lot_wbs_library.get_lot_wbs_by_name(str(row["Lot WBS"]))
-                    be_number = str(row["Numéro du BE"])
-                    produit = convert_doc_produit_column(str(row["Document Produit\n(Yes/No)"]))
-                    doc_deleted = convert_document_supprime_column(str(row["Document Supprimé"]))
+                        responsible_core_team = responsible_core_team_library.get_responsible_core_team_by_name(str(row["ResponsableCoreTeam"]))
+                        lot_wbs = lot_wbs_library.get_lot_wbs_by_name(str(row["Lot WBS"]))
+                        be_number = str(row["Numéro du BE"])
+                        produit = convert_doc_produit_column(str(row["Document Produit\n(Yes/No)"]))
+                        doc_deleted = convert_document_supprime_column(str(row["Document Supprimé"]))
 
-                    dml_document = find_document_by_code_ged_moe_title_or_fa(all_documents_found, code_ged_moe, title, fa)
-                    if not dml_document:
-                        dml_document = DmlDocument()
-                        all_documents_found.append(dml_document)
-                    dml_line = DmlLine(
-                        row, dml_document, code_ged_moe, title, version, revision, status, guide, actual_livraison, fa, pa, rpa, rrpa, responsible_core_team, lot_wbs, be_number, produit, doc_deleted
-                    )
-                    all_lines_found.append(dml_line)
+                        dml_document = find_document_by_code_ged_moe_title_or_fa(all_documents_found, code_ged_moe, title, fa)
+                        if not dml_document:
+                            dml_document = DmlDocument()
+                            all_documents_found.append(dml_document)
+
+                        dml_line = DmlLine(
+                            row,
+                            dml_document,
+                            code_ged_moe,
+                            title,
+                            version,
+                            revision,
+                            status,
+                            guide,
+                            actual_livraison,
+                            fa,
+                            pa,
+                            rpa,
+                            rrpa,
+                            responsible_core_team,
+                            lot_wbs,
+                            be_number,
+                            produit,
+                            doc_deleted,
+                        )
+                        all_lines_found.append(dml_line)
+
+                    except Exception as e:
+                        logger_config.print_and_log_exception(e)
+                        logger_config.print_and_log_error(f"Could not create line {row}")
 
             logger_config.print_and_log_info(f"{len(all_lines_found)} lines found")
             logger_config.print_and_log_info(f"{len(responsible_core_team_library.elements)} responsibles core team found")
