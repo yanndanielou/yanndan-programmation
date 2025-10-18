@@ -81,22 +81,23 @@ class ReferenceFaPa:
 
     def __init__(self, full_raw_reference: str) -> None:
 
-        if full_raw_reference in PATCHED_FA_NAMES:
-            full_raw_reference = PATCHED_FA_NAMES[full_raw_reference]
-
-        self.full_raw_reference = full_raw_reference
-        self.empty_by_error = not isinstance(full_raw_reference, str)
-
         self.number = None
         self.index = None
         self.name = None
-        self.full_cleaned_reference = None
+        self.empty_by_error = not isinstance(full_raw_reference, str)
 
         if not self.empty_by_error:
+            full_raw_reference = full_raw_reference.strip()
+            if full_raw_reference in PATCHED_FA_NAMES:
+                full_raw_reference = PATCHED_FA_NAMES[full_raw_reference]
+
+            self.full_raw_reference = full_raw_reference
+
             self.full_cleaned_reference = full_raw_reference.replace(" ", "_").replace("FA-", "FA").replace("FA_", "FA").upper()
 
             if STANDARD_FA_CLEANED_PATTERN.match(self.full_cleaned_reference):
                 matched = STANDARD_FA_CLEANED_PATTERN.match(self.full_cleaned_reference)
+                assert matched
                 self.name = matched.group("FA_number")
                 self.index = matched.group("FA_indice")
                 pass
@@ -105,6 +106,8 @@ class ReferenceFaPa:
                 self.name = string_utils.left_part_after_last_occurence(input_string=self.full_cleaned_reference, separator="-")
                 self.number = int(self.full_cleaned_reference.replace("FA", "").split("_")[0].split("-")[0])
                 self.index = string_utils.right_part_after_last_occurence(input_string=self.full_cleaned_reference, separator="-")
+        else:
+            self.full_raw_reference = full_raw_reference
 
     def is_no_fa(self) -> bool:
         return self.full_raw_reference.lower() == ReferenceFaPa.NO_FA.lower() if not self.empty_by_error else False
