@@ -1,12 +1,17 @@
 import math
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
-from typing import Dict, List, Optional, cast, Set
+from typing import Dict, List, Optional, Set, cast
 
 import pandas
 from common import string_utils
 from logger import logger_config
+
+STANDARD_FA_CLEANED_PATTERN = re.compile(r"FA(?P<FA_number>\d+)-(?P<FA_indice>\d+)")
+
+PATCHED_FA_NAMES = {"FA_2016-03-01_v2": "FA20160301-1"}
 
 
 class ElementGenericLibrary:
@@ -75,8 +80,11 @@ class ReferenceFaPa:
     REFUSE = "refusé"
 
     def __init__(self, full_raw_reference: str) -> None:
-        self.full_raw_reference = full_raw_reference
 
+        if full_raw_reference in PATCHED_FA_NAMES:
+            full_raw_reference = PATCHED_FA_NAMES[full_raw_reference]
+
+        self.full_raw_reference = full_raw_reference
         self.empty_by_error = not isinstance(full_raw_reference, str)
 
         self.number = None
@@ -85,7 +93,14 @@ class ReferenceFaPa:
         self.full_cleaned_reference = None
 
         if not self.empty_by_error:
-            self.full_cleaned_reference = full_raw_reference.replace(" ", "_").replace("FA-", "FA").upper()
+            self.full_cleaned_reference = full_raw_reference.replace(" ", "_").replace("FA-", "FA").replace("FA_", "FA").upper()
+
+            if STANDARD_FA_CLEANED_PATTERN.match(self.full_cleaned_reference):
+                matched = STANDARD_FA_CLEANED_PATTERN.match(self.full_cleaned_reference)
+                self.name = matched.group("FA_number")
+                self.index = matched.group("FA_indice")
+                pass
+
             if full_raw_reference.lower() != ReferenceFaPa.NO_FA.lower() and full_raw_reference != ReferenceFaPa.REFUSE:
                 self.name = string_utils.left_part_after_last_occurence(input_string=self.full_cleaned_reference, separator="-")
                 self.number = int(self.full_cleaned_reference.replace("FA", "").split("_")[0].split("-")[0])
@@ -93,6 +108,13 @@ class ReferenceFaPa:
 
     def is_no_fa(self) -> bool:
         return self.full_raw_reference.lower() == ReferenceFaPa.NO_FA.lower() if not self.empty_by_error else False
+
+    def is_standard_fa(self) -> bool:
+        if self.empty_by_error:
+            return False
+        if self.is_no_fa():
+            return False
+        return True
 
 
 @dataclass
@@ -108,6 +130,7 @@ class Rpa(FaPa):
 
 @dataclass
 class DmlLine:
+    full_row: pandas.Series
     dml_document: "DmlDocument"
     code_ged_moe: str
     title: str
@@ -128,18 +151,18 @@ class DmlLine:
 
     def __post_init__(self) -> None:
         self.all_unique_fa_numbers: Set[int] = set()
-        if self.fa and not self.fa.reference.empty_by_error and not self.fa.reference.is_no_fa():
+        if self.fa and self.fa.reference.is_standard_fa():
             assert self.fa.reference.number
             self.all_unique_fa_numbers.add(self.fa.reference.number)
-        if self.rpa and not self.rpa.reference.empty_by_error and not self.rpa.reference.is_no_fa():
+        if self.rpa and self.rpa.reference.is_standard_fa():
             assert self.rpa.reference.number
             self.all_unique_fa_numbers.add(self.rpa.reference.number)
 
-        self.all_unique_fa_names: Set[int] = set()
-        if self.fa and not self.fa.reference.is_no_fa() and not self.fa.reference.empty_by_error:
+        self.all_unique_fa_names: Set[str] = set()
+        if self.fa and self.fa.reference.is_standard_fa():
             assert self.fa.reference.name
             self.all_unique_fa_names.add(self.fa.reference.name)
-        if self.rpa and not self.rpa.reference.is_no_fa() and not self.rpa.reference.empty_by_error:
+        if self.rpa and self.rpa.reference.is_standard_fa():
             assert self.rpa.reference.name
             self.all_unique_fa_names.add(self.rpa.reference.name)
 
@@ -303,7 +326,7 @@ class DmlFileContent:
                         dml_document = DmlDocument()
                         all_documents_found.append(dml_document)
                     dml_line = DmlLine(
-                        dml_document, code_ged_moe, title, version, revision, status, guide, actual_livraison, fa, pa, rpa, rrpa, responsible_core_team, lot_wbs, be_number, produit, doc_deleted
+                        row, dml_document, code_ged_moe, title, version, revision, status, guide, actual_livraison, fa, pa, rpa, rrpa, responsible_core_team, lot_wbs, be_number, produit, doc_deleted
                     )
                     all_lines_found.append(dml_line)
 
