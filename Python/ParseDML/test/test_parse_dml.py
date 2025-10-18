@@ -1,4 +1,5 @@
 import pytest
+from typing import Optional
 
 from parsedml import parse_dml
 import param
@@ -17,7 +18,9 @@ class TestLineDeleted:
 
 class TestReferenceFaPa:
 
-    @pytest.mark.parametrize("full_raw_reference", ["FA014 CoT-1", "FA-014-3-COT-2", parse_dml.ReferenceFaPa.NO_FA, parse_dml.ReferenceFaPa.REFUSE, math.nan, "pas de FA"])
+    @pytest.mark.parametrize(
+        "full_raw_reference", ["FA2016-1", "FA_2016-03-01_v2", "FA014 CoT-1", "FA-014-3-COT-2", parse_dml.ReferenceFaPa.NO_FA, parse_dml.ReferenceFaPa.REFUSE, math.nan, "pas de FA"]
+    )
     def test_weird_names_are_accepted(self, full_raw_reference: str) -> None:
         parse_dml.ReferenceFaPa(full_raw_reference)
 
@@ -26,6 +29,24 @@ class TestReferenceFaPa:
         reference_fapa = parse_dml.ReferenceFaPa(full_raw_reference)
         assert reference_fapa
         assert reference_fapa.is_no_fa() == expected_result
+
+    @pytest.mark.parametrize(
+        "full_raw_reference,expected_result",
+        [
+            (parse_dml.ReferenceFaPa.NO_FA, None),
+            ("pas de FA", None),
+            ("FA014 CoT-1", 14),
+            (math.nan, None),
+            ("FA2016-1", 2016),
+            ("FA_2016-03-01_v2", 20160301),
+            ("FA014 CoT-1", 14),
+            ("FA-014-3-COT-2", 14),
+        ],
+    )
+    def test_number(self, full_raw_reference: str, expected_result: Optional[bool]) -> None:
+        reference_fapa = parse_dml.ReferenceFaPa(full_raw_reference)
+        assert reference_fapa
+        assert reference_fapa.number == expected_result
 
 
 class TestDocumentRenamedAndReferenceChanged:
