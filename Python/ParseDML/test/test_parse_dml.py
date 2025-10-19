@@ -25,8 +25,18 @@ class TestReferenceFaPa:
     def test_weird_names_are_accepted(self, full_raw_reference: str) -> None:
         parse_dml.ReferenceFaPa(full_raw_reference)
 
-    def test_FA622_create_version_1(self) -> None:
-        reference = parse_dml.ReferenceFaPa("FA622")
+    def test_fa622_create_version_1(self) -> None:
+        reference_created = parse_dml.ReferenceFaPa("FA622")
+        assert reference_created
+        assert reference_created.index == 1
+
+    @pytest.mark.parametrize("full_raw_reference", [parse_dml.ReferenceFaPa.REFUSE, "refusé"])
+    def test_refused_fa(self, full_raw_reference: str) -> None:
+        reference_created = parse_dml.ReferenceFaPa(full_raw_reference)
+        assert reference_created
+        assert reference_created.is_refused()
+        assert not reference_created.is_standard_fa()
+        assert not reference_created.is_no_fa()
 
     @pytest.mark.parametrize("full_raw_reference,expected_result", [(parse_dml.ReferenceFaPa.NO_FA, True), ("pas de FA", True), ("FA014 CoT-1", False), (math.nan, False), ("Pas de  FA", True)])
     def test_is_no_fa(self, full_raw_reference: str, expected_result: bool) -> None:
