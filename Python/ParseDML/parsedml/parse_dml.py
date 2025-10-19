@@ -250,6 +250,7 @@ def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], 
 class DmlFileContent:
     dml_lines: List[DmlLine]
     dml_documents: List[DmlDocument]
+    could_not_be_parsed_because_error_rows: List[pandas.Series]
 
     responsible_core_team_library: ResponsibleCoreTeamLibrary
     lot_wbs_library: LotWbsLibrary
@@ -278,21 +279,22 @@ class DmlFileContent:
             all_documents_found: List[DmlDocument] = []
             responsible_core_team_library = ResponsibleCoreTeamLibrary()
             lot_wbs_library = LotWbsLibrary()
+            could_not_be_parsed_because_error_rows: List[pandas.Series] = []
 
             with logger_config.stopwatch_with_label(f"Load and parse {len(main_data_frame)} DML lines"):
 
-                for _, row in main_data_frame.iterrows():
+                for index, (_, row) in enumerate(main_data_frame.iterrows()):
 
                     try:
 
                         code_ged_moe = str(row["Code GED MOE"])
                         title = str(row["Titre Document"])
                         raw_version = row["Version"]
-                        if type(raw_version) is not str and math.isnan(raw_version):
+                        if not isinstance(raw_version, str) and math.isnan(raw_version):
                             raw_version = "-1"
                         version = int(raw_version)
                         raw_revision = row["Révision"]
-                        if type(raw_revision) is not str and math.isnan(raw_revision):
+                        if not isinstance(raw_revision, str) and math.isnan(raw_revision):
                             raw_revision = "-1"
                         revision = int(raw_revision)
                         status = DmlStatus[string_utils.text_to_valid_enum_value_text(str(row["Statut"]))]
@@ -354,13 +356,19 @@ class DmlFileContent:
                         all_lines_found.append(dml_line)
 
                     except Exception as e:
+                        could_not_be_parsed_because_error_rows.append(row)
                         logger_config.print_and_log_exception(e)
+                        logger_config.print_and_log_error(f"Could not create line number {index}, code_ged_moe:{code_ged_moe} {row}")
                         logger_config.print_and_log_error(f"Could not create line {row}")
 
             logger_config.print_and_log_info(f"{len(all_lines_found)} lines found")
             logger_config.print_and_log_info(f"{len(responsible_core_team_library.elements)} responsibles core team found")
             logger_config.print_and_log_info(f"{len(lot_wbs_library.elements)} lots wbs found")
             dml_file_content = DmlFileContent(
-                dml_documents=all_documents_found, dml_lines=all_lines_found, responsible_core_team_library=responsible_core_team_library, lot_wbs_library=lot_wbs_library
+                dml_documents=all_documents_found,
+                dml_lines=all_lines_found,
+                responsible_core_team_library=responsible_core_team_library,
+                lot_wbs_library=lot_wbs_library,
+                could_not_be_parsed_because_error_rows=could_not_be_parsed_because_error_rows,
             )
             return dml_file_content
