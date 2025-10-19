@@ -90,7 +90,7 @@ class ReferenceFaPa:
         if not self.empty_by_error:
             full_raw_reference = full_raw_reference.strip().replace("  ", " ")
             if full_raw_reference in PATCHED_FA_NAMES:
-                logger_config.print_and_log_info("FA {initial_full_raw_reference} patched to {PATCHED_FA_NAMES[full_raw_reference]}")
+                logger_config.print_and_log_info(f"FA {initial_full_raw_reference} patched to {PATCHED_FA_NAMES[full_raw_reference]}")
                 full_raw_reference = PATCHED_FA_NAMES[full_raw_reference]
 
             self.full_raw_reference = full_raw_reference
