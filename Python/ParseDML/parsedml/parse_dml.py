@@ -1,4 +1,5 @@
 import math
+from warnings import deprecated
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -162,6 +163,8 @@ class DmlLine:
     doc_deleted: bool
 
     def __post_init__(self) -> None:
+        self.dml_document.dml_lines.append(self)
+
         self.all_unique_fa_numbers: Set[int] = set()
         if self.fa and self.fa.reference.is_standard_fa():
             assert self.fa.reference.number
@@ -192,14 +195,10 @@ class DmlDocument:
         return all_titles
 
     def get_all_fa_numbers(self) -> set[int]:
-        all_fa_numbers: Set[int] = set()
-        all_fa_numbers.union({dml_line.all_unique_fa_numbers for dml_line in self.dml_lines})
-        return all_fa_numbers
+        return {fa_number for line in self.dml_lines for fa_number in line.all_unique_fa_numbers}
 
     def get_all_fa_names(self) -> set[str]:
-        all_fa_names: Set[str] = set()
-        all_fa_names.union({dml_line.all_unique_fa_names for dml_line in self.dml_lines})
-        return all_fa_names
+        return {fa_name for line in self.dml_lines for fa_name in line.all_unique_fa_names}
 
 
 def convert_dml_date_to_datetime(dml_date: str) -> Optional[datetime]:
@@ -227,6 +226,7 @@ def convert_document_supprime_column(raw_document_supprime_column_content: str) 
     return raw_document_supprime_column_content.lower() == "x"
 
 
+@deprecated("Use other method")
 def get_or_create_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], code_ged_moe: str, title: str, fa: Optional[FaPa]) -> DmlDocument:
     found = find_document_by_code_ged_moe_title_or_fa(dml_documents, code_ged_moe, title, fa)
     return found if found else DmlDocument()
@@ -362,6 +362,7 @@ class DmlFileContent:
                             produit,
                             doc_deleted,
                         )
+
                         all_lines_found.append(dml_line)
 
                     except Exception as e:
@@ -371,6 +372,7 @@ class DmlFileContent:
                         logger_config.print_and_log_error(f"Could not create line {row}")
 
             logger_config.print_and_log_info(f"{len(all_lines_found)} lines found")
+            logger_config.print_and_log_info(f"{len(all_documents_found)} documents found")
             logger_config.print_and_log_info(f"{len(responsible_core_team_library.elements)} responsibles core team found")
             logger_config.print_and_log_info(f"{len(lot_wbs_library.elements)} lots wbs found")
             dml_file_content = DmlFileContent(
