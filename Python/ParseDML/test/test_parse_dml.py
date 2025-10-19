@@ -11,6 +11,12 @@ def full_dml_content_fixture() -> parse_dml.DmlFileContent:
     return parse_dml.DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path=param.DML_FILE_WITH_USELESS_RANGES)
 
 
+class TestConstructionWorks:
+    def test_no_error_at_construction(self, full_dml_content: parse_dml.DmlFileContent) -> None:
+        assert full_dml_content
+        assert not full_dml_content.could_not_be_parsed_because_error_rows
+
+
 class TestLineDeleted:
     def test_with_status_deleted(self, full_dml_content: parse_dml.DmlFileContent) -> None:
         pass
