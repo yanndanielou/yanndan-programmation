@@ -194,6 +194,7 @@ def configure_logger_with_exact_file_name(log_file_name: str, logger_level: int 
         os.makedirs(logger_directory)
 
     print(time.asctime(time.localtime(time.time())) + "\t" + "Logger level:" + str(logger_level))
+    print(time.asctime(time.localtime(time.time())) + "\t" + "Log file name:" + log_file_name)
 
     logging.basicConfig(
         level=logger_level,
