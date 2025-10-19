@@ -9,9 +9,9 @@ import pandas
 from common import string_utils
 from logger import logger_config
 
-STANDARD_FA_CLEANED_PATTERN = re.compile(r"FA(?P<FA_number>\d+)-(?P<FA_indice>\d+)")
+STANDARD_FA_CLEANED_PATTERN = re.compile(r"FA(?P<FA_number>\d+)-?(?P<FA_indice>\d+)?$")
 
-PATCHED_FA_NAMES = {"FA_2016-03-01_v2": "FA20160301-1"}
+PATCHED_FA_NAMES = {"FA_2016-03-01_v2": "FA20160301-1", "FA634-3.1": "FA634-4"}
 
 
 class ElementGenericLibrary:
@@ -79,16 +79,18 @@ class ReferenceFaPa:
     NO_FA = "Pas de FA"
     REFUSE = "refusé"
 
-    def __init__(self, full_raw_reference: str) -> None:
+    def __init__(self, initial_full_raw_reference: str) -> None:
 
         self.number = None
         self.index = None
         self.name = None
-        self.empty_by_error = not isinstance(full_raw_reference, str)
+        self.empty_by_error = not isinstance(initial_full_raw_reference, str)
 
+        full_raw_reference = initial_full_raw_reference
         if not self.empty_by_error:
             full_raw_reference = full_raw_reference.strip().replace("  ", " ")
             if full_raw_reference in PATCHED_FA_NAMES:
+                logger_config.print_and_log_info("FA {initial_full_raw_reference} patched to {PATCHED_FA_NAMES[full_raw_reference]}")
                 full_raw_reference = PATCHED_FA_NAMES[full_raw_reference]
 
             self.full_raw_reference = full_raw_reference
@@ -99,21 +101,28 @@ class ReferenceFaPa:
                 matched = STANDARD_FA_CLEANED_PATTERN.match(self.full_cleaned_reference)
                 assert matched
                 self.name = matched.group("FA_number")
-                self.index = matched.group("FA_indice")
+                self.number = int(matched.group("FA_number"))
+                group_fa_indice = matched.group("FA_indice")
+                self.index = int(group_fa_indice) if bool(group_fa_indice) else 1
                 pass
 
-            if full_raw_reference.lower() != ReferenceFaPa.NO_FA.lower() and full_raw_reference != ReferenceFaPa.REFUSE:
+            elif full_raw_reference.lower() != ReferenceFaPa.NO_FA.lower() and full_raw_reference != ReferenceFaPa.REFUSE:
                 self.name = string_utils.left_part_after_last_occurence(input_string=self.full_cleaned_reference, separator="-")
                 self.number = int(self.full_cleaned_reference.replace("FA", "").split("_")[0].split("-")[0])
-                self.index = string_utils.right_part_after_last_occurence(input_string=self.full_cleaned_reference, separator="-")
+                self.index = int(string_utils.right_part_after_last_occurence(input_string=self.full_cleaned_reference, separator="-"))
         else:
             self.full_raw_reference = full_raw_reference
+
+    def is_refused(self) -> bool:
+        return self.full_raw_reference.lower() == ReferenceFaPa.REFUSE.lower() if not self.empty_by_error else False
 
     def is_no_fa(self) -> bool:
         return self.full_raw_reference.lower() == ReferenceFaPa.NO_FA.lower() if not self.empty_by_error else False
 
     def is_standard_fa(self) -> bool:
         if self.empty_by_error:
+            return False
+        if self.is_refused():
             return False
         if self.is_no_fa():
             return False
