@@ -16,6 +16,9 @@ class TestConstructionWorks:
         assert full_dml_content
         assert not full_dml_content.could_not_be_parsed_because_error_rows
 
+    def test_there_are_more_lines_than_documents(self, full_dml_content: parse_dml.DmlFileContent) -> None:
+        assert len(full_dml_content.dml_lines) > len(full_dml_content.dml_documents)
+
 
 class TestLineDeleted:
     def test_with_status_deleted(self, full_dml_content: parse_dml.DmlFileContent) -> None:
