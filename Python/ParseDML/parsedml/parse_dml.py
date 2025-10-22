@@ -9,10 +9,10 @@ from typing import Dict, List, Optional, Set, cast
 import pandas
 from common import string_utils
 from logger import logger_config
+import param
+
 
 STANDARD_FA_CLEANED_PATTERN = re.compile(r"FA(?P<FA_number>\d+)-?(?P<FA_indice>\d+)?$")
-
-PATCHED_FA_NAMES = {"FA_2016-03-01_v2": "FA20160301-1", "FA634-3.1": "FA634-4"}
 
 
 class ElementGenericLibrary:
@@ -90,9 +90,9 @@ class ReferenceFaPa:
         full_raw_reference = initial_full_raw_reference
         if not self.empty_by_error:
             full_raw_reference = full_raw_reference.strip().replace("  ", " ")
-            if full_raw_reference in PATCHED_FA_NAMES:
-                logger_config.print_and_log_info(f"FA {initial_full_raw_reference} patched to {PATCHED_FA_NAMES[full_raw_reference]}")
-                full_raw_reference = PATCHED_FA_NAMES[full_raw_reference]
+            if full_raw_reference in param.PATCHED_FA_NAMES:
+                logger_config.print_and_log_info(f"FA {initial_full_raw_reference} patched to {param.PATCHED_FA_NAMES[full_raw_reference]}")
+                full_raw_reference = param.PATCHED_FA_NAMES[full_raw_reference]
 
             self.full_raw_reference = full_raw_reference
 
@@ -105,7 +105,6 @@ class ReferenceFaPa:
                 self.number = int(matched.group("FA_number"))
                 group_fa_indice = matched.group("FA_indice")
                 self.index = int(group_fa_indice) if bool(group_fa_indice) else 1
-                pass
 
             elif full_raw_reference.lower() != ReferenceFaPa.NO_FA.lower() and full_raw_reference != ReferenceFaPa.REFUSE:
                 self.name = string_utils.left_part_after_last_occurence(input_string=self.full_cleaned_reference, separator="-")
@@ -245,12 +244,14 @@ def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], 
         return documents_found_by_title[0]
 
     # Document has changed reference and title, search by FA
-    if fa:
+    if fa and fa.reference.number not in param.FA_NUMBERS_THAT_ARE_NOT_UNIQUE_BY_ERROR:
         fa_name = fa.reference.name
         documents_found_by_fa = [document for document in dml_documents if fa_name in document.get_all_fa_names()]
         if documents_found_by_fa:
             assert len(documents_found_by_fa) == 1
-            return documents_found_by_fa[0]
+            document_found_by_fa = documents_found_by_fa[0]
+            logger_config.print_and_log_info(f"For {code_ged_moe} {title} {fa}, found doc {document_found_by_fa} with FAs {document_found_by_fa.get_all_fa_names()}")
+            return document_found_by_fa
 
     return None
 
