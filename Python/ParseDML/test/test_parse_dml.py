@@ -19,6 +19,17 @@ class TestConstructionWorks:
     def test_there_are_more_lines_than_documents(self, full_dml_content: parse_dml.DmlFileContent) -> None:
         assert len(full_dml_content.dml_lines) > len(full_dml_content.dml_documents)
 
+    def test_documents_have_only_one_fa_number(self, full_dml_content: parse_dml.DmlFileContent) -> None:
+        number_of_docs_ignored = 0
+        for document in full_dml_content.dml_documents:
+            if not document.get_all_code_ged_moes().intersection(param.DOCUMENTS_CODE_MOE_GEDS_THAT_HAVE_SEVERAL_FA_BY_ERROR):
+                assert (
+                    len(document.get_all_fa_names()) <= 1
+                ), f"Document with refs {document.get_all_code_ged_moes()} and titles {document.get_all_titles()} has {len(document.get_all_fa_names())} FA names: {document.get_all_fa_names()}"
+            else:
+                number_of_docs_ignored += 1
+        assert number_of_docs_ignored == len(param.DOCUMENTS_CODE_MOE_GEDS_THAT_HAVE_SEVERAL_FA_BY_ERROR)
+
 
 class TestLineDeleted:
     def test_with_status_deleted(self, full_dml_content: parse_dml.DmlFileContent) -> None:
@@ -88,5 +99,3 @@ class TestDocumentRenamedAndReferenceChanged:
         assert sfe_ats_v1.dml_document == sfe_ats_v2.dml_document
         assert sfe_ats_v1.dml_document == sfe_ats_v3.dml_document
         assert sfe_ats_v1.dml_document == sfe_ats_v4.dml_document
-
-        pass
