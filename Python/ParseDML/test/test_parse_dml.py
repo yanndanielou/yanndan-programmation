@@ -137,3 +137,20 @@ class TestDocumentRenamedAndReferenceChanged:
         assert sfe_ats_v1.dml_document is sfe_ats_v2.dml_document
         assert sfe_ats_v1.dml_document is sfe_ats_v3.dml_document
         assert sfe_ats_v1.dml_document is sfe_ats_v4.dml_document
+
+    def test_sfe_ats_on_sample_test_data(self) -> None:
+        full_dml_content = parse_dml.DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path="Input_for_tests/DML_Example_sf_ats.xlsm")
+
+        sfe_ats_v1 = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="Prj2-240000-02-0107-01", version=1)
+        sfe_ats_v2 = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="Prj2-240000-02-0107-01", version=2)
+        sfe_ats_v3 = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="Prj2-240000-02-0107-01", version=3)
+        sfe_ats_v4 = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="Prj1-240000-02-0107-01", version=4)
+
+        assert sfe_ats_v1
+        assert sfe_ats_v2
+        assert sfe_ats_v3
+        assert sfe_ats_v4
+        assert sfe_ats_v1.dml_document
+        assert sfe_ats_v1.dml_document is sfe_ats_v2.dml_document
+        assert sfe_ats_v1.dml_document is sfe_ats_v3.dml_document
+        assert sfe_ats_v1.dml_document is sfe_ats_v4.dml_document
