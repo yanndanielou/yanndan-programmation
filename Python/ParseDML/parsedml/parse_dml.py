@@ -281,7 +281,7 @@ class DmlFileContent:
         def build_with_excel_file(dml_excel_file_full_path: str) -> "DmlFileContent":
 
             with logger_config.stopwatch_with_label(f"Load {dml_excel_file_full_path}", monitor_ram_usage=True, inform_beginning=True):
-                main_data_frame = pandas.read_excel(dml_excel_file_full_path, sheet_name="Database")
+                main_data_frame: pandas.DataFrame = pandas.read_excel(dml_excel_file_full_path, sheet_name="Database")
             logger_config.print_and_log_info(f"{dml_excel_file_full_path} has {len(main_data_frame)} items")
             logger_config.print_and_log_info(f" {dml_excel_file_full_path} columns  {main_data_frame.columns[:10]} ...")
 
