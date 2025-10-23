@@ -4,6 +4,7 @@
 /logs/
 /Input__/
 /Input/*.txt
+Input_for_tests/~$DML_Example_sf_ats.xlsm
 Input/CFX_kown_by_customer.txt
 /Input_for_Tests/*.json
 /Input_for_Tests/*.xlsx
