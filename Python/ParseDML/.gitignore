@@ -1,5 +1,4 @@
 *.zip
-*.xls*
 *.png
 /.mypy_cache/
 /logs/
