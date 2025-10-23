@@ -38,7 +38,7 @@ class TestConstructionWorks:
             line_of_doc_version = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="NExTEO-021100-01-0007-00", version=doc_version)
             assert line_of_doc_version
             assert line_of_doc_version.dml_document
-            assert full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="NExTEO-021100-01-0007-00", version=doc_version) is not line_of_line_of_version_0doc_version
+            assert line_of_doc_version is not line_of_version_0
             assert line_of_doc_version.dml_document is line_of_version_0.dml_document
 
     def test_documents_have_only_one_fa_number(self, full_dml_content: parse_dml.DmlFileContent) -> None:
