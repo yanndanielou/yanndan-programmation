@@ -19,6 +19,24 @@ class TestConstructionWorks:
     def test_there_are_more_lines_than_documents(self, full_dml_content: parse_dml.DmlFileContent) -> None:
         assert len(full_dml_content.dml_lines) > len(full_dml_content.dml_documents)
 
+    def test_documents_that_share_fa_by_mistake_are_correctly_seen_as_distinct(self, full_dml_content: parse_dml.DmlFileContent) -> None:
+        line_a = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="NExTEO-021B00-10-0903-01", version=1)
+        line_b = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="NExTEO-S-351100-07-0607-00", version=3)
+        assert line_a
+        assert line_b
+        assert line_a is not line_b
+        assert line_a.all_unique_fa_names == line_b.all_unique_fa_names
+        assert line_a.all_unique_fa_numbers == line_b.all_unique_fa_numbers
+        assert line_a.dml_document is not line_b.dml_document
+
+    def test_documents_that_have_renamed_fa_by_mistake_are_correctly_seen_as_same_document(self, full_dml_content: parse_dml.DmlFileContent) -> None:
+        assert full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="NExTEO-021100-01-0007-00", version=0)
+        for doc_version in range(1, 8):
+            assert full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="NExTEO-021100-01-0007-00", version=doc_version)
+            assert full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="NExTEO-021100-01-0007-00", version=doc_version) is full_dml_content.get_dml_line_by_code_ged_moe_and_version(
+                code_ged_moe="NExTEO-021100-01-0007-00", version=0
+            )
+
     def test_documents_have_only_one_fa_number(self, full_dml_content: parse_dml.DmlFileContent) -> None:
         number_of_docs_ignored = 0
         for document in full_dml_content.dml_documents:
