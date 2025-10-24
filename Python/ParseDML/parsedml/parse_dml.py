@@ -180,6 +180,9 @@ class DmlLine:
             assert self.rpa.reference.name
             self.all_unique_fa_names.add(self.rpa.reference.name)
 
+    def __str__(self) -> str:
+        return f"Line code_ged_moe:{self.code_ged_moe} version:{self.version} title:{self.title}"
+
 
 @dataclass
 class DmlDocument:
@@ -198,6 +201,9 @@ class DmlDocument:
 
     def get_all_fa_names(self) -> set[str]:
         return {fa_name for line in self.dml_lines for fa_name in line.all_unique_fa_names}
+
+    def __str__(self) -> str:
+        return f"DmlDocument {len(self.dml_lines)} lines: {'\n'.join([str(dml_line) for dml_line in self.dml_lines])}"
 
 
 def convert_dml_date_to_datetime(dml_date: str) -> Optional[datetime]:
@@ -312,7 +318,7 @@ class DmlFileContent:
             could_not_be_parsed_because_error_rows: List[pandas.Series] = []
 
             with logger_config.stopwatch_with_label("Sort main_data_frame by version"):
-                main_data_frame.sort_values(by=["Version"])
+                main_data_frame.sort_values(by=["Version"], inplace=True)
 
             with logger_config.stopwatch_with_label(f"Load and parse {len(main_data_frame)} DML lines"):
 
