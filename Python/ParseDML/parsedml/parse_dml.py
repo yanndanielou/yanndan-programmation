@@ -275,6 +275,20 @@ class DmlFileContent:
     def find_document_by_code_ged_moe_title_or_fa(self, code_ged_moe: str, title: str, fa: Optional[FaPa]) -> Optional[DmlDocument]:
         return find_document_by_code_ged_moe_title_or_fa(self.dml_documents, code_ged_moe, title, fa)
 
+    def find_document_by_code_ged_moe(self, code_ged_moe: str) -> Optional[DmlDocument]:
+        documents_found_by_code_ged_moe = [document for document in self.dml_documents if code_ged_moe in document.get_all_code_ged_moes()]
+        if documents_found_by_code_ged_moe:
+            assert len(documents_found_by_code_ged_moe) == 1
+            return documents_found_by_code_ged_moe[0]
+        return None
+
+    def find_document_by_title(self, title: str) -> Optional[DmlDocument]:
+        documents_found_by_title = [document for document in self.dml_documents if title in document.get_all_titles()]
+        if documents_found_by_title:
+            assert len(documents_found_by_title) == 1
+            return documents_found_by_title[0]
+        return None
+
     class Builder:
 
         @staticmethod
