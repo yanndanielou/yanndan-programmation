@@ -268,7 +268,9 @@ class DmlFileContent:
     lot_wbs_library: LotWbsLibrary
 
     def get_dml_line_by_code_ged_moe_and_version(self, code_ged_moe: str, version: int, revision: int = 0) -> Optional[DmlLine]:
-        dml_lines_found = [dml_line for dml_line in self.dml_lines if dml_line.code_ged_moe == code_ged_moe and dml_line.version == version and dml_line.revision == revision]
+        dml_lines_found_by_code_ged_moe = self.dml_lines_by_code_ged_moe[code_ged_moe]
+
+        dml_lines_found = [dml_line for dml_line in dml_lines_found_by_code_ged_moe if dml_line.code_ged_moe == code_ged_moe and dml_line.version == version and dml_line.revision == revision]
         assert dml_lines_found
         assert len(dml_lines_found) == 1
         dml_line_found = dml_lines_found[0]
@@ -308,6 +310,9 @@ class DmlFileContent:
             responsible_core_team_library = ResponsibleCoreTeamLibrary()
             lot_wbs_library = LotWbsLibrary()
             could_not_be_parsed_because_error_rows: List[pandas.Series] = []
+
+            with logger_config.stopwatch_with_label("Sort main_data_frame by version"):
+                main_data_frame.sort_values(by=["Version"])
 
             with logger_config.stopwatch_with_label(f"Load and parse {len(main_data_frame)} DML lines"):
 
