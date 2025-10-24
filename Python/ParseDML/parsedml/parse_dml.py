@@ -259,6 +259,8 @@ def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], 
 @dataclass
 class DmlFileContent:
     dml_lines: List[DmlLine]
+    dml_lines_by_code_ged_moe: Dict[str, List[DmlLine]]
+    dml_lines_by_title: Dict[str, List[DmlLine]]
     dml_documents: List[DmlDocument]
     could_not_be_parsed_because_error_rows: List[pandas.Series]
 
@@ -300,6 +302,8 @@ class DmlFileContent:
             logger_config.print_and_log_info(f" {dml_excel_file_full_path} columns  {main_data_frame.columns[:10]} ...")
 
             all_lines_found: List[DmlLine] = []
+            dml_lines_by_code_ged_moe: Dict[str, List[DmlLine]] = {}
+            dml_lines_by_title: Dict[str, List[DmlLine]] = {}
             all_documents_found: List[DmlDocument] = []
             responsible_core_team_library = ResponsibleCoreTeamLibrary()
             lot_wbs_library = LotWbsLibrary()
@@ -380,6 +384,14 @@ class DmlFileContent:
 
                         all_lines_found.append(dml_line)
 
+                        if code_ged_moe not in dml_lines_by_code_ged_moe:
+                            dml_lines_by_code_ged_moe[code_ged_moe] = []
+                        dml_lines_by_code_ged_moe[code_ged_moe].append(dml_line)
+
+                        if title not in dml_lines_by_title:
+                            dml_lines_by_title[title] = []
+                        dml_lines_by_title[title].append(dml_line)
+
                     except Exception as e:
                         could_not_be_parsed_because_error_rows.append(row)
                         logger_config.print_and_log_exception(e)
@@ -393,6 +405,8 @@ class DmlFileContent:
             dml_file_content = DmlFileContent(
                 dml_documents=all_documents_found,
                 dml_lines=all_lines_found,
+                dml_lines_by_code_ged_moe=dml_lines_by_code_ged_moe,
+                dml_lines_by_title=dml_lines_by_title,
                 responsible_core_team_library=responsible_core_team_library,
                 lot_wbs_library=lot_wbs_library,
                 could_not_be_parsed_because_error_rows=could_not_be_parsed_because_error_rows,
