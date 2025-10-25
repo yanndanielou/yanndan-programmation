@@ -209,6 +209,9 @@ class DmlDocument:
     def get_all_fa_names(self) -> set[str]:
         return {fa_name for line in self.dml_lines for fa_name in line.all_unique_fa_names}
 
+    def has_several_fa_numbers(self) -> bool:
+        return len(self.get_all_fa_names()) > 1
+
     def __str__(self) -> str:
         return f"DmlDocument __str__ {len(self.dml_lines)} lines: {'\n'.join([str(dml_line) for dml_line in self.dml_lines])}"
 
@@ -273,6 +276,13 @@ class DmlFileContent:
 
     responsible_core_team_library: ResponsibleCoreTeamLibrary
     lot_wbs_library: LotWbsLibrary
+
+    def get_dml_document_by_code_ged_moe(self, code_ged_moe: str) -> Optional[DmlDocument]:
+        dml_lines_found_by_code_ged_moe = self.dml_lines_by_code_ged_moe[code_ged_moe]
+        if dml_lines_found_by_code_ged_moe:
+            return dml_lines_found_by_code_ged_moe[0].dml_document
+        else:
+            return None
 
     def get_dml_line_by_code_ged_moe_and_version(self, code_ged_moe: str, version: int, revision: int = 0) -> Optional[DmlLine]:
         dml_lines_found_by_code_ged_moe = self.dml_lines_by_code_ged_moe[code_ged_moe]

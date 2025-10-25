@@ -113,6 +113,22 @@ class TestConstructionWorks:
             assert line_of_doc_version is not line_of_version_0
             assert line_of_doc_version.dml_document is line_of_version_0.dml_document
 
+    @pytest.mark.parametrize(
+        "document_code_goe,expected_has_several_fa",
+        [
+            ("NExTEO-021100-01-0007-00", True),
+            ("PGO-ATS+-021100-01-0007-03", True),
+            ("NExTEO-021100-01-0008-00", True),
+            ("NExTEO-200000-02-0111-00", True),
+            ("NExTEO-200000-02-0104-00", True),
+            ("PGO-ATS+-021100-06-0500-01", False),
+        ],
+    )
+    def test_documents_has_several_fa_numbers(self, document_code_goe: str, expected_has_several_fa: bool, full_dml_content: parse_dml.DmlFileContent) -> None:
+        document = full_dml_content.get_dml_document_by_code_ged_moe(document_code_goe)
+        assert document
+        assert document.has_several_fa_numbers() == expected_has_several_fa
+
     def ignore_test_documents_have_only_one_fa_number_stop_at_first_error(self, full_dml_content: parse_dml.DmlFileContent) -> None:
         number_of_docs_ignored = 0
         for document in full_dml_content.dml_documents:
