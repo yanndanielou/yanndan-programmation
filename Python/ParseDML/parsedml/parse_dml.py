@@ -181,10 +181,10 @@ class DmlLine:
             self.all_unique_fa_names.add(self.rpa.reference.name)
 
     def __str__(self) -> str:
-        return f"Line str code_ged_moe:{self.code_ged_moe} version:{self.version} title:{self.title}"
+        return f"Line __str__ code_ged_moe:{self.code_ged_moe} version:{self.version} title:{self.title}"
 
     def __repr__(self) -> str:
-        return f"Line repr code_ged_moe:{self.code_ged_moe} version:{self.version} title:{self.title}"
+        return f"Line __repr__ code_ged_moe:{self.code_ged_moe} version:{self.version} title:{self.title}"
 
 
 @dataclass
@@ -210,7 +210,7 @@ class DmlDocument:
         return {fa_name for line in self.dml_lines for fa_name in line.all_unique_fa_names}
 
     def __str__(self) -> str:
-        return f"DmlDocument {len(self.dml_lines)} lines: {'\n'.join([str(dml_line) for dml_line in self.dml_lines])}"
+        return f"DmlDocument __str__ {len(self.dml_lines)} lines: {'\n'.join([str(dml_line) for dml_line in self.dml_lines])}"
 
 
 def convert_dml_date_to_datetime(dml_date: str) -> Optional[datetime]:
