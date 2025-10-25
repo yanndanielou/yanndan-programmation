@@ -236,9 +236,28 @@ class TestDocumentsThatHaveSameTitleButSameVersionAreSeenDistinct:
             assert dml_line.dml_document is not first_dml_line.dml_document
 
 
+class TestDocumentWithReferenceChangedButNotRenamed:
+    @pytest.mark.parametrize(
+        "doc_line_1_code_ged,doc_line_1_version,doc_line_2_code_ged,doc_line_2_version",
+        [
+            ("NExTEO-200000-04-0302-01", 1, "PGO-ATS+-200000-04-0302-01", 2),
+            ("NExTEO-200000-02-0102-02", 1, "PGO-ATS+-200000-02-0102-04", 2),
+        ],
+    )
+    def test_can_find_document_by_title(self, doc_line_1_code_ged: str, doc_line_1_version: int, doc_line_2_code_ged: str, doc_line_2_version: int, full_dml_content: parse_dml.DmlFileContent) -> None:
+        line_1 = full_dml_content.get_dml_line_by_code_ged_moe_and_version(doc_line_1_code_ged, doc_line_1_version)
+        line_2 = full_dml_content.get_dml_line_by_code_ged_moe_and_version(doc_line_2_code_ged, doc_line_2_version)
+        assert line_1
+        assert line_2
+        assert line_1 is not line_2
+        assert line_1.code_ged_moe != line_2.code_ged_moe
+        assert line_1.title == line_2.title
+        assert line_1.dml_document is line_2.dml_document
+
+
 class TestDocumentRenamedAndReferenceChanged:
 
-    def test_sfe_ats(self, full_dml_content: parse_dml.DmlFileContent) -> None:
+    def test_sfe_ats_on_full_dml(self, full_dml_content: parse_dml.DmlFileContent) -> None:
         sfe_ats_v1 = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="NExTEO-240000-02-0107-01", version=1)
         sfe_ats_v2 = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="NExTEO-240000-02-0107-01", version=2)
         sfe_ats_v3 = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="NExTEO-240000-02-0107-01", version=3)

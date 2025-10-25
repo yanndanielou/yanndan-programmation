@@ -113,6 +113,12 @@ class ReferenceFaPa:
         else:
             self.full_raw_reference = full_raw_reference
 
+    def __str__(self) -> str:
+        return f"FA __str__ {self.full_raw_reference}"
+
+    def __repr__(self) -> str:
+        return f"FA __repr__ {self.full_raw_reference}"
+
     def is_refused(self) -> bool:
         return self.full_raw_reference.lower() == ReferenceFaPa.REFUSE.lower() if not self.empty_by_error else False
 
@@ -251,6 +257,11 @@ def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], 
     documents_found_by_title = [document for document in dml_documents if title in document.get_all_titles() and (version, revision) not in document.get_all_version_revisions()]
     if documents_found_by_title:
         assert len(documents_found_by_title) == 1
+        document_found_by_title = documents_found_by_title[0]
+        logger_config.print_and_log_info(
+            f"Searching {code_ged_moe} {title} {fa}. Found with title. Previous references: {document_found_by_title.get_all_code_ged_moes()}, previous titles {document_found_by_title.get_all_titles()}"
+        )
+
         return documents_found_by_title[0]
 
     # Document has changed reference and title, search by FA
@@ -260,7 +271,10 @@ def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], 
         if documents_found_by_fa:
             assert len(documents_found_by_fa) == 1
             document_found_by_fa = documents_found_by_fa[0]
-            logger_config.print_and_log_info(f"For {code_ged_moe} {title} {fa}, found doc {document_found_by_fa} with FAs {document_found_by_fa.get_all_fa_names()}")
+
+            logger_config.print_and_log_info(
+                f"Searching {code_ged_moe} {title} {fa}. Found with FA (was renamed and reference changed). found doc {document_found_by_fa} with FAs {document_found_by_fa.get_all_fa_names()}"
+            )
             return document_found_by_fa
 
     return None
@@ -318,7 +332,7 @@ class DmlFileContent:
             with logger_config.stopwatch_with_label(f"Load {dml_excel_file_full_path}", monitor_ram_usage=True, inform_beginning=True):
                 main_data_frame: pandas.DataFrame = pandas.read_excel(dml_excel_file_full_path, sheet_name="Database")
             logger_config.print_and_log_info(f"{dml_excel_file_full_path} has {len(main_data_frame)} items")
-            logger_config.print_and_log_info(f" {dml_excel_file_full_path} columns  {main_data_frame.columns[:10]} ...")
+            logger_config.print_and_log_info(f" {dml_excel_file_full_path} columns  {main_data_frame.columns[:5]} ...")
 
             all_lines_found: List[DmlLine] = []
             dml_lines_by_code_ged_moe: Dict[str, List[DmlLine]] = {}
