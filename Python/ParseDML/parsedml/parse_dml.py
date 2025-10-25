@@ -265,7 +265,7 @@ def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], 
         return documents_found_by_title[0]
 
     # Document has changed reference and title, search by FA
-    if fa and fa.reference.number not in param.FA_NUMBERS_THAT_ARE_NOT_UNIQUE_AND_USED_BY_SEVERAL_DOCUMENTS_BY_ERROR:
+    if fa:
         fa_name = fa.reference.name
         documents_found_by_fa = [document for document in dml_documents if fa_name in document.get_all_fa_names() and (version, revision) not in document.get_all_version_revisions()]
         if documents_found_by_fa:
