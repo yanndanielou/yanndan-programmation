@@ -80,8 +80,23 @@ class TestConstructionWorks:
         assert line_a.dml_document is not line_b.dml_document
         assert line_a.dml_document is not line_c.dml_document
 
+
+class TestDocumentsThatShareSameFa:
     @pytest.mark.parametrize(
-        "all_references_and_versions_of_distinct_docs_sharing_same_fa", [[("PSO-ATS+-S-240000-04-0322-81", 1), ("PSO-ATS+-S-240000-04-0322-79", 2), ("PSO-ATS+-S-240000-04-0322-78", 1)]]
+        "all_references_and_versions_of_distinct_docs_sharing_same_fa",
+        [
+            [("PSO-ATS+-S-240000-04-0322-81", 1), ("PSO-ATS+-S-240000-04-0322-79", 2), ("PSO-ATS+-S-240000-04-0322-78", 1)],
+            [("NExTEO-021B00-10-0903-01", 2), ("NExTEO-021B00-11-0903-01", 1), ("PGO-ATS+-S-231300-08-0701-01", 1), ("NExTEO-S-314215-07-0607-03", 1), ("NExTEO-S-351100-07-0607-00", 2)],
+            [
+                ("PSO-ATS+-S-240000-04-0311-28", 1),
+                ("PSO-ATS+-S-240000-04-0311-29", 1),
+                ("PSO-ATS+-S-240000-04-0311-30", 1),
+                ("PSO-ATS+-S-240000-04-0322-77", 1),
+                ("PSO-ATS+-S-240000-04-0322-78", 1),
+                ("PSO-ATS+-S-240000-04-0322-79", 2),
+                ("PSO-ATS+-S-240000-04-0322-81", 1),
+            ],
+        ],
     )
     def test_documents_that_share_fa_by_mistake_are_correctly_seen_as_distinct_param(
         self, all_references_and_versions_of_distinct_docs_sharing_same_fa: List[Tuple[str, int]], full_dml_content: parse_dml.DmlFileContent
@@ -101,6 +116,8 @@ class TestConstructionWorks:
             assert dml_line is not first_dml_line
             assert dml_line.dml_document is not first_dml_line.dml_document
 
+
+class TestDocumentsThatHaveSeveralFANames:
     def test_documents_that_have_renamed_fa_by_mistake_are_correctly_seen_as_same_document(self, full_dml_content: parse_dml.DmlFileContent) -> None:
         line_of_version_0 = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="NExTEO-021100-01-0007-00", version=0)
         assert line_of_version_0
@@ -128,36 +145,6 @@ class TestConstructionWorks:
         document = full_dml_content.get_dml_document_by_code_ged_moe(document_code_goe)
         assert document
         assert document.has_several_fa_numbers() == expected_has_several_fa
-
-    def ignore_test_documents_have_only_one_fa_number_stop_at_first_error(self, full_dml_content: parse_dml.DmlFileContent) -> None:
-        number_of_docs_ignored = 0
-        for document in full_dml_content.dml_documents:
-            if not document.get_all_code_ged_moes().intersection(param.DOCUMENTS_CODE_MOE_GEDS_THAT_HAVE_SEVERAL_FA_BY_ERROR):
-                assert (
-                    len(document.get_all_fa_names()) <= 1
-                ), f"Document with refs {document.get_all_code_ged_moes()} and titles {document.get_all_titles()} has {len(document.get_all_fa_names())} FA names: {document.get_all_fa_names()}"
-            else:
-                number_of_docs_ignored += 1
-        assert number_of_docs_ignored == len(param.DOCUMENTS_CODE_MOE_GEDS_THAT_HAVE_SEVERAL_FA_BY_ERROR)
-
-    def ignore_test_documents_have_only_one_fa_number_print_all_errors_at_end(self, full_dml_content: parse_dml.DmlFileContent) -> None:
-        number_of_docs_ignored = 0
-        documents_in_errors: List[parse_dml.DmlDocument] = []
-
-        for document in full_dml_content.dml_documents:
-            if not document.get_all_code_ged_moes().intersection(param.DOCUMENTS_CODE_MOE_GEDS_THAT_HAVE_SEVERAL_FA_BY_ERROR):
-                if len(document.get_all_fa_names()) > 1:
-                    documents_in_errors.append(document)
-            else:
-                number_of_docs_ignored += 1
-
-        for document_in_error in documents_in_errors:
-            print(
-                f"Documents with refs {document_in_error.get_all_code_ged_moes()} and titles {document_in_error.get_all_titles()} has {len(document.get_all_fa_names())} FA names: {document_in_error.get_all_fa_names()}"
-            )
-
-        assert not documents_in_errors
-        assert number_of_docs_ignored == len(param.DOCUMENTS_CODE_MOE_GEDS_THAT_HAVE_SEVERAL_FA_BY_ERROR)
 
 
 class TestLineDeleted:
