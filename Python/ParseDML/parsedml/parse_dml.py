@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
-from typing import Dict, List, Optional, Set, cast
+from typing import Dict, List, Optional, Set, Tuple, cast
 
 import pandas
 from common import string_utils
@@ -181,7 +181,10 @@ class DmlLine:
             self.all_unique_fa_names.add(self.rpa.reference.name)
 
     def __str__(self) -> str:
-        return f"Line code_ged_moe:{self.code_ged_moe} version:{self.version} title:{self.title}"
+        return f"Line str code_ged_moe:{self.code_ged_moe} version:{self.version} title:{self.title}"
+
+    def __repr__(self) -> str:
+        return f"Line repr code_ged_moe:{self.code_ged_moe} version:{self.version} title:{self.title}"
 
 
 @dataclass
@@ -195,6 +198,10 @@ class DmlDocument:
     def get_all_titles(self) -> set[str]:
         all_titles = {dml_line.title for dml_line in self.dml_lines}
         return all_titles
+
+    def get_all_version_revisions(self) -> List[Tuple[int, int]]:
+        all_version_revisions = [(dml_line.version, dml_line.revision) for dml_line in self.dml_lines]
+        return all_version_revisions
 
     def get_all_fa_numbers(self) -> set[int]:
         return {fa_number for line in self.dml_lines for fa_number in line.all_unique_fa_numbers}
@@ -231,20 +238,14 @@ def convert_document_supprime_column(raw_document_supprime_column_content: str) 
     return raw_document_supprime_column_content.lower() == "x"
 
 
-@deprecated("Use other method")
-def get_or_create_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], code_ged_moe: str, title: str, fa: Optional[FaPa]) -> DmlDocument:
-    found = find_document_by_code_ged_moe_title_or_fa(dml_documents, code_ged_moe, title, fa)
-    return found if found else DmlDocument()
-
-
-def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], code_ged_moe: str, title: str, fa: Optional[FaPa]) -> Optional[DmlDocument]:
+def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], code_ged_moe: str, title: str, fa: Optional[FaPa], version: int, revision: int) -> Optional[DmlDocument]:
     documents_found_by_code_ged_moe = [document for document in dml_documents if code_ged_moe in document.get_all_code_ged_moes()]
     if documents_found_by_code_ged_moe:
         assert len(documents_found_by_code_ged_moe) == 1
         return documents_found_by_code_ged_moe[0]
 
     # Document has changed reference but kept title
-    documents_found_by_title = [document for document in dml_documents if title in document.get_all_titles()]
+    documents_found_by_title = [document for document in dml_documents if title in document.get_all_titles() and (version, revision) not in document.get_all_version_revisions()]
     if documents_found_by_title:
         assert len(documents_found_by_title) == 1
         return documents_found_by_title[0]
@@ -252,7 +253,7 @@ def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], 
     # Document has changed reference and title, search by FA
     if fa and fa.reference.number not in param.FA_NUMBERS_THAT_ARE_NOT_UNIQUE_AND_USED_BY_SEVERAL_DOCUMENTS_BY_ERROR:
         fa_name = fa.reference.name
-        documents_found_by_fa = [document for document in dml_documents if fa_name in document.get_all_fa_names()]
+        documents_found_by_fa = [document for document in dml_documents if fa_name in document.get_all_fa_names() and (version, revision) not in document.get_all_version_revisions()]
         if documents_found_by_fa:
             assert len(documents_found_by_fa) == 1
             document_found_by_fa = documents_found_by_fa[0]
@@ -282,8 +283,8 @@ class DmlFileContent:
         dml_line_found = dml_lines_found[0]
         return dml_line_found
 
-    def find_document_by_code_ged_moe_title_or_fa(self, code_ged_moe: str, title: str, fa: Optional[FaPa]) -> Optional[DmlDocument]:
-        return find_document_by_code_ged_moe_title_or_fa(self.dml_documents, code_ged_moe, title, fa)
+    def find_document_by_code_ged_moe_title_or_fa(self, code_ged_moe: str, title: str, fa: Optional[FaPa], version: int, revision: int) -> Optional[DmlDocument]:
+        return find_document_by_code_ged_moe_title_or_fa(self.dml_documents, code_ged_moe, title, fa, version, revision)
 
     def find_document_by_code_ged_moe(self, code_ged_moe: str) -> Optional[DmlDocument]:
         documents_found_by_code_ged_moe = [document for document in self.dml_documents if code_ged_moe in document.get_all_code_ged_moes()]
@@ -347,7 +348,7 @@ class DmlFileContent:
                         )
                         pa = (
                             FaPa(reference=ReferenceFaPa(row["Référence PA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual Emission PA"])))
-                            if str(row["Actual Emission PA"]) != "NaT"
+                            if str(row["Actual Emission PA"]) not in ["NaT", "nan", "na"]
                             else None
                         )
                         rpa = (
@@ -356,10 +357,14 @@ class DmlFileContent:
                                 status=DmlStatus[string_utils.text_to_valid_enum_value_text(str(row["Statut RPA"]))] if str(row["Statut RPA"]) not in ["nan", " "] else None,
                                 actual_delivery=convert_dml_date_to_datetime(str(row["Actual Retour PA"])),
                             )
-                            if str(row["Actual Retour PA"]) != "NaT"
+                            if str(row["Actual Retour PA"]) not in ["NaT", "nan", "na"]
                             else None
                         )
-                        rrpa = FaPa(reference=ReferenceFaPa(row["Référence RRPA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual RRPA"]))) if str(row["Actual RRPA"]) != "NaT" else None
+                        rrpa = (
+                            FaPa(reference=ReferenceFaPa(row["Référence RRPA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual RRPA"])))
+                            if str(row["Actual RRPA"]) not in ["NaT", "nan", "na"]
+                            else None
+                        )
 
                         responsible_core_team = responsible_core_team_library.get_responsible_core_team_by_name(str(row["ResponsableCoreTeam"]))
                         lot_wbs = lot_wbs_library.get_lot_wbs_by_name(str(row["Lot WBS"]))
@@ -367,7 +372,7 @@ class DmlFileContent:
                         produit = convert_doc_produit_column(str(row["Document Produit\n(Yes/No)"]))
                         doc_deleted = convert_document_supprime_column(str(row["Document Supprimé"]))
 
-                        dml_document = find_document_by_code_ged_moe_title_or_fa(all_documents_found, code_ged_moe, title, fa)
+                        dml_document = find_document_by_code_ged_moe_title_or_fa(all_documents_found, code_ged_moe, title, fa, version, revision)
                         if not dml_document:
                             dml_document = DmlDocument()
                             all_documents_found.append(dml_document)
