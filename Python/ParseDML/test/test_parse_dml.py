@@ -187,7 +187,7 @@ class TestDocumentsThatHaveSameTitleButSameVersionAreSeenDistinct:
         assert len(all_dml_lines) > 1
         first_dml_line = all_dml_lines[0]
         assert first_dml_line
-        all_dml_lines_except_first_one = all_dml_lines[:1]
+        all_dml_lines_except_first_one = all_dml_lines[1:]
         for dml_line in all_dml_lines_except_first_one:
             assert dml_line
             assert dml_line is not first_dml_line
@@ -205,7 +205,7 @@ class TestDocumentsThatHaveSameTitleButSameVersionAreSeenDistinct:
         assert len(all_dml_lines) > 1
         first_dml_line = all_dml_lines[0]
         assert first_dml_line
-        all_dml_lines_except_first_one = all_dml_lines[:1]
+        all_dml_lines_except_first_one = all_dml_lines[1:]
         for dml_line in all_dml_lines_except_first_one:
             assert dml_line
             assert dml_line is not first_dml_line
