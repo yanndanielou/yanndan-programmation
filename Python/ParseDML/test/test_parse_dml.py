@@ -66,7 +66,7 @@ class TestConstructionWorks:
 
     def test_documents_that_share_fa_by_mistake_are_correctly_seen_as_distinct_fa_1921(self, full_dml_content: parse_dml.DmlFileContent) -> None:
         line_a = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="PSO-ATS+-S-240000-04-0322-81", version=1)
-        line_b = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="PSO-ATS+-S-240000-04-0322-79", version=1)
+        line_b = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="PSO-ATS+-S-240000-04-0322-79", version=2)
         line_c = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="PSO-ATS+-S-240000-04-0322-78", version=1)
         assert line_a
         assert line_b
@@ -79,6 +79,27 @@ class TestConstructionWorks:
         assert line_a.all_unique_fa_numbers == line_c.all_unique_fa_numbers
         assert line_a.dml_document is not line_b.dml_document
         assert line_a.dml_document is not line_c.dml_document
+
+    @pytest.mark.parametrize(
+        "all_references_and_versions_of_distinct_docs_sharing_same_fa", [[("PSO-ATS+-S-240000-04-0322-81", 1), ("PSO-ATS+-S-240000-04-0322-79", 2), ("PSO-ATS+-S-240000-04-0322-78", 1)]]
+    )
+    def test_documents_that_share_fa_by_mistake_are_correctly_seen_as_distinct_param(
+        self, all_references_and_versions_of_distinct_docs_sharing_same_fa: List[Tuple[str, int]], full_dml_content: parse_dml.DmlFileContent
+    ) -> None:
+
+        all_dml_lines = [
+            full_dml_content.get_dml_line_by_code_ged_moe_and_version(references_and_version[0], references_and_version[1])
+            for references_and_version in all_references_and_versions_of_distinct_docs_sharing_same_fa
+        ]
+        assert all_dml_lines
+        assert len(all_dml_lines) > 1
+        first_dml_line = all_dml_lines[0]
+        assert first_dml_line
+        all_dml_lines_except_first_one = all_dml_lines[1:]
+        for dml_line in all_dml_lines_except_first_one:
+            assert dml_line
+            assert dml_line is not first_dml_line
+            assert dml_line.dml_document is not first_dml_line.dml_document
 
     def test_documents_that_have_renamed_fa_by_mistake_are_correctly_seen_as_same_document(self, full_dml_content: parse_dml.DmlFileContent) -> None:
         line_of_version_0 = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="NExTEO-021100-01-0007-00", version=0)
