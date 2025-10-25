@@ -1,14 +1,31 @@
-import pytest
-from typing import Optional
-
-from parsedml import parse_dml
-import param
 import math
+from typing import List, Optional, Set, Tuple
+
+import pytest
+
+import param
+from parsedml import parse_dml
 
 
 @pytest.fixture(scope="session", name="full_dml_content")
 def full_dml_content_fixture() -> parse_dml.DmlFileContent:
     return parse_dml.DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path=param.DML_FILE_WITH_USELESS_RANGES)
+
+
+@pytest.fixture(scope="session", name="full_dml_content_all_documents")
+def full_dml_content_all_documents_fixture(full_dml_content: parse_dml.DmlFileContent) -> List[parse_dml.DmlDocument]:
+    return full_dml_content.dml_documents
+
+
+def disabled_pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
+    """
+    Parametrize tests that need a single dml_document at collection time.
+    We build the same data as the fixture full_dml_content_all_documents to avoid
+    calling fixtures at collection time.
+    """
+    if "each_dml_document" in metafunc.fixturenames:
+        docs = parse_dml.DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path=param.DML_FILE_WITH_USELESS_RANGES).dml_documents
+        metafunc.parametrize("each_dml_document", docs)
 
 
 class TestConstructionWorks:
@@ -28,6 +45,24 @@ class TestConstructionWorks:
         assert line_a.all_unique_fa_names == line_b.all_unique_fa_names
         assert line_a.all_unique_fa_numbers == line_b.all_unique_fa_numbers
         assert line_a.dml_document is not line_b.dml_document
+
+    def test_all_documents_have_only_one_line_per_version_stop_at_first_error(self, full_dml_content: parse_dml.DmlFileContent) -> None:
+        for dml_document in full_dml_content.dml_documents:
+            all_versions_list = [(dml_line.version, dml_line.revision) for dml_line in dml_document.dml_lines]
+            all_versions_set = {(dml_line.version, dml_line.revision) for dml_line in dml_document.dml_lines}
+            assert len(all_versions_list) == len(all_versions_set), dml_document
+
+    def test_all_documents_have_only_one_line_per_version_show_all_errors(self, full_dml_content: parse_dml.DmlFileContent) -> None:
+        documents_in_errors_with_versions_list_and_sets: List[Tuple[parse_dml.DmlDocument, List[Tuple[int, int]], Set[Tuple[int, int]]]] = []
+        for dml_document in full_dml_content.dml_documents:
+            all_versions_list = [(dml_line.version, dml_line.revision) for dml_line in dml_document.dml_lines]
+            all_versions_list = [(dml_line.version, dml_line.revision) for dml_line in dml_document.dml_lines]
+            all_versions_set = {(dml_line.version, dml_line.revision) for dml_line in dml_document.dml_lines}
+            if len(all_versions_list) != len(all_versions_set):
+                documents_in_errors_with_versions_list_and_sets.append((dml_document, all_versions_list, all_versions_set))
+
+        print(f"test_all_documents_have_only_one_line_per_version_show_all_errors: all errors: {'\n'.join([str(dml_doc) for dml_doc in documents_in_errors_with_versions_list_and_sets])}")
+        assert not documents_in_errors_with_versions_list_and_sets
 
     def test_documents_that_share_fa_by_mistake_are_correctly_seen_as_distinct_fa_1921(self, full_dml_content: parse_dml.DmlFileContent) -> None:
         line_a = full_dml_content.get_dml_line_by_code_ged_moe_and_version(code_ged_moe="PSO-ATS+-S-240000-04-0322-81", version=1)
@@ -57,7 +92,7 @@ class TestConstructionWorks:
             assert line_of_doc_version is not line_of_version_0
             assert line_of_doc_version.dml_document is line_of_version_0.dml_document
 
-    def test_documents_have_only_one_fa_number(self, full_dml_content: parse_dml.DmlFileContent) -> None:
+    def ignore_test_documents_have_only_one_fa_number_stop_at_first_error(self, full_dml_content: parse_dml.DmlFileContent) -> None:
         number_of_docs_ignored = 0
         for document in full_dml_content.dml_documents:
             if not document.get_all_code_ged_moes().intersection(param.DOCUMENTS_CODE_MOE_GEDS_THAT_HAVE_SEVERAL_FA_BY_ERROR):
@@ -66,6 +101,25 @@ class TestConstructionWorks:
                 ), f"Document with refs {document.get_all_code_ged_moes()} and titles {document.get_all_titles()} has {len(document.get_all_fa_names())} FA names: {document.get_all_fa_names()}"
             else:
                 number_of_docs_ignored += 1
+        assert number_of_docs_ignored == len(param.DOCUMENTS_CODE_MOE_GEDS_THAT_HAVE_SEVERAL_FA_BY_ERROR)
+
+    def ignore_test_documents_have_only_one_fa_number_print_all_errors_at_end(self, full_dml_content: parse_dml.DmlFileContent) -> None:
+        number_of_docs_ignored = 0
+        documents_in_errors: List[parse_dml.DmlDocument] = []
+
+        for document in full_dml_content.dml_documents:
+            if not document.get_all_code_ged_moes().intersection(param.DOCUMENTS_CODE_MOE_GEDS_THAT_HAVE_SEVERAL_FA_BY_ERROR):
+                if len(document.get_all_fa_names()) > 1:
+                    documents_in_errors.append(document)
+            else:
+                number_of_docs_ignored += 1
+
+        for document_in_error in documents_in_errors:
+            print(
+                f"Documents with refs {document_in_error.get_all_code_ged_moes()} and titles {document_in_error.get_all_titles()} has {len(document.get_all_fa_names())} FA names: {document_in_error.get_all_fa_names()}"
+            )
+
+        assert not documents_in_errors
         assert number_of_docs_ignored == len(param.DOCUMENTS_CODE_MOE_GEDS_THAT_HAVE_SEVERAL_FA_BY_ERROR)
 
 
@@ -119,6 +173,43 @@ class TestReferenceFaPa:
         reference_fapa = parse_dml.ReferenceFaPa(full_raw_reference)
         assert reference_fapa
         assert reference_fapa.number == expected_result
+
+
+class TestDocumentsThatHaveSameTitleButSameVersionAreSeenDistinct:
+    @pytest.mark.parametrize("all_references_and_versions_of_distinct_docs_with_same_title", [[("PGO-ATS+-021900-03-0203-00", 1), ("NExTEO-021900-03-0203-00", 1)]])
+    def test_on_real_dml(self, all_references_and_versions_of_distinct_docs_with_same_title: List[Tuple[str, int]], full_dml_content: parse_dml.DmlFileContent) -> None:
+
+        all_dml_lines = [
+            full_dml_content.get_dml_line_by_code_ged_moe_and_version(references_and_version[0], references_and_version[1])
+            for references_and_version in all_references_and_versions_of_distinct_docs_with_same_title
+        ]
+        assert all_dml_lines
+        assert len(all_dml_lines) > 1
+        first_dml_line = all_dml_lines[0]
+        assert first_dml_line
+        all_dml_lines_except_first_one = all_dml_lines[:1]
+        for dml_line in all_dml_lines_except_first_one:
+            assert dml_line
+            assert dml_line is not first_dml_line
+            assert dml_line.dml_document is not first_dml_line.dml_document
+
+    @pytest.mark.parametrize("all_references_and_versions_of_distinct_docs_with_same_title", [[("Prj2-240000-02-0107-01", 1), ("Prj1-240000-02-0107-01", 1)]])
+    def test_on_sample_dml(self, all_references_and_versions_of_distinct_docs_with_same_title: List[Tuple[str, int]]) -> None:
+        sample_dml_content = parse_dml.DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path="Input_for_tests/DML_Example_two_docs_same_title_different.xlsm")
+
+        all_dml_lines = [
+            sample_dml_content.get_dml_line_by_code_ged_moe_and_version(references_and_version[0], references_and_version[1])
+            for references_and_version in all_references_and_versions_of_distinct_docs_with_same_title
+        ]
+        assert all_dml_lines
+        assert len(all_dml_lines) > 1
+        first_dml_line = all_dml_lines[0]
+        assert first_dml_line
+        all_dml_lines_except_first_one = all_dml_lines[:1]
+        for dml_line in all_dml_lines_except_first_one:
+            assert dml_line
+            assert dml_line is not first_dml_line
+            assert dml_line.dml_document is not first_dml_line.dml_document
 
 
 class TestDocumentRenamedAndReferenceChanged:
