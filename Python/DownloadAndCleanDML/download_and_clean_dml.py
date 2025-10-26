@@ -5,10 +5,13 @@ from dataclasses import dataclass
 from typing import Optional
 
 # Other libraries
-from common import download_utils, excel_utils
+from common import download_utils, excel_utils, file_name_utils, file_utils
 from logger import logger_config
 from pywintypes import com_error
 from rhapsody import rhapsody_utils
+import shutil
+import os
+import datetime
 
 import param
 
@@ -110,6 +113,19 @@ class DownloadAndCleanDMLApplication:
             sheet_name=param.USEFUL_DML_SHEET_NAME,
             removal_operation_type=excel_utils.XlWingsRemoveColumnsOperation.RemovalOperationType.COLUMN_ONE_BY_ONE_USING_LETTER,
         )
+
+        today_copy_file_name = (
+            file_name_utils.get_file_name_without_extension_from_full_path(final_excel_file_path)
+            + " "
+            + datetime.datetime.now().strftime("%Y-%m-%d")
+            + "."
+            + file_name_utils.file_extension_from_full_path(final_excel_file_path)
+        )
+        final_excel_file_directory = os.path.dirname(final_excel_file_path)
+        today_copy_file_full_path = f"{final_excel_file_directory}/{today_copy_file_name}"
+        logger_config.print_and_log_info(f"Copy final {final_excel_file_path} to today copy {today_copy_file_full_path}")
+        shutil.copy(final_excel_file_path, today_copy_file_full_path)
+
         return final_excel_file_path
 
     def download_dml_file(self) -> str:
