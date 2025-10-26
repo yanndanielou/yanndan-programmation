@@ -166,6 +166,7 @@ class DmlLine:
     be_number: str
     produit: Optional[bool]
     doc_deleted: bool
+    is_last_submit_of_doc: bool
 
     def __post_init__(self) -> None:
         self.dml_document.dml_lines.append(self)
@@ -220,6 +221,16 @@ class DmlDocument:
 
     def __str__(self) -> str:
         return f"DmlDocument __str__ {len(self.dml_lines)} lines: {'\n'.join([str(dml_line) for dml_line in self.dml_lines])}"
+
+
+def convert_is_last_submit_of_doc(raw_last_submit_of_doc: str) -> bool:
+    if raw_last_submit_of_doc in ["0", "O"]:
+        return True
+    elif raw_last_submit_of_doc in ["No", "na", "N/A", ""]:
+        return False
+
+    logger_config.print_and_log_error(f"Unsupported raw_last_submit_of_doc {raw_last_submit_of_doc}")
+    return None
 
 
 def convert_dml_date_to_datetime(dml_date: str) -> Optional[datetime]:
@@ -364,6 +375,7 @@ class DmlFileContent:
                         status = DmlStatus[string_utils.text_to_valid_enum_value_text(str(row["Statut"]))]
                         guide = GuideValue[string_utils.text_to_valid_enum_value_text(str(row["GUIDE"]))]
                         actual_livraison = convert_dml_date_to_datetime(str(row["Actual Livraison"]))
+                        is_last_submit_of_doc = convert_is_last_submit_of_doc(str(row["Dernière Soumission "]))
 
                         fa = (
                             FaPa(reference=ReferenceFaPa(row["Référence FA"]), actual_delivery=convert_dml_date_to_datetime(str(row["Actual FA"])))
@@ -402,24 +414,25 @@ class DmlFileContent:
                             all_documents_found.append(dml_document)
 
                         dml_line = DmlLine(
-                            row,
-                            dml_document,
-                            code_ged_moe,
-                            title,
-                            version,
-                            revision,
-                            status,
-                            guide,
-                            actual_livraison,
-                            fa,
-                            pa,
-                            rpa,
-                            rrpa,
-                            responsible_core_team,
-                            lot_wbs,
-                            be_number,
-                            produit,
-                            doc_deleted,
+                            full_row=row,
+                            dml_document=dml_document,
+                            code_ged_moe=code_ged_moe,
+                            title=title,
+                            version=version,
+                            revision=revision,
+                            status=status,
+                            guide=guide,
+                            actual_livraison=actual_livraison,
+                            is_last_submit_of_doc=is_last_submit_of_doc,
+                            fa=fa,
+                            pa=pa,
+                            rpa=rpa,
+                            rrpa=rrpa,
+                            responsible_core_team=responsible_core_team,
+                            lot_wbs=lot_wbs,
+                            be_number=be_number,
+                            produit=produit,
+                            doc_deleted=doc_deleted,
                         )
 
                         all_lines_found.append(dml_line)
