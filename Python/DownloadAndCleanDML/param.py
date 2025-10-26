@@ -34,7 +34,6 @@ COLUMNS_NAMES_TO_REMOVE = [
     "GCONF",
     "Jalon Fourniture",
     "Nb de commentaires bloquants encore ouverts",
-    "Dernière Soumission ",
     "Document technique (Yes/No)",
     "Confidentialité Document",
     "Référence SNCF",
