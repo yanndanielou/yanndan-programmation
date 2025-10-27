@@ -224,13 +224,13 @@ class DmlDocument:
 
 
 def convert_is_last_submit_of_doc(raw_last_submit_of_doc: str) -> bool:
-    if raw_last_submit_of_doc in ["0", "O"]:
+    if raw_last_submit_of_doc in ["0", "O", "x", "X"]:
         return True
-    elif raw_last_submit_of_doc in ["No", "na", "N/A", ""]:
+    elif raw_last_submit_of_doc in ["No", "na", "N/A", "nan", ""]:
         return False
 
     logger_config.print_and_log_error(f"Unsupported raw_last_submit_of_doc {raw_last_submit_of_doc}")
-    return None
+    assert False
 
 
 def convert_dml_date_to_datetime(dml_date: str) -> Optional[datetime]:
@@ -289,6 +289,21 @@ def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], 
             return document_found_by_fa
 
     return None
+
+
+@dataclass
+class DocumentStatusReport:
+    dml_document: DmlDocument
+
+    def __post_init__(self) -> None:
+        pass
+
+    class Builder:
+
+        @staticmethod
+        def build_by_code_ged_moe(dml_file_content: "DmlFileContent", code_ged_moe: str) -> "DocumentStatusReport":
+            dml_document = dml_file_content.find_document_by_code_ged_moe(code_ged_moe)
+            pass
 
 
 @dataclass
