@@ -255,6 +255,11 @@ class TestDocumentWithReferenceChangedButNotRenamed:
         assert line_1.dml_document is line_2.dml_document
 
 
+class TestLastSubmit:
+    def ignore_test_all_lignes_have_last_submit_evaluated(self) -> None:
+        pass
+
+
 class TestDocumentRenamedAndReferenceChanged:
 
     def test_sfe_ats_on_full_dml(self, full_dml_content: parse_dml.DmlFileContent) -> None:
