@@ -1,5 +1,10 @@
 import os
 
+
+DML_FILE_RHAPS_ID = 92361740
+DML_FILE_RHAPS_ID = 79329709
+
+
 COLUMNS_NAMES_TO_REMOVE = [
     "Unique ID",
     "Code Dico & Code Arborescence",
