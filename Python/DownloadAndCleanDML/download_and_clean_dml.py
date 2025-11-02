@@ -135,7 +135,7 @@ class DownloadAndCleanDMLApplication:
             logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
-        dml_download_url = "https://rhapsody.siemens.net/livelink/livelink.exe?func=ll&objId=79329709&objAction=Download"
+        dml_download_url = f"https://rhapsody.siemens.net/livelink/livelink.exe?func=ll&objId={param.DML_FILE_RHAPS_ID}&objAction=Download"
         file_downloaded: Optional[str] = rhapsody_utils.download_file_from_rhapsody_old(
             file_to_download_pattern=param.DML_FILE_DOWNLOADED_PATTERN,
             file_to_download_url=dml_download_url,
