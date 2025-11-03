@@ -349,15 +349,22 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
 
             else:
 
-                for colum_it, column_name_to_remove in enumerate(columns_to_remove_names):
+                # Obtenir toutes les valeurs de la première ligne
+                headers_found_in_excel: List[str] = sht.range("A1").expand("right").value
+                logger_config.print_and_log_info(f"{len(headers_found_in_excel)} headers:{headers_found_in_excel}")
 
+                # Check that all columns to remove are present
+                for column_to_remove_name in columns_to_remove_names:
+                    assert column_to_remove_name in headers_found_in_excel, f"Column {column_to_remove_name} not found in excel among {headers_found_in_excel}"
+
+                for colum_it, column_name_to_remove in enumerate(columns_to_remove_names):
                     # Obtenir toutes les valeurs de la première ligne
-                    headers = sht.range("A1").expand("right").value
-                    logger_config.print_and_log_info(f"{len(headers)} headers:{headers}")
+                    headers_found_in_excel = sht.range("A1").expand("right").value
+                    logger_config.print_and_log_info(f"{len(headers_found_in_excel)} headers:{headers_found_in_excel}")
 
                     # Trouver l'index de la colonne à supprimer
                     logger_config.print_and_log_info(f"removing {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}%")
-                    col_index_starting_0 = headers.index(column_name_to_remove)
+                    col_index_starting_0 = headers_found_in_excel.index(column_name_to_remove)
                     col_letter = xl_col_to_name(col_index_starting_0)
                     logger_config.print_and_log_info(f"col_index:{col_index_starting_0}, col_letter:{col_letter}")
                     with logger_config.stopwatch_with_label(
@@ -373,7 +380,7 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
                             sht.range(col_range).delete()
                             # sht.range(col_range).delete(DeleteShiftDirection.xlShiftToLeft)
                         elif removal_operation_type == XlWingsRemoveColumnsOperation.RemovalOperationType.COLUMN_ONE_BY_ONE_USING_INDEX:
-                            col_index_starting_1 = headers.index(column_name_to_remove) + 1
+                            col_index_starting_1 = headers_found_in_excel.index(column_name_to_remove) + 1
                             sht.range((1, col_index_starting_1), (sht.cells.last_cell.row, col_index_starting_1)).delete()  # Supprimer la colonne
 
             at_end_headers: List[str] = sht.range("A1").expand("right").value
