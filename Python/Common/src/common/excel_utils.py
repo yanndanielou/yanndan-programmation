@@ -1,10 +1,8 @@
 # Standard
-import tempfile
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import List, cast
-import shutil
 
 from enum import Enum, auto
 
@@ -236,7 +234,7 @@ class XlWingsRemoveExcelExternalLinksOperation(XlWingOperationBase):
                     with logger_config.stopwatch_with_label(label=f"Removing link:{external_links_source_name}"):
                         workbook_dml.api.BreakLink(Name=external_links_source_name, Type=1)  # Type=1 pour les liaisons de type Excel
             else:
-                logger_config.print_and_log_info(f"No external link found (pass)")
+                logger_config.print_and_log_info("No external link found (pass)")
 
 
 @dataclass
@@ -291,24 +289,46 @@ class XlWingsRemoveRangesOperation(XlWingOperationBase):
         return
 
 
+class ColumnRemovalOperationType(Enum):
+    ALL_COLUMNS_AT_ONCE = auto()
+    COLUMN_ONE_BY_ONE_USING_LETTER = auto()
+    COLUMN_ONE_BY_ONE_USING_INDEX = auto()
+
+
+@dataclass
+class RemoveColumnsInstructions:
+    input_excel_file_path: str
+    sheet_name: str
+    columns_to_remove_names: List[str]
+    removal_operation_type: ColumnRemovalOperationType
+    file_to_create_path: str
+    assert_if_column_is_missing: bool
+
+
 @dataclass
 class XlWingsRemoveColumnsOperation(XlWingOperationBase):
 
-    class RemovalOperationType(Enum):
-        ALL_COLUMNS_AT_ONCE = auto()
-        COLUMN_ONE_BY_ONE_USING_LETTER = auto()
-        COLUMN_ONE_BY_ONE_USING_INDEX = auto()
-
     sheet_name: str
     columns_to_remove_names: List[str]
-    removal_operation_type: RemovalOperationType = RemovalOperationType.COLUMN_ONE_BY_ONE_USING_LETTER
+    assert_if_column_is_missing: bool
+    removal_operation_type: ColumnRemovalOperationType = ColumnRemovalOperationType.COLUMN_ONE_BY_ONE_USING_LETTER
 
     def do(self, workbook_dml: xlwings.Book) -> None:
-        XlWingsRemoveColumnsOperation.remove_columns_with_xlwings(workbook_dml, self.sheet_name, self.columns_to_remove_names, self.removal_operation_type)
+        XlWingsRemoveColumnsOperation.remove_columns_with_xlwings(
+            workbook_dml=workbook_dml,
+            sheet_name=self.sheet_name,
+            columns_to_remove_names=self.columns_to_remove_names,
+            assert_if_column_is_missing=self.assert_if_column_is_missing,
+            removal_operation_type=self.removal_operation_type,
+        )
 
     @staticmethod
     def remove_columns_with_xlwings(
-        workbook_dml: xlwings.Book, sheet_name: str, columns_to_remove_names: List[str], removal_operation_type: RemovalOperationType = RemovalOperationType.COLUMN_ONE_BY_ONE_USING_LETTER
+        workbook_dml: xlwings.Book,
+        sheet_name: str,
+        columns_to_remove_names: List[str],
+        assert_if_column_is_missing: bool,
+        removal_operation_type: ColumnRemovalOperationType = ColumnRemovalOperationType.COLUMN_ONE_BY_ONE_USING_LETTER,
     ) -> None:
 
         number_of_columns_to_remove = len(columns_to_remove_names)
@@ -324,7 +344,7 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
             at_beginning_headers: List[str] = sht.range("A1").expand("right").value
             logger_config.print_and_log_info(f"At beginning, {len(at_beginning_headers)} headers: {at_beginning_headers}")
 
-            if removal_operation_type == XlWingsRemoveColumnsOperation.RemovalOperationType.ALL_COLUMNS_AT_ONCE:
+            if removal_operation_type == ColumnRemovalOperationType.ALL_COLUMNS_AT_ONCE:
 
                 all_col_initial_index_to_remove: List[int] = []
                 for colum_it, column_name_to_remove in enumerate(columns_to_remove_names):
@@ -353,35 +373,42 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
                 headers_found_in_excel: List[str] = sht.range("A1").expand("right").value
                 logger_config.print_and_log_info(f"{len(headers_found_in_excel)} headers:{headers_found_in_excel}")
 
-                # Check that all columns to remove are present
-                for column_to_remove_name in columns_to_remove_names:
-                    assert column_to_remove_name in headers_found_in_excel, f"Column {column_to_remove_name} not found in excel among {headers_found_in_excel}"
+                if assert_if_column_is_missing:
+                    # Check that all columns to remove are present
+                    for column_to_remove_name in columns_to_remove_names:
+                        assert column_to_remove_name in headers_found_in_excel, f"Column {column_to_remove_name} not found in excel among {headers_found_in_excel}"
 
                 for colum_it, column_name_to_remove in enumerate(columns_to_remove_names):
                     # Obtenir toutes les valeurs de la première ligne
                     headers_found_in_excel = sht.range("A1").expand("right").value
                     logger_config.print_and_log_info(f"{len(headers_found_in_excel)} headers:{headers_found_in_excel}")
 
-                    # Trouver l'index de la colonne à supprimer
-                    logger_config.print_and_log_info(f"removing {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}%")
-                    col_index_starting_0 = headers_found_in_excel.index(column_name_to_remove)
-                    col_letter = xl_col_to_name(col_index_starting_0)
-                    logger_config.print_and_log_info(f"col_index:{col_index_starting_0}, col_letter:{col_letter}")
-                    with logger_config.stopwatch_with_label(
-                        label=f"Removing {colum_it+1}/{number_of_columns_to_remove}th column {column_name_to_remove} with index(starting0):{col_index_starting_0}, letter:{col_letter}.  {round((colum_it+1)/number_of_columns_to_remove*100,2)}%",
-                        inform_beginning=False,
-                    ):
-                        if removal_operation_type == XlWingsRemoveColumnsOperation.RemovalOperationType.COLUMN_ONE_BY_ONE_USING_LETTER:
-                            col_range = f"{col_letter}:{col_letter}"
+                    if column_name_to_remove in headers_found_in_excel:
 
-                            if sht.range(col_range).column_width == 0:
-                                logger_config.print_and_log_info(f"Attempting to delete hidden column {col_range}: show it")
-                                sht.range(col_range).column_width = 10
-                            sht.range(col_range).delete()
-                            # sht.range(col_range).delete(DeleteShiftDirection.xlShiftToLeft)
-                        elif removal_operation_type == XlWingsRemoveColumnsOperation.RemovalOperationType.COLUMN_ONE_BY_ONE_USING_INDEX:
-                            col_index_starting_1 = headers_found_in_excel.index(column_name_to_remove) + 1
-                            sht.range((1, col_index_starting_1), (sht.cells.last_cell.row, col_index_starting_1)).delete()  # Supprimer la colonne
+                        # Trouver l'index de la colonne à supprimer
+                        logger_config.print_and_log_info(
+                            f"removing {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}%"
+                        )
+                        col_index_starting_0 = headers_found_in_excel.index(column_name_to_remove)
+                        col_letter = xl_col_to_name(col_index_starting_0)
+                        logger_config.print_and_log_info(f"col_index:{col_index_starting_0}, col_letter:{col_letter}")
+                        with logger_config.stopwatch_with_label(
+                            label=f"Removing {colum_it+1}/{number_of_columns_to_remove}th column {column_name_to_remove} with index(starting0):{col_index_starting_0}, letter:{col_letter}.  {round((colum_it+1)/number_of_columns_to_remove*100,2)}%",
+                            inform_beginning=False,
+                        ):
+                            if removal_operation_type == ColumnRemovalOperationType.COLUMN_ONE_BY_ONE_USING_LETTER:
+                                col_range = f"{col_letter}:{col_letter}"
+
+                                if sht.range(col_range).column_width == 0:
+                                    logger_config.print_and_log_info(f"Attempting to delete hidden column {col_range}: show it")
+                                    sht.range(col_range).column_width = 10
+                                sht.range(col_range).delete()
+                                # sht.range(col_range).delete(DeleteShiftDirection.xlShiftToLeft)
+                            elif removal_operation_type == ColumnRemovalOperationType.COLUMN_ONE_BY_ONE_USING_INDEX:
+                                col_index_starting_1 = headers_found_in_excel.index(column_name_to_remove) + 1
+                                sht.range((1, col_index_starting_1), (sht.cells.last_cell.row, col_index_starting_1)).delete()  # Supprimer la colonne
+                    else:
+                        logger_config.print_and_log_error(f"Column {column_name_to_remove} not found in excel among {headers_found_in_excel}")
 
             at_end_headers: List[str] = sht.range("A1").expand("right").value
             logger_config.print_and_log_info(f"At the end, {len(at_end_headers)} headers: {at_end_headers}")
@@ -521,22 +548,23 @@ def remove_ranges_with_xlwings(input_excel_file_path: str, file_to_create_path: 
 
 
 def remove_columns_with_xlwings(
-    input_excel_file_path: str,
-    sheet_name: str,
-    file_to_create_path: str,
-    columns_to_remove_names: List[str],
-    removal_operation_type: XlWingsRemoveColumnsOperation.RemovalOperationType,
+    remove_columns_instruction: RemoveColumnsInstructions,
     excel_visibility: bool = False,
 ) -> str:
-    with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
+    with file_utils.temporary_copy_of_file(remove_columns_instruction.input_excel_file_path) as temp_file_full_path:
         with logger_config.stopwatch_with_label(
-            f"remove_columns_with_xlwings input_excel_file_path:{input_excel_file_path}, sheet_name:{sheet_name}, file_to_create_path:{file_to_create_path}, columns_to_remove_names:{columns_to_remove_names}",
+            f"remove_columns_with_xlwings input_excel_file_path:{remove_columns_instruction.input_excel_file_path}, sheet_name:{remove_columns_instruction.sheet_name}, file_to_create_path:{remove_columns_instruction.file_to_create_path}, columns_to_remove_names:{remove_columns_instruction.columns_to_remove_names}",
             inform_beginning=True,
         ):
             workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=temp_file_full_path, excel_visibility=excel_visibility).do()
-            XlWingsRemoveColumnsOperation(sheet_name=sheet_name, columns_to_remove_names=columns_to_remove_names, removal_operation_type=removal_operation_type).do(workbook_dml)
-            XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=file_to_create_path).do(workbook_dml)
-            return file_to_create_path
+            XlWingsRemoveColumnsOperation(
+                sheet_name=remove_columns_instruction.sheet_name,
+                columns_to_remove_names=remove_columns_instruction.columns_to_remove_names,
+                removal_operation_type=remove_columns_instruction.removal_operation_type,
+                assert_if_column_is_missing=remove_columns_instruction.assert_if_column_is_missing,
+            ).do(workbook_dml)
+            XlWingsSaveAndCloseWorkbookOperation(file_to_create_path=remove_columns_instruction.file_to_create_path).do(workbook_dml)
+            return remove_columns_instruction.file_to_create_path
 
 
 def xl_column_name_to_index(column_name: str) -> int:
