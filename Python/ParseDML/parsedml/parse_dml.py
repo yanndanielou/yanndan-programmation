@@ -303,7 +303,9 @@ class DocumentStatusReport:
         @staticmethod
         def build_by_code_ged_moe(dml_file_content: "DmlFileContent", code_ged_moe: str) -> "DocumentStatusReport":
             dml_document = dml_file_content.find_document_by_code_ged_moe(code_ged_moe)
-            pass
+            assert dml_document
+            document_status_report = DocumentStatusReport(dml_document=dml_document)
+            return document_status_report
 
 
 @dataclass
