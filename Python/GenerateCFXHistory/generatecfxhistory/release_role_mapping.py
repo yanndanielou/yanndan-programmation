@@ -6,6 +6,7 @@ other_projects_release_subsystem_mapping: dict[SubSystem, list[str]] = {
 
 
 next_atsp_release_subsystem_mapping: dict[SubSystem, list[str]] = {
+    SubSystem.SECLAB: ["S002_Subsystem SECLAB"],
     SubSystem.TCR3: ["S003_Component TCR3", "TCR3"],
     SubSystem.RESEAU: ["Réseau", "Commutateur", "pare-feu"],
     SubSystem.SW: [
