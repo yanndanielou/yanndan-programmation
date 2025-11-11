@@ -36,6 +36,7 @@ class SubSystem(enums_utils.NameBasedEnum):
     SW_TESTS_SECU = cast("SubSystem", auto())
     V3 = cast("SubSystem", auto())
     TCR3 = cast("SubSystem", auto())
+    SECLAB = cast("SubSystem", auto())
 
 
 class WorkPackage:
