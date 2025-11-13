@@ -63,6 +63,8 @@ class DownloadAndCleanDMLApplication:
             logger_config.print_and_log_info("remove_useless_columns: retry")
             dml_file_path = self.remove_useless_columns(dml_file_path)
 
+        self.create_dated_copy_of_dml(dml_file_path)
+
     def remove_useless_tabs(self, dml_file_path: str) -> str:
         file_to_create_path = param.DML_FILE_WITHOUT_USELESS_SHEETS_PATH
 
@@ -116,19 +118,20 @@ class DownloadAndCleanDMLApplication:
                 assert_if_column_is_missing=False,
             )
         )
+        return final_excel_file_path
+
+    def create_dated_copy_of_dml(self, dml_file_path: str) -> None:
 
         today_copy_file_name = (
-            file_name_utils.get_file_name_without_extension_from_full_path(final_excel_file_path)
+            file_name_utils.get_file_name_without_extension_from_full_path(dml_file_path)
             + " - "
             + datetime.datetime.now().strftime("%Y-%m-%d")
-            + file_name_utils.file_extension_from_full_path(final_excel_file_path)
+            + file_name_utils.file_extension_from_full_path(dml_file_path)
         )
-        final_excel_file_directory = os.path.dirname(final_excel_file_path)
+        final_excel_file_directory = os.path.dirname(dml_file_path)
         today_copy_file_full_path = f"{final_excel_file_directory}/{today_copy_file_name}"
-        logger_config.print_and_log_info(f"Copy final {final_excel_file_path} to today copy {today_copy_file_full_path}")
-        shutil.copy(final_excel_file_path, today_copy_file_full_path)
-
-        return final_excel_file_path
+        logger_config.print_and_log_info(f"Copy final {dml_file_path} to today copy {today_copy_file_full_path}")
+        shutil.copy(dml_file_path, today_copy_file_full_path)
 
     def download_dml_file(self) -> str:
         file_to_create_path = param.DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH
