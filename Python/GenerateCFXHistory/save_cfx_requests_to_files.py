@@ -17,7 +17,7 @@ from common import download_utils, file_utils, web_driver_utils
 from logger import logger_config
 
 # Third Party
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.common.by import By
@@ -64,8 +64,11 @@ class QueryOutputFileType(Enum):
     def get_file_extension(self) -> str:
         return TEXT_FILE_EXTENSION if self == QueryOutputFileType.TXT_EXPORT else EXCEL_FILE_EXTENSION
 
-    def get_file_download_dropdown_menu_option_text(self) -> str:
+    def get_file_download_dropdown_menu_option_text_french(self) -> str:
         return "Exporter vers un fichier texte" if self == QueryOutputFileType.TXT_EXPORT else "Exporter vers un tableur Excel"
+
+    def get_file_download_dropdown_menu_option_text_english(self) -> str:
+        return "Export to a Text File" if self == QueryOutputFileType.TXT_EXPORT else "Export to an Excel Spreadsheet"
 
 
 @dataclass
@@ -617,7 +620,13 @@ class SaveCfxRequestMultipagesResultsApplication:
         ):
             arrow_to_acces_export.click()
 
-        export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'" + change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text() + "')]")
+        try:
+            export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'" + change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text_french() + "')]")
+        except NoSuchElementException as ex:
+            logger_config.print_and_log_warning(
+                f"Could not find {change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text_french()}, try {change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text_english()}"
+            )
+            export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'" + change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text_english() + "')]")
 
         download_file_detector = download_utils.DownloadFileDetector(
             directory_path=self.web_browser_download_directory,
