@@ -74,6 +74,12 @@ def get_results_parsing_as_xml(xml_file_path: str) -> Tuple[List[Tuple[str, str,
     root = tree.getroot()
     parent_map = {c: p for p in root.iter() for c in p}
 
+    # Precompute the start positions of each opening <enumeration ...> tag in the raw XML
+    enum_positions: Dict[str, List[int]] = {}
+    for m in re.finditer(r'<enumeration\b[^>]*\bid="([^"]+)"[^>]*>', xml_str):
+        enum_id_found = m.group(1)
+        enum_positions.setdefault(enum_id_found, []).append(m.start())
+
     results_ok: List[Tuple[str, str, int]] = []
     results_not_ok: List[Tuple[str, str, int]] = []
 
@@ -92,10 +98,10 @@ def get_results_parsing_as_xml(xml_file_path: str) -> Tuple[List[Tuple[str, str,
         assert next_sibling.tag == "field"
         next_sibling_id = cast(str, next_sibling.get("id"))
 
-        # compute line number for the enumeration opening tag by searching in the raw XML
-        pattern = rf"<enumeration\b[^>]*\bid=\"{re.escape(enum_id)}\"[^>]*>"
-        m = re.search(pattern, xml_str, re.DOTALL)
-        line_no = xml_str.count("\n", 0, m.start()) + 1 if m else -1
+        # compute line number for this specific enumeration occurrence using precomputed positions
+        positions = enum_positions.get(enum_id, [])
+        start_index = positions.pop(0) if positions else -1
+        line_no = xml_str.count("\n", 0, start_index) + 1 if start_index != -1 else -1
 
         if next_sibling_id == enum_id:
             results_ok.append((enum_id, next_sibling_id, line_no))
