@@ -7,6 +7,33 @@ import xml.etree.ElementTree as ET
 from typing import List, Tuple, Dict
 import pathlib
 import logging
+import re
+
+
+def extract_enum_fields_regex(xml_file_path: str) -> None:
+    """
+    Extracts enumeration IDs and subsequent field classes using regex.
+    WARNING: Regex parsing has limitations for complex/nested XML structures.
+    """
+
+    with open(xml_file_path, encoding="utf-8") as xml_file:
+
+        xml_str = xml_file.read()
+
+        pattern = r"""
+            <enumeration\s+      # Start of enumeration tag
+            id="([^"]+)"         # Capture enumeration ID
+            [^>]*>               # Rest of opening tag
+            .*?                  # Content of enumeration (non-greedy)
+            </enumeration>       # End of enumeration
+            \s*                  # Any whitespace between tags
+            <field\s+            # Start of field tag
+            [^>]*                # Any attributes before class
+            class="[^"]+"      # Capture class attribute
+            [^>]*?
+            id="([^"]+)"
+        """
+        return re.findall(pattern, xml_str, re.DOTALL | re.VERBOSE)
 
 
 def handle_xml_file(xml_file_path: str) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
@@ -56,6 +83,11 @@ if __name__ == "__main__":
         all_xml_files = file_utils.get_files_by_directory_and_file_name_mask(directory_path=XML_FOLDER_PATH, filename_pattern="*.xml")
         logger_config.print_and_log_info(f"{len(all_xml_files)} files found")
         for current_xml_file_path in all_xml_files:
+
+            extract_enum_fields_regex_res = extract_enum_fields_regex(current_xml_file_path)
+            if extract_enum_fields_regex_res:
+                pass
+
             xml_file_name_without_extension = pathlib.Path(current_xml_file_path).stem
             xml_results_ok, current_xml_results_not_ok = handle_xml_file(current_xml_file_path)
             if current_xml_results_not_ok:
