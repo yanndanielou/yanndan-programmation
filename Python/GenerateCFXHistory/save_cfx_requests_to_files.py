@@ -24,7 +24,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
-# Current programm
+# Current program
 import connexion_param
 
 CFX_FILES_DOWNLOADED_PATTERN_WITHOUT_EXTENSION = "QueryResult*"
@@ -36,7 +36,7 @@ DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
 
 CREATE_PARSED_EXTENDED_HISTORY_FILES = False
 
-CREATE_PARSED_CURRENT_OWNNER_MODIFICATIONS_JSON_FILES = False
+CREATE_PARSED_CURRENT_OWNER_MODIFICATIONS_JSON_FILES = False
 
 DEFAULT_DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = False
 # DEFAULT_DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = True
