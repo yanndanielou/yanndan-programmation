@@ -77,7 +77,8 @@ def get_results_parsing_as_xml(xml_file_path: str) -> Tuple[List[Tuple[str, str,
     results_ok: List[Tuple[str, str, int]] = []
     results_not_ok: List[Tuple[str, str, int]] = []
 
-    for enum in root.findall(".//enumeration"):
+    all_enumerations = root.findall(".//enumeration")
+    for enum in all_enumerations:
         enum_id = cast(str, enum.get("id"))
         parent = parent_map.get(enum)
 
@@ -124,7 +125,11 @@ def handle_xml_file(xml_file_path: str) -> Tuple[List[Tuple[str, str, int]], Lis
 def main() -> None:
     with logger_config.application_logger("detect_CFX00892900"):
 
-        XML_FOLDERS_PATHS = [r"D:\NEXT_PCC_V0_41_NEXT_PCC_BD_V0_40\Data\Xml"]
+        XML_FOLDERS_PATHS = [
+            r"inputs_for_tests",
+            # r"C:\Users\fr232487\NEXT_ITF_D7_0A\ats_itf_spe\xml",
+            # r"C:\Users\fr232487\CBTC_ITF_RL4aGIT_10_31_2025_ats_itf\xml",
+        ]
 
         for xml_folder_path in XML_FOLDERS_PATHS:
             logger_config.print_and_log_info(f"Folder {xml_folder_path}")
