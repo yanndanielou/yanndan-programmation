@@ -107,7 +107,7 @@ def get_results_parsing_as_xml(xml_file_path: str) -> Tuple[List[Tuple[str, str,
             results_ok.append((enum_id, next_sibling_id, line_no))
         else:
             results_not_ok.append((enum_id, next_sibling_id, line_no))
-            logger_config.print_and_log_error(f"In {xml_file_name_without_extension}, line {line_no}, the enumeration {enum_id} must be renamed to {next_sibling_id}")
+            logger_config.print_and_log_error(f"In {xml_file_path}, line {line_no}, the enumeration {enum_id} must be renamed to {next_sibling_id}")
 
     return results_ok, results_not_ok
 
@@ -133,8 +133,8 @@ def main() -> None:
 
         XML_FOLDERS_PATHS = [
             r"inputs_for_tests",
-            # r"C:\Users\fr232487\NEXT_ITF_D7_0A\ats_itf_spe\xml",
-            # r"C:\Users\fr232487\CBTC_ITF_RL4aGIT_10_31_2025_ats_itf\xml",
+            r"C:\Users\fr232487\NEXT_ITF_D7_0A\ats_itf_spe\xml",
+            r"C:\Users\fr232487\CBTC_ITF_RL4aGIT_10_31_2025_ats_itf\xml",
         ]
 
         for xml_folder_path in XML_FOLDERS_PATHS:
