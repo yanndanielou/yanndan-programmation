@@ -124,19 +124,21 @@ def handle_xml_file(xml_file_path: str) -> Tuple[List[Tuple[str, str, int]], Lis
 def main() -> None:
     with logger_config.application_logger("detect_CFX00892900"):
 
-        XML_FOLDER_PATH = r"D:\NEXT_PCC_V0_41_NEXT_PCC_BD_V0_40\Data\Xml"
+        XML_FOLDERS_PATHS = [r"D:\NEXT_PCC_V0_41_NEXT_PCC_BD_V0_40\Data\Xml"]
 
-        all_results_not_ok: Dict[str, List[Tuple[str, str, int]]] = {}
-        all_xml_files = file_utils.get_files_by_directory_and_file_name_mask(directory_path=XML_FOLDER_PATH, filename_pattern="*.xml")
-        logger_config.print_and_log_info(f"{len(all_xml_files)} files found")
-        for current_xml_file_path in all_xml_files:
+        for xml_folder_path in XML_FOLDERS_PATHS:
+            logger_config.print_and_log_info(f"Folder {xml_folder_path}")
+            all_results_not_ok: Dict[str, List[Tuple[str, str, int]]] = {}
+            all_xml_files = file_utils.get_files_by_directory_and_file_name_mask(directory_path=xml_folder_path, filename_pattern="*.xml")
+            logger_config.print_and_log_info(f"{len(all_xml_files)} files found")
+            for current_xml_file_path in all_xml_files:
 
-            xml_file_name_without_extension = pathlib.Path(current_xml_file_path).stem
-            _, current_xml_results_not_ok = handle_xml_file(current_xml_file_path)
-            if current_xml_results_not_ok:
-                all_results_not_ok[xml_file_name_without_extension] = current_xml_results_not_ok
+                xml_file_name_without_extension = pathlib.Path(current_xml_file_path).stem
+                _, current_xml_results_not_ok = handle_xml_file(current_xml_file_path)
+                if current_xml_results_not_ok:
+                    all_results_not_ok[xml_file_name_without_extension] = current_xml_results_not_ok
 
-        logger_config.print_and_log_info(f"{all_results_not_ok}")
+            logger_config.print_and_log_info(f"{all_results_not_ok}")
 
 
 if __name__ == "__main__":
