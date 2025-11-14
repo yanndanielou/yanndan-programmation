@@ -9,7 +9,7 @@ from common import file_utils
 from logger import logger_config
 
 
-def extract_enum_fields_regex(xml_file_path: str) -> List[Tuple[str, str]]:
+def extract_enum_fields_regex(xml_file_path: str) -> List[Tuple[str, str, int]]:
     """
     Extracts enumeration IDs and subsequent field classes using regex.
     WARNING: Regex parsing has limitations for complex/nested XML structures.
@@ -32,41 +32,53 @@ def extract_enum_fields_regex(xml_file_path: str) -> List[Tuple[str, str]]:
             [^>]*?
             id="([^"]+)"
         """
-        return re.findall(pattern, xml_str, re.DOTALL | re.VERBOSE)
+
+        results: List[Tuple[str, str, int]] = []
+        for match in re.finditer(pattern, xml_str, re.DOTALL | re.VERBOSE):
+            enum_id = match.group(1)
+            field_id = match.group(2)
+            start_index = match.start(0)
+            line_no = xml_str.count("\n", 0, start_index) + 1
+            results.append((enum_id, field_id, line_no))
+
+        return results
 
 
-def get_results_parsing_with_regex(xml_file_path: str) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
+def get_results_parsing_with_regex(xml_file_path: str) -> Tuple[List[Tuple[str, str, int]], List[Tuple[str, str, int]]]:
 
-    results_ok: List[Tuple[str, str]] = []
-    results_not_ok: List[Tuple[str, str]] = []
+    results_ok: List[Tuple[str, str, int]] = []
+    results_not_ok: List[Tuple[str, str, int]] = []
 
     enums_extracted_with_regex = extract_enum_fields_regex(xml_file_path)
     for enum_extracted_with_regex in enums_extracted_with_regex:
         enum_id = enum_extracted_with_regex[0]
         field_id = enum_extracted_with_regex[1]
+        line_no = enum_extracted_with_regex[2]
 
         if enum_id == field_id:
-            results_ok.append((enum_id, field_id))
+            results_ok.append((enum_id, field_id, line_no))
         else:
-            results_not_ok.append((enum_id, field_id))
+            results_not_ok.append((enum_id, field_id, line_no))
 
     return results_ok, results_not_ok
 
 
-def get_results_parsing_as_xml(xml_file_path: str) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
+def get_results_parsing_as_xml(xml_file_path: str) -> Tuple[List[Tuple[str, str, int]], List[Tuple[str, str, int]]]:
     xml_file_name_without_extension = pathlib.Path(xml_file_path).stem
-
     # logging.debug(f"Load and parse file {xml_file_path}")
+    # read file text to compute line numbers
+    with open(xml_file_path, encoding="utf-8") as f:
+        xml_str = f.read()
+
     tree = ET.parse(xml_file_path)
     root = tree.getroot()
     parent_map = {c: p for p in root.iter() for c in p}
 
-    results_ok: List[Tuple[str, str]] = []
-    results_not_ok: List[Tuple[str, str]] = []
+    results_ok: List[Tuple[str, str, int]] = []
+    results_not_ok: List[Tuple[str, str, int]] = []
 
     for enum in root.findall(".//enumeration"):
         enum_id = cast(str, enum.get("id"))
-        # logging.debug(f"Handle enumeration {enum_id}")
         parent = parent_map.get(enum)
 
         assert parent is not None
@@ -78,25 +90,33 @@ def get_results_parsing_as_xml(xml_file_path: str) -> Tuple[List[Tuple[str, str]
 
         assert next_sibling.tag == "field"
         next_sibling_id = cast(str, next_sibling.get("id"))
-        if next_sibling_id == enum_id:
-            results_ok.append((enum_id, next_sibling_id))
-            # logging.debug(f"{xml_file_name_without_extension} next sibling after enumeration {enum_id} is {next_sibling_id}")
-        else:
-            results_not_ok.append((enum_id, next_sibling_id))
-            logger_config.print_and_log_error(f"In {xml_file_name_without_extension}, the enumeration {enum_id} must be renamed to {next_sibling_id}")
 
-    # print(results)
+        # compute line number for the enumeration opening tag by searching in the raw XML
+        pattern = rf"<enumeration\b[^>]*\bid=\"{re.escape(enum_id)}\"[^>]*>"
+        m = re.search(pattern, xml_str, re.DOTALL)
+        line_no = xml_str.count("\n", 0, m.start()) + 1 if m else -1
+
+        if next_sibling_id == enum_id:
+            results_ok.append((enum_id, next_sibling_id, line_no))
+        else:
+            results_not_ok.append((enum_id, next_sibling_id, line_no))
+            logger_config.print_and_log_error(f"In {xml_file_name_without_extension}, line {line_no}, the enumeration {enum_id} must be renamed to {next_sibling_id}")
+
     return results_ok, results_not_ok
 
 
-def handle_xml_file(xml_file_path: str) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]]]:
+def handle_xml_file(xml_file_path: str) -> Tuple[List[Tuple[str, str, int]], List[Tuple[str, str, int]]]:
     # logging.debug(f"processing {xml_file_path}")
     results_ok_parsing_xml_method, results_not_ok_parsing_xml_method = get_results_parsing_as_xml(xml_file_path)
 
     results_ok_parsing_regex_method, results_not_ok_parsing_regex_method = get_results_parsing_with_regex(xml_file_path)
 
-    assert results_ok_parsing_regex_method == results_ok_parsing_xml_method
-    assert results_not_ok_parsing_regex_method == results_not_ok_parsing_xml_method
+    # compare ids only (ignore line numbers) to keep parity between both methods
+    def strip_line_numbers(lst: List[Tuple[str, str, int]]) -> List[Tuple[str, str]]:
+        return [(a, b) for (a, b, _) in lst]
+
+    assert strip_line_numbers(results_ok_parsing_regex_method) == strip_line_numbers(results_ok_parsing_xml_method)
+    assert strip_line_numbers(results_not_ok_parsing_regex_method) == strip_line_numbers(results_not_ok_parsing_xml_method)
 
     return results_ok_parsing_xml_method, results_not_ok_parsing_xml_method
 
@@ -106,7 +126,7 @@ def main() -> None:
 
         XML_FOLDER_PATH = r"D:\NEXT_PCC_V0_41_NEXT_PCC_BD_V0_40\Data\Xml"
 
-        all_results_not_ok: Dict[str, List[Tuple[str, str]]] = {}
+        all_results_not_ok: Dict[str, List[Tuple[str, str, int]]] = {}
         all_xml_files = file_utils.get_files_by_directory_and_file_name_mask(directory_path=XML_FOLDER_PATH, filename_pattern="*.xml")
         logger_config.print_and_log_info(f"{len(all_xml_files)} files found")
         for current_xml_file_path in all_xml_files:
