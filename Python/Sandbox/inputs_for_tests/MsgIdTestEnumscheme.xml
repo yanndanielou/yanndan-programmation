@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<!-- Message ecificOperation (id=85) -->
+<message class="DataMessage">
+  <layer class="DataTransformer">
+    <record class="Record" id="ecificOperation" offset="0">
+      <record class="Record" id="DRa" offset="0">
+        <record class="Record" id="Deaflfe" offset="0">
+          <field class="SecretClass" id="Critip" size="1"/>
+          <field class="SecretClass" id="CpaSwrbidden" size="1"/>
+          <enumeration id="DownRestrType">
+            <enumeration-value id="estre">0</enumeration-value>
+            <enumeration-value id="RDITwnRestrType">1</enumeration-value>
+            <enumeration-value id="_DowstrdType">2</enumeration-value>
+            <enumeration-value id="_DowstrType">3</enumeration-value>
+            <enumeration-value id="NTE_nRestrType">4</enumeration-value>
+          </enumeration>
+          <field class="SecretClass" id="DownRestrType" size="3" dim="10"/>
+          <field class="SecretClass" id="RestrEnd1SegId" size="18" dim="10"/>
+          <enumeration id="SanitaryTrainState">
+            <enumeration-value id="ETAT_e">0</enumeration-value>
+            <enumeration-value id="ETAT_te">1</enumeration-value>
+            <enumeration-value id="ETAT_State">2</enumeration-value>
+          </enumeration>
+          <field class="SecretClass" id="SanitaryTrainState" size="2"/>
+          <field class="SecretClass" id="EbTestWithoutControlLoc" size="1"/>
+          <record class="Record" id="EbTestWithoutControlCab1Loc" offset="0">
+            <field class="SecretClass" id="Activ" size="1"/>
+            <field class="SecretClass" id="Extr" size="1"/>
+            <enumeration id="RESULTAT_FU">
+              <enumeration-value id="VOIE1_NON_OK_VOIE2_NON_OK_RESULTAT_FU">0</enumeration-value>
+              <enumeration-value id="VOIE1_OK_VOIE2_NON_OK_RESULTAT_FU">1</enumeration-value>
+              <enumeration-value id="VOIE1_NON_OK_VOIE2_OK_RESULTAT_FU">2</enumeration-value>
+              <enumeration-value id="VOIE1_OK_VOIE2_OK_RESULTAT_FU">3</enumeration-value>
+            </enumeration>
+            <field class="SecretClass" id="Result" size="2"/>
+          </record>
+          <record class="Record" id="EbTestWithoutControlCab2Loc" offset="0">
+            <field class="SecretClass" id="Activ" size="1"/>
+            <field class="SecretClass" id="Extr" size="1"/>
+            <enumeration id="RESULTAT_FU">
+              <enumeration-value id="VOIE1_NON_OK_VOIE2_NON_OK_RESULTAT_FU">0</enumeration-value>
+              <enumeration-value id="VOIE1_OK_VOIE2_NON_OK_RESULTAT_FU">1</enumeration-value>
+              <enumeration-value id="VOIE1_NON_OK_VOIE2_OK_RESULTAT_FU">2</enumeration-value>
+              <enumeration-value id="VOIE1_OK_VOIE2_OK_RESULTAT_FU">3</enumeration-value>
+            </enumeration>
+            <field class="SecretClass" id="Result" size="2"/>
+          </record>
+          <field class="SecretClass" id="EbTestWithoutControlRemUsExist" size="1"/>
+          <field class="SecretClass" id="EbTestWithoutControlRem" size="1"/>
+          <record class="Record" id="EbTestWithoutControlCab1Rem" offset="0">
+            <field class="SecretClass" id="Activ" size="1"/>
+            <field class="SecretClass" id="Extr" size="1"/>
+            <enumeration id="RESULTAT_FU">
+              <enumeration-value id="VESULTAT_FU">0</enumeration-value>
+              <enumeration-value id="VTAT_FU">1</enumeration-value>
+              <enumeration-value id="VTDAT_FU">2</enumeration-value>
+              <enumeration-value id="VFU">3</enumeration-value>
+            </enumeration>
+            <field class="SecretClass" id="Result" size="2"/>
+          </record>
+          <record class="Record" id="EbTestWithoutControlCab2Rem" offset="0">
+            <field class="SecretClass" id="Extr" size="1"/>
+            <enumeration id="RESULTAT_FU">
+              <enumeration-value id="VOSULTAT_FU">0</enumeration-value>
+              <enumeration-value id="VOAT_FU">1</enumeration-value>
+              <enumeration-value id="VOATD_FU">2</enumeration-value>
+              <enumeration-value id="VOU">3</enumeration-value>
+            </enumeration>
+            <field class="SecretClass" id="Result" size="2"/>
+          </record>
+          <field class="SecretClass" id="Db1Result" size="3"/>
+          <field class="SecretClass" id="Db2Result" size="3"/>
+          <field class="SecretClass" id="Oess" size="1"/>
+          <enumeration id="MLevel">
+            <enumeration-value id="LEVE">0</enumeration-value>
+            <enumeration-value id="LEVEIFIED_BY_NID_NTC_MLevel">1</enumeration-value>
+            <enumeration-value id="LEVE">2</enumeration-value>
+            <enumeration-value id="LEVE">3</enumeration-value>
+            <enumeration-value id="LEVE">4</enumeration-value>
+          </enumeration>
+          <field class="SecretClass" id="MLevel" size="3"/>
+          <field class="SecretClass" id="NidNtc" size="8"/>
+          <enumeration id="MODE_ETCS">
+            <enumeration-value id="FUSION_MODE_ETCS">0</enumeration-value>
+            <enumeration-value id="ONE_ETCS">1</enumeration-value>
+            <enumeration-value id="STSIBLE_MODE_ETCS">2</enumeration-value>
+            <enumeration-value id="SHE_ETCS">3</enumeration-value>
+            <enumeration-value id="UNE_ETCS">4</enumeration-value>
+            <enumeration-value id="SLE_ETCS">5</enumeration-value>
+            <enumeration-value id="STE_ETCS">6</enumeration-value>
+            <enumeration-value id="TRCS">7</enumeration-value>
+            <enumeration-value id="PODE_ETCS">8</enumeration-value>
+            <enumeration-value id="SYRE_MODE_ETCS">9</enumeration-value>
+            <enumeration-value id="ISDE_ETCS">10</enumeration-value>
+            <enumeration-value id="NOMODE_ETCS">11</enumeration-value>
+            <enumeration-value id="LIRVISION_MODE_ETCS">12</enumeration-value>
+            <enumeration-value id="NATEM_MODE_ETCS">13</enumeration-value>
+            <enumeration-value id="REDE_ETCS">14</enumeration-value>
+            <enumeration-value id="PATING_MODE_ETCS">15</enumeration-value>
+          </enumeration>
+          <field class="SecretClass" id="MModestm" size="4"/>
+          <enumeration id="ETAT_STM">
+            <enumeration-value id="NP_STM">0</enumeration-value>
+            <enumeration-value id="POM">1</enumeration-value>
+            <enumeration-value id="COAT_STM">2</enumeration-value>
+            <enumeration-value id="DESTM">3</enumeration-value>
+            <enumeration-value id="CSLD_STANDBY_ETAT_STM">4</enumeration-value>
+            <enumeration-value id="CS_STANDBY_ETAT_STM">5</enumeration-value>
+            <enumeration-value id="HS_STM">6</enumeration-value>
+            <enumeration-value id="DATAT_STM">7</enumeration-value>
+            <enumeration-value id="FA">8</enumeration-value>
+          </enumeration>
+          <field class="SecretClass" id="NidStmstate" size="4"/>
+          <field class="BigEndianBitSet" id="Padding_1" size="34"/>
+        </record>
+      </record>
+      <record class="Record" id="TReime" offset="0">
+        <field class="SecretClass" id="Terere" size="12"/>
+      </record>
+    </record>
+  </layer>
+</message>

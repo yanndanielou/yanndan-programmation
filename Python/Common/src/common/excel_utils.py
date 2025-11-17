@@ -547,6 +547,35 @@ def remove_ranges_with_xlwings(input_excel_file_path: str, file_to_create_path: 
             return file_to_create_path
 
 
+def remove_columns_with_openpyxl(
+    remove_columns_instruction: RemoveColumnsInstructions,
+) -> str:
+    with file_utils.temporary_copy_of_file(remove_columns_instruction.input_excel_file_path) as temp_file_full_path:
+        with logger_config.stopwatch_with_label(
+            f"remove_columns_with_xlwings input_excel_file_path:{remove_columns_instruction.input_excel_file_path}, sheet_name:{remove_columns_instruction.sheet_name}, file_to_create_path:{remove_columns_instruction.file_to_create_path}, columns_to_remove_names:{remove_columns_instruction.columns_to_remove_names}",
+            inform_beginning=True,
+        ):
+
+            with logger_config.stopwatch_with_label(label=f"Open {temp_file_full_path}", inform_beginning=True):
+                workbook = openpyxl.load_workbook(temp_file_full_path)
+
+            sheet = workbook[remove_columns_instruction.sheet_name]
+
+            openpyxl.utils.cell.column_index_from_string(i)
+            sheet.delete_cols(which_cols, 1)
+
+            workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=temp_file_full_path, excel_visibility=excel_visibility).do()
+            XlWingsRemoveColumnsOperation(
+                sheet_name=remove_columns_instruction.sheet_name,
+                columns_to_remove_names=remove_columns_instruction.columns_to_remove_names,
+                removal_operation_type=remove_columns_instruction.removal_operation_type,
+                assert_if_column_is_missing=remove_columns_instruction.assert_if_column_is_missing,
+            ).do(workbook_dml)
+
+            save_and_close_workbook(workbook, remove_columns_instruction.file_to_create_path)
+            return remove_columns_instruction.file_to_create_path
+
+
 def remove_columns_with_xlwings(
     remove_columns_instruction: RemoveColumnsInstructions,
     excel_visibility: bool = False,
