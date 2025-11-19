@@ -227,7 +227,7 @@ def main() -> None:
             ),
         )
 
-        ui_and_results_generation.produce_results_and_displays(
+        ui_and_results_generation.produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
             cfx_library=nextatsp_champfx_library,
             display_without_cumulative_eras=False,
             display_with_cumulative_eras=True,
@@ -250,7 +250,7 @@ def main() -> None:
             ),
         )
 
-        ui_and_results_generation.produce_results_and_displays(
+        ui_and_results_generation.produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
             cfx_library=nextatsp_champfx_library,
             display_without_cumulative_eras=False,
             display_with_cumulative_eras=True,

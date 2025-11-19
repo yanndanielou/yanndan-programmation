@@ -77,7 +77,7 @@ def main() -> None:
             generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
         )
 
-        ui_and_results_generation.produce_results_and_displays(
+        ui_and_results_generation.produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
             cfx_library=all_champfx_library,
             output_directory_name=OUTPUT_DIRECTORY_NAME,
             display_without_cumulative_eras=False,
@@ -96,7 +96,7 @@ def main() -> None:
             generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
         )
 
-        ui_and_results_generation.produce_results_and_displays(
+        ui_and_results_generation.produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
             cfx_library=all_champfx_library,
             output_directory_name=OUTPUT_DIRECTORY_NAME,
             display_without_cumulative_eras=False,

@@ -71,7 +71,7 @@ def main() -> None:
             adc_dc_subsystem_filter = cfx.ChampFxFilterFieldSubsystem(
                 field_accepted_values=[role.SubSystem.SW, role.SubSystem.SW_ANALYSES_SECU, role.SubSystem.SW_TESTS_SECU, role.SubSystem.SW_VAL], forced_label="ADC DC"
             )
-            ui_and_results_generation.produce_results_and_displays(
+            ui_and_results_generation.produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
                 cfx_library=all_champfx_library,
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 create_excel_file=CREATE_EXCEL_FILE,
