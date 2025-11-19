@@ -35,9 +35,24 @@ def main() -> None:
 
         nextatsp_champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
 
+        ui_and_results_generation.produce_baregraph_number_of_cfx(
+            cfx_library=nextatsp_champfx_library,
+            generation_instructions=ui_and_results_generation.NumberOfCfxByCriteriaGenerationInstructionsForLibrary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                by_subsystem=True,
+                by_current_owner_role=True,
+                cfx_filters=[
+                    cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSafetyRelevant(field_accepted_value=True)]),
+                ],
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+                generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
+            ),
+        )
+
         ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 for_global=True,
                 for_each_subsystem=False,
@@ -61,7 +76,7 @@ def main() -> None:
 
         ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 for_global=True,
                 for_each_subsystem=False,
@@ -85,7 +100,7 @@ def main() -> None:
 
         ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 for_global=True,
                 for_each_subsystem=False,
@@ -108,7 +123,7 @@ def main() -> None:
 
         ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 for_global=True,
                 for_each_subsystem=False,
@@ -132,7 +147,7 @@ def main() -> None:
 
         ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 for_global=True,
                 for_each_subsystem=False,
@@ -156,7 +171,7 @@ def main() -> None:
 
         ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 for_global=True,
                 for_each_subsystem=False,
@@ -173,7 +188,7 @@ def main() -> None:
 
         ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 for_global=True,
                 for_each_subsystem=True,
@@ -190,7 +205,7 @@ def main() -> None:
 
         ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 for_global=True,
                 for_each_subsystem=False,
@@ -211,7 +226,7 @@ def main() -> None:
 
         ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 for_global=True,
                 for_each_subsystem=True,
@@ -231,7 +246,7 @@ def main() -> None:
             cfx_library=nextatsp_champfx_library,
             display_without_cumulative_eras=False,
             display_with_cumulative_eras=True,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 cfx_filters=[
                     cfx.ChampFxFilter(
@@ -254,7 +269,7 @@ def main() -> None:
             cfx_library=nextatsp_champfx_library,
             display_without_cumulative_eras=False,
             display_with_cumulative_eras=True,
-            generation_instructions=ui_and_results_generation.GenerationInstructions(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructions(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 cfx_filters=[
                     cfx.ChampFxFilter(
@@ -275,7 +290,7 @@ def main() -> None:
 
         ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 for_global=True,
                 for_each_subsystem=True,

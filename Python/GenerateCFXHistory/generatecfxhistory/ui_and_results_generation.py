@@ -63,27 +63,40 @@ class RepresentationType(enums_utils.NameBasedEnum):
 @dataclass
 class GenerationInstructions:
     output_directory_name: str
-    generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS
-    project_in_case_of_generate_by_project_instruction_one_project: Optional[str] = None
     cfx_filters: List[ChampFxFilter] = field(default_factory=list)
     create_html_file: bool = True
-    create_excel_file: bool = True
     display_output_plots: bool = True
-    dump_all_cfx_ids_in_json: bool = True
     create_screenshot: bool = True
-    dates_generator: DatesGenerator = DecreasingIntervalDatesGenerator()
 
 
 @dataclass
-class GenerationInstructionsForLibary(GenerationInstructions):
+class NumberOfCfxStatePerDateGenerationInstructions(GenerationInstructions):
+    create_excel_file: bool = True
+    dump_all_cfx_ids_in_json: bool = True
+    dates_generator: DatesGenerator = DecreasingIntervalDatesGenerator()
+    generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS
+    project_in_case_of_generate_by_project_instruction_one_project: Optional[str] = None
+
+
+@dataclass
+class NumberOfCfxStatePerDateGenerationInstructionsForLibrary(NumberOfCfxStatePerDateGenerationInstructions):
     for_global: bool = True
     for_each_subsystem: bool = False
     for_each_current_owner_per_date: bool = False
 
 
+@dataclass
+class NumberOfCfxByCriteriaGenerationInstructionsForLibrary(GenerationInstructions):
+    by_subsystem: bool = False
+    by_current_owner_role: bool = False
+    for_global: bool = False
+    states_to_take_into_account_black_list: Optional[List[State]] = None
+    states_to_take_into_account_white_list: Optional[List[State]] = None
+
+
 def produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
     cfx_library: ChampFXLibrary,
-    generation_instructions: GenerationInstructions,
+    generation_instructions: NumberOfCfxStatePerDateGenerationInstructions,
     display_without_cumulative_eras: bool,
     display_with_cumulative_eras: bool,
 ) -> None:
@@ -215,7 +228,7 @@ def produce_excel_output_file_results_number_of_cfx_by_state_per_date(output_exc
 
 
 def produce_displays_and_create_html_number_of_cfx_by_state_per_date(
-    generation_instructions: GenerationInstructions,
+    generation_instructions: NumberOfCfxStatePerDateGenerationInstructions,
     use_cumulative: bool,
     all_results_to_display: AllResultsPerDates,
     window_title: str,
@@ -296,9 +309,18 @@ def produce_displays_and_create_html_number_of_cfx_by_state_per_date(
     logger_config.print_and_log_current_ram_usage(prefix="After UI computation", previous_reference_rss_value_and_label=[before_plots_computation_ram_rss, "Compared to before UI computation"])
 
 
+def produce_baregraph_number_of_cfx(
+    cfx_library: ChampFXLibrary,
+    generation_instructions: NumberOfCfxByCriteriaGenerationInstructionsForLibrary,
+) -> None:
+
+    if generation_instructions.for_global:
+        pass
+
+
 def produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
     cfx_library: ChampFXLibrary,
-    generation_instructions: GenerationInstructionsForLibary,
+    generation_instructions: NumberOfCfxStatePerDateGenerationInstructionsForLibrary,
 ) -> None:
 
     if generation_instructions.for_global:

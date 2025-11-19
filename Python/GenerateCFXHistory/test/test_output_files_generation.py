@@ -50,7 +50,7 @@ class TestGenerateByProjectInstruction:
         nextatsp_champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
         ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=output_directory_name,
                 for_global=True,
                 for_each_subsystem=False,
@@ -93,7 +93,7 @@ class TestGenerateByProjectInstruction:
         nextatsp_champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
         ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=output_directory_name,
                 for_global=True,
                 for_each_subsystem=False,
@@ -136,7 +136,7 @@ class TestGenerateByProjectInstruction:
         nextatsp_champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
         ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=output_directory_name,
                 for_global=True,
                 for_each_subsystem=False,
@@ -181,7 +181,7 @@ class TestGenerateByProjectInstruction:
         nextatsp_champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
         ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=nextatsp_champfx_library,
-            generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
+            generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
                 output_directory_name=output_directory_name,
                 for_global=True,
                 for_each_subsystem=False,
