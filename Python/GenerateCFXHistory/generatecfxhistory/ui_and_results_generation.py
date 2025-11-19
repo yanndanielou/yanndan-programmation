@@ -81,7 +81,7 @@ class GenerationInstructionsForLibary(GenerationInstructions):
     for_each_current_owner_per_date: bool = False
 
 
-def produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
+def produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
     cfx_library: ChampFXLibrary,
     generation_instructions: GenerationInstructions,
     display_without_cumulative_eras: bool,
@@ -102,7 +102,7 @@ def produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
                 generation_instructions_copy.generate_by_project_instruction = GenerateByProjectInstruction.ONLY_ONE_PROJECT
                 generation_instructions_copy.project_in_case_of_generate_by_project_instruction_one_project = project
 
-                produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
+                produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
                     cfx_library=cfx_library,
                     generation_instructions=generation_instructions_copy,
                     display_without_cumulative_eras=display_without_cumulative_eras,
@@ -114,7 +114,7 @@ def produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
 
             generation_instructions_copy = copy.deepcopy(generation_instructions)
             generation_instructions_copy.generate_by_project_instruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS
-            produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
+            produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
                 cfx_library=cfx_library,
                 generation_instructions=generation_instructions_copy,
                 display_without_cumulative_eras=display_without_cumulative_eras,
@@ -123,7 +123,7 @@ def produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
 
             generation_instructions_copy = copy.deepcopy(generation_instructions)
             generation_instructions_copy.generate_by_project_instruction = GenerateByProjectInstruction.BY_PROJECT
-            produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
+            produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
                 cfx_library=cfx_library,
                 generation_instructions=generation_instructions_copy,
                 display_without_cumulative_eras=display_without_cumulative_eras,
@@ -296,14 +296,14 @@ def produce_displays_and_create_html_number_of_cfx_by_state_per_date(
     logger_config.print_and_log_current_ram_usage(prefix="After UI computation", previous_reference_rss_value_and_label=[before_plots_computation_ram_rss, "Compared to before UI computation"])
 
 
-def produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
+def produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
     cfx_library: ChampFXLibrary,
     generation_instructions: GenerationInstructionsForLibary,
 ) -> None:
 
     if generation_instructions.for_global:
 
-        produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
+        produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
             cfx_library=cfx_library,
             generation_instructions=generation_instructions,
             display_without_cumulative_eras=True,
@@ -318,7 +318,7 @@ def produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
                 ChampFxFilter(role_depending_on_date_filter=ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))
             ]
             with logger_config.stopwatch_with_label(label=f"{cfx_library.label} produce_results_and_displays for {subsystem.name}", inform_beginning=True, monitor_ram_usage=True):
-                produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
+                produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
                     cfx_library=cfx_library,
                     generation_instructions=generation_instructions_copy,
                     display_without_cumulative_eras=False,
@@ -331,7 +331,7 @@ def produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
                 generation_instructions_copy = copy.deepcopy(generation_instructions)
                 generation_instructions_copy.cfx_filters = generation_instructions_copy.cfx_filters + [ChampFxFilter(field_filters=[ChampFxFilterFieldSubsystem(field_accepted_values=[subsystem])])]
 
-                produce_line_graphs_number_of_cfx_by_state_per_date_results_and_displays(
+                produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
                     cfx_library=cfx_library,
                     generation_instructions=generation_instructions_copy,
                     display_without_cumulative_eras=False,
