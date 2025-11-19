@@ -35,7 +35,7 @@ def main() -> None:
 
         nextatsp_champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
 
-        ui_and_results_generation.produce_results_and_displays_for_library(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
             cfx_library=nextatsp_champfx_library,
             generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
@@ -59,7 +59,7 @@ def main() -> None:
             ),
         )
 
-        ui_and_results_generation.produce_results_and_displays_for_library(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
             cfx_library=nextatsp_champfx_library,
             generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
@@ -83,7 +83,7 @@ def main() -> None:
             ),
         )
 
-        ui_and_results_generation.produce_results_and_displays_for_library(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
             cfx_library=nextatsp_champfx_library,
             generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
@@ -106,7 +106,7 @@ def main() -> None:
             ),
         )
 
-        ui_and_results_generation.produce_results_and_displays_for_library(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
             cfx_library=nextatsp_champfx_library,
             generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
@@ -130,7 +130,7 @@ def main() -> None:
             ),
         )
 
-        ui_and_results_generation.produce_results_and_displays_for_library(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
             cfx_library=nextatsp_champfx_library,
             generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
@@ -154,7 +154,7 @@ def main() -> None:
             ),
         )
 
-        ui_and_results_generation.produce_results_and_displays_for_library(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
             cfx_library=nextatsp_champfx_library,
             generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
@@ -171,7 +171,7 @@ def main() -> None:
             ),
         )
 
-        ui_and_results_generation.produce_results_and_displays_for_library(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
             cfx_library=nextatsp_champfx_library,
             generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
@@ -188,7 +188,7 @@ def main() -> None:
             ),
         )
 
-        ui_and_results_generation.produce_results_and_displays_for_library(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
             cfx_library=nextatsp_champfx_library,
             generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
@@ -209,7 +209,7 @@ def main() -> None:
             ),
         )
 
-        ui_and_results_generation.produce_results_and_displays_for_library(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
             cfx_library=nextatsp_champfx_library,
             generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
@@ -273,7 +273,7 @@ def main() -> None:
             ),
         )
 
-        ui_and_results_generation.produce_results_and_displays_for_library(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
             cfx_library=nextatsp_champfx_library,
             generation_instructions=ui_and_results_generation.GenerationInstructionsForLibary(
                 output_directory_name=OUTPUT_DIRECTORY_NAME,

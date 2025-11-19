@@ -296,7 +296,7 @@ def produce_displays_and_create_html_number_of_cfx_by_state_per_date(
     logger_config.print_and_log_current_ram_usage(prefix="After UI computation", previous_reference_rss_value_and_label=[before_plots_computation_ram_rss, "Compared to before UI computation"])
 
 
-def produce_results_and_displays_for_library(
+def produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
     cfx_library: ChampFXLibrary,
     generation_instructions: GenerationInstructionsForLibary,
 ) -> None:

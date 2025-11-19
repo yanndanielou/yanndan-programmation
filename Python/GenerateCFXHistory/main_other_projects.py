@@ -35,7 +35,7 @@ def main() -> None:
             allow_cfx_creation_errors=True,
         )
 
-        ui_and_results_generation.produce_results_and_displays_for_library(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
             cfx_library=all_champfx_library,
             output_directory_name=OUTPUT_DIRECTORY_NAME,
             for_global=True,
@@ -47,7 +47,7 @@ def main() -> None:
             generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
         )
 
-        ui_and_results_generation.produce_results_and_displays_for_library(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
             cfx_library=all_champfx_library,
             output_directory_name=OUTPUT_DIRECTORY_NAME,
             for_global=True,
@@ -62,7 +62,7 @@ def main() -> None:
             generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
         )
 
-        ui_and_results_generation.produce_results_and_displays_for_library(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_results_and_displays_for_library(
             cfx_library=all_champfx_library,
             output_directory_name=OUTPUT_DIRECTORY_NAME,
             for_global=True,
