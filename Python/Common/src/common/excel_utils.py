@@ -12,7 +12,7 @@ from xlwings.constants import DeleteShiftDirection
 
 from win32com.client import Dispatch
 
-from common import file_utils
+from common import file_utils, file_name_utils
 
 
 # Other libraries
@@ -27,6 +27,7 @@ EXCEL_FILE_EXTENSION = ".xlsx"
 
 # cf    https://learn.microsoft.com/fr-fr/office/vba/api/Excel.XlFileFormat
 EXCEL_8_XLS_FORMAT_XL_FILE_FORMAT_VALUE = 56
+EXCEL_WORKBOOK_DEFAULT_XLSX_FORMAT_XL_FILE_FORMAT_VALUE = 51
 
 
 def convert_xlsx_file_to_xls_with_win32com_dispatch(xlsx_file_full_path: str) -> str:
@@ -46,6 +47,27 @@ def convert_xlsx_file_to_xls_with_win32com_dispatch(xlsx_file_full_path: str) ->
         with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls: save {xls_output_file_path}"):
             wb.SaveAs(xls_output_file_path, FileFormat=EXCEL_8_XLS_FORMAT_XL_FILE_FORMAT_VALUE)
         with logger_config.stopwatch_with_label("convert_xlsx_file_to_xls: quit excel"):
+            xl.Quit()
+        return xls_output_file_path
+
+
+def convert_excel_file_to_xlsx_with_win32com_dispatch(excel_file_full_path: str) -> str:
+    with logger_config.stopwatch_with_label(f"convert_excel_file_to_xlsx_with_win32com_dispatch: {excel_file_full_path}"):
+        xls_output_file_path = file_name_utils.get_file_name_with_extension_from_full_path(excel_file_full_path) + ".xlsx"
+        with logger_config.stopwatch_with_label("convert_excel_file_to_xlsx_with_win32com_dispatch: open excel application"):
+            xl = Dispatch("Excel.Application")
+
+        xl.DisplayAlerts = False
+
+        with logger_config.stopwatch_with_label(f"convert_excel_file_to_xlsx_with_win32com_dispatch: open {excel_file_full_path}"):
+            wb = xl.Workbooks.Add(excel_file_full_path)
+
+        wb.CheckCompatibility = False
+        wb.DoNotPromptForConvert = True
+
+        with logger_config.stopwatch_with_label(f"convert_excel_file_to_xlsx_with_win32com_dispatch: save {xls_output_file_path}"):
+            wb.SaveAs(xls_output_file_path, FileFormat=EXCEL_WORKBOOK_DEFAULT_XLSX_FORMAT_XL_FILE_FORMAT_VALUE)
+        with logger_config.stopwatch_with_label("convert_excel_file_to_xlsx_with_win32com_dispatch: quit excel"):
             xl.Quit()
         return xls_output_file_path
 
@@ -550,14 +572,15 @@ def remove_ranges_with_xlwings(input_excel_file_path: str, file_to_create_path: 
 def remove_columns_with_openpyxl(
     remove_columns_instruction: RemoveColumnsInstructions,
 ) -> str:
-    with file_utils.temporary_copy_of_file(remove_columns_instruction.input_excel_file_path) as temp_file_full_path:
+    with file_utils.temporary_copy_of_file(remove_columns_instruction.input_excel_file_path) as temp_xlsm_file_full_path:
         with logger_config.stopwatch_with_label(
             f"remove_columns_with_xlwings input_excel_file_path:{remove_columns_instruction.input_excel_file_path}, sheet_name:{remove_columns_instruction.sheet_name}, file_to_create_path:{remove_columns_instruction.file_to_create_path}, columns_to_remove_names:{remove_columns_instruction.columns_to_remove_names}",
             inform_beginning=True,
         ):
 
-            with logger_config.stopwatch_with_label(label=f"Open {temp_file_full_path}", inform_beginning=True):
-                workbook = openpyxl.load_workbook(temp_file_full_path)
+            temp_xls_file_full_path = convert_excel_file_to_xlsx_with_win32com_dispatch(temp_xlsm_file_full_path)
+            with logger_config.stopwatch_with_label(label=f"Open {temp_xls_file_full_path}", inform_beginning=True):
+                workbook = openpyxl.load_workbook(temp_xls_file_full_path)
 
             worksheet = workbook[remove_columns_instruction.sheet_name]
 
