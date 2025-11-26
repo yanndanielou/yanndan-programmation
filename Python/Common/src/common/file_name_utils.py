@@ -2,6 +2,7 @@
 
 from common import string_utils
 import pathlib
+import os
 
 
 def file_extension_from_full_path(full_path: str) -> str:
@@ -18,6 +19,11 @@ def file_extension_from_full_path(full_path: str) -> str:
 def get_file_name_without_extension_from_full_path(full_path: str) -> str:
     file_name_without_extension_from_full_path = pathlib.Path(full_path).stem
     return file_name_without_extension_from_full_path
+
+
+def get_file_folder_from_full_path(full_path: str) -> str:
+    file_folder_full_path = os.path.dirname(pathlib.Path(full_path))
+    return file_folder_full_path
 
 
 def get_file_name_with_extension_from_full_path(full_path: str) -> str:
