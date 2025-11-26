@@ -583,13 +583,17 @@ def remove_columns_with_openpyxl(
                     logger_config.print_and_log_info(f"removing {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}%")
 
                     col_index_starting_0 = headers_found_in_excel.index(column_name_to_remove)
+                    col_index_starting_1 = headers_found_in_excel.index(column_name_to_remove) + 1
                     col_letter = xl_col_to_name(col_index_starting_0)
-                    logger_config.print_and_log_info(f"col_index:{col_index_starting_0}, col_letter:{col_letter}")
+                    logger_config.print_and_log_info(f"col_index:{col_index_starting_1}, col_letter:{col_letter}")
                     with logger_config.stopwatch_with_label(
                         label=f"Removing {colum_it+1}/{number_of_columns_to_remove}th column {column_name_to_remove} with index(starting0):{col_index_starting_0}, letter:{col_letter}.  {round((colum_it+1)/number_of_columns_to_remove*100,2)}%",
                         inform_beginning=False,
                     ):
-                        worksheet.delete_cols(col_index_starting_0)
+                        worksheet.delete_cols(col_index_starting_1)
+
+                else:
+                    logger_config.print_and_log_error(f"Column {column_name_to_remove} not found in excel among {headers_found_in_excel}")
 
             save_and_close_workbook(workbook, remove_columns_instruction.file_to_create_path)
             return remove_columns_instruction.file_to_create_path
