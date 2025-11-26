@@ -53,7 +53,7 @@ def convert_xlsx_file_to_xls_with_win32com_dispatch(xlsx_file_full_path: str) ->
 
 def convert_excel_file_to_xlsx_with_win32com_dispatch(excel_file_full_path: str) -> str:
     with logger_config.stopwatch_with_label(f"convert_excel_file_to_xlsx_with_win32com_dispatch: {excel_file_full_path}"):
-        xls_output_file_path = file_name_utils.get_file_name_with_extension_from_full_path(excel_file_full_path) + ".xlsx"
+        xls_output_file_path = file_name_utils.get_file_name_without_extension_from_full_path(excel_file_full_path) + ".xlsx"
         with logger_config.stopwatch_with_label("convert_excel_file_to_xlsx_with_win32com_dispatch: open excel application"):
             xl = Dispatch("Excel.Application")
 
