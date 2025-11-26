@@ -581,9 +581,8 @@ def remove_columns_with_openpyxl(
             inform_beginning=True,
         ):
 
-            temp_xls_file_full_path = convert_excel_file_to_xlsx_with_win32com_dispatch(temp_xlsm_file_full_path)
-            with logger_config.stopwatch_with_label(label=f"Open {temp_xls_file_full_path}", inform_beginning=True):
-                workbook = openpyxl.load_workbook(temp_xls_file_full_path)
+            with logger_config.stopwatch_with_label(label=f"Open {temp_xlsm_file_full_path}", inform_beginning=True):
+                workbook = openpyxl.load_workbook(temp_xlsm_file_full_path)
 
             worksheet = workbook[remove_columns_instruction.sheet_name]
 
