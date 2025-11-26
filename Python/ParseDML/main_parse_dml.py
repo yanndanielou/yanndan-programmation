@@ -13,7 +13,7 @@ def dump_errors(dml_file_content_to_print: parse_dml.DmlFileContent) -> None:
 if __name__ == "__main__":
 
     with logger_config.application_logger("ParseDML"):
-        dml_file_content_built = parse_dml.DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path=param.DML_FILE_CLEANED_FINAL)
+        dml_file_content_built = parse_dml.DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path=param.DML_FILE_WITH_USELESS_RANGES)
         all_documents_that_have_several_titles = [document for document in dml_file_content_built.dml_documents if len(document.get_all_titles()) > 1]
         pass
 
