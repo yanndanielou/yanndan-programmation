@@ -377,14 +377,32 @@ def produce_baregraph_number_of_cfx(
         data = []
         for subsystem_it, state_dict in all_cfx_to_consider_per_subsystem_per_state_dict.items():
             for state_it, count in state_dict.items():
-                data.append({"SubSystem": str(subsystem_it), "State": str(state_it), "Count": count})
+                data.append({"SubSystem": str(subsystem_it), "State": str(state_it), "Count": count, "StateValue": state_it.value})
 
         df = pd.DataFrame(data)
 
         # Create grouped bar chart
         fig, ax = plt.subplots(figsize=(12, 6))
         df_pivot = df.pivot(index="SubSystem", columns="State", values="Count").fillna(0)
+        # Sort columns (States) by their enum value
+        state_order = sorted(df_pivot.columns, key=lambda x: df[df["State"] == x]["StateValue"].iloc[0])
+        df_pivot = df_pivot[state_order]
         df_pivot.plot(kind="bar", ax=ax, width=0.8)
+
+        # Add tooltips with mpld3
+        tooltip_labels = []
+        for idx, subsystem in enumerate(df_pivot.index):
+            for state in df_pivot.columns:
+                count = int(df_pivot.loc[subsystem, state])
+                tooltip_labels.append(f"SubSystem: {subsystem}\nState: {state}\nCount: {count}")
+        
+        points = []
+        for container in ax.containers:
+            for patch in container:
+                points.append(patch)
+        
+        tooltip = mpld3.plugins.PointHTMLTooltip(points, tooltip_labels, voffset=10, hoffset=10)
+        mpld3.plugins.connect(fig, tooltip)
 
         # Customize the plot
         ax.set_xlabel("State", fontsize=12, fontweight="bold")
