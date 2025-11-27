@@ -389,21 +389,6 @@ def produce_baregraph_number_of_cfx(
         df_pivot = df_pivot[state_order]
         df_pivot.plot(kind="bar", ax=ax, width=0.8)
 
-        # Add tooltips with mpld3
-        tooltip_labels = []
-        for idx, subsystem in enumerate(df_pivot.index):
-            for state in df_pivot.columns:
-                count = int(df_pivot.loc[subsystem, state])
-                tooltip_labels.append(f"SubSystem: {subsystem}\nState: {state}\nCount: {count}")
-        
-        points = []
-        for container in ax.containers:
-            for patch in container:
-                points.append(patch)
-        
-        tooltip = mpld3.plugins.PointHTMLTooltip(points, tooltip_labels, voffset=10, hoffset=10)
-        mpld3.plugins.connect(fig, tooltip)
-
         # Customize the plot
         ax.set_xlabel("State", fontsize=12, fontweight="bold")
         ax.set_ylabel("Count", fontsize=12, fontweight="bold")
