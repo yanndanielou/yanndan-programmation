@@ -7,6 +7,7 @@ from common import string_utils
 from logger import logger_config
 
 from generatecfxhistory.role import SubSystem
+from generatecfxhistory.constants import State
 
 if TYPE_CHECKING:
     from generatecfxhistory.cfx import ChampFXEntry
@@ -190,11 +191,22 @@ class ChampFxFilterFieldSubsystem(ChampFXFieldFilter):
         )
 
 
-class ChampFxFilterFieldCategory(ChampFXFieldFilter):
+class ChampFxFilterFieldSubsystem(ChampFXFieldFilter):
     def __init__(self, field_accepted_values: Optional[List[Any]] = None, field_forbidden_values: Optional[List[Any]] = None, forced_label: Optional[str] = None) -> None:
         super().__init__(
-            field_name="_category",
-            field_label="Category",
+            field_name="_subsystem",
+            field_label="Subsystem",
+            field_accepted_values=field_accepted_values,
+            field_forbidden_values=field_forbidden_values,
+            forced_label=forced_label,
+        )
+
+
+class ChampFxFilterFieldState(ChampFXFieldFilter):
+    def __init__(self, field_accepted_values: Optional[List[State]] = None, field_forbidden_values: Optional[List[State]] = None, forced_label: Optional[str] = None) -> None:
+        super().__init__(
+            field_name="_state",
+            field_label="State",
             field_accepted_values=field_accepted_values,
             field_forbidden_values=field_forbidden_values,
             forced_label=forced_label,
