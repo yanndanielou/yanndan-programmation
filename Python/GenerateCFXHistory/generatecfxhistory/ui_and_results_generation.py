@@ -329,12 +329,31 @@ def produce_baregraph_number_of_cfx(
 
         logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx. all_cfx_to_consider_per_state: {all_cfx_to_consider_per_subsystem_per_state_dict}")
 
-        # plt.bar([e.value for e in State], all_cfx_to_consider_per_state_dict.values(), width=0.3)
+        # Create figure and bar chart
+        fig, ax = plt.subplots(figsize=(12, 6))
         plt.bar(range(len(all_cfx_to_consider_per_subsystem_per_state_dict)), list(all_cfx_to_consider_per_subsystem_per_state_dict.values()), align="center")
         plt.xticks(range(len(all_cfx_to_consider_per_subsystem_per_state_dict)), list(all_cfx_to_consider_per_subsystem_per_state_dict.keys()))
         plt.title("Number of CFX per state")
         plt.xlabel("State")
         plt.ylabel("Number of CFX")
+
+        # Add tooltips
+        tooltip_data = []
+        for state, count in all_cfx_to_consider_per_subsystem_per_state_dict.items():
+            tooltip_data.append(f"State: {state}\nCount: {count}")
+
+        # Helper function to create a closure that captures the correct text
+        def create_tooltip_handler(text):
+            return lambda sel: sel.annotation.set_text(text)
+
+        # Add cursor tooltips to all bar patches
+        tooltip_idx = 0
+        for container in ax.containers:
+            for patch in container:
+                if tooltip_idx < len(tooltip_data):
+                    mplcursors.cursor(patch, hover=HoverMode.Transient).connect("add", create_tooltip_handler(tooltip_data[tooltip_idx]))
+                    tooltip_idx += 1
+
         plt.show()
 
     if generation_instructions.by_current_owner_role:
@@ -396,12 +415,16 @@ def produce_baregraph_number_of_cfx(
                 count = int(df_pivot.loc[subsystem, state])
                 tooltip_data.append(f"SubSystem: {subsystem}\nState: {state}\nCount: {count}")
 
+        # Helper function to create a closure that captures the correct text
+        def create_tooltip_handler(text):
+            return lambda sel: sel.annotation.set_text(text)
+
         # Add cursor tooltips to all bar patches
         tooltip_idx = 0
         for container in ax.containers:
             for patch in container:
                 if tooltip_idx < len(tooltip_data):
-                    mplcursors.cursor(patch, hover=HoverMode.Transient).connect("add", lambda sel, text=tooltip_data[tooltip_idx]: sel.annotation.set_text(text))
+                    mplcursors.cursor(patch, hover=HoverMode.Transient).connect("add", create_tooltip_handler(tooltip_data[tooltip_idx]))
                     tooltip_idx += 1
 
         # Customize the plot
