@@ -3,6 +3,7 @@ import os
 from logger import logger_config
 
 from generatecfxhistory import cfx, filters
+from generatecfxhistory.constants import State
 from generatecfxhistory import constants, role, inputs
 from generatecfxhistory import ui_and_results_generation
 
@@ -35,6 +36,29 @@ def main() -> None:
 
         nextatsp_champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
 
+        ui_and_results_generation.produce_baregraph_number_of_cfx(
+            cfx_library=nextatsp_champfx_library,
+            generation_instructions=ui_and_results_generation.NumberOfCfxByCriteriaGenerationInstructionsForLibrary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                by_subsystem=True,
+                by_current_owner_role=True,
+                static_criteria_filters=[filters.ChampFxFilterFieldState(field_forbidden_values=[State.CLOSED])],
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+            ),
+        )
+
+        ui_and_results_generation.produce_baregraph_number_of_cfx(
+            cfx_library=nextatsp_champfx_library,
+            generation_instructions=ui_and_results_generation.NumberOfCfxByCriteriaGenerationInstructionsForLibrary(
+                output_directory_name=OUTPUT_DIRECTORY_NAME,
+                by_subsystem=True,
+                by_current_owner_role=True,
+                static_criteria_filters=[filters.ChampFxFilterFieldState(field_accepted_values=[State.SUBMITTED])],
+                create_html_file=True,
+                display_output_plots=DISPLAY_OUTPUT,
+            ),
+        )
         ui_and_results_generation.produce_baregraph_number_of_cfx(
             cfx_library=nextatsp_champfx_library,
             generation_instructions=ui_and_results_generation.NumberOfCfxByCriteriaGenerationInstructionsForLibrary(
