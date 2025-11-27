@@ -383,7 +383,7 @@ def produce_baregraph_number_of_cfx(
 
         # Create grouped bar chart
         fig, ax = plt.subplots(figsize=(12, 6))
-        df_pivot = df.pivot(index="State", columns="SubSystem", values="Count").fillna(0)
+        df_pivot = df.pivot(index="SubSystem", columns="State", values="Count").fillna(0)
         df_pivot.plot(kind="bar", ax=ax, width=0.8)
 
         # Customize the plot
