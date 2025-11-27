@@ -390,7 +390,7 @@ def produce_baregraph_number_of_cfx(
         ax.set_xlabel("State", fontsize=12, fontweight="bold")
         ax.set_ylabel("Count", fontsize=12, fontweight="bold")
         ax.set_title("CFX Count by SubSystem and State", fontsize=14, fontweight="bold")
-        ax.legend(title="SubSystem", bbox_to_anchor=(1.05, 1), loc="upper left")
+        ax.legend(title="States", bbox_to_anchor=(1.05, 1), loc="upper left")
         ax.grid(axis="y", alpha=0.3)
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
