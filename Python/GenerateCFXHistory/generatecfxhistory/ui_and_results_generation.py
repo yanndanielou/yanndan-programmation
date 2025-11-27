@@ -310,36 +310,91 @@ def produce_baregraph_number_of_cfx(
 ) -> None:
 
     if generation_instructions.for_global:
-        pass
 
-    # Get cfx matching filter
-    all_cfx_to_consider = cfx_library.get_all_cfx_matching_filters(static_criteria_filters=generation_instructions.static_criteria_filters)
-    logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx: {len(all_cfx_to_consider)} CFX to consider")
+        # Get cfx matching filter
+        all_cfx_to_consider = cfx_library.get_all_cfx_matching_filters(static_criteria_filters=generation_instructions.static_criteria_filters)
+        logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx: {len(all_cfx_to_consider)} CFX to consider")
 
-    all_cfx_to_consider_per_state_dict: Dict[State, int] = {}
-    all_cfx_to_consider_per_state_list: List[int] = []
-    for state in State:
-        all_cfx_to_consider_per_state_dict[state] = 0
-        all_cfx_to_consider_per_state_list.append(0)
+        all_cfx_to_consider_per_subsystem_per_state_dict: Dict[State, int] = {}
+        all_cfx_to_consider_per_state_list: List[int] = []
+        for state_it in State:
+            all_cfx_to_consider_per_subsystem_per_state_dict[state_it] = 0
+            all_cfx_to_consider_per_state_list.append(0)
 
-    for cfx_entry in all_cfx_to_consider:
-        all_cfx_to_consider_per_state_dict[cfx_entry._state] += 1
+        for cfx_entry in all_cfx_to_consider:
+            all_cfx_to_consider_per_subsystem_per_state_dict[cfx_entry._state] += 1
 
-    all_cfx_to_consider_per_state_dict = {state: count for state, count in all_cfx_to_consider_per_state_dict.items() if count != 0}
+        # Remove key of 0 values
+        all_cfx_to_consider_per_subsystem_per_state_dict = {state: count for state, count in all_cfx_to_consider_per_subsystem_per_state_dict.items() if count != 0}
 
-    logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx. all_cfx_to_consider_per_state: {all_cfx_to_consider_per_state_dict}")
+        logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx. all_cfx_to_consider_per_state: {all_cfx_to_consider_per_subsystem_per_state_dict}")
 
-    # plt.bar([e.value for e in State], all_cfx_to_consider_per_state_dict.values(), width=0.3)
-    plt.bar(range(len(all_cfx_to_consider_per_state_dict)), list(all_cfx_to_consider_per_state_dict.values()), align="center")
-    plt.xticks(range(len(all_cfx_to_consider_per_state_dict)), list(all_cfx_to_consider_per_state_dict.keys()))
-    plt.title("Number of CFX per state")
-    plt.xlabel("State")
-    plt.ylabel("Number of CFX")
-    plt.show()
+        # plt.bar([e.value for e in State], all_cfx_to_consider_per_state_dict.values(), width=0.3)
+        plt.bar(range(len(all_cfx_to_consider_per_subsystem_per_state_dict)), list(all_cfx_to_consider_per_subsystem_per_state_dict.values()), align="center")
+        plt.xticks(range(len(all_cfx_to_consider_per_subsystem_per_state_dict)), list(all_cfx_to_consider_per_subsystem_per_state_dict.keys()))
+        plt.title("Number of CFX per state")
+        plt.xlabel("State")
+        plt.ylabel("Number of CFX")
+        plt.show()
 
-    # Get number of cfx per state
+    if generation_instructions.by_current_owner_role:
 
-    # Get number of cfx per role
+        # Get cfx matching filter
+        all_cfx_to_consider = cfx_library.get_all_cfx_matching_filters(static_criteria_filters=generation_instructions.static_criteria_filters)
+        logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx: {len(all_cfx_to_consider)} CFX to consider")
+
+        all_cfx_to_consider_per_subsystem_per_state_dict: Dict[SubSystem, Dict[State, int]] = {}
+        for subsystem_it in SubSystem:
+            all_cfx_to_consider_per_subsystem_per_state_dict[subsystem_it] = {}
+            for state_it in State:
+                all_cfx_to_consider_per_subsystem_per_state_dict[subsystem_it][state_it] = 0
+
+        logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx. Empty all_cfx_to_consider_per_subsystem_per_state_dict: {all_cfx_to_consider_per_subsystem_per_state_dict}")
+
+        for cfx_entry in all_cfx_to_consider:
+            cfx_current_owner_role = cfx_entry._current_owner_role
+            cfx_state = cfx_entry._state
+            all_cfx_to_consider_per_subsystem_per_state_dict[cfx_current_owner_role][cfx_state] += 1
+
+        logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx. all_cfx_to_consider_per_subsystem_per_state_dict: {all_cfx_to_consider_per_subsystem_per_state_dict}")
+        # Remove key of 0 values for states
+        for subsystem_it in SubSystem:
+            all_cfx_to_consider_per_subsystem_per_state_dict[subsystem_it] = {
+                number_of_cfx_by_state: count for number_of_cfx_by_state, count in all_cfx_to_consider_per_subsystem_per_state_dict[subsystem_it].items() if count != 0
+            }
+
+        logger_config.print_and_log_info(
+            f"produce_baregraph_number_of_cfx. after removing 0 States of each subsystem, all_cfx_to_consider_per_subsystem_per_state_dict: {all_cfx_to_consider_per_subsystem_per_state_dict}"
+        )
+        # Remove subsystem who don't have any state
+        all_cfx_to_consider_per_subsystem_per_state_dict = {states: dict_by_state for states, dict_by_state in all_cfx_to_consider_per_subsystem_per_state_dict.items() if dict_by_state != {}}
+
+        logger_config.print_and_log_info(
+            f"produce_baregraph_number_of_cfx. after removing subsystem with no state, all_cfx_to_consider_per_subsystem_per_state_dict: {all_cfx_to_consider_per_subsystem_per_state_dict}"
+        )
+
+        # Convert nested dict to DataFrame
+        data = []
+        for subsystem_it, state_dict in all_cfx_to_consider_per_subsystem_per_state_dict.items():
+            for state_it, count in state_dict.items():
+                data.append({"SubSystem": str(subsystem_it), "State": str(state_it), "Count": count})
+
+        df = pd.DataFrame(data)
+
+        # Create grouped bar chart
+        fig, ax = plt.subplots(figsize=(12, 6))
+        df_pivot = df.pivot(index="State", columns="SubSystem", values="Count").fillna(0)
+        df_pivot.plot(kind="bar", ax=ax, width=0.8)
+
+        # Customize the plot
+        ax.set_xlabel("State", fontsize=12, fontweight="bold")
+        ax.set_ylabel("Count", fontsize=12, fontweight="bold")
+        ax.set_title("CFX Count by SubSystem and State", fontsize=14, fontweight="bold")
+        ax.legend(title="SubSystem", bbox_to_anchor=(1.05, 1), loc="upper left")
+        ax.grid(axis="y", alpha=0.3)
+        plt.xticks(rotation=45, ha="right")
+        plt.tight_layout()
+        plt.show()
 
 
 def produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
