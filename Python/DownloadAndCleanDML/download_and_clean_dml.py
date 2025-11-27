@@ -10,7 +10,6 @@ from typing import Optional
 # Other libraries
 from common import download_utils, excel_utils, file_name_utils, file_utils
 from logger import logger_config
-from pywintypes import com_error
 from rhapsody import rhapsody_utils
 
 import param
