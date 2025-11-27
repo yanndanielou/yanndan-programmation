@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from generatecfxhistory.cfx import ChampFXEntry
 
 
-class ChampFXtSaticCriteriaFilter(ABC):
+class ChampFXtStaticCriteriaFilter(ABC):
     def __init__(self, label: str = "") -> None:
         self._cache_result_by_cfx: dict["ChampFXEntry", bool] = dict()
         self._number_of_results_obtained_by_cache_usage = 0
@@ -36,7 +36,7 @@ class ChampFXtSaticCriteriaFilter(ABC):
         return self._label
 
 
-class ChampFXWhitelistFilter(ChampFXtSaticCriteriaFilter, ABC):
+class ChampFXWhitelistFilter(ChampFXtStaticCriteriaFilter, ABC):
     @abstractmethod
     def __init__(
         self,
@@ -85,7 +85,7 @@ class ChampFXWhiteListBasedOnFileFilter(ChampFXWhitelistFilter):
         logger_config.print_and_log_info(f"Number of cfx_to_treat_whitelist_ids:{len(self._cfx_to_treat_whitelist_ids)}")
 
 
-class ChampFXFieldFilter(ChampFXtSaticCriteriaFilter, ABC):
+class ChampFXFieldFilter(ChampFXtStaticCriteriaFilter, ABC):
 
     @abstractmethod
     def __init__(
@@ -260,7 +260,7 @@ class ChampFxFilter:
     def __init__(
         self,
         role_depending_on_date_filter: Optional[ChampFXRoleDependingOnDateFilter] = None,
-        field_filters: Optional[List[ChampFXtSaticCriteriaFilter]] = None,
+        field_filters: Optional[List[ChampFXtStaticCriteriaFilter]] = None,
         cfx_to_treat_whitelist_text_file_full_path: Optional[str] = None,
         whitelist_filter: Optional[ChampFXWhitelistFilter] = None,
         label: Optional[str] = None,
@@ -269,12 +269,12 @@ class ChampFxFilter:
             field_filters = []
 
         self.role_depending_on_date_filter: Optional[ChampFXRoleDependingOnDateFilter] = role_depending_on_date_filter
-        self._field_filters: List[ChampFXtSaticCriteriaFilter] = field_filters
+        self._field_filters: List[ChampFXtStaticCriteriaFilter] = field_filters
         self._cfx_to_treat_whitelist_text_file_full_path: Optional[str] = cfx_to_treat_whitelist_text_file_full_path
         self._cfx_to_treat_whitelist_ids: Optional[Set[str]] = None
         self.label: str = label if label is not None else ""
 
-        self._static_criteria_filters: List[ChampFXtSaticCriteriaFilter] = self._field_filters
+        self._static_criteria_filters: List[ChampFXtStaticCriteriaFilter] = self._field_filters
 
         self._white_list_filter: Optional[ChampFXWhitelistFilter] = (
             ChampFXWhiteListBasedOnFileFilter(cfx_to_treat_whitelist_text_file_full_path) if cfx_to_treat_whitelist_text_file_full_path is not None else whitelist_filter

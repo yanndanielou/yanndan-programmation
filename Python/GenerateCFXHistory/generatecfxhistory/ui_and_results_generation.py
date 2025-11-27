@@ -3,7 +3,7 @@ import datetime
 import os
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import List, Optional, Set, cast
+from typing import List, Optional, cast, Dict
 
 import matplotlib.pyplot as plt
 import mplcursors
@@ -20,16 +20,10 @@ from generatecfxhistory.dates_generators import (
     DatesGenerator,
     DecreasingIntervalDatesGenerator,
 )
-from generatecfxhistory.filters import (
-    ChampFxFilter,
-    ChampFxFilterFieldProject,
-    ChampFxFilterFieldSubsystem,
-    ChampFXRoleDependingOnDateFilter,
-)
+from generatecfxhistory.filters import ChampFxFilter, ChampFxFilterFieldProject, ChampFxFilterFieldSubsystem, ChampFXRoleDependingOnDateFilter, ChampFXtStaticCriteriaFilter
 from generatecfxhistory.results import (
     AllResultsPerDates,
     AllResultsPerDatesWithDebugDetails,
-    OneTimestampResult,
 )
 from generatecfxhistory.role import SubSystem
 
@@ -63,7 +57,6 @@ class RepresentationType(enums_utils.NameBasedEnum):
 @dataclass
 class GenerationInstructions:
     output_directory_name: str
-    cfx_filters: List[ChampFxFilter] = field(default_factory=list)
     create_html_file: bool = True
     display_output_plots: bool = True
     create_screenshot: bool = True
@@ -71,6 +64,7 @@ class GenerationInstructions:
 
 @dataclass
 class NumberOfCfxStatePerDateGenerationInstructions(GenerationInstructions):
+    cfx_filters: List[ChampFxFilter] = field(default_factory=list)
     create_excel_file: bool = True
     dump_all_cfx_ids_in_json: bool = True
     dates_generator: DatesGenerator = DecreasingIntervalDatesGenerator()
@@ -87,6 +81,7 @@ class NumberOfCfxStatePerDateGenerationInstructionsForLibrary(NumberOfCfxStatePe
 
 @dataclass
 class NumberOfCfxByCriteriaGenerationInstructionsForLibrary(GenerationInstructions):
+    static_criteria_filters: List[ChampFXtStaticCriteriaFilter] = field(default_factory=list)
     by_subsystem: bool = False
     by_current_owner_role: bool = False
     for_global: bool = False
@@ -214,7 +209,7 @@ def produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
 def produce_excel_output_file_results_number_of_cfx_by_state_per_date(output_excel_file: str, all_results_to_display: AllResultsPerDatesWithDebugDetails) -> None:
     # Convert data to DataFrame for Excel output
 
-    state_counts_per_timestamp: List[dict[State, int]] = all_results_to_display.get_state_counts_per_timestamp()
+    state_counts_per_timestamp: List[Dict[State, int]] = all_results_to_display.get_state_counts_per_timestamp()
     all_timestamps: List[datetime.datetime] = all_results_to_display.get_all_timestamps()
 
     # Convert state enumerations to their names for DataFrame columns
@@ -316,6 +311,35 @@ def produce_baregraph_number_of_cfx(
 
     if generation_instructions.for_global:
         pass
+
+    # Get cfx matching filter
+    all_cfx_to_consider = cfx_library.get_all_cfx_matching_filters(static_criteria_filters=generation_instructions.static_criteria_filters)
+    logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx: {len(all_cfx_to_consider)} CFX to consider")
+
+    all_cfx_to_consider_per_state_dict: Dict[State, int] = {}
+    all_cfx_to_consider_per_state_list: List[int] = []
+    for state in State:
+        all_cfx_to_consider_per_state_dict[state] = 0
+        all_cfx_to_consider_per_state_list.append(0)
+
+    for cfx_entry in all_cfx_to_consider:
+        all_cfx_to_consider_per_state_dict[cfx_entry._state] += 1
+
+    all_cfx_to_consider_per_state_dict = {state: count for state, count in all_cfx_to_consider_per_state_dict.items() if count != 0}
+
+    logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx. all_cfx_to_consider_per_state: {all_cfx_to_consider_per_state_dict}")
+
+    # plt.bar([e.value for e in State], all_cfx_to_consider_per_state_dict.values(), width=0.3)
+    plt.bar(range(len(all_cfx_to_consider_per_state_dict)), list(all_cfx_to_consider_per_state_dict.values()), align="center")
+    plt.xticks(range(len(all_cfx_to_consider_per_state_dict)), list(all_cfx_to_consider_per_state_dict.keys()))
+    plt.title("Number of CFX per state")
+    plt.xlabel("State")
+    plt.ylabel("Number of CFX")
+    plt.show()
+
+    # Get number of cfx per state
+
+    # Get number of cfx per role
 
 
 def produce_number_of_cfx_by_state_per_date_line_graphs_for_library(

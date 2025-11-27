@@ -5,7 +5,7 @@ from typing import Set, Dict, Any
 from dateutil import relativedelta
 from logger import logger_config
 
-from generatecfxhistory import cfx
+from generatecfxhistory import cfx, inputs
 from generatecfxhistory import ui_and_results_generation, release_role_mapping, role
 
 OUTPUT_DIRECTORY_NAME = "output_all_projects"
@@ -22,7 +22,7 @@ def main() -> None:
             os.mkdir(OUTPUT_DIRECTORY_NAME)
 
         cfx_inputs = (
-            cfx.ChampFxInputsBuilder()
+            inputs.ChampFxInputsWithFilesBuilder()
             .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input_Downloaded", filename_pattern="details_project_other_projects.xlsx")
             .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input_Downloaded", filename_pattern="states_changes_other_projects.xlsx")
             .build()

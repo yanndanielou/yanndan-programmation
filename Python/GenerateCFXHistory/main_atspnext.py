@@ -41,12 +41,9 @@ def main() -> None:
                 output_directory_name=OUTPUT_DIRECTORY_NAME,
                 by_subsystem=True,
                 by_current_owner_role=True,
-                cfx_filters=[
-                    cfx.ChampFxFilter(field_filters=[filters.ChampFxFilterFieldSafetyRelevant(field_accepted_value=True)]),
-                ],
+                static_criteria_filters=[filters.ChampFxFilterFieldSafetyRelevant(field_accepted_value=True)],
                 create_html_file=True,
                 display_output_plots=DISPLAY_OUTPUT,
-                generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
             ),
         )
 
