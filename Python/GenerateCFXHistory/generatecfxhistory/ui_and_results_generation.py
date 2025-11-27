@@ -389,6 +389,21 @@ def produce_baregraph_number_of_cfx(
         df_pivot = df_pivot[state_order]
         df_pivot.plot(kind="bar", ax=ax, width=0.8)
 
+        # Add tooltips with mplcursors for each bar
+        tooltip_data = []
+        for idx, subsystem in enumerate(df_pivot.index):
+            for state in df_pivot.columns:
+                count = int(df_pivot.loc[subsystem, state])
+                tooltip_data.append(f"SubSystem: {subsystem}\nState: {state}\nCount: {count}")
+
+        # Add cursor tooltips to all bar patches
+        tooltip_idx = 0
+        for container in ax.containers:
+            for patch in container:
+                if tooltip_idx < len(tooltip_data):
+                    mplcursors.cursor(patch, hover=HoverMode.Transient).connect("add", lambda sel, text=tooltip_data[tooltip_idx]: sel.annotation.set_text(text))
+                    tooltip_idx += 1
+
         # Customize the plot
         ax.set_xlabel("State", fontsize=12, fontweight="bold")
         ax.set_ylabel("Count", fontsize=12, fontweight="bold")
