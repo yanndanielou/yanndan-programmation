@@ -46,9 +46,10 @@ class DownloadAndCleanDMLApplication:
         dml_file_path = self.remove_excel_external_links(dml_file_path)
         dml_file_path = self.remove_useless_ranges(dml_file_path)
         dml_file_path = self.convert_excel_to_standard_xslx(dml_file_path)
-        dml_file_path = self.remove_useless_columns_with_openpyxl(dml_file_path)
+        dml_file_path_openpyxl = self.remove_useless_columns_with_openpyxl(dml_file_path)
+        dml_file_path_xlwings = self.remove_useless_columns_with_xlwings(dml_file_path)
 
-        self.create_dated_copy_of_dml(dml_file_path)
+        self.create_dated_copy_of_dml(dml_file_path_openpyxl)
 
     def remove_useless_tabs(self, dml_file_path: str) -> str:
         file_to_create_path = param.DML_FILE_WITHOUT_USELESS_SHEETS_PATH
@@ -102,7 +103,7 @@ class DownloadAndCleanDMLApplication:
         return file_to_create_path
 
     def remove_useless_columns_with_openpyxl(self, dml_file_path: str) -> str:
-        file_to_create_path = param.DML_FILE_CLEANED_FINAL
+        file_to_create_path = param.DML_FILE_WITH_USELESS_COLUMNS_REMOVED_OPENPYXL
 
         if not param.REMOVE_USELESS_COLUMNS_ENABLED:
             logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
@@ -121,7 +122,7 @@ class DownloadAndCleanDMLApplication:
         return final_excel_file_path
 
     def remove_useless_columns_with_xlwings(self, dml_file_path: str) -> str:
-        file_to_create_path = param.DML_FILE_CLEANED_FINAL
+        file_to_create_path = param.DML_FILE_WITH_USELESS_COLUMNS_REMOVED_XLWINGS
 
         if not param.REMOVE_USELESS_COLUMNS_ENABLED:
             logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
