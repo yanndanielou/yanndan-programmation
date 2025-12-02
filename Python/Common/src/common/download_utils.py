@@ -95,7 +95,7 @@ class DownloadFileDetector:
             time.sleep(1)
             current_file_size = os.path.getsize(file_path)
             if current_file_size == previous_file_size:
-                logger_config.print_and_log_info(f"{self.label_with_separator}Size of {file_path} is stable to {humanize.naturalsize(current_file_size)}. Do not wait anymore")
+                logger_config.print_and_log_info(f"{self.label_with_separator}Size of {file_path} is stable at {humanize.naturalsize(current_file_size)}. Do not wait anymore")
                 return
 
             logger_config.print_and_log_info(
