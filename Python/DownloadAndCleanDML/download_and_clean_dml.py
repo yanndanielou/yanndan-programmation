@@ -1,9 +1,9 @@
 # Standard
-
 import datetime
 import inspect
 import os
 import shutil
+import time
 from dataclasses import dataclass
 from typing import Optional
 
@@ -13,6 +13,19 @@ from logger import logger_config
 from rhapsody import rhapsody_utils
 
 import param
+
+
+def rename_file_and_wait_if_is_locked(origin_path: str, dest_path: str) -> None:
+
+    success = False
+    while not success:
+        try:
+            shutil.copy(origin_path, dest_path)
+            success = True
+        except Exception as e:
+            logger_config.print_and_log_exception(e)
+            logger_config.print_and_log_error(f"Could not copy to :{dest_path}, must be used")
+            time.sleep(1)
 
 
 @dataclass
@@ -55,7 +68,8 @@ class DownloadAndCleanDMLApplication:
         # dml_file_path_standard_excel = self.convert_excel_to_standard_xslx(dml_file_path)
         dml_file_path_openpyxl = self.remove_useless_columns_with_openpyxl(dml_file_path)
         dml_file_path_xlwings = self.remove_useless_columns_with_xlwings(dml_file_path)
-        dml_file_path = shutil.copy(dml_file_path_xlwings, param.DML_FILE_CLEANED_FINAL_PATH)
+
+        rename_file_and_wait_if_is_locked(dml_file_path_xlwings, param.DML_FILE_CLEANED_FINAL_PATH)
 
         self.create_dated_copy_of_dml(dml_file_path)
 
@@ -106,7 +120,8 @@ class DownloadAndCleanDMLApplication:
 
         with file_utils.temporary_copy_of_file(dml_file_path) as temp_xlsm_file_full_path:
             xlsx_excel_file_path: str = excel_utils.convert_excel_file_to_xlsx_with_win32com_dispatch(temp_xlsm_file_full_path)
-            shutil.copy(xlsx_excel_file_path, file_to_create_path)
+
+            rename_file_and_wait_if_is_locked(xlsx_excel_file_path, file_to_create_path)
 
         return file_to_create_path
 
@@ -160,7 +175,8 @@ class DownloadAndCleanDMLApplication:
         final_excel_file_directory = os.path.dirname(dml_file_path)
         today_copy_file_full_path = f"{final_excel_file_directory}/{today_copy_file_name}"
         logger_config.print_and_log_info(f"Copy final {dml_file_path} to today copy {today_copy_file_full_path}")
-        shutil.copy(dml_file_path, today_copy_file_full_path)
+
+        rename_file_and_wait_if_is_locked(dml_file_path, today_copy_file_full_path)
 
     def download_dml_file(self) -> str:
         file_to_create_path = param.DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH
