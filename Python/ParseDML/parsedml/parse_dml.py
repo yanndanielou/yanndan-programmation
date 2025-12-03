@@ -205,6 +205,9 @@ class DmlDocument:
     def get_sorted_dml_lines(self) -> List[DmlLine]:
         return sorted(self.dml_lines, key=lambda l: (l.version, l.revision))
 
+    def get_last_dml_line(self) -> DmlLine:
+        return self.get_sorted_dml_lines()[-1]
+
     def get_all_code_ged_moes(self) -> set[str]:
         all_code_ged_moes = {dml_line.code_ged_moe for dml_line in self.dml_lines}
         return all_code_ged_moes
@@ -312,7 +315,8 @@ class DocumentStatusReport:
         self.dml_document.get_all_code_ged_moes()
         logger_config.print_and_log_info(f"Print report for {self.dml_document.get_all_code_ged_moes()}")
         document_sorted_dml_lines = self.dml_document.get_sorted_dml_lines()
-        last_line = document_sorted_dml_lines[-1]
+
+        last_line = self.dml_document.get_last_dml_line()
         assert last_line
         for line_number, line in enumerate(self.dml_document.dml_lines):
             logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}")
