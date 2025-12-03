@@ -2,6 +2,7 @@
 
 @call :UPDATE_PYTHON_LIB pip
 
+@call :INSTALL_AND_UPDATE_PYTHON_LIB case-converter
 @call :INSTALL_AND_UPDATE_PYTHON_LIB pyshark
 @call :INSTALL_AND_UPDATE_PYTHON_LIB python-pcapng
 rem @call :INSTALL_AND_UPDATE_PYTHON_LIB dpkt
