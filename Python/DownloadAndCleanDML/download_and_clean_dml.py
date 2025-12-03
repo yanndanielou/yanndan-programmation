@@ -23,7 +23,9 @@ class DownloadAndCleanDMLApplication:
         excel_utils.close_all_xlwings()
         dml_file_path = self.download_dml_file()
 
-        excel_utils.copy_and_paste_excel_content_with_format_with_openpyxl(input_excel_file_path=dml_file_path, sheet_name="Database", output_excel_file_path=param.DML_FILE_CLEANED_FINAL_PATH)
+        excel_utils.copy_and_paste_excel_content_with_format_with_openpyxl(
+            input_excel_file_path=dml_file_path, sheet_name="Database", output_excel_file_path=param.DML_FILE_CONVERTED_TO_STANDARD_XSLX_PATH
+        )
 
         # dml_file_path = excel_utils.convert_xlsx_file_to_xls_with_win32com_dispatch(dml_file_path)
         self.run_step_by_step(dml_file_path)
