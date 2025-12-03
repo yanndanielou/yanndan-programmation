@@ -23,16 +23,11 @@ class DownloadAndCleanDMLApplication:
         excel_utils.close_all_xlwings()
         dml_file_path = self.download_dml_file()
 
-        excel_utils.copy_and_paste_excel_content_with_format_with_win32(
+        dml_file_path = excel_utils.copy_and_paste_excel_content_with_format_with_win32(
             input_excel_file_path=dml_file_path,
             sheet_name="Database",
-            output_excel_file_path=f"{os.path.expandvars(r"%userprofile%\downloads")}\\copy_and_paste_excel_content_with_format_with_win32.xlsx",
-        )
-
-        excel_utils.copy_and_paste_excel_content_with_format_with_openpyxl(
-            input_excel_file_path=dml_file_path,
-            sheet_name="Database",
-            output_excel_file_path=f"{os.path.expandvars(r"%userprofile%\downloads")}\\copy_and_paste_excel_content_with_format_with_openpyxl.xlsx",
+            output_excel_file_path=param.DML_FILE_CONVERTED_TO_STANDARD_XSLX_PATH,
+            # output_excel_file_path=f"{os.path.expandvars(r"%userprofile%\downloads")}\\copy_and_paste_excel_content_with_format_with_win32.xlsx",
         )
 
         # dml_file_path = excel_utils.convert_xlsx_file_to_xls_with_win32com_dispatch(dml_file_path)
@@ -57,8 +52,8 @@ class DownloadAndCleanDMLApplication:
         dml_file_path = self.remove_useless_tabs(dml_file_path)
         dml_file_path = self.remove_excel_external_links(dml_file_path)
         dml_file_path = self.remove_useless_ranges(dml_file_path)
-        dml_file_path_standard_excel = self.convert_excel_to_standard_xslx(dml_file_path)
-        dml_file_path_openpyxl = self.remove_useless_columns_with_openpyxl(dml_file_path_standard_excel)
+        # dml_file_path_standard_excel = self.convert_excel_to_standard_xslx(dml_file_path)
+        dml_file_path_openpyxl = self.remove_useless_columns_with_openpyxl(dml_file_path)
         dml_file_path_xlwings = self.remove_useless_columns_with_xlwings(dml_file_path)
 
         self.create_dated_copy_of_dml(dml_file_path_xlwings)
