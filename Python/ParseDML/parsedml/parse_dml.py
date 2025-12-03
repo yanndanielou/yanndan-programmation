@@ -200,15 +200,9 @@ class DmlLine:
 class DmlDocument:
     dml_lines: List[DmlLine] = field(default_factory=list)
 
-    def __post_init__(self) -> None:
-        
-
-
     def get_all_code_ged_moes(self) -> set[str]:
         all_code_ged_moes = {dml_line.code_ged_moe for dml_line in self.dml_lines}
         return all_code_ged_moes
-    
-    def get_sorted_dml_lines(self)->List[DmlLine]:
 
     def get_all_titles(self) -> set[str]:
         all_titles = {dml_line.title for dml_line in self.dml_lines}
@@ -312,7 +306,30 @@ class DocumentStatusReport:
 
         self.dml_document.get_all_code_ged_moes()
         logger_config.print_and_log_info(f"Print report for {self.dml_document.get_all_code_ged_moes()}")
-        logger_config.print_and_log_info(f"Print report for {self.dml_document.get_all_code_ged_moes()}")
+        last_line = self.dml_document.dml_lines[-1]
+        assert last_line
+        for line_number, line in enumerate(self.dml_document.dml_lines):
+            logger_config.print_and_log_info(f"Line #{line_number}")
+            logger_config.print_and_log_info(f"Line #{line_number}\tcode_ged_moe:{line.code_ged_moe}")
+            logger_config.print_and_log_info(f"Line #{line_number}\ttitle:{line.title}")
+            logger_config.print_and_log_info(f"Line #{line_number}\tversion:{line.version}\trevision:{line.revision}")
+            logger_config.print_and_log_info(f"Line #{line_number}\tstatus:{line.status}")
+            logger_config.print_and_log_info(f"Line #{line_number}\tactual_livraison:{line.actual_livraison}")
+            logger_config.print_and_log_info(f"Line #{line_number}\tdoc_deleted:{line.doc_deleted}")
+            logger_config.print_and_log_info(f"Line #{line_number}\tfa:{line.fa}")
+            logger_config.print_and_log_info(f"Line #{line_number}\tpa:{line.pa}")
+            logger_config.print_and_log_info(f"\n")
+
+        logger_config.print_and_log_info(f"Last line")
+        logger_config.print_and_log_info(f"Last line: code_ged_moe:{last_line.code_ged_moe}")
+        logger_config.print_and_log_info(f"Last line: title:{last_line.title}")
+        logger_config.print_and_log_info(f"Last line: version:{last_line.version}\trevision:{line.revision}")
+        logger_config.print_and_log_info(f"Last line: status:{last_line.status}")
+        logger_config.print_and_log_info(f"Last line: actual_livraison:{last_line.actual_livraison}")
+        logger_config.print_and_log_info(f"Last line: doc_deleted:{last_line.doc_deleted}")
+        logger_config.print_and_log_info(f"Last line: fa:{last_line.fa}")
+        logger_config.print_and_log_info(f"Last line: pa:{last_line.pa}")
+        logger_config.print_and_log_info(f"\n")
 
     class Builder:
 
