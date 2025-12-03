@@ -12,6 +12,7 @@ import pandas
 from common import string_utils
 from logger import logger_config
 import param
+import logging
 
 
 STANDARD_FA_CLEANED_PATTERN = re.compile(r"FA(?P<FA_number>\d+)-?(?P<FA_indice>\d+)?$")
@@ -153,6 +154,7 @@ class DmlLine:
     full_row: pandas.Series
     dml_document: "DmlDocument"
     code_ged_moe: str
+    raw_title: str
     title: str
     version: int
     revision: int
@@ -313,18 +315,17 @@ class DocumentStatusReport:
         last_line = document_sorted_dml_lines[-1]
         assert last_line
         for line_number, line in enumerate(self.dml_document.dml_lines):
-            logger_config.print_and_log_info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}")
-            logger_config.print_and_log_info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tcode_ged_moe:{line.code_ged_moe}")
-            logger_config.print_and_log_info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\ttitle:{line.title}")
-            logger_config.print_and_log_info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tversion:{line.version}\trevision:{line.revision}")
-            logger_config.print_and_log_info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tstatus:{line.status}")
-            logger_config.print_and_log_info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tactual_livraison:{line.actual_livraison}")
-            logger_config.print_and_log_info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tdoc_deleted:{line.doc_deleted}")
-            logger_config.print_and_log_info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tfa:{line.fa}")
-            logger_config.print_and_log_info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tpa:{line.pa}")
-            logger_config.print_and_log_info(f"\n")
+            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}")
+            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tcode_ged_moe:{line.code_ged_moe}")
+            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\ttitle:{line.title}")
+            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tversion:{line.version}\trevision:{line.revision}")
+            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tstatus:{line.status}")
+            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tactual_livraison:{line.actual_livraison}")
+            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tdoc_deleted:{line.doc_deleted}")
+            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tfa:{line.fa}")
+            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tpa:{line.pa}")
+            logging.info(f"\n")
 
-        logger_config.print_and_log_info(f"Last line")
         logger_config.print_and_log_info(
             f"{self.dml_document.get_all_code_ged_moes()}\tLast line: code_ged_moe:{last_line.code_ged_moe}\ttitle:{last_line.title}\tversion:{last_line.version}\trevision:{line.revision}\tstatus:{last_line.status}\tactual_livraison:{last_line.actual_livraison}\tfa:{last_line.fa}\tpa:{last_line.pa}\n\n"
         )
@@ -411,7 +412,8 @@ class DmlFileContent:
                     try:
 
                         code_ged_moe = str(row["Code GED MOE"])
-                        title = str(row["Titre Document"])
+                        raw_title = str(row["Titre Document"])
+                        title = raw_title.replace("\n", "_")
                         raw_version = row["Version"]
                         if not isinstance(raw_version, str) and math.isnan(raw_version):
                             raw_version = "-1"
@@ -465,6 +467,7 @@ class DmlFileContent:
                             full_row=row,
                             dml_document=dml_document,
                             code_ged_moe=code_ged_moe,
+                            raw_title=raw_title,
                             title=title,
                             version=version,
                             revision=revision,
