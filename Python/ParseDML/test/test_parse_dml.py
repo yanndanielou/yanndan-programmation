@@ -87,10 +87,23 @@ class TestConstructionWorks:
             # DmlLines are appended to their DmlDocument in the order they are parsed
             # (normally sorted by version beforehand). Validate ordering to catch
             # unexpected insertion orders early.
-            if dml_document.dml_lines:
-                sorted_copy = sorted(dml_document.dml_lines, key=lambda l: (l.version, l.revision))
-                if dml_document.dml_lines != sorted_copy:
-                    assert False, "DmlDocument dml_lines must be sorted by (version, revision)"
+            assert dml_document.dml_lines
+            sorted_dml_lines = dml_document.get_sorted_dml_lines()
+            assert sorted_dml_lines
+            sorted_copy = sorted(dml_document.dml_lines, key=lambda l: (l.version, l.revision))
+            if sorted_dml_lines != sorted_copy:
+                assert False, "DmlDocument dml_lines must be sorted by (version, revision)"
+
+            previous_iterated_dml_line = None
+            for sorted_dml_line in sorted_dml_lines:
+                if previous_iterated_dml_line:
+                    assert previous_iterated_dml_line.version <= sorted_dml_line.version
+
+                    if previous_iterated_dml_line.version == sorted_dml_line.version:
+                        assert previous_iterated_dml_line.revision < sorted_dml_line.revision
+                previous_iterated_dml_line = sorted_dml_line
+
+            assert previous_iterated_dml_line
 
 
 class TestDocumentsThatShareSameFa:
