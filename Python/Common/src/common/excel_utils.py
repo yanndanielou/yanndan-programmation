@@ -31,6 +31,10 @@ EXCEL_FILE_EXTENSION = ".xlsx"
 EXCEL_8_XLS_FORMAT_XL_FILE_FORMAT_VALUE = 56
 EXCEL_WORKBOOK_DEFAULT_XLSX_FORMAT_XL_FILE_FORMAT_VALUE = 51
 
+XL_SAVE_CONFLICT_RESOLUTION_XL_LOCAL_SESSION_CHANGES = 2  # Les modifications de l'utilisateur local sont toujours acceptées.
+XL_SAVE_CONFLICT_RESOLUTION_XL_OTHER_SESSION_CHANGES = 3  # Les modifications de l'utilisateur local sont toujours rejetées.
+XL_SAVE_CONFLICT_RESOLUTION_XL_USER_RESOLUTION = 1  # Une boîte de dialogue demande à l'utilisateur de résoudre le conflit.
+
 
 def convert_xlsx_file_to_xls_with_win32com_dispatch(xlsx_file_full_path: str) -> str:
     with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls: {xlsx_file_full_path}"):
@@ -757,7 +761,11 @@ def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: s
                 sheet_copied.UsedRange.Value = sheet_copied.UsedRange.Value
 
             with logger_config.stopwatch_with_label(f"Save output workbook {output_excel_file_path}"):
-                wb_output.SaveAs(Filename=output_excel_file_path, FileFormat=51)  # FileFormat=51 corresponds to .xlsx format
+                wb_output.SaveAs(
+                    Filename=output_excel_file_path,
+                    FileFormat=EXCEL_WORKBOOK_DEFAULT_XLSX_FORMAT_XL_FILE_FORMAT_VALUE,
+                    ConflictResolution=XL_SAVE_CONFLICT_RESOLUTION_XL_LOCAL_SESSION_CHANGES,
+                )
 
             with logger_config.stopwatch_with_label(f"Close output workbook {output_excel_file_path}"):
                 wb_output.Close()  # Close the output workbook
