@@ -613,16 +613,14 @@ def remove_columns_with_openpyxl(
                 if column_name_to_remove in headers_found_in_excel:
 
                     # Trouver l'index de la colonne à supprimer
-                    logger_config.print_and_log_info(
-                        f"removing with openpyxl {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}%"
-                    )
+                    logger_config.print_and_log_info(f"removing {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}%")
 
                     col_index_starting_0 = headers_found_in_excel.index(column_name_to_remove)
                     col_index_starting_1 = headers_found_in_excel.index(column_name_to_remove) + 1
                     col_letter = xl_col_to_name(col_index_starting_0)
                     logger_config.print_and_log_info(f"col_index:{col_index_starting_1}, col_letter:{col_letter}")
                     with logger_config.stopwatch_with_label(
-                        label=f"Removing {colum_it+1}/{number_of_columns_to_remove}th column {column_name_to_remove} with index(starting0):{col_index_starting_0}, letter:{col_letter}.  {round((colum_it+1)/number_of_columns_to_remove*100,2)}%",
+                        label=f"Removing with xlwings {colum_it+1}/{number_of_columns_to_remove}th column {column_name_to_remove} with index(starting0):{col_index_starting_0}, letter:{col_letter}.  {round((colum_it+1)/number_of_columns_to_remove*100,2)}%",
                         inform_beginning=False,
                     ):
                         worksheet.delete_cols(col_index_starting_1)
