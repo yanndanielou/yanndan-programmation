@@ -726,7 +726,9 @@ def copy_and_paste_excel_content_with_format_with_openpyxl(input_excel_file_path
             print(f"Contenu copié avec succès dans : {output_excel_file_path}")
 
 
-def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: str, sheet_name: str, output_excel_file_path: str, excel_visibility: bool = False) -> None:
+def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: str, sheet_name: str, output_excel_file_path: str, excel_visibility: bool = False) -> str:
+    os.remove(output_excel_file_path)
+
     with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
 
         # Ensure the input file exists
@@ -742,22 +744,22 @@ def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: s
             with logger_config.stopwatch_with_label(f"Open the input workbook {input_excel_file_path}"):
                 wb_input = excel_app.Workbooks.Open(input_excel_file_path)
 
-            # Check if the sheet name exists in the input workbook
-            try:
-                sheet_input = wb_input.Sheets(sheet_name)
-            except Exception as exc:
-                raise ValueError(f"The sheet '{sheet_name}' was not found in the input file '{input_excel_file_path}'.") from exc
+            with logger_config.stopwatch_with_label("Check if the sheet name exists in the input workbook"):
+                try:
+                    sheet_input = wb_input.Sheets(sheet_name)
+                except Exception as exc:
+                    raise ValueError(f"The sheet '{sheet_name}' was not found in the input file '{input_excel_file_path}'.") from exc
 
-            # Add a new workbook for the output
-            wb_output = excel_app.Workbooks.Add()
+            with logger_config.stopwatch_with_label("Add a new workbook for the output"):
+                wb_output = excel_app.Workbooks.Add()
 
-            with logger_config.stopwatch_with_label("Copy the sheet from the input workbook to the new workbook"):
+            with logger_config.stopwatch_with_label("Copy the sheet from the input workbook to the new workbook", inform_beginning=True):
                 sheet_input.Copy(Before=wb_output.Sheets(1))
 
             # Get the copied sheet (will always be the first sheet in the new workbook)
             sheet_copied = wb_output.Sheets(1)
 
-            with logger_config.stopwatch_with_label("Remove formulas by pasting values only"):
+            with logger_config.stopwatch_with_label("Remove formulas by pasting values only", inform_beginning=True):
                 sheet_copied.UsedRange.Value = sheet_copied.UsedRange.Value
 
             with logger_config.stopwatch_with_label(f"Save output workbook {output_excel_file_path}"):
@@ -778,3 +780,5 @@ def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: s
 
             with logger_config.stopwatch_with_label("Quit Excel app"):
                 excel_app.Quit()
+
+        return output_excel_file_path
