@@ -13,7 +13,9 @@ from logger import logger_config
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill
 from openpyxl.utils import get_column_letter
-from win32com.client import Dispatch
+from win32com.client import Dispatch, gencache
+import os
+
 
 # import pywintypes
 from xlsxwriter.utility import xl_cell_to_rowcol, xl_col_to_name
@@ -669,39 +671,41 @@ def copy_and_paste_excel_content_with_format_with_openpyxl(input_excel_file_path
 
         with logger_config.stopwatch_with_label("Copier le contenu, les formats et le style cellule par cellule", inform_beginning=True):
 
-            all_rows = sheet_input.iter_rows()
-            logger_config.print_and_log_info(f"{len(all_rows)} rows")
-            for row in all_rows:
-                with logger_config.stopwatch_with_label("Handling row", inform_beginning=True):
-                    for cell in row:
-                        # Copier la valeur
-                        new_cell = sheet_output.cell(row=cell.row, column=cell.column, value=cell.value)
+            logger_config.print_and_log_info(f"{sum(1 for _ in sheet_input.iter_rows()) } rows")
+            number_of_rows_processed = 0
+            for row in sheet_input.iter_rows():
+                if number_of_rows_processed % 100 == 0:
+                    logger_config.print_and_log_info(f"Handling row {number_of_rows_processed}", inform_beginning=True)
+                for cell in row:
+                    # Copier la valeur
+                    new_cell = sheet_output.cell(row=cell.row, column=cell.column, value=cell.value)
 
-                        # Copier les formats de la cellule
-                        if cell.fill:
-                            new_cell.fill = PatternFill(fill_type=cell.fill.fill_type, fgColor=cell.fill.fgColor, bgColor=cell.fill.bgColor)
-                        if cell.font:
-                            new_cell.font = Font(
-                                name=cell.font.name,
-                                size=cell.font.size,
-                                bold=cell.font.bold,
-                                italic=cell.font.italic,
-                                vertAlign=cell.font.vertAlign,
-                                underline=cell.font.underline,
-                                strike=cell.font.strike,
-                                color=cell.font.color,
-                            )
-                        if cell.alignment:
-                            new_cell.alignment = Alignment(
-                                horizontal=cell.alignment.horizontal,
-                                vertical=cell.alignment.vertical,
-                                text_rotation=cell.alignment.text_rotation,
-                                wrap_text=cell.alignment.wrap_text,
-                                shrink_to_fit=cell.alignment.shrink_to_fit,
-                                indent=cell.alignment.indent,
-                            )
-                        if cell.border:
-                            new_cell.border = Border(left=cell.border.left, right=cell.border.right, top=cell.border.top, bottom=cell.border.bottom)
+                    # Copier les formats de la cellule
+                    if cell.fill:
+                        new_cell.fill = PatternFill(fill_type=cell.fill.fill_type, fgColor=cell.fill.fgColor, bgColor=cell.fill.bgColor)
+                    if cell.font:
+                        new_cell.font = Font(
+                            name=cell.font.name,
+                            size=cell.font.size,
+                            bold=cell.font.bold,
+                            italic=cell.font.italic,
+                            vertAlign=cell.font.vertAlign,
+                            underline=cell.font.underline,
+                            strike=cell.font.strike,
+                            color=cell.font.color,
+                        )
+                    if cell.alignment:
+                        new_cell.alignment = Alignment(
+                            horizontal=cell.alignment.horizontal,
+                            vertical=cell.alignment.vertical,
+                            text_rotation=cell.alignment.text_rotation,
+                            wrap_text=cell.alignment.wrap_text,
+                            shrink_to_fit=cell.alignment.shrink_to_fit,
+                            indent=cell.alignment.indent,
+                        )
+                    if cell.border:
+                        new_cell.border = Border(left=cell.border.left, right=cell.border.right, top=cell.border.top, bottom=cell.border.bottom)
+                number_of_rows_processed += 1
 
         #
         with logger_config.stopwatch_with_label("Ajuster la largeur des colonnes et hauteur des lignes", inform_beginning=True):
@@ -716,3 +720,45 @@ def copy_and_paste_excel_content_with_format_with_openpyxl(input_excel_file_path
         with logger_config.stopwatch_with_label(f"Save output file {output_excel_file_path}"):
             wb_output.save(output_excel_file_path)
             print(f"Contenu copié avec succès dans : {output_excel_file_path}")
+
+
+def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: str, sheet_name: str, output_excel_file_path: str) -> None:
+    # Ensure the input file exists
+    if not os.path.exists(input_excel_file_path):
+        raise FileNotFoundError(f"The file '{input_excel_file_path}' does not exist.")
+
+    # Initialize Excel application (using COM)
+    excel_app = gencache.EnsureDispatch("Excel.Application")
+    excel_app.Visible = False  # Make sure Excel doesn't open a UI window
+
+    try:
+        # Open the input workbook
+        wb_input = excel_app.Workbooks.Open(input_excel_file_path)
+
+        # Check if the sheet name exists in the input workbook
+        try:
+            sheet_input = wb_input.Sheets(sheet_name)
+        except Exception:
+            raise ValueError(f"The sheet '{sheet_name}' was not found in the input file '{input_excel_file_path}'.")
+
+        # Add a new workbook for the output
+        wb_output = excel_app.Workbooks.Add()
+
+        # Copy the sheet from the input workbook to the new workbook
+        sheet_input.Copy(Before=wb_output.Sheets(1))
+
+        # Get the copied sheet (will always be the first sheet in the new workbook)
+        sheet_copied = wb_output.Sheets(1)
+
+        # Remove formulas by pasting values only
+        sheet_copied.UsedRange.Value = sheet_copied.UsedRange.Value
+
+        # Save the output workbook
+        wb_output.SaveAs(Filename=output_excel_file_path, FileFormat=51)  # FileFormat=51 corresponds to .xlsx format
+        wb_output.Close()  # Close the output workbook
+
+        print(f"Excel sheet '{sheet_name}' was successfully copied and saved to '{output_excel_file_path}'.")
+    finally:
+        # Close the input workbook and quit the Excel application
+        wb_input.Close()
+        excel_app.Quit()
