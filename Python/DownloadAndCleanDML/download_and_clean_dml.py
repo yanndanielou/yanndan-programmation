@@ -29,13 +29,13 @@ class DownloadAndCleanDMLApplication:
         self.run_step_by_step(dml_file_path)
 
     def run_in_one_batch(self, dml_file_path: str) -> None:
-        operations_batch = excel_utils.XlWingsOperationsBatch(excel_visibility=False, input_excel_file_path=dml_file_path, file_to_create_path=param.DML_FILE_CLEANED_FINAL)
+        operations_batch = excel_utils.XlWingsOperationsBatch(excel_visibility=False, input_excel_file_path=dml_file_path, file_to_create_path=param.DML_FILE_CLEANED_FINAL_PATH)
         operations_batch.add_operation(excel_utils.XlWingsRemoveTabsOperation(sheets_to_keep_names=param.ALLOWED_DML_SHEETS_NAMES))
         operations_batch.add_operation(excel_utils.XlWingsSaveWorkbookOperation(file_to_create_path=param.DML_FILE_WITHOUT_USELESS_SHEETS_PATH))
         operations_batch.add_operation(excel_utils.XlWingsRemoveExcelExternalLinksOperation())
-        operations_batch.add_operation(excel_utils.XlWingsSaveWorkbookOperation(file_to_create_path=param.DML_FILE_WITHOUT_LINKS))
+        operations_batch.add_operation(excel_utils.XlWingsSaveWorkbookOperation(file_to_create_path=param.DML_FILE_WITHOUT_LINKS_PATH))
         operations_batch.add_operation(excel_utils.XlWingsRemoveRangesOperation(ranges_to_remove=param.RANGES_TO_REMOVE))
-        operations_batch.add_operation(excel_utils.XlWingsSaveWorkbookOperation(file_to_create_path=param.DML_FILE_WITH_USELESS_RANGES))
+        operations_batch.add_operation(excel_utils.XlWingsSaveWorkbookOperation(file_to_create_path=param.DML_FILE_WITH_USELESS_RANGES_PATH))
         operations_batch.add_operation(
             excel_utils.XlWingsRemoveColumnsOperation(columns_to_remove_names=param.COLUMNS_NAMES_TO_REMOVE, sheet_name=param.USEFUL_DML_SHEET_NAME, assert_if_column_is_missing=False)
         )
@@ -69,7 +69,7 @@ class DownloadAndCleanDMLApplication:
         return final_excel_file_path
 
     def remove_excel_external_links(self, dml_file_path: str) -> str:
-        file_to_create_path = param.DML_FILE_WITHOUT_LINKS
+        file_to_create_path = param.DML_FILE_WITHOUT_LINKS_PATH
 
         if not param.REMOVE_LINKS_SHEETS_ENABLED:
             logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
@@ -80,7 +80,7 @@ class DownloadAndCleanDMLApplication:
         return final_excel_file_path
 
     def remove_useless_ranges(self, dml_file_path: str) -> str:
-        file_to_create_path = param.DML_FILE_WITH_USELESS_RANGES
+        file_to_create_path = param.DML_FILE_WITH_USELESS_RANGES_PATH
 
         if not param.REMOVE_USELESS_RANGES_ENABLED:
             logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
@@ -90,7 +90,7 @@ class DownloadAndCleanDMLApplication:
         return final_excel_file_path
 
     def convert_excel_to_standard_xslx(self, dml_file_path: str) -> str:
-        file_to_create_path = param.DML_FILE_CONVERTED_TO_STANDARD_XSLX
+        file_to_create_path = param.DML_FILE_CONVERTED_TO_STANDARD_XSLX_PATH
 
         if not param.CONVERT_EXCEL_TO_STANDARD_XSLX_ENABLED:
             logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
@@ -105,7 +105,7 @@ class DownloadAndCleanDMLApplication:
         return file_to_create_path
 
     def remove_useless_columns_with_openpyxl(self, dml_file_path: str) -> str:
-        file_to_create_path = param.DML_FILE_WITH_USELESS_COLUMNS_REMOVED_OPENPYXL
+        file_to_create_path = param.DML_FILE_WITH_USELESS_COLUMNS_REMOVED_OPENPYXL_PATH
 
         if not param.REMOVE_USELESS_COLUMNS_ENABLED:
             logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
@@ -124,7 +124,7 @@ class DownloadAndCleanDMLApplication:
         return final_excel_file_path
 
     def remove_useless_columns_with_xlwings(self, dml_file_path: str) -> str:
-        file_to_create_path = param.DML_FILE_WITH_USELESS_COLUMNS_REMOVED_XLWINGS
+        file_to_create_path = param.DML_FILE_WITH_USELESS_COLUMNS_REMOVED_XLWINGS_PATH
 
         if not param.REMOVE_USELESS_COLUMNS_ENABLED:
             logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
