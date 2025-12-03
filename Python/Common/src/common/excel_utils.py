@@ -722,7 +722,7 @@ def copy_and_paste_excel_content_with_format_with_openpyxl(input_excel_file_path
             print(f"Contenu copié avec succès dans : {output_excel_file_path}")
 
 
-def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: str, sheet_name: str, output_excel_file_path: str) -> None:
+def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: str, sheet_name: str, output_excel_file_path: str, excel_visibility: bool = False) -> None:
     with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
 
         # Ensure the input file exists
@@ -731,7 +731,7 @@ def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: s
 
         with logger_config.stopwatch_with_label("Initialize Excel application (using COM)"):
             excel_app = gencache.EnsureDispatch("Excel.Application")
-            excel_app.Visible = False  # Make sure Excel doesn't open a UI window
+            excel_app.Visible = excel_visibility  # Make sure Excel doesn't open a UI window
 
         try:
 
@@ -741,8 +741,8 @@ def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: s
             # Check if the sheet name exists in the input workbook
             try:
                 sheet_input = wb_input.Sheets(sheet_name)
-            except Exception:
-                raise ValueError(f"The sheet '{sheet_name}' was not found in the input file '{input_excel_file_path}'.")
+            except Exception as exc:
+                raise ValueError(f"The sheet '{sheet_name}' was not found in the input file '{input_excel_file_path}'.") from exc
 
             # Add a new workbook for the output
             wb_output = excel_app.Workbooks.Add()
@@ -766,7 +766,7 @@ def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: s
         finally:
             # Close the input workbook and quit the Excel application
             with logger_config.stopwatch_with_label(f"Close input workbook {temp_file_full_path}"):
-                wb_input.Close()
+                wb_input.Close(SaveChanges=False)
 
             with logger_config.stopwatch_with_label("Quit Excel app"):
                 excel_app.Quit()
