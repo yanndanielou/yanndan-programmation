@@ -25,6 +25,8 @@ from common import file_name_utils, file_utils
 
 EXCEL_INTERNAL_RESERVED_SHEETS_NAMES = ["Register"]
 
+EXCEL_NA_NUMERIC_VALUE = -2146826246
+
 EXCEL_FILE_EXTENSION = ".xlsx"
 
 # cf    https://learn.microsoft.com/fr-fr/office/vba/api/Excel.XlFileFormat
