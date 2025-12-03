@@ -2,28 +2,24 @@
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List, cast
-
 from enum import Enum, auto
+from typing import List, cast
 
 import openpyxl
 import xlwings
-from xlwings.constants import DeleteShiftDirection
-
-from win32com.client import Dispatch
-
-from common import file_utils, file_name_utils
-
-from openpyxl import load_workbook, Workbook
-from openpyxl.styles import PatternFill, Font, Alignment, Border
-from openpyxl.utils import get_column_letter
-
 
 # Other libraries
 from logger import logger_config
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Alignment, Border, Font, PatternFill
+from openpyxl.utils import get_column_letter
+from win32com.client import Dispatch
 
 # import pywintypes
 from xlsxwriter.utility import xl_cell_to_rowcol, xl_col_to_name
+from xlwings.constants import DeleteShiftDirection
+
+from common import file_name_utils, file_utils
 
 EXCEL_INTERNAL_RESERVED_SHEETS_NAMES = ["Register"]
 
@@ -659,53 +655,56 @@ def copy_and_paste_excel_content_with_format_with_openpyxl(input_excel_file_path
 
     with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
         # Charger le fichier Excel source
-        with logger_config.stopwatch_with_label(f"Open and load input {temp_file_full_path}"):
+        with logger_config.stopwatch_with_label(f"Open and load input {temp_file_full_path}", inform_beginning=True):
             wb_input = load_workbook(temp_file_full_path, data_only=True)  # `data_only=True` pour récupérer les valeurs, pas les formules
             if sheet_name not in wb_input.sheetnames:
                 raise ValueError(f"La feuille '{sheet_name}' n'existe pas dans le fichier d'entrée.")
 
         sheet_input = wb_input[sheet_name]
 
-        with logger_config.stopwatch_with_label(f"Créer un nouveau fichier Excel pour la sortie"):
+        with logger_config.stopwatch_with_label("Créer un nouveau fichier Excel pour la sortie", inform_beginning=True):
             wb_output = Workbook()
             sheet_output = wb_output.active
             sheet_output.title = sheet_name
 
-        with logger_config.stopwatch_with_label(f"Copier le contenu, les formats et le style cellule par cellule"):
+        with logger_config.stopwatch_with_label("Copier le contenu, les formats et le style cellule par cellule", inform_beginning=True):
 
-            for row in sheet_input.iter_rows():
-                for cell in row:
-                    # Copier la valeur
-                    new_cell = sheet_output.cell(row=cell.row, column=cell.column, value=cell.value)
+            all_rows = sheet_input.iter_rows()
+            logger_config.print_and_log_info(f"{len(all_rows)} rows")
+            for row in all_rows:
+                with logger_config.stopwatch_with_label("Handling row", inform_beginning=True):
+                    for cell in row:
+                        # Copier la valeur
+                        new_cell = sheet_output.cell(row=cell.row, column=cell.column, value=cell.value)
 
-                    # Copier les formats de la cellule
-                    if cell.fill:
-                        new_cell.fill = PatternFill(fill_type=cell.fill.fill_type, fgColor=cell.fill.fgColor, bgColor=cell.fill.bgColor)
-                    if cell.font:
-                        new_cell.font = Font(
-                            name=cell.font.name,
-                            size=cell.font.size,
-                            bold=cell.font.bold,
-                            italic=cell.font.italic,
-                            vertAlign=cell.font.vertAlign,
-                            underline=cell.font.underline,
-                            strike=cell.font.strike,
-                            color=cell.font.color,
-                        )
-                    if cell.alignment:
-                        new_cell.alignment = Alignment(
-                            horizontal=cell.alignment.horizontal,
-                            vertical=cell.alignment.vertical,
-                            text_rotation=cell.alignment.text_rotation,
-                            wrap_text=cell.alignment.wrap_text,
-                            shrink_to_fit=cell.alignment.shrink_to_fit,
-                            indent=cell.alignment.indent,
-                        )
-                    if cell.border:
-                        new_cell.border = Border(left=cell.border.left, right=cell.border.right, top=cell.border.top, bottom=cell.border.bottom)
+                        # Copier les formats de la cellule
+                        if cell.fill:
+                            new_cell.fill = PatternFill(fill_type=cell.fill.fill_type, fgColor=cell.fill.fgColor, bgColor=cell.fill.bgColor)
+                        if cell.font:
+                            new_cell.font = Font(
+                                name=cell.font.name,
+                                size=cell.font.size,
+                                bold=cell.font.bold,
+                                italic=cell.font.italic,
+                                vertAlign=cell.font.vertAlign,
+                                underline=cell.font.underline,
+                                strike=cell.font.strike,
+                                color=cell.font.color,
+                            )
+                        if cell.alignment:
+                            new_cell.alignment = Alignment(
+                                horizontal=cell.alignment.horizontal,
+                                vertical=cell.alignment.vertical,
+                                text_rotation=cell.alignment.text_rotation,
+                                wrap_text=cell.alignment.wrap_text,
+                                shrink_to_fit=cell.alignment.shrink_to_fit,
+                                indent=cell.alignment.indent,
+                            )
+                        if cell.border:
+                            new_cell.border = Border(left=cell.border.left, right=cell.border.right, top=cell.border.top, bottom=cell.border.bottom)
 
         #
-        with logger_config.stopwatch_with_label(f"Ajuster la largeur des colonnes et hauteur des lignes"):
+        with logger_config.stopwatch_with_label("Ajuster la largeur des colonnes et hauteur des lignes", inform_beginning=True):
 
             for col in sheet_input.columns:
                 column_letter = get_column_letter(col[0].column)  # Récupère la lettre de la colonne
