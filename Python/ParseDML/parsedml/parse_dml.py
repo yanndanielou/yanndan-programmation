@@ -6,6 +6,8 @@ from datetime import datetime
 from enum import Enum, auto
 from typing import Dict, List, Optional, Set, Tuple, cast
 
+from common import excel_utils
+
 import pandas
 from common import string_utils
 from logger import logger_config
@@ -226,7 +228,7 @@ class DmlDocument:
 def convert_is_last_submit_of_doc(raw_last_submit_of_doc: str) -> bool:
     if raw_last_submit_of_doc in ["0", "O", "x", "X"]:
         return True
-    elif raw_last_submit_of_doc in ["No", "na", "N/A", "nan", ""]:
+    elif raw_last_submit_of_doc in ["No", "na", "N/A", "nan", "", str(excel_utils.EXCEL_NA_NUMERIC_VALUE)]:
         return False
 
     logger_config.print_and_log_error(f"Unsupported raw_last_submit_of_doc {raw_last_submit_of_doc}")
@@ -244,7 +246,9 @@ def convert_doc_produit_column(raw_doc_produit_column_content: str) -> Optional[
         return None
 
     raw_doc_produit_column_content = raw_doc_produit_column_content.strip()
-    if raw_doc_produit_column_content == "No":
+    if raw_doc_produit_column_content.upper() == "NO":
+        return False
+    if raw_doc_produit_column_content == "Non":
         return False
     elif raw_doc_produit_column_content == "Yes":
         return True
@@ -390,7 +394,7 @@ class DmlFileContent:
                             raw_revision = "-1"
                         revision = int(raw_revision)
                         status = DmlStatus[string_utils.text_to_valid_enum_value_text(str(row["Statut"]))]
-                        guide = GuideValue[string_utils.text_to_valid_enum_value_text(str(row["GUIDE"]))]
+                        guide = GuideValue[string_utils.text_to_valid_enum_value_text(str(row["GUIDE"]))] if str(row["GUIDE"]).upper() != "NAN" else GuideValue.NON
                         actual_livraison = convert_dml_date_to_datetime(str(row["Actual Livraison"]))
                         is_last_submit_of_doc = convert_is_last_submit_of_doc(str(row["Dernière Soumission "]))
 
