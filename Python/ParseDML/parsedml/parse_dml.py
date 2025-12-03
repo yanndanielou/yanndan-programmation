@@ -200,9 +200,15 @@ class DmlLine:
 class DmlDocument:
     dml_lines: List[DmlLine] = field(default_factory=list)
 
+    def __post_init__(self) -> None:
+        
+
+
     def get_all_code_ged_moes(self) -> set[str]:
         all_code_ged_moes = {dml_line.code_ged_moe for dml_line in self.dml_lines}
         return all_code_ged_moes
+    
+    def get_sorted_dml_lines(self)->List[DmlLine]:
 
     def get_all_titles(self) -> set[str]:
         all_titles = {dml_line.title for dml_line in self.dml_lines}
@@ -301,6 +307,12 @@ class DocumentStatusReport:
 
     def __post_init__(self) -> None:
         pass
+
+    def print_report(self) -> None:
+
+        self.dml_document.get_all_code_ged_moes()
+        logger_config.print_and_log_info(f"Print report for {self.dml_document.get_all_code_ged_moes()}")
+        logger_config.print_and_log_info(f"Print report for {self.dml_document.get_all_code_ged_moes()}")
 
     class Builder:
 
