@@ -741,7 +741,7 @@ def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: s
 
         try:
 
-            with logger_config.stopwatch_with_label(f"Open the input workbook {input_excel_file_path}"):
+            with logger_config.stopwatch_with_label(f"Open the input workbook {input_excel_file_path}", inform_beginning=True):
                 wb_input = excel_app.Workbooks.Open(input_excel_file_path)
 
             with logger_config.stopwatch_with_label("Check if the sheet name exists in the input workbook"):
