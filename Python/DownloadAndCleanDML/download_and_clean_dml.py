@@ -57,7 +57,7 @@ class DownloadAndCleanDMLApplication:
         dml_file_path_xlwings = self.remove_useless_columns_with_xlwings(dml_file_path)
         dml_file_path = shutil.copy(dml_file_path_xlwings, param.DML_FILE_CLEANED_FINAL_PATH)
 
-        self.create_dated_copy_of_dml(dml_file_path_xlwings)
+        self.create_dated_copy_of_dml(dml_file_path)
 
     def remove_useless_tabs(self, dml_file_path: str) -> str:
         file_to_create_path = param.DML_FILE_WITHOUT_USELESS_SHEETS_PATH
