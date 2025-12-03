@@ -727,7 +727,10 @@ def copy_and_paste_excel_content_with_format_with_openpyxl(input_excel_file_path
 
 
 def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: str, sheet_name: str, output_excel_file_path: str, excel_visibility: bool = False) -> str:
-    os.remove(output_excel_file_path)
+
+    if os.path.exists(output_excel_file_path):
+        logger_config.print_and_log_info(f"The file '{output_excel_file_path}' already exists. Deleting it...")
+        os.remove(output_excel_file_path)  # Delete the existing file to avoid conflicts
 
     with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
 
