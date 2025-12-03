@@ -675,7 +675,7 @@ def copy_and_paste_excel_content_with_format_with_openpyxl(input_excel_file_path
             number_of_rows_processed = 0
             for row in sheet_input.iter_rows():
                 if number_of_rows_processed % 100 == 0:
-                    logger_config.print_and_log_info(f"Handling row {number_of_rows_processed}", inform_beginning=True)
+                    logger_config.print_and_log_info(f"Handling row {number_of_rows_processed}")
                 for cell in row:
                     # Copier la valeur
                     new_cell = sheet_output.cell(row=cell.row, column=cell.column, value=cell.value)
@@ -723,42 +723,50 @@ def copy_and_paste_excel_content_with_format_with_openpyxl(input_excel_file_path
 
 
 def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: str, sheet_name: str, output_excel_file_path: str) -> None:
-    # Ensure the input file exists
-    if not os.path.exists(input_excel_file_path):
-        raise FileNotFoundError(f"The file '{input_excel_file_path}' does not exist.")
+    with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
 
-    # Initialize Excel application (using COM)
-    excel_app = gencache.EnsureDispatch("Excel.Application")
-    excel_app.Visible = False  # Make sure Excel doesn't open a UI window
+        # Ensure the input file exists
+        if not os.path.exists(temp_file_full_path):
+            raise FileNotFoundError(f"The file '{temp_file_full_path}' does not exist.")
 
-    try:
-        # Open the input workbook
-        wb_input = excel_app.Workbooks.Open(input_excel_file_path)
+        with logger_config.stopwatch_with_label("Initialize Excel application (using COM)"):
+            excel_app = gencache.EnsureDispatch("Excel.Application")
+            excel_app.Visible = False  # Make sure Excel doesn't open a UI window
 
-        # Check if the sheet name exists in the input workbook
         try:
-            sheet_input = wb_input.Sheets(sheet_name)
-        except Exception:
-            raise ValueError(f"The sheet '{sheet_name}' was not found in the input file '{input_excel_file_path}'.")
 
-        # Add a new workbook for the output
-        wb_output = excel_app.Workbooks.Add()
+            with logger_config.stopwatch_with_label(f"Open the input workbook {input_excel_file_path}"):
+                wb_input = excel_app.Workbooks.Open(input_excel_file_path)
 
-        # Copy the sheet from the input workbook to the new workbook
-        sheet_input.Copy(Before=wb_output.Sheets(1))
+            # Check if the sheet name exists in the input workbook
+            try:
+                sheet_input = wb_input.Sheets(sheet_name)
+            except Exception:
+                raise ValueError(f"The sheet '{sheet_name}' was not found in the input file '{input_excel_file_path}'.")
 
-        # Get the copied sheet (will always be the first sheet in the new workbook)
-        sheet_copied = wb_output.Sheets(1)
+            # Add a new workbook for the output
+            wb_output = excel_app.Workbooks.Add()
 
-        # Remove formulas by pasting values only
-        sheet_copied.UsedRange.Value = sheet_copied.UsedRange.Value
+            with logger_config.stopwatch_with_label("Copy the sheet from the input workbook to the new workbook"):
+                sheet_input.Copy(Before=wb_output.Sheets(1))
 
-        # Save the output workbook
-        wb_output.SaveAs(Filename=output_excel_file_path, FileFormat=51)  # FileFormat=51 corresponds to .xlsx format
-        wb_output.Close()  # Close the output workbook
+            # Get the copied sheet (will always be the first sheet in the new workbook)
+            sheet_copied = wb_output.Sheets(1)
 
-        print(f"Excel sheet '{sheet_name}' was successfully copied and saved to '{output_excel_file_path}'.")
-    finally:
-        # Close the input workbook and quit the Excel application
-        wb_input.Close()
-        excel_app.Quit()
+            with logger_config.stopwatch_with_label("Remove formulas by pasting values only"):
+                sheet_copied.UsedRange.Value = sheet_copied.UsedRange.Value
+
+            with logger_config.stopwatch_with_label(f"Save output workbook {output_excel_file_path}"):
+                wb_output.SaveAs(Filename=output_excel_file_path, FileFormat=51)  # FileFormat=51 corresponds to .xlsx format
+
+            with logger_config.stopwatch_with_label(f"Close output workbook {output_excel_file_path}"):
+                wb_output.Close()  # Close the output workbook
+
+            print(f"Excel sheet '{sheet_name}' was successfully copied and saved to '{output_excel_file_path}'.")
+        finally:
+            # Close the input workbook and quit the Excel application
+            with logger_config.stopwatch_with_label(f"Close input workbook {temp_file_full_path}"):
+                wb_input.Close()
+
+            with logger_config.stopwatch_with_label("Quit Excel app"):
+                excel_app.Quit()
