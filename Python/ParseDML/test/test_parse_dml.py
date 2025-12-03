@@ -80,6 +80,18 @@ class TestConstructionWorks:
         assert line_a.dml_document is not line_b.dml_document
         assert line_a.dml_document is not line_c.dml_document
 
+    def test_inside_document_lines_are_sorted(self, full_dml_content: parse_dml.DmlFileContent) -> None:
+        for dml_document in full_dml_content.dml_documents:
+
+            # Ensure dml_lines are sorted by (version, revision).
+            # DmlLines are appended to their DmlDocument in the order they are parsed
+            # (normally sorted by version beforehand). Validate ordering to catch
+            # unexpected insertion orders early.
+            if dml_document.dml_lines:
+                sorted_copy = sorted(dml_document.dml_lines, key=lambda l: (l.version, l.revision))
+                if dml_document.dml_lines != sorted_copy:
+                    assert False, "DmlDocument dml_lines must be sorted by (version, revision)"
+
 
 class TestDocumentsThatShareSameFa:
     @pytest.mark.parametrize(
