@@ -656,58 +656,64 @@ def xl_column_name_to_index(column_name: str) -> int:
 
 
 def copy_and_paste_excel_content_with_format_with_openpyxl(input_excel_file_path: str, sheet_name: str, output_excel_file_path: str) -> None:
-    # Charger le fichier Excel source
-    wb_input = load_workbook(input_excel_file_path, data_only=True)  # `data_only=True` pour récupérer les valeurs, pas les formules
-    if sheet_name not in wb_input.sheetnames:
-        raise ValueError(f"La feuille '{sheet_name}' n'existe pas dans le fichier d'entrée.")
 
-    sheet_input = wb_input[sheet_name]
+    with file_utils.temporary_copy_of_file(input_excel_file_path) as temp_file_full_path:
+        # Charger le fichier Excel source
+        with logger_config.stopwatch_with_label(f"Open and load input {temp_file_full_path}"):
+            wb_input = load_workbook(temp_file_full_path, data_only=True)  # `data_only=True` pour récupérer les valeurs, pas les formules
+            if sheet_name not in wb_input.sheetnames:
+                raise ValueError(f"La feuille '{sheet_name}' n'existe pas dans le fichier d'entrée.")
 
-    # Créer un nouveau fichier Excel pour la sortie
-    wb_output = Workbook()
-    sheet_output = wb_output.active
-    sheet_output.title = sheet_name
+        sheet_input = wb_input[sheet_name]
 
-    # Copier le contenu, les formats et le style cellule par cellule
-    for row in sheet_input.iter_rows():
-        for cell in row:
-            # Copier la valeur
-            new_cell = sheet_output.cell(row=cell.row, column=cell.column, value=cell.value)
+        with logger_config.stopwatch_with_label(f"Créer un nouveau fichier Excel pour la sortie"):
+            wb_output = Workbook()
+            sheet_output = wb_output.active
+            sheet_output.title = sheet_name
 
-            # Copier les formats de la cellule
-            if cell.fill:
-                new_cell.fill = PatternFill(fill_type=cell.fill.fill_type, fgColor=cell.fill.fgColor, bgColor=cell.fill.bgColor)
-            if cell.font:
-                new_cell.font = Font(
-                    name=cell.font.name,
-                    size=cell.font.size,
-                    bold=cell.font.bold,
-                    italic=cell.font.italic,
-                    vertAlign=cell.font.vertAlign,
-                    underline=cell.font.underline,
-                    strike=cell.font.strike,
-                    color=cell.font.color,
-                )
-            if cell.alignment:
-                new_cell.alignment = Alignment(
-                    horizontal=cell.alignment.horizontal,
-                    vertical=cell.alignment.vertical,
-                    text_rotation=cell.alignment.text_rotation,
-                    wrap_text=cell.alignment.wrap_text,
-                    shrink_to_fit=cell.alignment.shrink_to_fit,
-                    indent=cell.alignment.indent,
-                )
-            if cell.border:
-                new_cell.border = Border(left=cell.border.left, right=cell.border.right, top=cell.border.top, bottom=cell.border.bottom)
+        with logger_config.stopwatch_with_label(f"Copier le contenu, les formats et le style cellule par cellule"):
 
-    # Ajuster la largeur des colonnes et hauteur des lignes
-    for col in sheet_input.columns:
-        column_letter = get_column_letter(col[0].column)  # Récupère la lettre de la colonne
-        sheet_output.column_dimensions[column_letter].width = sheet_input.column_dimensions[column_letter].width
+            for row in sheet_input.iter_rows():
+                for cell in row:
+                    # Copier la valeur
+                    new_cell = sheet_output.cell(row=cell.row, column=cell.column, value=cell.value)
 
-    for row_idx, row in enumerate(sheet_input.iter_rows(), start=1):
-        sheet_output.row_dimensions[row_idx].height = sheet_input.row_dimensions[row_idx].height
+                    # Copier les formats de la cellule
+                    if cell.fill:
+                        new_cell.fill = PatternFill(fill_type=cell.fill.fill_type, fgColor=cell.fill.fgColor, bgColor=cell.fill.bgColor)
+                    if cell.font:
+                        new_cell.font = Font(
+                            name=cell.font.name,
+                            size=cell.font.size,
+                            bold=cell.font.bold,
+                            italic=cell.font.italic,
+                            vertAlign=cell.font.vertAlign,
+                            underline=cell.font.underline,
+                            strike=cell.font.strike,
+                            color=cell.font.color,
+                        )
+                    if cell.alignment:
+                        new_cell.alignment = Alignment(
+                            horizontal=cell.alignment.horizontal,
+                            vertical=cell.alignment.vertical,
+                            text_rotation=cell.alignment.text_rotation,
+                            wrap_text=cell.alignment.wrap_text,
+                            shrink_to_fit=cell.alignment.shrink_to_fit,
+                            indent=cell.alignment.indent,
+                        )
+                    if cell.border:
+                        new_cell.border = Border(left=cell.border.left, right=cell.border.right, top=cell.border.top, bottom=cell.border.bottom)
 
-    # Sauvegarder le fichier de sortie
-    wb_output.save(output_excel_file_path)
-    print(f"Contenu copié avec succès dans : {output_excel_file_path}")
+        #
+        with logger_config.stopwatch_with_label(f"Ajuster la largeur des colonnes et hauteur des lignes"):
+
+            for col in sheet_input.columns:
+                column_letter = get_column_letter(col[0].column)  # Récupère la lettre de la colonne
+                sheet_output.column_dimensions[column_letter].width = sheet_input.column_dimensions[column_letter].width
+
+            for row_idx, row in enumerate(sheet_input.iter_rows(), start=1):
+                sheet_output.row_dimensions[row_idx].height = sheet_input.row_dimensions[row_idx].height
+
+        with logger_config.stopwatch_with_label(f"Save output file {output_excel_file_path}"):
+            wb_output.save(output_excel_file_path)
+            print(f"Contenu copié avec succès dans : {output_excel_file_path}")
