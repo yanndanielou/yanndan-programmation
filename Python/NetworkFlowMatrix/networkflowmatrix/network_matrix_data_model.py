@@ -79,6 +79,7 @@ class EquipmentInFLowMatrix:
 
 @dataclass
 class FlowEndPoint:
+    matrice_line_identifier_raw_str: str
     network_flow_matrix: "NetworkFlowMatrix"
     subsystem_raw: str
     equipment_cell_raw: str
@@ -106,14 +107,14 @@ class FlowEndPoint:
         self.equipments_names = [equipment_name.strip().upper() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.strip() != ""]
 
         if len(self.equipments_names) > len(self.raw_ip_addresses):
-            logger_config.print_and_log_error(f"Missing IP addresses for {self.equipments_names}, see {self.raw_ip_addresses}")
+            logger_config.print_and_log_error(f"Error at line {self.matrice_line_identifier_raw_str}: missing IP addresses for {self.equipments_names}, see {self.raw_ip_addresses}")
 
         for index_eqpt, equipment_name in enumerate(self.equipments_names):
             assert equipment_name
             assert len(equipment_name.split()) > 0
             self.network_flow_matrix.all_equipments_names.add(equipment_name)
             if len(self.raw_ip_addresses) <= index_eqpt:
-                logger_config.print_and_log_error(f"Error: no IP found for {equipment_name} (not enough lines)")
+                logger_config.print_and_log_error(f"Error at line {self.matrice_line_identifier_raw_str}: no IP found for {equipment_name} (not enough lines)")
                 self.ip_address_raw = INVALID_IP_ADDRESS
             else:
                 try:
@@ -138,6 +139,7 @@ class FlowSource(FlowEndPoint):
 
         @staticmethod
         def build_with_row(row: pandas.Series, network_flow_matrix: "NetworkFlowMatrix") -> "FlowSource":
+            matrice_line_identifier_raw_str = cast(str, row["ID"])
             subsystem_raw = row["src \nss-système"]
             equipment_raw = row["src \nÉquipement"]
             detail_raw = row["src Détail"]
@@ -149,6 +151,7 @@ class FlowSource(FlowEndPoint):
             port_raw = row["src Port"]
 
             return FlowSource(
+                matrice_line_identifier_raw_str=matrice_line_identifier_raw_str,
                 network_flow_matrix=network_flow_matrix,
                 detail_raw=detail_raw,
                 equipment_cell_raw=equipment_raw,
@@ -172,6 +175,7 @@ class FlowDestination(FlowEndPoint):
 
         @staticmethod
         def build_with_row(row: pandas.Series, network_flow_matrix: "NetworkFlowMatrix") -> "FlowDestination":
+            matrice_line_identifier_raw_str = cast(str, row["ID"])
             subsystem_raw = row["dst \nss-système"]
             equipments_raw = row["dst \nÉquipement"]
             detail_raw = row["dst\nDétail"]
@@ -185,6 +189,7 @@ class FlowDestination(FlowEndPoint):
             cast_raw = row["dst\ncast"]
 
             return FlowDestination(
+                matrice_line_identifier_raw_str=matrice_line_identifier_raw_str,
                 network_flow_matrix=network_flow_matrix,
                 detail_raw=detail_raw,
                 equipment_cell_raw=equipments_raw,
