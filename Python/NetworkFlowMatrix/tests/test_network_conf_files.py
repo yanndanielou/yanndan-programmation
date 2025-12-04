@@ -18,22 +18,22 @@ from networkflowmatrix.network_conf_files_descriptions_data import (
 
 
 @pytest.fixture(scope="session", name="parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture")
-def parse_std_sol_dossier_conf_v10_file_and_build_objects() -> NetworkConfFile:
+def parse_std_sol_dossier_conf_v11_file_and_build_objects() -> NetworkConfFile:
     equipments_library = NetworkConfFilesEquipmentsLibrary()
     dossier_conf = NetworkConfFile.Builder.build_with_excel_file(
         equipments_library=equipments_library,
-        excel_file_full_path=SolStdNetworkConfV11Description().excel_file_full_name,
+        excel_file_full_path=SolStdNetworkConfV11Description().excel_file_full_path,
         equipment_definition_tabs=SolStdNetworkConfV11Description().all_tabs_definition,
     )
     return dossier_conf
 
 
-class TestSolStdNetworkV10ConfFileTabIpCbtcOnly:
+class TestSolStdNetworkV11ConfFileTabIpCbtcOnly:
     def test_no_error(self) -> None:
         equipments_library = NetworkConfFilesEquipmentsLibrary()
         std_sol_dossier_conf = NetworkConfFile.Builder.build_with_excel_file(
             equipments_library=equipments_library,
-            excel_file_full_path=SolStdNetworkConfV11Description().excel_file_full_name,
+            excel_file_full_path=SolStdNetworkConfV11Description().excel_file_full_path,
             equipment_definition_tabs=[SolStdNetworkConfV11Description().ip_cbtc_tab],
         )
         assert std_sol_dossier_conf
@@ -48,7 +48,7 @@ class TestSolStdNetworkV10ConfFileTabIpCbtcOnly:
         assert std_sol_dossier_conf
 
 
-class TestSolStdNetworkV10FullConfFile:
+class TestSolStdNetworkV11FullConfFile:
     def test_no_empty_ip_address(self, parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture: NetworkConfFile) -> None:
         for network_conf_files_defined_equipment in parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture.equipments_library.network_conf_files_defined_equipments:
             for ip_address in network_conf_files_defined_equipment.ip_addresses:
