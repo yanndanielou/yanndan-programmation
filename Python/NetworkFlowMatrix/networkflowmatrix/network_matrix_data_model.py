@@ -253,7 +253,7 @@ class NetworkFlowMatrixLine:
         @staticmethod
         def build_with_row(row: pandas.Series, network_flow_matrix: NetworkFlowMatrix) -> "NetworkFlowMatrixLine":
             identifier_raw = cast(str, row["ID"])
-            name_raw = cast(str, row["Lien de com."])
+            name_raw = cast(str, row["Lien de com. complet\n(Auto)"])
             sol_bord_raw = cast(str, row["S/B"])
 
             protocole_applicative_raw = row["Protocole\nApplicatif"]
