@@ -62,8 +62,8 @@ if __name__ == "__main__":
 
         sol_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_file(
             equipments_library=equipments_library,
-            excel_file_full_path=network_conf_files_descriptions_data.SolStdNetworkConfV10Description().excel_file_full_name,
-            equipment_definition_tabs=network_conf_files_descriptions_data.SolStdNetworkConfV10Description().all_tabs_definition,
+            excel_file_full_path=network_conf_files_descriptions_data.SolStdNetworkConfV11Description().excel_file_full_name,
+            equipment_definition_tabs=network_conf_files_descriptions_data.SolStdNetworkConfV11Description().all_tabs_definition,
         )
 
         logger_config.print_and_log_info(f"After radio_std_conf_file, {len(equipments_library.network_conf_files_defined_equipments)} equipments")

@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
         download_instructions = [
             get_download_instruction(std_radio_network_conf),
-            get_download_instruction(network_conf_files_descriptions_data.SolStdNetworkConfV10Description()),
+            get_download_instruction(network_conf_files_descriptions_data.SolStdNetworkConfV11Description()),
             get_download_instruction(network_conf_files_descriptions_data.BordAddressPlanV9Description()),
         ]
         file_downloaded: Optional[str] = rhapsody_utils.download_files_from_rhapsody(download_instructions)
