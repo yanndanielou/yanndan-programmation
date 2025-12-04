@@ -3,10 +3,11 @@ import fnmatch
 import os
 import shutil
 import tempfile
+import time
 from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Tuple, cast
 
 from logger import logger_config
 
@@ -56,3 +57,16 @@ def get_files_modification_time(files_paths: List[str]) -> List[Tuple[str, datet
     for file_path in files_paths:
         files_and_modified_time.append((file_path, datetime.fromtimestamp(os.path.getmtime(file_path))))
     return files_and_modified_time
+
+
+def rename_file_and_wait_if_is_locked(origin_path: str, dest_path: str) -> str:
+
+    success = False
+    while not success:
+        try:
+            return cast(str, shutil.copy(origin_path, dest_path))
+        except Exception as e:
+            logger_config.print_and_log_exception(e)
+            logger_config.print_and_log_error(f"Could not copy to :{dest_path}, must be used")
+            time.sleep(1)
+    assert False
