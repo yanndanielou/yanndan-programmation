@@ -105,14 +105,21 @@ class FlowEndPoint:
 
         self.equipments_names = [equipment_name.strip().upper() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.strip() != ""]
 
+        if len(self.equipments_names) > len(self.raw_ip_addresses):
+            logger_config.print_and_log_error(f"Missing IP addresses for {self.equipments_names}, see {self.raw_ip_addresses}")
+
         for index_eqpt, equipment_name in enumerate(self.equipments_names):
             assert equipment_name
             assert len(equipment_name.split()) > 0
             self.network_flow_matrix.all_equipments_names.add(equipment_name)
-            try:
-                ip_address_raw = self.raw_ip_addresses[index_eqpt] if len(self.raw_ip_addresses) > 1 else self.raw_ip_addresses[0] if self.equipments_detected_in_flow_matrix else None
-            except IndexError:
-                ip_address_raw = INVALID_IP_ADDRESS
+            if len(self.raw_ip_addresses) <= index_eqpt:
+                logger_config.print_and_log_error(f"Error: no IP found for {equipment_name} (not enough lines)")
+                self.ip_address_raw = INVALID_IP_ADDRESS
+            else:
+                try:
+                    self.ip_address_raw = self.raw_ip_addresses[index_eqpt] if len(self.raw_ip_addresses) > 1 else self.raw_ip_addresses[0] if self.equipments_detected_in_flow_matrix else None
+                except IndexError:
+                    self.ip_address_raw = INVALID_IP_ADDRESS
             equipment_detected_in_flow_matrix = EquipmentInFLowMatrix.get_or_create_if_not_exist_by_name(
                 network_flow_matrix=self.network_flow_matrix, name=equipment_name, subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix
             )
@@ -222,8 +229,9 @@ class NetworkFlowMatrix:
 
             for _, row in main_data_frame.iterrows():
                 network_flow_matrix_line = NetworkFlowMatrixLine.Builder.build_with_row(row=row, network_flow_matrix=network_flow_matrix)
-                network_flow_matrix_lines.append(network_flow_matrix_line)
-                network_flow_matrix_lines_by_identifier[network_flow_matrix_line.identifier] = network_flow_matrix_line
+                if network_flow_matrix_line:
+                    network_flow_matrix_lines.append(network_flow_matrix_line)
+                    network_flow_matrix_lines_by_identifier[network_flow_matrix_line.identifier] = network_flow_matrix_line
 
             network_flow_matrix.network_flow_matrix_lines = network_flow_matrix_lines
             network_flow_matrix.network_flow_matrix_lines_by_identifier = network_flow_matrix_lines_by_identifier
@@ -251,8 +259,12 @@ class NetworkFlowMatrixLine:
     class Builder:
 
         @staticmethod
-        def build_with_row(row: pandas.Series, network_flow_matrix: NetworkFlowMatrix) -> "NetworkFlowMatrixLine":
-            identifier_raw = cast(str, row["ID"])
+        def build_with_row(row: pandas.Series, network_flow_matrix: NetworkFlowMatrix) -> Optional["NetworkFlowMatrixLine"]:
+            identifier_raw_str = cast(str, row["ID"])
+            if str(identifier_raw_str) == "nan":
+                logger_config.print_and_log_warning(f"Invalid row {row}")
+                return None
+            identifier_int = int(identifier_raw_str)
             name_raw = cast(str, row["Lien de com. complet\n(Auto)"])
             sol_bord_raw = cast(str, row["S/B"])
 
@@ -268,7 +280,7 @@ class NetworkFlowMatrixLine:
             network_flow_matrix_line = NetworkFlowMatrixLine(
                 network_flow_matrix=network_flow_matrix,
                 destination=destination,
-                identifier_raw=identifier_raw,
+                identifier_raw=identifier_raw_str,
                 name_raw=name_raw,
                 sol_bord_raw=sol_bord_raw,
                 source=source,
