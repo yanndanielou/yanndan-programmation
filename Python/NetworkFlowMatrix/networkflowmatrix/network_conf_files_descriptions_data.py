@@ -55,8 +55,8 @@ class StdRadioNetworkConfV2Description(ExcelInputFileDescription):
         )
         super().__init__(
             all_tabs_definition=[self.ip_reseau_std_radio_tab],
-            excel_file_full_name="NExTEO-S-273000-02-0125-01 Dossier de Configuration Réseau STD Radio - V01-00 Annexe A.xlsx",
-            rhapsody_id=90870046,
+            excel_file_full_name="NExTEO-S-273000-02-0125-01 Dossier de Configuration Réseau STD Radio - V02-00 Annexe A.xlsx",
+            rhapsody_id=92435067,
         )
 
 
