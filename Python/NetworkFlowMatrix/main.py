@@ -4,11 +4,7 @@ from typing import Dict
 from common import file_utils, json_encoders
 from logger import logger_config
 
-from networkflowmatrix import (
-    network_conf_files,
-    network_conf_files_descriptions_data,
-    network_matrix_data_model,
-)
+from networkflowmatrix import network_conf_files, network_conf_files_descriptions_data, network_matrix_data_model, equipments
 
 OUTPUT_PARENT_DIRECTORY_NAME = "Output"
 
@@ -56,7 +52,7 @@ def dump_equipments_to_json(network_flow_matrix_to_dump: network_matrix_data_mod
 
 if __name__ == "__main__":
     with logger_config.application_logger("networkflowmatrix"):
-        equipments_library = network_conf_files.NetworkConfFilesEquipmentsLibrary()
+        equipments_library = equipments.NetworkConfFilesEquipmentsLibrary()
 
         radio_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_file(
             equipments_library=equipments_library,
@@ -73,7 +69,9 @@ if __name__ == "__main__":
         logger_config.print_and_log_info(f"After radio_std_conf_file, {len(equipments_library.network_conf_files_defined_equipments)} equipments")
 
         with logger_config.stopwatch_with_label("Build matrix", inform_beginning=True, monitor_ram_usage=True):
-            network_flow_matrix = network_matrix_data_model.NetworkFlowMatrix.Builder.build_with_excel_file(excel_file_full_path="Input/Matrice_next.xlsm", sheet_name="Matrice_de_Flux_SITE")
+            network_flow_matrix = network_matrix_data_model.NetworkFlowMatrix.Builder.build_with_excel_file(
+                excel_file_full_path="Input_Downloaded/NExTEO-S-271000-02-0125-00_Matrice_de_Flux_V15-01Draft.xlsm", sheet_name="Matrice_de_Flux_SITE"
+            )
 
         for directory_path in [OUTPUT_PARENT_DIRECTORY_NAME]:
             file_utils.create_folder_if_not_exist(directory_path)
