@@ -5,6 +5,8 @@ from typing import List, Optional, Set, Tuple, cast, Dict
 import pandas
 from logger import logger_config
 
+from common import string_utils
+from networkflowmatrix import constants
 
 INVALID_IP_ADDRESS = "INVALID_IP_ADDRESS"
 MISSING_IP_ADDRESS = "MISSING_IP_ADDRESS"
@@ -185,6 +187,7 @@ class FlowDestination(FlowEndPoint):
 
     group_multicast_raw: str
     cast_raw: str
+    cast_type: constants.CastType
 
     class Builder:
 
@@ -204,6 +207,7 @@ class FlowDestination(FlowEndPoint):
             group_multicast_raw = row["dst Groupe\nMCast"]
             port_raw = row["dst\nPort"]
             cast_raw = row["dst\ncast"]
+            cast_type = constants.CastType(string_utils.text_to_valid_enum_value_text(cast_raw))
 
             return FlowDestination(
                 matrice_line_identifier=matrice_line_identifier,
@@ -219,6 +223,7 @@ class FlowDestination(FlowEndPoint):
                 vlan_sol_raw=vlan_sol_raw,
                 group_multicast_raw=group_multicast_raw,
                 cast_raw=cast_raw,
+                cast_type=cast_type,
             )
 
 
