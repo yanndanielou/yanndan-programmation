@@ -63,33 +63,43 @@ def main() -> None:
 
         patched_ats_inv = build_ats_inv_for_version("Input_Downloaded/Patch_SIGNAL_ZC.csv")
 
-        for input_file_line in input_acq_term_file_lines:
-            input_file_line_splitted = input_file_line.split(";")
-            eqpt_id = input_file_line_splitted[1]
-            term_id = input_file_line_splitted[3]
-            assert term_id
+        with open("output/output_acq_term.csv", mode="w", encoding="ANSI") as output_file:
 
-            term_id_splitted_underscore = term_id.split("_")
+            for input_file_original_line in input_acq_term_file_lines:
+                input_file_line_splitted = input_file_original_line.split(";")
+                eqpt_id = input_file_line_splitted[1]
+                term_id = input_file_line_splitted[3]
+                assert term_id
 
-            if "RC_SIGNAL_OVERRIDE_STATUS" in term_id:
-                signal_id = term_id.replace("_RC_SIGNAL_OVERRIDE_STATUS", "").split("_")[3:]
-                signal_number_str_in_original_acq_term = input_file_line_splitted[9]
-                signal_number_int_in_original_acq_term = int(signal_number_str_in_original_acq_term)
-                logger_config.print_and_log_info(f"{term_id}, signal {signal_id}, pas {eqpt_id}, current signal number in acq term: {signal_number_int_in_original_acq_term}")
-                pass
+                term_id_splitted_underscore = term_id.split("_")
 
-            if "ST_ANDREWS_CROSS_MAINT_SIGNAL_LIGHT" in term_id:
-                signal_id = "_".join(term_id.replace("_ST_ANDREWS_CROSS_MAINT_SIGNAL_LIGHT_REQ_ON", "").replace("_ST_ANDREWS_CROSS_MAINT_SIGNAL_LIGHT_REQ_OFF", "").split("_")[3:])
-                signal_number_str_in_original_acq_term = input_file_line_splitted[10]
-                signal_number_int_in_original_acq_term = int(signal_number_str_in_original_acq_term)
+                if "RC_SIGNAL_OVERRIDE_STATUS" in term_id:
+                    signal_id = "_".join(term_id.replace("_RC_SIGNAL_OVERRIDE_STATUS", "").split("_")[3:])
+                    signal_number_str_in_original_acq_term = input_file_line_splitted[9]
+                    signal_number_int_in_original_acq_term = int(signal_number_str_in_original_acq_term)
 
-                entry_in_ats_v6_14_inv = ats_v6_14_inv.get_entry_by_zc_and_signal_id(zc_id=eqpt_id, signal_id=signal_id)
-                entry_in_patched_ats_inv = patched_ats_inv.get_entry_by_zc_and_signal_id(zc_id=eqpt_id, signal_id=signal_id)
+                    entry_in_ats_v6_14_inv = ats_v6_14_inv.get_entry_by_zc_and_signal_id(zc_id=eqpt_id, signal_id=signal_id)
+                    entry_in_patched_ats_inv = patched_ats_inv.get_entry_by_zc_and_signal_id(zc_id=eqpt_id, signal_id=signal_id)
 
-                logger_config.print_and_log_info(
-                    f"{term_id}, signal {signal_id}, pas {eqpt_id},  current signal number in acq term: {signal_number_int_in_original_acq_term}, in v6_14_inv:{entry_in_ats_v6_14_inv.num_signal_zc}, in patched_ats_inv:{entry_in_patched_ats_inv.num_signal_zc}"
-                )
-                pass
+                    logger_config.print_and_log_info(f"{term_id}, signal {signal_id}, pas {eqpt_id}, current signal number in acq term: {signal_number_int_in_original_acq_term}")
+                    pass
+
+                elif "ST_ANDREWS_CROSS_MAINT_SIGNAL_LIGHT" in term_id:
+                    signal_id = "_".join(term_id.replace("_ST_ANDREWS_CROSS_MAINT_SIGNAL_LIGHT_REQ_ON", "").replace("_ST_ANDREWS_CROSS_MAINT_SIGNAL_LIGHT_REQ_OFF", "").split("_")[3:])
+                    signal_number_str_in_original_acq_term = input_file_line_splitted[10]
+                    signal_number_int_in_original_acq_term = int(signal_number_str_in_original_acq_term)
+
+                    entry_in_ats_v6_14_inv = ats_v6_14_inv.get_entry_by_zc_and_signal_id(zc_id=eqpt_id, signal_id=signal_id)
+                    entry_in_patched_ats_inv = patched_ats_inv.get_entry_by_zc_and_signal_id(zc_id=eqpt_id, signal_id=signal_id)
+
+                    logger_config.print_and_log_info(
+                        f"{term_id}, signal {signal_id}, pas {eqpt_id},  current signal number in acq term: {signal_number_int_in_original_acq_term}, in v6_14_inv:{entry_in_ats_v6_14_inv.num_signal_zc}, in patched_ats_inv:{entry_in_patched_ats_inv.num_signal_zc}"
+                    )
+                    pass
+
+                else:
+                    pass
+                    output_file.write(input_file_original_line)
 
 
 if __name__ == "__main__":
