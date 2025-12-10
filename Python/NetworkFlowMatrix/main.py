@@ -24,12 +24,12 @@ def equipment_to_dict(equipment: network_matrix_data_model.EquipmentInFLowMatrix
     if with_subsystem:
         new_var = {
             "equipment_name": equipment.name,
-            "equipment_ip_addresses": [str(ip) for ip in equipment.ip_addresses],
+            "equipment_ip_addresses": [str(ip) for ip in equipment.raw_ip_addresses],
             "equipment_number_of_subsystems_detected_in_flow_matrix": len(equipment.all_subsystems_detected_in_flow_matrix),
             "equipment_all_subsystems_detected_in_flow_matrix": [subsystem_to_dict(subsys, False) for subsys in equipment.all_subsystems_detected_in_flow_matrix],
         }
     else:
-        new_var = {"equipment_name": equipment.name, "equipment_ip_addresses": [str(ip) for ip in equipment.ip_addresses]}
+        new_var = {"equipment_name": equipment.name, "equipment_ip_addresses": [str(ip) for ip in equipment.raw_ip_addresses]}
 
     return new_var
 
