@@ -93,20 +93,25 @@ class FlowEndPoint:
 
     def __post_init__(self) -> None:
 
+        self.raw_ip_addresses: List[str] = []
+        self.equipments_detected_in_flow_matrix: List[EquipmentInFLowMatrix] = []
+        self.equipments_names: List[str] = []
+
         self.network_flow_matrix_line: "NetworkFlowMatrixLine" = cast("NetworkFlowMatrixLine", None)
 
         if not isinstance(self.ip_raw, str):
             self.ip_raw = None
 
-        self.raw_ip_addresses = self.ip_raw.split("\n") if self.ip_raw else []
         # self.ip_address = [ipaddress.IPv4Address(raw_ip_raw) for raw_ip_raw in self.raw_ip_addresses]
 
         self.subsystem_detected_in_flow_matrix = SubSystemInFlowMatrix.get_or_create_if_not_exist_by_name(network_flow_matrix=self.network_flow_matrix, name=self.subsystem_raw.strip().upper())
-        self.equipments_detected_in_flow_matrix: List[EquipmentInFLowMatrix] = []
+
+    def decompact_equipments_and_ip_addresses(self) -> None:
+        self.raw_ip_addresses = self.ip_raw.split("\n") if self.ip_raw else []
 
         self.equipments_names = [equipment_name.strip().upper() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.strip() != ""]
 
-        if len(self.equipments_names) > len(self.raw_ip_addresses):
+        if len(self.equipments_names) > len(self.raw_ip_addresses) and len(self.raw_ip_addresses) > 1:
             logger_config.print_and_log_error(f"Error at line {self.matrice_line_identifier}: missing IP addresses for {self.equipments_names}, see {self.raw_ip_addresses}")
 
         for index_eqpt, equipment_name in enumerate(self.equipments_names):
@@ -243,6 +248,12 @@ class NetworkFlowMatrix:
 
             network_flow_matrix.network_flow_matrix_lines = network_flow_matrix_lines
             network_flow_matrix.network_flow_matrix_lines_by_identifier = network_flow_matrix_lines_by_identifier
+
+            with logger_config.stopwatch_with_label("decompact_equipments_and_ip_addresses"):
+                for line in network_flow_matrix.network_flow_matrix_lines:
+                    line.source.decompact_equipments_and_ip_addresses()
+                    line.destination.decompact_equipments_and_ip_addresses()
+
             return network_flow_matrix
 
     def get_line_by_identifier(self, identifier: int) -> Optional["NetworkFlowMatrixLine"]:
