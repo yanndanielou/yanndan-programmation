@@ -7,6 +7,7 @@ from logger import logger_config
 
 
 INVALID_IP_ADDRESS = "INVALID_IP_ADDRESS"
+MISSING_IP_ADDRESS = "MISSING_IP_ADDRESS"
 
 
 class SubSystemInFlowMatrix:
@@ -55,7 +56,9 @@ class EquipmentInFLowMatrix:
         return None
 
     @staticmethod
-    def get_or_create_if_not_exist_by_name(network_flow_matrix: "NetworkFlowMatrix", name: str, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix) -> "EquipmentInFLowMatrix":
+    def get_or_create_if_not_exist_by_name_and_ip(
+        network_flow_matrix: "NetworkFlowMatrix", name: str, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix, raw_ip_address: str
+    ) -> "EquipmentInFLowMatrix":
         if EquipmentInFLowMatrix.is_existing_by_name(network_flow_matrix, name):
             equipment = network_flow_matrix.all_matrix_flow_equipments_by_name[name]
             if subsystem_detected_in_flow_matrix not in equipment.all_subsystems_detected_in_flow_matrix:
@@ -63,15 +66,19 @@ class EquipmentInFLowMatrix:
 
             if equipment not in subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix:
                 subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix.append(equipment)
+
+            equipment.raw_ip_addresses.add(raw_ip_address)
             return equipment
         equipment = EquipmentInFLowMatrix(name=name, subsystem_detected_in_flow_matrix=subsystem_detected_in_flow_matrix, network_flow_matrix=network_flow_matrix)
+        equipment.raw_ip_addresses.add(raw_ip_address)
         network_flow_matrix.all_matrix_flow_equipments_by_name[name] = equipment
         network_flow_matrix.all_matrix_flow_equipments_definitions_instances.append(equipment)
         subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix.append(equipment)
         return equipment
 
     def __init__(self, name: str, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix, network_flow_matrix: "NetworkFlowMatrix") -> None:
-        self.ip_addresses: List[ipaddress.IPv4Address] = []
+        self.raw_ip_addresses: Set[str] = set()
+        # self.ip_addresses: List[ipaddress.IPv4Address] = []
         self.all_subsystems_detected_in_flow_matrix: List[SubSystemInFlowMatrix] = [subsystem_detected_in_flow_matrix]
         self.name = name
         self.network_flow_matrix = network_flow_matrix
@@ -94,22 +101,22 @@ class FlowEndPoint:
     def __post_init__(self) -> None:
 
         self.raw_ip_addresses: List[str] = []
+
         self.equipments_detected_in_flow_matrix: List[EquipmentInFLowMatrix] = []
-        self.equipments_names: List[str] = []
+        self.equipments_names: List[str] = [equipment_name.strip().upper() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.strip() != ""]
 
         self.network_flow_matrix_line: "NetworkFlowMatrixLine" = cast("NetworkFlowMatrixLine", None)
 
         if not isinstance(self.ip_raw, str):
             self.ip_raw = None
+        else:
+            self.raw_ip_addresses = self.ip_raw.split("\n")
 
         # self.ip_address = [ipaddress.IPv4Address(raw_ip_raw) for raw_ip_raw in self.raw_ip_addresses]
 
         self.subsystem_detected_in_flow_matrix = SubSystemInFlowMatrix.get_or_create_if_not_exist_by_name(network_flow_matrix=self.network_flow_matrix, name=self.subsystem_raw.strip().upper())
 
     def decompact_equipments_and_ip_addresses(self) -> None:
-        self.raw_ip_addresses = self.ip_raw.split("\n") if self.ip_raw else []
-
-        self.equipments_names = [equipment_name.strip().upper() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.strip() != ""]
 
         if len(self.equipments_names) > len(self.raw_ip_addresses) and len(self.raw_ip_addresses) > 1:
             logger_config.print_and_log_error(f"Error at line {self.matrice_line_identifier}: missing IP addresses for {self.equipments_names}, see {self.raw_ip_addresses}")
@@ -120,14 +127,16 @@ class FlowEndPoint:
             self.network_flow_matrix.all_equipments_names.add(equipment_name)
             if len(self.raw_ip_addresses) <= index_eqpt:
                 logger_config.print_and_log_error(f"Error at line {self.matrice_line_identifier}: no IP found for {equipment_name} (not enough lines)")
-                self.ip_address_raw = INVALID_IP_ADDRESS
+                eqpt_ip_address_raw = INVALID_IP_ADDRESS
             else:
                 try:
-                    self.ip_address_raw = self.raw_ip_addresses[index_eqpt] if len(self.raw_ip_addresses) > 1 else self.raw_ip_addresses[0] if self.equipments_detected_in_flow_matrix else None
+                    eqpt_ip_address_raw = (
+                        self.raw_ip_addresses[index_eqpt] if len(self.raw_ip_addresses) > 1 else self.raw_ip_addresses[0] if self.equipments_detected_in_flow_matrix else MISSING_IP_ADDRESS
+                    )
                 except IndexError:
-                    self.ip_address_raw = INVALID_IP_ADDRESS
-            equipment_detected_in_flow_matrix = EquipmentInFLowMatrix.get_or_create_if_not_exist_by_name(
-                network_flow_matrix=self.network_flow_matrix, name=equipment_name, subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix
+                    eqpt_ip_address_raw = INVALID_IP_ADDRESS
+            equipment_detected_in_flow_matrix = EquipmentInFLowMatrix.get_or_create_if_not_exist_by_name_and_ip(
+                network_flow_matrix=self.network_flow_matrix, name=equipment_name, subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix, raw_ip_address=eqpt_ip_address_raw
             )
             self.equipments_detected_in_flow_matrix.append(equipment_detected_in_flow_matrix)
             self.network_flow_matrix.all_equipments_names_with_subsystem.add((equipment_name, self.subsystem_raw))
