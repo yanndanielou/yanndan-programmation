@@ -1,7 +1,8 @@
 import json
-from typing import TYPE_CHECKING, List, Optional, cast
+from typing import TYPE_CHECKING, List, Optional, cast, Any
 from dataclasses import dataclass, field
 from typing import Dict
+
 
 from common import file_utils, json_encoders
 from logger import logger_config
@@ -48,6 +49,51 @@ def build_ats_inv_for_version(file_path: str) -> AtsInvDatabaseForVersion:
     return ats_inv
 
 
+def treat_cx_line(
+    line_number: int,
+    acq_term_original_line: str,
+    eqpt_id: str,
+    term_id: str,
+    input_file_line_splitted: List[str],
+    signal_number_position: int,
+    ats_v6_14_inv: AtsInvDatabaseForVersion,
+    patched_ats_inv: AtsInvDatabaseForVersion,
+    output_file: Any,
+    offset_in_signal_number: int,
+) -> None:
+    signal_id = "_".join(
+        term_id.replace("_RC_SIGNAL_OVERRIDE_STATUS", "").replace("_ST_ANDREWS_CROSS_MAINT_SIGNAL_LIGHT_REQ_ON", "").replace("_ST_ANDREWS_CROSS_MAINT_SIGNAL_LIGHT_REQ_OFF", "").split("_")[3:]
+    )
+    signal_number_str_in_original_acq_term = input_file_line_splitted[signal_number_position]
+    signal_number_int_in_original_acq_term = int(signal_number_str_in_original_acq_term) + offset_in_signal_number
+
+    entry_in_ats_v6_14_inv = ats_v6_14_inv.get_entry_by_zc_and_signal_id(zc_id=eqpt_id, signal_id=signal_id)
+    entry_in_patched_ats_inv = patched_ats_inv.get_entry_by_zc_and_signal_id(zc_id=eqpt_id, signal_id=signal_id)
+
+    assert signal_number_int_in_original_acq_term == entry_in_ats_v6_14_inv.num_signal_zc
+
+    if signal_number_int_in_original_acq_term == entry_in_patched_ats_inv.num_signal_zc:
+        logger_config.print_and_log_info(
+            f"Line {line_number}, {term_id}, signal {signal_id}, pas {eqpt_id}: do nothing, keep {signal_number_int_in_original_acq_term}, to:{entry_in_ats_v6_14_inv.num_signal_zc}"
+        )
+        output_file.write(acq_term_original_line)
+
+    else:
+        acq_term_line_before_signal_number = ";".join(input_file_line_splitted[:8]) + ";"
+        acq_term_line_after_signal_number = ";" + ";".join(input_file_line_splitted[10:])
+
+        reconstructed_initial_line = acq_term_line_before_signal_number + str(signal_number_str_in_original_acq_term) + acq_term_line_after_signal_number
+        assert reconstructed_initial_line == acq_term_original_line
+
+        new_line = acq_term_line_before_signal_number + str(entry_in_patched_ats_inv.num_signal_zc - offset_in_signal_number) + acq_term_line_after_signal_number
+        output_file.write(new_line)
+
+        logger_config.print_and_log_info(
+            f"Line {line_number}, {term_id}, signal {signal_id}, pas {eqpt_id}: change : {signal_number_int_in_original_acq_term}, to:{entry_in_ats_v6_14_inv.num_signal_zc}, in patched_ats_inv:{entry_in_patched_ats_inv.num_signal_zc}"
+        )
+    pass
+
+
 def main() -> None:
     with logger_config.application_logger("patchacqterm"):
 
@@ -72,6 +118,19 @@ def main() -> None:
                 assert term_id
 
                 if "RC_SIGNAL_OVERRIDE_STATUS" in term_id:
+
+                    treat_cx_line(
+                        line_number=line_number,
+                        acq_term_original_line=input_file_original_line,
+                        eqpt_id=eqpt_id,
+                        term_id=term_id,
+                        input_file_line_splitted=input_file_line_splitted,
+                        signal_number_position=9,
+                        output_file=output_file,
+                        ats_v6_14_inv=ats_v6_14_inv,
+                        patched_ats_inv=patched_ats_inv,
+                        offset_in_signal_number=1,
+                    )
                     signal_id = "_".join(term_id.replace("_RC_SIGNAL_OVERRIDE_STATUS", "").split("_")[3:])
                     signal_number_str_in_original_acq_term = input_file_line_splitted[9]
                     signal_number_int_in_original_acq_term = int(signal_number_str_in_original_acq_term)
