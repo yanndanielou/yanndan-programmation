@@ -764,8 +764,11 @@ def copy_and_paste_excel_content_with_format_with_win32(input_excel_file_path: s
             # Get the copied sheet (will always be the first sheet in the new workbook)
             sheet_copied = wb_output.Sheets(1)
 
+            # logger_config.print_and_log_info(f"sheet_input.UsedRange:{sheet_input.UsedRange}")
+            # logger_config.print_and_log_info(f"sheet_copied.UsedRange:{sheet_copied.UsedRange}")
             with logger_config.stopwatch_with_label("Remove formulas by pasting values only", inform_beginning=True):
-                sheet_copied.UsedRange.Value = sheet_copied.UsedRange.Value
+                # sheet_copied.UsedRange.Value = sheet_copied.UsedRange.Value
+                sheet_copied.UsedRange.Value = sheet_input.UsedRange.Value
 
             with logger_config.stopwatch_with_label(f"Save output workbook {output_excel_file_path}"):
                 wb_output.SaveAs(
