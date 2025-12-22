@@ -25,6 +25,7 @@ class DownloadAndCleanDMLApplication:
             input_excel_file_path=dml_file_path,
             sheet_name="Database",
             output_excel_file_path=param.DML_FILE_CONVERTED_TO_STANDARD_XSLX_PATH,
+            replace_formulas_by_value=False,
             # output_excel_file_path=f"{os.path.expandvars(r"%userprofile%\downloads")}\\copy_and_paste_excel_content_with_format_with_win32.xlsx",
         )
 
