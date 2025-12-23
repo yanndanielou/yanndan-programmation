@@ -303,35 +303,80 @@ def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], 
 
 
 @dataclass
-class OneDocumentStatusReport:
+class OneDocumentLineStatusReport:
     dml_document: DmlDocument
+    line_number: int
+    code_ged_moe: str
+    title: str
+    version: int
+    revision: int
+    status: DmlStatus
+    actual_livraison: Optional[datetime]
+    doc_deleted: bool
+    fa: Optional[FaPa]
+    pa: Optional[FaPa]
 
     def __post_init__(self) -> None:
-        pass
+        self.version_and_revision = f"V{self.version}-{self.revision}"
 
     def print_report(self) -> None:
+        logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{self.line_number}\tversion:{self.version}\trevision:{self.revision}")
+        logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{self.line_number}\tstatus:{self.status}")
+        logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{self.line_number}\tactual_livraison:{self.actual_livraison}")
+        logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{self.line_number}\tdoc_deleted:{self.doc_deleted}")
+        logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{self.line_number}\tfa:{self.fa}")
+        logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{self.line_number}\tpa:{self.pa}")
+        logging.info(f"\n")
 
-        self.dml_document.get_all_code_ged_moes()
-        logger_config.print_and_log_info(f"Print report for {self.dml_document.get_all_code_ged_moes()}")
-        document_sorted_dml_lines = self.dml_document.get_sorted_dml_lines()
 
-        last_line = self.dml_document.get_last_dml_line()
-        assert last_line
+@dataclass
+class OneDocumentStatusReport:
+    dml_document: DmlDocument
+    all_documents_lines_status_reports: List[OneDocumentLineStatusReport] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        self.all_code_ged_moes = self.dml_document.get_all_code_ged_moes()
+        logger_config.print_and_log_info(f"Build report for {self.all_code_ged_moes}")
+        # self.document_sorted_dml_lines = self.dml_document.get_sorted_dml_lines()
+
+        self.last_line = self.dml_document.get_last_dml_line()
+        assert self.last_line
+
         for line_number, line in enumerate(self.dml_document.dml_lines):
-            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}")
-            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tcode_ged_moe:{line.code_ged_moe}")
-            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\ttitle:{line.title}")
-            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tversion:{line.version}\trevision:{line.revision}")
-            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tstatus:{line.status}")
-            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tactual_livraison:{line.actual_livraison}")
-            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tdoc_deleted:{line.doc_deleted}")
-            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tfa:{line.fa}")
-            logging.info(f"{self.dml_document.get_all_code_ged_moes()}\tLine #{line_number}\tpa:{line.pa}")
+            self.all_documents_lines_status_reports.append(
+                OneDocumentLineStatusReport(
+                    dml_document=self.dml_document,
+                    line_number=line_number,
+                    code_ged_moe=line.code_ged_moe,
+                    title=line.title,
+                    version=line.version,
+                    revision=line.revision,
+                    status=line.status,
+                    actual_livraison=line.actual_livraison,
+                    doc_deleted=line.doc_deleted,
+                    fa=line.fa,
+                    pa=line.pa,
+                )
+            )
+
+    def print_all_lines_report(self) -> None:
+        for line_number, documents_line_status_report in enumerate(self.all_documents_lines_status_reports):
+            documents_line_status_report.print_report()
             logging.info(f"\n")
 
+        self.print_last_line()
+
+    def print_last_line(self) -> None:
+        last_line = self.dml_document.get_last_dml_line()
+        assert last_line
+
         logger_config.print_and_log_info(
-            f"{self.dml_document.get_all_code_ged_moes()}\tLast line: code_ged_moe:{last_line.code_ged_moe}\ttitle:{last_line.title}\tversion:{last_line.version}\trevision:{line.revision}\tstatus:{last_line.status}\tactual_livraison:{last_line.actual_livraison}\tfa:{last_line.fa}\tpa:{last_line.pa}\n\n"
+            f"{self.dml_document.get_all_code_ged_moes()}\tLast line: code_ged_moe:{last_line.code_ged_moe}\ttitle:{last_line.title}\tversion:{last_line.version}\trevision:{last_line.revision}\tstatus:{last_line.status}\tactual_livraison:{last_line.actual_livraison}\tfa:{last_line.fa}\tpa:{last_line.pa}\n\n"
         )
+
+    def print_report(self, full: bool) -> None:
+        self.print_all_lines_report()
+        self.print_last_line()
 
     class Builder:
 
@@ -346,7 +391,7 @@ class OneDocumentStatusReport:
 @dataclass
 class DocumentsStatusReport:
     name: str
-    all_documents_status_reports: OneDocumentStatusReport
+    all_documents_status_reports: List[OneDocumentStatusReport]
 
     def __post_init__(self) -> None:
         self.output_directory_path = "Reports"
@@ -356,6 +401,18 @@ class DocumentsStatusReport:
         self.output_file_name_without_extension = self.output_directory_path + self.name
         self.output_file_name_with_extension = self.output_file_name_without_extension + ".xlsx"
         self.output_file_full_path = self.output_directory_path + "/" + self.output_file_name_with_extension
+
+    class Builder:
+
+        @staticmethod
+        def build_by_code_ged_moe(name: str, dml_file_content: "DmlFileContent", codes_ged_moe: List[str]) -> "DocumentsStatusReport":
+            all_documents_status_reports: List[OneDocumentStatusReport] = []
+            for code_ged_moe in set(codes_ged_moe):
+                one_document_status_report = OneDocumentStatusReport.Builder.build_by_code_ged_moe(dml_file_content=dml_file_content, code_ged_moe=code_ged_moe)
+                all_documents_status_reports.append(one_document_status_report)
+
+            ret = DocumentsStatusReport(name=name, all_documents_status_reports=all_documents_status_reports)
+            return ret
 
 
 @dataclass
