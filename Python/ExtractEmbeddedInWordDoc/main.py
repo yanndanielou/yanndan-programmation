@@ -105,9 +105,14 @@ if __name__ == "__main__":
 
         os.makedirs(OUTPUT_PARENT_DIRECTORY, exist_ok=True)
 
-        input_files_paths = file_utils.get_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="*.doc*") + file_utils.get_files_by_directory_and_file_name_mask(
-            directory_path="Input_for_tests", filename_pattern="*.doc*"
-        )
+        try:
+            input_files_paths = file_utils.get_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="*.doc*") + file_utils.get_files_by_directory_and_file_name_mask(
+                directory_path="Input_for_tests", filename_pattern="*.doc*"
+            )
+        except FileNotFoundError as not_found:
+            logger_config.print_and_log_exception(not_found)
+            logger_config.print_and_log_critical_and_kill("Could not find input folder")
+
         for input_file_path in input_files_paths:
             input_file_name_without_extension = file_name_utils.get_file_name_without_extension_from_full_path(input_file_path)
             with logger_config.stopwatch_with_label(label=f"Handling input file {input_file_path}", inform_beginning=True):
