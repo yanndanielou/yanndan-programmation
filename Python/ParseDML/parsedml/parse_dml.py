@@ -414,6 +414,46 @@ class DocumentsStatusReport:
             ret = DocumentsStatusReport(name=name, all_documents_status_reports=all_documents_status_reports)
             return ret
 
+    def write_all_lines_to_excel(self) -> None:
+        """Write all OneDocumentLineStatusReport entries from all documents into an Excel file.
+
+        The output file path is `self.output_file_full_path`.
+        Columns written correspond to attributes of `OneDocumentLineStatusReport`.
+        """
+        rows: List[Dict[str, object]] = []
+
+        for document_status in self.all_documents_status_reports:
+            for line_status in document_status.all_documents_lines_status_reports:
+                # Convert complex attributes to serializable representations
+                dml_document_codes = ",".join(sorted(document_status.dml_document.get_all_code_ged_moes()))
+
+                row: Dict[str, object] = {
+                    "dml_document": dml_document_codes,
+                    "line_number": line_status.line_number,
+                    "code_ged_moe": line_status.code_ged_moe,
+                    "title": line_status.title,
+                    "version": line_status.version,
+                    "revision": line_status.revision,
+                    "version_and_revision": getattr(line_status, "version_and_revision", None),
+                    "status": line_status.status.name if line_status.status is not None else None,
+                    "actual_livraison": line_status.actual_livraison.strftime("%Y-%m-%d %H:%M:%S") if line_status.actual_livraison else None,
+                    "doc_deleted": line_status.doc_deleted,
+                    "fa_reference": line_status.fa.reference.full_raw_reference if line_status.fa and line_status.fa.reference else None,
+                    "fa_actual_delivery": line_status.fa.actual_delivery.strftime("%Y-%m-%d %H:%M:%S") if line_status.fa and line_status.fa.actual_delivery else None,
+                    "pa_reference": line_status.pa.reference.full_raw_reference if line_status.pa and line_status.pa.reference else None,
+                    "pa_actual_delivery": line_status.pa.actual_delivery.strftime("%Y-%m-%d %H:%M:%S") if line_status.pa and line_status.pa.actual_delivery else None,
+                }
+
+                rows.append(row)
+
+        df = pandas.DataFrame(rows)
+
+        # Ensure output directory exists (in case it was removed after instantiation)
+        os.makedirs(self.output_directory_path, exist_ok=True)
+
+        df.to_excel(self.output_file_full_path, index=False)
+        logger_config.print_and_log_info(f"Wrote {len(df)} rows to {self.output_file_full_path}")
+
 
 @dataclass
 class DmlFileContent:
