@@ -207,6 +207,9 @@ class DmlDocument:
     def get_last_dml_line(self) -> DmlLine:
         return self.get_sorted_dml_lines()[-1]
 
+    def get_penultimate_dml_line(self) -> Optional[DmlLine]:
+        return self.get_sorted_dml_lines()[-2] if len(self.get_sorted_dml_lines()) >= 2 else None
+
     def get_all_code_ged_moes(self) -> set[str]:
         all_code_ged_moes = {dml_line.code_ged_moe for dml_line in self.dml_lines}
         return all_code_ged_moes
@@ -342,6 +345,8 @@ class OneDocumentStatusReport:
         self.last_line = self.dml_document.get_last_dml_line()
         assert self.last_line
 
+        self.penultimate_line = self.dml_document.get_penultimate_dml_line()
+
         for line_number, line in enumerate(self.dml_document.dml_lines):
             self.all_documents_lines_status_reports.append(
                 OneDocumentLineStatusReport(
@@ -400,7 +405,8 @@ class DocumentsStatusReport:
 
         self.output_file_name_without_extension = self.output_directory_path + self.name
         self.output_file_name_with_extension = self.output_file_name_without_extension + ".xlsx"
-        self.output_file_full_path = self.output_directory_path + "/" + self.output_file_name_with_extension
+        self.output_file_light_report_full_path = self.output_directory_path + "_full_report/" + self.output_file_name_with_extension
+        self.output_file_synthetic_report_full_path = self.output_directory_path + "_synthetic_report/" + self.output_file_name_with_extension
 
     class Builder:
 
@@ -451,8 +457,60 @@ class DocumentsStatusReport:
         # Ensure output directory exists (in case it was removed after instantiation)
         os.makedirs(self.output_directory_path, exist_ok=True)
 
-        df.to_excel(self.output_file_full_path, index=False)
-        logger_config.print_and_log_info(f"Wrote {len(df)} rows to {self.output_file_full_path}")
+        df.to_excel(self.output_file_synthetic_report_full_path, index=False)
+        logger_config.print_and_log_info(f"Wrote {len(df)} rows to {self.output_file_synthetic_report_full_path}")
+
+    def write_synthetic_report_to_excel(self) -> None:
+        """Write all OneDocumentLineStatusReport entries from all documents into an Excel file.
+
+        The output file path is `self.output_file_full_path`.
+        Columns written correspond to attributes of `OneDocumentLineStatusReport`.
+        """
+        rows: List[Dict[str, object]] = []
+
+        for document_status in self.all_documents_status_reports:
+            last_line = document_status.last_line
+            penultimate_line = document_status.penultimate_line
+
+            # Convert complex attributes to serializable representations
+            dml_document_codes = ",".join(sorted(document_status.dml_document.get_all_code_ged_moes()))
+
+            row: Dict[str, object] = {
+                "dml_document": dml_document_codes,
+                "last_line code_ged_moe": last_line.code_ged_moe,
+                "last_line title": last_line.title,
+                "last_line version": last_line.version,
+                "last_line revision": last_line.revision,
+                "last_line version_and_revision": getattr(last_line, "version_and_revision", None),
+                "last_line status": last_line.status.name if last_line.status is not None else None,
+                "last_line actual_livraison": last_line.actual_livraison.strftime("%Y-%m-%d %H:%M:%S") if last_line.actual_livraison else None,
+                "doc_deleted": last_line.doc_deleted,
+                "last_line fa_reference": last_line.fa.reference.full_raw_reference if last_line.fa and last_line.fa.reference else None,
+                "last_line fa_actual_delivery": last_line.fa.actual_delivery.strftime("%Y-%m-%d %H:%M:%S") if last_line.fa and last_line.fa.actual_delivery else None,
+                "last_line pa_reference": last_line.pa.reference.full_raw_reference if last_line.pa and last_line.pa.reference else None,
+                "last_line pa_actual_delivery": last_line.pa.actual_delivery.strftime("%Y-%m-%d %H:%M:%S") if last_line.pa and last_line.pa.actual_delivery else None,
+                "penultimate_line version_and_revision": getattr(penultimate_line, "version_and_revision", None),
+                "penultimate_line status": "NA" if penultimate_line is None else penultimate_line.status.name if penultimate_line.status is not None else None,
+                "penultimate_line actual_livraison": (
+                    "NA" if penultimate_line is None else (penultimate_line.actual_livraison.strftime("%Y-%m-%d %H:%M:%S") if penultimate_line.actual_livraison else None)
+                ),
+                "penultimate_line fa_reference": (
+                    "NA" if penultimate_line is None else penultimate_line.fa.reference.full_raw_reference if penultimate_line.fa and penultimate_line.fa.reference else None
+                ),
+                "penultimate_line fa_actual_delivery": (
+                    "NA" if penultimate_line is None else penultimate_line.fa.actual_delivery.strftime("%Y-%m-%d %H:%M:%S") if penultimate_line.fa and penultimate_line.fa.actual_delivery else None
+                ),
+            }
+
+            rows.append(row)
+
+        df = pandas.DataFrame(rows)
+
+        # Ensure output directory exists (in case it was removed after instantiation)
+        os.makedirs(self.output_directory_path, exist_ok=True)
+
+        df.to_excel(self.output_file_light_report_full_path, index=False)
+        logger_config.print_and_log_info(f"Wrote {len(df)} rows to {self.output_file_light_report_full_path}")
 
 
 @dataclass
