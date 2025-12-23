@@ -318,3 +318,43 @@ class TestDocumentRenamedAndReferenceChanged:
         assert sfe_ats_v1.dml_document is sfe_ats_v2.dml_document
         assert sfe_ats_v1.dml_document is sfe_ats_v3.dml_document
         assert sfe_ats_v1.dml_document is sfe_ats_v4.dml_document
+
+
+def test_documents_status_report_write_all_lines(full_dml_content: parse_dml.DmlFileContent) -> None:
+    import os
+    import pandas as pandas
+
+    # Pick two distinct codes to produce a small report
+    codes = [full_dml_content.dml_lines[0].code_ged_moe, full_dml_content.dml_lines[1].code_ged_moe]
+
+    report = parse_dml.DocumentsStatusReport.Builder.build_by_code_ged_moe(name="/test_write_all_lines", dml_file_content=full_dml_content, codes_ged_moe=codes)
+
+    report.write_all_lines_to_excel()
+
+    assert os.path.exists(report.output_file_full_path)
+
+    df = pandas.read_excel(report.output_file_full_path)
+
+    expected_cols = [
+        "dml_document",
+        "line_number",
+        "code_ged_moe",
+        "title",
+        "version",
+        "revision",
+        "version_and_revision",
+        "status",
+        "actual_livraison",
+        "doc_deleted",
+        "fa_reference",
+        "fa_actual_delivery",
+        "pa_reference",
+        "pa_actual_delivery",
+    ]
+
+    for col in expected_cols:
+        assert col in df.columns
+
+    # Clean up generated file
+    os.remove(report.output_file_full_path)
+
