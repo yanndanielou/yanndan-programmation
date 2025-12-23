@@ -1,19 +1,18 @@
+import logging
 import math
-from warnings import deprecated
+import os
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
 from typing import Dict, List, Optional, Set, Tuple, cast
-
-from common import excel_utils
+from warnings import deprecated
 
 import pandas
-from common import string_utils
+from common import excel_utils, string_utils
 from logger import logger_config
-import param
-import logging
 
+import param
 
 STANDARD_FA_CLEANED_PATTERN = re.compile(r"FA(?P<FA_number>\d+)-?(?P<FA_indice>\d+)?$")
 
@@ -304,7 +303,7 @@ def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], 
 
 
 @dataclass
-class DocumentStatusReport:
+class OneDocumentStatusReport:
     dml_document: DmlDocument
 
     def __post_init__(self) -> None:
@@ -337,11 +336,26 @@ class DocumentStatusReport:
     class Builder:
 
         @staticmethod
-        def build_by_code_ged_moe(dml_file_content: "DmlFileContent", code_ged_moe: str) -> "DocumentStatusReport":
+        def build_by_code_ged_moe(dml_file_content: "DmlFileContent", code_ged_moe: str) -> "OneDocumentStatusReport":
             dml_document = dml_file_content.find_document_by_code_ged_moe(code_ged_moe)
             assert dml_document
-            document_status_report = DocumentStatusReport(dml_document=dml_document)
+            document_status_report = OneDocumentStatusReport(dml_document=dml_document)
             return document_status_report
+
+
+@dataclass
+class DocumentsStatusReport:
+    name: str
+    all_documents_status_reports: OneDocumentStatusReport
+
+    def __post_init__(self) -> None:
+        self.output_directory_path = "Reports"
+
+        os.makedirs(self.output_directory_path, exist_ok=True)
+
+        self.output_file_name_without_extension = self.output_directory_path + self.name
+        self.output_file_name_with_extension = self.output_file_name_without_extension + ".xlsx"
+        self.output_file_full_path = self.output_directory_path + "/" + self.output_file_name_with_extension
 
 
 @dataclass
