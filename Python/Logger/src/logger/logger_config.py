@@ -58,8 +58,10 @@ def print_and_log_critical_and_kill(to_print_and_log: str) -> None:
 
     # pylint: disable=line-too-long
     print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + to_print_and_log)
+    print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + "Kill application")
 
     logging.critical(f"{__get_calling_file_name_and_line_number()} '\t' {to_print_and_log}")
+    logging.critical(f"{__get_calling_file_name_and_line_number()} '\t' Kill application")
     sys.exit()
 
 
