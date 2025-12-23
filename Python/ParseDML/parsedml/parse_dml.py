@@ -258,7 +258,7 @@ def convert_doc_produit_column(raw_doc_produit_column_content: str) -> Optional[
         return False
     if raw_doc_produit_column_content == "Non":
         return False
-    elif raw_doc_produit_column_content == "Yes":
+    elif raw_doc_produit_column_content.lower() == "yes":
         return True
     elif raw_doc_produit_column_content == "Oui":
         return True
