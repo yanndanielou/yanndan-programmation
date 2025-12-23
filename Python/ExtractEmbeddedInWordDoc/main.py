@@ -9,6 +9,7 @@ from common import file_utils, file_name_utils
 from logger import logger_config
 
 OUTPUT_PARENT_DIRECTORY = "output"
+INPUT_DIRECTORY_PATH = "Input"
 
 
 def simply_unzip_embedded_files(docx_path: str, output_dir: str) -> None:
@@ -106,12 +107,12 @@ if __name__ == "__main__":
         os.makedirs(OUTPUT_PARENT_DIRECTORY, exist_ok=True)
 
         try:
-            input_files_paths = file_utils.get_files_by_directory_and_file_name_mask(directory_path="Input", filename_pattern="*.doc*") + file_utils.get_files_by_directory_and_file_name_mask(
-                directory_path="Input_for_tests", filename_pattern="*.doc*"
-            )
+            input_files_paths = file_utils.get_files_by_directory_and_file_name_mask(
+                directory_path=INPUT_DIRECTORY_PATH, filename_pattern="*.doc*"
+            ) + file_utils.get_files_by_directory_and_file_name_mask(directory_path="Input_for_tests", filename_pattern="*.doc*")
         except FileNotFoundError as not_found:
             logger_config.print_and_log_exception(not_found)
-            logger_config.print_and_log_critical_and_kill("Could not find input folder")
+            logger_config.print_and_log_critical_and_kill(f"Could not find input folder:{INPUT_DIRECTORY_PATH}")
 
         for input_file_path in input_files_paths:
             input_file_name_without_extension = file_name_utils.get_file_name_without_extension_from_full_path(input_file_path)
