@@ -1,6 +1,7 @@
 # -*-coding:Utf-8 -*
 
 from common import string_utils
+import datetime
 import pathlib
 import os
 
@@ -29,3 +30,7 @@ def get_file_folder_from_full_path(full_path: str) -> str:
 def get_file_name_with_extension_from_full_path(full_path: str) -> str:
     file_name_with_extension_from_full_path = pathlib.Path(full_path).name
     return file_name_with_extension_from_full_path
+
+
+def get_file_suffix_with_current_datetime() -> str:
+    return datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d-%H-%M-%S")
