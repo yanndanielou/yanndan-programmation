@@ -6,7 +6,7 @@ import pandas
 from logger import logger_config
 
 from common import string_utils
-from networkflowmatrix import constants
+from networkflowmatrix import constants, equipments
 
 INVALID_IP_ADDRESS = "INVALID_IP_ADDRESS"
 MISSING_IP_ADDRESS = "MISSING_IP_ADDRESS"
@@ -99,6 +99,7 @@ class FlowEndPoint:
     ip_raw: Optional[str]
     nat_raw: str
     port_raw: str
+    allow_one_ip_for_several_equipments: bool
 
     def __post_init__(self) -> None:
 
@@ -118,7 +119,7 @@ class FlowEndPoint:
 
         self.subsystem_detected_in_flow_matrix = SubSystemInFlowMatrix.get_or_create_if_not_exist_by_name(network_flow_matrix=self.network_flow_matrix, name=self.subsystem_raw.strip().upper())
 
-    def decompact_equipments_and_ip_addresses(self) -> None:
+    def match_equipments_with_network_conf_files(self, equipments_library: equipments.NetworkConfFilesEquipmentsLibrary) -> None:
 
         if len(self.equipments_names) > len(self.raw_ip_addresses) and len(self.raw_ip_addresses) > 1:
             logger_config.print_and_log_error(f"Error at line {self.matrice_line_identifier}: missing IP addresses for {self.equipments_names}, see {self.raw_ip_addresses}")
@@ -127,9 +128,13 @@ class FlowEndPoint:
             assert equipment_name
             assert len(equipment_name.split()) > 0
             self.network_flow_matrix.all_equipments_names.add(equipment_name)
-            if len(self.raw_ip_addresses) <= index_eqpt:
+
+            if len(self.raw_ip_addresses) <= index_eqpt and len(self.raw_ip_addresses) > 1:
                 logger_config.print_and_log_error(f"Error at line {self.matrice_line_identifier}: no IP found for {equipment_name} (not enough lines)")
                 eqpt_ip_address_raw = INVALID_IP_ADDRESS
+            elif len(self.raw_ip_addresses) <= index_eqpt and len(self.raw_ip_addresses) == 1 and self.allow_one_ip_for_several_equipments:
+                logger_config.print_and_log_info(f"At line {self.matrice_line_identifier}: shared IP found for {equipment_name}, ip {self.raw_ip_addresses[0]}")
+                eqpt_ip_address_raw = self.raw_ip_addresses[0]
             else:
                 try:
                     eqpt_ip_address_raw = (
@@ -179,6 +184,7 @@ class FlowSource(FlowEndPoint):
                 subsystem_raw=subsystem_raw,
                 vlan_bord_raw=vlan_bord_raw,
                 vlan_sol_raw=vlan_sol_raw,
+                allow_one_ip_for_several_equipments=False,
             )
 
 
@@ -207,7 +213,7 @@ class FlowDestination(FlowEndPoint):
             group_multicast_raw = row["dst Groupe\nMCast"]
             port_raw = row["dst\nPort"]
             cast_raw = row["dst\ncast"]
-            cast_type = constants.CastType(string_utils.text_to_valid_enum_value_text(cast_raw))
+            cast_type = constants.CastType[string_utils.text_to_valid_enum_value_text(cast_raw)] if str(cast_raw).lower() != "nan" else constants.CastType.UNKNOWN
 
             return FlowDestination(
                 matrice_line_identifier=matrice_line_identifier,
@@ -224,6 +230,7 @@ class FlowDestination(FlowEndPoint):
                 group_multicast_raw=group_multicast_raw,
                 cast_raw=cast_raw,
                 cast_type=cast_type,
+                allow_one_ip_for_several_equipments=(cast_type == constants.CastType.MULTICAST),
             )
 
 
@@ -263,15 +270,17 @@ class NetworkFlowMatrix:
             network_flow_matrix.network_flow_matrix_lines = network_flow_matrix_lines
             network_flow_matrix.network_flow_matrix_lines_by_identifier = network_flow_matrix_lines_by_identifier
 
-            with logger_config.stopwatch_with_label("decompact_equipments_and_ip_addresses"):
-                for line in network_flow_matrix.network_flow_matrix_lines:
-                    line.source.decompact_equipments_and_ip_addresses()
-                    line.destination.decompact_equipments_and_ip_addresses()
-
             return network_flow_matrix
 
     def get_line_by_identifier(self, identifier: int) -> Optional["NetworkFlowMatrixLine"]:
         return self.network_flow_matrix_lines_by_identifier[identifier]
+
+    def match_equipments_with_network_conf_files(self, equipments_library: equipments.NetworkConfFilesEquipmentsLibrary) -> None:
+
+        with logger_config.stopwatch_with_label("match_equipments_with_network_conf_files"):
+            for line in self.network_flow_matrix_lines:
+                line.source.match_equipments_with_network_conf_files(equipments_library)
+                line.destination.match_equipments_with_network_conf_files(equipments_library)
 
 
 @dataclass
@@ -295,8 +304,12 @@ class NetworkFlowMatrixLine:
         @staticmethod
         def build_with_row(row: pandas.Series, network_flow_matrix: NetworkFlowMatrix) -> Optional["NetworkFlowMatrixLine"]:
             identifier_raw_str = cast(str, row["ID"])
-            if str(identifier_raw_str) == "nan":
-                logger_config.print_and_log_warning(f"Invalid row {row}")
+            if str(identifier_raw_str) in ["nan"]:
+                logger_config.print_and_log_warning(f"Empty row with identifier {identifier_raw_str}")
+                return None
+            identifier_raw_str = cast(str, row["ID"])
+            if str(identifier_raw_str) in ["nan", "%%%"]:
+                logger_config.print_and_log_warning(f"Invalid row with identifier {identifier_raw_str}")
                 return None
             identifier_int = int(identifier_raw_str)
             name_raw = cast(str, row["Lien de com. complet\n(Auto)"])
