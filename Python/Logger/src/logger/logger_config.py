@@ -21,7 +21,7 @@ from typing import Optional, Tuple, cast
 
 import humanize
 import psutil
-from common import date_time_formats
+from common import date_time_formats, file_name_utils
 
 # pylint: enable=logging-not-lazy
 # pylint: disable=logging-fstring-interpolation
@@ -166,7 +166,9 @@ def application_logger(application_name: str, logger_level: int = logging.INFO) 
 def configure_logger_with_timestamp_log_file_suffix(
     log_file_name_prefix: str, log_file_extension: str = "log", logger_level: int = logging.INFO
 ) -> None:
-    log_file_name = f"{log_file_name_prefix}_{datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d-%H-%M-%S")}.{log_file_extension}"
+    log_file_name = (
+        f"{log_file_name_prefix}_{file_name_utils.get_file_suffix_with_current_datetime()}.{log_file_extension}"
+    )
     configure_logger_with_exact_file_name(log_file_name, logger_level)
 
 
