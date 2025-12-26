@@ -405,8 +405,8 @@ class DocumentsStatusReport:
 
         self.output_file_name_without_extension = self.output_directory_path + self.name
         self.output_file_name_with_extension = self.output_file_name_without_extension + ".xlsx"
-        self.output_file_light_report_full_path = self.output_directory_path + "_full_report/" + self.output_file_name_with_extension
-        self.output_file_synthetic_report_full_path = self.output_directory_path + "_synthetic_report/" + self.output_file_name_with_extension
+        self.output_file_light_report_full_path = self.output_directory_path + "/" + self.output_file_name_without_extension + "_full_report.xlsx"
+        self.output_file_synthetic_report_full_path = self.output_directory_path + "/" + self.output_file_name_without_extension + "_sunthetic_report.xlsx"
 
     class Builder:
 
