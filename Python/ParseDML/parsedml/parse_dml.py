@@ -456,8 +456,9 @@ class DocumentsStatusReport:
         # Ensure output directory exists (in case it was removed after instantiation)
         os.makedirs(self.output_directory_path, exist_ok=True)
 
-        df.to_excel(self.output_file_synthetic_report_full_path, index=False)
-        logger_config.print_and_log_info(f"Wrote {len(df)} rows to {self.output_file_synthetic_report_full_path}")
+        report_full_path = self.output_file_full_report_full_path
+        df.to_excel(report_full_path, index=False)
+        logger_config.print_and_log_info(f"Wrote {len(df)} rows to {report_full_path}")
 
     def write_synthetic_report_to_excel(self) -> None:
         """Write all OneDocumentLineStatusReport entries from all documents into an Excel file.
@@ -508,8 +509,9 @@ class DocumentsStatusReport:
         # Ensure output directory exists (in case it was removed after instantiation)
         os.makedirs(self.output_directory_path, exist_ok=True)
 
-        df.to_excel(self.output_file_full_report_full_path, index=False)
-        logger_config.print_and_log_info(f"Wrote {len(df)} rows to {self.output_file_full_report_full_path}")
+        report_full_path = self.output_file_synthetic_report_full_path
+        df.to_excel(report_full_path, index=False)
+        logger_config.print_and_log_info(f"Wrote {len(df)} rows to {report_full_path}")
 
 
 @dataclass
