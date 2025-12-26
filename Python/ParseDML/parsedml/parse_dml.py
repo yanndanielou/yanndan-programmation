@@ -300,7 +300,7 @@ def find_document_by_code_ged_moe_title_or_fa(dml_documents: List[DmlDocument], 
             document_found_by_fa = documents_found_by_fa[0]
 
             logger_config.print_and_log_info(
-                f"Searching {code_ged_moe} {title} {fa}. Found with FA (was renamed and reference changed). found doc {document_found_by_fa} with FAs {document_found_by_fa.get_all_fa_names()}"
+                f"Searching {code_ged_moe} {title} {fa}. Found with FA (was renamed and reference changed). found doc {document_found_by_fa.get_all_code_ged_moes()} {document_found_by_fa.get_all_titles()} with FAs {document_found_by_fa.get_all_fa_names()}"
             )
             return document_found_by_fa
 
