@@ -419,7 +419,7 @@ class DocumentsStatusReport:
             ret = DocumentsStatusReport(name=name, all_documents_status_reports=all_documents_status_reports)
             return ret
 
-    def write_all_lines_to_excel(self) -> None:
+    def write_full_report_to_excel(self) -> None:
         """Write all OneDocumentLineStatusReport entries from all documents into an Excel file.
 
         The output file path is `self.output_file_full_path`.

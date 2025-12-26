@@ -329,7 +329,7 @@ def test_documents_status_report_write_all_lines(full_dml_content: parse_dml.Dml
 
     report = parse_dml.DocumentsStatusReport.Builder.build_by_code_ged_moe(name="/test_write_all_lines", dml_file_content=full_dml_content, codes_ged_moe=codes)
 
-    report.write_all_lines_to_excel()
+    report.write_full_report_to_excel()
 
     assert os.path.exists(report.output_file_full_path)
 
@@ -357,4 +357,3 @@ def test_documents_status_report_write_all_lines(full_dml_content: parse_dml.Dml
 
     # Clean up generated file
     os.remove(report.output_file_full_path)
-
