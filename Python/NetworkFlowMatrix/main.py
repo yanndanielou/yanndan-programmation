@@ -73,6 +73,8 @@ if __name__ == "__main__":
                 excel_file_full_path="Input_Downloaded/NExTEO-S-271000-02-0125-00_Matrice_de_Flux_V15-01Draft.xlsm", sheet_name="Matrice_de_Flux_SITE"
             )
 
+        network_flow_matrix.match_equipments_with_network_conf_files(equipments_library)
+
         for directory_path in [OUTPUT_PARENT_DIRECTORY_NAME]:
             file_utils.create_folder_if_not_exist(directory_path)
 
