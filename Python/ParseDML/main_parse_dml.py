@@ -20,9 +20,10 @@ if __name__ == "__main__":
         all_documents_that_have_several_references = [document for document in dml_file_content_built.dml_documents if len(document.get_all_code_ged_moes()) > 1]
         pass
 
-        Jalon_docs = [
-            "feaf-02-54545-45450-00",
-        ]
-
-        for jalon_doc in Jalon_docs:
-            parse_dml.DocumentStatusReport.Builder.build_by_code_ged_moe(dml_file_content=dml_file_content_built, code_ged_moe=jalon_doc).print_report()
+        j16b2 = parse_dml.DocumentsStatusReport.Builder.build_by_code_ged_moe(
+            name="j16b2",
+            dml_file_content=dml_file_content_built,
+            codes_ged_moe=["NExTEO-021300-01-0025-143", "NExTEO-021710-08-0703-95"],
+        )
+        j16b2.write_full_report_to_excel()
+        j16b2.write_synthetic_report_to_excel()
