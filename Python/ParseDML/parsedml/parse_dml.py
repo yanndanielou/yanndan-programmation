@@ -119,7 +119,7 @@ class ReferenceFaPa:
         return f"FA __str__ {self.full_raw_reference}"
 
     def __repr__(self) -> str:
-        return f"FA __repr__ {self.full_raw_reference}"
+        return f"{self.full_raw_reference}"
 
     def is_refused(self) -> bool:
         return self.full_raw_reference.lower() == ReferenceFaPa.REFUSE.lower() if not self.empty_by_error else False
@@ -196,7 +196,7 @@ class DmlLine:
         return f"Line __str__ code_ged_moe:{self.code_ged_moe} version:{self.version} title:{self.title}"
 
     def __repr__(self) -> str:
-        return f"Line __repr__ code_ged_moe:{self.code_ged_moe} version:{self.version} title:{self.title}"
+        return f"Line: code_ged_moe:{self.code_ged_moe} version:{self.version} title:{self.title}"
 
 
 @dataclass
@@ -436,6 +436,7 @@ class DocumentsStatusReport:
 
                 row: Dict[str, object] = {
                     "dml_document_codes": dml_document_codes,
+                    "doc_deleted": line_status.doc_deleted,
                     "line_number": line_status.line_number,
                     "code_ged_moe": line_status.code_ged_moe,
                     "title": line_status.title,
@@ -443,12 +444,11 @@ class DocumentsStatusReport:
                     "revision": line_status.revision,
                     "version_and_revision": line_status.version_and_revision,
                     "status": line_status.status.name if line_status.status is not None else None,
-                    "actual_livraison": line_status.actual_livraison.strftime("%Y-%m-%d %H:%M:%S") if line_status.actual_livraison else None,
-                    "doc_deleted": line_status.doc_deleted,
+                    "actual_livraison": line_status.actual_livraison.strftime("%Y-%m-%d") if line_status.actual_livraison else None,
                     "fa_reference": line_status.fa.reference.full_raw_reference if line_status.fa and line_status.fa.reference else None,
-                    "fa_actual_delivery": line_status.fa.actual_delivery.strftime("%Y-%m-%d %H:%M:%S") if line_status.fa and line_status.fa.actual_delivery else None,
+                    "fa_actual_delivery": line_status.fa.actual_delivery.strftime("%Y-%m-%d") if line_status.fa and line_status.fa.actual_delivery else None,
                     "pa_reference": line_status.pa.reference.full_raw_reference if line_status.pa and line_status.pa.reference else None,
-                    "pa_actual_delivery": line_status.pa.actual_delivery.strftime("%Y-%m-%d %H:%M:%S") if line_status.pa and line_status.pa.actual_delivery else None,
+                    "pa_actual_delivery": line_status.pa.actual_delivery.strftime("%Y-%m-%d") if line_status.pa and line_status.pa.actual_delivery else None,
                 }
 
                 rows.append(row)
@@ -479,32 +479,30 @@ class DocumentsStatusReport:
 
             row: Dict[str, object] = {
                 "dml_document_codes": dml_document_codes,
+                "doc_deleted": last_line.doc_deleted,
                 "last_line code_ged_moe": last_line.code_ged_moe,
                 "last_line title": last_line.title,
                 "last_line version_and_revision": last_line.version_and_revision,
                 "last_line status": last_line.status.name if last_line.status is not None else None,
-                "last_line actual_livraison": last_line.actual_livraison.strftime("%Y-%m-%d %H:%M:%S") if last_line.actual_livraison else None,
-                "doc_deleted": last_line.doc_deleted,
+                "last_line actual_livraison": last_line.actual_livraison.strftime("%Y-%m-%d") if last_line.actual_livraison else None,
                 "last_line fa": last_line.fa,
                 "last_line pa": last_line.pa,
-                "last_line fa_reference": last_line.fa.reference.full_raw_reference if last_line.fa and last_line.fa.reference else None,
-                "last_line fa_actual_delivery": last_line.fa.actual_delivery.strftime("%Y-%m-%d %H:%M:%S") if last_line.fa and last_line.fa.actual_delivery else None,
-                "last_line pa_reference": last_line.pa.reference.full_raw_reference if last_line.pa and last_line.pa.reference else None,
-                "last_line pa_actual_delivery": last_line.pa.actual_delivery.strftime("%Y-%m-%d %H:%M:%S") if last_line.pa and last_line.pa.actual_delivery else None,
                 "penultimate_line version_and_revision": "NA" if penultimate_line is None else penultimate_line.version_and_revision,
                 "penultimate_line status": "NA" if penultimate_line is None else penultimate_line.status.name if penultimate_line.status is not None else None,
-                "penultimate_line actual_livraison": (
-                    "NA" if penultimate_line is None else (penultimate_line.actual_livraison.strftime("%Y-%m-%d %H:%M:%S") if penultimate_line.actual_livraison else None)
-                ),
+                "penultimate_line actual_livraison": ("NA" if penultimate_line is None else (penultimate_line.actual_livraison.strftime("%Y-%m-%d") if penultimate_line.actual_livraison else None)),
                 "penultimate_line fa": ("NA" if penultimate_line is None else penultimate_line.fa),
                 "penultimate_line fa_reference": (
                     "NA" if penultimate_line is None else penultimate_line.fa.reference.full_raw_reference if penultimate_line.fa and penultimate_line.fa.reference else None
                 ),
                 "penultimate_line fa_actual_delivery": (
-                    "NA" if penultimate_line is None else penultimate_line.fa.actual_delivery.strftime("%Y-%m-%d %H:%M:%S") if penultimate_line.fa and penultimate_line.fa.actual_delivery else None
+                    "NA" if penultimate_line is None else penultimate_line.fa.actual_delivery.strftime("%Y-%m-%d") if penultimate_line.fa and penultimate_line.fa.actual_delivery else None
                 ),
                 "last_line version": last_line.version,
                 "last_line revision": last_line.revision,
+                "last_line fa_reference": last_line.fa.reference.full_raw_reference if last_line.fa and last_line.fa.reference else None,
+                "last_line fa_actual_delivery": last_line.fa.actual_delivery.strftime("%Y-%m-%d") if last_line.fa and last_line.fa.actual_delivery else None,
+                "last_line pa_reference": last_line.pa.reference.full_raw_reference if last_line.pa and last_line.pa.reference else None,
+                "last_line pa_actual_delivery": last_line.pa.actual_delivery.strftime("%Y-%m-%d") if last_line.pa and last_line.pa.actual_delivery else None,
             }
 
             rows.append(row)
