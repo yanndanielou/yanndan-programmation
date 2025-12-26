@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Set, Tuple, cast
 from warnings import deprecated
 
 import pandas
-from common import excel_utils, string_utils
+from common import excel_utils, string_utils, file_name_utils
 from logger import logger_config
 
 import param
@@ -403,8 +403,7 @@ class DocumentsStatusReport:
 
         os.makedirs(self.output_directory_path, exist_ok=True)
 
-        self.output_file_name_without_extension = self.output_directory_path + self.name
-        self.output_file_name_with_extension = self.output_file_name_without_extension + ".xlsx"
+        self.output_file_name_without_extension = "Report_" + self.name + "_" + file_name_utils.get_file_suffix_with_current_datetime()
         self.output_file_light_report_full_path = self.output_directory_path + "/" + self.output_file_name_without_extension + "_full_report.xlsx"
         self.output_file_synthetic_report_full_path = self.output_directory_path + "/" + self.output_file_name_without_extension + "_sunthetic_report.xlsx"
 
