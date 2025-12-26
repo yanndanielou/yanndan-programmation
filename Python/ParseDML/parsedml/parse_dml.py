@@ -174,6 +174,8 @@ class DmlLine:
     def __post_init__(self) -> None:
         self.dml_document.dml_lines.append(self)
 
+        self.version_and_revision = f"V{self.version}-{self.revision}"
+
         self.all_unique_fa_numbers: Set[int] = set()
         if self.fa and self.fa.reference.is_standard_fa():
             assert self.fa.reference.number
@@ -433,13 +435,13 @@ class DocumentsStatusReport:
                 dml_document_codes = ",".join(sorted(document_status.dml_document.get_all_code_ged_moes()))
 
                 row: Dict[str, object] = {
-                    "dml_document": dml_document_codes,
+                    "dml_document_codes": dml_document_codes,
                     "line_number": line_status.line_number,
                     "code_ged_moe": line_status.code_ged_moe,
                     "title": line_status.title,
                     "version": line_status.version,
                     "revision": line_status.revision,
-                    "version_and_revision": getattr(line_status, "version_and_revision", None),
+                    "version_and_revision": line_status.version_and_revision,
                     "status": line_status.status.name if line_status.status is not None else None,
                     "actual_livraison": line_status.actual_livraison.strftime("%Y-%m-%d %H:%M:%S") if line_status.actual_livraison else None,
                     "doc_deleted": line_status.doc_deleted,
@@ -476,24 +478,26 @@ class DocumentsStatusReport:
             dml_document_codes = ",".join(sorted(document_status.dml_document.get_all_code_ged_moes()))
 
             row: Dict[str, object] = {
-                "dml_document": dml_document_codes,
+                "dml_document_codes": dml_document_codes,
                 "last_line code_ged_moe": last_line.code_ged_moe,
                 "last_line title": last_line.title,
                 "last_line version": last_line.version,
                 "last_line revision": last_line.revision,
-                "last_line version_and_revision": getattr(last_line, "version_and_revision", None),
+                "last_line version_and_revision": last_line.version_and_revision,
                 "last_line status": last_line.status.name if last_line.status is not None else None,
                 "last_line actual_livraison": last_line.actual_livraison.strftime("%Y-%m-%d %H:%M:%S") if last_line.actual_livraison else None,
                 "doc_deleted": last_line.doc_deleted,
+                "last_line fa": last_line.fa,
                 "last_line fa_reference": last_line.fa.reference.full_raw_reference if last_line.fa and last_line.fa.reference else None,
                 "last_line fa_actual_delivery": last_line.fa.actual_delivery.strftime("%Y-%m-%d %H:%M:%S") if last_line.fa and last_line.fa.actual_delivery else None,
                 "last_line pa_reference": last_line.pa.reference.full_raw_reference if last_line.pa and last_line.pa.reference else None,
                 "last_line pa_actual_delivery": last_line.pa.actual_delivery.strftime("%Y-%m-%d %H:%M:%S") if last_line.pa and last_line.pa.actual_delivery else None,
-                "penultimate_line version_and_revision": getattr(penultimate_line, "version_and_revision", None),
+                "penultimate_line version_and_revision": "NA" if penultimate_line is None else penultimate_line.version_and_revision,
                 "penultimate_line status": "NA" if penultimate_line is None else penultimate_line.status.name if penultimate_line.status is not None else None,
                 "penultimate_line actual_livraison": (
                     "NA" if penultimate_line is None else (penultimate_line.actual_livraison.strftime("%Y-%m-%d %H:%M:%S") if penultimate_line.actual_livraison else None)
                 ),
+                "penultimate_line fa": ("NA" if penultimate_line is None else penultimate_line.fa),
                 "penultimate_line fa_reference": (
                     "NA" if penultimate_line is None else penultimate_line.fa.reference.full_raw_reference if penultimate_line.fa and penultimate_line.fa.reference else None
                 ),
