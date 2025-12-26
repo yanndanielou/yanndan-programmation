@@ -404,8 +404,8 @@ class DocumentsStatusReport:
         os.makedirs(self.output_directory_path, exist_ok=True)
 
         self.output_file_name_without_extension = "Report_" + self.name + "_" + file_name_utils.get_file_suffix_with_current_datetime()
-        self.output_file_light_report_full_path = self.output_directory_path + "/" + self.output_file_name_without_extension + "_full_report.xlsx"
-        self.output_file_synthetic_report_full_path = self.output_directory_path + "/" + self.output_file_name_without_extension + "_sunthetic_report.xlsx"
+        self.output_file_full_report_full_path = self.output_directory_path + "/" + self.output_file_name_without_extension + "_full_report.xlsx"
+        self.output_file_synthetic_report_full_path = self.output_directory_path + "/" + self.output_file_name_without_extension + "_synthetic_report.xlsx"
 
     class Builder:
 
@@ -508,8 +508,8 @@ class DocumentsStatusReport:
         # Ensure output directory exists (in case it was removed after instantiation)
         os.makedirs(self.output_directory_path, exist_ok=True)
 
-        df.to_excel(self.output_file_light_report_full_path, index=False)
-        logger_config.print_and_log_info(f"Wrote {len(df)} rows to {self.output_file_light_report_full_path}")
+        df.to_excel(self.output_file_full_report_full_path, index=False)
+        logger_config.print_and_log_info(f"Wrote {len(df)} rows to {self.output_file_full_report_full_path}")
 
 
 @dataclass
