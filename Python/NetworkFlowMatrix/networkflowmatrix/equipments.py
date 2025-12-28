@@ -59,7 +59,11 @@ class NetworkConfFilesEquipmentsLibrary:
         self.all_trains_unbreakable_units: List[TrainUnbreakableSingleUnit] = []
         self.all_trains_unbreakable_units_by_cc_id: Dict[int, TrainUnbreakableSingleUnit] = {}
         self.all_trains_unbreakable_units_by_emu_id: Dict[int, TrainUnbreakableSingleUnit] = {}
+        self.not_found_equipment_names: Set[str] = set()
         self.create_train_unbreakable_units()
+
+    def print_stats(self) -> None:
+        logger_config.print_and_log_info(f"The network conf files library contains {len(self.all_network_conf_files_defined_equipments)} equipments in total")
 
     def is_existing_network_conf_file_eqpt_by_name(self, name: str) -> bool:
         return name in self.network_conf_files_defined_equipments_by_id
