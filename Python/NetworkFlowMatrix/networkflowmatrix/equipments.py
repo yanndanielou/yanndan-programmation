@@ -33,6 +33,10 @@ class NetworkConfFilesDefinedEquipment:
     alternative_identifiers: Set[str] = field(default_factory=set)
     ip_addresses: List["NetworkConfFilesDefinedIpAddress"] = field(default_factory=list)
 
+    def __post_init__(self) -> None:
+        assert self.name
+        assert isinstance(self.name, str)
+
     def add_ip_address(self, ip_address: "NetworkConfFilesDefinedIpAddress") -> None:
         assert ip_address not in self.ip_addresses
         ip_address_raw = ip_address.ip_raw
