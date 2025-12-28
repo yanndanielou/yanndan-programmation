@@ -143,11 +143,11 @@ class FlowEndPoint:
                 except IndexError:
                     eqpt_ip_address_raw = INVALID_IP_ADDRESS
 
-            equipment_in_network_conf_file_by_name = (
-                equipments_library.network_conf_files_defined_equipments_by_id[equipment_name] if equipment_name in equipments_library.network_conf_files_defined_equipments_by_id else None
-            )
+            equipment_in_network_conf_file_by_name = equipments_library.get_existing_equipment_by_name(expected_equipment_name=equipment_name, allow_not_exact_name=True)
+
             if equipment_in_network_conf_file_by_name is None:
                 logger_config.print_and_log_error(f"Could not find equipment {equipment_name} in network conf files")
+                equipments_library.not_found_equipment_names.add(equipment_name)
 
             if eqpt_ip_address_raw not in [MISSING_IP_ADDRESS, INVALID_IP_ADDRESS]:
                 equipments_in_network_conf_file_matching_ip_address = (
@@ -311,6 +311,10 @@ class NetworkFlowMatrix:
             for line in self.network_flow_matrix_lines:
                 line.source.match_equipments_with_network_conf_files(equipments_library)
                 line.destination.match_equipments_with_network_conf_files(equipments_library)
+
+        logger_config.print_and_log_warning(
+            f"After scanning network flow matrix, {len(equipments_library.not_found_equipment_names)} unknown equipments (not found in network conf files) are {equipments_library.not_found_equipment_names}"
+        )
 
 
 @dataclass
