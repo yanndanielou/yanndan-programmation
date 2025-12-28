@@ -159,7 +159,7 @@ class FlowEndPoint:
                 if equipments_in_network_conf_file_by_ip_address is None:
                     logger_config.print_and_log_error(f"{equipment_name}: Ip address {eqpt_ip_address_raw} not defined in any network conf file")
 
-                if equipment_name not in [equipment.name for equipment in equipments_in_network_conf_file_by_ip_address]:
+                elif equipment_name not in [equipment.name for equipment in equipments_in_network_conf_file_by_ip_address]:
                     logger_config.print_and_log_error(
                         f"Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in {[equipment.name for equipment in equipments_in_network_conf_file_by_ip_address]}"
                     )
