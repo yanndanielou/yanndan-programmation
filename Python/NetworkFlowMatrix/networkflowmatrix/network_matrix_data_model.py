@@ -143,11 +143,15 @@ class FlowEndPoint:
                 except IndexError:
                     eqpt_ip_address_raw = INVALID_IP_ADDRESS
 
-            equipment_in_network_conf_file_by_name = equipments_library.network_conf_files_defined_equipments_by_id[equipment_name] if equipment_name in equipments_library.network_conf_files_defined_equipments_by_id else None
+            equipment_in_network_conf_file_by_name = (
+                equipments_library.network_conf_files_defined_equipments_by_id[equipment_name] if equipment_name in equipments_library.network_conf_files_defined_equipments_by_id else None
+            )
             if equipment_in_network_conf_file_by_name is None:
                 logger_config.print_and_log_error(f"Could not find equipment {equipment_name} in network conf files")
 
-            equipment_in_network_conf_file_by_ip_address =
+            equipments_in_network_conf_file_by_ip_address = equipments_library.network_conf_files_defined_equipments_by_raw_ip_addresses[eqpt_ip_address_raw]
+            if equipment_name not in [equipment.name for equipment in equipments_in_network_conf_file_by_ip_address]:
+                logger_config.print_and_log_error(f"Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in []")
 
             equipment_detected_in_flow_matrix = EquipmentInFLowMatrix.get_or_create_if_not_exist_by_name_and_ip(
                 network_flow_matrix=self.network_flow_matrix, name=equipment_name, subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix, raw_ip_address=eqpt_ip_address_raw
