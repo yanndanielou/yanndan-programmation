@@ -322,7 +322,7 @@ class NetworkFlowMatrixLine:
                 return None
             identifier_raw_str = cast(str, row["ID"])
             if str(identifier_raw_str) in ["nan", "%%%"]:
-                logger_config.print_and_log_warninfg(f"Invalid row with identifier {identifier_raw_str}")
+                logger_config.print_and_log_warning(f"Invalid row with identifier {identifier_raw_str}")
                 return None
             identifier_int = int(identifier_raw_str)
             name_raw = cast(str, row["Lien de com. complet\n(Auto)"])

@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, TYPE_CHECKING
+from logger import logger_config
 
 if TYPE_CHECKING:
     from networkflowmatrix.network_conf_files import (
@@ -40,7 +41,9 @@ class NetworkConfFilesDefinedEquipment:
         if ip_address_raw not in self.library.network_conf_files_defined_equipments_by_raw_ip_addresses:
             self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw] = []
 
-        assert self not in self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw]
+        if self in self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw]:
+            logger_config.print_and_log_error(f"IP address {ip_address_raw} already defined. Will exist twice")
+
         self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw].append(self)
 
 
