@@ -237,28 +237,34 @@ class NetworkConfFile:
 
                     all_equipments_found: List[NetworkConfFilesDefinedEquipment] = []
 
-                    for _, row in main_data_frame.iterrows():
+                    for usefull_raw_number, row in main_data_frame.iterrows():
 
                         equipment_name = cast(str, equipment_definition_tab.equipment_name_column_definition.get_value(row))
-                        equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(name=equipment_name)
-                        all_equipments_found.append(equipment)
 
-                        equipment_type = cast(str, equipment_definition_tab.equipment_type_column_definition.get_value(row))
-                        equipment.equipment_types.add(equipment_type)
+                        if isinstance(equipment_name, str):
+                            equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(name=equipment_name)
+                            all_equipments_found.append(equipment)
 
-                        equipment_alternative_identifier = cast(str, equipment_definition_tab.equipment_alternative_name_column_definition.get_value(row))
-                        equipment.alternative_identifiers.add(equipment_alternative_identifier)
+                            equipment_type = cast(str, equipment_definition_tab.equipment_type_column_definition.get_value(row))
+                            equipment.equipment_types.add(equipment_type)
 
-                        for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
+                            equipment_alternative_identifier = cast(str, equipment_definition_tab.equipment_alternative_name_column_definition.get_value(row))
+                            equipment.alternative_identifiers.add(equipment_alternative_identifier)
 
-                            equipment_raw_ip_address = cast(str, ip_address_definition.equipment_ip_address_column_definition.get_value(row))
-                            if not isinstance(equipment_raw_ip_address, str) and ip_address_definition.can_be_empty:
-                                continue
+                            for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
 
-                            ip_address = ip_address_definition.build_with_row(row)
+                                equipment_raw_ip_address = cast(str, ip_address_definition.equipment_ip_address_column_definition.get_value(row))
+                                if not isinstance(equipment_raw_ip_address, str) and ip_address_definition.can_be_empty:
+                                    continue
 
-                            equipment.add_ip_address(ip_address)
-                            assert len(equipment.ip_addresses) < 10, f"{equipment_name}\n{[ip.ip_raw for ip in equipment.ip_addresses]}\n\n{equipment}"
+                                ip_address = ip_address_definition.build_with_row(row)
+
+                                equipment.add_ip_address(ip_address)
+                                assert len(equipment.ip_addresses) < 10, f"{equipment_name}\n{[ip.ip_raw for ip in equipment.ip_addresses]}\n\n{equipment}"
+                        else:
+                            logger_config.print_and_log_error(
+                                f"In {excel_file_full_path} tab {equipment_definition_tab.tab_name} Could not create {usefull_raw_number+1}th object with invalid id {equipment_name} for row {row}"
+                            )
 
                     for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
                         assert ip_address_definition.all_ip_addresses_found
@@ -271,5 +277,6 @@ class NetworkConfFile:
             )
 
             logger_config.print_and_log_info(f"{excel_file_full_path}: {len(all_equipments_found)} equipment found")
+            logger_config.print_and_log_info(f"So far, the library contains {len(equipments_library.all_network_conf_files_defined_equipments)} equipments in total")
 
             return conf_file
