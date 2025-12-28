@@ -150,19 +150,27 @@ class FlowEndPoint:
                 logger_config.print_and_log_error(f"Could not find equipment {equipment_name} in network conf files")
 
             if eqpt_ip_address_raw not in [MISSING_IP_ADDRESS, INVALID_IP_ADDRESS]:
-                equipments_in_network_conf_file_by_ip_address = (
+                equipments_in_network_conf_file_matching_ip_address = (
                     equipments_library.network_conf_files_defined_equipments_by_raw_ip_addresses[eqpt_ip_address_raw]
                     if eqpt_ip_address_raw in equipments_library.network_conf_files_defined_equipments_by_raw_ip_addresses
                     else None
                 )
 
-                if equipments_in_network_conf_file_by_ip_address is None:
+                if equipments_in_network_conf_file_matching_ip_address is None:
                     logger_config.print_and_log_error(f"{equipment_name}: Ip address {eqpt_ip_address_raw} not defined in any network conf file")
 
-                elif equipment_name not in [equipment.name for equipment in equipments_in_network_conf_file_by_ip_address]:
-                    logger_config.print_and_log_error(
-                        f"Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in {[equipment.name for equipment in equipments_in_network_conf_file_by_ip_address]}"
-                    )
+                elif equipment_name not in [equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]:
+                    for equipment_in_network_conf_file_matching_ip_address_it in equipments_in_network_conf_file_matching_ip_address:
+                        if equipment_name in equipment_in_network_conf_file_matching_ip_address_it.name:
+                            if equipments_in_network_conf_file_matching_ip_address is None:
+                                equipments_in_network_conf_file_matching_ip_address = []
+                            logger_config.print_and_log_info(f"Re-allocate {equipment_name} to {equipment_in_network_conf_file_matching_ip_address_it.name} thanks to IP {eqpt_ip_address_raw}")
+                            equipments_in_network_conf_file_matching_ip_address.append(equipment_in_network_conf_file_matching_ip_address_it)
+
+                    if not equipments_in_network_conf_file_matching_ip_address:
+                        logger_config.print_and_log_error(
+                            f"Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in {[equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]}"
+                        )
 
             equipment_detected_in_flow_matrix = EquipmentInFLowMatrix.get_or_create_if_not_exist_by_name_and_ip(
                 network_flow_matrix=self.network_flow_matrix, name=equipment_name, subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix, raw_ip_address=eqpt_ip_address_raw
