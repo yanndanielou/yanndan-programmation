@@ -149,11 +149,20 @@ class FlowEndPoint:
             if equipment_in_network_conf_file_by_name is None:
                 logger_config.print_and_log_error(f"Could not find equipment {equipment_name} in network conf files")
 
-            equipments_in_network_conf_file_by_ip_address = equipments_library.network_conf_files_defined_equipments_by_raw_ip_addresses[eqpt_ip_address_raw]
-            if equipment_name not in [equipment.name for equipment in equipments_in_network_conf_file_by_ip_address]:
-                logger_config.print_and_log_error(
-                    f"Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in {[equipment.name for equipment in equipments_in_network_conf_file_by_ip_address]}"
+            if eqpt_ip_address_raw not in [MISSING_IP_ADDRESS, INVALID_IP_ADDRESS]:
+                equipments_in_network_conf_file_by_ip_address = (
+                    equipments_library.network_conf_files_defined_equipments_by_raw_ip_addresses[eqpt_ip_address_raw]
+                    if eqpt_ip_address_raw in equipments_library.network_conf_files_defined_equipments_by_raw_ip_addresses
+                    else None
                 )
+
+                if equipments_in_network_conf_file_by_ip_address is None:
+                    logger_config.print_and_log_error(f"{equipment_name}: Ip address {eqpt_ip_address_raw} not defined in any network conf file")
+
+                if equipment_name not in [equipment.name for equipment in equipments_in_network_conf_file_by_ip_address]:
+                    logger_config.print_and_log_error(
+                        f"Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in {[equipment.name for equipment in equipments_in_network_conf_file_by_ip_address]}"
+                    )
 
             equipment_detected_in_flow_matrix = EquipmentInFLowMatrix.get_or_create_if_not_exist_by_name_and_ip(
                 network_flow_matrix=self.network_flow_matrix, name=equipment_name, subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix, raw_ip_address=eqpt_ip_address_raw
