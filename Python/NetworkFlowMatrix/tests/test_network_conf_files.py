@@ -50,7 +50,7 @@ class TestSolStdNetworkV11ConfFileTabIpCbtcOnly:
 
 class TestSolStdNetworkV11FullConfFile:
     def test_no_empty_ip_address(self, parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture: NetworkConfFile) -> None:
-        for network_conf_files_defined_equipment in parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture.equipments_library.network_conf_files_defined_equipments:
+        for network_conf_files_defined_equipment in parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture.equipments_library.all_network_conf_files_defined_equipments:
             for ip_address in network_conf_files_defined_equipment.ip_addresses:
                 ip_address.check_valid_and_raise_if_error()
 

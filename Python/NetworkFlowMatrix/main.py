@@ -66,7 +66,7 @@ if __name__ == "__main__":
             equipment_definition_tabs=network_conf_files_descriptions_data.SolStdNetworkConfV11Description().all_tabs_definition,
         )
 
-        logger_config.print_and_log_info(f"After radio_std_conf_file, {len(equipments_library.network_conf_files_defined_equipments)} equipments")
+        logger_config.print_and_log_info(f"After radio_std_conf_file, {len(equipments_library.all_network_conf_files_defined_equipments)} equipments")
 
         with logger_config.stopwatch_with_label("Build matrix", inform_beginning=True, monitor_ram_usage=True):
             network_flow_matrix = network_matrix_data_model.NetworkFlowMatrix.Builder.build_with_excel_file(

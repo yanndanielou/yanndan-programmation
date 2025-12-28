@@ -257,7 +257,7 @@ class NetworkConfFile:
 
                             ip_address = ip_address_definition.build_with_row(row)
 
-                            equipment.ip_addresses.append(ip_address)
+                            equipment.add_ip_address(ip_address)
                             assert len(equipment.ip_addresses) < 10, f"{equipment_name}\n{[ip.ip_raw for ip in equipment.ip_addresses]}\n\n{equipment}"
 
                     for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:

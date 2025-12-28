@@ -27,15 +27,28 @@ class TrainUnbreakableSingleUnit:
 @dataclass
 class NetworkConfFilesDefinedEquipment:
     name: str
+    library: "NetworkConfFilesEquipmentsLibrary"
     equipment_types: Set[str] = field(default_factory=set)
     alternative_identifiers: Set[str] = field(default_factory=set)
     ip_addresses: List["NetworkConfFilesDefinedIpAddress"] = field(default_factory=list)
 
+    def add_ip_address(self, ip_address: "NetworkConfFilesDefinedIpAddress") -> None:
+        assert ip_address not in self.ip_addresses
+        ip_address_raw = ip_address.ip_raw
+        self.ip_addresses.append(ip_address)
+
+        if ip_address_raw not in self.library.network_conf_files_defined_equipments_by_raw_ip_addresses:
+            self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw] = []
+
+        assert self not in self.library.network_conf_files_defined_equipments_by_raw_ip_addresses
+        self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw].append(self)
+
 
 class NetworkConfFilesEquipmentsLibrary:
     def __init__(self) -> None:
-        self.network_conf_files_defined_equipments: List[NetworkConfFilesDefinedEquipment] = []
+        self.all_network_conf_files_defined_equipments: List[NetworkConfFilesDefinedEquipment] = []
         self.network_conf_files_defined_equipments_by_id: Dict[str, NetworkConfFilesDefinedEquipment] = {}
+        self.network_conf_files_defined_equipments_by_raw_ip_addresses: Dict[str, List[NetworkConfFilesDefinedEquipment]] = {}
         self.all_trains_unbreakable_units: List[TrainUnbreakableSingleUnit] = []
         self.all_trains_unbreakable_units_by_cc_id: Dict[int, TrainUnbreakableSingleUnit] = {}
         self.all_trains_unbreakable_units_by_emu_id: Dict[int, TrainUnbreakableSingleUnit] = {}
@@ -52,9 +65,9 @@ class NetworkConfFilesEquipmentsLibrary:
     def get_or_create_network_conf_file_eqpt_if_not_exist_by_name(self, name: str) -> "NetworkConfFilesDefinedEquipment":
         if self.is_existingnetwork_conf_file_eqpt_by_name(name):
             return self.network_conf_files_defined_equipments_by_id[name]
-        equipment = NetworkConfFilesDefinedEquipment(name=name)
+        equipment = NetworkConfFilesDefinedEquipment(name=name, library=self)
         self.network_conf_files_defined_equipments_by_id[name] = equipment
-        self.network_conf_files_defined_equipments.append(equipment)
+        self.all_network_conf_files_defined_equipments.append(equipment)
 
         return equipment
 
