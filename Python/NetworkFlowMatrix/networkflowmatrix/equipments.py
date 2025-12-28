@@ -42,7 +42,7 @@ class NetworkConfFilesDefinedEquipment:
             self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw] = []
 
         if self in self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw]:
-            logger_config.print_and_log_error(f"IP address {ip_address_raw} already defined. Will exist twice")
+            logger_config.print_and_log_error(f"IP address {ip_address_raw} already defined. {self.name} {self.equipment_types} Will exist twice")
 
         self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw].append(self)
 
@@ -57,16 +57,33 @@ class NetworkConfFilesEquipmentsLibrary:
         self.all_trains_unbreakable_units_by_emu_id: Dict[int, TrainUnbreakableSingleUnit] = {}
         self.create_train_unbreakable_units()
 
-    def is_existingnetwork_conf_file_eqpt_by_name(self, name: str) -> bool:
+    def is_existing_network_conf_file_eqpt_by_name(self, name: str) -> bool:
         return name in self.network_conf_files_defined_equipments_by_id
 
+    def get_existing_equipment_by_name(self, expected_equipment_name: str, allow_not_exact_name: bool) -> Optional["NetworkConfFilesDefinedEquipment"]:
+        equipment_in_network_conf_file_by_name = (
+            self.network_conf_files_defined_equipments_by_id[expected_equipment_name] if expected_equipment_name in self.network_conf_files_defined_equipments_by_id else None
+        )
+        if equipment_in_network_conf_file_by_name:
+            return equipment_in_network_conf_file_by_name
+
+        if allow_not_exact_name:
+            for equipment in self.all_network_conf_files_defined_equipments:
+                if equipment.name in expected_equipment_name:
+                    logger_config.print_and_log_info(f"Add alternative name {expected_equipment_name} for {equipment.name}")
+                    self.network_conf_files_defined_equipments_by_id[expected_equipment_name] = equipment
+                    equipment.alternative_identifiers.add(expected_equipment_name)
+
+                    return equipment
+        return None
+
     def get_existing_network_conf_file_eqpt_by_name(self, name: str) -> Optional["NetworkConfFilesDefinedEquipment"]:
-        if self.is_existingnetwork_conf_file_eqpt_by_name(name):
+        if self.is_existing_network_conf_file_eqpt_by_name(name):
             return self.network_conf_files_defined_equipments_by_id[name]
         return None
 
     def get_or_create_network_conf_file_eqpt_if_not_exist_by_name(self, name: str) -> "NetworkConfFilesDefinedEquipment":
-        if self.is_existingnetwork_conf_file_eqpt_by_name(name):
+        if self.is_existing_network_conf_file_eqpt_by_name(name):
             return self.network_conf_files_defined_equipments_by_id[name]
         equipment = NetworkConfFilesDefinedEquipment(name=name, library=self)
         self.network_conf_files_defined_equipments_by_id[name] = equipment
