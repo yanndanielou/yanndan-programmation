@@ -40,7 +40,7 @@ class NetworkConfFilesDefinedEquipment:
         if ip_address_raw not in self.library.network_conf_files_defined_equipments_by_raw_ip_addresses:
             self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw] = []
 
-        assert self not in self.library.network_conf_files_defined_equipments_by_raw_ip_addresses
+        assert self not in self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw]
         self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw].append(self)
 
 
