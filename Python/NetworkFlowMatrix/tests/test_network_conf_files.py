@@ -37,6 +37,11 @@ class TestSolStdNetworkV11ConfFileTabIpCbtcOnly:
             equipment_definition_tabs=[SolStdNetworkConfV11Description().ip_cbtc_tab],
         )
         assert std_sol_dossier_conf
+        assert std_sol_dossier_conf.all_equipments
+        assert std_sol_dossier_conf.equipment_definition_tabs
+        assert equipments_library.all_network_conf_files_defined_equipments
+        assert equipments_library.network_conf_files_defined_equipments_by_raw_ip_addresses
+        assert equipments_library.network_conf_files_defined_equipments_by_id
 
     def all_ip_definitions_have_decoded_ip_addresses(self) -> None:
         equipments_library = NetworkConfFilesEquipmentsLibrary()
