@@ -137,16 +137,16 @@ class FlowEndPoint:
                 eqpt_ip_address_raw = self.raw_ip_addresses[0]
             else:
                 try:
-                    eqpt_ip_address_raw = (
-                        self.raw_ip_addresses[index_eqpt] if len(self.raw_ip_addresses) > 1 else self.raw_ip_addresses[0] if self.equipments_detected_in_flow_matrix else MISSING_IP_ADDRESS
-                    )
+                    eqpt_ip_address_raw = self.raw_ip_addresses[index_eqpt] if len(self.raw_ip_addresses) > 1 else self.raw_ip_addresses[0] if len(self.raw_ip_addresses) == 1 else MISSING_IP_ADDRESS
+                    if eqpt_ip_address_raw == MISSING_IP_ADDRESS:
+                        logger_config.print_and_log_error(f"Missing IP address for {equipment_name}")
                 except IndexError:
                     eqpt_ip_address_raw = INVALID_IP_ADDRESS
 
             equipment_in_network_conf_file_by_name = equipments_library.get_existing_equipment_by_name(expected_equipment_name=equipment_name, allow_not_exact_name=True)
 
             if equipment_in_network_conf_file_by_name is None:
-                logger_config.print_and_log_error(f"Could not find equipment {equipment_name} in network conf files")
+                logger_config.print_and_log_error(f"{self.matrice_line_identifier}: Could not find equipment {equipment_name} in network conf files (its IP is {eqpt_ip_address_raw})")
                 equipments_library.not_found_equipment_names.add(equipment_name)
 
             if eqpt_ip_address_raw not in [MISSING_IP_ADDRESS, INVALID_IP_ADDRESS]:
@@ -157,19 +157,21 @@ class FlowEndPoint:
                 )
 
                 if equipments_in_network_conf_file_matching_ip_address is None:
-                    logger_config.print_and_log_error(f"{equipment_name}: Ip address {eqpt_ip_address_raw} not defined in any network conf file")
+                    logger_config.print_and_log_error(f"{self.matrice_line_identifier}: {equipment_name}: Ip address {eqpt_ip_address_raw} not defined in any network conf file")
 
                 elif equipment_name not in [equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]:
                     for equipment_in_network_conf_file_matching_ip_address_it in equipments_in_network_conf_file_matching_ip_address:
                         if equipment_name in equipment_in_network_conf_file_matching_ip_address_it.name:
                             if equipments_in_network_conf_file_matching_ip_address is None:
                                 equipments_in_network_conf_file_matching_ip_address = []
-                            logger_config.print_and_log_info(f"Re-allocate {equipment_name} to {equipment_in_network_conf_file_matching_ip_address_it.name} thanks to IP {eqpt_ip_address_raw}")
+                            logger_config.print_and_log_info(
+                                f"{self.matrice_line_identifier}: Re-allocate {equipment_name} to {equipment_in_network_conf_file_matching_ip_address_it.name} thanks to IP {eqpt_ip_address_raw}"
+                            )
                             equipments_in_network_conf_file_matching_ip_address.append(equipment_in_network_conf_file_matching_ip_address_it)
-
+                            break
                     if not equipments_in_network_conf_file_matching_ip_address:
                         logger_config.print_and_log_error(
-                            f"Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in {[equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]}"
+                            f"{self.matrice_line_identifier}: Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in {[equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]}"
                         )
 
             equipment_detected_in_flow_matrix = EquipmentInFLowMatrix.get_or_create_if_not_exist_by_name_and_ip(
@@ -315,6 +317,7 @@ class NetworkFlowMatrix:
         logger_config.print_and_log_warning(
             f"After scanning network flow matrix, {len(equipments_library.not_found_equipment_names)} unknown equipments (not found in network conf files) are {equipments_library.not_found_equipment_names}"
         )
+        logger_config.print_and_log_warning(f"{'\n'.join(list(equipments_library.not_found_equipment_names))}")
 
 
 @dataclass
