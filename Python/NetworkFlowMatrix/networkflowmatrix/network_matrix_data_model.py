@@ -88,7 +88,7 @@ class EquipmentInFLowMatrix:
 
 @dataclass
 class FlowEndPoint:
-    matrice_line_identifier: int
+    matrix_line_identifier: int
     network_flow_matrix: "NetworkFlowMatrix"
     subsystem_raw: str
     equipment_cell_raw: str
@@ -122,7 +122,7 @@ class FlowEndPoint:
     def match_equipments_with_network_conf_files(self, equipments_library: equipments.NetworkConfFilesEquipmentsLibrary) -> None:
 
         if len(self.equipments_names) > len(self.raw_ip_addresses) and len(self.raw_ip_addresses) > 1:
-            logger_config.print_and_log_error(f"Error at line {self.matrice_line_identifier}: missing IP addresses for {self.equipments_names}, see {self.raw_ip_addresses}")
+            logger_config.print_and_log_error(f"Error at line {self.matrix_line_identifier}: missing IP addresses for {self.equipments_names}, see {self.raw_ip_addresses}")
 
         for index_eqpt, equipment_name in enumerate(self.equipments_names):
             assert equipment_name
@@ -130,10 +130,10 @@ class FlowEndPoint:
             self.network_flow_matrix.all_equipments_names.add(equipment_name)
 
             if len(self.raw_ip_addresses) <= index_eqpt and len(self.raw_ip_addresses) > 1:
-                logger_config.print_and_log_error(f"Error at line {self.matrice_line_identifier}: no IP found for {equipment_name} (not enough lines)")
+                logger_config.print_and_log_error(f"Error at line {self.matrix_line_identifier}: no IP found for {equipment_name} (not enough lines)")
                 eqpt_ip_address_raw = INVALID_IP_ADDRESS
             elif len(self.raw_ip_addresses) <= index_eqpt and len(self.raw_ip_addresses) == 1 and self.allow_one_ip_for_several_equipments:
-                logger_config.print_and_log_info(f"At line {self.matrice_line_identifier}: shared IP found for {equipment_name}, ip {self.raw_ip_addresses[0]}")
+                logger_config.print_and_log_info(f"At line {self.matrix_line_identifier}: shared IP found for {equipment_name}, ip {self.raw_ip_addresses[0]}")
                 eqpt_ip_address_raw = self.raw_ip_addresses[0]
             else:
                 try:
@@ -144,20 +144,16 @@ class FlowEndPoint:
                     eqpt_ip_address_raw = INVALID_IP_ADDRESS
 
             equipment_in_network_conf_file_by_name = equipments_library.get_existing_equipment_by_name(expected_equipment_name=equipment_name, allow_not_exact_name=True)
+            equipments_in_network_conf_file_matching_ip_address = equipments_library.get_existing_equipment_by_raw_ip_address(eqpt_ip_address_raw)
 
             if equipment_in_network_conf_file_by_name is None:
-                logger_config.print_and_log_error(f"{self.matrice_line_identifier}: Could not find equipment {equipment_name} in network conf files (its IP is {eqpt_ip_address_raw})")
+                logger_config.print_and_log_error(
+                    f"{self.matrix_line_identifier}: Could not find equipment {equipment_name} in network conf files. Searching with IP {eqpt_ip_address_raw}, found {len(equipments_in_network_conf_file_matching_ip_address)} equipments {[eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address]}"
+                )
                 equipments_library.not_found_equipment_names.add(equipment_name)
 
-            if eqpt_ip_address_raw not in [MISSING_IP_ADDRESS, INVALID_IP_ADDRESS]:
-                equipments_in_network_conf_file_matching_ip_address = (
-                    equipments_library.network_conf_files_defined_equipments_by_raw_ip_addresses[eqpt_ip_address_raw]
-                    if eqpt_ip_address_raw in equipments_library.network_conf_files_defined_equipments_by_raw_ip_addresses
-                    else None
-                )
-
                 if equipments_in_network_conf_file_matching_ip_address is None:
-                    logger_config.print_and_log_error(f"{self.matrice_line_identifier}: {equipment_name}: Ip address {eqpt_ip_address_raw} not defined in any network conf file")
+                    logger_config.print_and_log_error(f"{self.matrix_line_identifier}: {equipment_name}: Ip address {eqpt_ip_address_raw} not defined in any network conf file")
 
                 elif equipment_name not in [equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]:
                     for equipment_in_network_conf_file_matching_ip_address_it in equipments_in_network_conf_file_matching_ip_address:
@@ -165,13 +161,13 @@ class FlowEndPoint:
                             if equipments_in_network_conf_file_matching_ip_address is None:
                                 equipments_in_network_conf_file_matching_ip_address = []
                             logger_config.print_and_log_info(
-                                f"{self.matrice_line_identifier}: Re-allocate {equipment_name} to {equipment_in_network_conf_file_matching_ip_address_it.name} thanks to IP {eqpt_ip_address_raw}"
+                                f"{self.matrix_line_identifier}: Re-allocate {equipment_name} to {equipment_in_network_conf_file_matching_ip_address_it.name} thanks to IP {eqpt_ip_address_raw}"
                             )
                             equipments_in_network_conf_file_matching_ip_address.append(equipment_in_network_conf_file_matching_ip_address_it)
                             break
                     if not equipments_in_network_conf_file_matching_ip_address:
                         logger_config.print_and_log_error(
-                            f"{self.matrice_line_identifier}: Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in {[equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]}"
+                            f"{self.matrix_line_identifier}: Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in {[equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]}"
                         )
 
             equipment_detected_in_flow_matrix = EquipmentInFLowMatrix.get_or_create_if_not_exist_by_name_and_ip(
@@ -205,7 +201,7 @@ class FlowSource(FlowEndPoint):
             port_raw = row["src Port"]
 
             return FlowSource(
-                matrice_line_identifier=matrice_line_identifier,
+                matrix_line_identifier=matrice_line_identifier,
                 network_flow_matrix=network_flow_matrix,
                 detail_raw=detail_raw,
                 equipment_cell_raw=equipment_raw,
@@ -248,7 +244,7 @@ class FlowDestination(FlowEndPoint):
             cast_type = constants.CastType[string_utils.text_to_valid_enum_value_text(cast_raw)] if str(cast_raw).lower() != "nan" else constants.CastType.UNKNOWN
 
             return FlowDestination(
-                matrice_line_identifier=matrice_line_identifier,
+                matrix_line_identifier=matrice_line_identifier,
                 network_flow_matrix=network_flow_matrix,
                 detail_raw=detail_raw,
                 equipment_cell_raw=equipments_raw,
