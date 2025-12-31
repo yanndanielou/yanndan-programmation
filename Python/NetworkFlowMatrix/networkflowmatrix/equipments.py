@@ -60,6 +60,7 @@ class NetworkConfFilesEquipmentsLibrary:
         self.all_trains_unbreakable_units_by_cc_id: Dict[int, TrainUnbreakableSingleUnit] = {}
         self.all_trains_unbreakable_units_by_emu_id: Dict[int, TrainUnbreakableSingleUnit] = {}
         self.not_found_equipment_names: Set[str] = set()
+        self.not_found_equipment_names_and_raw_ip_address: Set[str] = set()
         self.create_train_unbreakable_units()
 
     def print_stats(self) -> None:
@@ -84,6 +85,11 @@ class NetworkConfFilesEquipmentsLibrary:
 
                     return equipment
         return None
+
+    def get_existing_equipment_by_raw_ip_address(self, expected_raw_ip_address: str) -> List["NetworkConfFilesDefinedEquipment"]:
+        return (
+            self.network_conf_files_defined_equipments_by_raw_ip_addresses[expected_raw_ip_address] if expected_raw_ip_address in self.network_conf_files_defined_equipments_by_raw_ip_addresses else []
+        )
 
     def get_existing_network_conf_file_eqpt_by_name(self, name: str) -> Optional["NetworkConfFilesDefinedEquipment"]:
         if self.is_existing_network_conf_file_eqpt_by_name(name):

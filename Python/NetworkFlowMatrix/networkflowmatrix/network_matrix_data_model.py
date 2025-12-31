@@ -151,6 +151,7 @@ class FlowEndPoint:
                     f"{self.matrix_line_identifier}: Could not find equipment {equipment_name} in network conf files. Searching with IP {eqpt_ip_address_raw}, found {len(equipments_in_network_conf_file_matching_ip_address)} equipments {[eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address]}"
                 )
                 equipments_library.not_found_equipment_names.add(equipment_name)
+                equipments_library.not_found_equipment_names_and_raw_ip_address.add(f"{equipment_name};{eqpt_ip_address_raw}")
 
                 if equipments_in_network_conf_file_matching_ip_address is None:
                     logger_config.print_and_log_error(f"{self.matrix_line_identifier}: {equipment_name}: Ip address {eqpt_ip_address_raw} not defined in any network conf file")
@@ -311,9 +312,14 @@ class NetworkFlowMatrix:
                 line.destination.match_equipments_with_network_conf_files(equipments_library)
 
         logger_config.print_and_log_warning(
-            f"After scanning network flow matrix, {len(equipments_library.not_found_equipment_names)} unknown equipments (not found in network conf files) are {equipments_library.not_found_equipment_names}"
+            f"After scanning network flow matrix, {len(equipments_library.not_found_equipment_names)} unknown equipments (not found in network conf files) names are {equipments_library.not_found_equipment_names}"
         )
-        logger_config.print_and_log_warning(f"{'\n'.join(list(equipments_library.not_found_equipment_names))}")
+        logger_config.print_and_log_warning(f"{'\n'.join(sorted(list(equipments_library.not_found_equipment_names)))}")
+
+        logger_config.print_and_log_warning(
+            f"After scanning network flow matrix, {len(equipments_library.not_found_equipment_names_and_raw_ip_address)} unknown equipments (not found in network conf files) names and IP addresses are {equipments_library.not_found_equipment_names}"
+        )
+        logger_config.print_and_log_warning(f"{'\n'.join(sorted(list(equipments_library.not_found_equipment_names_and_raw_ip_address)))}")
 
 
 @dataclass
