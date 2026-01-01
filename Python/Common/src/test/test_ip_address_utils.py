@@ -12,14 +12,14 @@ ip_generation_data = [
 @pytest.mark.parametrize(
     "prefix,mask,number,expected",
     [
-        ("239.192", "255.255.0.0", 13313, "239.192.52.1"),
-        ("192.168.1", "255.255.255.0", 23, "192.168.1.23"),
-        ("10.10.0", "255.255.0.0", 10, "10.10.0.10"),
-        ("10.10.0", "255.255.255.0", 10, "10.10.0.10"),
+        ("239.192.0.0", "255.255.0.0", 13313, "239.192.52.1"),
+        ("192.168.1.0", "255.255.255.0", 23, "192.168.1.23"),
+        ("10.10.0.0", "255.255.0.0", 10, "10.10.0.10"),
+        ("10.10.0.0", "255.255.255.0", 10, "10.10.0.10"),
     ],
 )
 def test_generate_ip_address(prefix: str, mask: str, number: int, expected: str) -> None:
-    assert ip_address_utils.generate_ip_address(prefix=prefix, mask=mask, number=number) == expected
+    assert ip_address_utils.generate_ip_address(initial_ip_address=prefix, mask=mask, number=number) == expected
 
 
 @pytest.mark.parametrize(

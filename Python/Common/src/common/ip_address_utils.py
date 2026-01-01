@@ -1,3 +1,43 @@
+import ipaddress
+from warnings import deprecated
+
+
+def generate_ip_address(initial_ip_address: str, mask: str, number: int) -> str:
+    """
+    Incrémente l'adresse IP initiale de `number` tout en vérifiant que
+    le masque reste applicable.
+
+    Args:
+        initial_ip_address (str): L'adresse IP initiale (ex: '192.168.0.1').
+        mask (str): Le masque de sous-réseau (ex: '255.255.255.0').
+        number (int): Le nombre d'incréments appliqués à l'adresse IP.
+
+    Returns:
+        str: La nouvelle adresse IP après incrémentation.
+
+    Raises:
+        ValueError: Si la nouvelle adresse IP dépasse le masque ou si
+                    les arguments sont invalides.
+    """
+
+    try:
+        # Crée les objets IP pour la vérification et l'incrémentation
+        network = ipaddress.IPv4Network(f"{initial_ip_address}/{mask}", strict=False)
+        current_ip = ipaddress.IPv4Address(initial_ip_address)
+
+        # Incrémente l'adresse IP
+        new_ip = current_ip + number
+
+        # Vérifie si la nouvelle adresse IP appartient au réseau
+        if new_ip not in network:
+            raise ValueError(f"L'adresse IP {new_ip} dépasse le réseau défini par le masque {mask}.")
+
+        return str(new_ip)
+
+    except ipaddress.AddressValueError:
+        raise ValueError("Les arguments spécifiés ne sont pas des adresses IP valides.")
+
+
 def generate_16_mask_ip_address(number: int, subnet_prefix: str) -> str:
     # Définition des parties Class_C et Class_D
     tmp = number
@@ -13,7 +53,8 @@ def generate_16_mask_ip_address(number: int, subnet_prefix: str) -> str:
     return result
 
 
-def generate_ip_address(prefix: str, mask: str, number: int) -> str:
+@deprecated("Kept just in case")
+def generate_ip_address_old_does_not_work(prefix: str, mask: str, number: int) -> str:
     """
     Génère une adresse IP valide à partir d'un préfixe, d'un masque et d'un numéro.
 
