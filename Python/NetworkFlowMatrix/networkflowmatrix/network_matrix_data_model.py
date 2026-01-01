@@ -133,7 +133,9 @@ class FlowEndPoint:
                 logger_config.print_and_log_error(f"Error at line {self.matrix_line_identifier}: no IP found for {equipment_name} (not enough lines)")
                 eqpt_ip_address_raw = INVALID_IP_ADDRESS
             elif len(self.raw_ip_addresses) <= index_eqpt and len(self.raw_ip_addresses) == 1 and self.allow_one_ip_for_several_equipments:
-                logger_config.print_and_log_info(f"At line {self.matrix_line_identifier}: shared IP found for {equipment_name}, ip {self.raw_ip_addresses[0]}")
+                logger_config.print_and_log_info(
+                    f"At line {self.matrix_line_identifier}: equipment {equipment_name} shared  ip {self.raw_ip_addresses[0]}: is shared with found for {self.equipments_names}"
+                )
                 eqpt_ip_address_raw = self.raw_ip_addresses[0]
             else:
                 try:
