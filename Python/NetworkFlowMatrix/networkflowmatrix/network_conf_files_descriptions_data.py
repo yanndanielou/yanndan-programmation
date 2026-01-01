@@ -9,6 +9,7 @@ from networkflowmatrix.network_conf_files import (
     ExcelColumnDefinitionByColumnExcelId,
     ExcelColumnDefinitionByColumnTitle,
     ForcedNoneValueInformationDefinition,
+    ForcedStrValueInformationDefinition,
     InsideTrainEquipmentDefinitionTab,
     MulticastIpDefinitionColumnsInTab,
     TrainByCcIdColumnDefinition,
@@ -64,15 +65,26 @@ class RadioLayoutR841Description(ExcelInputFileDescription):
     def __init__(self) -> None:
 
         self.ip_reseau_std_radio_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
-            tab_name="IP RESEAU STD RADIO",
-            rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+            tab_name="AP CBTC",
+            rows_to_ignore=[],
+            equipment_type_definition=ForcedStrValueInformationDefinition("AP"),
+            equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("AP name"),
+            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("N° AP Layout radio"),
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
-                    forced_label="Anneau A",
+                    equipment_vlan_column_definition=None,
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("IP via CSR_A\n(S&D info)"),
+                    equipment_mask_column_definition=None,
+                    equipment_gateway_column_definition=None,
+                    forced_label="IP via CSR_A (S&D info)",
+                    can_be_empty=True,
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_vlan_column_definition=None,
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("IP via CSR_B\n(S&D info)"),
+                    equipment_mask_column_definition=None,
+                    equipment_gateway_column_definition=None,
+                    forced_label="IP via CSR_B (S&D info)",
                     can_be_empty=True,
                 ),
             ],

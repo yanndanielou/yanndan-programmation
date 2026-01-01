@@ -25,9 +25,9 @@ class NetworkConfFilesDefinedIpAddress(ABC):
 
 @dataclass
 class NetworkConfFilesDefinedUnicastIpAddress(NetworkConfFilesDefinedIpAddress):
-    mask: str
+    mask: Optional[str]
     gateway: Optional[str]
-    vlan_name: str | int
+    vlan_name: Optional[str | int]
     gateway_is_optional: bool
     mask_is_optional: bool
 
@@ -68,6 +68,9 @@ class ForcedIntValueInformationDefinition(InformationDefinitionBase):
 @dataclass
 class ForcedStrValueInformationDefinition(InformationDefinitionBase):
     value: Optional[str]
+
+    def get_value(self, row: pandas.Series) -> Optional[str] | Optional[int]:
+        return self.value
 
 
 @dataclass
@@ -110,9 +113,9 @@ class IpDefinitionColumnsInTab(ABC):
 
 @dataclass
 class UnicastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
-    equipment_vlan_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("VLAN ID"))
-    equipment_mask_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Masque"))
-    equipment_gateway_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Passerelle"))
+    equipment_vlan_column_definition: Optional[InformationDefinitionBase] = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("VLAN ID"))
+    equipment_mask_column_definition: Optional[InformationDefinitionBase] = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Masque"))
+    equipment_gateway_column_definition: Optional[InformationDefinitionBase] = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Passerelle"))
     gateway_is_optional: bool = False
     mask_is_optional: bool = False
 
@@ -122,22 +125,31 @@ class UnicastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
         assert equipment_raw_ip_address and isinstance(equipment_raw_ip_address, str), f"\n Ip address: {equipment_raw_ip_address}\nRow: {row}"
 
         # ip_address = NetworkConfFilesDefinedUnicasttIpAddress(ip_raw=)
-        equipment_vlan = cast(int, self.equipment_vlan_column_definition.get_value(row))
+        if self.equipment_vlan_column_definition:
+            equipment_vlan = cast(int, self.equipment_vlan_column_definition.get_value(row))
 
-        assert equipment_vlan
-        assert (
-            isinstance(equipment_vlan, str) or isinstance(equipment_vlan, int) or isinstance(equipment_vlan, float)
-        ), f"{row} {self.equipment_gateway_column_definition} column {self.equipment_vlan_column_definition} is {equipment_vlan}"
+            assert equipment_vlan
+            assert (
+                isinstance(equipment_vlan, str) or isinstance(equipment_vlan, int) or isinstance(equipment_vlan, float)
+            ), f"{row} {self.equipment_gateway_column_definition} column {self.equipment_vlan_column_definition} is {equipment_vlan}"
+        else:
+            equipment_vlan = None
 
         equipment_ip_label = self.forced_label
 
-        equipment_raw_mask = cast(str, self.equipment_mask_column_definition.get_value(row))
-        assert self.mask_is_optional or equipment_raw_mask and isinstance(equipment_raw_mask, str)
+        if self.equipment_mask_column_definition:
+            equipment_raw_mask = cast(str, self.equipment_mask_column_definition.get_value(row))
+            assert self.mask_is_optional or equipment_raw_mask and isinstance(equipment_raw_mask, str)
+        else:
+            equipment_raw_mask = None
 
-        equipment_raw_gateway: Optional[str] = cast(str, self.equipment_gateway_column_definition.get_value(row))
-        if not isinstance(equipment_raw_gateway, str):
+        if self.equipment_gateway_column_definition:
+            equipment_raw_gateway: Optional[str] = cast(str, self.equipment_gateway_column_definition.get_value(row))
+            if not isinstance(equipment_raw_gateway, str):
+                equipment_raw_gateway = None
+            assert self.gateway_is_optional or equipment_raw_gateway and isinstance(equipment_raw_gateway, str), f"{equipment_raw_ip_address} has no gateway"
+        else:
             equipment_raw_gateway = None
-        assert self.gateway_is_optional or equipment_raw_gateway and isinstance(equipment_raw_gateway, str), f"{equipment_raw_ip_address} has no gateway"
 
         ip_address = NetworkConfFilesDefinedUnicastIpAddress(
             ip_raw=equipment_raw_ip_address,
@@ -171,10 +183,10 @@ class MulticastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
 class EquipmentDefinitionTab:
     tab_name: str
     rows_to_ignore: List[int]
-    equipment_type_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Type"))
+    equipment_type_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Type"))
     equipment_ip_definitions: List["IpDefinitionColumnsInTab"] = field(default_factory=list)
     equipment_name_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equipement"))
-    equipment_alternative_name_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equip_ID"))
+    equipment_alternative_name_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equip_ID"))
 
 
 class TrainIdentifierDefinition(ABC):
@@ -268,11 +280,11 @@ class NetworkConfFile(GenericConfFile):
                             )
                             all_equipments_found.append(equipment)
 
-                            equipment_type_raw = equipment_definition_tab.equipment_type_column_definition.get_value(row)
+                            equipment_type_raw = equipment_definition_tab.equipment_type_definition.get_value(row)
                             if isinstance(equipment_type_raw, str):
                                 equipment.add_equipment_type(equipment_type_raw)
 
-                            equipment_alternative_identifier_raw = equipment_definition_tab.equipment_alternative_name_column_definition.get_value(row)
+                            equipment_alternative_identifier_raw = equipment_definition_tab.equipment_alternative_name_definition.get_value(row)
                             if isinstance(equipment_alternative_identifier_raw, str):
                                 equipment.add_alternative_identifier(equipment_alternative_identifier_raw)
 
