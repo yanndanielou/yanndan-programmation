@@ -30,6 +30,7 @@ class TrainUnbreakableSingleUnit:
 @dataclass
 class NetworkConfFilesDefinedEquipment:
     name: str
+    source_label: str
     library: "NetworkConfFilesEquipmentsLibrary"
     equipment_types: Set[str] = field(default_factory=set)
     alternative_identifiers: Set[str] = field(default_factory=set)
@@ -107,10 +108,10 @@ class NetworkConfFilesEquipmentsLibrary:
             return self.network_conf_files_defined_equipments_by_id[name]
         return None
 
-    def get_or_create_network_conf_file_eqpt_if_not_exist_by_name(self, name: str) -> "NetworkConfFilesDefinedEquipment":
+    def get_or_create_network_conf_file_eqpt_if_not_exist_by_name(self, name: str, source_label_for_creation: str) -> "NetworkConfFilesDefinedEquipment":
         if self.is_existing_network_conf_file_eqpt_by_name(name):
             return self.network_conf_files_defined_equipments_by_id[name]
-        equipment = NetworkConfFilesDefinedEquipment(name=name, library=self)
+        equipment = NetworkConfFilesDefinedEquipment(name=name, library=self, source_label=source_label_for_creation)
         self.network_conf_files_defined_equipments_by_id[name] = equipment
         self.all_network_conf_files_defined_equipments.append(equipment)
 
@@ -145,6 +146,7 @@ class NetworkConfFilesEquipmentsLibrary:
             data_to_dump.append(
                 (
                     equipment.name,
+                    equipment.source_label,
                     f"Types:{', '.join(list(equipment.equipment_types))}",
                     f"Alternative ids:{', '.join([str(alter) for alter in equipment.alternative_identifiers])}",
                     f"Ip:{', '.join([ip.ip_raw for ip in equipment.ip_addresses])}",

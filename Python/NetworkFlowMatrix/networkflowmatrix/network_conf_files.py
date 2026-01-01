@@ -263,7 +263,9 @@ class NetworkConfFile(GenericConfFile):
                         equipment_name = cast(str, equipment_definition_tab.equipment_name_column_definition.get_value(row))
 
                         if isinstance(equipment_name, str):
-                            equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(name=equipment_name)
+                            equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(
+                                name=equipment_name, source_label_for_creation=f"{excel_file_full_path}/{equipment_definition_tab.tab_name}"
+                            )
                             all_equipments_found.append(equipment)
 
                             equipment_type = cast(str, equipment_definition_tab.equipment_type_column_definition.get_value(row))
