@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
+
+from common import json_encoders
 from logger import logger_config
 
 if TYPE_CHECKING:
@@ -36,6 +38,15 @@ class NetworkConfFilesDefinedEquipment:
     def __post_init__(self) -> None:
         assert self.name
         assert isinstance(self.name, str)
+
+        for alternative_identifier in self.alternative_identifiers:
+            assert alternative_identifier
+            assert isinstance(alternative_identifier, str)
+        assert isinstance(self.name, str)
+
+        for equipment_type in self.equipment_types:
+            assert equipment_type
+            assert isinstance(equipment_type, str)
 
     def add_ip_address(self, ip_address: "NetworkConfFilesDefinedIpAddress") -> None:
         assert ip_address not in self.ip_addresses
@@ -127,3 +138,16 @@ class NetworkConfFilesEquipmentsLibrary:
             self.all_trains_unbreakable_units.append(train_unbreakable_unit)
             self.all_trains_unbreakable_units_by_cc_id[train_unbreakable_unit.cc_id] = train_unbreakable_unit
             self.all_trains_unbreakable_units_by_emu_id[train_unbreakable_unit.emu_id] = train_unbreakable_unit
+
+    def dump_to_json_file(self, output_json_file_full_path: str) -> None:
+        data_to_dump: List[Tuple] = []
+        for equipment in self.all_network_conf_files_defined_equipments:
+            data_to_dump.append(
+                (
+                    equipment.name,
+                    f"Types:{', '.join(list(equipment.equipment_types))}",
+                    f"Alternative ids:{', '.join([str(alter) for alter in equipment.alternative_identifiers])}",
+                    f"Ip:{', '.join([ip.ip_raw for ip in equipment.ip_addresses])}",
+                )
+            )
+        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(data_to_dump, output_json_file_full_path)
