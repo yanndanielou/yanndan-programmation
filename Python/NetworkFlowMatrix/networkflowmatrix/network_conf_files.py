@@ -268,11 +268,13 @@ class NetworkConfFile(GenericConfFile):
                             )
                             all_equipments_found.append(equipment)
 
-                            equipment_type = cast(str, equipment_definition_tab.equipment_type_column_definition.get_value(row))
-                            equipment.equipment_types.add(equipment_type)
+                            equipment_type_raw = equipment_definition_tab.equipment_type_column_definition.get_value(row)
+                            if isinstance(equipment_type_raw, str):
+                                equipment.add_equipment_type(equipment_type_raw)
 
-                            equipment_alternative_identifier = cast(str, equipment_definition_tab.equipment_alternative_name_column_definition.get_value(row))
-                            equipment.alternative_identifiers.add(equipment_alternative_identifier)
+                            equipment_alternative_identifier_raw = equipment_definition_tab.equipment_alternative_name_column_definition.get_value(row)
+                            if isinstance(equipment_alternative_identifier_raw, str):
+                                equipment.add_alternative_identifier(equipment_alternative_identifier_raw)
 
                             for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
 
