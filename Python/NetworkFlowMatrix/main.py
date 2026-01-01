@@ -4,7 +4,7 @@ from typing import Dict
 from common import file_utils, json_encoders
 from logger import logger_config
 
-from networkflowmatrix import network_conf_files, network_conf_files_descriptions_data, network_matrix_data_model, equipments, sith_equipments_builder, ppn_equipments_builder
+from networkflowmatrix import network_conf_files, network_conf_files_descriptions_data, network_matrix_data_model, equipments, sith_equipments_builder, ppn_equipments_builder, ihm_program_builder
 
 OUTPUT_PARENT_DIRECTORY_NAME = "Output"
 
@@ -53,6 +53,10 @@ def dump_matrix_equipments_to_json(network_flow_matrix_to_dump: network_matrix_d
 if __name__ == "__main__":
     with logger_config.application_logger("networkflowmatrix"):
         equipments_library = equipments.NetworkConfFilesEquipmentsLibrary()
+
+        ihm_program = ihm_program_builder.IhmProgrammConfFile.Builder.build_with_excel_file(
+            equipments_library=equipments_library, excel_file_full_path=network_conf_files_descriptions_data.INPUT_DOWNLOAD_FOLDER + "/" + "S2_P2_02 à 08_Ind13 1.xlsm"
+        )
 
         bord = network_conf_files.NetworkConfFile.Builder.build_with_excel_description(
             equipments_library=equipments_library, excel_description=network_conf_files_descriptions_data.BordAddressPlanV9Description()
