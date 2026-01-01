@@ -46,12 +46,17 @@ class IhmProgrammConfFile(network_conf_files.GenericConfFile):
                     gateway_raw = cast(str, row["Gateway"])
                     mask_raw = cast(str, row["Masque"])
 
-                    module = module_raw if str(module_raw) != "nan" else previous_module
+                    module_is_defined = str(module_raw) != "nan"
+                    module = module_raw if module_is_defined else previous_module
                     eqpt = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(name=module, source_label_for_creation=f"{excel_file_full_path}/{"P2-4"}")
                     ip_address = adresses_raw.replace("(1)", "").replace(" ", "")
-                    eqpt.add_ip_address(network_conf_files.NetworkConfFilesDefinedIpAddress(ip_raw=ip_address, label=None))
+                    try:
+                        eqpt.add_ip_address(network_conf_files.NetworkConfFilesDefinedIpAddress(ip_raw=ip_address, label=None))
+                    except AssertionError:
+                        logger_config.print_and_log_error(f"Could not create IP {ip_address} for {module} because is already defined for it")
 
-                    previous_module = module_raw
+                    if module_is_defined:
+                        previous_module = module_raw
                     previous_gateway = gateway_raw
 
                 logger_config.print_and_log_info(f"{excel_file_full_path} tab {sheet_name}: {len(all_equipments_found)} equipment found")
