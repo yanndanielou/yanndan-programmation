@@ -217,10 +217,19 @@ class InsideTrainEquipmentDefinitionTab(EquipmentDefinitionTab):
 
 
 @dataclass
-class NetworkConfFile:
-    excel_file_full_path: str
+class GenericConfFile:
     all_equipments: List["NetworkConfFilesDefinedEquipment"]
     equipments_library: "NetworkConfFilesEquipmentsLibrary"
+    name: str
+
+    def __post_init__(self) -> None:
+        logger_config.print_and_log_info(f"{self.name}: {len(self.all_equipments)} equipment found")
+        logger_config.print_and_log_info(f"So far, the library contains {len(self.equipments_library.all_network_conf_files_defined_equipments)} equipments in total")
+
+
+@dataclass
+class NetworkConfFile(GenericConfFile):
+    excel_file_full_path: str
     equipment_definition_tabs: List[EquipmentDefinitionTab]
 
     class Builder:
@@ -273,7 +282,11 @@ class NetworkConfFile:
                     logger_config.print_and_log_info(f"{excel_file_full_path} tab {equipment_definition_tab.tab_name}: {len(all_equipments_found)} equipment found")
 
             conf_file = NetworkConfFile(
-                equipments_library=equipments_library, excel_file_full_path=excel_file_full_path, all_equipments=all_equipments_found, equipment_definition_tabs=equipment_definition_tabs
+                name=excel_file_full_path,
+                equipments_library=equipments_library,
+                excel_file_full_path=excel_file_full_path,
+                all_equipments=all_equipments_found,
+                equipment_definition_tabs=equipment_definition_tabs,
             )
 
             logger_config.print_and_log_info(f"{excel_file_full_path}: {len(all_equipments_found)} equipment found")
