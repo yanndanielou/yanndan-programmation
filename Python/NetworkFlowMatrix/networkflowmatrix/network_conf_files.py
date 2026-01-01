@@ -283,7 +283,7 @@ class NetworkConfFile(GenericConfFile):
                         if isinstance(equipment_definition_tab, InsideTrainEquipmentDefinitionTab):
                             train = equipment_definition_tab.train_identifier_definition.get_train(row, equipments_library)
                             assert train
-                            equipment_name = f"TRAIN_{train.cc_id}_{equipment_name}"
+                            equipment_name = f"TRAIN_CC_{train.cc_id}_{equipment_name}"
 
                         if isinstance(equipment_name, str):
                             equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(
