@@ -68,6 +68,10 @@ if __name__ == "__main__":
 
         sith_conf_file = sith_equipments.SithConfFile.Builder.build(equipments_library=equipments_library)
 
+        bord = network_conf_files.NetworkConfFile.Builder.build_with_excel_description(
+            equipments_library=equipments_library, excel_description=network_conf_files_descriptions_data.BordAddressPlanV9Description()
+        )
+
         equipments_library.print_stats()
 
         with logger_config.stopwatch_with_label("Build matrix", inform_beginning=True, monitor_ram_usage=True):

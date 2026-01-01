@@ -300,6 +300,8 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
             tab_name="@IP TU",
             rows_to_ignore=[0, 1, 2, 3, 4, 6],
             train_identifier_definition=TrainByCcIdColumnDefinition(),
+            equipment_type_definition=ForcedStrValueInformationDefinition("TU"),
+            # equipment_name_column_definition=ForcedStrValueInformationDefinition("TU_1"),
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
                     equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("CPL SUBNET_1"),
