@@ -196,15 +196,16 @@ class TrainIdentifierDefinition(ABC):
         pass
 
 
+@dataclass
 class TrainByCcIdColumnDefinition(TrainIdentifierDefinition):
 
-    def __init__(self) -> None:
-        self.cc_id_column_definition: InformationDefinitionBase = ExcelColumnDefinitionByColumnTitle("Type")
+    cc_id_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("CC_ID"))
 
     def get_train(self, row: pandas.Series, equipment_library: "NetworkConfFilesEquipmentsLibrary") -> "TrainUnbreakableSingleUnit":
-        cc_id = self.cc_id_column_definition.get_value(row)
+        cc_id = int(self.cc_id_column_definition.get_value(row))
         assert cc_id
-        assert isinstance(cc_id, int)
+        assert cc_id > 0
+        # assert isinstance(cc_id, int)
         train = equipment_library.get_existing_train_unbreakable_unit_by_cc_id(cc_id=cc_id)
         assert train
         return train
@@ -273,6 +274,11 @@ class NetworkConfFile(GenericConfFile):
                     for usefull_raw_number, row in main_data_frame.iterrows():
 
                         equipment_name = cast(str, equipment_definition_tab.equipment_name_column_definition.get_value(row))
+
+                        if isinstance(equipment_definition_tab, InsideTrainEquipmentDefinitionTab):
+                            train = equipment_definition_tab.train_identifier_definition.get_train(row, equipments_library)
+                            assert train
+                            equipment_name = f"TRAIN_{train.cc_id}_{equipment_name}"
 
                         if isinstance(equipment_name, str):
                             equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(

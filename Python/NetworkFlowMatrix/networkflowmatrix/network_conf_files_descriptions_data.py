@@ -302,9 +302,9 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
         self.ip_tu_tab: InsideTrainEquipmentDefinitionTab = InsideTrainEquipmentDefinitionTab(
             tab_name="@IP TU",
             rows_to_ignore=[0, 1, 2, 3, 4, 6],
-            train_identifier_definition=TrainByCcIdColumnDefinition(),
+            train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnExcelId("B")),
             equipment_type_definition=ForcedStrValueInformationDefinition("TU"),
-            equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("TU_1"),
+            equipment_name_column_definition=ForcedStrValueInformationDefinition("TU_1"),
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
                     equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("CPL SUBNET_1"),

@@ -54,6 +54,10 @@ if __name__ == "__main__":
     with logger_config.application_logger("networkflowmatrix"):
         equipments_library = equipments.NetworkConfFilesEquipmentsLibrary()
 
+        bord = network_conf_files.NetworkConfFile.Builder.build_with_excel_description(
+            equipments_library=equipments_library, excel_description=network_conf_files_descriptions_data.BordAddressPlanV9Description()
+        )
+
         radio_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_description(
             equipments_library=equipments_library, excel_description=network_conf_files_descriptions_data.StdRadioNetworkConfV2Description()
         )
@@ -67,10 +71,6 @@ if __name__ == "__main__":
         )
 
         sith_conf_file = sith_equipments.SithConfFile.Builder.build(equipments_library=equipments_library)
-
-        bord = network_conf_files.NetworkConfFile.Builder.build_with_excel_description(
-            equipments_library=equipments_library, excel_description=network_conf_files_descriptions_data.BordAddressPlanV9Description()
-        )
 
         equipments_library.print_stats()
 
