@@ -314,12 +314,12 @@ class NetworkFlowMatrix:
         logger_config.print_and_log_warning(
             f"After scanning network flow matrix, {len(equipments_library.not_found_equipment_names)} unknown equipments (not found in network conf files) names are {equipments_library.not_found_equipment_names}"
         )
-        logger_config.print_and_log_warning(f"{'\n'.join(sorted(list(equipments_library.not_found_equipment_names)))}")
+        logger_config.print_and_log_warning(f"'\n'{'\n'.join(sorted(list(equipments_library.not_found_equipment_names)))}")
 
         logger_config.print_and_log_warning(
             f"After scanning network flow matrix, {len(equipments_library.not_found_equipment_names_and_raw_ip_address)} unknown equipments (not found in network conf files) names and IP addresses are {equipments_library.not_found_equipment_names}"
         )
-        logger_config.print_and_log_warning(f"{'\n'.join(sorted(list(equipments_library.not_found_equipment_names_and_raw_ip_address)))}")
+        logger_config.print_and_log_warning(f"'\n'{'\n'.join(sorted(list(equipments_library.not_found_equipment_names_and_raw_ip_address)))}")
 
 
 @dataclass
