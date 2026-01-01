@@ -60,6 +60,30 @@ class StdRadioNetworkConfV2Description(ExcelInputFileDescription):
         )
 
 
+class RadioLayoutR841Description(ExcelInputFileDescription):
+    def __init__(self) -> None:
+
+        self.ip_reseau_std_radio_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
+            tab_name="IP RESEAU STD RADIO",
+            rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+            equipment_ip_definitions=[
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                    forced_label="Anneau A",
+                    can_be_empty=True,
+                ),
+            ],
+        )
+        super().__init__(
+            all_tabs_definition=[self.ip_reseau_std_radio_tab],
+            excel_file_full_name="NEXTEO_LIGNE_InputAirlinkCBTC_8_4_1_V8.xlsm",
+            rhapsody_id=-1,
+        )
+
+
 class SolStdNetworkConfV11Description(ExcelInputFileDescription):
     def __init__(self) -> None:
 
