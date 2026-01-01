@@ -40,6 +40,14 @@ class NetworkConfFilesDefinedEquipment:
         assert self.name
         assert isinstance(self.name, str)
 
+    @property
+    def equipment_types(self) -> Set[str]:
+        return self._equipment_types
+
+    @property
+    def alternative_identifiers(self) -> Set[str]:
+        return self._alternative_identifiers
+
     def add_alternative_identifier(self, alternative_identifier: str) -> None:
         assert alternative_identifier
         assert isinstance(alternative_identifier, str)
@@ -148,8 +156,8 @@ class NetworkConfFilesEquipmentsLibrary:
                 (
                     equipment.name,
                     equipment.source_label,
-                    f"Types:{', '.join(list(equipment._equipment_types))}",
-                    f"Alternative ids:{', '.join([str(alter) for alter in equipment._alternative_identifiers])}",
+                    f"Types:{', '.join(list(equipment.equipment_types))}",
+                    f"Alternative ids:{', '.join([str(alter) for alter in equipment.alternative_identifiers])}",
                     f"Ip:{', '.join([ip.ip_raw for ip in equipment.ip_addresses])}",
                 )
             )
