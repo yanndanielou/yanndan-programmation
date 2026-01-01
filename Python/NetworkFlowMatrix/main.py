@@ -50,20 +50,26 @@ def dump_equipments_to_json(network_flow_matrix_to_dump: network_matrix_data_mod
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
+def build_
+
+
 if __name__ == "__main__":
     with logger_config.application_logger("networkflowmatrix"):
         equipments_library = equipments.NetworkConfFilesEquipmentsLibrary()
 
-        radio_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_file(
+        radio_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_description(
             equipments_library=equipments_library,
-            excel_file_full_path=network_conf_files_descriptions_data.StdRadioNetworkConfV2Description().excel_file_full_path,
-            equipment_definition_tabs=network_conf_files_descriptions_data.StdRadioNetworkConfV2Description().all_tabs_definition,
+            excel_file_full_path=network_conf_files_descriptions_data.StdRadioNetworkConfV2Description()
         )
 
-        sol_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_file(
+        sol_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_description(
             equipments_library=equipments_library,
-            excel_file_full_path=network_conf_files_descriptions_data.SolStdNetworkConfV11Description().excel_file_full_path,
-            equipment_definition_tabs=network_conf_files_descriptions_data.SolStdNetworkConfV11Description().all_tabs_definition,
+            excel_file_full_path=network_conf_files_descriptions_data.SolStdNetworkConfV11Description()
+        )
+
+        airlink_radio_layout_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_description(
+            equipments_library=equipments_library,
+            excel_file_full_path=network_conf_files_descriptions_data.RadioLayoutR841Description()
         )
 
         sith_conf_file = sith_equipments.SithConfFile.Builder.build(equipments_library=equipments_library)
