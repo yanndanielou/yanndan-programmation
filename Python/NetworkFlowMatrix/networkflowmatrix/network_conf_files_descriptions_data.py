@@ -307,7 +307,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
 class BordAddressPlanV9Description(ExcelInputFileDescription):
     def __init__(self) -> None:
 
-        self.ip_tu_tab: InsideTrainEquipmentDefinitionTab = InsideTrainEquipmentDefinitionTab(
+        self.ip_tu1_tab: InsideTrainEquipmentDefinitionTab = InsideTrainEquipmentDefinitionTab(
             tab_name="@IP TU",
             rows_to_ignore=[0, 1, 2, 3, 4, 6],
             train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnExcelId("B")),
@@ -321,8 +321,90 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
                     equipment_vlan_column_definition=None,
                     mask_is_optional=True,
                     gateway_is_optional=True,
-                )
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("To TU_2"),
+                    equipment_gateway_column_definition=None,
+                    equipment_mask_column_definition=None,
+                    equipment_vlan_column_definition=None,
+                    mask_is_optional=True,
+                    gateway_is_optional=True,
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("SERIAL"),
+                    equipment_gateway_column_definition=None,
+                    equipment_mask_column_definition=None,
+                    equipment_vlan_column_definition=None,
+                    mask_is_optional=True,
+                    gateway_is_optional=True,
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("MGMT_CSR_1"),
+                    equipment_gateway_column_definition=None,
+                    equipment_mask_column_definition=None,
+                    equipment_vlan_column_definition=None,
+                    mask_is_optional=True,
+                    gateway_is_optional=True,
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("MGMT_CSR_2"),
+                    equipment_gateway_column_definition=None,
+                    equipment_mask_column_definition=None,
+                    equipment_vlan_column_definition=None,
+                    mask_is_optional=True,
+                    gateway_is_optional=True,
+                ),
             ],
         )
 
-        super().__init__(all_tabs_definition=[self.ip_tu_tab], excel_file_full_name="NExTEO-B-272000-02-0125-00 Plan d adressage NExTEO Bord V09-00.xlsm", rhapsody_id=91211232)
+        self.ip_tu2_tab: InsideTrainEquipmentDefinitionTab = InsideTrainEquipmentDefinitionTab(
+            tab_name="@IP TU",
+            rows_to_ignore=[0, 1, 2, 3, 4, 6],
+            train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnExcelId("B")),
+            equipment_type_definition=ForcedStrValueInformationDefinition("TU"),
+            equipment_name_column_definition=ForcedStrValueInformationDefinition("TU_2"),
+            equipment_ip_definitions=[
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("CPL SUBNET_2"),
+                    equipment_gateway_column_definition=None,
+                    equipment_mask_column_definition=None,
+                    equipment_vlan_column_definition=None,
+                    mask_is_optional=True,
+                    gateway_is_optional=True,
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("To TU_1"),
+                    equipment_gateway_column_definition=None,
+                    equipment_mask_column_definition=None,
+                    equipment_vlan_column_definition=None,
+                    mask_is_optional=True,
+                    gateway_is_optional=True,
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("SERIAL"),
+                    equipment_gateway_column_definition=None,
+                    equipment_mask_column_definition=None,
+                    equipment_vlan_column_definition=None,
+                    mask_is_optional=True,
+                    gateway_is_optional=True,
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("MGMT_CSR_1"),
+                    equipment_gateway_column_definition=None,
+                    equipment_mask_column_definition=None,
+                    equipment_vlan_column_definition=None,
+                    mask_is_optional=True,
+                    gateway_is_optional=True,
+                ),
+                UnicastIpDefinitionColumnsInTab(
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("MGMT_CSR_2"),
+                    equipment_gateway_column_definition=None,
+                    equipment_mask_column_definition=None,
+                    equipment_vlan_column_definition=None,
+                    mask_is_optional=True,
+                    gateway_is_optional=True,
+                ),
+            ],
+        )
+
+        super().__init__(all_tabs_definition=[self.ip_tu1_tab, self.ip_tu2_tab], excel_file_full_name="NExTEO-B-272000-02-0125-00 Plan d adressage NExTEO Bord V09-00.xlsm", rhapsody_id=91211232)

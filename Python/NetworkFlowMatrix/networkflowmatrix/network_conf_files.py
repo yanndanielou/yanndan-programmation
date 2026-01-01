@@ -272,7 +272,7 @@ class NetworkConfFile(GenericConfFile):
                         number_of_not_null_columns = sum(row.notnull())
                         number_of_not_na_columns = sum(row.notna())
 
-                        if number_of_not_null_columns < 2:
+                        if number_of_not_null_columns == 0:
                             logger_config.print_and_log_error(
                                 f"Ignore {usefull_raw_number} th row in {excel_file_full_path} tab {equipment_definition_tab.tab_name} because seems null ({number_of_null_columns} null columns, {number_of_not_null_columns} not null columns, {number_of_na_columns} na columns, {number_of_not_na_columns} not na columns): {row}"
                             )
