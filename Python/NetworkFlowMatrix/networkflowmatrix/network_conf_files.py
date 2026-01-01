@@ -51,12 +51,6 @@ class InformationDefinitionBase(ABC):
         pass
 
 
-class ForcedNoneValueInformationDefinition(InformationDefinitionBase):
-
-    def get_value(self, row: pandas.Series) -> Optional[str] | Optional[int]:
-        return None
-
-
 @dataclass
 class ForcedIntValueInformationDefinition(InformationDefinitionBase):
     value: Optional[int]
@@ -186,7 +180,7 @@ class EquipmentDefinitionTab:
     equipment_type_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Type"))
     equipment_ip_definitions: List["IpDefinitionColumnsInTab"] = field(default_factory=list)
     equipment_name_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equipement"))
-    equipment_alternative_name_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equip_ID"))
+    equipment_alternative_name_definition: Optional[InformationDefinitionBase] = None
 
 
 class TrainIdentifierDefinition(ABC):
@@ -273,6 +267,17 @@ class NetworkConfFile(GenericConfFile):
 
                     for usefull_raw_number, row in main_data_frame.iterrows():
 
+                        number_of_null_columns = sum(row.isnull())
+                        number_of_na_columns = sum(row.isna())
+                        number_of_not_null_columns = sum(row.notnull())
+                        number_of_not_na_columns = sum(row.notna())
+
+                        if number_of_not_null_columns < 2:
+                            logger_config.print_and_log_error(
+                                f"Ignore {usefull_raw_number} th row in {excel_file_full_path} tab {equipment_definition_tab.tab_name} because seems null ({number_of_null_columns} null columns, {number_of_not_null_columns} not null columns, {number_of_na_columns} na columns, {number_of_not_na_columns} not na columns): {row}"
+                            )
+                            break
+
                         equipment_name = cast(str, equipment_definition_tab.equipment_name_column_definition.get_value(row))
 
                         if isinstance(equipment_definition_tab, InsideTrainEquipmentDefinitionTab):
@@ -290,9 +295,10 @@ class NetworkConfFile(GenericConfFile):
                             if isinstance(equipment_type_raw, str):
                                 equipment.add_equipment_type(equipment_type_raw)
 
-                            equipment_alternative_identifier_raw = equipment_definition_tab.equipment_alternative_name_definition.get_value(row)
-                            if isinstance(equipment_alternative_identifier_raw, str):
-                                equipment.add_alternative_identifier(equipment_alternative_identifier_raw)
+                            if equipment_definition_tab.equipment_alternative_name_definition:
+                                equipment_alternative_identifier_raw = equipment_definition_tab.equipment_alternative_name_definition.get_value(row)
+                                if isinstance(equipment_alternative_identifier_raw, str):
+                                    equipment.add_alternative_identifier(equipment_alternative_identifier_raw)
 
                             for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
 
