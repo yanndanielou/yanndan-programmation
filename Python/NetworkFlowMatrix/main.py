@@ -4,7 +4,7 @@ from typing import Dict
 from common import file_utils, json_encoders
 from logger import logger_config
 
-from networkflowmatrix import network_conf_files, network_conf_files_descriptions_data, network_matrix_data_model, equipments
+from networkflowmatrix import network_conf_files, network_conf_files_descriptions_data, network_matrix_data_model, equipments, sith_equipments
 
 OUTPUT_PARENT_DIRECTORY_NAME = "Output"
 
@@ -65,6 +65,8 @@ if __name__ == "__main__":
             excel_file_full_path=network_conf_files_descriptions_data.SolStdNetworkConfV11Description().excel_file_full_path,
             equipment_definition_tabs=network_conf_files_descriptions_data.SolStdNetworkConfV11Description().all_tabs_definition,
         )
+
+        sith_conf_file = sith_equipments.SithConfFile.Builder.build(equipments_library=equipments_library)
 
         equipments_library.print_stats()
 
