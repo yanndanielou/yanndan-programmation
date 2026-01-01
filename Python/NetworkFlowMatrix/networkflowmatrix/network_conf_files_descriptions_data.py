@@ -457,6 +457,27 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
                 )
             )
 
+        for eqpt in ["NRS_1_1", "NRS_2_1", "NRS_5_1", "NRS_6_1", "NBR_A", "NBR_B", "NRS_1_2", "NRS_2_2", "GW_Mgt_SW"]:
+            all_tabs_definition.append(
+                InsideTrainEquipmentDefinitionTab(
+                    tab_name="@IP Mgt SW",
+                    rows_to_ignore=list(range(0, 10)) + [11, 12],
+                    train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnTitle("CC ID")),
+                    equipment_type_definition=ForcedStrValueInformationDefinition(eqpt),
+                    equipment_name_column_definition=ForcedStrValueInformationDefinition(eqpt),
+                    equipment_ip_definitions=[
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle(eqpt),
+                            equipment_gateway_column_definition=None,
+                            equipment_mask_column_definition=None,
+                            equipment_vlan_column_definition=None,
+                            mask_is_optional=True,
+                            gateway_is_optional=True,
+                        ),
+                    ],
+                )
+            )
+
         super().__init__(
             all_tabs_definition=all_tabs_definition,
             excel_file_full_name=excel_file_full_name,
