@@ -29,6 +29,8 @@ class IhmProgrammConfFile(network_conf_files.GenericConfFile):
 
                 all_equipments_found: List[NetworkConfFilesDefinedEquipment] = []
 
+                previous_module = ""
+                previous_gateway = ""
                 for usefull_raw_number, row in main_data_frame.iterrows():
 
                     number_of_null_columns = sum(row.isnull())
@@ -44,7 +46,12 @@ class IhmProgrammConfFile(network_conf_files.GenericConfFile):
                     gateway_raw = cast(str, row["Gateway"])
                     mask_raw = cast(str, row["Masque"])
 
-                    equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(name=module_raw, source_label_for_creation=f"{excel_file_full_path}/{"P2-4"}")
+                    eqpt = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(name=module_raw, source_label_for_creation=f"{excel_file_full_path}/{"P2-4"}")
+                    ip_address = adresses_raw.replace("(1)", "").replace(" ", "")
+                    eqpt.add_ip_address(network_conf_files.NetworkConfFilesDefinedIpAddress(ip_raw=ip_address, label=None))
+
+                    previous_module = module_raw
+                    previous_gateway = gateway_raw
 
                 logger_config.print_and_log_info(f"{excel_file_full_path} tab {sheet_name}: {len(all_equipments_found)} equipment found")
 
