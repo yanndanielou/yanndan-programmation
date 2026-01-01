@@ -4,7 +4,7 @@ from typing import Dict
 from common import file_utils, json_encoders
 from logger import logger_config
 
-from networkflowmatrix import network_conf_files, network_conf_files_descriptions_data, network_matrix_data_model, equipments, sith_equipments
+from networkflowmatrix import network_conf_files, network_conf_files_descriptions_data, network_matrix_data_model, equipments, sith_equipments_builder, ppn_equipments_builder
 
 OUTPUT_PARENT_DIRECTORY_NAME = "Output"
 
@@ -70,7 +70,8 @@ if __name__ == "__main__":
             equipments_library=equipments_library, excel_description=network_conf_files_descriptions_data.RadioLayoutR841Description()
         )
 
-        sith_conf_file = sith_equipments.SithConfFile.Builder.build(equipments_library=equipments_library)
+        sith_conf_file = sith_equipments_builder.SithConfFile.Builder.build(equipments_library=equipments_library)
+        ppn_conf_file = ppn_equipments_builder.PpnConfFile.Builder.build(equipments_library=equipments_library)
 
         equipments_library.print_stats()
 
