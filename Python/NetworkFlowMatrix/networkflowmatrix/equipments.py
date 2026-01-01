@@ -32,22 +32,23 @@ class NetworkConfFilesDefinedEquipment:
     name: str
     source_label: str
     library: "NetworkConfFilesEquipmentsLibrary"
-    equipment_types: Set[str] = field(default_factory=set)
-    alternative_identifiers: Set[str] = field(default_factory=set)
+    _equipment_types: Set[str] = field(default_factory=set)
+    _alternative_identifiers: Set[str] = field(default_factory=set)
     ip_addresses: List["NetworkConfFilesDefinedIpAddress"] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         assert self.name
         assert isinstance(self.name, str)
 
-        for alternative_identifier in self.alternative_identifiers:
-            assert alternative_identifier
-            assert isinstance(alternative_identifier, str)
-        assert isinstance(self.name, str)
+    def add_alternative_identifier(self, alternative_identifier: str) -> None:
+        assert alternative_identifier
+        assert isinstance(alternative_identifier, str)
+        self._alternative_identifiers.add(alternative_identifier)
 
-        for equipment_type in self.equipment_types:
-            assert equipment_type
-            assert isinstance(equipment_type, str)
+    def add_equipment_type(self, equipment_type: str) -> None:
+        assert equipment_type
+        assert isinstance(equipment_type, str)
+        self._equipment_types.add(equipment_type)
 
     def add_ip_address(self, ip_address: "NetworkConfFilesDefinedIpAddress") -> None:
         assert ip_address not in self.ip_addresses
@@ -58,7 +59,7 @@ class NetworkConfFilesDefinedEquipment:
             self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw] = []
 
         if self in self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw]:
-            logger_config.print_and_log_error(f"IP address {ip_address_raw} already defined. {self.name} {self.equipment_types} Will exist twice")
+            logger_config.print_and_log_error(f"IP address {ip_address_raw} already defined. {self.name} {self._equipment_types} Will exist twice")
 
         self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw].append(self)
 
@@ -93,7 +94,7 @@ class NetworkConfFilesEquipmentsLibrary:
                 if equipment.name in expected_equipment_name:
                     logger_config.print_and_log_info(f"Add alternative name {expected_equipment_name} for {equipment.name}")
                     self.network_conf_files_defined_equipments_by_id[expected_equipment_name] = equipment
-                    equipment.alternative_identifiers.add(expected_equipment_name)
+                    equipment._alternative_identifiers.add(expected_equipment_name)
 
                     return equipment
         return None
@@ -147,8 +148,8 @@ class NetworkConfFilesEquipmentsLibrary:
                 (
                     equipment.name,
                     equipment.source_label,
-                    f"Types:{', '.join(list(equipment.equipment_types))}",
-                    f"Alternative ids:{', '.join([str(alter) for alter in equipment.alternative_identifiers])}",
+                    f"Types:{', '.join(list(equipment._equipment_types))}",
+                    f"Alternative ids:{', '.join([str(alter) for alter in equipment._alternative_identifiers])}",
                     f"Ip:{', '.join([ip.ip_raw for ip in equipment.ip_addresses])}",
                 )
             )
