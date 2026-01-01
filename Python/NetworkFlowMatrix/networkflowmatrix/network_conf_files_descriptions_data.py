@@ -233,7 +233,10 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
                     can_be_empty=True,
                 ),
                 MulticastIpDefinitionColumnsInTab(
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("@IP multicast"), forced_label="Multicast", can_be_empty=True, group_multicast="239.192.0.0"
+                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("@IP multicast"),
+                    forced_label="Multicast",
+                    can_be_empty=True,
+                    group_multicast="239.192.0.0",
                 ),
             ],
         )
@@ -301,7 +304,7 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
             rows_to_ignore=[0, 1, 2, 3, 4, 6],
             train_identifier_definition=TrainByCcIdColumnDefinition(),
             equipment_type_definition=ForcedStrValueInformationDefinition("TU"),
-            # equipment_name_column_definition=ForcedStrValueInformationDefinition("TU_1"),
+            equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("TU_1"),
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
                     equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("CPL SUBNET_1"),
