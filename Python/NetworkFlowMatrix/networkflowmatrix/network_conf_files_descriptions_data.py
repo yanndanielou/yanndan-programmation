@@ -481,7 +481,7 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
             InsideTrainEquipmentDefinitionTab(
                 tab_name="@IP Multicast",
                 rows_to_ignore=list(range(0, 3)) + [4] + list(range(275, 550)),
-                train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnTitle("CC ID")),
+                train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnTitle("CC_ID \n(valeur  1 à 2047)")),
                 equipment_type_definition=ForcedStrValueInformationDefinition(eqpt),
                 equipment_name_column_definition=ForcedStrValueInformationDefinition(eqpt),
                 equipment_ip_definitions=[
