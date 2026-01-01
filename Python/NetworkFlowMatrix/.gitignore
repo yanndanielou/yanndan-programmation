@@ -15,5 +15,4 @@ Output/
 Output*/
 Output*.7z
 tests/secret_tests_data.py
-networkflowmatrix/ppn_equipments_builder.py
-networkflowmatrix/sith_equipments_builder.py
+networkflowmatrix/manual_equipments_builder.py
