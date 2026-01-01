@@ -58,7 +58,6 @@ class IhmProgrammConfFile(network_conf_files.GenericConfFile):
             conf_file = IhmProgrammConfFile(
                 name=excel_file_full_path,
                 equipments_library=equipments_library,
-                excel_file_full_path=excel_file_full_path,
                 all_equipments=all_equipments_found,
             )
 
