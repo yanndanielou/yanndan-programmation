@@ -236,14 +236,14 @@ class NetworkConfFile(GenericConfFile):
     class Builder:
 
         @staticmethod
-        def build_with_excel_descriptions(equipments_library: "NetworkConfFilesEquipmentsLibrary", excel_descriptions: List[ExcelInputFileDescription]) -> List["NetworkConfFile"]:
+        def build_with_excel_descriptions(equipments_library: "NetworkConfFilesEquipmentsLibrary", excel_descriptions: List["ExcelInputFileDescription"]) -> List["NetworkConfFile"]:
             network_conf_files: List["NetworkConfFile"] = []
             for excel_description in excel_descriptions:
                 network_conf_files.append(NetworkConfFile.Builder.build_with_excel_description(equipments_library, excel_description))
             return network_conf_files
 
         @staticmethod
-        def build_with_excel_description(equipments_library: "NetworkConfFilesEquipmentsLibrary", excel_description: ExcelInputFileDescription) -> "NetworkConfFile":
+        def build_with_excel_description(equipments_library: "NetworkConfFilesEquipmentsLibrary", excel_description: "ExcelInputFileDescription") -> "NetworkConfFile":
             return NetworkConfFile.Builder.build_with_excel_file(equipments_library, excel_description.excel_file_full_path, excel_description.all_tabs_definition)
 
         @staticmethod
