@@ -8,7 +8,6 @@ from networkflowmatrix.network_conf_files import (
     EquipmentDefinitionTab,
     ExcelColumnDefinitionByColumnExcelId,
     ExcelColumnDefinitionByColumnTitle,
-    ForcedNoneValueInformationDefinition,
     ForcedStrValueInformationDefinition,
     InsideTrainEquipmentDefinitionTab,
     MulticastIpDefinitionColumnsInTab,
@@ -43,6 +42,7 @@ class StdRadioNetworkConfV2Description(ExcelInputFileDescription):
         self.ip_reseau_std_radio_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP RESEAU STD RADIO",
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
                     equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
@@ -101,11 +101,13 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
 
         self.ip_ats_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP ATS",
+            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_ip_definitions=[UnicastIpDefinitionColumnsInTab(equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Adresse IP"))],
         )
         self.ip_reseau_std_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP RESEAU STD",
+            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
@@ -128,6 +130,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
         )
         self.ip_cbtc_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP CBTC",
+            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
@@ -169,6 +172,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
         )
         self.ip_mats: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP MATS",
+            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
@@ -207,6 +211,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
         )
         self.ip_reseau_pcc: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP RESEAU PCC",
+            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             rows_to_ignore=[0, 1, 2, 4, 5],
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(can_be_empty=True, gateway_is_optional=True),
@@ -214,6 +219,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
         )
         self.ip_csr_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP CSR",
+            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
@@ -242,6 +248,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
         )
         self.ip_pmb_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP PMB",
+            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
@@ -264,6 +271,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
         )
         self.ip_pai_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP PAI",
+            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipment"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_ip_definitions=[
@@ -308,9 +316,9 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
             equipment_ip_definitions=[
                 UnicastIpDefinitionColumnsInTab(
                     equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("CPL SUBNET_1"),
-                    equipment_gateway_column_definition=ForcedNoneValueInformationDefinition(),
-                    equipment_mask_column_definition=ForcedNoneValueInformationDefinition(),
-                    equipment_vlan_column_definition=ForcedNoneValueInformationDefinition(),
+                    equipment_gateway_column_definition=None,
+                    equipment_mask_column_definition=None,
+                    equipment_vlan_column_definition=None,
                     mask_is_optional=True,
                     gateway_is_optional=True,
                 )
