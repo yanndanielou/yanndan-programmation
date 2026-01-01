@@ -166,7 +166,7 @@ class FlowEndPoint:
                             )
                             equipments_in_network_conf_file_matching_ip_address.append(equipment_in_network_conf_file_matching_ip_address_it)
                             break
-                    if not equipments_in_network_conf_file_matching_ip_address:
+                    if equipments_in_network_conf_file_matching_ip_address:
                         logger_config.print_and_log_error(
                             f"{self.matrix_line_identifier}: Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in {[equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]}"
                         )
