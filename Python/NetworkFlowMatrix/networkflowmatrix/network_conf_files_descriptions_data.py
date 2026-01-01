@@ -477,25 +477,6 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
                     ],
                 )
             )
-        all_tabs_definition.append(
-            InsideTrainEquipmentDefinitionTab(
-                tab_name="@IP Multicast",
-                rows_to_ignore=list(range(0, 3)) + [4] + list(range(275, 550)),
-                train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnTitle("CC_ID \n(valeur  1 à 2047)")),
-                equipment_type_definition=ForcedStrValueInformationDefinition(eqpt),
-                equipment_name_column_definition=ForcedStrValueInformationDefinition(eqpt),
-                equipment_ip_definitions=[
-                    UnicastIpDefinitionColumnsInTab(
-                        equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle(eqpt),
-                        equipment_gateway_column_definition=None,
-                        equipment_mask_column_definition=None,
-                        equipment_vlan_column_definition=None,
-                        mask_is_optional=True,
-                        gateway_is_optional=True,
-                    ),
-                ],
-            )
-        )
 
         super().__init__(
             all_tabs_definition=all_tabs_definition,
