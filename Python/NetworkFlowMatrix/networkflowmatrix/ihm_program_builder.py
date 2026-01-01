@@ -53,7 +53,7 @@ class IhmProgrammConfFile(network_conf_files.GenericConfFile):
                     try:
                         eqpt.add_ip_address(network_conf_files.NetworkConfFilesDefinedIpAddress(ip_raw=ip_address, label=None))
                     except AssertionError:
-                        logger_config.print_and_log_error(f"Could not create IP {ip_address} for {module} because is already defined for it")
+                        logger_config.print_and_log_error(f"Could not create IP {ip_address} for {module} in {emplacement_raw} because is already defined for it")
 
                     if module_is_defined:
                         previous_module = module_raw
