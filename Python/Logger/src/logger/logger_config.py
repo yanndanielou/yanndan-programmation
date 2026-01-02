@@ -171,11 +171,7 @@ def application_logger(application_name: str, logger_level: int = logging.INFO) 
     application_end_timestamp = time.asctime(time.localtime(time.time()))
 
     elapsed_time = application_end_time - application_start_time
-    to_print_and_log = (
-        f"{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s\n"
-        f"{application_name} : Logger stats: \n{'\n'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts.items()))}"
-     #   f"{'\n'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts.items()))}"
-    )
+    to_print_and_log = f"{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s. Logger stats: \t{'\t'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts.items()))}"
     print(application_end_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
     logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
 
@@ -237,6 +233,7 @@ def configure_logger_with_exact_file_name(log_file_name: str, logger_level: int 
     counting_handler = MessagesCounterHandler()
     logger.addHandler(counting_handler)
 
+
 class ExecutionTime(object):
     """Print execution time of a function"""
 
@@ -292,7 +289,7 @@ class PrintInputAndOutput(object):
         logging.debug(f"Arguments passed to {self.f.__name__ } called with: {str(args)} returns: {str(ret)}")
         return ret
 
- 
+
 @deprecated("Kept just in case")
 def get_logger(name: str, rotating_file_name_without_extension: str, level: int = logging.DEBUG) -> logging.Logger:
     """Create and configure a logger."""
