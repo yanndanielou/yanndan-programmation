@@ -1,6 +1,8 @@
 ﻿"""logger"""
 
 import datetime
+from warnings import deprecated
+
 
 # To get line number for logs
 # from inspect import currentframe, getframeinfo
@@ -21,6 +23,8 @@ from typing import Optional, Tuple, cast
 
 import humanize
 import psutil
+from collections import defaultdict
+
 from common import date_time_formats, file_name_utils
 
 # pylint: enable=logging-not-lazy
@@ -28,6 +32,17 @@ from common import date_time_formats, file_name_utils
 
 DEFAULT_CALL_STACK_CONTEXT_VALUE = 1
 DEFAULT_CALL_STACK_FRAME_VALUE = 2
+
+log_counts = defaultdict(int)
+
+
+class MessagesCounterHandler(logging.Handler):
+
+    def __init__(self, *args, **kwargs):
+        super(MessagesCounterHandler, self).__init__(*args, **kwargs)
+
+    def emit(self, record):
+        log_counts[record.levelname] += 1
 
 
 def __get_calling_file_name_and_line_number(
@@ -157,7 +172,9 @@ def application_logger(application_name: str, logger_level: int = logging.INFO) 
 
     elapsed_time = application_end_time - application_start_time
     to_print_and_log = (
-        f"{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s"
+        f"{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s\n"
+        f"{application_name} : Logger stats: \n{'\n'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts.items()))}"
+     #   f"{'\n'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts.items()))}"
     )
     print(application_end_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
     logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
@@ -213,6 +230,12 @@ def configure_logger_with_exact_file_name(log_file_name: str, logger_level: int 
     # logging.error
     # logging.critical
 
+    # Create logger
+    logger = logging.getLogger()
+
+    # Add the custom handler
+    counting_handler = MessagesCounterHandler()
+    logger.addHandler(counting_handler)
 
 class ExecutionTime(object):
     """Print execution time of a function"""
@@ -269,7 +292,8 @@ class PrintInputAndOutput(object):
         logging.debug(f"Arguments passed to {self.f.__name__ } called with: {str(args)} returns: {str(ret)}")
         return ret
 
-
+ 
+@deprecated("Kept just in case")
 def get_logger(name: str, rotating_file_name_without_extension: str, level: int = logging.DEBUG) -> logging.Logger:
     """Create and configure a logger."""
     logger = logging.getLogger(name)
