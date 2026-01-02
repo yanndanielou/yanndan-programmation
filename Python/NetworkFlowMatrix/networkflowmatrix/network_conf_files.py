@@ -259,7 +259,9 @@ class NetworkConfFile(GenericConfFile):
             for equipment_definition_tab in equipment_definition_tabs:
 
                 with logger_config.stopwatch_with_label(f"Load {excel_file_full_path} sheet {equipment_definition_tab.tab_name}", monitor_ram_usage=True, inform_beginning=True):
-                    main_data_frame = pandas.read_excel(excel_file_full_path, skiprows=equipment_definition_tab.rows_to_ignore, sheet_name=equipment_definition_tab.tab_name)
+
+                    with logger_config.stopwatch_with_label(f"Read excel {excel_file_full_path} sheet {equipment_definition_tab.tab_name}", monitor_ram_usage=True, inform_beginning=True):
+                        main_data_frame = pandas.read_excel(excel_file_full_path, skiprows=equipment_definition_tab.rows_to_ignore, sheet_name=equipment_definition_tab.tab_name)
                     logger_config.print_and_log_info(f"{excel_file_full_path} {equipment_definition_tab.tab_name} has {len(main_data_frame)} items")
                     logger_config.print_and_log_info(f" {excel_file_full_path} {equipment_definition_tab.tab_name} columns  {main_data_frame.columns[:4]} ...")
 
