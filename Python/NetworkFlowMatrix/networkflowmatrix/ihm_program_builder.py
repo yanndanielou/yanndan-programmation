@@ -78,9 +78,6 @@ class IhmProgrammConfFile(network_conf_files.GenericConfFile):
                 all_equipments=all_equipments_found,
             )
 
-            logger_config.print_and_log_info(f"{excel_file_full_path}: {len(all_equipments_found)} equipment found")
-            logger_config.print_and_log_info(f"So far, the library contains {len(equipments_library.all_network_conf_files_defined_equipments)} equipments in total")
-
             return conf_file
 
 
@@ -111,11 +108,15 @@ class FdiffClientsConfFile(network_conf_files.GenericConfFile):
                         logger_config.print_and_log_warning(f"{excel_file_full_path} : ignore {usefull_raw_number}th row because is null")
                         continue
 
-                    emplacement_raw = cast(str, row["Emplacement\nTerminal"])
+                    emplacement_raw = cast(str, row["Emplacement Terminal"])
                     terminal_raw = cast(str, row["Terminal"])
-                    adresses_raw = cast(str, row["'@IP des terminaux (2)"])
+                    adresses_raw = cast(str, row["@IP des terminaux (2)"])
                     gateway_raw = cast(str, row["Gateway (2)"])
                     mask_raw = cast(str, row["Masque (2)"])
+
+                    if str(adresses_raw) == "nan":
+                        logger_config.print_and_log_warning(f"{excel_file_full_path} : ignore {usefull_raw_number}th row because missing info")
+                        continue
 
                     equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(
                         name="FDIFF_CLIENT_" + emplacement_raw + "_" + terminal_raw, source_label_for_creation=f"{excel_file_full_path}"
@@ -135,8 +136,5 @@ class FdiffClientsConfFile(network_conf_files.GenericConfFile):
                 equipments_library=equipments_library,
                 all_equipments=all_equipments_found,
             )
-
-            logger_config.print_and_log_info(f"{excel_file_full_path}: {len(all_equipments_found)} equipment found")
-            logger_config.print_and_log_info(f"So far, the library contains {len(equipments_library.all_network_conf_files_defined_equipments)} equipments in total")
 
             return conf_file
