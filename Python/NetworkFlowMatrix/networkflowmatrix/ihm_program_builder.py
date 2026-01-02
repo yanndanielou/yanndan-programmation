@@ -52,10 +52,11 @@ class IhmProgrammConfFile(network_conf_files.GenericConfFile):
 
                     module_is_defined = str(module_raw) != "nan"
                     module = module_raw if module_is_defined else last_valid_module
-                    eqpt = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(name=location + "_" + module, source_label_for_creation=f"{excel_file_full_path}/{"P2-4"}")
+                    equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(name=location + "_" + module, source_label_for_creation=f"{excel_file_full_path}/{"P2-4"}")
+                    all_equipments_found.append(equipment)
                     ip_address = adresses_raw.replace("(1)", "").replace(" ", "")
                     try:
-                        eqpt.add_ip_address(
+                        equipment.add_ip_address(
                             network_conf_files.NetworkConfFilesDefinedUnicastIpAddress(
                                 ip_raw=ip_address, label=None, mask=mask_raw, gateway=gateway_raw, vlan_name=None, gateway_is_optional=True, mask_is_optional=True
                             )
@@ -106,23 +107,26 @@ class FdiffClientsConfFile(network_conf_files.GenericConfFile):
                     number_of_not_null_columns = sum(row.notnull())
                     number_of_not_na_columns = sum(row.notna())
 
+                    if number_of_not_null_columns == 0:
+                        logger_config.print_and_log_warning(f"{excel_file_full_path} : ignore {usefull_raw_number}th row because is null")
+                        continue
+
                     emplacement_raw = cast(str, row["Emplacement\nTerminal"])
                     terminal_raw = cast(str, row["Terminal"])
                     adresses_raw = cast(str, row["'@IP des terminaux (2)"])
                     gateway_raw = cast(str, row["Gateway (2)"])
                     mask_raw = cast(str, row["Masque (2)"])
 
-                    eqpt = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(
+                    equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(
                         name="FDIFF_CLIENT_" + emplacement_raw + "_" + terminal_raw, source_label_for_creation=f"{excel_file_full_path}"
                     )
-                    try:
-                        eqpt.add_ip_address(
-                            network_conf_files.NetworkConfFilesDefinedUnicastIpAddress(
-                                ip_raw=adresses_raw, label=None, mask=mask_raw, gateway=gateway_raw, vlan_name=None, gateway_is_optional=True, mask_is_optional=True
-                            )
+                    all_equipments_found.append(equipment)
+
+                    equipment.add_ip_address(
+                        network_conf_files.NetworkConfFilesDefinedUnicastIpAddress(
+                            ip_raw=adresses_raw, label=None, mask=mask_raw, gateway=gateway_raw, vlan_name=None, gateway_is_optional=True, mask_is_optional=True
                         )
-                    except AssertionError:
-                        logger_config.print_and_log_error(f"Could not create IP {adresses_raw} for {terminal_raw} in {emplacement_raw} because is already defined for it")
+                    )
 
                 logger_config.print_and_log_info(f"{excel_file_full_path} tab {sheet_name}: {len(all_equipments_found)} equipment found")
 
