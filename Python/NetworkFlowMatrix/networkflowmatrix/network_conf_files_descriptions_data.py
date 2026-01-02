@@ -462,78 +462,78 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
             )
         )
 
-        for eqpt in [
-            "PAE_A",
-            "PAE_B",
-            "PPN_A_1",
-            "PPN_B_1",
-            "PPN_A_2",
-            "PPN_B_2",
-            "TU_A",
-            "TU_B",
-            "INT_TOOL",
-            "GW_CBTC",
-            "NBR_A",
-            "NBR_B",
-            "AFF_CAR_1",
-            "AFF_CAR_2",
-            "GW_AFF",
-            "NBR_A_AFF",
-            "NBR_B_AFF",
-            "MPU0_Z11",
-            "MPU0_Z12",
-            "GW_SIE",
-            "NBR_A_SIE",
-            "NBR_B_SIE",
-        ]:
-            all_tabs_definition.append(
-                EquipmentDefinitionTab(
-                    tab_name="@IP NExTEO VLAN",
-                    rows_to_ignore=list(range(0, 13)) + [14, 15],
-                    equipment_definitions=[
-                        InsideTrainEquipmentDefinitionColumn(
-                            train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnTitle("CC ID")),
-                            equipment_type_definition=ForcedStrValueInformationDefinition(eqpt),
-                            equipment_name_column_definition=ForcedStrValueInformationDefinition(eqpt),
-                            equipment_ip_definitions=[
-                                UnicastIpDefinitionColumnsInTab(
-                                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle(eqpt),
-                                    equipment_gateway_column_definition=None,
-                                    equipment_mask_column_definition=None,
-                                    equipment_vlan_column_definition=None,
-                                    mask_is_optional=True,
-                                    gateway_is_optional=True,
-                                ),
-                            ],
-                        )
-                    ],
-                )
+        all_tabs_definition.append(
+            EquipmentDefinitionTab(
+                tab_name="@IP NExTEO VLAN",
+                rows_to_ignore=list(range(0, 13)) + [14, 15],
+                equipment_definitions=[
+                    InsideTrainEquipmentDefinitionColumn(
+                        train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnTitle("CC ID")),
+                        equipment_type_definition=ForcedStrValueInformationDefinition(eqpt),
+                        equipment_name_column_definition=ForcedStrValueInformationDefinition(eqpt),
+                        equipment_ip_definitions=[
+                            UnicastIpDefinitionColumnsInTab(
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle(eqpt),
+                                equipment_gateway_column_definition=None,
+                                equipment_mask_column_definition=None,
+                                equipment_vlan_column_definition=None,
+                                mask_is_optional=True,
+                                gateway_is_optional=True,
+                            ),
+                        ],
+                    )
+                    for eqpt in [
+                        "PAE_A",
+                        "PAE_B",
+                        "PPN_A_1",
+                        "PPN_B_1",
+                        "PPN_A_2",
+                        "PPN_B_2",
+                        "TU_A",
+                        "TU_B",
+                        "INT_TOOL",
+                        "GW_CBTC",
+                        "NBR_A",
+                        "NBR_B",
+                        "AFF_CAR_1",
+                        "AFF_CAR_2",
+                        "GW_AFF",
+                        "NBR_A_AFF",
+                        "NBR_B_AFF",
+                        "MPU0_Z11",
+                        "MPU0_Z12",
+                        "GW_SIE",
+                        "NBR_A_SIE",
+                        "NBR_B_SIE",
+                    ]
+                ],
             )
+        )
 
-        for eqpt in ["NRS_1_1", "NRS_2_1", "NRS_5_1", "NRS_6_1", "NBR_A", "NBR_B", "NRS_1_2", "NRS_2_2", "GW_Mgt_SW"]:
-            all_tabs_definition.append(
-                EquipmentDefinitionTab(
-                    tab_name="@IP Mgt SW",
-                    rows_to_ignore=list(range(0, 10)) + [11, 12],
-                    equipment_definitions=[
-                        InsideTrainEquipmentDefinitionColumn(
-                            train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnTitle("CC ID")),
-                            equipment_type_definition=ForcedStrValueInformationDefinition(eqpt),
-                            equipment_name_column_definition=ForcedStrValueInformationDefinition(eqpt),
-                            equipment_ip_definitions=[
-                                UnicastIpDefinitionColumnsInTab(
-                                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle(eqpt),
-                                    equipment_gateway_column_definition=None,
-                                    equipment_mask_column_definition=None,
-                                    equipment_vlan_column_definition=None,
-                                    mask_is_optional=True,
-                                    gateway_is_optional=True,
-                                ),
-                            ],
-                        )
-                    ],
-                )
+        all_tabs_definition.append(
+            EquipmentDefinitionTab(
+                tab_name="@IP Mgt SW",
+                rows_to_ignore=list(range(0, 10)) + [11, 12],
+                equipment_definitions=[
+                    InsideTrainEquipmentDefinitionColumn(
+                        train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnTitle("CC ID")),
+                        equipment_type_definition=ForcedStrValueInformationDefinition(eqpt),
+                        equipment_name_column_definition=ForcedStrValueInformationDefinition(eqpt),
+                        equipment_ip_definitions=[
+                            UnicastIpDefinitionColumnsInTab(
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle(eqpt),
+                                equipment_gateway_column_definition=None,
+                                equipment_mask_column_definition=None,
+                                equipment_vlan_column_definition=None,
+                                mask_is_optional=True,
+                                gateway_is_optional=True,
+                            ),
+                        ],
+                    )
+                    for eqpt in ["NRS_1_1", "NRS_2_1", "NRS_5_1", "NRS_6_1", "NBR_A", "NBR_B", "NRS_1_2", "NRS_2_2", "GW_Mgt_SW"]
+                ],
             )
+        )
 
         super().__init__(
             all_tabs_definition=all_tabs_definition,
