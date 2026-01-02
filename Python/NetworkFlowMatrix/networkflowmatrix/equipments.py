@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 from common import json_encoders
 from logger import logger_config
 
+from networkflowmatrix import constants
+
 if TYPE_CHECKING:
     from networkflowmatrix.network_conf_files import (
         NetworkConfFilesDefinedIpAddress,
     )
-
-NUMBER_OF_TRAINS = 131
 
 
 @dataclass
@@ -78,6 +78,7 @@ class NetworkConfFilesEquipmentsLibrary:
         self.network_conf_files_defined_equipments_by_id: Dict[str, NetworkConfFilesDefinedEquipment] = {}
         self.network_conf_files_defined_equipments_by_raw_ip_addresses: Dict[str, List[NetworkConfFilesDefinedEquipment]] = {}
         self.all_trains_unbreakable_units: List[TrainUnbreakableSingleUnit] = []
+        self.all_ignored_trains_unbreakable_units: List[TrainUnbreakableSingleUnit] = []
         self.all_trains_unbreakable_units_by_cc_id: Dict[int, TrainUnbreakableSingleUnit] = {}
         self.all_trains_unbreakable_units_by_emu_id: Dict[int, TrainUnbreakableSingleUnit] = {}
         self.not_found_equipment_names: Set[str] = set()
@@ -102,7 +103,7 @@ class NetworkConfFilesEquipmentsLibrary:
                 if equipment.name in expected_equipment_name:
                     logger_config.print_and_log_info(f"Add alternative name {expected_equipment_name} for {equipment.name}")
                     self.network_conf_files_defined_equipments_by_id[expected_equipment_name] = equipment
-                    equipment._alternative_identifiers.add(expected_equipment_name)
+                    equipment.add_alternative_identifier(expected_equipment_name)
 
                     return equipment
         return None
@@ -143,11 +144,15 @@ class NetworkConfFilesEquipmentsLibrary:
         return None
 
     def create_train_unbreakable_units(self) -> None:
-        for i in range(1, NUMBER_OF_TRAINS + 1):
+        for i in constants.ALL_USED_TRAINS_IDS:
             train_unbreakable_unit = TrainUnbreakableSingleUnit(cc_id=i, emu_id=4000 + i)
             self.all_trains_unbreakable_units.append(train_unbreakable_unit)
             self.all_trains_unbreakable_units_by_cc_id[train_unbreakable_unit.cc_id] = train_unbreakable_unit
             self.all_trains_unbreakable_units_by_emu_id[train_unbreakable_unit.emu_id] = train_unbreakable_unit
+
+        for i in constants.TO_IGNORE_TRAINS_IDS:
+            train_unbreakable_unit = TrainUnbreakableSingleUnit(cc_id=i, emu_id=4000 + i)
+            self.all_ignored_trains_unbreakable_units.append(train_unbreakable_unit)
 
     def dump_to_json_file(self, output_json_file_full_path: str) -> None:
         data_to_dump: List[Tuple] = []

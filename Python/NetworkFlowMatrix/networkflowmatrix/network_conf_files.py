@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from networkflowmatrix.equipments import TrainUnbreakableSingleUnit, Equipment, NetworkConfFilesEquipmentsLibrary, NetworkConfFilesDefinedEquipment
     from networkflowmatrix.network_conf_files_descriptions_data import ExcelInputFileDescription
 
+from networkflowmatrix import constants
+
 
 @dataclass
 class NetworkConfFilesDefinedIpAddress(ABC):
@@ -201,12 +203,18 @@ class TrainByCcIdColumnDefinition(TrainIdentifierDefinition):
     cc_id_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("CC_ID"))
 
     def get_train(self, row: pandas.Series, equipment_library: "NetworkConfFilesEquipmentsLibrary") -> "TrainUnbreakableSingleUnit":
-        cc_id = int(self.cc_id_column_definition.get_value(row))
+        cc_id = self.cc_id_column_definition.get_value(row)
+        assert isinstance(cc_id, int) or isinstance(cc_id, float)
+        cc_id = int(cc_id)
+        if cc_id in constants.TO_IGNORE_TRAINS_IDS:
+            logger_config.print_and_log_info(f"Ignore cc_id {cc_id} because in black list {constants.TO_IGNORE_TRAINS_IDS}")
+            return [train for train in equipment_library.all_ignored_trains_unbreakable_units if train.cc_id == cc_id][0]
+        assert isinstance(cc_id, int)
         assert cc_id
         assert cc_id > 0
         # assert isinstance(cc_id, int)
         train = equipment_library.get_existing_train_unbreakable_unit_by_cc_id(cc_id=cc_id)
-        assert train
+        assert train, f"Could not find train with CC id {cc_id}"
         return train
 
 
@@ -298,6 +306,11 @@ class NetworkConfFile(GenericConfFile):
                                 if isinstance(equipment_definition, InsideTrainEquipmentDefinitionColumn):
                                     train = equipment_definition.train_identifier_definition.get_train(row, equipments_library)
                                     assert train
+
+                                    if train in equipments_library.all_ignored_trains_unbreakable_units:
+                                        logger_config.print_and_log_info(f"Ignore row {row} because train with cc_id {train.cc_id} is in black list {constants.TO_IGNORE_TRAINS_IDS}")
+                                        continue
+
                                     equipment_name = f"TRAIN_CC_{train.cc_id}_{equipment_name}"
 
                                 if isinstance(equipment_name, str):

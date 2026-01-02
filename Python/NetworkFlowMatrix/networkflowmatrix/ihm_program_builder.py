@@ -99,10 +99,7 @@ class FdiffClientsConfFile(network_conf_files.GenericConfFile):
 
                 for usefull_raw_number, row in main_data_frame.iterrows():
 
-                    number_of_null_columns = sum(row.isnull())
-                    number_of_na_columns = sum(row.isna())
                     number_of_not_null_columns = sum(row.notnull())
-                    number_of_not_na_columns = sum(row.notna())
 
                     if number_of_not_null_columns == 0:
                         logger_config.print_and_log_warning(f"{excel_file_full_path} : ignore {usefull_raw_number}th row because is null")
