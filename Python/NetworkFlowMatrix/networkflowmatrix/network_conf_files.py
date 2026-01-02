@@ -350,7 +350,4 @@ class NetworkConfFile(GenericConfFile):
                 equipment_definition_tabs=equipment_definition_tabs,
             )
 
-            logger_config.print_and_log_info(f"{excel_file_full_path}: {len(all_equipments_found_in_excel)} equipment found")
-            logger_config.print_and_log_info(f"So far, the library contains {len(equipments_library.all_network_conf_files_defined_equipments)} equipments in total")
-
             return conf_file
