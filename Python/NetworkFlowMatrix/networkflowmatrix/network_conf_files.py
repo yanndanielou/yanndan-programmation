@@ -291,7 +291,7 @@ class NetworkConfFile(GenericConfFile):
                                     logger_config.print_and_log_warning(
                                         f"Ignore {usefull_raw_number} th row in {excel_file_full_path} tab {equipment_definition_tab.tab_name} because seems null ({number_of_null_columns} null columns, {number_of_not_null_columns} not null columns, {number_of_na_columns} na columns, {number_of_not_na_columns} not na columns): {row}"
                                     )
-                                    break
+                                    continue
 
                                 equipment_name = cast(str, equipment_definition.equipment_name_column_definition.get_value(row))
 
