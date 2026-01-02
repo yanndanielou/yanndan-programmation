@@ -244,7 +244,7 @@ class GenericConfFile:
     name: str
 
     def __post_init__(self) -> None:
-        assert self.all_equipments
+        assert self.all_equipments, f"{self.name} did not produce any equipment"
         logger_config.print_and_log_info(f"{self.name}: {len(self.all_equipments)} equipment found")
         logger_config.print_and_log_info(f"So far, the library contains {len(self.equipments_library.all_network_conf_files_defined_equipments)} equipments in total")
 
