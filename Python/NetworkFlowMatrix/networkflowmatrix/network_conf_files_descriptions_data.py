@@ -6,10 +6,11 @@ from common import file_name_utils
 
 from networkflowmatrix.network_conf_files import (
     EquipmentDefinitionTab,
+    EquipmentDefinitionColumn,
+    InsideTrainEquipmentDefinitionColumn,
     ExcelColumnDefinitionByColumnExcelId,
     ExcelColumnDefinitionByColumnTitle,
     ForcedStrValueInformationDefinition,
-    InsideTrainEquipmentDefinitionTab,
     MulticastIpDefinitionColumnsInTab,
     TrainByCcIdColumnDefinition,
     UnicastIpDefinitionColumnsInTab,
@@ -42,16 +43,20 @@ class StdRadioNetworkConfV2Description(ExcelInputFileDescription):
         self.ip_reseau_std_radio_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP RESEAU STD RADIO",
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
-            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
-            equipment_ip_definitions=[
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
-                    forced_label="Anneau A",
-                    can_be_empty=True,
-                ),
+            equipment_definitions=[
+                EquipmentDefinitionColumn(
+                    equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
+                    equipment_ip_definitions=[
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                            forced_label="Anneau A",
+                            can_be_empty=True,
+                        ),
+                    ],
+                )
             ],
         )
         super().__init__(
@@ -67,26 +72,30 @@ class RadioLayoutR841Description(ExcelInputFileDescription):
         self.ip_reseau_std_radio_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="AP CBTC",
             rows_to_ignore=[],
-            equipment_type_definition=ForcedStrValueInformationDefinition("AP"),
-            equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("AP name"),
-            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("N° AP Layout radio"),
-            equipment_ip_definitions=[
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=None,
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("IP via CSR_A\n(S&D info)"),
-                    equipment_mask_column_definition=None,
-                    equipment_gateway_column_definition=None,
-                    forced_label="IP via CSR_A (S&D info)",
-                    can_be_empty=True,
-                ),
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=None,
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("IP via CSR_B\n(S&D info)"),
-                    equipment_mask_column_definition=None,
-                    equipment_gateway_column_definition=None,
-                    forced_label="IP via CSR_B (S&D info)",
-                    can_be_empty=True,
-                ),
+            equipment_definitions=[
+                EquipmentDefinitionColumn(
+                    equipment_type_definition=ForcedStrValueInformationDefinition("AP"),
+                    equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("AP name"),
+                    equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("N° AP Layout radio"),
+                    equipment_ip_definitions=[
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=None,
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("IP via CSR_A\n(S&D info)"),
+                            equipment_mask_column_definition=None,
+                            equipment_gateway_column_definition=None,
+                            forced_label="IP via CSR_A (S&D info)",
+                            can_be_empty=True,
+                        ),
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=None,
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("IP via CSR_B\n(S&D info)"),
+                            equipment_mask_column_definition=None,
+                            equipment_gateway_column_definition=None,
+                            forced_label="IP via CSR_B (S&D info)",
+                            can_be_empty=True,
+                        ),
+                    ],
+                )
             ],
         )
         super().__init__(
@@ -101,199 +110,231 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
 
         self.ip_ats_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP ATS",
-            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
-            equipment_ip_definitions=[UnicastIpDefinitionColumnsInTab(equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Adresse IP"))],
+            equipment_definitions=[
+                EquipmentDefinitionColumn(
+                    equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
+                    equipment_ip_definitions=[UnicastIpDefinitionColumnsInTab(equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Adresse IP"))],
+                )
+            ],
         )
         self.ip_reseau_std_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP RESEAU STD",
-            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
-            equipment_ip_definitions=[
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
-                    forced_label="Anneau A",
-                    can_be_empty=True,
-                ),
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau B"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
-                    forced_label="Anneau B",
-                    can_be_empty=True,
-                ),
+            equipment_definitions=[
+                EquipmentDefinitionColumn(
+                    equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
+                    equipment_ip_definitions=[
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                            forced_label="Anneau A",
+                            can_be_empty=True,
+                        ),
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau B"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
+                            forced_label="Anneau B",
+                            can_be_empty=True,
+                        ),
+                    ],
+                )
             ],
         )
         self.ip_cbtc_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP CBTC",
-            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
-            equipment_ip_definitions=[
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("G"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
-                    forced_label="Anneau A Unite A",
-                    can_be_empty=True,
-                ),
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("H"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
-                    forced_label="Anneau A Unite B",
-                    can_be_empty=True,
-                ),
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("M"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
-                    forced_label="Anneau B Unite A",
-                    can_be_empty=True,
-                ),
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("N"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
-                    forced_label="Anneau B Unite B",
-                    can_be_empty=True,
-                ),
-                MulticastIpDefinitionColumnsInTab(
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("R"), forced_label="Multicast", can_be_empty=True, group_multicast="239.192.0.0"
-                ),
+            equipment_definitions=[
+                EquipmentDefinitionColumn(
+                    equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
+                    equipment_ip_definitions=[
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("G"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                            forced_label="Anneau A Unite A",
+                            can_be_empty=True,
+                        ),
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("H"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                            forced_label="Anneau A Unite B",
+                            can_be_empty=True,
+                        ),
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("M"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
+                            forced_label="Anneau B Unite A",
+                            can_be_empty=True,
+                        ),
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("N"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
+                            forced_label="Anneau B Unite B",
+                            can_be_empty=True,
+                        ),
+                        MulticastIpDefinitionColumnsInTab(
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("R"), forced_label="Multicast", can_be_empty=True, group_multicast="239.192.0.0"
+                        ),
+                    ],
+                )
             ],
         )
         self.ip_mats: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP MATS",
-            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
-            equipment_ip_definitions=[
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("G"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
-                    forced_label="Anneau A Unite A",
-                    can_be_empty=True,
-                ),
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("H"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
-                    forced_label="Anneau A Unite B",
-                    can_be_empty=True,
-                ),
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("M"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
-                    forced_label="Anneau B Unite A",
-                    can_be_empty=True,
-                ),
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("N"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
-                    forced_label="Anneau B Unite B",
-                    can_be_empty=True,
-                ),
+            equipment_definitions=[
+                EquipmentDefinitionColumn(
+                    equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
+                    equipment_ip_definitions=[
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("G"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                            forced_label="Anneau A Unite A",
+                            can_be_empty=True,
+                        ),
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("H"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                            forced_label="Anneau A Unite B",
+                            can_be_empty=True,
+                        ),
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("M"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
+                            forced_label="Anneau B Unite A",
+                            can_be_empty=True,
+                        ),
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnExcelId("N"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
+                            forced_label="Anneau B Unite B",
+                            can_be_empty=True,
+                        ),
+                    ],
+                )
             ],
         )
         self.ip_reseau_pcc: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP RESEAU PCC",
-            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             rows_to_ignore=[0, 1, 2, 4, 5],
-            equipment_ip_definitions=[
-                UnicastIpDefinitionColumnsInTab(can_be_empty=True, gateway_is_optional=True),
+            equipment_definitions=[
+                EquipmentDefinitionColumn(
+                    equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
+                    equipment_ip_definitions=[
+                        UnicastIpDefinitionColumnsInTab(can_be_empty=True, gateway_is_optional=True),
+                    ],
+                )
             ],
         )
         self.ip_csr_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP CSR",
-            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
-            equipment_ip_definitions=[
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
-                    forced_label="Anneau A Unite A",
-                    can_be_empty=True,
-                ),
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau B"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
-                    forced_label="Anneau B Unite A",
-                    can_be_empty=True,
-                ),
-                MulticastIpDefinitionColumnsInTab(
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("@IP multicast"),
-                    forced_label="Multicast",
-                    can_be_empty=True,
-                    group_multicast="239.192.0.0",
-                ),
+            equipment_definitions=[
+                EquipmentDefinitionColumn(
+                    equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
+                    equipment_ip_definitions=[
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                            forced_label="Anneau A Unite A",
+                            can_be_empty=True,
+                        ),
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau B"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
+                            forced_label="Anneau B Unite A",
+                            can_be_empty=True,
+                        ),
+                        MulticastIpDefinitionColumnsInTab(
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("@IP multicast"),
+                            forced_label="Multicast",
+                            can_be_empty=True,
+                            group_multicast="239.192.0.0",
+                        ),
+                    ],
+                )
             ],
         )
         self.ip_pmb_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP PMB",
-            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
-            equipment_ip_definitions=[
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
-                    forced_label="Anneau A",
-                    can_be_empty=True,
-                ),
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau B"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
-                    forced_label="Anneau B",
-                    can_be_empty=True,
-                ),
+            equipment_definitions=[
+                EquipmentDefinitionColumn(
+                    equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
+                    equipment_ip_definitions=[
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                            forced_label="Anneau A",
+                            can_be_empty=True,
+                        ),
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau B"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
+                            forced_label="Anneau B",
+                            can_be_empty=True,
+                        ),
+                    ],
+                )
             ],
         )
         self.ip_pai_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP PAI",
-            equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
-            equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipment"),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
-            equipment_ip_definitions=[
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
-                    forced_label="Anneau A",
-                    can_be_empty=True,
-                    gateway_is_optional=True,
-                    mask_is_optional=True,
-                ),
-                UnicastIpDefinitionColumnsInTab(
-                    equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
-                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau B"),
-                    equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
-                    equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
-                    forced_label="Anneau B",
-                    can_be_empty=True,
-                    gateway_is_optional=True,
-                    mask_is_optional=True,
+            equipment_definitions=[
+                EquipmentDefinitionColumn(
+                    equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
+                    equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipment"),
+                    equipment_ip_definitions=[
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau A"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque A"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle A"),
+                            forced_label="Anneau A",
+                            can_be_empty=True,
+                            gateway_is_optional=True,
+                            mask_is_optional=True,
+                        ),
+                        UnicastIpDefinitionColumnsInTab(
+                            equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID B"),
+                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Anneau B"),
+                            equipment_mask_column_definition=ExcelColumnDefinitionByColumnTitle("Masque B"),
+                            equipment_gateway_column_definition=ExcelColumnDefinitionByColumnTitle("Passerelle B"),
+                            forced_label="Anneau B",
+                            can_be_empty=True,
+                            gateway_is_optional=True,
+                            mask_is_optional=True,
+                        ),
+                    ],
                 ),
             ],
         )
@@ -310,105 +351,113 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
         all_tabs_definition: List[EquipmentDefinitionTab] = []
 
         all_tabs_definition.append(
-            InsideTrainEquipmentDefinitionTab(
+            EquipmentDefinitionTab(
                 tab_name="@IP TU",
                 rows_to_ignore=[0, 1, 2, 3, 4, 6],
-                train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnExcelId("B")),
-                equipment_type_definition=ForcedStrValueInformationDefinition("TU"),
-                equipment_name_column_definition=ForcedStrValueInformationDefinition("TU_A"),
-                equipment_ip_definitions=[
-                    UnicastIpDefinitionColumnsInTab(
-                        equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("CPL SUBNET_1"),
-                        equipment_gateway_column_definition=None,
-                        equipment_mask_column_definition=None,
-                        equipment_vlan_column_definition=None,
-                        mask_is_optional=True,
-                        gateway_is_optional=True,
-                    ),
-                    UnicastIpDefinitionColumnsInTab(
-                        equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("To TU_2"),
-                        equipment_gateway_column_definition=None,
-                        equipment_mask_column_definition=None,
-                        equipment_vlan_column_definition=None,
-                        mask_is_optional=True,
-                        gateway_is_optional=True,
-                    ),
-                    UnicastIpDefinitionColumnsInTab(
-                        equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("SERIAL"),
-                        equipment_gateway_column_definition=None,
-                        equipment_mask_column_definition=None,
-                        equipment_vlan_column_definition=None,
-                        mask_is_optional=True,
-                        gateway_is_optional=True,
-                    ),
-                    UnicastIpDefinitionColumnsInTab(
-                        equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("MGMT_CSR_1"),
-                        equipment_gateway_column_definition=None,
-                        equipment_mask_column_definition=None,
-                        equipment_vlan_column_definition=None,
-                        mask_is_optional=True,
-                        gateway_is_optional=True,
-                    ),
-                    UnicastIpDefinitionColumnsInTab(
-                        equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("MGMT_CSR_2"),
-                        equipment_gateway_column_definition=None,
-                        equipment_mask_column_definition=None,
-                        equipment_vlan_column_definition=None,
-                        mask_is_optional=True,
-                        gateway_is_optional=True,
-                    ),
+                equipment_definitions=[
+                    InsideTrainEquipmentDefinitionColumn(
+                        train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnExcelId("B")),
+                        equipment_type_definition=ForcedStrValueInformationDefinition("TU"),
+                        equipment_name_column_definition=ForcedStrValueInformationDefinition("TU_A"),
+                        equipment_ip_definitions=[
+                            UnicastIpDefinitionColumnsInTab(
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("CPL SUBNET_1"),
+                                equipment_gateway_column_definition=None,
+                                equipment_mask_column_definition=None,
+                                equipment_vlan_column_definition=None,
+                                mask_is_optional=True,
+                                gateway_is_optional=True,
+                            ),
+                            UnicastIpDefinitionColumnsInTab(
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("To TU_2"),
+                                equipment_gateway_column_definition=None,
+                                equipment_mask_column_definition=None,
+                                equipment_vlan_column_definition=None,
+                                mask_is_optional=True,
+                                gateway_is_optional=True,
+                            ),
+                            UnicastIpDefinitionColumnsInTab(
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("SERIAL"),
+                                equipment_gateway_column_definition=None,
+                                equipment_mask_column_definition=None,
+                                equipment_vlan_column_definition=None,
+                                mask_is_optional=True,
+                                gateway_is_optional=True,
+                            ),
+                            UnicastIpDefinitionColumnsInTab(
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("MGMT_CSR_1"),
+                                equipment_gateway_column_definition=None,
+                                equipment_mask_column_definition=None,
+                                equipment_vlan_column_definition=None,
+                                mask_is_optional=True,
+                                gateway_is_optional=True,
+                            ),
+                            UnicastIpDefinitionColumnsInTab(
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("MGMT_CSR_2"),
+                                equipment_gateway_column_definition=None,
+                                equipment_mask_column_definition=None,
+                                equipment_vlan_column_definition=None,
+                                mask_is_optional=True,
+                                gateway_is_optional=True,
+                            ),
+                        ],
+                    )
                 ],
             )
         )
 
         all_tabs_definition.append(
-            InsideTrainEquipmentDefinitionTab(
+            EquipmentDefinitionTab(
                 tab_name="@IP TU",
                 rows_to_ignore=[0, 1, 2, 3, 4, 6],
-                train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnExcelId("B")),
-                equipment_type_definition=ForcedStrValueInformationDefinition("TU"),
-                equipment_name_column_definition=ForcedStrValueInformationDefinition("TU_B"),
-                equipment_ip_definitions=[
-                    UnicastIpDefinitionColumnsInTab(
-                        equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("CPL SUBNET_2"),
-                        equipment_gateway_column_definition=None,
-                        equipment_mask_column_definition=None,
-                        equipment_vlan_column_definition=None,
-                        mask_is_optional=True,
-                        gateway_is_optional=True,
-                    ),
-                    UnicastIpDefinitionColumnsInTab(
-                        equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("To TU_1"),
-                        equipment_gateway_column_definition=None,
-                        equipment_mask_column_definition=None,
-                        equipment_vlan_column_definition=None,
-                        mask_is_optional=True,
-                        gateway_is_optional=True,
-                    ),
-                    UnicastIpDefinitionColumnsInTab(
-                        equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("SERIAL"),
-                        equipment_gateway_column_definition=None,
-                        equipment_mask_column_definition=None,
-                        equipment_vlan_column_definition=None,
-                        mask_is_optional=True,
-                        gateway_is_optional=True,
-                    ),
-                    UnicastIpDefinitionColumnsInTab(
-                        equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("MGMT_CSR_1"),
-                        equipment_gateway_column_definition=None,
-                        equipment_mask_column_definition=None,
-                        equipment_vlan_column_definition=None,
-                        mask_is_optional=True,
-                        gateway_is_optional=True,
-                    ),
-                    UnicastIpDefinitionColumnsInTab(
-                        equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("MGMT_CSR_2"),
-                        equipment_gateway_column_definition=None,
-                        equipment_mask_column_definition=None,
-                        equipment_vlan_column_definition=None,
-                        mask_is_optional=True,
-                        gateway_is_optional=True,
-                    ),
+                equipment_definitions=[
+                    InsideTrainEquipmentDefinitionColumn(
+                        train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnExcelId("B")),
+                        equipment_type_definition=ForcedStrValueInformationDefinition("TU"),
+                        equipment_name_column_definition=ForcedStrValueInformationDefinition("TU_B"),
+                        equipment_ip_definitions=[
+                            UnicastIpDefinitionColumnsInTab(
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("CPL SUBNET_2"),
+                                equipment_gateway_column_definition=None,
+                                equipment_mask_column_definition=None,
+                                equipment_vlan_column_definition=None,
+                                mask_is_optional=True,
+                                gateway_is_optional=True,
+                            ),
+                            UnicastIpDefinitionColumnsInTab(
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("To TU_1"),
+                                equipment_gateway_column_definition=None,
+                                equipment_mask_column_definition=None,
+                                equipment_vlan_column_definition=None,
+                                mask_is_optional=True,
+                                gateway_is_optional=True,
+                            ),
+                            UnicastIpDefinitionColumnsInTab(
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("SERIAL"),
+                                equipment_gateway_column_definition=None,
+                                equipment_mask_column_definition=None,
+                                equipment_vlan_column_definition=None,
+                                mask_is_optional=True,
+                                gateway_is_optional=True,
+                            ),
+                            UnicastIpDefinitionColumnsInTab(
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("MGMT_CSR_1"),
+                                equipment_gateway_column_definition=None,
+                                equipment_mask_column_definition=None,
+                                equipment_vlan_column_definition=None,
+                                mask_is_optional=True,
+                                gateway_is_optional=True,
+                            ),
+                            UnicastIpDefinitionColumnsInTab(
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("MGMT_CSR_2"),
+                                equipment_gateway_column_definition=None,
+                                equipment_mask_column_definition=None,
+                                equipment_vlan_column_definition=None,
+                                mask_is_optional=True,
+                                gateway_is_optional=True,
+                            ),
+                        ],
+                    )
                 ],
             )
         )
@@ -438,42 +487,50 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
             "NBR_B_SIE",
         ]:
             all_tabs_definition.append(
-                InsideTrainEquipmentDefinitionTab(
+                EquipmentDefinitionTab(
                     tab_name="@IP NExTEO VLAN",
                     rows_to_ignore=list(range(0, 13)) + [14, 15],
-                    train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnTitle("CC ID")),
-                    equipment_type_definition=ForcedStrValueInformationDefinition(eqpt),
-                    equipment_name_column_definition=ForcedStrValueInformationDefinition(eqpt),
-                    equipment_ip_definitions=[
-                        UnicastIpDefinitionColumnsInTab(
-                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle(eqpt),
-                            equipment_gateway_column_definition=None,
-                            equipment_mask_column_definition=None,
-                            equipment_vlan_column_definition=None,
-                            mask_is_optional=True,
-                            gateway_is_optional=True,
-                        ),
+                    equipment_definitions=[
+                        InsideTrainEquipmentDefinitionColumn(
+                            train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnTitle("CC ID")),
+                            equipment_type_definition=ForcedStrValueInformationDefinition(eqpt),
+                            equipment_name_column_definition=ForcedStrValueInformationDefinition(eqpt),
+                            equipment_ip_definitions=[
+                                UnicastIpDefinitionColumnsInTab(
+                                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle(eqpt),
+                                    equipment_gateway_column_definition=None,
+                                    equipment_mask_column_definition=None,
+                                    equipment_vlan_column_definition=None,
+                                    mask_is_optional=True,
+                                    gateway_is_optional=True,
+                                ),
+                            ],
+                        )
                     ],
                 )
             )
 
         for eqpt in ["NRS_1_1", "NRS_2_1", "NRS_5_1", "NRS_6_1", "NBR_A", "NBR_B", "NRS_1_2", "NRS_2_2", "GW_Mgt_SW"]:
             all_tabs_definition.append(
-                InsideTrainEquipmentDefinitionTab(
+                EquipmentDefinitionTab(
                     tab_name="@IP Mgt SW",
                     rows_to_ignore=list(range(0, 10)) + [11, 12],
-                    train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnTitle("CC ID")),
-                    equipment_type_definition=ForcedStrValueInformationDefinition(eqpt),
-                    equipment_name_column_definition=ForcedStrValueInformationDefinition(eqpt),
-                    equipment_ip_definitions=[
-                        UnicastIpDefinitionColumnsInTab(
-                            equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle(eqpt),
-                            equipment_gateway_column_definition=None,
-                            equipment_mask_column_definition=None,
-                            equipment_vlan_column_definition=None,
-                            mask_is_optional=True,
-                            gateway_is_optional=True,
-                        ),
+                    equipment_definitions=[
+                        InsideTrainEquipmentDefinitionColumn(
+                            train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnTitle("CC ID")),
+                            equipment_type_definition=ForcedStrValueInformationDefinition(eqpt),
+                            equipment_name_column_definition=ForcedStrValueInformationDefinition(eqpt),
+                            equipment_ip_definitions=[
+                                UnicastIpDefinitionColumnsInTab(
+                                    equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle(eqpt),
+                                    equipment_gateway_column_definition=None,
+                                    equipment_mask_column_definition=None,
+                                    equipment_vlan_column_definition=None,
+                                    mask_is_optional=True,
+                                    gateway_is_optional=True,
+                                ),
+                            ],
+                        )
                     ],
                 )
             )

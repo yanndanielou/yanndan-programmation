@@ -174,13 +174,18 @@ class MulticastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
 
 
 @dataclass
-class EquipmentDefinitionTab:
-    tab_name: str
-    rows_to_ignore: List[int]
+class EquipmentDefinitionColumn:
     equipment_type_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Type"))
     equipment_ip_definitions: List["IpDefinitionColumnsInTab"] = field(default_factory=list)
     equipment_name_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equipement"))
     equipment_alternative_name_definition: Optional[InformationDefinitionBase] = None
+
+
+@dataclass
+class EquipmentDefinitionTab:
+    tab_name: str
+    rows_to_ignore: List[int]
+    equipment_definitions: List[EquipmentDefinitionColumn]
 
 
 class TrainIdentifierDefinition(ABC):
@@ -220,7 +225,7 @@ class TrainByEmuIdColumnDefinition(TrainIdentifierDefinition):
 
 
 @dataclass
-class InsideTrainEquipmentDefinitionTab(EquipmentDefinitionTab):
+class InsideTrainEquipmentDefinitionColumn(EquipmentDefinitionColumn):
     train_identifier_definition: TrainIdentifierDefinition = field(default_factory=TrainByCcIdColumnDefinition)
 
 
@@ -255,6 +260,7 @@ class NetworkConfFile(GenericConfFile):
 
         @staticmethod
         def build_with_excel_file(equipments_library: "NetworkConfFilesEquipmentsLibrary", excel_file_full_path: str, equipment_definition_tabs: List[EquipmentDefinitionTab]) -> "NetworkConfFile":
+            all_equipments_found_in_excel: List[NetworkConfFilesDefinedEquipment] = []
 
             for equipment_definition_tab in equipment_definition_tabs:
 
@@ -265,73 +271,85 @@ class NetworkConfFile(GenericConfFile):
                     logger_config.print_and_log_info(f"{excel_file_full_path} {equipment_definition_tab.tab_name} has {len(main_data_frame)} items")
                     logger_config.print_and_log_info(f" {excel_file_full_path} {equipment_definition_tab.tab_name} columns  {main_data_frame.columns[:4]} ...")
 
-                    all_equipments_found: List[NetworkConfFilesDefinedEquipment] = []
+                    for equipment_it, equipment_definition in enumerate(equipment_definition_tab.equipment_definitions):
+                        with logger_config.stopwatch_with_label(
+                            f"Handle {equipment_it}th equipment definition of {excel_file_full_path} sheet {equipment_definition_tab.tab_name}", monitor_ram_usage=True, inform_beginning=True
+                        ):
 
-                    for usefull_raw_number, row in main_data_frame.iterrows():
+                            all_equipments_found_in_current_tab: List[NetworkConfFilesDefinedEquipment] = []
+                            all_equipments_found_in_current_equipment_definition: List[NetworkConfFilesDefinedEquipment] = []
 
-                        number_of_null_columns = sum(row.isnull())
-                        number_of_na_columns = sum(row.isna())
-                        number_of_not_null_columns = sum(row.notnull())
-                        number_of_not_na_columns = sum(row.notna())
+                            for usefull_raw_number, row in main_data_frame.iterrows():
 
-                        if number_of_not_null_columns == 0:
-                            logger_config.print_and_log_error(
-                                f"Ignore {usefull_raw_number} th row in {excel_file_full_path} tab {equipment_definition_tab.tab_name} because seems null ({number_of_null_columns} null columns, {number_of_not_null_columns} not null columns, {number_of_na_columns} na columns, {number_of_not_na_columns} not na columns): {row}"
-                            )
-                            break
+                                number_of_null_columns = sum(row.isnull())
+                                number_of_na_columns = sum(row.isna())
+                                number_of_not_null_columns = sum(row.notnull())
+                                number_of_not_na_columns = sum(row.notna())
 
-                        equipment_name = cast(str, equipment_definition_tab.equipment_name_column_definition.get_value(row))
+                                if number_of_not_null_columns == 0:
+                                    logger_config.print_and_log_error(
+                                        f"Ignore {usefull_raw_number} th row in {excel_file_full_path} tab {equipment_definition_tab.tab_name} because seems null ({number_of_null_columns} null columns, {number_of_not_null_columns} not null columns, {number_of_na_columns} na columns, {number_of_not_na_columns} not na columns): {row}"
+                                    )
+                                    break
 
-                        if isinstance(equipment_definition_tab, InsideTrainEquipmentDefinitionTab):
-                            train = equipment_definition_tab.train_identifier_definition.get_train(row, equipments_library)
-                            assert train
-                            equipment_name = f"TRAIN_CC_{train.cc_id}_{equipment_name}"
+                                equipment_name = cast(str, equipment_definition.equipment_name_column_definition.get_value(row))
 
-                        if isinstance(equipment_name, str):
-                            equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(
-                                name=equipment_name, source_label_for_creation=f"{excel_file_full_path}/{equipment_definition_tab.tab_name}"
-                            )
-                            all_equipments_found.append(equipment)
+                                if isinstance(equipment_definition, InsideTrainEquipmentDefinitionColumn):
+                                    train = equipment_definition.train_identifier_definition.get_train(row, equipments_library)
+                                    assert train
+                                    equipment_name = f"TRAIN_CC_{train.cc_id}_{equipment_name}"
 
-                            equipment_type_raw = equipment_definition_tab.equipment_type_definition.get_value(row)
-                            if isinstance(equipment_type_raw, str):
-                                equipment.add_equipment_type(equipment_type_raw)
+                                if isinstance(equipment_name, str):
+                                    equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(
+                                        name=equipment_name, source_label_for_creation=f"{excel_file_full_path}/{equipment_definition_tab.tab_name}"
+                                    )
+                                    all_equipments_found_in_current_equipment_definition.append(equipment)
+                                    all_equipments_found_in_current_tab.append(equipment)
+                                    all_equipments_found_in_excel.append(equipment)
 
-                            if equipment_definition_tab.equipment_alternative_name_definition:
-                                equipment_alternative_identifier_raw = equipment_definition_tab.equipment_alternative_name_definition.get_value(row)
-                                if isinstance(equipment_alternative_identifier_raw, str):
-                                    equipment.add_alternative_identifier(equipment_alternative_identifier_raw)
+                                    equipment_type_raw = equipment_definition.equipment_type_definition.get_value(row)
+                                    if isinstance(equipment_type_raw, str):
+                                        equipment.add_equipment_type(equipment_type_raw)
 
-                            for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
+                                    if equipment_definition.equipment_alternative_name_definition:
+                                        equipment_alternative_identifier_raw = equipment_definition.equipment_alternative_name_definition.get_value(row)
+                                        if isinstance(equipment_alternative_identifier_raw, str):
+                                            equipment.add_alternative_identifier(equipment_alternative_identifier_raw)
 
-                                equipment_raw_ip_address = cast(str, ip_address_definition.equipment_ip_address_column_definition.get_value(row))
-                                if not isinstance(equipment_raw_ip_address, str) and ip_address_definition.can_be_empty:
-                                    continue
+                                    for ip_address_definition in equipment_definition.equipment_ip_definitions:
 
-                                ip_address = ip_address_definition.build_with_row(row)
+                                        equipment_raw_ip_address = cast(str, ip_address_definition.equipment_ip_address_column_definition.get_value(row))
+                                        if not isinstance(equipment_raw_ip_address, str) and ip_address_definition.can_be_empty:
+                                            continue
 
-                                equipment.add_ip_address(ip_address)
-                                assert len(equipment.ip_addresses) < 10, f"{equipment_name}\n{[ip.ip_raw for ip in equipment.ip_addresses]}\n\n{equipment}"
-                        else:
-                            logger_config.print_and_log_error(
-                                f"In {excel_file_full_path} tab {equipment_definition_tab.tab_name} Could not create {usefull_raw_number+1}th object with invalid id {equipment_name} for row {row}"
-                            )
+                                        ip_address = ip_address_definition.build_with_row(row)
 
-                    for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
-                        assert ip_address_definition.all_ip_addresses_found
-                        assert len(ip_address_definition.all_ip_addresses_found) > 1
+                                        equipment.add_ip_address(ip_address)
+                                        assert len(equipment.ip_addresses) < 10, f"{equipment_name}\n{[ip.ip_raw for ip in equipment.ip_addresses]}\n\n{equipment}"
+                                else:
+                                    logger_config.print_and_log_error(
+                                        f"In {excel_file_full_path} tab {equipment_definition_tab.tab_name} Could not create {usefull_raw_number+1}th object with invalid id {equipment_name} for row {row}"
+                                    )
 
-                    logger_config.print_and_log_info(f"{excel_file_full_path} tab {equipment_definition_tab.tab_name}: {len(all_equipments_found)} equipment found")
+                            for ip_address_definition in equipment_definition.equipment_ip_definitions:
+                                assert ip_address_definition.all_ip_addresses_found
+                                assert len(ip_address_definition.all_ip_addresses_found) > 1
+
+                        logger_config.print_and_log_info(
+                            f"Equipment definition in {excel_file_full_path} {equipment_definition_tab.tab_name}: {len(all_equipments_found_in_current_equipment_definition)} equipment found"
+                        )
+
+                    logger_config.print_and_log_info(f"Equipment definition tab {excel_file_full_path} {equipment_definition_tab.tab_name}: {len(all_equipments_found_in_current_tab)} equipment found")
 
             conf_file = NetworkConfFile(
                 name=excel_file_full_path,
                 equipments_library=equipments_library,
                 excel_file_full_path=excel_file_full_path,
-                all_equipments=all_equipments_found,
+                all_equipments=all_equipments_found_in_excel,
                 equipment_definition_tabs=equipment_definition_tabs,
             )
 
-            logger_config.print_and_log_info(f"{excel_file_full_path}: {len(all_equipments_found)} equipment found")
+            logger_config.print_and_log_info(f"{excel_file_full_path}: {len(all_equipments_found_in_excel)} equipment found")
             logger_config.print_and_log_info(f"So far, the library contains {len(equipments_library.all_network_conf_files_defined_equipments)} equipments in total")
 
             return conf_file
