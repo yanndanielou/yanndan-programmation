@@ -58,6 +58,10 @@ if __name__ == "__main__":
             equipments_library=equipments_library, excel_file_full_path=network_conf_files_descriptions_data.INPUT_DOWNLOAD_FOLDER + "/" + "S2_P2_02 à 08_Ind13 1.xlsm"
         )
 
+        fdiff_clients_conf_file = ihm_program_builder.FdiffClientsConfFile.Builder.build_with_excel_file(
+            equipments_library=equipments_library, excel_file_full_path=network_conf_files_descriptions_data.INPUT_DOWNLOAD_FOLDER + "/" + "I3G-NEXT-2024-DT-PCM-1103.xlsm"
+        )
+
         bord = network_conf_files.NetworkConfFile.Builder.build_with_excel_description(
             equipments_library=equipments_library, excel_description=network_conf_files_descriptions_data.BordAddressPlanV9Description()
         )
