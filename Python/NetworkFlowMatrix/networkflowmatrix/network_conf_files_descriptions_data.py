@@ -16,6 +16,7 @@ from networkflowmatrix.network_conf_files import (
     UnicastIpDefinitionColumnsInTab,
 )
 
+from networkflowmatrix.equipments import GroupDefinition
 from collections import namedtuple
 
 # import ipaddress
@@ -484,23 +485,23 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
                                 gateway_is_optional=True,
                             ),
                         ],
-                        groups_definitions=[eqpt_info.goups_definitions],
+                        groups_definitions=eqpt_info.goups_definitions,
                     )
                     for eqpt_info in [
-                        EquipmentInfo("PAE_A", ["PAE" "172.20.0.0/16"], ForcedStrValueInformationDefinition("255.255.255.224 /27)")),
-                        EquipmentInfo("PAE_B", ["PAE", "172.20.0.0/16"], ForcedStrValueInformationDefinition("255.255.255.224 /27)")),
-                        EquipmentInfo("PPN_A_1", ["PPN_A_1", "172.20.0.0/16"], None),
-                        EquipmentInfo("PPN_B_1", ["PPN_B_1", "172.20.0.0/16"], None),
-                        EquipmentInfo("PPN_A_2", ["PPN_A_2", "172.20.0.0/16"], None),
-                        EquipmentInfo("PPN_B_2", ["PPN_B_2", "172.20.0.0/16"], None),
-                        EquipmentInfo("TU_A", ["TU", "172.20.0.0/16"], None),
-                        EquipmentInfo("TU_B", ["TU", "172.20.0.0/16"], None),
+                        EquipmentInfo("PAE_A", [GroupDefinition("PAE", "172.20.0.0/16")], ForcedStrValueInformationDefinition("255.255.255.224 /27)")),
+                        EquipmentInfo("PAE_B", [GroupDefinition("PAE", "172.20.0.0/16")], ForcedStrValueInformationDefinition("255.255.255.224 /27)")),
+                        EquipmentInfo("PPN_A_1", [GroupDefinition("PPN_A_1", "172.20.0.0/16")], None),
+                        EquipmentInfo("PPN_B_1", [GroupDefinition("PPN_B_1", "172.20.0.0/16")], None),
+                        EquipmentInfo("PPN_A_2", [GroupDefinition("PPN_A_2", "172.20.0.0/16")], None),
+                        EquipmentInfo("PPN_B_2", [GroupDefinition("PPN_B_2", "172.20.0.0/16")], None),
+                        EquipmentInfo("TU_A", [GroupDefinition("TU", "172.20.0.0/16")], None),
+                        EquipmentInfo("TU_B", [GroupDefinition("TU", "172.20.0.0/16")], None),
                         EquipmentInfo("INT_TOOL", [], None),
                         EquipmentInfo("GW_CBTC", [], None),
                         EquipmentInfo("NBR_A", [], None),
                         EquipmentInfo("NBR_B", [], None),
-                        EquipmentInfo("AFF_CAR_1", ["AFFCAR", "172.40.0.0/16"], None),
-                        EquipmentInfo("AFF_CAR_2", ["AFFCAR", "172.40.0.0/16"], None),
+                        EquipmentInfo("AFF_CAR_1", [GroupDefinition("AFFCAR", "172.40.0.0/16")], None),
+                        EquipmentInfo("AFF_CAR_2", [GroupDefinition("AFFCAR", "172.40.0.0/16")], None),
                         EquipmentInfo("GW_AFF", [], None),
                         EquipmentInfo("NBR_A_AFF", [], None),
                         EquipmentInfo("NBR_B_AFF", [], None),

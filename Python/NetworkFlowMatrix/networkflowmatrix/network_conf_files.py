@@ -9,10 +9,11 @@ from logger import logger_config
 
 
 if TYPE_CHECKING:
-    from networkflowmatrix.equipments import TrainUnbreakableSingleUnit, Equipment, NetworkConfFilesEquipmentsLibrary, NetworkConfFilesDefinedEquipment, GroupDefinition
+    from networkflowmatrix.equipments import TrainUnbreakableSingleUnit, Equipment, NetworkConfFilesEquipmentsLibrary, NetworkConfFilesDefinedEquipment
     from networkflowmatrix.network_conf_files_descriptions_data import ExcelInputFileDescription
 
 from networkflowmatrix import constants
+from networkflowmatrix.equipments import GroupDefinition, Group
 
 
 @dataclass
@@ -181,7 +182,11 @@ class EquipmentDefinitionColumn:
     equipment_ip_definitions: List["IpDefinitionColumnsInTab"] = field(default_factory=list)
     equipment_name_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equipement"))
     equipment_alternative_name_definition: Optional[InformationDefinitionBase] = None
-    groups_definitions: List["GroupDefinition"] = field(default_factory=list)
+    groups_definitions: List[GroupDefinition] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        for group_definition in self.groups_definitions:
+            assert isinstance(group_definition, GroupDefinition), f"Group definition {group_definition} has bad type {type(group_definition)}"
 
 
 @dataclass
@@ -336,7 +341,7 @@ class NetworkConfFile(GenericConfFile):
                                         if not group in equipment.groups:
                                             equipment.groups.append(group)
                                         else:
-                                            logger_config.print_and_log_warning(f"Group {group.definition} already in {equipment.name}")
+                                            logger_config.print_and_log_warning(f"Group {group.definition} already in {equipment.n}")
 
                                     for ip_address_definition in equipment_definition.equipment_ip_definitions:
 
