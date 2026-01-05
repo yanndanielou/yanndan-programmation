@@ -148,6 +148,9 @@ class DownloadFileDetector:
 
                 return file_detected_path
 
+        logger_config.print_and_log_error(f"{self.label_with_separator}Timeout raised when trying to download {self.filename_pattern}")
+        return None
+
     def monitor_download_automatically_with_event_handler(self) -> Optional[str]:
         download_event_handler = DownloadEventHandler(self.filename_pattern)
         observer = Observer()
