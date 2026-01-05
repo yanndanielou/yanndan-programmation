@@ -1,7 +1,7 @@
 # import ipaddress
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional, cast
+from typing import TYPE_CHECKING, List, Optional, cast, Tuple, NamedTuple
 import pandas
 
 from common import excel_utils
@@ -9,7 +9,7 @@ from logger import logger_config
 
 
 if TYPE_CHECKING:
-    from networkflowmatrix.equipments import TrainUnbreakableSingleUnit, Equipment, NetworkConfFilesEquipmentsLibrary, NetworkConfFilesDefinedEquipment
+    from networkflowmatrix.equipments import TrainUnbreakableSingleUnit, Equipment, NetworkConfFilesEquipmentsLibrary, NetworkConfFilesDefinedEquipment, GroupDefinition
     from networkflowmatrix.network_conf_files_descriptions_data import ExcelInputFileDescription
 
 from networkflowmatrix import constants
@@ -181,6 +181,7 @@ class EquipmentDefinitionColumn:
     equipment_ip_definitions: List["IpDefinitionColumnsInTab"] = field(default_factory=list)
     equipment_name_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equipement"))
     equipment_alternative_name_definition: Optional[InformationDefinitionBase] = None
+    groups_definitions: List["GroupDefinition"] = field(default_factory=list)
 
 
 @dataclass
@@ -330,6 +331,13 @@ class NetworkConfFile(GenericConfFile):
                                         if isinstance(equipment_alternative_identifier_raw, str):
                                             equipment.add_alternative_identifier(equipment_alternative_identifier_raw)
 
+                                    for group_definition in equipment_definition.groups_definitions:
+                                        group = equipments_library.get_or_create_group(group_definition)
+                                        if not group in equipment.groups:
+                                            equipment.groups.append(group)
+                                        else:
+                                            logger_config.print_and_log_warning(f"Group {group.definition} already in {equipment.name}")
+
                                     for ip_address_definition in equipment_definition.equipment_ip_definitions:
 
                                         equipment_raw_ip_address = cast(str, ip_address_definition.equipment_ip_address_column_definition.get_value(row))
@@ -348,12 +356,17 @@ class NetworkConfFile(GenericConfFile):
                             for ip_address_definition in equipment_definition.equipment_ip_definitions:
                                 assert ip_address_definition.all_ip_addresses_found
                                 assert len(ip_address_definition.all_ip_addresses_found) > 1
-
                         logger_config.print_and_log_info(
                             f"Equipment definition in {excel_file_full_path} {equipment_definition_tab.tab_name}: {len(all_equipments_found_in_current_equipment_definition)} equipment found"
                         )
 
                     logger_config.print_and_log_info(f"Equipment definition tab {excel_file_full_path} {equipment_definition_tab.tab_name}: {len(all_equipments_found_in_current_tab)} equipment found")
+
+            with logger_config.stopwatch_with_label(f"Check that each equipment have an IP address {excel_file_full_path}"):
+                for equipment in all_equipments_found_in_excel:
+                    assert equipment
+                    if not equipment.ip_addresses or len(equipment.ip_addresses) == 0:
+                        logger_config.print_and_log_error(f"Equipment {equipment.name} {",".join(equipment.equipment_types)} {equipment.source_label} has no IP address defined")
 
             conf_file = NetworkConfFile(
                 name=excel_file_full_path,

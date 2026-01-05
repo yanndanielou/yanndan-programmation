@@ -16,6 +16,8 @@ from networkflowmatrix.network_conf_files import (
     UnicastIpDefinitionColumnsInTab,
 )
 
+from collections import namedtuple
+
 # import ipaddress
 
 
@@ -462,6 +464,7 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
             )
         )
 
+        EquipmentInfo = namedtuple("EquipmentInfo", ["name", "goups_definitions", "mask_definition"])
         all_tabs_definition.append(
             EquipmentDefinitionTab(
                 tab_name="@IP NExTEO VLAN",
@@ -469,42 +472,43 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
                 equipment_definitions=[
                     InsideTrainEquipmentDefinitionColumn(
                         train_identifier_definition=TrainByCcIdColumnDefinition(cc_id_column_definition=ExcelColumnDefinitionByColumnTitle("CC ID")),
-                        equipment_type_definition=ForcedStrValueInformationDefinition(eqpt),
-                        equipment_name_column_definition=ForcedStrValueInformationDefinition(eqpt),
+                        equipment_type_definition=ForcedStrValueInformationDefinition(eqpt_info.name),
+                        equipment_name_column_definition=ForcedStrValueInformationDefinition(eqpt_info.name),
                         equipment_ip_definitions=[
                             UnicastIpDefinitionColumnsInTab(
-                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle(eqpt),
+                                equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle(eqpt_info.name),
                                 equipment_gateway_column_definition=None,
-                                equipment_mask_column_definition=None,
+                                equipment_mask_column_definition=eqpt_info.mask_definition,
                                 equipment_vlan_column_definition=None,
                                 mask_is_optional=True,
                                 gateway_is_optional=True,
                             ),
                         ],
+                        groups_definitions=[eqpt_info.goups_definitions],
                     )
-                    for eqpt in [
-                        "PAE_A",
-                        "PAE_B",
-                        "PPN_A_1",
-                        "PPN_B_1",
-                        "PPN_A_2",
-                        "PPN_B_2",
-                        "TU_A",
-                        "TU_B",
-                        "INT_TOOL",
-                        "GW_CBTC",
-                        "NBR_A",
-                        "NBR_B",
-                        "AFF_CAR_1",
-                        "AFF_CAR_2",
-                        "GW_AFF",
-                        "NBR_A_AFF",
-                        "NBR_B_AFF",
-                        "MPU0_Z11",
-                        "MPU0_Z12",
-                        "GW_SIE",
-                        "NBR_A_SIE",
-                        "NBR_B_SIE",
+                    for eqpt_info in [
+                        EquipmentInfo("PAE_A", ["PAE" "172.20.0.0/16"], ForcedStrValueInformationDefinition("255.255.255.224 /27)")),
+                        EquipmentInfo("PAE_B", ["PAE", "172.20.0.0/16"], ForcedStrValueInformationDefinition("255.255.255.224 /27)")),
+                        EquipmentInfo("PPN_A_1", ["PPN_A_1", "172.20.0.0/16"], None),
+                        EquipmentInfo("PPN_B_1", ["PPN_B_1", "172.20.0.0/16"], None),
+                        EquipmentInfo("PPN_A_2", ["PPN_A_2", "172.20.0.0/16"], None),
+                        EquipmentInfo("PPN_B_2", ["PPN_B_2", "172.20.0.0/16"], None),
+                        EquipmentInfo("TU_A", ["TU", "172.20.0.0/16"], None),
+                        EquipmentInfo("TU_B", ["TU", "172.20.0.0/16"], None),
+                        EquipmentInfo("INT_TOOL", [], None),
+                        EquipmentInfo("GW_CBTC", [], None),
+                        EquipmentInfo("NBR_A", [], None),
+                        EquipmentInfo("NBR_B", [], None),
+                        EquipmentInfo("AFF_CAR_1", ["AFFCAR", "172.40.0.0/16"], None),
+                        EquipmentInfo("AFF_CAR_2", ["AFFCAR", "172.40.0.0/16"], None),
+                        EquipmentInfo("GW_AFF", [], None),
+                        EquipmentInfo("NBR_A_AFF", [], None),
+                        EquipmentInfo("NBR_B_AFF", [], None),
+                        EquipmentInfo("MPU0_Z11", [], None),
+                        EquipmentInfo("MPU0_Z12", [], None),
+                        EquipmentInfo("GW_SIE", [], None),
+                        EquipmentInfo("NBR_A_SIE", [], None),
+                        EquipmentInfo("NBR_B_SIE", [], None),
                     ]
                 ],
             )

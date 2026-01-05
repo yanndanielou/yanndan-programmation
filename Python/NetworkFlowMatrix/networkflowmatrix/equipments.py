@@ -21,6 +21,18 @@ class Equipment:
 
 
 @dataclass
+class GroupDefinition:
+    name: str
+    subnet_and_mask: str
+
+
+@dataclass
+class Group:
+    definition: GroupDefinition
+    equipments: List["NetworkConfFilesDefinedEquipment"] = field(default_factory=list)
+
+
+@dataclass
 class TrainUnbreakableSingleUnit:
     cc_id: int
     emu_id: int
@@ -35,6 +47,7 @@ class NetworkConfFilesDefinedEquipment:
     _equipment_types: Set[str] = field(default_factory=set)
     _alternative_identifiers: Set[str] = field(default_factory=set)
     ip_addresses: List["NetworkConfFilesDefinedIpAddress"] = field(default_factory=list)
+    groups: List[Group] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         assert self.name
@@ -83,6 +96,7 @@ class NetworkConfFilesEquipmentsLibrary:
         self.all_trains_unbreakable_units_by_emu_id: Dict[int, TrainUnbreakableSingleUnit] = {}
         self.not_found_equipment_names: Set[str] = set()
         self.not_found_equipment_names_and_raw_ip_address: Set[str] = set()
+        self.all_groups: List[Group] = []
         self.create_train_unbreakable_units()
 
     def print_stats(self) -> None:
@@ -143,6 +157,20 @@ class NetworkConfFilesEquipmentsLibrary:
             return self.all_trains_unbreakable_units_by_emu_id[emu_id]
         return None
 
+    def get_or_create_group(self, group_definition: GroupDefinition) -> Group:
+        assert isinstance(group_definition, GroupDefinition), f"Group definition {group_definition} has bad type {type(group_definition)}"
+
+        group_found = [group for group in self.all_groups if group.definition == group_definition]
+
+        assert len(group_found) < 2
+        if group_found:
+            return group_found[0]
+
+        else:
+            group = Group(group_definition)
+            self.all_groups.append(group)
+            return group
+
     def create_train_unbreakable_units(self) -> None:
         for i in constants.ALL_USED_TRAINS_IDS:
             train_unbreakable_unit = TrainUnbreakableSingleUnit(cc_id=i, emu_id=4000 + i)
@@ -164,6 +192,18 @@ class NetworkConfFilesEquipmentsLibrary:
                     f"Types:{', '.join(list(equipment.equipment_types))}",
                     f"Alternative ids:{', '.join([str(alter) for alter in equipment.alternative_identifiers])}",
                     f"Ip:{', '.join([ip.ip_raw for ip in equipment.ip_addresses])}",
+                    f"Masks:{', '.join([group.definition.name + ' ' + group.definition.subnet_and_mask for  group in equipment.groups])}  ",
                 )
             )
+
+        for group in self.all_groups:
+            data_to_dump.append(
+                (
+                    group.definition,
+                    ",".join(
+                        [equipment.name for equipment in group.equipments],
+                    ),
+                )
+            )
+
         json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(data_to_dump, output_json_file_full_path)
