@@ -622,7 +622,7 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         try:
             export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'" + change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text_french() + "')]")
-        except NoSuchElementException as ex:
+        except NoSuchElementException:
             logger_config.print_and_log_warning(
                 f"Could not find {change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text_french()}, try {change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text_english()}"
             )
