@@ -124,7 +124,7 @@ class NetworkConfFilesEquipmentsLibrary:
 
         def build(self) -> "NetworkConfFilesEquipmentsLibrary":
             self.equipments_library_being_created.print_stats()
-            # self.equipments_library_being_created.check_consistency()
+            self.equipments_library_being_created.check_consistency()
             return self.equipments_library_being_created
 
     def __init__(self) -> None:
@@ -146,8 +146,8 @@ class NetworkConfFilesEquipmentsLibrary:
         with logger_config.stopwatch_with_label("Check that all groups have equipment"):
             for group in self.all_groups:
                 assert group
-                assert group.equipments
-                assert len(group.equipments) > 0
+                assert group.equipments, f"Group {group.definition} has no equipment"
+                assert len(group.equipments) > 0, f"Group {group.definition} has no equipment"
 
     def print_stats(self) -> None:
         logger_config.print_and_log_info(f"The network conf files library contains {len(self.all_network_conf_files_defined_equipments)} equipments in total")
