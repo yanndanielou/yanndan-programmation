@@ -1,7 +1,7 @@
 # import ipaddress
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional, cast, Tuple, NamedTuple
+from typing import TYPE_CHECKING, List, Optional, cast
 import pandas
 
 from common import excel_utils
@@ -9,11 +9,11 @@ from logger import logger_config
 
 
 if TYPE_CHECKING:
-    from networkflowmatrix.equipments import TrainUnbreakableSingleUnit, Equipment, NetworkConfFilesEquipmentsLibrary, NetworkConfFilesDefinedEquipment
+    from networkflowmatrix.equipments import TrainUnbreakableSingleUnit, NetworkConfFilesEquipmentsLibrary, NetworkConfFilesDefinedEquipment
     from networkflowmatrix.network_conf_files_descriptions_data import ExcelInputFileDescription
+    from networkflowmatrix.equipments import GroupDefinition
 
 from networkflowmatrix import constants
-from networkflowmatrix.equipments import GroupDefinition, Group
 
 
 @dataclass
@@ -182,11 +182,7 @@ class EquipmentDefinitionColumn:
     equipment_ip_definitions: List["IpDefinitionColumnsInTab"] = field(default_factory=list)
     equipment_name_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equipement"))
     equipment_alternative_name_definition: Optional[InformationDefinitionBase] = None
-    groups_definitions: List[GroupDefinition] = field(default_factory=list)
-
-    def __post_init__(self) -> None:
-        for group_definition in self.groups_definitions:
-            assert isinstance(group_definition, GroupDefinition), f"Group definition {group_definition} has bad type {type(group_definition)}"
+    groups_definitions: List["GroupDefinition"] = field(default_factory=list)
 
 
 @dataclass
@@ -341,7 +337,7 @@ class NetworkConfFile(GenericConfFile):
                                         if not group in equipment.groups:
                                             equipment.groups.append(group)
                                         else:
-                                            logger_config.print_and_log_warning(f"Group {group.definition} already in {equipment.n}")
+                                            logger_config.print_and_log_warning(f"Group {group.definition} already in {equipment.name}")
 
                                     for ip_address_definition in equipment_definition.equipment_ip_definitions:
 

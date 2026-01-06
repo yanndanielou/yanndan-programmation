@@ -4,7 +4,7 @@ from typing import Dict
 from common import file_utils, json_encoders
 from logger import logger_config
 
-from networkflowmatrix import manual_equipments_builder, network_conf_files, network_conf_files_descriptions_data, network_matrix_data_model, equipments, ihm_program_builder
+from networkflowmatrix import network_conf_files_descriptions_data, network_matrix_data_model, equipments
 
 OUTPUT_PARENT_DIRECTORY_NAME = "Output"
 
@@ -52,36 +52,17 @@ def dump_matrix_equipments_to_json(network_flow_matrix_to_dump: network_matrix_d
 
 if __name__ == "__main__":
     with logger_config.application_logger("networkflowmatrix"):
-        equipments_library = equipments.NetworkConfFilesEquipmentsLibrary()
-
-        ihm_program = ihm_program_builder.IhmProgrammConfFile.Builder.build_with_excel_file(
-            equipments_library=equipments_library, excel_file_full_path=network_conf_files_descriptions_data.INPUT_DOWNLOAD_FOLDER + "/" + "S2_P2_02 à 08_Ind13 1.xlsm"
-        )
-
-        fdiff_clients_conf_file = ihm_program_builder.FdiffClientsConfFile.Builder.build_with_excel_file(
-            equipments_library=equipments_library, excel_file_full_path=network_conf_files_descriptions_data.INPUT_DOWNLOAD_FOLDER + "/" + "I3G-NEXT-2024-DT-PCM-1103.xlsm"
-        )
-
-        bord = network_conf_files.NetworkConfFile.Builder.build_with_excel_description(
-            equipments_library=equipments_library, excel_description=network_conf_files_descriptions_data.BordAddressPlanV9Description()
-        )
-
-        radio_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_description(
-            equipments_library=equipments_library, excel_description=network_conf_files_descriptions_data.StdRadioNetworkConfV2Description()
-        )
-
-        sol_std_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_description(
-            equipments_library=equipments_library, excel_description=network_conf_files_descriptions_data.SolStdNetworkConfV11Description()
-        )
-
-        airlink_radio_layout_conf_file = network_conf_files.NetworkConfFile.Builder.build_with_excel_description(
-            equipments_library=equipments_library, excel_description=network_conf_files_descriptions_data.RadioLayoutR841Description()
-        )
-
-        sith_conf_file = manual_equipments_builder.SithConfFile.Builder.build(equipments_library=equipments_library)
-        ppn_conf_file = manual_equipments_builder.TrainsConfFile.Builder.build(equipments_library=equipments_library)
-
-        equipments_library.print_stats()
+        equipments_library = (
+            equipments.NetworkConfFilesEquipmentsLibrary()
+            .Builder()
+            .add_ihm_programm(excel_file_full_path=network_conf_files_descriptions_data.INPUT_DOWNLOAD_FOLDER + "/" + "S2_P2_02 à 08_Ind13 1.xlsm")
+            .add_manual_entries()
+            .add_fdiff_clients(excel_file_full_path=network_conf_files_descriptions_data.INPUT_DOWNLOAD_FOLDER + "/" + "I3G-NEXT-2024-DT-PCM-1103.xlsm")
+            .add_network_config_file_with_excel_description(excel_description=network_conf_files_descriptions_data.BordAddressPlanV9Description())
+            .add_network_config_file_with_excel_description(excel_description=network_conf_files_descriptions_data.StdRadioNetworkConfV2Description())
+            .add_network_config_file_with_excel_description(excel_description=network_conf_files_descriptions_data.SolStdNetworkConfV11Description())
+            .add_network_config_file_with_excel_description(excel_description=network_conf_files_descriptions_data.RadioLayoutR841Description())
+        ).build()
 
         with logger_config.stopwatch_with_label("Build matrix", inform_beginning=True, monitor_ram_usage=True):
             network_flow_matrix = network_matrix_data_model.NetworkFlowMatrix.Builder.build_with_excel_file(

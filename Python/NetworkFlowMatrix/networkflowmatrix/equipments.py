@@ -7,9 +7,11 @@ from logger import logger_config
 from networkflowmatrix import constants
 
 if TYPE_CHECKING:
-    from networkflowmatrix.network_conf_files import (
-        NetworkConfFilesDefinedIpAddress,
-    )
+    from networkflowmatrix.network_conf_files import NetworkConfFilesDefinedIpAddress, GenericConfFile
+    from networkflowmatrix.network_conf_files_descriptions_data import ExcelInputFileDescription
+
+from networkflowmatrix.network_conf_files import NetworkConfFile
+from networkflowmatrix import manual_equipments_builder, ihm_program_builder
 
 
 @dataclass
@@ -86,6 +88,45 @@ class NetworkConfFilesDefinedEquipment:
 
 
 class NetworkConfFilesEquipmentsLibrary:
+
+    class Builder:
+        def __init__(self) -> None:
+            self.conf_files: List["GenericConfFile"] = []
+            self.equipments_library_being_created = NetworkConfFilesEquipmentsLibrary()
+
+        def add_network_config_file_with_excel_descriptions(self, excel_descriptions: List["ExcelInputFileDescription"]) -> "NetworkConfFilesEquipmentsLibrary.Builder":
+            for excel_description in excel_descriptions:
+                self.conf_files.append(NetworkConfFile.Builder.build_with_excel_description(self.equipments_library_being_created, excel_description))
+            return self
+
+        def add_network_config_file_with_excel_description(self, excel_description: "ExcelInputFileDescription") -> "NetworkConfFilesEquipmentsLibrary.Builder":
+            self.conf_files.append(NetworkConfFile.Builder.build_with_excel_file(self.equipments_library_being_created, excel_description.excel_file_full_path, excel_description.all_tabs_definition))
+            return self
+
+        def add_ihm_programm(self, excel_file_full_path: str) -> "NetworkConfFilesEquipmentsLibrary.Builder":
+
+            self.conf_files.append(
+                ihm_program_builder.IhmProgrammConfFile.Builder.build_with_excel_file(equipments_library=self.equipments_library_being_created, excel_file_full_path=excel_file_full_path)
+            )
+            return self
+
+        def add_fdiff_clients(self, excel_file_full_path: str) -> "NetworkConfFilesEquipmentsLibrary.Builder":
+
+            self.conf_files.append(
+                ihm_program_builder.FdiffClientsConfFile.Builder.build_with_excel_file(equipments_library=self.equipments_library_being_created, excel_file_full_path=excel_file_full_path)
+            )
+            return self
+
+        def add_manual_entries(self) -> "NetworkConfFilesEquipmentsLibrary.Builder":
+            self.conf_files.append(manual_equipments_builder.SithConfFile.Builder.build(equipments_library=self.equipments_library_being_created))
+            self.conf_files.append(manual_equipments_builder.TrainsConfFile.Builder.build(equipments_library=self.equipments_library_being_created))
+            return self
+
+        def build(self) -> "NetworkConfFilesEquipmentsLibrary":
+            self.equipments_library_being_created.print_stats()
+            # self.equipments_library_being_created.check_consistency()
+            return self.equipments_library_being_created
+
     def __init__(self) -> None:
         self.all_network_conf_files_defined_equipments: List[NetworkConfFilesDefinedEquipment] = []
         self.network_conf_files_defined_equipments_by_id: Dict[str, NetworkConfFilesDefinedEquipment] = {}
@@ -98,6 +139,15 @@ class NetworkConfFilesEquipmentsLibrary:
         self.not_found_equipment_names_and_raw_ip_address: Set[str] = set()
         self.all_groups: List[Group] = []
         self.create_train_unbreakable_units()
+
+    def check_consistency(self) -> None:
+        # logger_config.print_and_log_info(f"The network conf files library contains {len(self.all_network_conf_files_defined_equipments)} equipments in total")
+        pass
+        with logger_config.stopwatch_with_label("Check that all groups have equipment"):
+            for group in self.all_groups:
+                assert group
+                assert group.equipments
+                assert len(group.equipments) > 0
 
     def print_stats(self) -> None:
         logger_config.print_and_log_info(f"The network conf files library contains {len(self.all_network_conf_files_defined_equipments)} equipments in total")
