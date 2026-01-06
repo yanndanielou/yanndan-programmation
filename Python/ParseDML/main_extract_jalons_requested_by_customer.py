@@ -138,6 +138,8 @@ def main() -> None:
         f"{OUTPUT_PARENT_DIRECTORY_NAME}/{file_name_utils.get_file_suffix_with_current_datetime()}_all_docs_without_jalons.json",
     )
 
+    jalons_added_warnings: List[str] = []
+
     with logger_config.stopwatch_with_label("Detect change jalons dans un doc"):
         for doc in all_docs:
             previous_jalons: List[Jalon] = doc.lines[0]._jalons
@@ -147,9 +149,9 @@ def main() -> None:
 
                 if previous_jalons:
                     if new_jalons_added:
-                        logger_config.print_and_log_warning(
-                            f"Jalons {[jalon.name for jalon in new_jalons_added]} added in doc {doc.code_ged_moe}, in version {current_line.version} : previous jalons:{", ".join([jalon.name for jalon in previous_jalons])}, now {", ".join([jalon.name for jalon in current_line._jalons])}"
-                        )
+                        to_warn = f"Jalons {[jalon.name for jalon in new_jalons_added]} added in doc {doc.code_ged_moe}, in version {current_line.version} : previous jalons:{", ".join([jalon.name for jalon in previous_jalons])}, now {", ".join([jalon.name for jalon in current_line._jalons])}"
+                        jalons_added_warnings.append(to_warn)
+                        logger_config.print_and_log_warning(to_warn)
                         previous_jalons = previous_jalons + new_jalons_added
 
                 if current_line._jalons:
@@ -157,6 +159,11 @@ def main() -> None:
                         logger_config.print_and_log_info(
                             f"Jalons {[jalon.name for jalon in old_jalons_removed]} removed in doc {doc.code_ged_moe}, in version {current_line.version} : previous jalons:{", ".join([jalon.name for jalon in previous_jalons])}, now {", ".join([jalon.name for jalon in current_line._jalons])}"
                         )
+
+    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
+        jalons_added_warnings,
+        f"{OUTPUT_PARENT_DIRECTORY_NAME}/{file_name_utils.get_file_suffix_with_current_datetime()}_jalons_added_warnings.json",
+    )
 
     with logger_config.application_logger("ParseDML"):
         dml_file_content_built = parse_dml.DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path=param.DML_FILE_WITH_USELESS_RANGES)
