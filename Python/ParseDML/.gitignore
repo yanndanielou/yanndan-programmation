@@ -4,7 +4,7 @@
 /logs/
 /Input__/
 Reports/
-/Input/*.txt
+/Input/*
 Input_for_tests/~$*.xlsm
 Input/CFX_kown_by_customer.txt
 /Input_for_Tests/*.json
