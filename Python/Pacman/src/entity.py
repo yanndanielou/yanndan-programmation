@@ -3,10 +3,11 @@ from pygame.locals import *
 from vector import Vector2
 from constants import *
 from random import randint
+import nodes
 
 
 class Entity(object):
-    def __init__(self, node) -> None:
+    def __init__(self, node: nodes.Node) -> None:
         self.name = None
         self.directions = {UP: Vector2(0, -1), DOWN: Vector2(0, 1), LEFT: Vector2(-1, 0), RIGHT: Vector2(1, 0), STOP: Vector2()}
         self.direction = STOP
@@ -113,10 +114,10 @@ class Entity(object):
         self.speed = 100
         self.visible = True
 
-    def setSpeed(self, speed):
-        self.speed = speed * TILEWIDTH / 16
+    def setSpeed(self, speed: int) -> None:
+        self.speed: int = speed * TILEWIDTH / 16
 
-    def render(self, screen):
+    def render(self, screen) -> None:
         if self.visible:
             if self.image is not None:
                 adjust = Vector2(TILEWIDTH, TILEHEIGHT) / 2

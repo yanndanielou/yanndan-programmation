@@ -1,4 +1,5 @@
 from constants import *
+from typing import Dict
 
 
 class MazeBase(object):
@@ -57,7 +58,7 @@ class Maze2(MazeBase):
 class MazeData(object):
     def __init__(self) -> None:
         self.obj = None
-        self.mazedict = {0: Maze1, 1: Maze2}
+        self.mazedict: Dict[0, MazeBase] = {0: Maze1, 1: Maze2}
 
-    def loadMaze(self, level):
+    def loadMaze(self, level: int) -> None:
         self.obj = self.mazedict[level % len(self.mazedict)]()
