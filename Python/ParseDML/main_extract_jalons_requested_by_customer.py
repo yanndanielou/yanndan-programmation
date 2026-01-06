@@ -6,8 +6,13 @@ from logger import logger_config
 
 from parsedml import parse_dml
 import param
+import itertools
+
 
 import uuid
+
+
+import os
 
 INPUT_EXCEL_FILE = "Input/JALONS SIGNES_NExTEO-021100-01-0012-01 DML_NEXTEO_ATS+_V14_V41-00.xlsm"
 OUTPUT_PARENT_DIRECTORY_NAME = "Output"
@@ -168,10 +173,29 @@ def main() -> None:
     with logger_config.application_logger("ParseDML"):
         dml_file_content_built = parse_dml.DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path=param.DML_FILE_WITH_USELESS_RANGES)
 
+        all_jalon_reports_status: List[parse_dml.DocumentsStatusReport] = []
+
         for jalon in all_jalons:
             jalon_report_status = parse_dml.DocumentsStatusReport.Builder.build_by_code_ged_moe(name=jalon.name, dml_file_content=dml_file_content_built, codes_ged_moe=list(jalon.docs_codes_ged_moe))
-            jalon_report_status.write_full_report_to_excel()
-            jalon_report_status.write_synthetic_report_to_excel(warn_if_doc_deleted=True)
+            # jalon_report_status.write_full_report_to_excel()
+            # jalon_report_status.write_synthetic_report_to_excel(warn_if_doc_deleted=True)
+            all_jalon_reports_status.append(jalon_report_status)
+
+    all_rows_temptative_1 = [
+        row for jalon_report_status in jalon_report_status.prepare_synthetic_report_to_excel(warn_if_doc_deleted=True, include_report_name=True) for jalon_report_status in all_jalon_reports_status
+    ]
+
+    all_rows = [jalon_report_status.prepare_synthetic_report_to_excel(warn_if_doc_deleted=True, include_report_name=True) for jalon_report_status in all_jalon_reports_status]
+    all_rows_combined = list(itertools.chain.from_iterable(all_rows))
+
+    df = pandas.DataFrame(all_rows_combined)
+
+    # Ensure output directory exists (in case it was removed after instantiation)
+    os.makedirs("Reports", exist_ok=True)
+
+    report_full_path = f"Reports/full_report_all_jalons{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+    df.to_excel(report_full_path, index=False)
+    logger_config.print_and_log_info(f"Wrote {len(df)} rows to {report_full_path}")
 
 
 if __name__ == "__main__":
