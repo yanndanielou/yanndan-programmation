@@ -5,10 +5,8 @@ from typing import Dict, Tuple, Optional
 
 
 class Text(object):
-    def __init__(self, text: str, color: Tuple[int, int, int], x: int, y: int, size: int, time=None, id=None, visible: Optional[bool] = True) -> None:
-        assert time is None, "YDA for typing"
-        assert id is None, "YDA for typing"
-        self.id = id
+    def __init__(self, text: str, color: Tuple[int, int, int], x: int, y: int, size: int, time: Optional[int] = None, identifier: Optional[int] = None, visible: Optional[bool] = True) -> None:
+        self.identifier = identifier
         self.text = text
         self.color = color
         self.size = size
@@ -53,11 +51,11 @@ class TextGroup(object):
         self.setupText()
         self.showText(READYTXT)
 
-    def addText(self, text: str, color: Tuple[int, int, int], x: int, y: int, size: int, time: Optional[int] = None, id=None) -> int:
+    def addText(self, text: str, color: Tuple[int, int, int], x: int, y: int, size: int, time: Optional[int] = None, identifier: Optional[int] = None) -> int:
 
-        assert id is None, "YDA for typing"
+        assert identifier is None, "YDA for typing"
         self.nextid += 1
-        self.alltext[self.nextid] = Text(text, color, x, y, size, time=time, id=id)
+        self.alltext[self.nextid] = Text(text, color, x, y, size, time=time, identifier=identifier)
         return self.nextid
 
     def removeText(self, id: int) -> None:

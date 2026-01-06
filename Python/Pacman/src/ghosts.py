@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 from vector import Vector2
 from constants import *
+import constants
 from entity import Entity
 from modes import ModeController
 from sprites import GhostSprites
@@ -10,12 +11,13 @@ from typing import List, TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     import nodes
     import pacman
+    import ghosts
 
 
 class Ghost(Entity):
-    def __init__(self, node: "nodes.Node", pacman: Optional["pacman.Pacman"] = None, blinky: Optional[Blinky] = None):
+    def __init__(self, node: "nodes.Node", pacman: Optional["pacman.Pacman"] = None, blinky: Optional["ghosts.Blinky"] = None):
         Entity.__init__(self, node)
-        self.name = GHOST
+        self.name = constants.GHOST
         self.points = 200
         self.goal = Vector2()
         self.directionMethod = self.goalDirection
@@ -70,9 +72,8 @@ class Ghost(Entity):
 
 
 class Blinky(Ghost):
-    def __init__(self, node: "nodes.Node", pacman: Optional["pacman.Pacman"] = None, blinky=None) -> None:
+    def __init__(self, node: "nodes.Node", pacman: Optional["pacman.Pacman"] = None, blinky: Optional["ghosts.Blinky"] = None) -> None:
         Ghost.__init__(self, node, pacman, blinky)
-        assert blinky is None, "YDA"
         self.name = BLINKY
         self.color = RED
         self.sprites = GhostSprites(self)
@@ -89,6 +90,7 @@ class Pinky(Ghost):
         self.goal = Vector2(TILEWIDTH * NCOLS, 0)
 
     def chase(self) -> None:
+        assert self.pacman, "YDA FIXME"
         self.goal = self.pacman.position + self.pacman.directions[self.pacman.direction] * TILEWIDTH * 4
 
 
@@ -136,7 +138,7 @@ class GhostGroup(object):
         self.ghosts: List[Ghost] = [self.blinky, self.pinky, self.inky, self.clyde]
 
     def __iter__(self) -> List[Ghost]:
-        assert False, "Use ghosts instead"
+        # assert False, "Use ghosts instead"
         return iter(self.ghosts)
 
     def update(self, dt: float) -> None:
@@ -172,6 +174,6 @@ class GhostGroup(object):
         for ghost in self:
             ghost.reset()
 
-    def render(self, screen: pygame.surface.Surface):
+    def render(self, screen: pygame.surface.Surface) -> None:
         for ghost in self:
             ghost.render(screen)

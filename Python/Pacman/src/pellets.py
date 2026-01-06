@@ -3,6 +3,7 @@ from vector import Vector2
 from constants import *
 from typing import List
 import numpy as np
+import numpy
 
 
 class Pellet(object):
@@ -15,7 +16,7 @@ class Pellet(object):
         self.points = 10
         self.visible = True
 
-    def render(self, screen):
+    def render(self, screen: pygame.surface.SurfaceType) -> None:
         if self.visible:
             adjust = Vector2(TILEWIDTH, TILEHEIGHT) / 2
             p = self.position + adjust
@@ -23,7 +24,7 @@ class Pellet(object):
 
 
 class PowerPellet(Pellet):
-    def __init__(self, row, column):
+    def __init__(self, row: int, column: int) -> None:
         Pellet.__init__(self, row, column)
         self.name = POWERPELLET
         self.radius = int(8 * TILEWIDTH / 16)
@@ -31,7 +32,7 @@ class PowerPellet(Pellet):
         self.flashTime = 0.2
         self.timer = 0
 
-    def update(self, dt):
+    def update(self, dt: float) -> None:
         self.timer += dt
         if self.timer >= self.flashTime:
             self.visible = not self.visible
@@ -39,17 +40,17 @@ class PowerPellet(Pellet):
 
 
 class PelletGroup(object):
-    def __init__(self, pelletfile):
+    def __init__(self, pelletfile: str) -> None:
         self.pelletList: List[Pellet] = []
         self.powerpellets: List[PowerPellet] = []
         self.createPelletList(pelletfile)
         self.numEaten = 0
 
-    def update(self, dt):
+    def update(self, dt: float) -> None:
         for powerpellet in self.powerpellets:
             powerpellet.update(dt)
 
-    def createPelletList(self, pelletfile):
+    def createPelletList(self, pelletfile: str) -> None:
         data = self.readPelletfile(pelletfile)
         for row in range(data.shape[0]):
             for col in range(data.shape[1]):
@@ -60,14 +61,14 @@ class PelletGroup(object):
                     self.pelletList.append(pp)
                     self.powerpellets.append(pp)
 
-    def readPelletfile(self, textfile):
+    def readPelletfile(self, textfile: str) -> numpy.ndarray:
         return np.loadtxt(textfile, dtype="<U1")
 
-    def isEmpty(self) -> None:
+    def isEmpty(self) -> bool:
         if len(self.pelletList) == 0:
             return True
         return False
 
-    def render(self, screen):
+    def render(self, screen) -> None:
         for pellet in self.pelletList:
             pellet.render(screen)

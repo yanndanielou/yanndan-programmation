@@ -4,6 +4,7 @@ from constants import RESOURCES_FOLDER_NAME
 import numpy as np
 from animation import Animator
 
+
 BASETILEWIDTH = 16
 BASETILEHEIGHT = 16
 DEATH = 5
@@ -18,7 +19,11 @@ class Spritesheet(object):
         height = int(self.sheet.get_height() / BASETILEHEIGHT * TILEHEIGHT)
         self.sheet = pygame.transform.scale(self.sheet, (width, height))
 
-    def getImage(self, x, y, width, height):
+    def getImage(self, x: int, y: int, width: int, height: int) -> pygame.surface.Surface:
+        assert isinstance(x, int)
+        assert isinstance(y, int)
+        assert isinstance(width, int)
+        assert isinstance(height, int)
         x *= TILEWIDTH
         y *= TILEHEIGHT
         self.sheet.set_clip(pygame.Rect(x, y, width, height))
@@ -41,7 +46,7 @@ class PacmanSprites(Spritesheet):
         self.animations[DOWN] = Animator(((8, 2), (4, 0), (4, 2), (4, 0)))
         self.animations[DEATH] = Animator(((0, 12), (2, 12), (4, 12), (6, 12), (8, 12), (10, 12), (12, 12), (14, 12), (16, 12), (18, 12), (20, 12)), speed=6, loop=False)
 
-    def update(self, dt):
+    def update(self, dt: float) -> None:
         if self.entity.alive == True:
             if self.entity.direction == LEFT:
                 self.entity.image = self.getImage(*self.animations[LEFT].update(dt))
@@ -67,7 +72,7 @@ class PacmanSprites(Spritesheet):
     def getStartImage(self) -> None:
         return self.getImage(8, 0)
 
-    def getImage(self, x, y):
+    def getImage(self, x, y) -> pygame.surface.Surface:
         return Spritesheet.getImage(self, x, y, 2 * TILEWIDTH, 2 * TILEHEIGHT)
 
 
@@ -78,7 +83,7 @@ class GhostSprites(Spritesheet):
         self.entity = entity
         self.entity.image = self.getStartImage()
 
-    def update(self, dt):
+    def update(self, dt: float) -> None:
         x = self.x[self.entity.name]
         if self.entity.mode.current in [SCATTER, CHASE]:
             if self.entity.direction == LEFT:
@@ -101,10 +106,10 @@ class GhostSprites(Spritesheet):
             elif self.entity.direction == UP:
                 self.entity.image = self.getImage(8, 4)
 
-    def getStartImage(self) -> None:
+    def getStartImage(self) -> pygame.surface.Surface:
         return self.getImage(self.x[self.entity.name], 4)
 
-    def getImage(self, x, y):
+    def getImage(self, x: int, y: int) -> pygame.surface.Surface:
         return Spritesheet.getImage(self, x, y, 2 * TILEWIDTH, 2 * TILEHEIGHT)
 
 
@@ -123,7 +128,7 @@ class FruitSprites(Spritesheet):
 
 
 class LifeSprites(Spritesheet):
-    def __init__(self, numlives) -> None:
+    def __init__(self, numlives: int) -> None:
         Spritesheet.__init__(self)
         self.resetLives(numlives)
 
@@ -131,12 +136,14 @@ class LifeSprites(Spritesheet):
         if len(self.images) > 0:
             self.images.pop(0)
 
-    def resetLives(self, numlives):
+    def resetLives(self, numlives: int) -> None:
         self.images = []
         for i in range(numlives):
             self.images.append(self.getImage(0, 0))
 
-    def getImage(self, x, y):
+    def getImage(self, x: int, y: int) -> pygame.surface.Surface:
+        assert isinstance(x, int)
+        assert isinstance(y, int)
         return Spritesheet.getImage(self, x, y, 2 * TILEWIDTH, 2 * TILEHEIGHT)
 
 
@@ -146,13 +153,13 @@ class MazeSprites(Spritesheet):
         self.data = self.readMazeFile(mazefile)
         self.rotdata = self.readMazeFile(rotfile)
 
-    def getImage(self, x, y):
+    def getImage(self, x: int, y: int) -> pygame.surface.Surface:
         return Spritesheet.getImage(self, x, y, TILEWIDTH, TILEHEIGHT)
 
-    def readMazeFile(self, mazefile):
+    def readMazeFile(self, mazefile: str) -> np.ndarray:
         return np.loadtxt(mazefile, dtype="<U1")
 
-    def constructBackground(self, background, y):
+    def constructBackground(self, background: pygame.surface.Surface, y: int) -> pygame.surface.Surface:
         for row in list(range(self.data.shape[0])):
             for col in list(range(self.data.shape[1])):
                 if self.data[row][col].isdigit():
@@ -167,5 +174,5 @@ class MazeSprites(Spritesheet):
 
         return background
 
-    def rotate(self, sprite, value):
+    def rotate(self, sprite: pygame.surface.Surface, value: int) -> pygame.surface.Surface:
         return pygame.transform.rotate(sprite, value * 90)

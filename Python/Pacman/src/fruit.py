@@ -3,20 +3,25 @@ from entity import Entity
 from constants import *
 from sprites import FruitSprites
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import nodes
+
 
 class Fruit(Entity):
-    def __init__(self, node, level=0):
+    def __init__(self, node: "nodes.Node", level: int = 0) -> None:
         Entity.__init__(self, node)
         self.name = FRUIT
         self.color = GREEN
         self.lifespan = 5
-        self.timer = 0
+        self.timer: float = 0
         self.destroy = False
         self.points = 100 + level * 20
         self.setBetweenNodes(RIGHT)
         self.sprites = FruitSprites(self, level)
 
-    def update(self, dt):
+    def update(self, dt: float) -> None:
         self.timer += dt
         if self.timer >= self.lifespan:
             self.destroy = True

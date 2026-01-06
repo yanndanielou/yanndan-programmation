@@ -12,10 +12,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import pellets
     import ghosts
+    import nodes
 
 
 class Pacman(Entity):
-    def __init__(self, node):
+    def __init__(self, node: "nodes.Node") -> None:
         Entity.__init__(self, node)
         self.name = PACMAN
         self.color = YELLOW
@@ -36,7 +37,7 @@ class Pacman(Entity):
         self.alive = False
         self.direction = STOP
 
-    def update(self, dt):
+    def update(self, dt: float) -> None:
         self.sprites.update(dt)
         self.position += self.directions[self.direction] * self.speed * dt
         direction = self.getValidKey()
@@ -57,7 +58,7 @@ class Pacman(Entity):
             if self.oppositeDirection(direction):
                 self.reverseDirection()
 
-    def getValidKey(self) -> None:
+    def getValidKey(self) -> int:
         key_pressed = pygame.key.get_pressed()
         if key_pressed[K_UP]:
             return UP

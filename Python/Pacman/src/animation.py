@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 
 class Animator(object):
-    def __init__(self, frames: List = [], speed: int = 20, loop: bool = True) -> None:
+    def __init__(self, frames: Tuple[Tuple[int, int], ...], speed: int = 20, loop: bool = True) -> None:
         self.frames = frames
         self.current_frame = 0
         self.speed = speed

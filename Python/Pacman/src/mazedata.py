@@ -1,5 +1,10 @@
 from constants import *
-from typing import Dict
+
+from typing import Dict, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import nodes
+    import ghosts
 
 
 class MazeBase(object):
@@ -8,19 +13,19 @@ class MazeBase(object):
         self.homeoffset = (0, 0)
         self.ghostNodeDeny = {UP: (), DOWN: (), LEFT: (), RIGHT: ()}
 
-    def setPortalPairs(self, nodes):
+    def setPortalPairs(self, nodes: "nodes.NodeGroup") -> None:
         for pair in list(self.portalPairs.values()):
             nodes.setPortalPair(*pair)
 
-    def connectHomeNodes(self, nodes):
+    def connectHomeNodes(self, nodes: "nodes.NodeGroup") -> None:
         key = nodes.createHomeNodes(*self.homeoffset)
         nodes.connectHomeNodes(key, self.homenodeconnectLeft, LEFT)
         nodes.connectHomeNodes(key, self.homenodeconnectRight, RIGHT)
 
-    def addOffset(self, x, y):
+    def addOffset(self, x: int, y: int) -> Tuple[float, int]:
         return x + self.homeoffset[0], y + self.homeoffset[1]
 
-    def denyGhostsAccess(self, ghosts, nodes):
+    def denyGhostsAccess(self, ghosts: "ghosts.GhostGroup", nodes: "nodes.NodeGroup") -> None:
         nodes.denyAccessList(*(self.addOffset(2, 3) + (LEFT, ghosts)))
         nodes.denyAccessList(*(self.addOffset(2, 3) + (RIGHT, ghosts)))
 
