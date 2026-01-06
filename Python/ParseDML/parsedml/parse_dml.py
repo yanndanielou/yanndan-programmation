@@ -341,7 +341,7 @@ class OneDocumentStatusReport:
 
     def __post_init__(self) -> None:
         self.all_code_ged_moes = self.dml_document.get_all_code_ged_moes()
-        logger_config.print_and_log_info(f"Build report for {self.all_code_ged_moes}")
+        logger_config.print_and_log_info(f"Prepare report for {self.all_code_ged_moes}")
         # self.document_sorted_dml_lines = self.dml_document.get_sorted_dml_lines()
 
         self.last_line = self.dml_document.get_last_dml_line()
