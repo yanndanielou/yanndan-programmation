@@ -1,25 +1,11 @@
-from logger import logger_config
-from parsedml import parse_dml
-from common import json_encoders
-import param
-
-import logging
-import math
-import os
-import re
-from dataclasses import dataclass, field
-from datetime import datetime
-from enum import Enum, auto
-from typing import Dict, List, Optional, Set, Tuple, cast, Any
-from warnings import deprecated
+from typing import Any, List, Set
 
 import pandas
-from common import excel_utils, string_utils, file_name_utils
+from common import file_utils, json_encoders
 from logger import logger_config
 
-import param
-
 INPUT_EXCEL_FILE = "Input/JALONS SIGNES_NExTEO-021100-01-0012-01 DML_NEXTEO_ATS+_V14_V41-00.xlsm"
+OUTPUT_PARENT_DIRECTORY_NAME = "Output"
 
 
 class DocLine:
@@ -63,6 +49,11 @@ def main() -> None:
                             jalon = [jalon_found for jalon_found in all_jalons if jalon_found.name == jalon_name][0]
 
                         logger_config.print_and_log_info(f"Add doc {code_moe_ged_raw} to jalon {jalon_name}")
+
+    for directory_path in [OUTPUT_PARENT_DIRECTORY_NAME]:
+        file_utils.create_folder_if_not_exist(directory_path)
+
+    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(all_jalons, f"{OUTPUT_PARENT_DIRECTORY_NAME}/all_jalons.json")
 
 
 if __name__ == "__main__":
