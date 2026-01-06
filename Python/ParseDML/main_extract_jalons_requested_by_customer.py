@@ -59,6 +59,9 @@ def main() -> None:
                         jalon = [jalon_found for jalon_found in all_jalons if jalon_found.name == jalon_name][0]
 
                     logger_config.print_and_log_info(f"Add doc {code_moe_ged_raw} to jalon {jalon_name}")
+                    jalon.docs_codes_ged_moe.add(doc_line.code_ged_moe)
+
+    logger_config.print_and_log_info(f"{len(all_jalons)} jalons found: \n {'\n'.join([jalon.name for jalon in all_jalons])}")
 
     assert all_jalons
     for jalon in all_jalons:
