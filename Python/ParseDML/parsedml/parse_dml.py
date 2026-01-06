@@ -390,7 +390,7 @@ class OneDocumentStatusReport:
         @staticmethod
         def build_by_code_ged_moe(dml_file_content: "DmlFileContent", code_ged_moe: str) -> "OneDocumentStatusReport":
             dml_document = dml_file_content.find_document_by_code_ged_moe(code_ged_moe)
-            assert dml_document
+            assert dml_document, f"Could not find doc {code_ged_moe}"
             document_status_report = OneDocumentStatusReport(dml_document=dml_document)
             return document_status_report
 
