@@ -24,7 +24,7 @@ class Ghost(Entity):
         self.points = 200
         self.directionMethod = self.goalDirection
 
-    def update(self, dt):
+    def update(self, dt: float) -> None:
         self.sprites.update(dt)
         self.mode.update(dt)
         if self.mode.current is SCATTER:
@@ -132,7 +132,7 @@ class GhostGroup(object):
     def __iter__(self) -> None:
         return iter(self.ghosts)
 
-    def update(self, dt):
+    def update(self, dt: float) -> None:
         for ghost in self:
             ghost.update(dt)
 

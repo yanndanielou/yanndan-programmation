@@ -4,7 +4,7 @@ from warnings import deprecated
 
 
 class Vector2(object):
-    def __init__(self, x: int = 0, y: int = 0):
+    def __init__(self, x: int = 0, y: int = 0) -> None:
         self.x = x
         self.y = y
         self.thresh = 0.000001

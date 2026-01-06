@@ -4,6 +4,7 @@ from vector import Vector2
 from constants import *
 from random import randint
 import nodes
+from typing import List
 
 
 class Entity(object):
@@ -11,7 +12,7 @@ class Entity(object):
         self.name = None
         self.directions = {UP: Vector2(0, -1), DOWN: Vector2(0, 1), LEFT: Vector2(-1, 0), RIGHT: Vector2(1, 0), STOP: Vector2()}
         self.direction = STOP
-        self.setSpeed(100)
+        self.speed = self.setSpeed(100)
         self.radius = 10
         self.collideRadius = 5
         self.color = WHITE
@@ -25,7 +26,7 @@ class Entity(object):
     def setPosition(self) -> None:
         self.position = self.node.position.copy()
 
-    def update(self, dt) -> None:
+    def update(self, dt: float) -> None:
         self.position += self.directions[self.direction] * self.speed * dt
 
         if self.overshotTarget():
@@ -43,19 +44,19 @@ class Entity(object):
 
             self.setPosition()
 
-    def validDirection(self, direction) -> bool:
+    def validDirection(self, direction: int) -> bool:
         if direction is not STOP:
             if self.name in self.node.access[direction]:
                 if self.node.neighbors[direction] is not None:
                     return True
         return False
 
-    def getNewTarget(self, direction):
+    def getNewTarget(self, direction: int) -> nodes.Node:
         if self.validDirection(direction):
             return self.node.neighbors[direction]
         return self.node
 
-    def overshotTarget(self) -> None:
+    def overshotTarget(self) -> bool:
         if self.target is not None:
             vec1 = self.target.position - self.node.position
             vec2 = self.position - self.node.position
@@ -70,13 +71,13 @@ class Entity(object):
         self.node = self.target
         self.target = temp
 
-    def oppositeDirection(self, direction):
+    def oppositeDirection(self, direction: int) -> bool:
         if direction is not STOP:
             if direction == self.direction * -1:
                 return True
         return False
 
-    def validDirections(self) -> None:
+    def validDirections(self) -> List[int]:
         directions = []
         for key in [UP, DOWN, LEFT, RIGHT]:
             if self.validDirection(key):
@@ -86,10 +87,10 @@ class Entity(object):
             directions.append(self.direction * -1)
         return directions
 
-    def randomDirection(self, directions):
+    def randomDirection(self, directions: List[int]) -> int:
         return directions[randint(0, len(directions) - 1)]
 
-    def goalDirection(self, directions):
+    def goalDirection(self, directions: List[int]) -> int:
         distances = []
         for direction in directions:
             vec = self.node.position + self.directions[direction] * TILEWIDTH - self.goal
@@ -97,13 +98,13 @@ class Entity(object):
         index = distances.index(min(distances))
         return directions[index]
 
-    def setStartNode(self, node):
+    def setStartNode(self, node: nodes.Node) -> None:
         self.node = node
         self.startNode = node
         self.target = node
         self.setPosition()
 
-    def setBetweenNodes(self, direction):
+    def setBetweenNodes(self, direction: int) -> None:
         if self.node.neighbors[direction] is not None:
             self.target = self.node.neighbors[direction]
             self.position = (self.node.position + self.target.position) / 2.0
@@ -114,8 +115,9 @@ class Entity(object):
         self.speed = 100
         self.visible = True
 
-    def setSpeed(self, speed: int) -> None:
-        self.speed: int = speed * TILEWIDTH / 16
+    def setSpeed(self, speed: int) -> float:
+        self.speed: float = speed * TILEWIDTH / 16
+        return self.speed
 
     def render(self, screen) -> None:
         if self.visible:
