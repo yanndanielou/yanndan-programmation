@@ -7,19 +7,21 @@ import uuid
 
 INPUT_EXCEL_FILE = "Input/JALONS SIGNES_NExTEO-021100-01-0012-01 DML_NEXTEO_ATS+_V14_V41-00.xlsm"
 OUTPUT_PARENT_DIRECTORY_NAME = "Output"
+MAGIC_VALUE_SEPARATOR = str(uuid.uuid4())
 
 
 def split_jalons_raw_to_jalon_names_list(jalons_raw: str) -> List[str]:
 
-    if not jalons_raw or not isinstance(jalons_raw, str) or str(jalons_raw) in ["nan"]:
+    if not jalons_raw or not isinstance(jalons_raw, str) or str(jalons_raw) in ["nan"] or jalons_raw.strip() == "":
         return []
 
-    MAGIC_VALUE_SEPARATOR = str(uuid.uuid4())
     jalons_list = (
-        jalons_raw.replace(" ", MAGIC_VALUE_SEPARATOR)
+        jalons_raw.strip()
+        .replace(" ", MAGIC_VALUE_SEPARATOR)
         .replace("\n", MAGIC_VALUE_SEPARATOR)
         .replace("\\", MAGIC_VALUE_SEPARATOR)
         .replace("/", MAGIC_VALUE_SEPARATOR)
+        .replace(MAGIC_VALUE_SEPARATOR + MAGIC_VALUE_SEPARATOR, MAGIC_VALUE_SEPARATOR)
         .replace(MAGIC_VALUE_SEPARATOR + MAGIC_VALUE_SEPARATOR, MAGIC_VALUE_SEPARATOR)
         .split(MAGIC_VALUE_SEPARATOR)
     )
@@ -36,6 +38,10 @@ class Jalon:
     def __init__(self, name: str) -> None:
         self.name = name
         self.docs_codes_ged_moe: Set[str] = set()
+
+        assert self.name
+        assert " " not in self.name
+
         logger_config.print_and_log_info(f"Create jalon {self.name}")
 
 
@@ -68,12 +74,13 @@ def main() -> None:
                     logger_config.print_and_log_info(f"Add doc {code_moe_ged_raw} to jalon {jalon_name}")
                     jalon.docs_codes_ged_moe.add(doc_line.code_ged_moe)
 
-    logger_config.print_and_log_info(f"{len(all_jalons)} jalons found: \n {'\n'.join([jalon.name for jalon in all_jalons])}")
+    logger_config.print_and_log_info(f"{len(all_jalons)} jalons found: \n{'\n'.join([jalon.name for jalon in all_jalons])}")
 
     assert all_jalons
     for jalon in all_jalons:
         assert jalon.name
         assert jalon.docs_codes_ged_moe, f"Jalon {jalon.name} has no doc"
+        assert " " not in jalon.name
 
     for directory_path in [OUTPUT_PARENT_DIRECTORY_NAME]:
         file_utils.create_folder_if_not_exist(directory_path)
