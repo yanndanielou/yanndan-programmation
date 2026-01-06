@@ -5,10 +5,15 @@ from constants import *
 from entity import Entity
 from modes import ModeController
 from sprites import GhostSprites
+from typing import List, TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    import nodes
+    import pacman
 
 
 class Ghost(Entity):
-    def __init__(self, node, pacman=None, blinky=None):
+    def __init__(self, node: "nodes.Node", pacman: Optional["pacman.Pacman"] = None, blinky: Optional[Blinky] = None):
         Entity.__init__(self, node)
         self.name = GHOST
         self.points = 200
@@ -42,7 +47,7 @@ class Ghost(Entity):
     def spawn(self) -> None:
         self.goal = self.spawnNode.position
 
-    def setSpawnNode(self, node):
+    def setSpawnNode(self, node: "nodes.Node") -> None:
         self.spawnNode = node
 
     def startSpawn(self) -> None:
@@ -65,15 +70,16 @@ class Ghost(Entity):
 
 
 class Blinky(Ghost):
-    def __init__(self, node, pacman=None, blinky=None):
+    def __init__(self, node: "nodes.Node", pacman: Optional["pacman.Pacman"] = None, blinky=None) -> None:
         Ghost.__init__(self, node, pacman, blinky)
+        assert blinky is None, "YDA"
         self.name = BLINKY
         self.color = RED
         self.sprites = GhostSprites(self)
 
 
 class Pinky(Ghost):
-    def __init__(self, node, pacman=None, blinky=None):
+    def __init__(self, node: "nodes.Node", pacman: Optional["pacman.Pacman"] = None, blinky: Optional[Blinky] = None) -> None:
         Ghost.__init__(self, node, pacman, blinky)
         self.name = PINKY
         self.color = PINK
@@ -87,7 +93,7 @@ class Pinky(Ghost):
 
 
 class Inky(Ghost):
-    def __init__(self, node, pacman=None, blinky=None):
+    def __init__(self, node: "nodes.Node", pacman: Optional["pacman.Pacman"] = None, blinky: Optional[Blinky] = None) -> None:
         Ghost.__init__(self, node, pacman, blinky)
         self.name = INKY
         self.color = TEAL
@@ -103,7 +109,7 @@ class Inky(Ghost):
 
 
 class Clyde(Ghost):
-    def __init__(self, node, pacman=None, blinky=None):
+    def __init__(self, node: "nodes.Node", pacman: Optional["pacman.Pacman"] = None, blinky: Optional[Blinky] = None) -> None:
         Ghost.__init__(self, node, pacman, blinky)
         self.name = CLYDE
         self.color = ORANGE
@@ -122,14 +128,15 @@ class Clyde(Ghost):
 
 
 class GhostGroup(object):
-    def __init__(self, node, pacman):
+    def __init__(self, node: "nodes.Node", pacman: "pacman.Pacman") -> None:
         self.blinky = Blinky(node, pacman)
         self.pinky = Pinky(node, pacman)
         self.inky = Inky(node, pacman, self.blinky)
         self.clyde = Clyde(node, pacman)
-        self.ghosts = [self.blinky, self.pinky, self.inky, self.clyde]
+        self.ghosts: List[Ghost] = [self.blinky, self.pinky, self.inky, self.clyde]
 
-    def __iter__(self) -> None:
+    def __iter__(self) -> List[Ghost]:
+        assert False, "Use ghosts instead"
         return iter(self.ghosts)
 
     def update(self, dt: float) -> None:
@@ -142,7 +149,7 @@ class GhostGroup(object):
         self.resetPoints()
 
     def setSpawnNode(self, node):
-        for ghost in self:
+        for ghost in self.ghosts:
             ghost.setSpawnNode(node)
 
     def updatePoints(self) -> None:
@@ -165,6 +172,6 @@ class GhostGroup(object):
         for ghost in self:
             ghost.reset()
 
-    def render(self, screen):
+    def render(self, screen: pygame.surface.Surface):
         for ghost in self:
             ghost.render(screen)

@@ -1,11 +1,12 @@
 import pygame
 from vector import Vector2
 from constants import *
+from typing import List
 import numpy as np
 
 
 class Pellet(object):
-    def __init__(self, row, column):
+    def __init__(self, row: int, column: int) -> None:
         self.name = PELLET
         self.position = Vector2(column * TILEWIDTH, row * TILEHEIGHT)
         self.color = WHITE
@@ -39,8 +40,8 @@ class PowerPellet(Pellet):
 
 class PelletGroup(object):
     def __init__(self, pelletfile):
-        self.pelletList = []
-        self.powerpellets = []
+        self.pelletList: List[Pellet] = []
+        self.powerpellets: List[PowerPellet] = []
         self.createPelletList(pelletfile)
         self.numEaten = 0
 

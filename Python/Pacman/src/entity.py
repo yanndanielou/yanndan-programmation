@@ -119,7 +119,7 @@ class Entity(object):
         self.speed: float = speed * TILEWIDTH / 16
         return self.speed
 
-    def render(self, screen) -> None:
+    def render(self, screen: pygame.surface.Surface) -> None:
         if self.visible:
             if self.image is not None:
                 adjust = Vector2(TILEWIDTH, TILEHEIGHT) / 2

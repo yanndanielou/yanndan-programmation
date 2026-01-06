@@ -4,7 +4,14 @@ from vector import Vector2
 from constants import *
 from entity import Entity
 from sprites import PacmanSprites
-from typing import List
+from typing import List, Optional, Any
+
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pellets
+    import ghosts
 
 
 class Pacman(Entity):
@@ -62,16 +69,16 @@ class Pacman(Entity):
             return RIGHT
         return STOP
 
-    def eatPellets(self, pelletList: List):
+    def eatPellets(self, pelletList: List["pellets.Pellet"]) -> Optional["pellets.Pellet"]:
         for pellet in pelletList:
             if self.collideCheck(pellet):
                 return pellet
         return None
 
-    def collideGhost(self, ghost) -> None:
+    def collideGhost(self, ghost: "ghosts.Ghost") -> bool:
         return self.collideCheck(ghost)
 
-    def collideCheck(self, other) -> None:
+    def collideCheck(self, other: Any) -> bool:
         d = self.position - other.position
         dSquared = d.magnitudeSquared()
         rSquared = (self.collideRadius + other.collideRadius) ** 2

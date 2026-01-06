@@ -242,11 +242,12 @@ class GameController(object):
         self.fruit = None
         self.textgroup.showText(READYTXT)
 
-    def updateScore(self, points):
+    def updateScore(self, points: int) -> None:
         self.score += points
         self.textgroup.updateScore(self.score)
 
     def render(self) -> None:
+        assert self.background
         self.screen.blit(self.background, (0, 0))
         # self.nodes.render(self.screen)
         self.pellets.render(self.screen)

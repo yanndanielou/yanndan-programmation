@@ -1,5 +1,5 @@
 from constants import *
-from typing import List
+from typing import List, Tuple
 
 
 class Animator(object):
@@ -15,7 +15,7 @@ class Animator(object):
         self.current_frame = 0
         self.finished = False
 
-    def update(self, dt) -> None:
+    def update(self, dt: float) -> Tuple[int, int]:
         if not self.finished:
             self.nextFrame(dt)
         if self.current_frame == len(self.frames):
@@ -27,7 +27,7 @@ class Animator(object):
 
         return self.frames[self.current_frame]
 
-    def nextFrame(self, dt) -> None:
+    def nextFrame(self, dt: float) -> None:
         self.dt += dt
         if self.dt >= (1.0 / self.speed):
             self.current_frame += 1
