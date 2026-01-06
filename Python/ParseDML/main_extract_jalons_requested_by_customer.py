@@ -15,7 +15,7 @@ def split_jalons_raw_to_jalon_names_list(jalons_raw: str) -> List[str]:
         return []
 
     MAGIC_VALUE_SEPARATOR = str(uuid.uuid4())
-    jalons_list = jalons_raw.replace("\n", MAGIC_VALUE_SEPARATOR).replace("\\", MAGIC_VALUE_SEPARATOR).split(MAGIC_VALUE_SEPARATOR)
+    jalons_list = jalons_raw.replace("\n", MAGIC_VALUE_SEPARATOR).replace("\\", MAGIC_VALUE_SEPARATOR).replace("/", MAGIC_VALUE_SEPARATOR).split(MAGIC_VALUE_SEPARATOR)
     return jalons_list
 
 
@@ -53,11 +53,17 @@ def main() -> None:
                 for jalon_name in jalons_names_in_current_line:
                     if not [jalon_found for jalon_found in all_jalons if jalon_found.name == jalon_name]:
                         jalon = Jalon(jalon_name)
+                        all_jalons.append(jalon)
 
                     else:
                         jalon = [jalon_found for jalon_found in all_jalons if jalon_found.name == jalon_name][0]
 
                     logger_config.print_and_log_info(f"Add doc {code_moe_ged_raw} to jalon {jalon_name}")
+
+    assert all_jalons
+    for jalon in all_jalons:
+        assert jalon.name
+        assert jalon.docs_codes_ged_moe, f"Jalon {jalon.name} has no doc"
 
     for directory_path in [OUTPUT_PARENT_DIRECTORY_NAME]:
         file_utils.create_folder_if_not_exist(directory_path)
