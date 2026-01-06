@@ -481,6 +481,7 @@ class DocumentsStatusReport:
             dml_document_codes = ",".join(sorted(document_status.dml_document.get_all_code_ged_moes()))
 
             row: Dict[str, object] = {
+                "report_name": self.name,
                 "dml_document_codes": dml_document_codes,
                 "doc_deleted": last_line.doc_deleted,
                 "last_line code_ged_moe": last_line.code_ged_moe,
