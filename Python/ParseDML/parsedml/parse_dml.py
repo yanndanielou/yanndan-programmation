@@ -462,7 +462,7 @@ class DocumentsStatusReport:
         df.to_excel(report_full_path, index=False)
         logger_config.print_and_log_info(f"Wrote {len(df)} rows to {report_full_path}")
 
-    def write_synthetic_report_to_excel(self) -> None:
+    def write_synthetic_report_to_excel(self, warn_if_doc_deleted: bool) -> None:
         """Write all OneDocumentLineStatusReport entries from all documents into an Excel file.
 
         The output file path is `self.output_file_full_path`.
@@ -473,6 +473,9 @@ class DocumentsStatusReport:
         for document_status in self.all_documents_status_reports:
             last_line = document_status.last_line
             penultimate_line = document_status.penultimate_line
+
+            if warn_if_doc_deleted and last_line.doc_deleted:
+                logger_config.print_and_log_warning(f"{self.name}: doc {last_line.code_ged_moe} is deleted!")
 
             # Convert complex attributes to serializable representations
             dml_document_codes = ",".join(sorted(document_status.dml_document.get_all_code_ged_moes()))

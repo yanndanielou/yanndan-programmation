@@ -67,7 +67,7 @@ class Jalon:
 
         assert self.name
 
-        logger_config.print_and_log_info(f"Create jalon {self.name}")
+        # logger_config.print_and_log_info(f"Create jalon {self.name}")
 
 
 def main() -> None:
@@ -141,14 +141,22 @@ def main() -> None:
     with logger_config.stopwatch_with_label("Detect change jalons dans un doc"):
         for doc in all_docs:
             previous_jalons: List[Jalon] = doc.lines[0]._jalons
-            for other_line in doc.lines[1:]:
-                if other_line._jalons and other_line._jalons != previous_jalons:
-                    if previous_jalons:
-                        logger_config.print_and_log_info(
-                            f"Jalon changed in doc {doc.code_ged_moe}, version {other_line.version} between {[jalon.name for jalon in previous_jalons]} and {[jalon.name for jalon in other_line._jalons]}"
+            for current_line in doc.lines[1:]:
+                new_jalons_added = [jalon for jalon in current_line._jalons if jalon not in previous_jalons]
+                old_jalons_removed = [jalon for jalon in previous_jalons if jalon not in current_line._jalons]
+
+                if previous_jalons:
+                    if new_jalons_added:
+                        logger_config.print_and_log_warning(
+                            f"Jalons {[jalon.name for jalon in new_jalons_added]} added in doc {doc.code_ged_moe}, in version {current_line.version} : previous jalons:{", ".join([jalon.name for jalon in previous_jalons])}, now {", ".join([jalon.name for jalon in current_line._jalons])}"
                         )
-                    else:
-                        previous_jalons = other_line._jalons
+                        previous_jalons = previous_jalons + new_jalons_added
+
+                if current_line._jalons:
+                    if old_jalons_removed:
+                        logger_config.print_and_log_info(
+                            f"Jalons {[jalon.name for jalon in old_jalons_removed]} removed in doc {doc.code_ged_moe}, in version {current_line.version} : previous jalons:{", ".join([jalon.name for jalon in previous_jalons])}, now {", ".join([jalon.name for jalon in current_line._jalons])}"
+                        )
 
     with logger_config.application_logger("ParseDML"):
         dml_file_content_built = parse_dml.DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path=param.DML_FILE_WITH_USELESS_RANGES)
@@ -156,7 +164,7 @@ def main() -> None:
         for jalon in all_jalons:
             jalon_report_status = parse_dml.DocumentsStatusReport.Builder.build_by_code_ged_moe(name=jalon.name, dml_file_content=dml_file_content_built, codes_ged_moe=list(jalon.docs_codes_ged_moe))
             jalon_report_status.write_full_report_to_excel()
-            jalon_report_status.write_synthetic_report_to_excel()
+            jalon_report_status.write_synthetic_report_to_excel(warn_if_doc_deleted=True)
 
 
 if __name__ == "__main__":
