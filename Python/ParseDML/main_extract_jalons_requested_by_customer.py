@@ -3,6 +3,10 @@ from typing import Any, List, Set
 import pandas
 from common import file_utils, json_encoders, file_name_utils
 from logger import logger_config
+
+from parsedml import parse_dml
+import param
+
 import uuid
 
 INPUT_EXCEL_FILE = "Input/JALONS SIGNES_NExTEO-021100-01-0012-01 DML_NEXTEO_ATS+_V14_V41-00.xlsm"
@@ -38,14 +42,18 @@ class Doc:
     def __init__(self, code_moe_ged_raw: str) -> None:
         self.code_ged_moe = code_moe_ged_raw
         self.unique_jalons: Set[Jalon] = set()
+        self.lines: List[DocLine] = []
 
 
 class DocLine:
-    def __init__(self, code_moe_ged_raw: str, jalons_raw: Any, doc: Doc) -> None:
+    def __init__(self, code_moe_ged_raw: str, jalons_raw: Any, doc: Doc, version: str, title: str) -> None:
         self.code_ged_moe = code_moe_ged_raw
         self.doc = doc
         self.jalons_raw = jalons_raw
         self._jalons: List[Jalon] = []
+        self.version = version
+        self.title = title
+        doc.lines.append(self)
 
     def add_jalon(self, jalon: "Jalon") -> None:
         self._jalons.append(jalon)
@@ -76,6 +84,8 @@ def main() -> None:
             for index, (_, row) in enumerate(main_data_frame.iterrows()):
                 code_moe_ged_raw = row["Code GED MOE"]
                 jalons_raw = row["Jalon fourniture"]
+                version_raw = row["Version"]
+                title_raw = row["Titre Document"]
 
                 assert isinstance(code_moe_ged_raw, str)
 
@@ -86,7 +96,7 @@ def main() -> None:
                     doc = Doc(code_moe_ged_raw)
                     all_docs.append(doc)
 
-                doc_line = DocLine(code_moe_ged_raw, jalons_raw, doc)
+                doc_line = DocLine(code_moe_ged_raw=code_moe_ged_raw, jalons_raw=jalons_raw, doc=doc, version=version_raw, title=title_raw)
                 all_doc_lines.append(doc_line)
                 jalons_names_in_current_line = split_jalons_raw_to_jalon_names_list(jalons_raw)
 
@@ -127,6 +137,26 @@ def main() -> None:
         [doc.code_ged_moe for doc in all_docs if not doc.unique_jalons],
         f"{OUTPUT_PARENT_DIRECTORY_NAME}/{file_name_utils.get_file_suffix_with_current_datetime()}_all_docs_without_jalons.json",
     )
+
+    with logger_config.stopwatch_with_label("Detect change jalons dans un doc"):
+        for doc in all_docs:
+            previous_jalons: List[Jalon] = doc.lines[0]._jalons
+            for other_line in doc.lines[1:]:
+                if other_line._jalons and other_line._jalons != previous_jalons:
+                    if previous_jalons:
+                        logger_config.print_and_log_info(
+                            f"Jalon changed in doc {doc.code_ged_moe}, version {other_line.version} between {[jalon.name for jalon in previous_jalons]} and {[jalon.name for jalon in other_line._jalons]}"
+                        )
+                    else:
+                        previous_jalons = other_line._jalons
+
+    with logger_config.application_logger("ParseDML"):
+        dml_file_content_built = parse_dml.DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path=param.DML_FILE_WITH_USELESS_RANGES)
+
+        for jalon in all_jalons:
+            jalon_report_status = parse_dml.DocumentsStatusReport.Builder.build_by_code_ged_moe(name=jalon.name, dml_file_content=dml_file_content_built, codes_ged_moe=list(jalon.docs_codes_ged_moe))
+            jalon_report_status.write_full_report_to_excel()
+            jalon_report_status.write_synthetic_report_to_excel()
 
 
 if __name__ == "__main__":
