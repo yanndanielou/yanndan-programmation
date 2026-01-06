@@ -1,11 +1,22 @@
 from typing import Any, List, Set
 
 import pandas
-from common import file_utils, json_encoders
+from common import file_utils, json_encoders, file_name_utils
 from logger import logger_config
+import uuid
 
 INPUT_EXCEL_FILE = "Input/JALONS SIGNES_NExTEO-021100-01-0012-01 DML_NEXTEO_ATS+_V14_V41-00.xlsm"
 OUTPUT_PARENT_DIRECTORY_NAME = "Output"
+
+
+def split_jalons_raw_to_jalon_names_list(jalons_raw: str) -> List[str]:
+
+    if not jalons_raw or not isinstance(jalons_raw, str) or str(jalons_raw) in ["nan"]:
+        return []
+
+    MAGIC_VALUE_SEPARATOR = str(uuid.uuid4())
+    jalons_list = jalons_raw.replace("\n", MAGIC_VALUE_SEPARATOR).replace("\\", MAGIC_VALUE_SEPARATOR).split(MAGIC_VALUE_SEPARATOR)
+    return jalons_list
 
 
 class DocLine:
@@ -37,23 +48,21 @@ def main() -> None:
                 assert isinstance(code_moe_ged_raw, str)
 
                 doc_line = DocLine(code_moe_ged_raw, jalons_raw)
+                jalons_names_in_current_line = split_jalons_raw_to_jalon_names_list(jalons_raw)
 
-                if jalons_raw and str(jalons_raw) not in ["nan"]:
-                    assert isinstance(jalons_raw, str)
-                    jalons_in_current_line = jalons_raw.split("\n")
-                    for jalon_name in jalons_in_current_line:
-                        if not [jalon_found for jalon_found in all_jalons if jalon_found.name == jalon_name]:
-                            jalon = Jalon(jalon_name)
+                for jalon_name in jalons_names_in_current_line:
+                    if not [jalon_found for jalon_found in all_jalons if jalon_found.name == jalon_name]:
+                        jalon = Jalon(jalon_name)
 
-                        else:
-                            jalon = [jalon_found for jalon_found in all_jalons if jalon_found.name == jalon_name][0]
+                    else:
+                        jalon = [jalon_found for jalon_found in all_jalons if jalon_found.name == jalon_name][0]
 
-                        logger_config.print_and_log_info(f"Add doc {code_moe_ged_raw} to jalon {jalon_name}")
+                    logger_config.print_and_log_info(f"Add doc {code_moe_ged_raw} to jalon {jalon_name}")
 
     for directory_path in [OUTPUT_PARENT_DIRECTORY_NAME]:
         file_utils.create_folder_if_not_exist(directory_path)
 
-    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(all_jalons, f"{OUTPUT_PARENT_DIRECTORY_NAME}/all_jalons.json")
+    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(all_jalons, f"{OUTPUT_PARENT_DIRECTORY_NAME}/all_jalons_{file_name_utils.get_file_suffix_with_current_datetime()}.json")
 
 
 if __name__ == "__main__":
