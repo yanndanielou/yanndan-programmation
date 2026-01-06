@@ -15,7 +15,14 @@ def split_jalons_raw_to_jalon_names_list(jalons_raw: str) -> List[str]:
         return []
 
     MAGIC_VALUE_SEPARATOR = str(uuid.uuid4())
-    jalons_list = jalons_raw.replace("\n", MAGIC_VALUE_SEPARATOR).replace("\\", MAGIC_VALUE_SEPARATOR).replace("/", MAGIC_VALUE_SEPARATOR).split(MAGIC_VALUE_SEPARATOR)
+    jalons_list = (
+        jalons_raw.replace(" ", MAGIC_VALUE_SEPARATOR)
+        .replace("\n", MAGIC_VALUE_SEPARATOR)
+        .replace("\\", MAGIC_VALUE_SEPARATOR)
+        .replace("/", MAGIC_VALUE_SEPARATOR)
+        .replace(MAGIC_VALUE_SEPARATOR + MAGIC_VALUE_SEPARATOR, MAGIC_VALUE_SEPARATOR)
+        .split(MAGIC_VALUE_SEPARATOR)
+    )
     return jalons_list
 
 
