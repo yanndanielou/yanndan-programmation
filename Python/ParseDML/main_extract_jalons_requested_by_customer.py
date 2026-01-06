@@ -15,7 +15,7 @@ def split_jalons_raw_to_jalon_names_list(jalons_raw: str) -> List[str]:
     if not jalons_raw or not isinstance(jalons_raw, str) or str(jalons_raw) in ["nan"] or jalons_raw.strip() == "":
         return []
 
-    jalons_list = (
+    jalon_with_unique_separator = (
         jalons_raw.strip()
         .replace(" ", MAGIC_VALUE_SEPARATOR)
         .replace("\n", MAGIC_VALUE_SEPARATOR)
@@ -23,8 +23,11 @@ def split_jalons_raw_to_jalon_names_list(jalons_raw: str) -> List[str]:
         .replace("/", MAGIC_VALUE_SEPARATOR)
         .replace(MAGIC_VALUE_SEPARATOR + MAGIC_VALUE_SEPARATOR, MAGIC_VALUE_SEPARATOR)
         .replace(MAGIC_VALUE_SEPARATOR + MAGIC_VALUE_SEPARATOR, MAGIC_VALUE_SEPARATOR)
-        .split(MAGIC_VALUE_SEPARATOR)
     )
+
+    assert MAGIC_VALUE_SEPARATOR + MAGIC_VALUE_SEPARATOR not in jalon_with_unique_separator, f"Could not handle raw jalon {jalons_raw}"
+
+    jalons_list = jalon_with_unique_separator.split(MAGIC_VALUE_SEPARATOR)
     return jalons_list
 
 
