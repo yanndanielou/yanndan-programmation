@@ -5,6 +5,7 @@ from constants import *
 from random import randint
 import nodes
 from typing import List
+import constants
 
 
 class Entity(object):
@@ -12,7 +13,7 @@ class Entity(object):
         self.name = None
         self.directions = {UP: Vector2(0, -1), DOWN: Vector2(0, 1), LEFT: Vector2(-1, 0), RIGHT: Vector2(1, 0), STOP: Vector2()}
         self.direction = STOP
-        self.speed = self.setSpeed(100)
+        self.speed = self.setSpeed(constants.DEFAULT_ENTITY_SPEED)
         self.radius = 10
         self.collideRadius = 5
         self.color = WHITE
