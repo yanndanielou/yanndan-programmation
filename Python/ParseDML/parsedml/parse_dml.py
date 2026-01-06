@@ -462,7 +462,7 @@ class DocumentsStatusReport:
         df.to_excel(report_full_path, index=False)
         logger_config.print_and_log_info(f"Wrote {len(df)} rows to {report_full_path}")
 
-    def write_synthetic_report_to_excel(self, warn_if_doc_deleted: bool) -> None:
+    def prepare_synthetic_report_to_excel(self, warn_if_doc_deleted: bool, include_report_name: bool = False) -> List[Dict[str, object]]:
         """Write all OneDocumentLineStatusReport entries from all documents into an Excel file.
 
         The output file path is `self.output_file_full_path`.
@@ -509,6 +509,16 @@ class DocumentsStatusReport:
             }
 
             rows.append(row)
+
+        return rows
+
+    def write_synthetic_report_to_excel(self, warn_if_doc_deleted: bool) -> None:
+        """Write all OneDocumentLineStatusReport entries from all documents into an Excel file.
+
+        The output file path is `self.output_file_full_path`.
+        Columns written correspond to attributes of `OneDocumentLineStatusReport`.
+        """
+        rows = self.prepare_synthetic_report_to_excel(warn_if_doc_deleted)
 
         df = pandas.DataFrame(rows)
 
