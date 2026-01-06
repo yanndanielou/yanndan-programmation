@@ -7,6 +7,8 @@ import nodes
 from typing import List
 import constants
 
+from logger import logger_config
+
 
 class Entity(object):
     def __init__(self, node: nodes.Node) -> None:
@@ -111,13 +113,15 @@ class Entity(object):
             self.position = (self.node.position + self.target.position) / 2.0
 
     def reset(self) -> None:
+        logger_config.print_and_log_info(f"Reset entity {self}")
         self.setStartNode(self.startNode)
         self.direction = STOP
-        self.speed = 100
+        self.speed = constants.DEFAULT_ENTITY_SPEED
         self.visible = True
 
     def setSpeed(self, speed: int) -> float:
         self.speed: float = speed * TILEWIDTH / 16
+        logger_config.print_and_log_info(f"Set speed {speed} to {self}, now, actual speed is {self.speed}")
         return self.speed
 
     def render(self, screen: pygame.surface.Surface) -> None:
