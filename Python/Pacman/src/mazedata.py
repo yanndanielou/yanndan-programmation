@@ -1,6 +1,6 @@
 from constants import *
 
-from typing import Dict, Tuple, TYPE_CHECKING
+from typing import Dict, Tuple, TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     import nodes
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 class MazeBase(object):
     def __init__(self) -> None:
         self.portalPairs = {}
-        self.homeoffset = (0, 0)
+        self.homeoffset: Tuple[float, int] = (0, 0)
         self.ghostNodeDeny = {UP: (), DOWN: (), LEFT: (), RIGHT: ()}
 
     def setPortalPairs(self, nodes: "nodes.NodeGroup") -> None:
@@ -22,7 +22,7 @@ class MazeBase(object):
         nodes.connectHomeNodes(key, self.homenodeconnectLeft, LEFT)
         nodes.connectHomeNodes(key, self.homenodeconnectRight, RIGHT)
 
-    def addOffset(self, x: int, y: int) -> Tuple[float, int]:
+    def addOffset(self, x: int, y: int) -> Tuple[float,]:
         return x + self.homeoffset[0], y + self.homeoffset[1]
 
     def denyGhostsAccess(self, ghosts: "ghosts.GhostGroup", nodes: "nodes.NodeGroup") -> None:
@@ -44,7 +44,7 @@ class Maze1(MazeBase):
         self.homenodeconnectRight = (15, 14)
         self.pacmanStart = (15, 26)
         self.fruitStart = (9, 20)
-        self.ghostNodeDeny = {UP: ((12, 14), (15, 14), (12, 26), (15, 26)), LEFT: (self.addOffset(2, 3),), RIGHT: (self.addOffset(2, 3),)}
+        self.ghostNodeDeny: Dict[int, [Tuple[Tuple[int, ...]]]] = {UP: ((12, 14), (15, 14), (12, 26), (15, 26)), LEFT: (self.addOffset(2, 3),), RIGHT: (self.addOffset(2, 3),)}
 
 
 class Maze2(MazeBase):
@@ -58,12 +58,13 @@ class Maze2(MazeBase):
         self.pacmanStart = (16, 26)
         self.fruitStart = (11, 20)
         self.ghostNodeDeny = {UP: ((9, 14), (18, 14), (11, 23), (16, 23)), LEFT: (self.addOffset(2, 3),), RIGHT: (self.addOffset(2, 3),)}
+        pass
 
 
 class MazeData(object):
     def __init__(self) -> None:
         self.obj = None
-        self.mazedict: Dict[0, MazeBase] = {0: Maze1, 1: Maze2}
+        self.mazedict: Dict[int, Callable] = {0: Maze1, 1: Maze2}
 
     def loadMaze(self, level: int) -> None:
         self.obj = self.mazedict[level % len(self.mazedict)]()
