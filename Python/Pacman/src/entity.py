@@ -4,7 +4,7 @@ from vector import Vector2
 from constants import *
 from random import randint
 import nodes
-from typing import List
+from typing import List, cast
 import constants
 
 from logger import logger_config
@@ -21,7 +21,7 @@ class Entity(object):
         self.color = constants.WHITE
         self.visible = True
         self.disablePortal = False
-        self.goal = None
+        self.goal: Vector2 = None
         self.directionMethod = self.randomDirection
         self.setStartNode(node)
         self.image = None
@@ -65,7 +65,7 @@ class Entity(object):
             vec2 = self.position - self.node.position
             node2Target = vec1.magnitudeSquared()
             node2Self = vec2.magnitudeSquared()
-            return node2Self >= node2Target
+            return cast(int, node2Self >= node2Target)
         return False
 
     def reverseDirection(self) -> None:

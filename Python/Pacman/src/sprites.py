@@ -72,7 +72,7 @@ class PacmanSprites(Spritesheet):
     def getStartImage(self) -> None:
         return self.getImage(8, 0)
 
-    def getImage(self, x, y) -> pygame.surface.Surface:
+    def getImage(self, x: int, y: int) -> pygame.surface.Surface:
         return Spritesheet.getImage(self, x, y, 2 * TILEWIDTH, 2 * TILEHEIGHT)
 
 

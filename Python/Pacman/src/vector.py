@@ -1,10 +1,10 @@
 import math
-from typing import Tuple, Optional
+from typing import Tuple, Optional, cast
 from warnings import deprecated
 
 
-class Vector2(object):
-    def __init__(self, x: int = 0, y: int = 0) -> None:
+class Vector2:
+    def __init__(self, x: float = 0, y: float = 0) -> None:
         self.x = x
         self.y = y
         self.thresh = 0.000001
@@ -29,13 +29,14 @@ class Vector2(object):
     def __truediv__(self, scalar: int) -> Optional["Vector2"]:
         return self.__div__(scalar)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
+        other = cast(Vector2, other)
         if abs(self.x - other.x) < self.thresh:
             if abs(self.y - other.y) < self.thresh:
                 return True
         return False
 
-    def magnitudeSquared(self) -> int:
+    def magnitudeSquared(self) -> float:
         return self.x**2 + self.y**2
 
     def magnitude(self) -> float:
@@ -44,7 +45,7 @@ class Vector2(object):
     def copy(self) -> "Vector2":
         return Vector2(self.x, self.y)
 
-    def asTuple(self) -> Tuple[int, int]:
+    def asTuple(self) -> Tuple[float, float]:
         return self.x, self.y
 
     @deprecated("Returns tuple by mistake?")

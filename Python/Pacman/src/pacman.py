@@ -1,7 +1,10 @@
 import pygame
+from pygame.locals import K_RIGHT, K_LEFT, K_DOWN, K_UP  # pylint: disable=[no-name-in-module]
 from pygame.locals import *
+import pygame.locals
 from vector import Vector2
 from constants import *
+import constants
 from entity import Entity
 from sprites import PacmanSprites
 from typing import List, Optional, Any
@@ -61,14 +64,14 @@ class Pacman(Entity):
     def getValidKey(self) -> int:
         key_pressed = pygame.key.get_pressed()
         if key_pressed[K_UP]:
-            return UP
+            return constants.UP
         if key_pressed[K_DOWN]:
-            return DOWN
+            return constants.DOWN
         if key_pressed[K_LEFT]:
-            return LEFT
+            return constants.LEFT
         if key_pressed[K_RIGHT]:
-            return RIGHT
-        return STOP
+            return constants.RIGHT
+        return constants.STOP
 
     def eatPellets(self, pelletList: List["pellets.Pellet"]) -> Optional["pellets.Pellet"]:
         for pellet in pelletList:

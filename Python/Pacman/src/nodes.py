@@ -142,11 +142,11 @@ class NodeGroup(object):
         if node is not None:
             node.allowAccess(direction, entity)
 
-    def denyAccessList(self, col: float, row: float, direction: int, entities) -> None:
+    def denyAccessList(self, col: float, row: float, direction: int, entities: "ghosts.GhostGroup|pellets.PelletGroup") -> None:
         for entity in entities:
             self.denyAccess(col, row, direction, entity)
 
-    def allowAccessList(self, col: float, row: float, direction: int, entities) -> None:
+    def allowAccessList(self, col: float, row: float, direction: int, entities: "ghosts.GhostGroup|pellets.PelletGroup") -> None:
         for entity in entities:
             self.allowAccess(col, row, direction, entity)
 

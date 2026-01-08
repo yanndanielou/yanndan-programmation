@@ -1,29 +1,30 @@
 import pygame
 from vector import Vector2
 from constants import *
-from typing import Dict, Tuple, Optional
+import constants
+from typing import Dict, Tuple, Optional, cast
 
 
 class Text(object):
-    def __init__(self, text: str, color: Tuple[int, int, int], x: int, y: int, size: int, time: Optional[int] = None, identifier: Optional[int] = None, visible: Optional[bool] = True) -> None:
+    def __init__(self, text: str, color: Tuple[int, int, int], x: float, y: int, size: int, time: Optional[int] = None, identifier: Optional[int] = None, visible: Optional[bool] = True) -> None:
         self.identifier = identifier
         self.text = text
         self.color = color
         self.size = size
         self.visible = visible
         self.position = Vector2(x, y)
-        self.timer = 0
+        self.timer: float = 0
         self.lifespan = time
-        self.label = None
+        # self.label: pygame.surface.Surface = None
         self.destroy = False
-        self.setupFont(f"{RESOURCES_FOLDER_NAME}/PressStart2P-Regular.ttf")
+        self.setupFont(f"{constants.RESOURCES_FOLDER_NAME}/PressStart2P-Regular.ttf")
         self.createLabel()
 
     def setupFont(self, fontpath: str) -> None:
-        self.font = pygame.font.Font(fontpath, self.size)
+        self.font: pygame.font.Font = pygame.font.Font(fontpath, self.size)
 
     def createLabel(self) -> None:
-        self.label = self.font.render(self.text, 1, self.color)
+        self.label: pygame.surface.Surface = self.font.render(self.text, 1, self.color)
 
     def setText(self, newtext: str) -> None:
         self.text = str(newtext)
@@ -63,13 +64,13 @@ class TextGroup(object):
 
     def setupText(self) -> None:
         size = TILEHEIGHT
-        self.alltext[SCORETXT] = Text("0".zfill(8), WHITE, 0, TILEHEIGHT, size)
-        self.alltext[LEVELTXT] = Text(str(1).zfill(3), WHITE, 23 * TILEWIDTH, TILEHEIGHT, size)
-        self.alltext[READYTXT] = Text("READY!", YELLOW, 11.25 * TILEWIDTH, 20 * TILEHEIGHT, size, visible=False)
-        self.alltext[PAUSETXT] = Text("PAUSED!", YELLOW, 10.625 * TILEWIDTH, 20 * TILEHEIGHT, size, visible=False)
-        self.alltext[GAMEOVERTXT] = Text("GAMEOVER!", YELLOW, 10 * TILEWIDTH, 20 * TILEHEIGHT, size, visible=False)
-        self.addText("SCORE", WHITE, 0, 0, size)
-        self.addText("LEVEL", WHITE, 23 * TILEWIDTH, 0, size)
+        self.alltext[constants.SCORETXT] = Text("0".zfill(8), constants.WHITE, 0, constants.TILEHEIGHT, size)
+        self.alltext[constants.LEVELTXT] = Text(str(1).zfill(3), constants.WHITE, 23 * constants.TILEWIDTH, constants.TILEHEIGHT, size)
+        self.alltext[constants.READYTXT] = Text("READY!", constants.YELLOW, 11.25 * constants.TILEWIDTH, 20 * constants.TILEHEIGHT, size, visible=False)
+        self.alltext[constants.PAUSETXT] = Text("PAUSED!", constants.YELLOW, 10.625 * constants.TILEWIDTH, 20 * constants.TILEHEIGHT, size, visible=False)
+        self.alltext[constants.GAMEOVERTXT] = Text("GAMEOVER!", constants.YELLOW, 10 * constants.TILEWIDTH, 20 * constants.TILEHEIGHT, size, visible=False)
+        self.addText("SCORE", constants.WHITE, 0, 0, size)
+        self.addText("LEVEL", constants.WHITE, 23 * constants.TILEWIDTH, 0, size)
 
     def update(self, dt: float) -> None:
         for tkey in list(self.alltext.keys()):
@@ -82,15 +83,15 @@ class TextGroup(object):
         self.alltext[id].visible = True
 
     def hideText(self) -> None:
-        self.alltext[READYTXT].visible = False
-        self.alltext[PAUSETXT].visible = False
-        self.alltext[GAMEOVERTXT].visible = False
+        self.alltext[constants.READYTXT].visible = False
+        self.alltext[constants.PAUSETXT].visible = False
+        self.alltext[constants.GAMEOVERTXT].visible = False
 
     def updateScore(self, score: int) -> None:
-        self.updateText(SCORETXT, str(score).zfill(8))
+        self.updateText(constants.SCORETXT, str(score).zfill(8))
 
     def updateLevel(self, level: int) -> None:
-        self.updateText(LEVELTXT, str(level + 1).zfill(3))
+        self.updateText(constants.LEVELTXT, str(level + 1).zfill(3))
 
     def updateText(self, id: int, value: str) -> None:
         if id in self.alltext.keys():

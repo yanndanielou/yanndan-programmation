@@ -12,7 +12,7 @@ class MazeBase:
     def __init__(
         self,
         name: str,
-        ghost_node_deny: Dict[int, Tuple[Tuple[int, ...], ...]],
+        ghost_node_deny: Dict[int, Tuple[Tuple[float, ...], ...]],
         portalPairs: Dict[int, Tuple[Tuple[int, int], ...]],
         homeoffset: Tuple[float, int],
         homenodeconnectLeft: Tuple[int, int],
@@ -38,7 +38,7 @@ class MazeBase:
         nodes.connectHomeNodes(key, self.homenodeconnectLeft, LEFT)
         nodes.connectHomeNodes(key, self.homenodeconnectRight, RIGHT)
 
-    def addOffset(self, x: int, y: int) -> Tuple[int, int]:
+    def addOffset(self, x: float, y: float) -> Tuple[float, float]:
         return x + self.homeoffset[0], y + self.homeoffset[1]
 
     def denyGhostsAccess(self, ghosts: "ghosts.GhostGroup", nodes: "nodes.NodeGroup") -> None:
