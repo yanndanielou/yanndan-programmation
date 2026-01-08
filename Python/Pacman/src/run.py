@@ -13,6 +13,7 @@ from text import TextGroup
 from sprites import LifeSprites
 from sprites import MazeSprites
 from mazedata import MazeData
+from typing import Optional, TYPE_CHECKING
 
 
 class GameController(object):
@@ -23,7 +24,7 @@ class GameController(object):
         self.background_norm = None
         self.background_flash = None
         self.clock = pygame.time.Clock()
-        self.fruit = None
+        self.fruit: Optional[Fruit] = None
         self.pause = Pause(True)
         self.level = 0
         self.lives = constants.DEFAULT_NUMBER_OF_LIVES

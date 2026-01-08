@@ -6,6 +6,8 @@ from sprites import FruitSprites
 
 from typing import TYPE_CHECKING
 
+from logger import logger_config
+
 if TYPE_CHECKING:
     import nodes
 
@@ -21,8 +23,10 @@ class Fruit(Entity):
         self.points = 100 + level * 20
         self.setBetweenNodes(constants.RIGHT)
         self.sprites = FruitSprites(self, level)
+        logger_config.print_and_log_info(f"Fruit {self} is created")
 
     def update(self, dt: float) -> None:
         self.timer += dt
         if self.timer >= self.lifespan:
+            logger_config.print_and_log_info(f"Fruit {self} is destroyed")
             self.destroy = True
