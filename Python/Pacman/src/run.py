@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 from constants import *
 from constants import RESOURCES_FOLDER_NAME
+import constants
 from pacman import Pacman
 from nodes import NodeGroup
 from pellets import PelletGroup
@@ -25,7 +26,7 @@ class GameController(object):
         self.fruit = None
         self.pause = Pause(True)
         self.level = 0
-        self.lives = 5
+        self.lives = constants.DEFAULT_NUMBER_OF_LIVES
         self.score = 0
         self.textgroup = TextGroup()
         self.lifesprites = LifeSprites(self.lives)

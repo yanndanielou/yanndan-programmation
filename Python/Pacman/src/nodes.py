@@ -3,16 +3,19 @@ from vector import Vector2
 from constants import *
 import numpy as np
 import numpy
-from typing import Tuple, TYPE_CHECKING, Optional
+from typing import Tuple, TYPE_CHECKING, Optional, Dict
 
 if TYPE_CHECKING:
     import entity
+    import ghosts
+    import pacman
+    import pellets
 
 
 class Node(object):
     def __init__(self, x: int, y: int) -> None:
         self.position = Vector2(x, y)
-        self.neighbors = {UP: None, DOWN: None, LEFT: None, RIGHT: None, PORTAL: None}
+        self.neighbors: Dict[int, Node] = {UP: None, DOWN: None, LEFT: None, RIGHT: None, PORTAL: None}
         self.access = {
             UP: [PACMAN, BLINKY, PINKY, INKY, CLYDE, FRUIT],
             DOWN: [PACMAN, BLINKY, PINKY, INKY, CLYDE, FRUIT],
@@ -38,31 +41,31 @@ class Node(object):
 
 
 class NodeGroup(object):
-    def __init__(self, level: int) -> None:
-        self.level = level
-        self.nodesLUT = {}
+    def __init__(self, level_maze_file_path: str) -> None:
+        self.level = level_maze_file_path
+        self.nodesLUT: Dict[Tuple[float, float], Node] = {}
         self.nodeSymbols = ["+", "P", "n"]
         self.pathSymbols = [".", "-", "|", "p"]
-        data = self.readMazeFile(level)
+        data = self.readMazeFile(level_maze_file_path)
         self.createNodeTable(data)
         self.connectHorizontally(data)
         self.connectVertically(data)
-        self.homekey = None
+        self.homekey: Optional[Tuple[float, float]] = None
 
     def readMazeFile(self, textfile: str) -> numpy.ndarray:
         return np.loadtxt(textfile, dtype="<U1")
 
-    def createNodeTable(self, data, xoffset: int = 0, yoffset: int = 0) -> None:
+    def createNodeTable(self, data: numpy.ndarray, xoffset: float = 0, yoffset: float = 0) -> None:
         for row in list(range(data.shape[0])):
             for col in list(range(data.shape[1])):
                 if data[row][col] in self.nodeSymbols:
                     x, y = self.constructKey(col + xoffset, row + yoffset)
                     self.nodesLUT[(x, y)] = Node(x, y)
 
-    def constructKey(self, x: int, y: int) -> Tuple[int, int]:
+    def constructKey(self, x: float, y: float) -> Tuple[float, float]:
         return x * TILEWIDTH, y * TILEHEIGHT
 
-    def connectHorizontally(self, data, xoffset=0, yoffset=0) -> None:
+    def connectHorizontally(self, data: numpy.ndarray, xoffset: float = 0, yoffset: float = 0) -> None:
         for row in list(range(data.shape[0])):
             key = None
             for col in list(range(data.shape[1])):
@@ -77,7 +80,7 @@ class NodeGroup(object):
                 elif data[row][col] not in self.pathSymbols:
                     key = None
 
-    def connectVertically(self, data, xoffset=0, yoffset=0) -> None:
+    def connectVertically(self, data: numpy.ndarray, xoffset: float = 0, yoffset: float = 0) -> None:
         dataT = data.transpose()
         for col in list(range(dataT.shape[0])):
             key = None
@@ -104,7 +107,7 @@ class NodeGroup(object):
             self.nodesLUT[key1].neighbors[PORTAL] = self.nodesLUT[key2]
             self.nodesLUT[key2].neighbors[PORTAL] = self.nodesLUT[key1]
 
-    def createHomeNodes(self, xoffset: float, yoffset: float) -> None:
+    def createHomeNodes(self, xoffset: float, yoffset: float) -> Tuple[float, float]:
         homedata = np.array([["X", "X", "+", "X", "X"], ["X", "X", ".", "X", "X"], ["+", "X", ".", "X", "+"], ["+", ".", "+", ".", "+"], ["+", "X", "X", "X", "+"]])
 
         self.createNodeTable(homedata, xoffset, yoffset)
@@ -153,7 +156,7 @@ class NodeGroup(object):
     def allowHomeAccess(self, entity: "entity.Entity") -> None:
         self.nodesLUT[self.homekey].allowAccess(DOWN, entity)
 
-    def denyHomeAccessList(self, entities) -> None:
+    def denyHomeAccessList(self, entities: "ghosts.GhostGroup|pellets.PelletGroup") -> None:
         for entity in entities:
             self.denyHomeAccess(entity)
 

@@ -1,11 +1,14 @@
-class Pause(object):
-    def __init__(self, paused=False):
-        self.paused = paused
-        self.timer = 0
-        self.pauseTime = None
-        self.func = None
+from typing import Optional, Callable
 
-    def update(self, dt):
+
+class Pause(object):
+    def __init__(self, paused: bool = False) -> None:
+        self.paused = paused
+        self.timer: float = 0
+        self.pauseTime: Optional[int] = None
+        self.func: Optional[Callable] = None
+
+    def update(self, dt: float) -> Optional[Callable]:
         if self.pauseTime is not None:
             self.timer += dt
             if self.timer >= self.pauseTime:
@@ -15,7 +18,7 @@ class Pause(object):
                 return self.func
         return None
 
-    def setPause(self, playerPaused=False, pauseTime=None, func=None):
+    def setPause(self, playerPaused: bool = False, pauseTime: Optional[int] = None, func: Optional[Callable] = None) -> None:
         self.timer = 0
         self.func = func
         self.pauseTime = pauseTime

@@ -13,12 +13,12 @@ from logger import logger_config
 class Entity(object):
     def __init__(self, node: nodes.Node) -> None:
         self.name = None
-        self.directions = {UP: Vector2(0, -1), DOWN: Vector2(0, 1), LEFT: Vector2(-1, 0), RIGHT: Vector2(1, 0), STOP: Vector2()}
-        self.direction = STOP
+        self.directions = {constants.UP: Vector2(0, -1), constants.DOWN: Vector2(0, 1), constants.LEFT: Vector2(-1, 0), constants.RIGHT: Vector2(1, 0), constants.STOP: Vector2()}
+        self.direction = constants.STOP
         self.speed = self.setSpeed(constants.DEFAULT_ENTITY_SPEED)
         self.radius = 10
         self.collideRadius = 5
-        self.color = WHITE
+        self.color = constants.WHITE
         self.visible = True
         self.disablePortal = False
         self.goal = None
