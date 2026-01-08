@@ -1,4 +1,5 @@
 from constants import *
+import constants
 
 from typing import Dict, Tuple, TYPE_CHECKING, Callable
 
@@ -8,10 +9,25 @@ if TYPE_CHECKING:
 
 
 class MazeBase(object):
-    def __init__(self) -> None:
-        self.portalPairs = {}
-        self.homeoffset: Tuple[float, int] = (0, 0)
-        self.ghostNodeDeny = {UP: (), DOWN: (), LEFT: (), RIGHT: ()}
+    def __init__(
+        self,
+        name: str,
+        ghost_node_deny: Dict[int, Tuple[Tuple[int, ...]]],
+        portalPairs: Dict[int, Tuple[Tuple[int, int]]],
+        homeoffset: Tuple[float, int],
+        homenodeconnectLeft: Tuple[int, int],
+        homenodeconnectRight: Tuple[int, int],
+        fruitStart: Tuple[int, int],
+        pacmanStart: Tuple[int, int],
+    ) -> None:
+        self.portalPairs = portalPairs
+        self.homeoffset = homeoffset
+        self.ghostNodeDeny = ghost_node_deny
+        self.name = name
+        self.homenodeconnectLeft = homenodeconnectLeft
+        self.homenodeconnectRight = homenodeconnectRight
+        self.fruitStart = fruitStart
+        self.pacmanStart = pacmanStart
 
     def setPortalPairs(self, nodes: "nodes.NodeGroup") -> None:
         for pair in list(self.portalPairs.values()):
@@ -36,29 +52,32 @@ class MazeBase(object):
 
 class Maze1(MazeBase):
     def __init__(self) -> None:
-        MazeBase.__init__(self)
-        self.name = "maze1"
-        self.portalPairs = {0: ((0, 17), (27, 17))}
-        self.homeoffset = (11.5, 14)
-        self.homenodeconnectLeft = (12, 14)
-        self.homenodeconnectRight = (15, 14)
-        self.pacmanStart = (15, 26)
-        self.fruitStart = (9, 20)
-        self.ghostNodeDeny: Dict[int, [Tuple[Tuple[int, ...]]]] = {UP: ((12, 14), (15, 14), (12, 26), (15, 26)), LEFT: (self.addOffset(2, 3),), RIGHT: (self.addOffset(2, 3),)}
+        MazeBase.__init__(
+            self,
+            name="maze1",
+            ghost_node_deny={constants.UP: ((12, 14), (15, 14), (12, 26), (15, 26)), constants.LEFT: (self.addOffset(2, 3),), constants.RIGHT: (self.addOffset(2, 3),)},
+            homenodeconnectLeft=(12, 14),
+            homenodeconnectRight=(15, 14),
+            pacmanStart=(15, 26),
+            homeoffset=(11.5, 14),
+            portalPairs={0: ((0, 17), (27, 17))},
+            fruitStart=(9, 20),
+        )
 
 
 class Maze2(MazeBase):
     def __init__(self) -> None:
-        MazeBase.__init__(self)
-        self.name = "maze2"
-        self.portalPairs = {0: ((0, 4), (27, 4)), 1: ((0, 26), (27, 26))}
-        self.homeoffset = (11.5, 14)
-        self.homenodeconnectLeft = (9, 14)
-        self.homenodeconnectRight = (18, 14)
-        self.pacmanStart = (16, 26)
-        self.fruitStart = (11, 20)
-        self.ghostNodeDeny = {UP: ((9, 14), (18, 14), (11, 23), (16, 23)), LEFT: (self.addOffset(2, 3),), RIGHT: (self.addOffset(2, 3),)}
-        pass
+        MazeBase.__init__(
+            self,
+            name="maze2",
+            portalPairs={0: ((0, 4), (27, 4)), 1: ((0, 26), (27, 26))},
+            homeoffset=(11.5, 14),
+            homenodeconnectLeft=(9, 14),
+            homenodeconnectRight=(18, 14),
+            pacmanStart=(16, 26),
+            fruitStart=(11, 20),
+            ghost_node_deny={constants.UP: ((9, 14), (18, 14), (11, 23), (16, 23)), constants.LEFT: (self.addOffset(2, 3),), constants.RIGHT: (self.addOffset(2, 3),)},
+        )
 
 
 class MazeData(object):
