@@ -142,38 +142,38 @@ class GhostGroup(object):
         return iter(self.ghosts)
 
     def update(self, dt: float) -> None:
-        for ghost in self:
+        for ghost in self.ghosts:
             ghost.update(dt)
 
     def startFreight(self) -> None:
-        for ghost in self:
+        for ghost in self.ghosts:
             ghost.startFreight()
         self.resetPoints()
 
-    def setSpawnNode(self, node):
+    def setSpawnNode(self, node: "nodes.Node") -> None:
         for ghost in self.ghosts:
             ghost.setSpawnNode(node)
 
     def updatePoints(self) -> None:
-        for ghost in self:
+        for ghost in self.ghosts:
             ghost.points *= 2
 
     def resetPoints(self) -> None:
-        for ghost in self:
+        for ghost in self.ghosts:
             ghost.points = 200
 
     def hide(self) -> None:
-        for ghost in self:
+        for ghost in self.ghosts:
             ghost.visible = False
 
     def show(self) -> None:
-        for ghost in self:
+        for ghost in self.ghosts:
             ghost.visible = True
 
     def reset(self) -> None:
-        for ghost in self:
+        for ghost in self.ghosts:
             ghost.reset()
 
     def render(self, screen: pygame.surface.Surface) -> None:
-        for ghost in self:
+        for ghost in self.ghosts:
             ghost.render(screen)

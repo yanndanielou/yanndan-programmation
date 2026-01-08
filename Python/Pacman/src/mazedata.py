@@ -83,7 +83,7 @@ class Maze2(MazeBase):
 
 class MazeData(object):
     def __init__(self) -> None:
-        self.obj = None
+        self.obj: MazeBase = None
         self.mazedict: Dict[int, Callable] = {0: Maze1, 1: Maze2}
 
     def loadMaze(self, level: int) -> None:

@@ -96,7 +96,7 @@ class NodeGroup(object):
                 elif dataT[col][row] not in self.pathSymbols:
                     key = None
 
-    def getStartTempNode(self) -> None:
+    def getStartTempNode(self) -> Node:
         nodes = list(self.nodesLUT.values())
         return nodes[0]
 
@@ -121,7 +121,7 @@ class NodeGroup(object):
         self.nodesLUT[homekey].neighbors[direction] = self.nodesLUT[key]
         self.nodesLUT[key].neighbors[direction * -1] = self.nodesLUT[homekey]
 
-    def getNodeFromPixels(self, xpixel, ypixel) -> None:
+    def getNodeFromPixels(self, xpixel: float, ypixel: float) -> Optional[Node]:
         if (xpixel, ypixel) in self.nodesLUT.keys():
             return self.nodesLUT[(xpixel, ypixel)]
         return None

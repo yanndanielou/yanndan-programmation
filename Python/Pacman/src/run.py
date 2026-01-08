@@ -1,7 +1,6 @@
 import pygame
 from pygame.locals import *
 from constants import *
-from constants import RESOURCES_FOLDER_NAME
 import constants
 from pacman import Pacman
 from nodes import NodeGroup
@@ -13,16 +12,19 @@ from text import TextGroup
 from sprites import LifeSprites
 from sprites import MazeSprites
 from mazedata import MazeData
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    import nodes
 
 
 class GameController(object):
     def __init__(self) -> None:
         pygame.init()
         self.screen = pygame.display.set_mode(SCREENSIZE, 0, 32)
-        self.background = None
-        self.background_norm = None
-        self.background_flash = None
+        self.background: pygame.surface.Surface = None
+        self.background_norm: pygame.surface.Surface = None
+        self.background_flash: pygame.surface.Surface = None
         self.clock = pygame.time.Clock()
         self.fruit: Optional[Fruit] = None
         self.pause = Pause(True)
@@ -39,10 +41,10 @@ class GameController(object):
         self.mazedata = MazeData()
 
     def setBackground(self) -> None:
-        self.background_norm = pygame.surface.Surface(SCREENSIZE).convert()
-        self.background_norm.fill(BLACK)
-        self.background_flash = pygame.surface.Surface(SCREENSIZE).convert()
-        self.background_flash.fill(BLACK)
+        self.background_norm = pygame.surface.Surface(constants.SCREENSIZE).convert()
+        self.background_norm.fill(constants.BLACK)
+        self.background_flash = pygame.surface.Surface(constants.SCREENSIZE).convert()
+        self.background_flash.fill(constants.BLACK)
         self.background_norm = self.mazesprites.constructBackground(self.background_norm, self.level % 5)
         self.background_flash = self.mazesprites.constructBackground(self.background_flash, 5)
         self.flashBG = False
@@ -50,20 +52,20 @@ class GameController(object):
 
     def startGame(self) -> None:
         self.mazedata.loadMaze(self.level)
-        self.mazesprites = MazeSprites(RESOURCES_FOLDER_NAME + "/" + self.mazedata.obj.name + ".txt", RESOURCES_FOLDER_NAME + "/" + self.mazedata.obj.name + "_rotation.txt")
+        self.mazesprites = MazeSprites(constants.RESOURCES_FOLDER_NAME + "/" + self.mazedata.obj.name + ".txt", constants.RESOURCES_FOLDER_NAME + "/" + self.mazedata.obj.name + "_rotation.txt")
         self.setBackground()
-        self.nodes = NodeGroup(RESOURCES_FOLDER_NAME + "/" + self.mazedata.obj.name + ".txt")
+        self.nodes = NodeGroup(constants.RESOURCES_FOLDER_NAME + "/" + self.mazedata.obj.name + ".txt")
         self.mazedata.obj.setPortalPairs(self.nodes)
         self.mazedata.obj.connectHomeNodes(self.nodes)
-        self.pacman = Pacman(self.nodes.getNodeFromTiles(*self.mazedata.obj.pacmanStart))
-        self.pellets = PelletGroup(RESOURCES_FOLDER_NAME + "/" + self.mazedata.obj.name + ".txt")
+        self.pacman = Pacman(cast("nodes.Node", self.nodes.getNodeFromTiles(*self.mazedata.obj.pacmanStart)))
+        self.pellets = PelletGroup(constants.RESOURCES_FOLDER_NAME + "/" + self.mazedata.obj.name + ".txt")
         self.ghosts = GhostGroup(self.nodes.getStartTempNode(), self.pacman)
 
-        self.ghosts.pinky.setStartNode(self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(2, 3)))
-        self.ghosts.inky.setStartNode(self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(0, 3)))
-        self.ghosts.clyde.setStartNode(self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(4, 3)))
-        self.ghosts.setSpawnNode(self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(2, 3)))
-        self.ghosts.blinky.setStartNode(self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(2, 0)))
+        self.ghosts.pinky.setStartNode(cast("nodes.Node", self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(2, 3))))
+        self.ghosts.inky.setStartNode(cast("nodes.Node", self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(0, 3))))
+        self.ghosts.clyde.setStartNode(cast("nodes.Node", self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(4, 3))))
+        self.ghosts.setSpawnNode(cast("nodes.Node", self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(2, 3))))
+        self.ghosts.blinky.setStartNode(cast("nodes.Node", self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(2, 0))))
 
         self.nodes.denyHomeAccess(self.pacman)
         self.nodes.denyHomeAccessList(self.ghosts)
@@ -73,15 +75,15 @@ class GameController(object):
 
     def startGame_old(self) -> None:
         self.mazedata.loadMaze(self.level)  #######
-        self.mazesprites = MazeSprites(RESOURCES_FOLDER_NAME + "/" + "maze1.txt", "maze1_rotation.txt")
+        self.mazesprites = MazeSprites(constants.RESOURCES_FOLDER_NAME + "/" + "maze1.txt", "maze1_rotation.txt")
         self.setBackground()
-        self.nodes = NodeGroup(RESOURCES_FOLDER_NAME + "/" + "maze1.txt")
+        self.nodes = NodeGroup(constants.RESOURCES_FOLDER_NAME + "/" + "maze1.txt")
         self.nodes.setPortalPair((0, 17), (27, 17))
         homekey = self.nodes.createHomeNodes(11.5, 14)
         self.nodes.connectHomeNodes(homekey, (12, 14), LEFT)
         self.nodes.connectHomeNodes(homekey, (15, 14), RIGHT)
         self.pacman = Pacman(self.nodes.getNodeFromTiles(15, 26))
-        self.pellets = PelletGroup(RESOURCES_FOLDER_NAME + "/" + "maze1.txt")
+        self.pellets = PelletGroup(constants.RESOURCES_FOLDER_NAME + "/" + "maze1.txt")
         self.ghosts = GhostGroup(self.nodes.getStartTempNode(), self.pacman)
         self.ghosts.blinky.setStartNode(self.nodes.getNodeFromTiles(2 + 11.5, 0 + 14))
         self.ghosts.pinky.setStartNode(self.nodes.getNodeFromTiles(2 + 11.5, 3 + 14))
