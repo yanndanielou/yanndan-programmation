@@ -12,8 +12,9 @@ from logger import logger_config
 
 
 class Entity(object):
-    def __init__(self, node: nodes.Node) -> None:
-        self.name = None
+
+    def __init__(self, node: nodes.Node, name: int) -> None:
+        self.name = name
         self.directions = {constants.UP: Vector2(0, -1), constants.DOWN: Vector2(0, 1), constants.LEFT: Vector2(-1, 0), constants.RIGHT: Vector2(1, 0), constants.STOP: Vector2()}
         self.direction = constants.STOP
         self.speed = self.setSpeed(constants.DEFAULT_ENTITY_SPEED)
@@ -66,7 +67,7 @@ class Entity(object):
             vec1 = self.target.position - self.node.position
             vec2 = self.position - self.node.position
             node2Target = vec1.magnitudeSquared()
-            node2Self = cast(float, vec2.magnitudeSquared())
+            node2Self = vec2.magnitudeSquared()
             return node2Self >= node2Target
 
         return False
@@ -118,19 +119,19 @@ class Entity(object):
     def reset(self) -> None:
         logger_config.print_and_log_info(f"Reset entity {self}")
         self.setStartNode(self.startNode)
-        self.direction = STOP
+        self.direction = constants.STOP
         self.speed = constants.DEFAULT_ENTITY_SPEED
         self.visible = True
 
     def setSpeed(self, speed: int) -> float:
-        self.speed: float = speed * TILEWIDTH / 16
+        self.speed: float = speed * constants.TILEWIDTH / 16
         logger_config.print_and_log_info(f"Set speed {speed} to {self}, now, actual speed is {self.speed}")
         return self.speed
 
     def render(self, screen: pygame.surface.Surface) -> None:
         if self.visible:
             if self.image is not None:
-                adjust = Vector2(TILEWIDTH, TILEHEIGHT) / 2
+                adjust = Vector2(constants.TILEWIDTH, constants.TILEHEIGHT) / 2
                 p = self.position - adjust
                 screen.blit(self.image, p.asTuple())
             else:

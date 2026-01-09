@@ -16,8 +16,7 @@ if TYPE_CHECKING:
 
 class Ghost(Entity):
     def __init__(self, node: "nodes.Node", pacman: Optional["pacman.Pacman"] = None, blinky: Optional["ghosts.Blinky"] = None):
-        Entity.__init__(self, node)
-        self.name = constants.GHOST
+        Entity.__init__(self, node=node, name=constants.GHOST)
         self.points = 200
         self.goal = Vector2()
         self.directionMethod = self.goalDirection

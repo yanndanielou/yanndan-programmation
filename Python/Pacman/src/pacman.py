@@ -20,25 +20,25 @@ if TYPE_CHECKING:
 
 class Pacman(Entity):
     def __init__(self, node: "nodes.Node") -> None:
-        Entity.__init__(self, node)
-        self.name = PACMAN
-        self.color = YELLOW
-        self.direction = LEFT
-        self.setBetweenNodes(LEFT)
+        Entity.__init__(self, node=node, name=PACMAN)
+
+        self.color = constants.YELLOW
+        self.direction = constants.LEFT
+        self.setBetweenNodes(constants.LEFT)
         self.alive = True
         self.sprites = PacmanSprites(self)
 
     def reset(self) -> None:
         Entity.reset(self)
-        self.direction = LEFT
-        self.setBetweenNodes(LEFT)
+        self.direction = constants.LEFT
+        self.setBetweenNodes(constants.LEFT)
         self.alive = True
         self.image = self.sprites.getStartImage()
         self.sprites.reset()
 
     def die(self) -> None:
         self.alive = False
-        self.direction = STOP
+        self.direction = constants.STOP
 
     def update(self, dt: float) -> None:
         self.sprites.update(dt)
@@ -46,8 +46,8 @@ class Pacman(Entity):
         direction = self.getValidKey()
         if self.overshotTarget():
             self.node = self.target
-            if self.node.neighbors[PORTAL] is not None:
-                self.node = self.node.neighbors[PORTAL]
+            if self.node.neighbors[constants.PORTAL] is not None:
+                self.node = self.node.neighbors[constants.PORTAL]
             self.target = self.getNewTarget(direction)
             if self.target is not self.node:
                 self.direction = direction
@@ -55,7 +55,7 @@ class Pacman(Entity):
                 self.target = self.getNewTarget(self.direction)
 
             if self.target is self.node:
-                self.direction = STOP
+                self.direction = constants.STOP
             self.setPosition()
         else:
             if self.oppositeDirection(direction):

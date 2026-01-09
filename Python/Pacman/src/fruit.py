@@ -14,8 +14,7 @@ if TYPE_CHECKING:
 
 class Fruit(Entity):
     def __init__(self, node: "nodes.Node", level: int = 0) -> None:
-        Entity.__init__(self, node)
-        self.name = constants.FRUIT
+        Entity.__init__(self, node=node, name=constants.FRUIT)
         self.color = constants.GREEN
         self.lifespan = 5
         self.timer: float = 0

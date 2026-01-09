@@ -18,15 +18,15 @@ class Vector2:
     def __neg__(self) -> "Vector2":
         return Vector2(-self.x, -self.y)
 
-    def __mul__(self, scalar: int) -> "Vector2":
+    def __mul__(self, scalar: float) -> "Vector2":
         return Vector2(self.x * scalar, self.y * scalar)
 
-    def __div__(self, scalar: int) -> Optional["Vector2"]:
+    def __div__(self, scalar: float) -> Optional["Vector2"]:
         if scalar != 0:
             return Vector2(self.x / float(scalar), self.y / float(scalar))
         return None
 
-    def __truediv__(self, scalar: int) -> Optional["Vector2"]:
+    def __truediv__(self, scalar: float) -> Optional["Vector2"]:
         return self.__div__(scalar)
 
     def __eq__(self, other: object) -> bool:
