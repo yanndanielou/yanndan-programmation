@@ -1,6 +1,7 @@
 import pygame
 from vector import Vector2
 from constants import *
+import constants
 import numpy as np
 import numpy
 from typing import Tuple, TYPE_CHECKING, Optional, Dict
@@ -12,10 +13,10 @@ if TYPE_CHECKING:
     import pellets
 
 
-class Node(object):
+class Node:
     def __init__(self, x: int, y: int) -> None:
         self.position = Vector2(x, y)
-        self.neighbors: Dict[int, Node] = {UP: None, DOWN: None, LEFT: None, RIGHT: None, PORTAL: None}
+        self.neighbors: Dict[int, Node] = {constants.UP: None, constants.DOWN: None, constants.LEFT: None, constants.RIGHT: None, constants.PORTAL: None}
         self.access = {
             UP: [PACMAN, BLINKY, PINKY, INKY, CLYDE, FRUIT],
             DOWN: [PACMAN, BLINKY, PINKY, INKY, CLYDE, FRUIT],
@@ -150,17 +151,20 @@ class NodeGroup(object):
         for entity in entities:
             self.allowAccess(col, row, direction, entity)
 
-    def denyHomeAccess(self, entity: "entity.Entity") -> None:
-        self.nodesLUT[self.homekey].denyAccess(DOWN, entity)
+    def denyHomeAccess(self, entity: "ghosts.Ghost|pacman.Pacman") -> None:
+        assert self.homekey, "YDA"
+        self.nodesLUT[self.homekey].denyAccess(constants.DOWN, entity)
 
-    def allowHomeAccess(self, entity: "entity.Entity") -> None:
-        self.nodesLUT[self.homekey].allowAccess(DOWN, entity)
+    def allowHomeAccess(self, entity: "ghosts.Ghost") -> None:
+        assert self.homekey, "YDA"
+        self.nodesLUT[self.homekey].allowAccess(constants.DOWN, entity)
 
-    def denyHomeAccessList(self, entities: "ghosts.GhostGroup|pellets.PelletGroup") -> None:
-        for entity in entities:
+    def denyHomeAccessList(self, entities: "ghosts.GhostGroup") -> None:
+        for entity in entities.ghosts:
             self.denyHomeAccess(entity)
 
     def allowHomeAccessList(self, entities) -> None:
+        assert False
         for entity in entities:
             self.allowHomeAccess(entity)
 

@@ -6,6 +6,7 @@ from random import randint
 import nodes
 from typing import List, cast
 import constants
+from abc import ABC, abstractmethod
 
 from logger import logger_config
 
@@ -30,10 +31,11 @@ class Entity(object):
         self.position = self.node.position.copy()
 
     def update(self, dt: float) -> None:
-        self.position += self.directions[self.direction] * self.speed * dt
+        to_add = self.directions[self.direction] * self.speed * dt
+        self.position += to_add
 
         if self.overshotTarget():
-            self.node = self.target
+            self.node: nodes.Node = self.target
             directions = self.validDirections()
             direction = self.directionMethod(directions)
             if not self.disablePortal:
@@ -64,8 +66,9 @@ class Entity(object):
             vec1 = self.target.position - self.node.position
             vec2 = self.position - self.node.position
             node2Target = vec1.magnitudeSquared()
-            node2Self = vec2.magnitudeSquared()
-            return cast(int, node2Self >= node2Target)
+            node2Self = cast(float, vec2.magnitudeSquared())
+            return node2Self >= node2Target
+
         return False
 
     def reverseDirection(self) -> None:
@@ -133,3 +136,9 @@ class Entity(object):
             else:
                 p = self.position.asInt()
                 pygame.draw.circle(screen, self.color, p, self.radius)
+
+
+class EntityGroup(ABC):
+    @abstractmethod
+    def __init__(self) -> None:
+        self.all_entities: List[Entity] = []

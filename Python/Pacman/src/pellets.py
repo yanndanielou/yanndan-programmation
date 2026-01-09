@@ -40,7 +40,7 @@ class PowerPellet(Pellet):
             self.timer = 0
 
 
-class PelletGroup(object):
+class PelletGroup:
     def __init__(self, pelletfile: str) -> None:
         self.pelletList: List[Pellet] = []
         self.powerpellets: List[PowerPellet] = []

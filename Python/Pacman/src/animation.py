@@ -6,11 +6,11 @@ from typing import List, Tuple
 class Animator(object):
     def __init__(self, frames: Tuple[Tuple[int, int], ...], speed: int = 20, loop: bool = True) -> None:
         self.frames = frames
-        self.current_frame = 0
+        self.current_frame: int = 0
         self.speed = speed
         self.loop = loop
-        self.dt = 0
-        self.finished = False
+        self.dt: float = 0
+        self.finished: bool = False
 
     def reset(self) -> None:
         self.current_frame = 0

@@ -3,7 +3,7 @@ from pygame.locals import *
 from vector import Vector2
 from constants import *
 import constants
-from entity import Entity
+from entity import Entity, EntityGroup
 from modes import ModeController
 from sprites import GhostSprites
 from typing import List, TYPE_CHECKING, Optional
@@ -129,16 +129,17 @@ class Clyde(Ghost):
             self.goal = self.pacman.position + self.pacman.directions[self.pacman.direction] * TILEWIDTH * 4
 
 
-class GhostGroup(object):
+class GhostGroup(EntityGroup):
     def __init__(self, node: "nodes.Node", pacman: "pacman.Pacman") -> None:
         self.blinky = Blinky(node, pacman)
         self.pinky = Pinky(node, pacman)
         self.inky = Inky(node, pacman, self.blinky)
         self.clyde = Clyde(node, pacman)
         self.ghosts: List[Ghost] = [self.blinky, self.pinky, self.inky, self.clyde]
+        self.all_entities = [self.blinky, self.pinky, self.inky, self.clyde]
 
     def __iter__(self) -> List[Ghost]:
-        # assert False, "Use ghosts instead"
+        assert False, "Use ghosts instead"
         return iter(self.ghosts)
 
     def update(self, dt: float) -> None:

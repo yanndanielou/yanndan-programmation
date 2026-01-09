@@ -69,8 +69,8 @@ class GameController(object):
 
         self.nodes.denyHomeAccess(self.pacman)
         self.nodes.denyHomeAccessList(self.ghosts)
-        self.ghosts.inky.startNode.denyAccess(RIGHT, self.ghosts.inky)
-        self.ghosts.clyde.startNode.denyAccess(LEFT, self.ghosts.clyde)
+        self.ghosts.inky.startNode.denyAccess(constants.RIGHT, self.ghosts.inky)
+        self.ghosts.clyde.startNode.denyAccess(constants.LEFT, self.ghosts.clyde)
         self.mazedata.obj.denyGhostsAccess(self.ghosts, self.nodes)
 
     def startGame_old(self) -> None:
@@ -168,7 +168,7 @@ class GameController(object):
                 self.pause.setPause(pauseTime=3, func=self.nextLevel)
 
     def checkGhostEvents(self) -> None:
-        for ghost in self.ghosts:
+        for ghost in self.ghosts.ghosts:
             if self.pacman.collideGhost(ghost):
                 if ghost.mode.current is FREIGHT:
                     self.pacman.visible = False
