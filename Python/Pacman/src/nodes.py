@@ -127,10 +127,11 @@ class NodeGroup(object):
             return self.nodesLUT[(xpixel, ypixel)]
         return None
 
-    def getNodeFromTiles(self, col: int, row: int) -> Optional[Node]:
+    def getNodeFromTiles(self, col: float, row: float) -> Optional[Node]:
         x, y = self.constructKey(col, row)
         if (x, y) in self.nodesLUT.keys():
             return self.nodesLUT[(x, y)]
+        assert False, "YDA check if can be removed"
         return None
 
     def denyAccess(self, col: float, row: float, direction: int, entity: "entity.Entity") -> None:
@@ -143,12 +144,12 @@ class NodeGroup(object):
         if node is not None:
             node.allowAccess(direction, entity)
 
-    def denyAccessList(self, col: float, row: float, direction: int, entities: "ghosts.GhostGroup|pellets.PelletGroup") -> None:
-        for entity in entities:
+    def denyAccessList(self, col: float, row: float, direction: int, entities: "ghosts.GhostGroup") -> None:
+        for entity in entities.all_entities:
             self.denyAccess(col, row, direction, entity)
 
-    def allowAccessList(self, col: float, row: float, direction: int, entities: "ghosts.GhostGroup|pellets.PelletGroup") -> None:
-        for entity in entities:
+    def allowAccessList(self, col: float, row: float, direction: int, entities: "ghosts.GhostGroup") -> None:
+        for entity in entities.all_entities:
             self.allowAccess(col, row, direction, entity)
 
     def denyHomeAccess(self, entity: "ghosts.Ghost|pacman.Pacman") -> None:

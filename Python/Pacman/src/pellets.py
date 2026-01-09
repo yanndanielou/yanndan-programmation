@@ -70,6 +70,6 @@ class PelletGroup:
             return True
         return False
 
-    def render(self, screen) -> None:
+    def render(self, screen: pygame.surface.Surface) -> None:
         for pellet in self.pelletList:
             pellet.render(screen)
