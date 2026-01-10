@@ -2,7 +2,13 @@ import tkinter as tk
 import random
 from typing import List, Tuple
 
+import logging
+
+
 EXIT_CASE_CONTENT = "E"
+START_CASE_CONTENT = "S"
+WALL_CASE_CONTENT = "#"
+FREE_CASE_CONTENT = " "
 
 
 class MazeGame:
@@ -19,14 +25,16 @@ class MazeGame:
         self.maze, self.solution_path = self.generate_maze_with_solution()
         self.player_pos = (1, 1)
 
+        self.print()
+
         self.root.bind("<KeyPress>", self.key_press)
         self.draw_maze()
 
     def generate_maze_with_solution(self) -> Tuple[List[List[str]], List[Tuple[int, int]]]:
-        maze = [["#" for _ in range(self.size)] for _ in range(self.size)]
+        maze = [[WALL_CASE_CONTENT for _ in range(self.size)] for _ in range(self.size)]
         solution_path: List[Tuple[int, int]] = []
         self._generate_path(maze, solution_path, 1, 1)
-        maze[1][1] = "S"
+        maze[1][1] = START_CASE_CONTENT
         maze[self.size - 2][self.size - 2] = EXIT_CASE_CONTENT
         return maze, solution_path
 
@@ -37,9 +45,9 @@ class MazeGame:
 
         for dx, dy in directions:
             nx, ny = x + dx, y + dy
-            if 1 <= nx < self.size - 1 and 1 <= ny < self.size - 1 and maze[nx][ny] == "#":
-                if sum(1 for dx, dy in directions if maze[nx + dx][ny + dy] == " ") < 2:
-                    maze[nx][ny] = " "
+            if 1 <= nx < self.size - 1 and 1 <= ny < self.size - 1 and maze[nx][ny] == WALL_CASE_CONTENT:
+                if sum(1 for dx, dy in directions if maze[nx + dx][ny + dy] == FREE_CASE_CONTENT) < 2:
+                    maze[nx][ny] = FREE_CASE_CONTENT
                     self._generate_path(maze, solution_path, nx, ny)
                     if maze[self.size - 2][self.size - 2] == EXIT_CASE_CONTENT:
                         break
@@ -54,7 +62,7 @@ class MazeGame:
                 x2 = x1 + self.cell_size
                 y2 = y1 + self.cell_size
 
-                fill = "black" if self.maze[i][j] == "#" else "white"
+                fill = "black" if self.maze[i][j] == WALL_CASE_CONTENT else "white"
 
                 if (i, j) == self.player_pos:
                     fill = "blue"
@@ -68,8 +76,12 @@ class MazeGame:
     def move_player(self, dx: int, dy: int) -> None:
         x, y = self.player_pos
         new_position = (x + dx, y + dy)
-        if self.maze[new_position[0]][new_position[1]] != "#":
+        if self.maze[new_position[0]][new_position[1]] != WALL_CASE_CONTENT:
             self.player_pos = new_position
+            print(f"Moved player {dx} {dy} to {new_position}")
+
+        else:
+            print(f"Could not move player {dx} {dy} to {new_position}")
 
     def key_press(self, event: tk.Event) -> None:
         show_solution = False
@@ -92,6 +104,11 @@ class MazeGame:
                 self.canvas.quit()
             else:
                 self.root.quit()
+
+    def print(self) -> None:
+        for x in range(1, self.size):
+            for y in range(1, self.size):
+                print(f"x:{x}, y:{y} = {self.maze[x ][ y]}")
 
 
 if __name__ == "__main__":
