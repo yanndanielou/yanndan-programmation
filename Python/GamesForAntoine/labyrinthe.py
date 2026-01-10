@@ -3,6 +3,7 @@ import random
 from typing import List, Tuple
 
 import logging
+import sys
 
 
 EXIT_CASE_CONTENT = "E"
@@ -12,7 +13,11 @@ FREE_CASE_CONTENT = " "
 
 
 class MazeGame:
-    def __init__(self, root: tk.Tk, embedded_in_other_application: bool, size: int = 18) -> None:
+    def __init__(self, root: tk.Tk, embedded_in_other_application: bool, size: int = 800) -> None:
+
+        print(f"Recursion limit : {sys.getrecursionlimit()}")
+        sys.setrecursionlimit(150000)
+
         self.embedded_in_other_application = embedded_in_other_application
         self.size = size
         self.root = root
@@ -25,7 +30,7 @@ class MazeGame:
         self.maze, self.best_solution_path = self.generate_maze_with_solution()
         self.player_pos = (1, 1)
 
-        self.print()
+        # self.print()
 
         self.root.bind("<KeyPress>", self.key_press)
         self.draw_maze()
