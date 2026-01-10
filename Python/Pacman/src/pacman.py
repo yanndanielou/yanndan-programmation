@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 class Pacman(Entity):
     def __init__(self, node: "nodes.Node") -> None:
-        Entity.__init__(self, node=node, name=PACMAN)
+        Entity.__init__(self, node=node, name=constants.PACMAN)
 
         self.color = constants.YELLOW
         self.direction = constants.LEFT

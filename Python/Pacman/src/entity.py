@@ -26,7 +26,7 @@ class Entity(object):
         self.goal: Vector2 = None
         self.directionMethod = self.randomDirection
         self.setStartNode(node)
-        self.image = None
+        self.image: pygame.surface.Surface = None
 
     def setPosition(self) -> None:
         self.position = self.node.position.copy()

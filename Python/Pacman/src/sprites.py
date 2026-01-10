@@ -4,6 +4,11 @@ from constants import RESOURCES_FOLDER_NAME
 import numpy as np
 from animation import Animator
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pacman
+
 
 BASETILEWIDTH = 16
 BASETILEHEIGHT = 16
@@ -31,7 +36,7 @@ class Spritesheet(object):
 
 
 class PacmanSprites(Spritesheet):
-    def __init__(self, entity) -> None:
+    def __init__(self, entity: "pacman.Pacman") -> None:
         Spritesheet.__init__(self)
         self.entity = entity
         self.entity.image = self.getStartImage()
@@ -69,7 +74,7 @@ class PacmanSprites(Spritesheet):
         for key in list(self.animations.keys()):
             self.animations[key].reset()
 
-    def getStartImage(self) -> None:
+    def getStartImage(self) -> pygame.surface.Surface:
         return self.getImage(8, 0)
 
     def getImage(self, x: int, y: int) -> pygame.surface.Surface:

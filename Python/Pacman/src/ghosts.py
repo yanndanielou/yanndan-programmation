@@ -25,6 +25,8 @@ class Ghost(Entity):
         self.blinky = blinky
         self.homeNode = node
 
+        self.sprites: GhostSprites = None
+
     def reset(self) -> None:
         Entity.reset(self)
         self.points = 200
@@ -43,6 +45,7 @@ class Ghost(Entity):
         self.goal = Vector2()
 
     def chase(self) -> None:
+        assert self.pacman
         self.goal = self.pacman.position
 
     def spawn(self) -> None:
@@ -110,7 +113,7 @@ class Inky(Ghost):
 
 
 class Clyde(Ghost):
-    def __init__(self, node: "nodes.Node", pacman: Optional["pacman.Pacman"] = None, blinky: Optional[Blinky] = None) -> None:
+    def __init__(self, node: "nodes.Node", pacman: "pacman.Pacman" = None, blinky: Optional[Blinky] = None) -> None:
         Ghost.__init__(self, node, pacman, blinky)
         self.name = CLYDE
         self.color = ORANGE
