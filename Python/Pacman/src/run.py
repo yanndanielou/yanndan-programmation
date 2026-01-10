@@ -1,6 +1,6 @@
 import pygame
 from pygame.locals import *
-from pygame.locals import QUIT  # pylint: disable=[no-name-in-module]
+from pygame.locals import QUIT, KEYDOWN, K_SPACE  # pylint: disable=[no-name-in-module]
 from constants import *
 import constants
 from pacman import Pacman
@@ -81,16 +81,16 @@ class GameController:
         self.nodes = NodeGroup(constants.RESOURCES_FOLDER_NAME + "/" + "maze1.txt")
         self.nodes.setPortalPair((0, 17), (27, 17))
         homekey = self.nodes.createHomeNodes(11.5, 14)
-        self.nodes.connectHomeNodes(homekey, (12, 14), LEFT)
-        self.nodes.connectHomeNodes(homekey, (15, 14), RIGHT)
-        self.pacman = Pacman(self.nodes.getNodeFromTiles(15, 26))
+        self.nodes.connectHomeNodes(homekey, (12, 14), constants.LEFT)
+        self.nodes.connectHomeNodes(homekey, (15, 14), constants.RIGHT)
+        self.pacman = Pacman(self.nodes.get_node_from_tiles_guarranteed(15, 26))
         self.pellets = PelletGroup(constants.RESOURCES_FOLDER_NAME + "/" + "maze1.txt")
         self.ghosts = GhostGroup(self.nodes.getStartTempNode(), self.pacman)
-        self.ghosts.blinky.setStartNode(self.nodes.getNodeFromTiles(2 + 11.5, 0 + 14))
-        self.ghosts.pinky.setStartNode(self.nodes.getNodeFromTiles(2 + 11.5, 3 + 14))
-        self.ghosts.inky.setStartNode(self.nodes.getNodeFromTiles(0 + 11.5, 3 + 14))
-        self.ghosts.clyde.setStartNode(self.nodes.getNodeFromTiles(4 + 11.5, 3 + 14))
-        self.ghosts.setSpawnNode(self.nodes.getNodeFromTiles(2 + 11.5, 3 + 14))
+        self.ghosts.blinky.setStartNode(self.nodes.get_node_from_tiles_guarranteed(2 + 11.5, 0 + 14))
+        self.ghosts.pinky.setStartNode(self.nodes.get_node_from_tiles_guarranteed(2 + 11.5, 3 + 14))
+        self.ghosts.inky.setStartNode(self.nodes.get_node_from_tiles_guarranteed(0 + 11.5, 3 + 14))
+        self.ghosts.clyde.setStartNode(self.nodes.get_node_from_tiles_guarranteed(4 + 11.5, 3 + 14))
+        self.ghosts.setSpawnNode(self.nodes.get_node_from_tiles_guarranteed(2 + 11.5, 3 + 14))
 
         self.nodes.denyHomeAccess(self.pacman)
         self.nodes.denyHomeAccessList(self.ghosts)

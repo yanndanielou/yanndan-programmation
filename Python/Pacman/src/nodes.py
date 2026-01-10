@@ -61,6 +61,8 @@ class NodeGroup(object):
             for col in list(range(data.shape[1])):
                 if data[row][col] in self.nodeSymbols:
                     x, y = self.constructKey(col + xoffset, row + yoffset)
+                    assert isinstance(x, int)
+                    assert isinstance(y, int)
                     self.nodesLUT[(x, y)] = Node(x, y)
 
     def constructKey(self, x: float, y: float) -> Tuple[float, float]:
@@ -136,6 +138,12 @@ class NodeGroup(object):
             return self.nodesLUT[(x, y)]
         assert False, "YDA check if can be removed"
         return None
+
+    def get_node_from_tiles_guarranteed(self, col: float, row: float) -> Node:
+        x, y = self.constructKey(col, row)
+        if (x, y) in self.nodesLUT.keys():
+            return self.nodesLUT[(x, y)]
+        assert False, "YDA check if can be removed"
 
     def denyAccess(self, col: float, row: float, direction: int, entity: "entity.Entity") -> None:
         node = self.getNodeFromTiles(col, row)
