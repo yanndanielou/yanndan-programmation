@@ -50,7 +50,7 @@ class MazeGame:
                     maze[nx][ny] = FREE_CASE_CONTENT
                     self._generate_path(maze, solution_path, nx, ny)
                     if maze[self.size - 2][self.size - 2] == EXIT_CASE_CONTENT:
-                        break
+                        return maze
         return maze
 
     def draw_maze(self, show_solution: bool = False) -> None:
