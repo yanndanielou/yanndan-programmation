@@ -117,7 +117,10 @@ class NodeGroup(object):
         self.homekey = self.constructKey(xoffset + 2, yoffset)
         return self.homekey
 
-    def connectHomeNodes(self, homekey: Tuple[int, int], otherkey: Tuple[int, int], direction: int) -> None:
+    def connectHomeNodes(self, homekey: Tuple[float, int], otherkey: Tuple[int, int], direction: int) -> None:
+        assert isinstance(homekey[1], int), "YDA"
+        assert isinstance(otherkey[0], int), "YDA"
+        assert isinstance(otherkey[1], int), "YDA"
         key = self.constructKey(*otherkey)
         self.nodesLUT[homekey].neighbors[direction] = self.nodesLUT[key]
         self.nodesLUT[key].neighbors[direction * -1] = self.nodesLUT[homekey]

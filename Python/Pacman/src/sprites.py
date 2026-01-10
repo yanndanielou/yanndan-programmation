@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import pacman
+    import ghosts
 
 
 BASETILEWIDTH = 16
@@ -82,7 +83,7 @@ class PacmanSprites(Spritesheet):
 
 
 class GhostSprites(Spritesheet):
-    def __init__(self, entity) -> None:
+    def __init__(self, entity: "ghosts.Ghost") -> None:
         Spritesheet.__init__(self)
         self.x = {BLINKY: 0, PINKY: 2, INKY: 4, CLYDE: 6}
         self.entity = entity

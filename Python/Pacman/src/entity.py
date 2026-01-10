@@ -4,7 +4,7 @@ from vector import Vector2
 from constants import *
 from random import randint
 import nodes
-from typing import List, cast
+from typing import List, cast, Tuple
 import constants
 from abc import ABC, abstractmethod
 
@@ -13,14 +13,14 @@ from logger import logger_config
 
 class Entity(object):
 
-    def __init__(self, node: nodes.Node, name: int) -> None:
+    def __init__(self, node: nodes.Node, name: int, color: Tuple[int, int, int]) -> None:
         self.name = name
         self.directions = {constants.UP: Vector2(0, -1), constants.DOWN: Vector2(0, 1), constants.LEFT: Vector2(-1, 0), constants.RIGHT: Vector2(1, 0), constants.STOP: Vector2()}
         self.direction = constants.STOP
         self.speed = self.setSpeed(constants.DEFAULT_ENTITY_SPEED)
         self.radius = 10
         self.collideRadius = 5
-        self.color = constants.WHITE
+        self.color = color  # constants.WHITE
         self.visible = True
         self.disablePortal = False
         self.goal: Vector2 = None
