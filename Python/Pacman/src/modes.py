@@ -51,7 +51,6 @@ class ModeController(object):
         if self.current is constants.FREIGHT:
             self.timer += dt
             if self.timer >= self.time:
-                assert False, "YDA"
                 self.time = None
                 self.entity.normalMode()
                 self.current = self.mainmode.mode
