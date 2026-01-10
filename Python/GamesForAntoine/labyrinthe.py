@@ -20,9 +20,9 @@ class MazeGame:
         self.canvas = tk.Canvas(root, width=400, height=400, bg="white")
         self.canvas.pack()
         self.cell_size = 400 // self.size
-        self.solution_path: List[Tuple[int, int]] = []
+        self.best_solution_path: List[Tuple[int, int]] = []
 
-        self.maze, self.solution_path = self.generate_maze_with_solution()
+        self.maze, self.best_solution_path = self.generate_maze_with_solution()
         self.player_pos = (1, 1)
 
         self.print()
@@ -120,7 +120,7 @@ class MazeGame:
                     fill = "blue"
                 elif self.maze[i][j] == "E":
                     fill = "green"
-                elif show_solution and (i, j) in self.solution_path:
+                elif show_solution and (i, j) in self.best_solution_path:
                     fill = "yellow"
 
                 self.canvas.create_rectangle(x1, y1, x2, y2, fill=fill)
