@@ -12,7 +12,7 @@ FREE_CASE_CONTENT = " "
 
 
 class MazeGame:
-    def __init__(self, root: tk.Tk, embedded_in_other_application: bool, size: int = 15) -> None:
+    def __init__(self, root: tk.Tk, embedded_in_other_application: bool, size: int = 8) -> None:
         self.embedded_in_other_application = embedded_in_other_application
         self.size = size
         self.root = root
@@ -50,7 +50,9 @@ class MazeGame:
                     maze[nx][ny] = FREE_CASE_CONTENT
                     self._generate_path(maze, solution_path, nx, ny)
                     if maze[self.size - 2][self.size - 2] == EXIT_CASE_CONTENT:
-                        break
+                        return maze
+
+        print("No solution found")
         return maze
 
     def draw_maze(self, show_solution: bool = False) -> None:
