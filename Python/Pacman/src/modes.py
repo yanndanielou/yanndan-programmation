@@ -33,7 +33,7 @@ class MainMode(object):
         self.timer = 0
 
     def chase(self) -> None:
-        self.mode = CHASE
+        self.mode = constants.CHASE
         self.time = 20
         self.timer = 0
 
@@ -50,6 +50,7 @@ class ModeController(object):
         self.mainmode.update(dt)
         if self.current is constants.FREIGHT:
             self.timer += dt
+            assert self.time
             if self.timer >= self.time:
                 self.time = None
                 self.entity.normalMode()

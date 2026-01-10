@@ -1,5 +1,6 @@
 import pygame
 from pygame.locals import *
+from pygame.locals import QUIT  # pylint: disable=[no-name-in-module]
 from constants import *
 import constants
 from pacman import Pacman
@@ -18,9 +19,9 @@ if TYPE_CHECKING:
     import nodes
 
 
-class GameController(object):
+class GameController:
     def __init__(self) -> None:
-        pygame.init()
+        pygame.init()  # pylint: disable=[no-member]
         self.screen = pygame.display.set_mode(SCREENSIZE, 0, 32)
         self.background: pygame.surface.Surface = None
         self.background_norm: pygame.surface.Surface = None
