@@ -12,7 +12,7 @@ FREE_CASE_CONTENT = " "
 
 
 class MazeGame:
-    def __init__(self, root: tk.Tk, embedded_in_other_application: bool, size: int = 8) -> None:
+    def __init__(self, root: tk.Tk, embedded_in_other_application: bool, size: int = 18) -> None:
         self.embedded_in_other_application = embedded_in_other_application
         self.size = size
         self.root = root
@@ -31,29 +31,79 @@ class MazeGame:
         self.draw_maze()
 
     def generate_maze_with_solution(self) -> Tuple[List[List[str]], List[Tuple[int, int]]]:
-        maze = [[WALL_CASE_CONTENT for _ in range(self.size)] for _ in range(self.size)]
-        solution_path: List[Tuple[int, int]] = []
-        self._generate_path(maze, solution_path, 1, 1)
-        maze[1][1] = START_CASE_CONTENT
-        maze[self.size - 2][self.size - 2] = EXIT_CASE_CONTENT
-        return maze, solution_path
+        # Keep generating until we obtain a valid path from start to exit
+        attempts = 0
+        while True:
+            attempts += 1
+            maze = [[WALL_CASE_CONTENT for _ in range(self.size)] for _ in range(self.size)]
+            # carve out free cells
+            self._generate_path(maze, [], 1, 1)
+            maze[1][1] = START_CASE_CONTENT
+            maze[self.size - 2][self.size - 2] = EXIT_CASE_CONTENT
 
-    def _generate_path(self, maze: List[List[str]], solution_path: List[Tuple[int, int]], x: int, y: int) -> List[List[str]]:
+            path = self._bfs_shortest_path(maze, (1, 1), (self.size - 2, self.size - 2))
+            if path:
+                return maze, path
+
+            if attempts >= 10:
+                logging.warning("Could not find a path after %d attempts", attempts)
+                return maze, []
+
+    def _generate_path(self, maze: List[List[str]], solution_path: List[Tuple[int, int]], x: int, y: int) -> None:
+        """Carve free cells using a randomized DFS-like approach. Mutates `maze` in place.
+        The `solution_path` parameter is only used to record visitation order (not the final solution).
+        """
         directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         random.shuffle(directions)
+
+        # mark current cell as free if needed
+        if maze[x][y] == WALL_CASE_CONTENT:
+            maze[x][y] = FREE_CASE_CONTENT
         solution_path.append((x, y))
 
         for dx, dy in directions:
             nx, ny = x + dx, y + dy
             if 1 <= nx < self.size - 1 and 1 <= ny < self.size - 1 and maze[nx][ny] == WALL_CASE_CONTENT:
-                if sum(1 for dx, dy in directions if maze[nx + dx][ny + dy] == FREE_CASE_CONTENT) < 2:
+                # count how many free neighbors the candidate cell already has (to avoid creating loops)
+                free_neighbors = 0
+                for ddx, ddy in directions:
+                    nnx, nny = nx + ddx, ny + ddy
+                    if 1 <= nnx < self.size - 1 and 1 <= nny < self.size - 1 and maze[nnx][nny] == FREE_CASE_CONTENT:
+                        free_neighbors += 1
+                if free_neighbors < 2:
                     maze[nx][ny] = FREE_CASE_CONTENT
                     self._generate_path(maze, solution_path, nx, ny)
-                    if maze[self.size - 2][self.size - 2] == EXIT_CASE_CONTENT:
-                        return maze
 
-        print("No solution found")
-        return maze
+    def _bfs_shortest_path(self, maze: List[List[str]], start: Tuple[int, int], end: Tuple[int, int]) -> List[Tuple[int, int]]:
+        """Return the shortest path from start to end (inclusive) using BFS, or an empty list if none exists."""
+        from collections import deque
+
+        q = deque([start])
+        visited = {start}
+        parent = {}
+
+        while q:
+            cur = q.popleft()
+            if cur == end:
+                # reconstruct path
+                path: List[Tuple[int, int]] = []
+                node = cur
+                while node != start:
+                    path.append(node)
+                    node = parent[node]
+                path.append(start)
+                path.reverse()
+                return path
+
+            x, y = cur
+            for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < self.size and 0 <= ny < self.size and maze[nx][ny] != WALL_CASE_CONTENT and (nx, ny) not in visited:
+                    visited.add((nx, ny))
+                    parent[(nx, ny)] = (x, y)
+                    q.append((nx, ny))
+
+        return []
 
     def draw_maze(self, show_solution: bool = False) -> None:
         self.canvas.delete("all")
