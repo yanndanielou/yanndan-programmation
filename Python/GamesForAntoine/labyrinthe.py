@@ -1,7 +1,8 @@
 import tkinter as tk
 import random
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
+from logger import logger_config
 import logging
 import sys
 
@@ -13,10 +14,11 @@ FREE_CASE_CONTENT = " "
 
 
 class MazeGame:
-    def __init__(self, root: tk.Tk, embedded_in_other_application: bool, size: int = 800) -> None:
+    def __init__(self, root: tk.Tk, embedded_in_other_application: bool, size: int = 50) -> None:
 
-        print(f"Recursion limit : {sys.getrecursionlimit()}")
-        sys.setrecursionlimit(150000)
+        print(f"Initial recursion limit : {sys.getrecursionlimit()}")
+        sys.setrecursionlimit(15000)
+        print(f"New recursion limit : {sys.getrecursionlimit()}")
 
         self.embedded_in_other_application = embedded_in_other_application
         self.size = size
@@ -36,23 +38,24 @@ class MazeGame:
         self.draw_maze()
 
     def generate_maze_with_solution(self) -> Tuple[List[List[str]], List[Tuple[int, int]]]:
-        # Keep generating until we obtain a valid path from start to exit
-        attempts = 0
-        while True:
-            attempts += 1
-            maze = [[WALL_CASE_CONTENT for _ in range(self.size)] for _ in range(self.size)]
-            # carve out free cells
-            self._generate_path(maze, [], 1, 1)
-            maze[1][1] = START_CASE_CONTENT
-            maze[self.size - 2][self.size - 2] = EXIT_CASE_CONTENT
+        with logger_config.stopwatch_with_label("generate_maze_with_solution"):
+            # Keep generating until we obtain a valid path from start to exit
+            attempts = 0
+            while True:
+                attempts += 1
+                maze = [[WALL_CASE_CONTENT for _ in range(self.size)] for _ in range(self.size)]
+                # carve out free cells
+                self._generate_path(maze, [], 1, 1)
+                maze[1][1] = START_CASE_CONTENT
+                maze[self.size - 2][self.size - 2] = EXIT_CASE_CONTENT
 
-            path = self._bfs_shortest_path(maze, (1, 1), (self.size - 2, self.size - 2))
-            if path:
-                return maze, path
+                path = self._bfs_shortest_path(maze, (1, 1), (self.size - 2, self.size - 2))
+                if path:
+                    return maze, path
 
-            if attempts >= 10:
-                logging.warning("Could not find a path after %d attempts", attempts)
-                return maze, []
+                if attempts >= 10:
+                    logging.warning("Could not find a path after %d attempts", attempts)
+                    return maze, []
 
     def _generate_path(self, maze: List[List[str]], solution_path: List[Tuple[int, int]], x: int, y: int) -> None:
         """Carve free cells using a randomized DFS-like approach. Mutates `maze` in place.
@@ -85,7 +88,7 @@ class MazeGame:
 
         q = deque([start])
         visited = {start}
-        parent = {}
+        parent: Dict[Tuple[int, int], Tuple[int, int]] = {}
 
         while q:
             cur = q.popleft()
@@ -111,24 +114,26 @@ class MazeGame:
         return []
 
     def draw_maze(self, show_solution: bool = False) -> None:
-        self.canvas.delete("all")
-        for i in range(self.size):
-            for j in range(self.size):
-                x1 = j * self.cell_size
-                y1 = i * self.cell_size
-                x2 = x1 + self.cell_size
-                y2 = y1 + self.cell_size
+        with logger_config.stopwatch_with_label("draw_maze"):
 
-                fill = "black" if self.maze[i][j] == WALL_CASE_CONTENT else "white"
+            self.canvas.delete("all")
+            for i in range(self.size):
+                for j in range(self.size):
+                    x1 = j * self.cell_size
+                    y1 = i * self.cell_size
+                    x2 = x1 + self.cell_size
+                    y2 = y1 + self.cell_size
 
-                if (i, j) == self.player_pos:
-                    fill = "blue"
-                elif self.maze[i][j] == "E":
-                    fill = "green"
-                elif show_solution and (i, j) in self.best_solution_path:
-                    fill = "yellow"
+                    fill = "black" if self.maze[i][j] == WALL_CASE_CONTENT else "white"
 
-                self.canvas.create_rectangle(x1, y1, x2, y2, fill=fill)
+                    if (i, j) == self.player_pos:
+                        fill = "blue"
+                    elif self.maze[i][j] == EXIT_CASE_CONTENT:
+                        fill = "green"
+                    elif show_solution and (i, j) in self.best_solution_path:
+                        fill = "yellow"
+
+                    self.canvas.create_rectangle(x1, y1, x2, y2, fill=fill)
 
     def move_player(self, dx: int, dy: int) -> None:
         x, y = self.player_pos
@@ -155,7 +160,7 @@ class MazeGame:
 
         self.draw_maze(show_solution)
 
-        if self.maze[self.player_pos[0]][self.player_pos[1]] == "E":
+        if self.maze[self.player_pos[0]][self.player_pos[1]] == EXIT_CASE_CONTENT:
             print("You've reached the end!")
             if self.embedded_in_other_application:
                 self.canvas.quit()
