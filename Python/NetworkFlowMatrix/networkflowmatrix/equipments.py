@@ -250,7 +250,8 @@ class NetworkConfFilesEquipmentsLibrary:
             data_to_dump.append(
                 (
                     group.definition,
-                    ",".join(
+                    "Equipments:"
+                    + ",".join(
                         [equipment.name for equipment in group.equipments],
                     ),
                 )
