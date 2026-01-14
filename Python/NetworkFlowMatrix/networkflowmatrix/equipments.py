@@ -177,6 +177,14 @@ class NetworkConfFilesEquipmentsLibrary:
             self.network_conf_files_defined_equipments_by_raw_ip_addresses[expected_raw_ip_address] if expected_raw_ip_address in self.network_conf_files_defined_equipments_by_raw_ip_addresses else []
         )
 
+    def get_existing_equipments_by_group(self, expected_group_name: str, expected_group_subnet_and_mask: str) -> List["NetworkConfFilesDefinedEquipment"]:
+
+        group_found = [group for group in self.all_groups if group.definition.name == expected_group_name and group.definition.subnet_and_mask == expected_group_subnet_and_mask]
+        if group_found:
+            assert len(group_found) == 1
+            return group_found[0].equipments
+        return []
+
     def get_existing_network_conf_file_eqpt_by_name(self, name: str) -> Optional["NetworkConfFilesDefinedEquipment"]:
         if self.is_existing_network_conf_file_eqpt_by_name(name):
             return self.network_conf_files_defined_equipments_by_id[name]
