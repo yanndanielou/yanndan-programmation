@@ -10,7 +10,7 @@ if __name__ == "__main__":
         equipments_library = (
             equipments.NetworkConfFilesEquipmentsLibrary()
             .Builder()
-            .add_ihm_programm(excel_file_full_path=network_conf_files_descriptions_data.INPUT_DOWNLOAD_FOLDER + "/" + "S2_P2_02 à 08_Ind13 1.xlsm")
+            .add_ihm_programm(excel_file_full_path=network_conf_files_descriptions_data.INPUT_DOWNLOAD_FOLDER + "/" + "S2_P2_02 à 08_Ind14.xlsm")
             .add_manual_entries()
             .add_fdiff_clients(excel_file_full_path=network_conf_files_descriptions_data.INPUT_DOWNLOAD_FOLDER + "/" + "I3G-NEXT-2024-DT-PCM-1103.xlsm")
             .add_network_config_file_with_excel_description(excel_description=network_conf_files_descriptions_data.BordAddressPlanV9Description())
@@ -27,6 +27,4 @@ if __name__ == "__main__":
         network_flow_matrix.match_equipments_with_network_conf_files(equipments_library)
 
         equipments_library.dump_to_json_file(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/all_equipments_in_conf_files_after_matching_network_matrix.json")
-
-        network_line = network_flow_matrix.get_line_by_identifier(1970)
-        assert network_line
+        pass

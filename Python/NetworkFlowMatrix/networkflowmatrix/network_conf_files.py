@@ -333,12 +333,7 @@ class NetworkConfFile(GenericConfFile):
                                             equipment.add_alternative_identifier(equipment_alternative_identifier_raw)
 
                                     for group_definition in equipment_definition.groups_definitions:
-                                        group = equipments_library.get_or_create_group(group_definition)
-                                        if not group in equipment.groups:
-                                            equipment.groups.append(group)
-                                            group.equipments.append(equipment)
-                                        else:
-                                            logger_config.print_and_log_warning(f"Group {group.definition} already in {equipment.name}")
+                                        group = equipments_library.get_or_create_group_and_add_equipment(group_definition, equipment)
 
                                     for ip_address_definition in equipment_definition.equipment_ip_definitions:
 

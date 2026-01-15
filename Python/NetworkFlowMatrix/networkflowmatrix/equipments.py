@@ -33,6 +33,13 @@ class Group:
     definition: GroupDefinition
     equipments: List["NetworkConfFilesDefinedEquipment"] = field(default_factory=list)
 
+    def add_equipment(self, equipment: "NetworkConfFilesDefinedEquipment") -> None:
+        if not self in equipment.groups:
+            equipment.groups.append(self)
+            self.equipments.append(equipment)
+        else:
+            logger_config.print_and_log_warning(f"Group {self.definition} already in {equipment.name}")
+
 
 @dataclass
 class TrainUnbreakableSingleUnit:
@@ -90,7 +97,7 @@ class NetworkConfFilesDefinedEquipment:
         assert ip_address not in self.ip_addresses
 
         if [existing_ip for existing_ip in self.ip_addresses if existing_ip.ip_raw == ip_address.ip_raw]:
-            logger_config.print_and_log_error(f"Ip address {ip_address.ip_raw} already exists for {self.name}, could not add {ip_address} ")
+            logger_config.print_and_log_error(f"Ip address {ip_address.ip_raw} already exists for {self.name}, could not add {ip_address} to the same equipment")
 
         else:
             ip_address_raw = ip_address.ip_raw
@@ -170,7 +177,6 @@ class NetworkConfFilesEquipmentsLibrary:
 
     def check_consistency(self) -> None:
         # logger_config.print_and_log_info(f"The network conf files library contains {len(self.all_network_conf_files_defined_equipments)} equipments in total")
-        pass
         with logger_config.stopwatch_with_label("Check that all groups have equipment"):
             for group in self.all_groups:
                 assert group
@@ -260,6 +266,10 @@ class NetworkConfFilesEquipmentsLibrary:
         if self.is_existing_train_unbreakable_unit_by_emu_id(emu_id):
             return self.all_trains_unbreakable_units_by_emu_id[emu_id]
         return None
+
+    def get_or_create_group_and_add_equipment(self, group_definition: GroupDefinition, equipment: "NetworkConfFilesDefinedEquipment") -> None:
+        group = self.get_or_create_group(group_definition=group_definition)
+        group.add_equipment(equipment)
 
     def get_or_create_group(self, group_definition: GroupDefinition) -> Group:
         assert isinstance(group_definition, GroupDefinition), f"Group definition {group_definition} has bad type {type(group_definition)}"

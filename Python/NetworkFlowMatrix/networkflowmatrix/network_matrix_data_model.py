@@ -335,6 +335,10 @@ class FlowDestination(FlowEndPoint):
                 allow_one_ip_for_several_equipments=(cast_type == constants.CastType.MULTICAST),
             )
 
+    def __post_init__(self) -> None:
+        if self.cast_type == constants.CastType.MULTICAST:
+            assert isinstance(self.group_multicast_raw, str)
+
 
 @dataclass
 class NetworkFlowMatrix:
@@ -371,6 +375,9 @@ class NetworkFlowMatrix:
 
             network_flow_matrix.network_flow_matrix_lines = network_flow_matrix_lines
             network_flow_matrix.network_flow_matrix_lines_by_identifier = network_flow_matrix_lines_by_identifier
+
+            assert network_flow_matrix.network_flow_matrix_lines, "matrix is empty"
+            assert network_flow_matrix.network_flow_matrix_lines_by_identifier, "matrix is empty"
 
             return network_flow_matrix
 

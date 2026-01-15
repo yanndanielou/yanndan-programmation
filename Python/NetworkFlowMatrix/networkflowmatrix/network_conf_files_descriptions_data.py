@@ -80,6 +80,10 @@ class RadioLayoutR841Description(ExcelInputFileDescription):
                     equipment_type_definition=ForcedStrValueInformationDefinition("AP"),
                     equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("AP name"),
                     equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("N° AP Layout radio"),
+                    groups_definitions=[
+                        GroupDefinition("AP_CPU", "10.202.0.0/16"),
+                        GroupDefinition("AP_CPU", "10.207.0.0/16"),
+                    ],
                     equipment_ip_definitions=[
                         UnicastIpDefinitionColumnsInTab(
                             equipment_vlan_column_definition=None,
