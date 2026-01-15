@@ -75,16 +75,27 @@ class NetworkConfFilesDefinedEquipment:
 
     def add_ip_address(self, ip_address: "NetworkConfFilesDefinedIpAddress") -> None:
         assert ip_address not in self.ip_addresses
-        ip_address_raw = ip_address.ip_raw
-        self.ip_addresses.append(ip_address)
 
-        if ip_address_raw not in self.library.network_conf_files_defined_equipments_by_raw_ip_addresses:
-            self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw] = []
+        if [existing_ip for existing_ip in self.ip_addresses if existing_ip.ip_raw == ip_address.ip_raw]:
+            logger_config.print_and_log_error(f"Ip address {ip_address.ip_raw} already exists for {self.name}, could not add {ip_address} ")
 
-        if self in self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw]:
-            logger_config.print_and_log_error(f"IP address {ip_address_raw} already defined. {self.name} {self._equipment_types} Will exist twice")
+        else:
+            ip_address_raw = ip_address.ip_raw
+            self.ip_addresses.append(ip_address)
 
-        self.library.network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw].append(self)
+            if ip_address_raw not in self.library._network_conf_files_defined_equipments_by_raw_ip_addresses:
+                self.library._network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw] = []
+
+            if self in self.library._network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw]:
+                logger_config.print_and_log_error(f"IP address {ip_address_raw} already defined. {self.name} {self._equipment_types} Will exist twice")
+
+            self.library._network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw].append(self)
+
+            # Check consitency
+            seen_ids = set()
+            for obj in self.library._network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw]:
+                assert id(obj) not in seen_ids, f"{self.library._network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw]} is defined several times by {ip_address_raw} "
+                seen_ids.add(id(obj))
 
 
 class NetworkConfFilesEquipmentsLibrary:
@@ -130,7 +141,7 @@ class NetworkConfFilesEquipmentsLibrary:
     def __init__(self) -> None:
         self.all_network_conf_files_defined_equipments: List[NetworkConfFilesDefinedEquipment] = []
         self.network_conf_files_defined_equipments_by_id: Dict[str, NetworkConfFilesDefinedEquipment] = {}
-        self.network_conf_files_defined_equipments_by_raw_ip_addresses: Dict[str, List[NetworkConfFilesDefinedEquipment]] = {}
+        self._network_conf_files_defined_equipments_by_raw_ip_addresses: Dict[str, List[NetworkConfFilesDefinedEquipment]] = {}
         self.all_trains_unbreakable_units: List[TrainUnbreakableSingleUnit] = []
         self.all_ignored_trains_unbreakable_units: List[TrainUnbreakableSingleUnit] = []
         self.all_trains_unbreakable_units_by_cc_id: Dict[int, TrainUnbreakableSingleUnit] = {}
@@ -148,6 +159,14 @@ class NetworkConfFilesEquipmentsLibrary:
                 assert group
                 assert group.equipments, f"Group {group.definition} has no equipment"
                 assert len(group.equipments) > 0, f"Group {group.definition} has no equipment"
+
+        with logger_config.stopwatch_with_label("Check that all network_conf_files_defined_equipments_by_raw_ip_addresses are unique"):
+            for items in self._network_conf_files_defined_equipments_by_raw_ip_addresses.values():
+                seen_ids = set()
+
+                for obj in items:
+                    assert id(obj) not in seen_ids
+                    seen_ids.add(id(obj))
 
     def print_stats(self) -> None:
         logger_config.print_and_log_info(f"The network conf files library contains {len(self.all_network_conf_files_defined_equipments)} equipments in total")
@@ -174,7 +193,9 @@ class NetworkConfFilesEquipmentsLibrary:
 
     def get_existing_equipment_by_raw_ip_address(self, expected_raw_ip_address: str) -> List["NetworkConfFilesDefinedEquipment"]:
         return (
-            self.network_conf_files_defined_equipments_by_raw_ip_addresses[expected_raw_ip_address] if expected_raw_ip_address in self.network_conf_files_defined_equipments_by_raw_ip_addresses else []
+            self._network_conf_files_defined_equipments_by_raw_ip_addresses[expected_raw_ip_address]
+            if expected_raw_ip_address in self._network_conf_files_defined_equipments_by_raw_ip_addresses
+            else []
         )
 
     def get_existing_equipments_by_group(self, expected_group_name: str, expected_group_subnet_and_mask: str) -> List["NetworkConfFilesDefinedEquipment"]:
