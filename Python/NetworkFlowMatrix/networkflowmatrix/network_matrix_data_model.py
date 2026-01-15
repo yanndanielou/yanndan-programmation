@@ -1,15 +1,57 @@
 import ipaddress
+import json
 from dataclasses import dataclass, field
-from typing import List, Optional, Set, Tuple, cast, Dict
+from typing import Dict, List, Optional, Set, Tuple, cast
 
 import pandas
+from common import file_utils, json_encoders, string_utils
 from logger import logger_config
 
-from common import string_utils
 from networkflowmatrix import constants, equipments
 
 INVALID_IP_ADDRESS = "INVALID_IP_ADDRESS"
 MISSING_IP_ADDRESS = "MISSING_IP_ADDRESS"
+
+
+def subsystem_to_dict(subsystem: "SubSystemInFlowMatrix", with_equipment: bool) -> Dict:
+    if with_equipment:
+        return {
+            "subsystem_name": subsystem.name,
+            "subsystem_number_equipments": len(subsystem.all_equipments_detected_in_flow_matrix),
+            "subsystem_all_equipments": [equipment_to_dict(eq, False) for eq in subsystem.all_equipments_detected_in_flow_matrix],
+        }
+    else:
+        return {"subsystem_name": subsystem.name}
+
+
+def equipment_to_dict(equipment: "EquipmentInFLowMatrix", with_subsystem: bool) -> Dict:
+    if with_subsystem:
+        new_var = {
+            "equipment_name": equipment.name,
+            "equipment_ip_addresses": [str(ip) for ip in equipment.raw_ip_addresses],
+            "equipment_number_of_subsystems_detected_in_flow_matrix": len(equipment.all_subsystems_detected_in_flow_matrix),
+            "equipment_all_subsystems_detected_in_flow_matrix": [subsystem_to_dict(subsys, False) for subsys in equipment.all_subsystems_detected_in_flow_matrix],
+        }
+    else:
+        new_var = {"equipment_name": equipment.name, "equipment_ip_addresses": [str(ip) for ip in equipment.raw_ip_addresses]}
+
+    return new_var
+
+
+def dump_matrix_subsystems_to_json(network_flow_matrix_to_dump: "NetworkFlowMatrix", filepath: str) -> None:
+    data = [
+        subsystem_to_dict(subsystem, with_equipment=True) for subsystem in sorted(network_flow_matrix_to_dump.all_matrix_flow_subsystems_definitions_instances, key=lambda subsystem: subsystem.name)
+    ]
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def dump_matrix_equipments_to_json(network_flow_matrix_to_dump: "NetworkFlowMatrix", filepath: str) -> None:
+    data = [
+        equipment_to_dict(equipment, with_subsystem=True) for equipment in sorted(network_flow_matrix_to_dump.all_matrix_flow_equipments_definitions_instances, key=lambda subsystem: subsystem.name)
+    ]
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
 
 
 class SubSystemInFlowMatrix:
@@ -156,6 +198,9 @@ class FlowEndPoint:
                     )
 
                 else:
+                    equipment_not_found = equipments_library.add_not_found_equipment_but_defined_in_network_flow_matrix(
+                        name=equipment_name, raw_ip_address=eqpt_ip_address_raw, matrix_line_id_referencing=self.matrix_line_identifier
+                    )
                     logger_config.print_and_log_error(
                         f"{self.matrix_line_identifier}: Could not find equipment {equipment_name} in network conf files. Searching with IP {eqpt_ip_address_raw}, found {len(equipments_in_network_conf_file_matching_ip_address)} equipments {[eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address]}"
                     )
@@ -181,6 +226,7 @@ class FlowEndPoint:
                                 equipments_library.not_found_equipment_names_and_raw_ip_address.add(
                                     f"{equipment_name};{eqpt_ip_address_raw} - found {equipment_in_network_conf_file_matching_ip_address_it.name}"
                                 )
+                                equipment_not_found.alternative_names_matching_ip.add(equipment_in_network_conf_file_matching_ip_address_it.name)
 
                                 break
                         if equipments_in_network_conf_file_matching_ip_address:
@@ -191,6 +237,7 @@ class FlowEndPoint:
                             equipments_library.not_found_equipment_names_and_raw_ip_address.add(
                                 f"{equipment_name};{eqpt_ip_address_raw} - found {[equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]}"
                             )
+                            equipment_not_found.alternative_names_matching_ip.add(equipment_in_network_conf_file_matching_ip_address_it.name)
 
                     else:
 
@@ -346,6 +393,17 @@ class NetworkFlowMatrix:
             f"After scanning network flow matrix, {len(equipments_library.not_found_equipment_names_and_raw_ip_address)} unknown equipments (not found in network conf files) names and IP addresses are {equipments_library.not_found_equipment_names}"
         )
         logger_config.print_and_log_warning(f"'\n'{'\n'.join(sorted(list(equipments_library.not_found_equipment_names_and_raw_ip_address)))}")
+
+        for directory_path in [constants.OUTPUT_PARENT_DIRECTORY_NAME]:
+            file_utils.create_folder_if_not_exist(directory_path)
+
+        dump_matrix_subsystems_to_json(self, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_subsystems_in_flow_matrix.json")
+        dump_matrix_equipments_to_json(self, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments_in_flow_matrix.json")
+        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
+            equipments_library.not_found_equipments_but_defined_in_flow_matrix, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_unknown_equipments.json"
+        )
+
+        equipments_library.dump_to_json_file(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/all_equipments_in_conf_files.json")
 
 
 @dataclass

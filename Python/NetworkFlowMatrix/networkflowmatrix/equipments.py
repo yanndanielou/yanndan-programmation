@@ -42,6 +42,14 @@ class TrainUnbreakableSingleUnit:
 
 
 @dataclass
+class NotFoundEquipmentButDefinedInMatrixFlow:
+    name: str
+    raw_ip_addresses: List[str] = field(default_factory=list)
+    matrix_line_ids_referencing: List[int] = field(default_factory=list)
+    alternative_names_matching_ip: Set[str] = field(default_factory=set)
+
+
+@dataclass
 class NetworkConfFilesDefinedEquipment:
     name: str
     source_label: str
@@ -141,6 +149,8 @@ class NetworkConfFilesEquipmentsLibrary:
         def build(self) -> "NetworkConfFilesEquipmentsLibrary":
             self.equipments_library_being_created.print_stats()
             self.equipments_library_being_created.check_consistency()
+            self.equipments_library_being_created.dump_to_json_file(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/all_equipments_in_conf_files_before_matching_network_matrix.json")
+
             return self.equipments_library_being_created
 
     def __init__(self) -> None:
@@ -151,6 +161,7 @@ class NetworkConfFilesEquipmentsLibrary:
         self.all_ignored_trains_unbreakable_units: List[TrainUnbreakableSingleUnit] = []
         self.all_trains_unbreakable_units_by_cc_id: Dict[int, TrainUnbreakableSingleUnit] = {}
         self.all_trains_unbreakable_units_by_emu_id: Dict[int, TrainUnbreakableSingleUnit] = {}
+        self.not_found_equipments_but_defined_in_flow_matrix: List[NotFoundEquipmentButDefinedInMatrixFlow] = []
         self.not_found_equipment_names: Set[str] = set()
         self.not_found_equipment_names_and_raw_ip_address: Set[str] = set()
         self.all_groups: List[Group] = []
@@ -274,6 +285,22 @@ class NetworkConfFilesEquipmentsLibrary:
         for i in constants.TO_IGNORE_TRAINS_IDS:
             train_unbreakable_unit = TrainUnbreakableSingleUnit(cc_id=i, emu_id=4000 + i)
             self.all_ignored_trains_unbreakable_units.append(train_unbreakable_unit)
+
+    def add_not_found_equipment_but_defined_in_network_flow_matrix(self, name: str, raw_ip_address: str, matrix_line_id_referencing: int) -> NotFoundEquipmentButDefinedInMatrixFlow:
+        equipments = [equipment for equipment in self.not_found_equipments_but_defined_in_flow_matrix if equipment.name == name]
+        assert len(equipments) < 2
+        if equipments:
+            equipment = equipments[0]
+        else:
+            equipment = NotFoundEquipmentButDefinedInMatrixFlow(name=name)
+            self.not_found_equipments_but_defined_in_flow_matrix.append(equipment)
+
+        if raw_ip_address not in equipment.raw_ip_addresses:
+            equipment.raw_ip_addresses.append(raw_ip_address)
+
+        equipment.matrix_line_ids_referencing.append(matrix_line_id_referencing)
+
+        return equipment
 
     def dump_to_json_file(self, output_json_file_full_path: str) -> None:
         data_to_dump: List[Tuple] = []
