@@ -336,6 +336,7 @@ class FlowDestination(FlowEndPoint):
             )
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         if self.cast_type == constants.CastType.MULTICAST:
             assert isinstance(self.group_multicast_raw, str), f"{self.matrix_line_identifier} : empty group {self.group_multicast_raw} for multicast {self.cast_type}"
 
