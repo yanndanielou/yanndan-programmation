@@ -4,13 +4,12 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, List, Optional, cast
 import pandas
 
-from common import excel_utils
 from logger import logger_config
 
 from networkflowmatrix import network_conf_files
 
 if TYPE_CHECKING:
-    from networkflowmatrix.equipments import TrainUnbreakableSingleUnit, Equipment, NetworkConfFilesEquipmentsLibrary, NetworkConfFilesDefinedEquipment
+    from networkflowmatrix.equipments import NetworkConfFilesEquipmentsLibrary, NetworkConfFilesDefinedEquipment
 
 
 @dataclass

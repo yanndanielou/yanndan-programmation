@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
+from dataclasses import dataclass, field
 
 from common import json_encoders
 from logger import logger_config
@@ -11,15 +11,15 @@ if TYPE_CHECKING:
     from networkflowmatrix.network_conf_files_descriptions_data import ExcelInputFileDescription
 
 from networkflowmatrix.network_conf_files import NetworkConfFile
-from networkflowmatrix import manual_equipments_builder, ihm_program_builder
+from networkflowmatrix import manual_equipments_builder, ihm_program_builder, names_equivalences
 
 
-@dataclass
-class Equipment:
-    eqpt_type: str
-    relative_name: str
-    unique_name: str
-    train_single_unit: Optional["TrainUnbreakableSingleUnit"] = None
+# @dataclass
+# class Equipment:
+#    eqpt_type: str
+#    relative_name: str
+#    unique_name: str
+#    train_single_unit: Optional["TrainUnbreakableSingleUnit"] = None
 
 
 @dataclass
@@ -38,7 +38,7 @@ class Group:
 class TrainUnbreakableSingleUnit:
     cc_id: int
     emu_id: int
-    equipments: List[Equipment] = field(default_factory=list)
+    # equipments: List[Equipment] = field(default_factory=list)
 
 
 @dataclass
@@ -54,6 +54,10 @@ class NetworkConfFilesDefinedEquipment:
     def __post_init__(self) -> None:
         assert self.name
         assert isinstance(self.name, str)
+        if self.name in self.library.names_equivalences_manager.names_equivalences_data.values():
+            alternative_names = [key for key, val in self.library.names_equivalences_manager.names_equivalences_data.items() if val == self.name]
+            for alternative_name in alternative_names:
+                self.add_alternative_identifier(alternative_name)
 
     @property
     def equipment_types(self) -> Set[str]:
@@ -67,6 +71,7 @@ class NetworkConfFilesDefinedEquipment:
         assert alternative_identifier
         assert isinstance(alternative_identifier, str)
         self._alternative_identifiers.add(alternative_identifier)
+        self.library.network_conf_files_defined_equipments_by_id[alternative_identifier] = self
 
     def add_equipment_type(self, equipment_type: str) -> None:
         assert equipment_type
@@ -150,6 +155,7 @@ class NetworkConfFilesEquipmentsLibrary:
         self.not_found_equipment_names_and_raw_ip_address: Set[str] = set()
         self.all_groups: List[Group] = []
         self.create_train_unbreakable_units()
+        self.names_equivalences_manager = names_equivalences.NamesEquivalences(manual_equipments_builder.names_equivalences_data)
 
     def check_consistency(self) -> None:
         # logger_config.print_and_log_info(f"The network conf files library contains {len(self.all_network_conf_files_defined_equipments)} equipments in total")
@@ -185,10 +191,10 @@ class NetworkConfFilesEquipmentsLibrary:
             for equipment in self.all_network_conf_files_defined_equipments:
                 if equipment.name in expected_equipment_name:
                     logger_config.print_and_log_info(f"Add alternative name {expected_equipment_name} for {equipment.name}")
-                    self.network_conf_files_defined_equipments_by_id[expected_equipment_name] = equipment
                     equipment.add_alternative_identifier(expected_equipment_name)
 
                     return equipment
+
         return None
 
     def get_existing_equipment_by_raw_ip_address(self, expected_raw_ip_address: str) -> List["NetworkConfFilesDefinedEquipment"]:
