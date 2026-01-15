@@ -91,7 +91,7 @@ class NetworkConfFilesDefinedEquipment:
 
             self.library._network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw].append(self)
 
-            # Check consitency
+            # Check consistency
             seen_ids = set()
             for obj in self.library._network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw]:
                 assert id(obj) not in seen_ids, f"{self.library._network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw]} is defined several times by {ip_address_raw} "
@@ -192,11 +192,19 @@ class NetworkConfFilesEquipmentsLibrary:
         return None
 
     def get_existing_equipment_by_raw_ip_address(self, expected_raw_ip_address: str) -> List["NetworkConfFilesDefinedEquipment"]:
-        return (
+        found = (
             self._network_conf_files_defined_equipments_by_raw_ip_addresses[expected_raw_ip_address]
             if expected_raw_ip_address in self._network_conf_files_defined_equipments_by_raw_ip_addresses
             else []
         )
+
+        # Check consitency
+        seen_ids = set()
+        for obj in found:
+            assert id(obj) not in seen_ids, f"{obj.name} is defined several times by {expected_raw_ip_address} "
+            seen_ids.add(id(obj))
+
+        return found
 
     def get_existing_equipments_by_group(self, expected_group_name: str, expected_group_subnet_and_mask: str) -> List["NetworkConfFilesDefinedEquipment"]:
 

@@ -163,8 +163,8 @@ class FlowEndPoint:
                     if equipments_in_network_conf_file_matching_ip_address is None:
                         logger_config.print_and_log_error(f"{self.matrix_line_identifier}: {equipment_name}: Ip address {eqpt_ip_address_raw} not defined in any network conf file")
 
-                        equipments_library.not_found_equipment_names.add(equipment_name)
-                        equipments_library.not_found_equipment_names_and_raw_ip_address.add(f"{equipment_name};{eqpt_ip_address_raw}")
+                        equipments_library.not_found_equipment_names.add(f"{equipment_name}. No alternative name found")
+                        equipments_library.not_found_equipment_names_and_raw_ip_address.add(f"{equipment_name};{eqpt_ip_address_raw};. No alternative name found")
 
                     elif equipment_name not in [equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]:
                         for equipment_in_network_conf_file_matching_ip_address_it in equipments_in_network_conf_file_matching_ip_address:
@@ -174,7 +174,8 @@ class FlowEndPoint:
                                 logger_config.print_and_log_info(
                                     f"{self.matrix_line_identifier}: Re-allocate {equipment_name} to {equipment_in_network_conf_file_matching_ip_address_it.name} thanks to IP {eqpt_ip_address_raw}"
                                 )
-                                equipments_in_network_conf_file_matching_ip_address.append(equipment_in_network_conf_file_matching_ip_address_it)
+                                # equipments_in_network_conf_file_matching_ip_address.append(equipment_in_network_conf_file_matching_ip_address_it)
+                                # Should we add the new name to the dictionnary here to find it by name?
 
                                 equipments_library.not_found_equipment_names.add(equipment_name + f" - found {equipment_in_network_conf_file_matching_ip_address_it.name}")
                                 equipments_library.not_found_equipment_names_and_raw_ip_address.add(
