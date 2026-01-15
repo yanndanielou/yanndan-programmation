@@ -2,15 +2,15 @@ from enum import Enum, auto
 
 
 class SeclabSide(Enum):
-    BORD = auto
-    SECLAB_ITSELF = auto
-    SOL = auto
+    BORD = auto()
+    SECLAB_ITSELF = auto()
+    SOL = auto()
 
 
 class CastType(Enum):
-    UNICAST = auto
-    MULTICAST = auto
-    UNKNOWN = auto
+    UNICAST = auto()
+    MULTICAST = auto()
+    UNKNOWN = auto()
 
 
 ALL_USED_TRAINS_IDS = list(range(1, 131 + 1))
