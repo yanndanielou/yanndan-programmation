@@ -337,7 +337,7 @@ class FlowDestination(FlowEndPoint):
 
     def __post_init__(self) -> None:
         if self.cast_type == constants.CastType.MULTICAST:
-            assert isinstance(self.group_multicast_raw, str)
+            assert isinstance(self.group_multicast_raw, str), self
 
 
 @dataclass

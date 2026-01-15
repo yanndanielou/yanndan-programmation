@@ -11,7 +11,8 @@ if TYPE_CHECKING:
     from networkflowmatrix.network_conf_files_descriptions_data import ExcelInputFileDescription
 
 from networkflowmatrix.network_conf_files import NetworkConfFile
-from networkflowmatrix import manual_equipments_builder, ihm_program_builder, names_equivalences
+from networkflowmatrix.groups import Group, GroupDefinition
+from networkflowmatrix import manual_equipments_builder, ihm_program_builder, names_equivalences, manual_group_definitions
 
 
 # @dataclass
@@ -20,25 +21,6 @@ from networkflowmatrix import manual_equipments_builder, ihm_program_builder, na
 #    relative_name: str
 #    unique_name: str
 #    train_single_unit: Optional["TrainUnbreakableSingleUnit"] = None
-
-
-@dataclass
-class GroupDefinition:
-    name: str
-    subnet_and_mask: str
-
-
-@dataclass
-class Group:
-    definition: GroupDefinition
-    equipments: List["NetworkConfFilesDefinedEquipment"] = field(default_factory=list)
-
-    def add_equipment(self, equipment: "NetworkConfFilesDefinedEquipment") -> None:
-        if not self in equipment.groups:
-            equipment.groups.append(self)
-            self.equipments.append(equipment)
-        else:
-            logger_config.print_and_log_warning(f"Group {self.definition} already in {equipment.name}")
 
 
 @dataclass
@@ -154,6 +136,7 @@ class NetworkConfFilesEquipmentsLibrary:
             return self
 
         def build(self) -> "NetworkConfFilesEquipmentsLibrary":
+            manual_group_definitions.construct_manual_groups(self.equipments_library_being_created)
             self.equipments_library_being_created.print_stats()
             self.equipments_library_being_created.check_consistency()
             self.equipments_library_being_created.dump_to_json_file(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/all_equipments_in_conf_files_before_matching_network_matrix.json")

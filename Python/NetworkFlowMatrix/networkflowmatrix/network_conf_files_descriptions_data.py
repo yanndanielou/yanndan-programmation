@@ -16,7 +16,7 @@ from networkflowmatrix.network_conf_files import (
     UnicastIpDefinitionColumnsInTab,
 )
 
-from networkflowmatrix.equipments import GroupDefinition
+from networkflowmatrix.groups import GroupDefinition
 from collections import namedtuple
 
 # import ipaddress

@@ -11,7 +11,7 @@ from logger import logger_config
 if TYPE_CHECKING:
     from networkflowmatrix.equipments import TrainUnbreakableSingleUnit, NetworkConfFilesEquipmentsLibrary, NetworkConfFilesDefinedEquipment
     from networkflowmatrix.network_conf_files_descriptions_data import ExcelInputFileDescription
-    from networkflowmatrix.equipments import GroupDefinition
+    from networkflowmatrix.groups import GroupDefinition
 
 from networkflowmatrix import constants
 
