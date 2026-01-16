@@ -47,6 +47,7 @@ PROJECT_MANUAL_SELECTION_DETAIL_QUERY_ID = 66977872
 PROJECT_MANUAL_SELECTION_CHANGE_STATE_QUERY_ID = 66875867
 NEXT_ATS_EXTENDED_HISTORY_QUERY_ID = 65753660
 NEXT_ATS_CMC_QUERY_ID = 63323368
+NEXT_LINKS_CFX_QUERY_ID = 69467605
 
 EXCEL_FILE_EXTENSION = ".xlsx"
 TEXT_FILE_EXTENSION = ".txt"
@@ -392,13 +393,14 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         self.create_webdriver_and_login()
 
-        self.generate_and_download_query_results_for_project_filters(
-            change_state_cfx_query=CfxQuery(
-                query_id=NEXT_ATS_CMC_QUERY_ID,
-                output_file_name_without_extension="nextatsp_CMC",
-                output_file_type=QueryOutputFileType.EXCEL_EXPORT,
+        for query_id, output_file_name_without_extension in [(NEXT_ATS_CMC_QUERY_ID, "nextatsp_CMC"), (NEXT_LINKS_CFX_QUERY_ID, "next_links_cfx")]:
+            self.generate_and_download_query_results_for_project_filters(
+                change_state_cfx_query=CfxQuery(
+                    query_id=query_id,
+                    output_file_name_without_extension=output_file_name_without_extension,
+                    output_file_type=QueryOutputFileType.EXCEL_EXPORT,
+                )
             )
-        )
 
         self.generate_and_download_query_results_for_project_filters(
             change_state_cfx_query=CfxQuery(
