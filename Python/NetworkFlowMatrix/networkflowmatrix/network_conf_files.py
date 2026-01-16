@@ -190,6 +190,7 @@ class EquipmentDefinitionTab:
     tab_name: str
     rows_to_ignore: List[int]
     equipment_definitions: List[EquipmentDefinitionColumn]
+    equipment_ids_to_ignore: List[str] = field(default_factory=list)
 
 
 class TrainIdentifierDefinition(ABC):
@@ -304,6 +305,9 @@ class NetworkConfFile(GenericConfFile):
                                     continue
 
                                 equipment_name = cast(str, equipment_definition.equipment_name_column_definition.get_value(row))
+                                if equipment_name in equipment_definition_tab.equipment_ids_to_ignore:
+                                    logger_config.print_and_log_info(f"Ignore {equipment_name} equipment in {excel_file_full_path} sheet {equipment_definition_tab.tab_name}")
+                                    continue
 
                                 if isinstance(equipment_definition, InsideTrainEquipmentDefinitionColumn):
                                     train = equipment_definition.train_identifier_definition.get_train(row, equipments_library)
@@ -363,7 +367,7 @@ class NetworkConfFile(GenericConfFile):
                 for equipment in all_equipments_found_in_excel:
                     assert equipment
                     if not equipment.ip_addresses or len(equipment.ip_addresses) == 0:
-                        logger_config.print_and_log_error(f"Equipment {equipment.name} {",".join(equipment.equipment_types)} {equipment.source_label} has no IP address defined")
+                        logger_config.print_and_log_error(f"Equipment {equipment.name} Type:{",".join(equipment.equipment_types)} Source:{equipment.source_label} has no IP address defined")
 
             conf_file = NetworkConfFile(
                 name=excel_file_full_path,

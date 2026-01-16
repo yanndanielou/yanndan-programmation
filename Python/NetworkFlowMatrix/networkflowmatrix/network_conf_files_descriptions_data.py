@@ -289,6 +289,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
         self.ip_pmb_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP PMB",
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
+            equipment_ids_to_ignore=["EVG-P22-PMB", "NSY-P26-PMB", "EVG-P22-IMPR", "NSY-P26-IMPR"],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
                     equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
