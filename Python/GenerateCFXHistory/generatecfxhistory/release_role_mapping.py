@@ -59,7 +59,7 @@ next_atsp_release_subsystem_mapping: dict[SubSystem, list[str]] = {
     SubSystem.COC_DE: ["S002_Subsystem Invariants", "Invariants", "Paramètres", "S003_Component SMT3"],
     SubSystem.TCM_TC: ["SIMECH", "Gumps", "Outils", "XT_OT", "S003_Component TU"],
     SubSystem.RADIO: ["RADIO", "Baie Centrale Radio"],
-    SubSystem.ATS_EVIDEN: ["COEUR CK", "FGPT", "MES SIL2"],
+    SubSystem.ATS_EVIDEN: ["COEUR CK", "FGPT", "MES SIL2", "Souche CCK"],
     SubSystem.ADONEM: ["ADONEM"],
     SubSystem.TCM_TM1: ["Plateforme", "Usine"],
     SubSystem.TCM_TM2: ["Site"],
