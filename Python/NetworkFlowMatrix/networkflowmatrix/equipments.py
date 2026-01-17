@@ -31,6 +31,22 @@ class TrainUnbreakableSingleUnit:
 
 
 @dataclass
+class WrongOrUnknownIpAddressInMatrixFlow:
+    wrong_equipment_name_allocated_to_this_ip_by_mistake: str
+    raw_ip_address: str
+    equipments_names_having_genuinely_this_ip_address: Set[str] = field(default_factory=set)
+    matrix_line_ids_referencing: List[int] = field(default_factory=list)
+
+
+@dataclass
+class EquipmentWithWrongOrUnknownIpAddressInMatrixFlow:
+    name: str
+    wrong_or_unknown_ip_address: List[WrongOrUnknownIpAddressInMatrixFlow] = field(default_factory=list)
+    raw_ip_addresses: List[str] = field(default_factory=list)
+    matrix_line_ids_referencing: List[int] = field(default_factory=list)
+
+
+@dataclass
 class NotFoundEquipmentButDefinedInMatrixFlow:
     name: str
     raw_ip_addresses: List[str] = field(default_factory=list)
@@ -157,6 +173,30 @@ class NetworkConfFilesEquipmentsLibrary:
         self.all_groups: List[Group] = []
         self.create_train_unbreakable_units()
         self.names_equivalences_manager = names_equivalences.NamesEquivalences(manual_equipments_builder.names_equivalences_data)
+        self.wrong_equipment_name_allocated_to_this_ip_by_mistake: List[WrongOrUnknownIpAddressInMatrixFlow] = []
+
+    def add_wrong_or_unknown_ip_address_in_matrix_flow(
+        self, wrong_equipment_name_allocated_to_this_ip_by_mistake: str, raw_ip_address: str, equipments_names_having_genuinely_this_ip_address: Set[str], matrix_line_id_referencing: int
+    ) -> WrongOrUnknownIpAddressInMatrixFlow:
+
+        wrong_eqpts = [
+            wrong
+            for wrong in self.wrong_equipment_name_allocated_to_this_ip_by_mistake
+            if wrong.wrong_equipment_name_allocated_to_this_ip_by_mistake == wrong_equipment_name_allocated_to_this_ip_by_mistake
+        ]
+        if wrong_eqpts:
+            wrong_ip_def = wrong_eqpts[0]
+        else:
+            wrong_ip_def = WrongOrUnknownIpAddressInMatrixFlow(
+                wrong_equipment_name_allocated_to_this_ip_by_mistake=wrong_equipment_name_allocated_to_this_ip_by_mistake,
+                raw_ip_address=raw_ip_address,
+            )
+            self.wrong_equipment_name_allocated_to_this_ip_by_mistake.append(wrong_ip_def)
+
+        wrong_ip_def.equipments_names_having_genuinely_this_ip_address.union(equipments_names_having_genuinely_this_ip_address)
+        wrong_ip_def.matrix_line_ids_referencing.append(matrix_line_id_referencing)
+
+        return wrong_ip_def
 
     def check_consistency(self) -> None:
         # logger_config.print_and_log_info(f"The network conf files library contains {len(self.all_network_conf_files_defined_equipments)} equipments in total")

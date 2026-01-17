@@ -200,6 +200,12 @@ class FlowEndPoint:
                         logger_config.print_and_log_error(
                             f"At line {self.matrix_line_identifier}: equipment {equipment_name} defined with {eqpt_ip_address_raw}, but this IP is not defined for this equipment in network conf files. This IP is defined for {','.join([eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address])}"
                         )
+                    wrong_ip = equipments_library.add_wrong_or_unknown_ip_address_in_matrix_flow(
+                        wrong_equipment_name_allocated_to_this_ip_by_mistake=equipment_name,
+                        raw_ip_address=eqpt_ip_address_raw,
+                        equipments_names_having_genuinely_this_ip_address=set([eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address]),
+                        matrix_line_id_referencing=self.matrix_line_identifier,
+                    )
 
             if equipment_in_network_conf_file_by_name is None:
                 equipments_in_network_conf_file_matching_group = equipments_library.get_existing_equipments_by_group(
@@ -415,6 +421,11 @@ class NetworkFlowMatrix:
         )
         logger_config.print_and_log_warning(f"'\n'{'\n'.join(sorted(list(equipments_library.not_found_equipment_names_and_raw_ip_address)))}")
 
+        logger_config.print_and_log_warning(f"After scanning network flow matrix, {len(equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake)} wrong IP address definition")
+        logger_config.print_and_log_warning(
+            f"'\n'{'\n'.join([wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake + ";"+ wrong_ip.raw_ip_address+";"+ ",".join(wrong_ip.equipments_names_having_genuinely_this_ip_address) for wrong_ip in equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake])}"
+        )
+
         for directory_path in [constants.OUTPUT_PARENT_DIRECTORY_NAME]:
             file_utils.create_folder_if_not_exist(directory_path)
 
@@ -422,6 +433,9 @@ class NetworkFlowMatrix:
         dump_matrix_equipments_to_json(self, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments_in_flow_matrix.json")
         json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
             equipments_library.not_found_equipments_but_defined_in_flow_matrix, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_unknown_equipments.json"
+        )
+        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
+            equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_wrong_ip.json"
         )
 
         equipments_library.dump_to_json_file(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/all_equipments_in_conf_files.json")

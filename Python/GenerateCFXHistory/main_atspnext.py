@@ -3,7 +3,7 @@ import os
 from logger import logger_config
 
 from generatecfxhistory import cfx, filters
-from generatecfxhistory.constants import State
+from generatecfxhistory.constants import State, RequestType
 from generatecfxhistory import constants, role, inputs
 from generatecfxhistory import ui_and_results_generation
 
@@ -35,6 +35,26 @@ def main() -> None:
         )
 
         nextatsp_champfx_library = cfx.ChampFXLibrary(cfx_inputs=cfx_inputs)
+
+        for request_type in RequestType:
+            ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
+                cfx_library=nextatsp_champfx_library,
+                generation_instructions=ui_and_results_generation.NumberOfCfxStatePerDateGenerationInstructionsForLibrary(
+                    output_directory_name=OUTPUT_DIRECTORY_NAME,
+                    for_global=True,
+                    for_each_subsystem=False,
+                    for_each_current_owner_per_date=False,
+                    cfx_filters=[
+                        filters.ChampFxFilter(
+                            cfx_to_treat_whitelist_text_file_full_path="Input/CFX_usine_site.txt", field_filters=[filters.ChampFxFilterFieldType(field_accepted_values=[request_type])]
+                        ),
+                    ],
+                    create_excel_file=True,
+                    create_html_file=True,
+                    display_output_plots=DISPLAY_OUTPUT,
+                    dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+                ),
+            )
 
         ui_and_results_generation.produce_baregraph_number_of_cfx(
             cfx_library=nextatsp_champfx_library,
