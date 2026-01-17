@@ -214,12 +214,6 @@ class FlowEndPoint:
 
                 else:
 
-                    equipments_library.add_wrong_or_unknown_ip_address_in_matrix_flow(
-                        wrong_equipment_name_allocated_to_this_ip_by_mistake=equipment_name,
-                        raw_ip_address=eqpt_ip_address_raw,
-                        equipments_names_having_genuinely_this_ip_address=set([eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address]),
-                        matrix_line_id_referencing=self.matrix_line_identifier,
-                    )
                     equipment_not_found = equipments_library.add_not_found_equipment_but_defined_in_network_flow_matrix(
                         name=equipment_name, raw_ip_address=eqpt_ip_address_raw, matrix_line_id_referencing=self.matrix_line_identifier
                     )
