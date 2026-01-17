@@ -42,6 +42,7 @@ def dump_matrix_subsystems_to_json(network_flow_matrix_to_dump: "NetworkFlowMatr
     data = [
         subsystem_to_dict(subsystem, with_equipment=True) for subsystem in sorted(network_flow_matrix_to_dump.all_matrix_flow_subsystems_definitions_instances, key=lambda subsystem: subsystem.name)
     ]
+
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
@@ -453,6 +454,20 @@ class NetworkFlowMatrix:
             f"'\n'{'\nWrong IP:'.join([wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake + ";"+ wrong_ip.raw_ip_address+";"+ ",".join(wrong_ip.equipments_names_having_genuinely_this_ip_address) +";" +",".join([str(matrix_line) for matrix_line in wrong_ip.matrix_line_ids_referencing]) for wrong_ip in equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake])}"
         )
 
+        with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_wrong_ip.txt", mode="w", encoding="utf-8") as matrix_wrong_ip_file:
+            for wrong_ip in equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake:
+                matrix_wrong_ip_file.write(
+                    "Wrong IP:"
+                    + wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake
+                    + ";"
+                    + wrong_ip.raw_ip_address
+                    + ";"
+                    + ",".join(wrong_ip.equipments_names_having_genuinely_this_ip_address)
+                    + ";"
+                    + ",".join([str(matrix_line) for matrix_line in wrong_ip.matrix_line_ids_referencing])
+                    + "\n"
+                )
+
         for directory_path in [constants.OUTPUT_PARENT_DIRECTORY_NAME]:
             file_utils.create_folder_if_not_exist(directory_path)
 
@@ -461,6 +476,21 @@ class NetworkFlowMatrix:
         json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
             equipments_library.not_found_equipments_but_defined_in_flow_matrix, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_unknown_equipments.json"
         )
+
+        with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_unknown_equipments.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
+            for not_found_eqpt in equipments_library.not_found_equipments_but_defined_in_flow_matrix:
+                matrix_all_unknown_equipments_file.write(
+                    "Not Found;"
+                    + not_found_eqpt.name
+                    + ";IP addresses:"
+                    + ",".join(not_found_eqpt.raw_ip_addresses)
+                    + ";Other equipment matching:"
+                    + ",".join(not_found_eqpt.alternative_names_matching_ip)
+                    + ";"
+                    + ",".join([str(matrix_line) for matrix_line in not_found_eqpt.matrix_line_ids_referencing])
+                    + "\n"
+                )
+
         json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
             equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_wrong_ip.json"
         )
