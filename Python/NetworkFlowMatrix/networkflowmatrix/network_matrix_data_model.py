@@ -423,7 +423,7 @@ class NetworkFlowMatrix:
 
         logger_config.print_and_log_warning(f"After scanning network flow matrix, {len(equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake)} wrong IP address definition")
         logger_config.print_and_log_warning(
-            f"'\n'{'\nWrong IP:'.join([wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake + ";"+ wrong_ip.raw_ip_address+";"+ ",".join(wrong_ip.equipments_names_having_genuinely_this_ip_address) +";" +",".join(wrong_ip.matrix_line_ids_referencing)for wrong_ip in equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake])}"
+            f"'\n'{'\nWrong IP:'.join([wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake + ";"+ wrong_ip.raw_ip_address+";"+ ",".join(wrong_ip.equipments_names_having_genuinely_this_ip_address) +";" +",".join([str(matrix_line) for matrix_line in wrong_ip.matrix_line_ids_referencing]) for wrong_ip in equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake])}"
         )
 
         for directory_path in [constants.OUTPUT_PARENT_DIRECTORY_NAME]:
