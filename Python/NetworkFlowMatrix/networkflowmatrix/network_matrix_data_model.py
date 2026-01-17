@@ -414,16 +414,16 @@ class NetworkFlowMatrix:
         logger_config.print_and_log_warning(
             f"After scanning network flow matrix, {len(equipments_library.not_found_equipment_names)} unknown equipments (not found in network conf files) names are {equipments_library.not_found_equipment_names}"
         )
-        logger_config.print_and_log_warning(f"'\n'{'\n'.join(sorted(list(equipments_library.not_found_equipment_names)))}")
+        logger_config.print_and_log_warning(f"'\n'{'\nnot_found_equipment_names'.join(sorted(list(equipments_library.not_found_equipment_names)))}")
 
         logger_config.print_and_log_warning(
             f"After scanning network flow matrix, {len(equipments_library.not_found_equipment_names_and_raw_ip_address)} unknown equipments (not found in network conf files) names and IP addresses are {equipments_library.not_found_equipment_names}"
         )
-        logger_config.print_and_log_warning(f"'\n'{'\n'.join(sorted(list(equipments_library.not_found_equipment_names_and_raw_ip_address)))}")
+        logger_config.print_and_log_warning(f"'\n'{'\nnot_found_equipment_names_and_raw_ip_address'.join(sorted(list(equipments_library.not_found_equipment_names_and_raw_ip_address)))}")
 
         logger_config.print_and_log_warning(f"After scanning network flow matrix, {len(equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake)} wrong IP address definition")
         logger_config.print_and_log_warning(
-            f"'\n'{'\n'.join([wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake + ";"+ wrong_ip.raw_ip_address+";"+ ",".join(wrong_ip.equipments_names_having_genuinely_this_ip_address) for wrong_ip in equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake])}"
+            f"'\n'{'\nWrong IP:'.join([wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake + ";"+ wrong_ip.raw_ip_address+";"+ ",".join(wrong_ip.equipments_names_having_genuinely_this_ip_address) +";" +",".join(wrong_ip.matrix_line_ids_referencing)for wrong_ip in equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake])}"
         )
 
         for directory_path in [constants.OUTPUT_PARENT_DIRECTORY_NAME]:
