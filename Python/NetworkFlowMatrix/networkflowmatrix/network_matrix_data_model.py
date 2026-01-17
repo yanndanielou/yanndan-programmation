@@ -173,7 +173,7 @@ class FlowEndPoint:
             ip_addresses_without_equipment_name = self.raw_ip_addresses[len(self.equipments_names) :]
             for ip_address_without_equipment_name in ip_addresses_without_equipment_name:
                 logger_config.print_and_log_error(
-                    f"Error at line {self.matrix_line_identifier}: missing equipment line for {ip_address_without_equipment_name} (it belongs to ({",".join([equipment.name for equipment in equipments_library.get_existing_equipment_by_raw_ip_address(ip_address_without_equipment_name)])}))"
+                    f"Error at line {self.matrix_line_identifier}: missing equipment line for {ip_address_without_equipment_name} (this IP belongs to ({",".join([equipment.name for equipment in equipments_library.get_existing_equipment_by_raw_ip_address(ip_address_without_equipment_name)])}))"
                 )
             pass
 
