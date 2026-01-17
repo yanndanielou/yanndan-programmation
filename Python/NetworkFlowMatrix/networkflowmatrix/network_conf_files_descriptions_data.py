@@ -493,8 +493,8 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
                         groups_definitions=eqpt_info.goups_definitions,
                     )
                     for eqpt_info in [
-                        EquipmentInfo("PAE_A", [GroupDefinition("PAE", "172.20.0.0/16")], ForcedStrValueInformationDefinition("255.255.255.224 /27)")),
-                        EquipmentInfo("PAE_B", [GroupDefinition("PAE", "172.20.0.0/16")], ForcedStrValueInformationDefinition("255.255.255.224 /27)")),
+                        EquipmentInfo("PAE_A", [GroupDefinition("PAE", "172.20.0.0/16"), GroupDefinition("PAE_A", "172.20.0.0/16")], ForcedStrValueInformationDefinition("255.255.255.224 /27)")),
+                        EquipmentInfo("PAE_B", [GroupDefinition("PAE", "172.20.0.0/16"), GroupDefinition("PAE_B", "172.20.0.0/16")], ForcedStrValueInformationDefinition("255.255.255.224 /27)")),
                         EquipmentInfo("PPN_A_1", [GroupDefinition("PPN_A_1", "172.20.0.0/16")], None),
                         EquipmentInfo("PPN_B_1", [GroupDefinition("PPN_B_1", "172.20.0.0/16")], None),
                         EquipmentInfo("PPN_A_2", [GroupDefinition("PPN_A_2", "172.20.0.0/16")], None),
