@@ -167,6 +167,10 @@ class FlowEndPoint:
         if len(self.equipments_names) > len(self.raw_ip_addresses) and len(self.raw_ip_addresses) > 1:
             logger_config.print_and_log_error(f"Error at line {self.matrix_line_identifier}: missing IP addresses for {self.equipments_names}, see {self.raw_ip_addresses}")
 
+        # If more IP than equipment names:
+        if len(self.equipments_names) > 1 and len(self.equipments_names) < len(self.raw_ip_addresses):
+            logger_config.print_and_log_error(f"Error at line {self.matrix_line_identifier}: Too few equipment names {self.equipments_names} compared to {self.raw_ip_addresses}")
+
         for index_eqpt, equipment_name in enumerate(self.equipments_names):
             assert equipment_name
             assert len(equipment_name.split()) > 0
