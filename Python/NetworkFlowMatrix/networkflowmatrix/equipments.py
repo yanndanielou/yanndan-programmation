@@ -193,7 +193,7 @@ class NetworkConfFilesEquipmentsLibrary:
             )
             self.wrong_equipment_name_allocated_to_this_ip_by_mistake.append(wrong_ip_def)
 
-        wrong_ip_def.equipments_names_having_genuinely_this_ip_address.union(equipments_names_having_genuinely_this_ip_address)
+        wrong_ip_def.equipments_names_having_genuinely_this_ip_address = wrong_ip_def.equipments_names_having_genuinely_this_ip_address.union(equipments_names_having_genuinely_this_ip_address)
         wrong_ip_def.matrix_line_ids_referencing.append(matrix_line_id_referencing)
 
         return wrong_ip_def
