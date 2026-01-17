@@ -179,10 +179,12 @@ class FlowEndPoint:
                 eqpt_ip_address_raw = INVALID_IP_ADDRESS
             elif len(self.raw_ip_addresses) <= index_eqpt and len(self.raw_ip_addresses) == 1 and self.allow_one_ip_for_several_equipments:
                 logger_config.print_and_log_info(f"At line {self.matrix_line_identifier}: equipment {equipment_name} shared  ip {self.raw_ip_addresses[0]}: is shared with {self.equipments_names}")
-                eqpt_ip_address_raw = self.raw_ip_addresses[0]
+                eqpt_ip_address_raw = self.raw_ip_addresses[0].strip()
             else:
                 try:
-                    eqpt_ip_address_raw = self.raw_ip_addresses[index_eqpt] if len(self.raw_ip_addresses) > 1 else self.raw_ip_addresses[0] if len(self.raw_ip_addresses) == 1 else MISSING_IP_ADDRESS
+                    eqpt_ip_address_raw = (
+                        self.raw_ip_addresses[index_eqpt].strip() if len(self.raw_ip_addresses) > 1 else self.raw_ip_addresses[0] if len(self.raw_ip_addresses) == 1 else MISSING_IP_ADDRESS
+                    )
                     if eqpt_ip_address_raw == MISSING_IP_ADDRESS:
                         logger_config.print_and_log_error(f"At line {self.matrix_line_identifier}: Missing IP address for {equipment_name}")
                 except IndexError:
@@ -200,12 +202,6 @@ class FlowEndPoint:
                         logger_config.print_and_log_error(
                             f"At line {self.matrix_line_identifier}: equipment {equipment_name} defined with {eqpt_ip_address_raw}, but this IP is not defined for this equipment in network conf files. This IP is defined for {','.join([eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address])}"
                         )
-                    wrong_ip = equipments_library.add_wrong_or_unknown_ip_address_in_matrix_flow(
-                        wrong_equipment_name_allocated_to_this_ip_by_mistake=equipment_name,
-                        raw_ip_address=eqpt_ip_address_raw,
-                        equipments_names_having_genuinely_this_ip_address=set([eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address]),
-                        matrix_line_id_referencing=self.matrix_line_identifier,
-                    )
 
             if equipment_in_network_conf_file_by_name is None:
                 equipments_in_network_conf_file_matching_group = equipments_library.get_existing_equipments_by_group(
@@ -217,6 +213,13 @@ class FlowEndPoint:
                     )
 
                 else:
+
+                    equipments_library.add_wrong_or_unknown_ip_address_in_matrix_flow(
+                        wrong_equipment_name_allocated_to_this_ip_by_mistake=equipment_name,
+                        raw_ip_address=eqpt_ip_address_raw,
+                        equipments_names_having_genuinely_this_ip_address=set([eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address]),
+                        matrix_line_id_referencing=self.matrix_line_identifier,
+                    )
                     equipment_not_found = equipments_library.add_not_found_equipment_but_defined_in_network_flow_matrix(
                         name=equipment_name, raw_ip_address=eqpt_ip_address_raw, matrix_line_id_referencing=self.matrix_line_identifier
                     )
