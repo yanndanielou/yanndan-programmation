@@ -340,12 +340,12 @@ class NetworkConfFilesEquipmentsLibrary:
         for equipment in self.all_network_conf_files_defined_equipments:
             data_to_dump.append(
                 (
-                    equipment.name,
-                    equipment.source_label,
+                    f"name:{equipment.name}",
+                    f"Source:{equipment.source_label}",
                     f"Types:{', '.join(list(equipment.equipment_types))}",
                     f"Alternative ids:{', '.join([str(alter) for alter in equipment.alternative_identifiers])}",
                     f"Ip:{', '.join([ip.ip_raw for ip in equipment.ip_addresses])}",
-                    f"Masks:{', '.join([group.definition.name + ' ' + group.definition.subnet_and_mask for  group in equipment.groups])}  ",
+                    f"Masks:{', '.join([group.definition.name + ' ' + group.definition.subnet_and_mask for  group in equipment.groups])}",
                 )
             )
 
