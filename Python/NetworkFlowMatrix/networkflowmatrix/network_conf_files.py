@@ -300,7 +300,7 @@ class NetworkConfFile(GenericConfFile):
 
                                 if number_of_not_null_columns == 0:
                                     logger_config.print_and_log_warning(
-                                        f"Ignore {usefull_raw_number} th row in {excel_file_full_path} tab {equipment_definition_tab.tab_name} because seems null ({number_of_null_columns} null columns, {number_of_not_null_columns} not null columns, {number_of_na_columns} na columns, {number_of_not_na_columns} not na columns): {row}"
+                                        f"Ignore {usefull_raw_number} th row in {excel_file_full_path} tab {equipment_definition_tab.tab_name} because seems null ({number_of_null_columns} null columns, {number_of_not_null_columns} not null columns, {number_of_na_columns} na columns, {number_of_not_na_columns} not na columns): {row[:3]}"
                                     )
                                     continue
 
@@ -314,7 +314,7 @@ class NetworkConfFile(GenericConfFile):
                                     assert train
 
                                     if train in equipments_library.all_ignored_trains_unbreakable_units:
-                                        logger_config.print_and_log_info(f"Ignore row {row} because train with cc_id {train.cc_id} is in black list {constants.TO_IGNORE_TRAINS_IDS}")
+                                        logger_config.print_and_log_info(f"Ignore row {row[:3]} because train with cc_id {train.cc_id} is in black list {constants.TO_IGNORE_TRAINS_IDS}")
                                         continue
 
                                     equipment_name = f"TRAIN_CC_{train.cc_id}_{equipment_name}"
