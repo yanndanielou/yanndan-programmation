@@ -166,14 +166,16 @@ class FlowEndPoint:
     def match_equipments_with_network_conf_files(self, equipments_library: equipments.NetworkConfFilesEquipmentsLibrary) -> None:
 
         if len(self.equipments_names) > len(self.raw_ip_addresses) and len(self.raw_ip_addresses) > 1:
-            logger_config.print_and_log_error(f"Error at line {self.matrix_line_identifier}: missing IP addresses for {self.equipments_names}, see {self.raw_ip_addresses}")
+            logger_config.print_and_log_error(to_print_and_log=f"Error at line {self.matrix_line_identifier}: missing IP addresses for {self.equipments_names}, see {self.raw_ip_addresses}")
 
         # If more IP than equipment names:
         """if len(self.equipments_names) > 1 and len(self.equipments_names) < len(self.raw_ip_addresses):
-            logger_config.print_and_log_error(f"Error at line {self.matrix_line_identifier}: Too few equipment names {self.equipments_names} compared to {self.raw_ip_addresses}")
+            logger_config.print_and_log_error(
+                                    to_print_and_log=f"Error at line {self.matrix_line_identifier}: Too few equipment names {self.equipments_names} compared to {self.raw_ip_addresses}")
             ip_addresses_without_equipment_name = self.raw_ip_addresses[len(self.equipments_names) :]
             for ip_address_without_equipment_name in ip_addresses_without_equipment_name:
                 logger_config.print_and_log_error(
+                                    to_print_and_log=
                     f"Error at line {self.matrix_line_identifier}: missing equipment line for {ip_address_without_equipment_name} (this IP belongs to ({",".join([equipment.name for equipment in equipments_library.get_existing_equipment_by_raw_ip_address(ip_address_without_equipment_name)])}))"
                 )
             pass"""
@@ -202,7 +204,7 @@ class FlowEndPoint:
             ):
                 if not is_first_time_equipment_line_is_used:
                     logger_config.print_and_log_info(
-                        f"line {self.matrix_line_identifier}:also use next IP {self.raw_ip_addresses[index_ip_addr+1]} for equipment {equipment_name}. Previously used IP was {self.raw_ip_addresses[index_ip_addr]}"
+                        to_print_and_log=f"line {self.matrix_line_identifier}:also use next IP {self.raw_ip_addresses[index_ip_addr+1]} for equipment {equipment_name}. Previously used IP was {self.raw_ip_addresses[index_ip_addr]}"
                     )
 
                 is_first_time_equipment_line_is_used = False
@@ -216,7 +218,7 @@ class FlowEndPoint:
                 if len(self.raw_ip_addresses) <= index_ip_addr and len(self.raw_ip_addresses) > 1:
                     equipment_in_network_conf_file_by_name = equipments_library.get_existing_equipment_by_name(expected_equipment_name=equipment_name, allow_not_exact_name=True)
                     logger_config.print_and_log_error(
-                        f"Error at line {self.matrix_line_identifier}: no IP found for {equipment_name} (not enough lines). In network conf, equipment {(equipment_in_network_conf_file_by_name.name+ ' with Ip: ' if equipment_in_network_conf_file_by_name else 'Not found')} {",".join([ip.ip_raw for ip in equipment_in_network_conf_file_by_name.ip_addresses]) if equipment_in_network_conf_file_by_name else 'found'}"
+                        to_print_and_log=f"Error at line {self.matrix_line_identifier}: no IP found for {equipment_name} (not enough lines). In network conf, equipment {(equipment_in_network_conf_file_by_name.name+ ' with Ip: ' if equipment_in_network_conf_file_by_name else 'Not found')} {",".join([ip.ip_raw for ip in equipment_in_network_conf_file_by_name.ip_addresses]) if equipment_in_network_conf_file_by_name else 'found'}"
                     )
                     eqpt_ip_address_raw = INVALID_IP_ADDRESS
                     equipments_library.add_wrong_or_unknown_ip_address_in_matrix_flow(
@@ -226,7 +228,10 @@ class FlowEndPoint:
                         matrix_line_id_referencing=self.matrix_line_identifier,
                     )
                 elif len(self.raw_ip_addresses) <= index_ip_addr and len(self.raw_ip_addresses) == 1 and self.allow_one_ip_for_several_equipments:
-                    logger_config.print_and_log_info(f"At line {self.matrix_line_identifier}: equipment {equipment_name} shared  ip {self.raw_ip_addresses[0]}: is shared with {self.equipments_names}")
+                    logger_config.print_and_log_info(
+                        to_print_and_log=f"At line {self.matrix_line_identifier}: equipment {equipment_name} shared  ip {self.raw_ip_addresses[0]}: is shared with {self.equipments_names}",
+                        do_not_print=True,
+                    )
                     eqpt_ip_address_raw = self.raw_ip_addresses[0]
                 else:
                     try:
@@ -234,7 +239,7 @@ class FlowEndPoint:
                             self.raw_ip_addresses[index_ip_addr] if len(self.raw_ip_addresses) > 1 else self.raw_ip_addresses[0] if len(self.raw_ip_addresses) == 1 else MISSING_IP_ADDRESS
                         )
                         if eqpt_ip_address_raw == MISSING_IP_ADDRESS:
-                            logger_config.print_and_log_error(f"At line {self.matrix_line_identifier}: Missing IP address for {equipment_name}")
+                            logger_config.print_and_log_error(to_print_and_log=f"At line {self.matrix_line_identifier}: Missing IP address for {equipment_name}")
                             equipments_library.add_wrong_or_unknown_ip_address_in_matrix_flow(
                                 wrong_equipment_name_allocated_to_this_ip_by_mistake=equipment_name,
                                 raw_ip_address=eqpt_ip_address_raw,
@@ -256,11 +261,11 @@ class FlowEndPoint:
                 if equipment_in_network_conf_file_by_name:
                     if eqpt_ip_address_raw not in [ip.ip_raw for ip in equipment_in_network_conf_file_by_name.ip_addresses]:
                         logger_config.print_and_log_error(
-                            f"At line {self.matrix_line_identifier}: equipment {equipment_name} defined with {eqpt_ip_address_raw}, but this IP is not defined for this equipment in network conf files. Known IP are {','.join([ip.ip_raw for ip in equipment_in_network_conf_file_by_name.ip_addresses])}"
+                            to_print_and_log=f"At line {self.matrix_line_identifier}: equipment {equipment_name} defined with {eqpt_ip_address_raw}, but this IP is not defined for this equipment in network conf files. Known IP are {','.join([ip.ip_raw for ip in equipment_in_network_conf_file_by_name.ip_addresses])}"
                         )
                         if equipments_in_network_conf_file_matching_ip_address:
                             logger_config.print_and_log_error(
-                                f"At line {self.matrix_line_identifier}: equipment {equipment_name} defined with {eqpt_ip_address_raw}, but this IP is not defined for this equipment in network conf files. This IP is defined for {','.join([eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address])}"
+                                to_print_and_log=f"At line {self.matrix_line_identifier}: equipment {equipment_name} defined with {eqpt_ip_address_raw}, but this IP is not defined for this equipment in network conf files. This IP is defined for {','.join([eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address])}"
                             )
                         equipments_library.add_wrong_or_unknown_ip_address_in_matrix_flow(
                             wrong_equipment_name_allocated_to_this_ip_by_mistake=equipment_name,
@@ -275,7 +280,8 @@ class FlowEndPoint:
                     )
                     if equipments_in_network_conf_file_matching_group:
                         logger_config.print_and_log_info(
-                            f"{self.matrix_line_identifier}: Found {len(equipments_in_network_conf_file_matching_group)} equipments in group {equipment_name} with subnet/mask {eqpt_ip_address_raw}"
+                            to_print_and_log=f"{self.matrix_line_identifier}: Found {len(equipments_in_network_conf_file_matching_group)} equipments in group {equipment_name} with subnet/mask {eqpt_ip_address_raw}",
+                            do_not_print=True,
                         )
 
                     else:
@@ -290,11 +296,13 @@ class FlowEndPoint:
                             name=equipment_name, raw_ip_address=eqpt_ip_address_raw, matrix_line_id_referencing=self.matrix_line_identifier
                         )
                         logger_config.print_and_log_error(
-                            f"{self.matrix_line_identifier}: Could not find equipment {equipment_name} in network conf files. Searching with IP {eqpt_ip_address_raw}, found {len(equipments_in_network_conf_file_matching_ip_address)} equipments {[eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address]}"
+                            to_print_and_log=f"{self.matrix_line_identifier}: Could not find equipment {equipment_name} in network conf files. Searching with IP {eqpt_ip_address_raw}, found {len(equipments_in_network_conf_file_matching_ip_address)} equipments {[eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address]}"
                         )
 
                         if equipments_in_network_conf_file_matching_ip_address is None:
-                            logger_config.print_and_log_error(f"{self.matrix_line_identifier}: {equipment_name}: Ip address {eqpt_ip_address_raw} not defined in any network conf file")
+                            logger_config.print_and_log_error(
+                                to_print_and_log=f"{self.matrix_line_identifier}: {equipment_name}: Ip address {eqpt_ip_address_raw} not defined in any network conf file"
+                            )
 
                             equipments_library.not_found_equipment_names.add(f"{equipment_name}. No alternative name found")
                             equipments_library.not_found_equipment_names_and_raw_ip_address.add(f"{equipment_name};{eqpt_ip_address_raw};. No alternative name found")
@@ -305,7 +313,8 @@ class FlowEndPoint:
                                     if equipments_in_network_conf_file_matching_ip_address is None:
                                         equipments_in_network_conf_file_matching_ip_address = []
                                     logger_config.print_and_log_info(
-                                        f"{self.matrix_line_identifier}: Re-allocate {equipment_name} to {equipment_in_network_conf_file_matching_ip_address_it.name} thanks to IP {eqpt_ip_address_raw}"
+                                        to_print_and_log=f"{self.matrix_line_identifier}: Re-allocate {equipment_name} to {equipment_in_network_conf_file_matching_ip_address_it.name} thanks to IP {eqpt_ip_address_raw}",
+                                        do_not_print=True,
                                     )
                                     # equipments_in_network_conf_file_matching_ip_address.append(equipment_in_network_conf_file_matching_ip_address_it)
                                     # Should we add the new name to the dictionnary here to find it by name?
@@ -319,7 +328,7 @@ class FlowEndPoint:
                                     continue
                             if equipments_in_network_conf_file_matching_ip_address:
                                 logger_config.print_and_log_error(
-                                    f"{self.matrix_line_identifier}: Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in {[equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]}"
+                                    to_print_and_log=f"{self.matrix_line_identifier}: Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in {[equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]}"
                                 )
                                 equipments_library.not_found_equipment_names.add(equipment_name + f" - found {[equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]}")
                                 equipments_library.not_found_equipment_names_and_raw_ip_address.add(
@@ -344,11 +353,11 @@ class FlowEndPoint:
 
         assert index_eqpt >= 0
         if (index_ip_addr + 1) < len(self.raw_ip_addresses):
-            logger_config.print_and_log_error(f"Error at line {self.matrix_line_identifier}: Too few equipment names {self.equipments_names} compared to {self.raw_ip_addresses}")
+            logger_config.print_and_log_error(to_print_and_log=f"Error at line {self.matrix_line_identifier}: Too few equipment names {self.equipments_names} compared to {self.raw_ip_addresses}")
             ip_addresses_without_equipment_name = self.raw_ip_addresses[index_eqpt:]
             for ip_address_without_equipment_name in ip_addresses_without_equipment_name:
                 logger_config.print_and_log_error(
-                    f"Error at line {self.matrix_line_identifier}: missing equipment line for {ip_address_without_equipment_name} (this IP belongs to ({",".join([equipment.name for equipment in equipments_library.get_existing_equipment_by_raw_ip_address(ip_address_without_equipment_name)])}))"
+                    to_print_and_log=f"Error at line {self.matrix_line_identifier}: missing equipment line for {ip_address_without_equipment_name} (this IP belongs to ({",".join([equipment.name for equipment in equipments_library.get_existing_equipment_by_raw_ip_address(ip_address_without_equipment_name)])}))"
                 )
             pass
 
@@ -458,8 +467,8 @@ class NetworkFlowMatrix:
         @staticmethod
         def build_with_excel_file(excel_file_full_path: str, sheet_name: str = "Matrice_de_Flux_SITE") -> "NetworkFlowMatrix":
             main_data_frame = pandas.read_excel(excel_file_full_path, skiprows=[0, 1, 2, 3, 4], sheet_name=sheet_name)
-            logger_config.print_and_log_info(f"Flow matrix {excel_file_full_path} has {len(main_data_frame)} items")
-            logger_config.print_and_log_info(f"Flow matrix {excel_file_full_path} columns  {main_data_frame.columns[:4]} ...")
+            logger_config.print_and_log_info(to_print_and_log=f"Flow matrix {excel_file_full_path} has {len(main_data_frame)} items")
+            logger_config.print_and_log_info(to_print_and_log=f"Flow matrix {excel_file_full_path} columns  {main_data_frame.columns[:4]} ...")
 
             network_flow_matrix_lines: List[NetworkFlowMatrixLine] = []
             network_flow_matrix_lines_by_identifier: Dict[int, "NetworkFlowMatrixLine"] = {}
