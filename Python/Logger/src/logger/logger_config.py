@@ -100,12 +100,13 @@ def print_and_log_info(to_print_and_log: str, do_not_print: bool = False) -> Non
     logging.info(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
 
-def print_and_log_warning(to_print_and_log: str) -> None:
+def print_and_log_warning(to_print_and_log: str, do_not_print: bool = False) -> None:
     """Print in standard output and log in file as info level"""
     log_timestamp = time.asctime(time.localtime(time.time()))
 
     # pylint: disable=line-too-long
-    print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + str() + to_print_and_log)
+    if not do_not_print:
+        print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + str() + to_print_and_log)
     logging.warning(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
 
@@ -136,9 +137,9 @@ def print_and_log_error(
 ) -> None:
     """Print in standard output and log in file as error level"""
     log_timestamp = time.asctime(time.localtime(time.time()))
-    print(log_timestamp + "\t" + "!!ERROR!!")
-    # pylint: disable=line-too-long
     if not do_not_print:
+        print(log_timestamp + "\t" + "!!ERROR!!")
+        # pylint: disable=line-too-long
         print(
             log_timestamp
             + "\t"
