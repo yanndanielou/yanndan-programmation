@@ -261,7 +261,8 @@ class FlowEndPoint:
                 if equipment_in_network_conf_file_by_name:
                     if eqpt_ip_address_raw not in [ip.ip_raw for ip in equipment_in_network_conf_file_by_name.ip_addresses]:
                         logger_config.print_and_log_error(
-                            to_print_and_log=f"At line {self.matrix_line_identifier}: equipment {equipment_name} defined with {eqpt_ip_address_raw}, but this IP is not defined for this equipment in network conf files. Known IP are {','.join([ip.ip_raw for ip in equipment_in_network_conf_file_by_name.ip_addresses])}"
+                            to_print_and_log=f"At line {self.matrix_line_identifier}: equipment {equipment_name} defined with {eqpt_ip_address_raw}, but this IP is not defined for this equipment in network conf files. Known IP are {','.join([ip.ip_raw for ip in equipment_in_network_conf_file_by_name.ip_addresses])}",
+                            do_not_print=True,
                         )
                         if equipments_in_network_conf_file_matching_ip_address:
                             logger_config.print_and_log_error(
@@ -301,7 +302,7 @@ class FlowEndPoint:
 
                         if equipments_in_network_conf_file_matching_ip_address is None:
                             logger_config.print_and_log_error(
-                                to_print_and_log=f"{self.matrix_line_identifier}: {equipment_name}: Ip address {eqpt_ip_address_raw} not defined in any network conf file"
+                                to_print_and_log=f"{self.matrix_line_identifier}: {equipment_name}: Ip address {eqpt_ip_address_raw} not defined in any network conf file", do_not_print=True
                             )
 
                             equipments_library.not_found_equipment_names.add(f"{equipment_name}. No alternative name found")
@@ -328,7 +329,8 @@ class FlowEndPoint:
                                     continue
                             if equipments_in_network_conf_file_matching_ip_address:
                                 logger_config.print_and_log_error(
-                                    to_print_and_log=f"{self.matrix_line_identifier}: Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in {[equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]}"
+                                    to_print_and_log=f"{self.matrix_line_identifier}: Ip address {eqpt_ip_address_raw} not allocated to {equipment_name} in network files but in {[equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]}",
+                                    do_not_print=True,
                                 )
                                 equipments_library.not_found_equipment_names.add(equipment_name + f" - found {[equipment.name for equipment in equipments_in_network_conf_file_matching_ip_address]}")
                                 equipments_library.not_found_equipment_names_and_raw_ip_address.add(
