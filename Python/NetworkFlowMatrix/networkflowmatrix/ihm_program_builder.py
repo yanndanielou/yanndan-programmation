@@ -2,14 +2,18 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, List, Optional, cast
-import pandas
 
+import pandas
 from logger import logger_config
 
 from networkflowmatrix import network_conf_files
+from networkflowmatrix.groups import GroupDefinition
 
 if TYPE_CHECKING:
-    from networkflowmatrix.equipments import NetworkConfFilesEquipmentsLibrary, NetworkConfFilesDefinedEquipment
+    from networkflowmatrix.equipments import (
+        NetworkConfFilesDefinedEquipment,
+        NetworkConfFilesEquipmentsLibrary,
+    )
 
 
 @dataclass
@@ -106,11 +110,11 @@ class FdiffClientsConfFile(network_conf_files.GenericConfFile):
 
                     emplacement_raw = cast(str, row["Emplacement Terminal"])
                     terminal_raw = cast(str, row["Terminal"])
-                    adresses_raw = cast(str, row["@IP des terminaux (2)"])
+                    ip_adress_raw = cast(str, row["@IP des terminaux (2)"])
                     gateway_raw = cast(str, row["Gateway (2)"])
                     mask_raw = cast(str, row["Masque (2)"])
 
-                    if str(adresses_raw) == "nan":
+                    if str(ip_adress_raw) == "nan":
                         logger_config.print_and_log_warning(f"{excel_file_full_path} : ignore {usefull_raw_number}th row because missing info")
                         continue
 
@@ -121,9 +125,13 @@ class FdiffClientsConfFile(network_conf_files.GenericConfFile):
 
                     equipment.add_ip_address(
                         network_conf_files.NetworkConfFilesDefinedUnicastIpAddress(
-                            ip_raw=adresses_raw, label=None, mask=mask_raw, gateway=gateway_raw, vlan_name=None, gateway_is_optional=True, mask_is_optional=True
+                            ip_raw=ip_adress_raw, label=None, mask=mask_raw, gateway=gateway_raw, vlan_name=None, gateway_is_optional=True, mask_is_optional=True
                         )
                     )
+                    equipment.add_equipment_type("CLIENT_FDIFF")
+
+                    group = equipments_library.get_or_create_group(GroupDefinition(name="CLIENT_FDIFF", subnet_and_mask=ip_adress_raw))
+                    group.add_equipment(equipment)
 
                 logger_config.print_and_log_info(f"{excel_file_full_path} tab {sheet_name}: {len(all_equipments_found)} equipment found")
 
