@@ -149,6 +149,7 @@ class NetworkConfFilesEquipmentsLibrary:
         def add_manual_entries(self) -> "NetworkConfFilesEquipmentsLibrary.Builder":
             self.conf_files.append(manual_equipments_builder.SithConfFile.Builder.build(equipments_library=self.equipments_library_being_created))
             self.conf_files.append(manual_equipments_builder.TrainsConfFile.Builder.build(equipments_library=self.equipments_library_being_created))
+            self.conf_files.append(manual_equipments_builder.OtherManualIpAddresses.Builder.build(equipments_library=self.equipments_library_being_created))
             return self
 
         def build(self) -> "NetworkConfFilesEquipmentsLibrary":
@@ -182,7 +183,7 @@ class NetworkConfFilesEquipmentsLibrary:
         wrong_eqpts = [
             wrong
             for wrong in self.wrong_equipment_name_allocated_to_this_ip_by_mistake
-            if wrong.wrong_equipment_name_allocated_to_this_ip_by_mistake == wrong_equipment_name_allocated_to_this_ip_by_mistake
+            if wrong.wrong_equipment_name_allocated_to_this_ip_by_mistake == wrong_equipment_name_allocated_to_this_ip_by_mistake and wrong.raw_ip_address == raw_ip_address
         ]
         if wrong_eqpts:
             wrong_ip_def = wrong_eqpts[0]
