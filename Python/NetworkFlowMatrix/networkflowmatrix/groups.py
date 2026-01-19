@@ -23,4 +23,4 @@ class Group:
             equipment.groups.append(self)
             self.equipments.append(equipment)
         else:
-            logger_config.print_and_log_warning(f"Group {self.definition} already in {equipment.name}")
+            logger_config.print_and_log_warning(to_print_and_log=f"Group {self.definition} already in {equipment.name}", do_not_print=True)

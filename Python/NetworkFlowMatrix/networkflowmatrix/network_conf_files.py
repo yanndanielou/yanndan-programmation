@@ -119,7 +119,7 @@ class UnicastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
     def build_with_row(self, row: pandas.Series) -> NetworkConfFilesDefinedIpAddress:
         equipment_raw_ip_address = cast(str, self.equipment_ip_address_column_definition.get_value(row))
 
-        assert equipment_raw_ip_address and isinstance(equipment_raw_ip_address, str), f"\n Ip address: {equipment_raw_ip_address}\nRow: {row}"
+        assert equipment_raw_ip_address and isinstance(equipment_raw_ip_address, str), f"\n Ip address: {equipment_raw_ip_address}\nRow: {row[:3]}"
 
         # ip_address = NetworkConfFilesDefinedUnicasttIpAddress(ip_raw=)
         if self.equipment_vlan_column_definition:
@@ -351,7 +351,7 @@ class NetworkConfFile(GenericConfFile):
                                         assert len(equipment.ip_addresses) < 10, f"{equipment_name}\n{[ip.ip_raw for ip in equipment.ip_addresses]}\n\n{equipment}"
                                 else:
                                     logger_config.print_and_log_error(
-                                        f"In {excel_file_full_path} tab {equipment_definition_tab.tab_name} Could not create {usefull_raw_number+1}th object with invalid id {equipment_name} for row {row}"
+                                        f"In {excel_file_full_path} tab {equipment_definition_tab.tab_name} Could not create {usefull_raw_number+1}th object with invalid id {equipment_name} for row {row[:3]}"
                                     )
 
                             for ip_address_definition in equipment_definition.equipment_ip_definitions:
