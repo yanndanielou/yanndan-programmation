@@ -51,11 +51,12 @@ class IhmProgrammConfFile(network_conf_files.GenericConfFile):
                     mask_raw = cast(str, row["Masque"])
 
                     location_is_defined = str(emplacement_raw) != "nan"
-                    location = emplacement_raw if location_is_defined else last_valid_location
+                    location = emplacement_raw.replace("\n", "\\n") if location_is_defined else last_valid_location
 
                     module_is_defined = str(module_raw) != "nan"
-                    module = module_raw if module_is_defined else last_valid_module
-                    equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(name=location + "_" + module, source_label_for_creation=f"{excel_file_full_path}/{"P2-4"}")
+                    module = module_raw.replace("\n", "\\n") if module_is_defined else last_valid_module
+                    name = location + "_" + module
+                    equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(name=name, source_label_for_creation=f"{excel_file_full_path}/{"P2-4"}")
                     all_equipments_found.append(equipment)
                     ip_address = adresses_raw.replace("(1)", "").replace(" ", "")
                     try:
@@ -65,13 +66,13 @@ class IhmProgrammConfFile(network_conf_files.GenericConfFile):
                             )
                         )
                     except AssertionError:
-                        logger_config.print_and_log_error(f"Could not create IP {ip_address} for {module} in {emplacement_raw} because is already defined for it")
+                        logger_config.print_and_log_error(f"Could not create IP {ip_address} for {module} in {location} because is already defined for it")
 
                     if module_is_defined:
-                        last_valid_module = module_raw
+                        last_valid_module = module
 
                     if location_is_defined:
-                        last_valid_location = emplacement_raw
+                        last_valid_location = location
 
                 logger_config.print_and_log_info(f"{excel_file_full_path} tab {sheet_name}: {len(all_equipments_found)} equipment found")
 

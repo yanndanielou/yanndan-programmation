@@ -66,6 +66,7 @@ class NetworkConfFilesDefinedEquipment:
 
     def __post_init__(self) -> None:
         assert self.name
+        assert "\n" not in self.name, f"Invalid name {self.name} from {self.source_label}"
         assert isinstance(self.name, str)
         if self.name in self.library.names_equivalences_manager.names_equivalences_data.values():
             alternative_names = [key for key, val in self.library.names_equivalences_manager.names_equivalences_data.items() if val == self.name]
