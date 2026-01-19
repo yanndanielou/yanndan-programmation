@@ -90,12 +90,13 @@ def print_and_log_info_if(condition: bool, to_print_and_log: str) -> None:
         logging.info(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
 
-def print_and_log_info(to_print_and_log: str) -> None:
+def print_and_log_info(to_print_and_log: str, do_not_print: bool = False) -> None:
     """Print in standard output and log in file as info level"""
     log_timestamp = time.asctime(time.localtime(time.time()))
 
     # pylint: disable=line-too-long
-    print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + to_print_and_log)
+    if not do_not_print:
+        print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + to_print_and_log)
     logging.info(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
 
@@ -129,6 +130,7 @@ def print_and_log_exception(exception_to_print: Exception, additional_text: Opti
 
 def print_and_log_error(
     to_print_and_log: str,
+    do_not_print: bool = False,
     call_stack_context: int = DEFAULT_CALL_STACK_CONTEXT_VALUE,
     call_stack_frame: int = DEFAULT_CALL_STACK_FRAME_VALUE,
 ) -> None:
@@ -136,16 +138,17 @@ def print_and_log_error(
     log_timestamp = time.asctime(time.localtime(time.time()))
     print(log_timestamp + "\t" + "!!ERROR!!")
     # pylint: disable=line-too-long
-    print(
-        log_timestamp
-        + "\t"
-        + __get_calling_file_name_and_line_number(
-            call_stack_context=call_stack_context, call_stack_frame=call_stack_frame
+    if not do_not_print:
+        print(
+            log_timestamp
+            + "\t"
+            + __get_calling_file_name_and_line_number(
+                call_stack_context=call_stack_context, call_stack_frame=call_stack_frame
+            )
+            + "\t"
+            + str()
+            + to_print_and_log
         )
-        + "\t"
-        + str()
-        + to_print_and_log
-    )
     logging.error(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
 
