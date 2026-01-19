@@ -11,12 +11,12 @@ if __name__ == "__main__":
             equipments.NetworkConfFilesEquipmentsLibrary()
             .Builder()
             .add_ihm_programm(excel_file_full_path=network_conf_files_descriptions_data.INPUT_DOWNLOAD_FOLDER + "/" + "S2_P2_02 à 08_Ind14.xlsm")
-            .add_manual_entries()
             .add_fdiff_clients(excel_file_full_path=network_conf_files_descriptions_data.INPUT_DOWNLOAD_FOLDER + "/" + "I3G-NEXT-2024-DT-PCM-1103.xlsm")
             .add_network_config_file_with_excel_description(excel_description=network_conf_files_descriptions_data.BordAddressPlanV9Description())
             .add_network_config_file_with_excel_description(excel_description=network_conf_files_descriptions_data.StdRadioNetworkConfV2Description())
             .add_network_config_file_with_excel_description(excel_description=network_conf_files_descriptions_data.SolStdNetworkConfV11Description())
             .add_network_config_file_with_excel_description(excel_description=network_conf_files_descriptions_data.RadioLayoutR841Description())
+            .add_manual_entries()
         ).build()
 
         with logger_config.stopwatch_with_label("Build matrix", inform_beginning=True, monitor_ram_usage=True):
