@@ -9,6 +9,7 @@ from logger import logger_config
 
 from networkflowmatrix import constants, equipments
 
+
 INVALID_IP_ADDRESS = "INVALID_IP_ADDRESS"
 MISSING_IP_ADDRESS = "MISSING_IP_ADDRESS"
 
@@ -168,32 +169,51 @@ class FlowEndPoint:
             logger_config.print_and_log_error(f"Error at line {self.matrix_line_identifier}: missing IP addresses for {self.equipments_names}, see {self.raw_ip_addresses}")
 
         # If more IP than equipment names:
-        if len(self.equipments_names) > 1 and len(self.equipments_names) < len(self.raw_ip_addresses):
+        """if len(self.equipments_names) > 1 and len(self.equipments_names) < len(self.raw_ip_addresses):
             logger_config.print_and_log_error(f"Error at line {self.matrix_line_identifier}: Too few equipment names {self.equipments_names} compared to {self.raw_ip_addresses}")
             ip_addresses_without_equipment_name = self.raw_ip_addresses[len(self.equipments_names) :]
             for ip_address_without_equipment_name in ip_addresses_without_equipment_name:
                 logger_config.print_and_log_error(
                     f"Error at line {self.matrix_line_identifier}: missing equipment line for {ip_address_without_equipment_name} (this IP belongs to ({",".join([equipment.name for equipment in equipments_library.get_existing_equipment_by_raw_ip_address(ip_address_without_equipment_name)])}))"
                 )
-            pass
+            pass"""
 
         index_ip_addr = -1
+        index_eqpt = -1
         for index_eqpt, equipment_name in enumerate(self.equipments_names):
             is_first_time_equipment_line_is_used = True
 
-            while (
-                is_first_time_equipment_line_is_used
-                or equipments_library.get_existing_equipment_by_name(expected_equipment_name=equipment_name, allow_not_exact_name=True)
-                or equipments_library.get_existing_equipments_by_group(expected_group_name=equipment_name, expected_group_subnet_and_mask=self.raw_ip_addresses[index_ip_addr])
+            while is_first_time_equipment_line_is_used or (
+                len(self.raw_ip_addresses) > index_ip_addr + 1  # There are more lines of IP addresses
+                and (
+                    [
+                        same_eqpt
+                        for same_eqpt in equipments_library.get_existing_equipment_by_raw_ip_address(expected_raw_ip_address=self.raw_ip_addresses[index_ip_addr + 1])
+                        if same_eqpt.name == equipment_name or equipment_name in same_eqpt.alternative_identifiers
+                    ]  # The next line of IP address is for the same eqpt (because its IP address)
+                    or [
+                        same_eqpt
+                        for same_eqpt in equipments_library.get_existing_equipments_by_group(
+                            expected_group_name=equipment_name, expected_group_subnet_and_mask=self.raw_ip_addresses[index_ip_addr + 1]
+                        )
+                        # The next line of IP address is for the same eqpt (found with the group)
+                    ]
+                )
             ):
+                if not is_first_time_equipment_line_is_used:
+                    logger_config.print_and_log_info(
+                        f"line {self.matrix_line_identifier}:also use next IP {self.raw_ip_addresses[index_ip_addr+1]} for equipment {equipment_name}. Previously used IP was {self.raw_ip_addresses[index_ip_addr]}"
+                    )
+
                 is_first_time_equipment_line_is_used = False
 
                 index_ip_addr = index_ip_addr + 1
+                assert index_ip_addr < 100, f"At line {self.matrix_line_identifier}: Stucked in infinite loop"
                 assert equipment_name
                 assert len(equipment_name.split()) > 0
                 self.network_flow_matrix.all_equipments_names.add(equipment_name)
 
-                if len(self.raw_ip_addresses) <= index_eqpt and len(self.raw_ip_addresses) > 1:
+                if len(self.raw_ip_addresses) <= index_ip_addr and len(self.raw_ip_addresses) > 1:
                     equipment_in_network_conf_file_by_name = equipments_library.get_existing_equipment_by_name(expected_equipment_name=equipment_name, allow_not_exact_name=True)
                     logger_config.print_and_log_error(
                         f"Error at line {self.matrix_line_identifier}: no IP found for {equipment_name} (not enough lines). In network conf, equipment {(equipment_in_network_conf_file_by_name.name+ ' with Ip: ' if equipment_in_network_conf_file_by_name else 'Not found')} {",".join([ip.ip_raw for ip in equipment_in_network_conf_file_by_name.ip_addresses]) if equipment_in_network_conf_file_by_name else 'found'}"
@@ -205,13 +225,13 @@ class FlowEndPoint:
                         equipments_names_having_genuinely_this_ip_address=set(),
                         matrix_line_id_referencing=self.matrix_line_identifier,
                     )
-                elif len(self.raw_ip_addresses) <= index_eqpt and len(self.raw_ip_addresses) == 1 and self.allow_one_ip_for_several_equipments:
+                elif len(self.raw_ip_addresses) <= index_ip_addr and len(self.raw_ip_addresses) == 1 and self.allow_one_ip_for_several_equipments:
                     logger_config.print_and_log_info(f"At line {self.matrix_line_identifier}: equipment {equipment_name} shared  ip {self.raw_ip_addresses[0]}: is shared with {self.equipments_names}")
                     eqpt_ip_address_raw = self.raw_ip_addresses[0]
                 else:
                     try:
                         eqpt_ip_address_raw = (
-                            self.raw_ip_addresses[index_eqpt] if len(self.raw_ip_addresses) > 1 else self.raw_ip_addresses[0] if len(self.raw_ip_addresses) == 1 else MISSING_IP_ADDRESS
+                            self.raw_ip_addresses[index_ip_addr] if len(self.raw_ip_addresses) > 1 else self.raw_ip_addresses[0] if len(self.raw_ip_addresses) == 1 else MISSING_IP_ADDRESS
                         )
                         if eqpt_ip_address_raw == MISSING_IP_ADDRESS:
                             logger_config.print_and_log_error(f"At line {self.matrix_line_identifier}: Missing IP address for {equipment_name}")
@@ -229,7 +249,7 @@ class FlowEndPoint:
                             equipments_names_having_genuinely_this_ip_address=set(),
                             matrix_line_id_referencing=self.matrix_line_identifier,
                         )
-                print(index_eqpt)
+
                 equipment_in_network_conf_file_by_name = equipments_library.get_existing_equipment_by_name(expected_equipment_name=equipment_name, allow_not_exact_name=True)
                 equipments_in_network_conf_file_matching_ip_address = equipments_library.get_existing_equipment_by_raw_ip_address(eqpt_ip_address_raw)
 
@@ -321,6 +341,16 @@ class FlowEndPoint:
                 assert equipment_detected_in_flow_matrix in self.subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix
 
                 assert self.subsystem_detected_in_flow_matrix in equipment_detected_in_flow_matrix.all_subsystems_detected_in_flow_matrix
+
+        assert index_eqpt >= 0
+        if (index_ip_addr + 1) < len(self.raw_ip_addresses):
+            logger_config.print_and_log_error(f"Error at line {self.matrix_line_identifier}: Too few equipment names {self.equipments_names} compared to {self.raw_ip_addresses}")
+            ip_addresses_without_equipment_name = self.raw_ip_addresses[index_eqpt:]
+            for ip_address_without_equipment_name in ip_addresses_without_equipment_name:
+                logger_config.print_and_log_error(
+                    f"Error at line {self.matrix_line_identifier}: missing equipment line for {ip_address_without_equipment_name} (this IP belongs to ({",".join([equipment.name for equipment in equipments_library.get_existing_equipment_by_raw_ip_address(ip_address_without_equipment_name)])}))"
+                )
+            pass
 
 
 @dataclass
