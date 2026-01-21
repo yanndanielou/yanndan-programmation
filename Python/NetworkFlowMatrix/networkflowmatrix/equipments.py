@@ -103,11 +103,13 @@ class NetworkConfFilesDefinedEquipment:
         assert isinstance(equipment_type, str)
         self._equipment_types.add(equipment_type)
 
+        # logger_config.print_and_log_info(f"Equipment {self.name}: add type {equipment_type}")
+
         if equipment_type not in self.library.network_conf_files_defined_equipments_by_type:
             self.library.network_conf_files_defined_equipments_by_type[equipment_type] = []
 
-        assert self not in self.library.network_conf_files_defined_equipments_by_type[equipment_type], f"Type {equipment_type} already has type {equipment_type} among {self.equipment_types}"
-        self.library.network_conf_files_defined_equipments_by_type[equipment_type].append(self)
+        if self not in self.library.network_conf_files_defined_equipments_by_type[equipment_type]:
+            self.library.network_conf_files_defined_equipments_by_type[equipment_type].append(self)
 
     def add_ip_address(self, ip_address: "NetworkConfFilesDefinedIpAddress") -> None:
         assert ip_address not in self.ip_addresses, f"{self.name} has already ip {ip_address}"
@@ -188,8 +190,6 @@ class NetworkConfFilesEquipmentsLibrary:
         self.all_trains_unbreakable_units_by_cc_id: Dict[int, TrainUnbreakableSingleUnit] = {}
         self.all_trains_unbreakable_units_by_emu_id: Dict[int, TrainUnbreakableSingleUnit] = {}
         self.not_found_equipments_but_defined_in_flow_matrix: List[NotFoundEquipmentButDefinedInMatrixFlow] = []
-        self.not_found_equipment_names: Set[str] = set()
-        self.not_found_equipment_names_and_raw_ip_address: Set[str] = set()
         self.all_groups: List[Group] = []
         self.create_train_unbreakable_units()
         self.names_equivalences_manager = names_equivalences.NamesEquivalences(manual_equipments_builder.names_equivalences_data)
