@@ -175,6 +175,7 @@ class FlowEndPoint:
 
             while is_first_time_equipment_line_is_used or (
                 len(self.raw_ip_addresses) > index_ip_addr + 1  # There are more lines of IP addresses
+                and len(self.raw_ip_addresses) > len(self.equipments_names)
                 and (
                     [
                         same_eqpt
@@ -252,7 +253,7 @@ class FlowEndPoint:
                                 matrix_line_id_referencing=self.matrix_line_identifier,
                             )
                     except IndexError:
-                        eqpt_ip_address_raw = INVALID_IP_ADDRESS
+                        eqpt_ip_address_raw = INVALID_IP_ADDRESS + "_Index_Error"
                         equipments_library.add_wrong_or_unknown_ip_address_in_matrix_flow(
                             wrong_equipment_name_allocated_to_this_ip_by_mistake=equipment_name,
                             raw_ip_address=eqpt_ip_address_raw,
@@ -300,8 +301,10 @@ class FlowEndPoint:
 
         assert index_eqpt >= 0
         if (index_ip_addr + 1) < len(self.raw_ip_addresses):
-            logger_config.print_and_log_error(to_print_and_log=f"Error at line {self.matrix_line_identifier}: Too few equipment names {self.equipments_names} compared to {self.raw_ip_addresses}")
             ip_addresses_without_equipment_name = self.raw_ip_addresses[index_eqpt:]
+            logger_config.print_and_log_error(
+                to_print_and_log=f"Error at line {self.matrix_line_identifier}: Too few equipment names {self.equipments_names} compared to {self.raw_ip_addresses}. ip_addresses_without_equipment_name:{ip_addresses_without_equipment_name}"
+            )
             for ip_address_without_equipment_name in ip_addresses_without_equipment_name:
                 logger_config.print_and_log_error(
                     to_print_and_log=f"Error at line {self.matrix_line_identifier}: missing equipment line for {ip_address_without_equipment_name} (this IP belongs to ({",".join([equipment.name for equipment in equipments_library.get_existing_equipment_by_raw_ip_address(ip_address_without_equipment_name)])}))",
@@ -309,8 +312,8 @@ class FlowEndPoint:
                 )
                 equipments_library.add_wrong_or_unknown_ip_address_in_matrix_flow(
                     wrong_equipment_name_allocated_to_this_ip_by_mistake="Missing equipment",
-                    raw_ip_address=eqpt_ip_address_raw,
-                    equipments_names_having_genuinely_this_ip_address=set([eqpt.name for eqpt in equipments_library.get_existing_equipment_by_raw_ip_address(eqpt_ip_address_raw)]),
+                    raw_ip_address=ip_address_without_equipment_name,
+                    equipments_names_having_genuinely_this_ip_address=set([eqpt.name for eqpt in equipments_library.get_existing_equipment_by_raw_ip_address(ip_address_without_equipment_name)]),
                     matrix_line_id_referencing=self.matrix_line_identifier,
                 )
             pass

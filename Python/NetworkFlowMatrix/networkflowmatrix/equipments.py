@@ -198,6 +198,9 @@ class NetworkConfFilesEquipmentsLibrary:
     def add_wrong_or_unknown_ip_address_in_matrix_flow(
         self, wrong_equipment_name_allocated_to_this_ip_by_mistake: str, raw_ip_address: str, equipments_names_having_genuinely_this_ip_address: Set[str], matrix_line_id_referencing: int
     ) -> WrongOrUnknownIpAddressInMatrixFlow:
+        logger_config.print_and_log_error(
+            f"Error line {matrix_line_id_referencing}. Bad IP {raw_ip_address} for {wrong_equipment_name_allocated_to_this_ip_by_mistake}. This IP is allocated to {','.join(equipments_names_having_genuinely_this_ip_address)}",
+        )
 
         wrong_eqpts = [
             wrong
@@ -214,6 +217,9 @@ class NetworkConfFilesEquipmentsLibrary:
             self.wrong_equipment_name_allocated_to_this_ip_by_mistake.append(wrong_ip_def)
 
         wrong_ip_def.equipments_names_having_genuinely_this_ip_address = wrong_ip_def.equipments_names_having_genuinely_this_ip_address.union(equipments_names_having_genuinely_this_ip_address)
+        # assert (
+        #    matrix_line_id_referencing not in wrong_ip_def.matrix_line_ids_referencing
+        # ), f"{matrix_line_id_referencing} already defined in {wrong_equipment_name_allocated_to_this_ip_by_mistake} for {raw_ip_address} / {equipments_names_having_genuinely_this_ip_address}"
         wrong_ip_def.matrix_line_ids_referencing.append(matrix_line_id_referencing)
 
         return wrong_ip_def
