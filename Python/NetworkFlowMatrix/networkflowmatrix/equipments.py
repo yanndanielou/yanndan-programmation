@@ -1,5 +1,5 @@
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 from common import json_encoders
 from logger import logger_config
@@ -7,13 +7,24 @@ from logger import logger_config
 from networkflowmatrix import constants
 
 if TYPE_CHECKING:
-    from networkflowmatrix.network_conf_files import NetworkConfFilesDefinedIpAddress, GenericConfFile
-    from networkflowmatrix.network_conf_files_descriptions_data import ExcelInputFileDescription
+    from networkflowmatrix.network_conf_files import (
+        GenericConfFile,
+        NetworkConfFilesDefinedIpAddress,
+    )
+    from networkflowmatrix.network_conf_files_descriptions_data import (
+        ExcelInputFileDescription,
+    )
 
-from networkflowmatrix.network_conf_files import NetworkConfFile
+from collections import defaultdict
+
+from networkflowmatrix import (
+    ihm_program_builder,
+    manual_equipments_builder,
+    manual_group_definitions,
+    names_equivalences,
+)
 from networkflowmatrix.groups import Group, GroupDefinition
-from networkflowmatrix import manual_equipments_builder, ihm_program_builder, names_equivalences, manual_group_definitions
-
+from networkflowmatrix.network_conf_files import NetworkConfFile
 
 # @dataclass
 # class Equipment:
@@ -92,8 +103,12 @@ class NetworkConfFilesDefinedEquipment:
         assert isinstance(equipment_type, str)
         self._equipment_types.add(equipment_type)
 
+        if equipment_type not in self.library.network_conf_files_defined_equipments_by_type:
+            self.library.network_conf_files_defined_equipments_by_type[equipment_type] = []
+        self.library.network_conf_files_defined_equipments_by_type[equipment_type].append(self)
+
     def add_ip_address(self, ip_address: "NetworkConfFilesDefinedIpAddress") -> None:
-        assert ip_address not in self.ip_addresses
+        assert ip_address not in self.ip_addresses, f"{self.name} has already ip {ip_address}"
 
         if [existing_ip for existing_ip in self.ip_addresses if existing_ip.ip_raw == ip_address.ip_raw]:
             logger_config.print_and_log_error(f"Ip address {ip_address.ip_raw} already exists for {self.name}, could not add {ip_address} to the same equipment")
@@ -164,6 +179,7 @@ class NetworkConfFilesEquipmentsLibrary:
     def __init__(self) -> None:
         self.all_network_conf_files_defined_equipments: List[NetworkConfFilesDefinedEquipment] = []
         self.network_conf_files_defined_equipments_by_id: Dict[str, NetworkConfFilesDefinedEquipment] = {}
+        self.network_conf_files_defined_equipments_by_type: Dict[str, List[NetworkConfFilesDefinedEquipment]] = defaultdict()
         self._network_conf_files_defined_equipments_by_raw_ip_addresses: Dict[str, List[NetworkConfFilesDefinedEquipment]] = {}
         self.all_trains_unbreakable_units: List[TrainUnbreakableSingleUnit] = []
         self.all_ignored_trains_unbreakable_units: List[TrainUnbreakableSingleUnit] = []
