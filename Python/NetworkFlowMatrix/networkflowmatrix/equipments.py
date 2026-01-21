@@ -321,17 +321,26 @@ class NetworkConfFilesEquipmentsLibrary:
             train_unbreakable_unit = TrainUnbreakableSingleUnit(cc_id=i, emu_id=4000 + i)
             self.all_ignored_trains_unbreakable_units.append(train_unbreakable_unit)
 
-    def add_not_found_equipment_but_defined_in_network_flow_matrix(self, name: str, raw_ip_address: str, matrix_line_id_referencing: int) -> NotFoundEquipmentButDefinedInMatrixFlow:
-        equipments = [equipment for equipment in self.not_found_equipments_but_defined_in_flow_matrix if equipment.name == name]
+    def add_not_found_equipment_but_defined_in_network_flow_matrix(
+        self, equipment_name: str, eqpt_ip_address_raw: str, matrix_line_id_referencing: int, equipments_in_network_conf_file_matching_ip_address: List["NetworkConfFilesDefinedEquipment"]
+    ) -> NotFoundEquipmentButDefinedInMatrixFlow:
+        logger_config.print_and_log_error(
+            to_print_and_log=f"{matrix_line_id_referencing}: {equipment_name} not defined in any network conf file.Ip address {eqpt_ip_address_raw} defined for {[eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address]}",
+            do_not_print=True,
+        )
+        equipments = [equipment for equipment in self.not_found_equipments_but_defined_in_flow_matrix if equipment.name == equipment_name]
         assert len(equipments) < 2
         if equipments:
             equipment = equipments[0]
         else:
-            equipment = NotFoundEquipmentButDefinedInMatrixFlow(name=name)
+            equipment = NotFoundEquipmentButDefinedInMatrixFlow(name=equipment_name)
             self.not_found_equipments_but_defined_in_flow_matrix.append(equipment)
 
-        if raw_ip_address not in equipment.raw_ip_addresses:
-            equipment.raw_ip_addresses.append(raw_ip_address)
+        if eqpt_ip_address_raw not in equipment.raw_ip_addresses:
+            equipment.raw_ip_addresses.append(eqpt_ip_address_raw)
+
+        for equipment_in_network_conf_file_matching_ip_address in equipments_in_network_conf_file_matching_ip_address:
+            equipment.alternative_names_matching_ip.add(equipment_in_network_conf_file_matching_ip_address.name)
 
         equipment.matrix_line_ids_referencing.append(matrix_line_id_referencing)
 
