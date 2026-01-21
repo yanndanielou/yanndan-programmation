@@ -189,6 +189,23 @@ class FlowEndPoint:
                         # The next line of IP address is for the same eqpt (found with the group)
                     ]
                 )
+                and not (
+                    len(self.equipments_names) > index_eqpt + 1
+                    and (
+                        [
+                            same_eqpt
+                            for same_eqpt in equipments_library.get_existing_equipment_by_raw_ip_address(expected_raw_ip_address=self.raw_ip_addresses[index_ip_addr + 1])
+                            if same_eqpt.name == self.equipments_names[index_eqpt + 1] or equipment_name in same_eqpt.alternative_identifiers
+                        ]  # The next line of IP address is not for the next line equipment
+                        or [
+                            same_eqpt
+                            for same_eqpt in equipments_library.get_existing_equipments_by_group(
+                                expected_group_name=self.equipments_names[index_eqpt + 1], expected_group_subnet_and_mask=self.raw_ip_addresses[index_ip_addr + 1]
+                            )
+                            # The next line of IP address is not for the next line equipment
+                        ]
+                    )
+                )
             ):
                 if not is_first_time_equipment_line_is_used:
                     logger_config.print_and_log_info(
@@ -472,8 +489,8 @@ class NetworkFlowMatrix:
                 matrix_all_unknown_equipments_file.write(
                     "Not Found;"
                     + not_found_eqpt.name
-                    + ";IP addresses:"
-                    + ",".join(not_found_eqpt.raw_ip_addresses)
+                    + ";IP address:"
+                    + not_found_eqpt.raw_ip_address
                     + ";Other equipment matching:"
                     + ",".join(not_found_eqpt.alternative_names_matching_ip)
                     + ";"
