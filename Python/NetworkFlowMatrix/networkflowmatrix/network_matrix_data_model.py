@@ -449,7 +449,7 @@ class NetworkFlowMatrix:
         )
 
         with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_wrong_ip.txt", mode="w", encoding="utf-8") as matrix_wrong_ip_file:
-            for wrong_ip in equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake:
+            for wrong_ip in sorted(equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake, key=lambda x: x.wrong_equipment_name_allocated_to_this_ip_by_mistake):
                 matrix_wrong_ip_file.write(
                     "Wrong IP:"
                     + wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake
@@ -472,7 +472,7 @@ class NetworkFlowMatrix:
         )
 
         with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_unknown_equipments.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
-            for not_found_eqpt in equipments_library.not_found_equipments_but_defined_in_flow_matrix:
+            for not_found_eqpt in sorted(equipments_library.not_found_equipments_but_defined_in_flow_matrix, key=lambda x: x.name):
                 matrix_all_unknown_equipments_file.write(
                     "Not Found;"
                     + not_found_eqpt.name
