@@ -427,8 +427,11 @@ class NetworkFlowMatrix:
 
         with logger_config.stopwatch_with_label("match_equipments_with_network_conf_files"):
             for line in self.network_flow_matrix_lines:
-                line.source.match_equipments_with_network_conf_files(equipments_library)
-                line.destination.match_equipments_with_network_conf_files(equipments_library)
+                if line.is_deleted:
+                    logger_config.print_and_log_info(f"Ignore line {line.identifier_int} because is deleted ({line.modif_raw_str})")
+                else:
+                    line.source.match_equipments_with_network_conf_files(equipments_library)
+                    line.destination.match_equipments_with_network_conf_files(equipments_library)
 
         logger_config.print_and_log_warning(
             f"After scanning network flow matrix, {len(equipments_library.not_found_equipment_names)} unknown equipments (not found in network conf files) names are {equipments_library.not_found_equipment_names}"
@@ -494,6 +497,8 @@ class NetworkFlowMatrixLine:
     network_flow_matrix: NetworkFlowMatrix
     identifier_int: int
     identifier_raw: str
+    is_deleted: bool
+    modif_raw_str: str
     name_raw: str
     sol_bord_raw: str
     seclab_raw: str
@@ -510,6 +515,8 @@ class NetworkFlowMatrixLine:
         @staticmethod
         def build_with_row(row: pandas.Series, network_flow_matrix: NetworkFlowMatrix) -> Optional["NetworkFlowMatrixLine"]:
             identifier_raw_str = cast(str, row["ID"])
+            modif_raw_str = str(row["Modif"])
+            is_deleted = str(modif_raw_str) == "D"
             if str(identifier_raw_str) in ["nan"]:
                 logger_config.print_and_log_warning(f"Empty row with identifier {identifier_raw_str}")
                 return None
@@ -532,6 +539,8 @@ class NetworkFlowMatrixLine:
 
             network_flow_matrix_line = NetworkFlowMatrixLine(
                 network_flow_matrix=network_flow_matrix,
+                modif_raw_str=modif_raw_str,
+                is_deleted=is_deleted,
                 destination=destination,
                 identifier_raw=identifier_raw_str,
                 identifier_int=identifier_int,
