@@ -60,7 +60,7 @@ class EquipmentWithWrongOrUnknownIpAddressInMatrixFlow:
 @dataclass
 class NotFoundEquipmentButDefinedInMatrixFlow:
     name: str
-    raw_ip_addresses: List[str] = field(default_factory=list)
+    raw_ip_address: str
     matrix_line_ids_referencing: List[int] = field(default_factory=list)
     alternative_names_matching_ip: Set[str] = field(default_factory=set)
 
@@ -346,16 +346,17 @@ class NetworkConfFilesEquipmentsLibrary:
             to_print_and_log=f"{matrix_line_id_referencing}: {equipment_name} not defined in any network conf file.Ip address {eqpt_ip_address_raw} defined for {[eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address]}",
             do_not_print=True,
         )
-        equipments = [equipment for equipment in self.not_found_equipments_but_defined_in_flow_matrix if equipment.name == equipment_name]
+        equipments = [
+            not_found_equipment
+            for not_found_equipment in self.not_found_equipments_but_defined_in_flow_matrix
+            if not_found_equipment.name == equipment_name and not_found_equipment.raw_ip_address == eqpt_ip_address_raw
+        ]
         assert len(equipments) < 2
         if equipments:
             equipment = equipments[0]
         else:
-            equipment = NotFoundEquipmentButDefinedInMatrixFlow(name=equipment_name)
+            equipment = NotFoundEquipmentButDefinedInMatrixFlow(name=equipment_name, raw_ip_address=eqpt_ip_address_raw)
             self.not_found_equipments_but_defined_in_flow_matrix.append(equipment)
-
-        if eqpt_ip_address_raw not in equipment.raw_ip_addresses:
-            equipment.raw_ip_addresses.append(eqpt_ip_address_raw)
 
         for equipment_in_network_conf_file_matching_ip_address in equipments_in_network_conf_file_matching_ip_address:
             equipment.alternative_names_matching_ip.add(equipment_in_network_conf_file_matching_ip_address.name)
