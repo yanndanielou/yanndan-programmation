@@ -290,6 +290,12 @@ class FlowEndPoint:
                     to_print_and_log=f"Error at line {self.matrix_line_identifier}: missing equipment line for {ip_address_without_equipment_name} (this IP belongs to ({",".join([equipment.name for equipment in equipments_library.get_existing_equipment_by_raw_ip_address(ip_address_without_equipment_name)])}))",
                     do_not_print=True,
                 )
+                equipments_library.add_wrong_or_unknown_ip_address_in_matrix_flow(
+                    wrong_equipment_name_allocated_to_this_ip_by_mistake="Missing equipment",
+                    raw_ip_address=eqpt_ip_address_raw,
+                    equipments_names_having_genuinely_this_ip_address=set([eqpt.name for eqpt in equipments_library.get_existing_equipment_by_raw_ip_address(eqpt_ip_address_raw)]),
+                    matrix_line_id_referencing=self.matrix_line_identifier,
+                )
             pass
 
 
@@ -432,16 +438,6 @@ class NetworkFlowMatrix:
                 else:
                     line.source.match_equipments_with_network_conf_files(equipments_library)
                     line.destination.match_equipments_with_network_conf_files(equipments_library)
-
-        logger_config.print_and_log_warning(
-            f"After scanning network flow matrix, {len(equipments_library.not_found_equipment_names)} unknown equipments (not found in network conf files) names are {equipments_library.not_found_equipment_names}"
-        )
-        logger_config.print_and_log_warning(f"'\n'{'\nnot_found_equipment_names:'.join(sorted(list(equipments_library.not_found_equipment_names)))}")
-
-        logger_config.print_and_log_warning(
-            f"After scanning network flow matrix, {len(equipments_library.not_found_equipment_names_and_raw_ip_address)} unknown equipments (not found in network conf files) names and IP addresses are {equipments_library.not_found_equipment_names}"
-        )
-        logger_config.print_and_log_warning(f"'\n'{'\nnot_found_equipment_names_and_raw_ip_address:'.join(sorted(list(equipments_library.not_found_equipment_names_and_raw_ip_address)))}")
 
         logger_config.print_and_log_warning(f"After scanning network flow matrix, {len(equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake)} wrong IP address definition")
         logger_config.print_and_log_warning(
