@@ -105,6 +105,8 @@ class NetworkConfFilesDefinedEquipment:
 
         if equipment_type not in self.library.network_conf_files_defined_equipments_by_type:
             self.library.network_conf_files_defined_equipments_by_type[equipment_type] = []
+
+        assert self not in self.library.network_conf_files_defined_equipments_by_type[equipment_type], f"Type {equipment_type} already has type {equipment_type} among {self.equipment_types}"
         self.library.network_conf_files_defined_equipments_by_type[equipment_type].append(self)
 
     def add_ip_address(self, ip_address: "NetworkConfFilesDefinedIpAddress") -> None:
