@@ -381,7 +381,7 @@ class NetworkConfFilesEquipmentsLibrary:
                     f"Types:{', '.join(list(equipment.equipment_types))}",
                     f"Alternative ids:{', '.join([str(alter) for alter in equipment.alternative_identifiers])}",
                     f"Ip:{', '.join([ip.ip_raw for ip in equipment.ip_addresses])}",
-                    f"Masks:{', '.join([group.definition.name + ' ' + group.definition.subnet_and_mask for  group in equipment.groups])}",
+                    f"Groups:{', '.join([group.definition.name + ' ' + group.definition.subnet_and_mask for  group in equipment.groups])}",
                 )
             )
 
