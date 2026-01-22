@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, List, Optional, cast
 import pandas
 from logger import logger_config
 
-from networkflowmatrix import network_conf_files
+from networkflowmatrix import network_conf_files, seclab
 from networkflowmatrix.groups import GroupDefinition
 
 if TYPE_CHECKING:
@@ -56,7 +56,11 @@ class IhmProgrammConfFile(network_conf_files.GenericConfFile):
                     module_is_defined = str(module_raw) != "nan"
                     module = module_raw.replace("\n", "\\n") if module_is_defined else last_valid_module
                     name = location + "_" + module
-                    equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(name=name, source_label_for_creation=f"{excel_file_full_path}/{"P2-4"}")
+                    equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(
+                        name=name,
+                        source_label_for_creation=f"{excel_file_full_path}/{"P2-4"}",
+                        seclab_side=seclab.SeclabSide.SOL,
+                    )
                     all_equipments_found.append(equipment)
                     ip_address = adresses_raw.replace("(1)", "").replace(" ", "")
                     try:
@@ -120,7 +124,9 @@ class FdiffClientsConfFile(network_conf_files.GenericConfFile):
                         continue
 
                     equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(
-                        name="FDIFF_CLIENT_" + emplacement_raw + "_" + terminal_raw, source_label_for_creation=f"{excel_file_full_path}"
+                        name="FDIFF_CLIENT_" + emplacement_raw + "_" + terminal_raw,
+                        source_label_for_creation=f"{excel_file_full_path}",
+                        seclab_side=seclab.SeclabSide.SOL,
                     )
                     all_equipments_found.append(equipment)
 

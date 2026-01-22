@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, cast
 
 from common import json_encoders
 from logger import logger_config
 
-from networkflowmatrix import constants
+from networkflowmatrix import constants, seclab
 
 if TYPE_CHECKING:
     from networkflowmatrix.network_conf_files import (
@@ -73,6 +73,7 @@ class NetworkConfFilesDefinedEquipment:
     _equipment_types: Set[str] = field(default_factory=set)
     _alternative_identifiers: Set[str] = field(default_factory=set)
     ip_addresses: List["NetworkConfFilesDefinedIpAddress"] = field(default_factory=list)
+    seclab_side: seclab.SeclabSide = cast(seclab.SeclabSide, None)
     groups: List[Group] = field(default_factory=list)
 
     def __post_init__(self) -> None:
@@ -240,6 +241,10 @@ class NetworkConfFilesEquipmentsLibrary:
                     assert id(obj) not in seen_ids
                     seen_ids.add(id(obj))
 
+        with logger_config.stopwatch_with_label("Check that all equipment is at a seclab side"):
+            for eqpt in self.all_network_conf_files_defined_equipments:
+                logger_config.print_and_log_error_if(condition=eqpt.seclab_side is None, to_print_and_log=f"Seclab side not defined for {eqpt.name}, source {eqpt.source_label}")
+
     def print_stats(self) -> None:
         logger_config.print_and_log_info(f"The network conf files library contains {len(self.all_network_conf_files_defined_equipments)} equipments in total")
 
@@ -291,10 +296,13 @@ class NetworkConfFilesEquipmentsLibrary:
             return self.network_conf_files_defined_equipments_by_id[name]
         return None
 
-    def get_or_create_network_conf_file_eqpt_if_not_exist_by_name(self, name: str, source_label_for_creation: str) -> "NetworkConfFilesDefinedEquipment":
+    def get_or_create_network_conf_file_eqpt_if_not_exist_by_name(self, name: str, source_label_for_creation: str, seclab_side: Optional[seclab.SeclabSide]) -> "NetworkConfFilesDefinedEquipment":
         if self.is_existing_network_conf_file_eqpt_by_name(name):
             return self.network_conf_files_defined_equipments_by_id[name]
-        equipment = NetworkConfFilesDefinedEquipment(name=name, library=self, source_label=source_label_for_creation)
+
+        if not seclab_side:
+            seclab_side = seclab.get_seclab_side_from_equipment_name(name)
+        equipment = NetworkConfFilesDefinedEquipment(name=name, library=self, source_label=source_label_for_creation, seclab_side=seclab_side)
         self.network_conf_files_defined_equipments_by_id[name] = equipment
         self.all_network_conf_files_defined_equipments.append(equipment)
 
@@ -379,6 +387,7 @@ class NetworkConfFilesEquipmentsLibrary:
                     f"name:{equipment.name}",
                     f"Source:{equipment.source_label}",
                     f"Types:{', '.join(list(equipment.equipment_types))}",
+                    f"Seclab:{equipment.seclab_side}",
                     f"Alternative ids:{', '.join([str(alter) for alter in equipment.alternative_identifiers])}",
                     f"Ip:{', '.join([ip.ip_raw for ip in equipment.ip_addresses])}",
                     f"Groups:{', '.join([group.definition.name + ' ' + group.definition.subnet_and_mask for  group in equipment.groups])}",
