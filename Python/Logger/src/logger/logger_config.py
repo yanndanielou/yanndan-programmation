@@ -179,7 +179,7 @@ def application_logger(application_name: str, logger_level: int = logging.INFO) 
     application_end_timestamp = time.asctime(time.localtime(time.time()))
 
     elapsed_time = application_end_time - application_start_time
-    to_print_and_log = f"\nErrors stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " errors raised" for item in list(log_counts_errors_occurences_per_file_and_line.items()))}\n{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s.\nLogger stats: \t{'\t'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts_occurences_per_level.items()))}"
+    to_print_and_log = f"\nErrors stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " errors raised" for item in list(dict(sorted(log_counts_errors_occurences_per_file_and_line.items(), key=lambda item: item[1])).items()))}\n{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s.\nLogger stats: \t{'\t'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts_occurences_per_level.items()))}"
     print(application_end_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
     logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
 
