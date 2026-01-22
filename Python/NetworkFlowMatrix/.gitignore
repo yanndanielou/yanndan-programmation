@@ -17,3 +17,4 @@ Output*.7z
 tests/secret_tests_data.py
 networkflowmatrix/manual_equipments_builder.py
 networkflowmatrix/manual_group_definitions.py
+networkflowmatrix/seclab.py
