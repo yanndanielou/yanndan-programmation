@@ -133,6 +133,15 @@ def print_and_log_exception(exception_to_print: Exception, additional_text: Opti
     logging.exception(exception_to_print)
 
 
+def print_and_log_error_if(condition: bool, to_print_and_log: str, do_not_print: bool = False) -> None:
+    if condition:
+        print_and_log_error(
+            to_print_and_log=to_print_and_log,
+            do_not_print=do_not_print,
+            call_stack_frame=3,
+        )
+
+
 def print_and_log_error(
     to_print_and_log: str,
     do_not_print: bool = False,
@@ -154,7 +163,11 @@ def print_and_log_error(
             + str()
             + to_print_and_log
         )
-    logging.error(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
+    logging.error(
+        f"{__get_calling_file_name_and_line_number(
+                call_stack_context=call_stack_context, call_stack_frame=call_stack_frame
+            )} \t {to_print_and_log}"
+    )
 
 
 @contextmanager
