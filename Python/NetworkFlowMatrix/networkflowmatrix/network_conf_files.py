@@ -183,6 +183,7 @@ class EquipmentDefinitionColumn:
     equipment_name_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equipement"))
     equipment_alternative_name_definition: Optional[InformationDefinitionBase] = None
     groups_definitions: List["GroupDefinition"] = field(default_factory=list)
+    gateway_equipments_names: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -340,7 +341,7 @@ class NetworkConfFile(GenericConfFile):
                                             equipment.add_alternative_identifier(equipment_alternative_identifier_raw)
 
                                     for group_definition in equipment_definition.groups_definitions:
-                                        group = equipments_library.get_or_create_group_and_add_equipment(group_definition, equipment)
+                                        equipments_library.get_or_create_group_and_add_equipment(group_definition, equipment)
 
                                     for ip_address_definition in equipment_definition.equipment_ip_definitions:
 
