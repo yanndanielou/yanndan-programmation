@@ -104,7 +104,7 @@ class IpDefinitionColumnsInTab(ABC):
     all_ip_addresses_found: List[NetworkConfFilesDefinedIpAddress] = field(default_factory=list)
 
     @abstractmethod
-    def build_with_row(self, row: pandas.Series) -> NetworkConfFilesDefinedIpAddress:
+    def build_with_row(self, row: pandas.Series, equipments_library: "NetworkConfFilesEquipmentsLibrary", equipment_definition: "EquipmentDefinitionColumn") -> NetworkConfFilesDefinedIpAddress:
         pass
 
 
@@ -116,7 +116,7 @@ class UnicastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
     gateway_is_optional: bool = False
     mask_is_optional: bool = False
 
-    def build_with_row(self, row: pandas.Series) -> NetworkConfFilesDefinedIpAddress:
+    def build_with_row(self, row: pandas.Series, equipments_library: "NetworkConfFilesEquipmentsLibrary", equipment_definition: "EquipmentDefinitionColumn") -> NetworkConfFilesDefinedIpAddress:
         equipment_raw_ip_address = cast(str, self.equipment_ip_address_column_definition.get_value(row))
 
         assert equipment_raw_ip_address and isinstance(equipment_raw_ip_address, str), f"\n Ip address: {equipment_raw_ip_address}\nRow: {row[:3]}"
@@ -142,7 +142,16 @@ class UnicastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
 
         if self.equipment_gateway_column_definition:
             equipment_raw_gateway: Optional[str] = cast(str, self.equipment_gateway_column_definition.get_value(row))
-            if not isinstance(equipment_raw_gateway, str):
+            if isinstance(equipment_raw_gateway, str):
+                for gateway_equipment_name in equipment_definition.gateway_equipments_names:
+                    gateway_equipment = equipments_library.get_existing_equipment_by_name(expected_equipment_name=gateway_equipment_name, allow_not_exact_name=False)
+                    assert gateway_equipment, f"Could not find gateway equipment {gateway_equipment_name}"
+                    if equipment_raw_gateway not in [gateway_ip.ip_raw for gateway_ip in gateway_equipment.ip_addresses]:
+                        logger_config.print_and_log_info(
+                            f"{gateway_equipment_name}: add IP {equipment_raw_gateway} because is gateway of {equipment_definition.equipment_name_column_definition.get_value(row)} for {equipment_raw_ip_address}"
+                        )
+                        gateway_equipment.add_ip_address(NetworkConfFilesDefinedIpAddress(ip_raw=equipment_raw_gateway, label=f"Gateway of {equipment_ip_label}"))
+            else:
                 equipment_raw_gateway = None
             assert self.gateway_is_optional or equipment_raw_gateway and isinstance(equipment_raw_gateway, str), f"{equipment_raw_ip_address} has no gateway"
         else:
@@ -165,7 +174,7 @@ class UnicastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
 class MulticastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
     group_multicast: str = ""
 
-    def build_with_row(self, row: pandas.Series) -> NetworkConfFilesDefinedIpAddress:
+    def build_with_row(self, row: pandas.Series, equipments_library: "NetworkConfFilesEquipmentsLibrary", equipment_definition: "EquipmentDefinitionColumn") -> NetworkConfFilesDefinedIpAddress:
         equipment_raw_ip_address = cast(str, self.equipment_ip_address_column_definition.get_value(row))
         assert equipment_raw_ip_address and isinstance(equipment_raw_ip_address, str), f"\n Ip address: {equipment_raw_ip_address}\nRow: {row}"
 
@@ -191,7 +200,8 @@ class EquipmentDefinitionTab:
     tab_name: str
     rows_to_ignore: List[int]
     equipment_definitions: List[EquipmentDefinitionColumn]
-    equipment_ids_to_ignore: List[str] = field(default_factory=list)
+    equipment_ids_white_list_to_accept_only: Optional[List[str]] = None
+    equipment_ids_black_list_to_ignore: List[str] = field(default_factory=list)
     seclab_side: Optional[seclab.SeclabSide] = None
 
 
@@ -307,7 +317,7 @@ class NetworkConfFile(GenericConfFile):
                                     continue
 
                                 equipment_name = cast(str, equipment_definition.equipment_name_column_definition.get_value(row))
-                                if equipment_name in equipment_definition_tab.equipment_ids_to_ignore:
+                                if equipment_name in equipment_definition_tab.equipment_ids_black_list_to_ignore:
                                     logger_config.print_and_log_info(f"Ignore {equipment_name} equipment in {excel_file_full_path} sheet {equipment_definition_tab.tab_name}")
                                     continue
 
@@ -349,7 +359,7 @@ class NetworkConfFile(GenericConfFile):
                                         if not isinstance(equipment_raw_ip_address, str) and ip_address_definition.can_be_empty:
                                             continue
 
-                                        ip_address = ip_address_definition.build_with_row(row)
+                                        ip_address = ip_address_definition.build_with_row(row, equipments_library, equipment_definition)
 
                                         equipment.add_ip_address(ip_address)
                                         assert len(equipment.ip_addresses) < 10, f"{equipment_name}\n{[ip.ip_raw for ip in equipment.ip_addresses]}\n\n{equipment}"

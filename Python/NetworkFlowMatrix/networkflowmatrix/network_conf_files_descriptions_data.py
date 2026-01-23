@@ -18,6 +18,7 @@ from networkflowmatrix.network_conf_files import (
 
 from networkflowmatrix.groups import GroupDefinition
 from networkflowmatrix.seclab import SeclabSide
+import networkflowmatrix.manual_equipments_builder
 from collections import namedtuple
 
 # import ipaddress
@@ -126,7 +127,8 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
                 EquipmentDefinitionColumn(
                     equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
                     equipment_ip_definitions=[UnicastIpDefinitionColumnsInTab(equipment_ip_address_column_definition=ExcelColumnDefinitionByColumnTitle("Adresse IP"))],
-                )
+                    gateway_equipments_names=networkflowmatrix.manual_equipments_builder.STD_FIREWALL_EQUIPMENT_NAMES,
+                ),
             ],
         )
         self.ip_reseau_std_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
@@ -136,6 +138,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
             equipment_definitions=[
                 EquipmentDefinitionColumn(
                     equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
+                    gateway_equipments_names=networkflowmatrix.manual_equipments_builder.STD_FIREWALL_EQUIPMENT_NAMES,
                     equipment_ip_definitions=[
                         UnicastIpDefinitionColumnsInTab(
                             equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
@@ -164,6 +167,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
             equipment_definitions=[
                 EquipmentDefinitionColumn(
                     equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
+                    gateway_equipments_names=networkflowmatrix.manual_equipments_builder.STD_FIREWALL_EQUIPMENT_NAMES,
                     equipment_ip_definitions=[
                         UnicastIpDefinitionColumnsInTab(
                             equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
@@ -210,6 +214,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
+                    gateway_equipments_names=networkflowmatrix.manual_equipments_builder.STD_FIREWALL_EQUIPMENT_NAMES,
                     equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
                     equipment_ip_definitions=[
                         UnicastIpDefinitionColumnsInTab(
@@ -248,12 +253,28 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
                 )
             ],
         )
-        self.ip_reseau_pcc: EquipmentDefinitionTab = EquipmentDefinitionTab(
+        self.ip_reseau_pcc_fw_only: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP RESEAU PCC",
+            equipment_ids_white_list_to_accept_only=networkflowmatrix.manual_equipments_builder.STD_FIREWALL_EQUIPMENT_NAMES,
             seclab_side=SeclabSide.SOL,
             rows_to_ignore=[0, 1, 2, 4, 5],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
+                    equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
+                    equipment_ip_definitions=[
+                        UnicastIpDefinitionColumnsInTab(can_be_empty=True, gateway_is_optional=True),
+                    ],
+                )
+            ],
+        )
+        self.ip_reseau_pcc_except_fw: EquipmentDefinitionTab = EquipmentDefinitionTab(
+            tab_name="IP RESEAU PCC",
+            equipment_ids_black_list_to_ignore=networkflowmatrix.manual_equipments_builder.STD_FIREWALL_EQUIPMENT_NAMES,
+            seclab_side=SeclabSide.SOL,
+            rows_to_ignore=[0, 1, 2, 4, 5],
+            equipment_definitions=[
+                EquipmentDefinitionColumn(
+                    gateway_equipments_names=networkflowmatrix.manual_equipments_builder.STD_FIREWALL_EQUIPMENT_NAMES,
                     equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
                     equipment_ip_definitions=[
                         UnicastIpDefinitionColumnsInTab(can_be_empty=True, gateway_is_optional=True),
@@ -268,6 +289,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
             equipment_definitions=[
                 EquipmentDefinitionColumn(
                     equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
+                    gateway_equipments_names=networkflowmatrix.manual_equipments_builder.STD_FIREWALL_EQUIPMENT_NAMES,
                     equipment_ip_definitions=[
                         UnicastIpDefinitionColumnsInTab(
                             equipment_vlan_column_definition=ExcelColumnDefinitionByColumnTitle("VLAN ID A"),
@@ -299,9 +321,10 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
             tab_name="IP PMB",
             seclab_side=SeclabSide.SOL,
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
-            equipment_ids_to_ignore=["EVG-P22-PMB", "NSY-P26-PMB", "EVG-P22-IMPR", "NSY-P26-IMPR"],
+            equipment_ids_black_list_to_ignore=["EVG-P22-PMB", "NSY-P26-PMB", "EVG-P22-IMPR", "NSY-P26-IMPR"],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
+                    gateway_equipments_names=networkflowmatrix.manual_equipments_builder.STD_FIREWALL_EQUIPMENT_NAMES,
                     equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
                     equipment_ip_definitions=[
                         UnicastIpDefinitionColumnsInTab(
@@ -330,6 +353,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
+                    gateway_equipments_names=networkflowmatrix.manual_equipments_builder.STD_FIREWALL_EQUIPMENT_NAMES,
                     equipment_alternative_name_definition=ExcelColumnDefinitionByColumnTitle("Equip_ID"),
                     equipment_name_column_definition=ExcelColumnDefinitionByColumnTitle("Equipment"),
                     equipment_ip_definitions=[
@@ -358,7 +382,17 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
             ],
         )
         super().__init__(
-            all_tabs_definition=[self.ip_ats_tab, self.ip_reseau_std_tab, self.ip_cbtc_tab, self.ip_mats, self.ip_reseau_pcc, self.ip_csr_tab, self.ip_pmb_tab, self.ip_pai_tab],
+            all_tabs_definition=[
+                self.ip_reseau_pcc_fw_only,
+                self.ip_reseau_pcc_except_fw,
+                self.ip_ats_tab,
+                self.ip_reseau_std_tab,
+                self.ip_cbtc_tab,
+                self.ip_mats,
+                self.ip_csr_tab,
+                self.ip_pmb_tab,
+                self.ip_pai_tab,
+            ],
             excel_file_full_name="NExTEO-S-271000-02-0125-02 Dossier de Configuration Réseau Sol - V11-00 Annexe A.xlsb",
             rhapsody_id=92403807,
         )
