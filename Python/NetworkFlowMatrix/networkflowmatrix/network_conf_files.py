@@ -317,8 +317,17 @@ class NetworkConfFile(GenericConfFile):
                                     continue
 
                                 equipment_name = cast(str, equipment_definition.equipment_name_column_definition.get_value(row))
+
+                                if equipment_definition_tab.equipment_ids_white_list_to_accept_only and equipment_name not in equipment_definition_tab.equipment_ids_white_list_to_accept_only:
+                                    logger_config.print_and_log_info(
+                                        f"Ignore {equipment_name} equipment in {excel_file_full_path} sheet {equipment_definition_tab.tab_name} because not in white list {equipment_definition_tab.equipment_ids_white_list_to_accept_only}"
+                                    )
+                                    continue
+
                                 if equipment_name in equipment_definition_tab.equipment_ids_black_list_to_ignore:
-                                    logger_config.print_and_log_info(f"Ignore {equipment_name} equipment in {excel_file_full_path} sheet {equipment_definition_tab.tab_name}")
+                                    logger_config.print_and_log_info(
+                                        f"Ignore {equipment_name} equipment in {excel_file_full_path} sheet {equipment_definition_tab.tab_name} because in black list {equipment_definition_tab.equipment_ids_black_list_to_ignore}"
+                                    )
                                     continue
 
                                 if isinstance(equipment_definition, InsideTrainEquipmentDefinitionColumn):
