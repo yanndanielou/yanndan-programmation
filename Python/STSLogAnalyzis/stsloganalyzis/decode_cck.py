@@ -1,9 +1,10 @@
 import csv
+import os
 import datetime
 import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, cast
+from typing import Dict, List, Optional, cast, Self
 
 import re
 
@@ -17,6 +18,23 @@ LIAISON_PATTERN = re.compile(LIAISON_PATTERN_STR)
 
 
 @dataclass
+class CckMproTraceLibrary:
+    all_processed_lines: List["CckMproTraceLine"] = field(default_factory=list)
+    all_processed_files: List["CckMproTraceFile"] = field(default_factory=list)
+
+    def load_folder(self, folder_full_path: str) -> Self:
+        for dirpath, dirnames, filenames in os.walk(folder_full_path):
+            for file_name in filenames:
+                cck_file = CckMproTraceFile(parent_folder_full_path=dirpath, file_name=file_name)
+                self.all_processed_files.append(cck_file)
+                self.all_processed_lines += cck_file.all_processed_lines
+        return self
+
+
+pass
+
+
+@dataclass
 class CckMproTraceFile:
     parent_folder_full_path: str
     file_name: str
@@ -27,7 +45,7 @@ class CckMproTraceFile:
         with logger_config.stopwatch_with_label(f"Open and read CCK Mpro trace file lines {self.file_full_path}"):
             with open(self.file_full_path, mode="r", encoding="ANSI") as file:
                 all_raw_lines = file.readlines()
-                logger_config.print_and_log_info(f"File {self.file_full_path} has {len(all_raw_lines)} lines")
+                logger_config.print_and_log_info(to_print_and_log=f"File {self.file_full_path} has {len(all_raw_lines)} lines", do_not_print=True)
                 for line_number, line in enumerate(all_raw_lines):
                     processed_line = CckMproTraceLine(parent_file=self, full_raw_line=line)
                     self.all_processed_lines.append(processed_line)
