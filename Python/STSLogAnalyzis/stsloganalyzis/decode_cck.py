@@ -5,12 +5,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, Optional, cast
 
-import dpkt
-from pcapng import FileScanner
-
-import pyshark
-import pyshark.packet.packet
-import pyshark.packet.layers
 
 from logger import logger_config
 
