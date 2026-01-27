@@ -1,3 +1,5 @@
+from collections import Counter
+import matplotlib.pyplot as plt
 import csv
 import os
 import datetime
@@ -17,6 +19,49 @@ LIAISON_PATTERN_STR = ".*(?P<liaison_full_name>Liaison (?P<liaison_id>\d+A?B?)).
 LIAISON_PATTERN = re.compile(LIAISON_PATTERN_STR)
 
 
+def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTraceLine"], label: str, interval_minutes: int = 10) -> None:
+    if not trace_lines:
+        print("La liste des traces est vide.")
+        return
+
+    # Trier les trace_lines par timestamp
+    trace_lines.sort(key=lambda x: x.decoded_timestamp)
+
+    # Déterminer la période totale (du timestamp le plus tôt au plus tard)
+    start_time = trace_lines[0].decoded_timestamp
+    end_time = trace_lines[-1].decoded_timestamp
+
+    # Créer des intervalles de temps
+    interval_start_times: List[datetime.datetime] = []
+    current_time = start_time
+    while current_time <= end_time:
+        interval_start_times.append(current_time)
+        current_time += datetime.timedelta(minutes=interval_minutes)
+
+    # Compter les éléments dans chaque intervalle
+    interval_counts: Dict[datetime.datetime, int] = Counter()
+    for trace in trace_lines:
+        for interval_start in interval_start_times:
+            interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+            if interval_start <= trace.decoded_timestamp < interval_end:
+                interval_counts[interval_start] += 1
+                break
+
+    # Préparer les données pour le graphe
+    x_labels = [start.strftime("%Y-%m-%d %H:%M") for start in interval_counts.keys()]
+    y_values = list(interval_counts.values())
+
+    # Afficher le bar graph
+    plt.figure(figsize=(10, 6))
+    plt.bar(x_labels, y_values, color="skyblue")
+    plt.xlabel("Intervalles de temps (heure début)")
+    plt.ylabel("Nombre de CckMproTraceLine")
+    plt.title(label + f" par périodes de {interval_minutes} minutes")
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.show()
+
+
 @dataclass
 class CckMproTraceLibrary:
     all_processed_lines: List["CckMproTraceLine"] = field(default_factory=list)
@@ -28,6 +73,8 @@ class CckMproTraceLibrary:
                 cck_file = CckMproTraceFile(parent_folder_full_path=dirpath, file_name=file_name)
                 self.all_processed_files.append(cck_file)
                 self.all_processed_lines += cck_file.all_processed_lines
+                assert self.all_processed_lines
+        assert self.all_processed_lines
         return self
 
 

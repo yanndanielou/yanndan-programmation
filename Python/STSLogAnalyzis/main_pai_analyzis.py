@@ -14,9 +14,11 @@ from logger import logger_config
 from common import file_name_utils
 
 with logger_config.application_logger("main_pai_analyzis"):
-    cck_libary = decode_cck.CckMproTraceLibrary().load_folder(r"D:\temp\2027-01-27 avec hitachi\2027-01-27\SIG3\Traces\Traces_MPRO1_1_20260127_15")
+    cck_libary = decode_cck.CckMproTraceLibrary().load_folder(r"D:\temp\2027-01-27 avec hitachi\2027-01-27\SIG3\Traces\Traces_MPRO1_1_20260127_15 - Copie")
 
     enchainement_protocolaire_lines = [line for line in cck_libary.all_processed_lines if "le msg a un problème de 'enchainement numero protocolaire'" in line.full_raw_line]
+    logger_config.print_and_log_info(f"{len(enchainement_protocolaire_lines)} problèmes de enchainement numero protocolaire")
+    decode_cck.plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines=enchainement_protocolaire_lines, label="enchainement_protocolaire_lines", interval_minutes=1)
     pass
 
 pass
