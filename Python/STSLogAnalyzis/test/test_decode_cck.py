@@ -4,6 +4,7 @@ import pytest
 
 from typing import List
 
+from common import file_utils
 from stsloganalyzis import decode_cck
 
 
@@ -19,5 +20,9 @@ class TestCckMproTraceLine:
     @pytest.mark.parametrize("full_raw_line_str, expected_timestamp", decode_mpro_trace_date_data)
     def test_line_timestamp(self, full_raw_line_str: str, expected_timestamp: datetime.datetime) -> None:
 
-        cck_mpro_trace_line = decode_cck.CckMproTraceLine(full_line=full_raw_line_str)
+        cck_mpro_trace_line = decode_cck.CckMproTraceLine(full_raw_line=full_raw_line_str)
         assert cck_mpro_trace_line.decoded_timestamp == expected_timestamp
+
+
+
+cck_file = 
