@@ -308,8 +308,11 @@ class CckMproLiaison:
     identifier: str
     all_lines: List["CckMproTraceLine"] = field(default_factory=list)
 
+    def __post_init__(self) -> None:
+        self.hash_computed = hash(self.full_name)
+
     def __hash__(self) -> int:
-        return hash(self.full_name)
+        return self.hash_computed
 
 
 @dataclass
