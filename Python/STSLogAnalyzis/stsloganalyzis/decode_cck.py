@@ -63,13 +63,14 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTrace
     ws.title = "Interval Counts"
 
     # Ajouter les en-têtes
-    ws["A1"] = "Intervalle de temps"
-    ws["B1"] = "Nombre d'éléments"
+    ws["A1"] = "Début Intervalle de temps"
+    ws["B1"] = "Fin Intervalle de temps"
+    ws["C1"] = "Nombre d'éléments"
 
     # Style des en-têtes
     header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
     header_font = Font(bold=True, color="FFFFFF")
-    for cell in [ws["A1"], ws["B1"]]:
+    for cell in [ws["A1"], ws["B1"], ws["C1"]]:
         cell.fill = header_fill
         cell.font = header_font
         cell.alignment = Alignment(horizontal="center", vertical="center")
