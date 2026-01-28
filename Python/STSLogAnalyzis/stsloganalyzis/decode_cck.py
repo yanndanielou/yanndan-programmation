@@ -464,7 +464,7 @@ class CckMproTraceLibrary:
         if do_show:
             plt.show()
 
-    def export_temporary_loss_link_to_excel(self, output_folder_path: str, excel_output_file_name_without_extension: str = "temporary_loss_link") -> None:
+    def export_temporary_loss_link_to_excel(self, output_folder_path: str) -> None:
         """
         Exporte les CckMproTemporaryLossLink dans un fichier Excel.
 
@@ -472,6 +472,7 @@ class CckMproTraceLibrary:
             output_folder_path: Chemin du dossier de sortie
             excel_output_file_name_without_extension: Nom du fichier Excel sans extension
         """
+        excel_output_file_name_without_extension = self.name + "_temporary_loss_link_" + file_name_utils.get_file_suffix_with_current_datetime()
         if not self.all_temporary_loss_link:
             logger_config.print_and_log_info("Aucune perte de lien temporaire. Aucun fichier créé.")
             return
@@ -597,7 +598,7 @@ class CckMproTraceFile:
                 for line_number, line in enumerate(all_raw_lines):
                     if line_number % 100000 == 0:
                         logger_config.print_and_log_info(f"Handle line {self.file_name}:#{line_number}")
-                    processed_line = CckMproTraceLine(parent_file=self, full_raw_line=line, line_number=line_number)
+                    processed_line = CckMproTraceLine(parent_file=self, full_raw_line=line, line_number=line_number + 1)
                     if processed_line.changement_etat_liaison:
                         self.all_changement_etats_liaisons_mpro.append(processed_line.changement_etat_liaison)
                     if processed_line.problem_enchainement_numero_protocolaire:
