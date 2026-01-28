@@ -69,7 +69,7 @@ def save_cck_mpro_lines_in_excel(trace_lines: List["CckMproTraceLine"], output_f
     logger_config.print_and_log_info(f"Total de {len(trace_lines)} lignes sauvegardées")
 
 
-def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTraceLine"], output_folder_path: str, label: str, interval_minutes: int = 10) -> None:
+def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTraceLine"], output_folder_path: str, label: str, interval_minutes: int = 10, do_show: bool = False) -> None:
     if not trace_lines:
         print("La liste des traces est vide.")
         return
@@ -178,7 +178,8 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTrace
     plt.title(f"{len(trace_lines)} {label} par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}")
     plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
-    plt.show()
+    if do_show:
+        plt.show()
 
 
 @dataclass
@@ -301,6 +302,162 @@ class CckMproTraceLibrary:
         )
 
         return self
+
+    def plot_problems_and_loss_link_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False) -> None:
+        """
+        Génère un bar graph montrant les problèmes d'enchaînement et les pertes de lien par intervalle de temps.
+
+        Args:
+            output_folder_path: Chemin du dossier de sortie
+            interval_minutes: Intervalle de temps en minutes (par défaut 10)
+        """
+        if not self.all_processed_lines:
+            logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
+            return
+
+        # Déterminer la période totale
+        start_time = self.all_processed_lines[0].decoded_timestamp
+        end_time = self.all_processed_lines[-1].decoded_timestamp
+
+        # Créer des intervalles de temps
+        interval_start_times: List[datetime.datetime] = []
+        current_time = start_time
+        while current_time <= end_time:
+            interval_start_times.append(current_time)
+            current_time += datetime.timedelta(minutes=interval_minutes)
+
+        # Compter les éléments dans chaque intervalle
+        interval_problems_count: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
+        interval_loss_link_count: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
+
+        # Initialiser les compteurs
+        for interval_start in interval_start_times:
+            interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+            interval_problems_count[(interval_start, interval_end)] = 0
+            interval_loss_link_count[(interval_start, interval_end)] = 0
+
+        # Compter les problèmes d'enchaînement
+        for problem in self.all_problem_enchainement_numero_protocolaire:
+            for interval_start in interval_start_times:
+                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                if interval_start <= problem.trace_line.decoded_timestamp < interval_end:
+                    interval_problems_count[(interval_start, interval_end)] += 1
+                    break
+
+        # Compter les pertes de lien
+        for loss_link in self.all_temporary_loss_link:
+            for interval_start in interval_start_times:
+                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                if interval_start <= loss_link.loss_link_event.trace_line.decoded_timestamp < interval_end:
+                    interval_loss_link_count[(interval_start, interval_end)] += 1
+                    break
+
+        # Préparer les données pour le graphe
+        x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_problems_count.keys()]
+        y_problems = list(interval_problems_count.values())
+        y_loss_link = list(interval_loss_link_count.values())
+
+        # Créer et exporter les données dans un fichier Excel
+        excel_filename = f"problems_and_loss_link_by_period_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Problems & Loss Link"
+
+        # Ajouter les en-têtes
+        ws["A1"] = "Début Intervalle de temps"
+        ws["B1"] = "Fin Intervalle de temps"
+        ws["C1"] = "Problèmes d'enchaînement"
+        ws["D1"] = "Pertes de lien"
+
+        # Style des en-têtes
+        header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF")
+        for cell in [ws["A1"], ws["B1"], ws["C1"], ws["D1"]]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        # Ajouter les données
+        for idx, ((interval_begin, interval_end), problems_count) in enumerate(interval_problems_count.items(), start=2):
+            ws[f"A{idx}"] = interval_begin
+            ws[f"B{idx}"] = interval_end
+            ws[f"C{idx}"] = problems_count
+            ws[f"D{idx}"] = interval_loss_link_count[(interval_begin, interval_end)]
+            ws[f"C{idx}"].alignment = Alignment(horizontal="center")
+            ws[f"D{idx}"].alignment = Alignment(horizontal="center")
+
+        # Ajuster la largeur des colonnes
+        ws.column_dimensions["A"].width = 25
+        ws.column_dimensions["B"].width = 25
+        ws.column_dimensions["C"].width = 25
+        ws.column_dimensions["D"].width = 25
+
+        # Ajouter un résumé
+        summary_row = len(interval_problems_count) + 3
+        ws[f"A{summary_row}"] = "Total"
+        ws[f"C{summary_row}"] = len(self.all_problem_enchainement_numero_protocolaire)
+        ws[f"D{summary_row}"] = len(self.all_temporary_loss_link)
+        ws[f"A{summary_row}"].font = Font(bold=True)
+        ws[f"C{summary_row}"].font = Font(bold=True)
+        ws[f"D{summary_row}"].font = Font(bold=True)
+        ws[f"C{summary_row}"].alignment = Alignment(horizontal="center")
+        ws[f"D{summary_row}"].alignment = Alignment(horizontal="center")
+
+        # Sauvegarder le fichier Excel
+        wb.save(output_folder_path + "/" + excel_filename)
+        logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
+
+        # Créer et sauvegarder le graphe en HTML avec Plotly
+        html_filename = f"problems_and_loss_link_by_period_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    name="Problèmes d'enchaînement",
+                    x=x_labels,
+                    y=y_problems,
+                    marker=dict(color="lightcoral"),
+                    text=y_problems,
+                    textposition="auto",
+                ),
+                go.Bar(
+                    name="Pertes de lien",
+                    x=x_labels,
+                    y=y_loss_link,
+                    marker=dict(color="lightskyblue"),
+                    text=y_loss_link,
+                    textposition="auto",
+                ),
+            ]
+        )
+
+        fig.update_layout(
+            title=f"Problèmes d'enchaînement et Pertes de lien par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
+            xaxis_title="Intervalles de temps (heure début - heure fin)",
+            yaxis_title="Nombre",
+            barmode="group",
+            hovermode="x unified",
+            template="plotly_white",
+            height=600,
+            width=1200,
+        )
+
+        fig.write_html(output_folder_path + "/" + html_filename)
+        logger_config.print_and_log_info(f"Fichier HTML créé: {html_filename}")
+
+        # Afficher le bar graph
+        plt.figure(figsize=(14, 6))
+        x_pos = range(len(x_labels))
+        width = 0.35
+        plt.bar([p - width / 2 for p in x_pos], y_problems, width, label="Problèmes d'enchaînement", color="lightcoral")
+        plt.bar([p + width / 2 for p in x_pos], y_loss_link, width, label="Pertes de lien", color="lightskyblue")
+        plt.xlabel("Intervalles de temps (heure début - heure fin)")
+        plt.ylabel("Nombre")
+        plt.title(f"Problèmes d'enchaînement et Pertes de lien par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}")
+        plt.xticks(x_pos, x_labels, rotation=45, ha="right")
+        plt.legend()
+        plt.tight_layout()
+        if do_show:
+            plt.show()
 
 
 pass
