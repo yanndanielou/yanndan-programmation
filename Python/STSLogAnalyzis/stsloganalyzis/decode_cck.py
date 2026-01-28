@@ -219,6 +219,7 @@ class CckMproTraceLibrary:
     all_processed_files: List["CckMproTraceFile"] = field(default_factory=list)
     all_problem_enchainement_numero_protocolaire: List["CckMproProblemEnchainementNumeroProtocolaire"] = field(default_factory=list)
     all_changement_etats_liaisons_mpro: List["CckMproChangementEtatLiaison"] = field(default_factory=list)
+    lines_per_liaison: Dict["CckMproLiaison", List["CckMproTraceLine"]] = field(default_factory=dict)
 
     def load_folder(self, folder_full_path: str) -> Self:
         for dirpath, dirnames, filenames in os.walk(folder_full_path):
@@ -228,16 +229,32 @@ class CckMproTraceLibrary:
                 self.all_processed_lines += cck_file.all_processed_lines
                 self.all_problem_enchainement_numero_protocolaire += cck_file.all_problem_enchainement_numero_protocolaire
                 self.all_changement_etats_liaisons_mpro += cck_file.all_changement_etats_liaisons_mpro
+
+                for key, value in cck_file.lines_per_liaison.items():
+                    if key not in self.lines_per_liaison:
+                        self.lines_per_liaison[key] = []
+                    self.lines_per_liaison[key] += value
+
                 assert self.all_processed_lines
         assert self.all_processed_lines
 
         logger_config.print_and_log_info(f"{len(self.all_problem_enchainement_numero_protocolaire)} problems enchainement numero protocolaire")
         logger_config.print_and_log_info(f"{len(self.all_changement_etats_liaisons_mpro)} changements états liaisons mpro")
+        logger_config.print_and_log_info(f"{','.join([key.identifier + ':' + str(len(value)) for key, value in self.lines_per_liaison.items()])} changements états liaisons mpro")
 
         return self
 
 
 pass
+
+
+@dataclass
+class CckMproLiaison:
+    full_name: str
+    identifier: str
+
+    def __hash__(self) -> int:
+        return hash(self.full_name)
 
 
 @dataclass
@@ -250,16 +267,22 @@ class CckMproTraceFile:
 
     def __post_init__(self) -> None:
         self.file_full_path = self.parent_folder_full_path + "/" + self.file_name
+
+        self.lines_per_liaison: Dict[CckMproLiaison, List["CckMproTraceLine"]] = {}
         with logger_config.stopwatch_with_label(f"Open and read CCK Mpro trace file lines {self.file_full_path}"):
             with open(self.file_full_path, mode="r", encoding="ANSI") as file:
                 all_raw_lines = file.readlines()
                 logger_config.print_and_log_info(to_print_and_log=f"File {self.file_full_path} has {len(all_raw_lines)} lines", do_not_print=True)
                 for line_number, line in enumerate(all_raw_lines):
-                    processed_line = CckMproTraceLine(parent_file=self, full_raw_line=line)
+                    processed_line = CckMproTraceLine(parent_file=self, full_raw_line=line, line_number=line_number)
                     if processed_line.changement_etat_liaison:
                         self.all_changement_etats_liaisons_mpro.append(processed_line.changement_etat_liaison)
                     if processed_line.problem_enchainement_numero_protocolaire:
                         self.all_problem_enchainement_numero_protocolaire.append(processed_line.problem_enchainement_numero_protocolaire)
+                    if processed_line.liaison:
+                        if processed_line.liaison not in self.lines_per_liaison:
+                            self.lines_per_liaison[processed_line.liaison] = []
+                        self.lines_per_liaison[processed_line.liaison].append(processed_line)
                     self.all_processed_lines.append(processed_line)
 
         logger_config.print_and_log_info(f"{self.file_full_path}: {len(self.all_processed_lines)} lines found")
@@ -270,6 +293,7 @@ class CckMproTraceFile:
 class CckMproTraceLine:
     parent_file: CckMproTraceFile
     full_raw_line: str
+    line_number: int
 
     def __post_init__(self) -> None:
         self.raw_date_str = self.full_raw_line[1:23]
@@ -284,6 +308,7 @@ class CckMproTraceLine:
         match_liaison_pattern = LIAISON_PATTERN.match(self.full_raw_line)
         self.liaison_full_name = match_liaison_pattern.group("liaison_full_name") if match_liaison_pattern else None
         self.liaison_id = match_liaison_pattern.group("liaison_id") if match_liaison_pattern else None
+        self.liaison = CckMproLiaison(full_name=self.liaison_full_name, identifier=self.liaison_id) if self.liaison_full_name and self.liaison_id else None
 
         self.problem_enchainement_numero_protocolaire = (
             CckMproProblemEnchainementNumeroProtocolaire(self) if "le msg a un problème de 'enchainement numero protocolaire'" in self.full_raw_line else None
