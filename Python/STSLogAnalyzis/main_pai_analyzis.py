@@ -17,7 +17,8 @@ OUTPUT_FOLDER_NAME = "output"
 with logger_config.application_logger("main_pai_analyzis"):
     file_utils.create_folder_if_not_exist(OUTPUT_FOLDER_NAME)
 
-    cck_libary = decode_cck.CckMproTraceLibrary().load_folder(r"D:\temp\2027-01-27 avec hitachi\2027-01-27\SIG3\Traces\Traces_MPRO1_1_20260127_15 - Copie")
+    # cck_libary = decode_cck.CckMproTraceLibrary().load_folder(r"D:\temp\2027-01-27 avec hitachi\2027-01-27\SIG3\Traces\Traces_MPRO1_1_20260127_15 - Copie")
+    cck_libary = decode_cck.CckMproTraceLibrary().load_folder(r"C:\Users\fr232487\Downloads\Traces_MPRO1_1_20260125_15_site_ccu")
 
     enchainement_protocolaire_lines = [line for line in cck_libary.all_processed_lines if "le msg a un problème de 'enchainement numero protocolaire'" in line.full_raw_line]
     logger_config.print_and_log_info(f"{len(enchainement_protocolaire_lines)} problèmes de enchainement numero protocolaire")

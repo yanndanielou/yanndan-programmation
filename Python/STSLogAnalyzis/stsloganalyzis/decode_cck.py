@@ -196,6 +196,7 @@ class CckMproProblemEnchainementNumeroProtocolaire(CckMproTraceSpecificEvent):
 class EtatLiaisonMpro(Enum):
     OK = auto()
     KO = auto()
+    NON_CONNU = auto()
 
 
 @dataclass
@@ -203,14 +204,11 @@ class CckMproChangementEtatLiaison(CckMproTraceSpecificEvent):
     additional_info: str = ""
 
     def __post_init__(self) -> None:
-        if "changement d'état : ok => ko" in self.trace_line.full_raw_line:
-            self.old_state = EtatLiaisonMpro.OK
-            self.new_state = EtatLiaisonMpro.KO
-        elif "changement d'état : ko => ok" in self.trace_line.full_raw_line:
-            self.old_state = EtatLiaisonMpro.KO
-            self.new_state = EtatLiaisonMpro.OK
-        else:
-            assert f"Not supported {self.trace_line.full_raw_line}"
+
+        change_states = self.trace_line.full_raw_line.split("changement d'état : ")[1]
+        states = change_states.split(" => ")
+        self.previous_state = EtatLiaisonMpro[states[0]]
+        self.new_state = EtatLiaisonMpro[states[1]]
 
 
 @dataclass
