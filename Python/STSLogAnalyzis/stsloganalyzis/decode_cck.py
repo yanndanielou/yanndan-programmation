@@ -235,6 +235,17 @@ class CckMproTraceLibrary:
 
     def __post_init__(self) -> None:
         self.all_temporary_loss_link: List[CckMproTemporaryLossLink] = []
+        self.all_liaisons: List[CckMproLiaison] = []
+        self.liaison_by_identifier: Dict[str, CckMproLiaison] = {}
+
+    def get_or_create_liaison(self, full_name: str, identifier: str) -> "CckMproLiaison":
+        if identifier in self.liaison_by_identifier:
+            return self.liaison_by_identifier[identifier]
+
+        liaison = CckMproLiaison(full_name=full_name, identifier=identifier)
+        self.liaison_by_identifier[identifier] = liaison
+        self.all_liaisons.append(liaison)
+        return liaison
 
     def load_folder(self, folder_full_path: str) -> Self:
         for dirpath, dirnames, filenames in os.walk(folder_full_path):
@@ -319,7 +330,7 @@ class CckMproTraceFile:
                 all_raw_lines = file.readlines()
                 logger_config.print_and_log_info(to_print_and_log=f"File {self.file_full_path} has {len(all_raw_lines)} lines", do_not_print=True)
                 for line_number, line in enumerate(all_raw_lines):
-                    if line_number % 10000 == 0:
+                    if line_number % 100000 == 0:
                         logger_config.print_and_log_info(f"Handle line #{line_number} of {self.file_full_path}")
                     processed_line = CckMproTraceLine(parent_file=self, full_raw_line=line, line_number=line_number)
                     if processed_line.changement_etat_liaison:
@@ -354,8 +365,10 @@ class CckMproTraceLine:
         match_liaison_pattern = LIAISON_PATTERN.match(self.full_raw_line)
         self.liaison_full_name = match_liaison_pattern.group("liaison_full_name") if match_liaison_pattern else None
         self.liaison_id = match_liaison_pattern.group("liaison_id") if match_liaison_pattern else None
-        self.liaison = CckMproLiaison(full_name=self.liaison_full_name, identifier=self.liaison_id) if self.liaison_full_name and self.liaison_id else None
-        self.liaison.all_lines.append(self)
+
+        self.liaison = self.parent_file.library.get_or_create_liaison(full_name=self.liaison_full_name, identifier=self.liaison_id) if self.liaison_full_name and self.liaison_id else None
+        if self.liaison:
+            self.liaison.all_lines.append(self)
 
         self.problem_enchainement_numero_protocolaire = (
             CckMproProblemEnchainementNumeroProtocolaire(self) if "le msg a un problème de 'enchainement numero protocolaire'" in self.full_raw_line else None
