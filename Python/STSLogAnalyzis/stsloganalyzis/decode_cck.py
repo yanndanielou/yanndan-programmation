@@ -64,8 +64,9 @@ def save_cck_mpro_lines_in_excel(trace_lines: List["CckMproTraceLine"], output_f
     ws.column_dimensions["E"].width = 80
 
     # Sauvegarder le fichier
-    wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + ".xlsx")
-    logger_config.print_and_log_info(f"Fichier Excel créé: {excel_output_file_name_without_extension}")
+    output_file_full_path = output_folder_path + "/" + excel_output_file_name_without_extensio + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx"
+    wb.save(output_file_full_path)
+    logger_config.print_and_log_info(f"Fichier Excel créé: {output_file_full_path}")
     logger_config.print_and_log_info(f"Total de {len(trace_lines)} lignes sauvegardées")
 
 
@@ -555,7 +556,7 @@ class CckMproTraceLibrary:
         ws.column_dimensions["J"].width = 20
 
         # Sauvegarder le fichier
-        wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + ".xlsx")
+        wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
         logger_config.print_and_log_info(f"Fichier Excel créé: {excel_output_file_name_without_extension}.xlsx")
         logger_config.print_and_log_info(f"Total de {len(self.all_temporary_loss_link)} pertes de lien sauvegardées")
 
