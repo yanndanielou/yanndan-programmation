@@ -18,6 +18,7 @@ with logger_config.application_logger("main_pai_analyzis"):
 
     enchainement_protocolaire_lines = [line for line in cck_libary.all_processed_lines if "le msg a un problème de 'enchainement numero protocolaire'" in line.full_raw_line]
     logger_config.print_and_log_info(f"{len(enchainement_protocolaire_lines)} problèmes de enchainement numero protocolaire")
+    decode_cck.save_cck_mpro_lines_in_excel(trace_lines=enchainement_protocolaire_lines, excel_output_file_name="Problèmes enchainement numéro protocolaire")
     decode_cck.plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines=enchainement_protocolaire_lines, label="enchainement_protocolaire_lines", interval_minutes=1)
     pass
 

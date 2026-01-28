@@ -24,7 +24,50 @@ LIAISON_PATTERN = re.compile(LIAISON_PATTERN_STR)
 
 
 def save_cck_mpro_lines_in_excel(trace_lines: List["CckMproTraceLine"], excel_output_file_name: str) -> None:
-    pass
+    """
+    Sauvegarde une liste de CckMproTraceLine dans un fichier Excel.
+
+    Args:
+        trace_lines: Liste des lignes de trace à sauvegarder
+        excel_output_file_name: Nom du fichier Excel de sortie
+    """
+    if not trace_lines:
+        logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
+        return
+
+    # Créer un workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "CCK MPRO Traces"
+
+    # Ajouter les en-têtes
+    headers = ["Timestamp", "Date complète", "Liaison", "ID Liaison", "Ligne brute"]
+    for col_idx, header in enumerate(headers, start=1):
+        cell = ws.cell(row=1, column=col_idx)
+        cell.value = header
+        cell.fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    # Ajouter les données
+    for row_idx, trace_line in enumerate(trace_lines, start=2):
+        ws.cell(row=row_idx, column=1).value = trace_line.decoded_timestamp
+        ws.cell(row=row_idx, column=2).value = trace_line.raw_date_str
+        ws.cell(row=row_idx, column=3).value = trace_line.liaison_full_name or "N/A"
+        ws.cell(row=row_idx, column=4).value = trace_line.liaison_id or "N/A"
+        ws.cell(row=row_idx, column=5).value = trace_line.full_raw_line.strip()
+
+    # Ajuster la largeur des colonnes
+    ws.column_dimensions["A"].width = 25
+    ws.column_dimensions["B"].width = 25
+    ws.column_dimensions["C"].width = 30
+    ws.column_dimensions["D"].width = 15
+    ws.column_dimensions["E"].width = 80
+
+    # Sauvegarder le fichier
+    wb.save(excel_output_file_name)
+    logger_config.print_and_log_info(f"Fichier Excel créé: {excel_output_file_name}")
+    logger_config.print_and_log_info(f"Total de {len(trace_lines)} lignes sauvegardées")
 
 
 def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTraceLine"], label: str, interval_minutes: int = 10) -> None:
