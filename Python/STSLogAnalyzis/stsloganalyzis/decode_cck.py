@@ -230,6 +230,7 @@ class CckMproChangementEtatLiaison(CckMproTraceSpecificEvent):
 
 @dataclass
 class CckMproTraceLibrary:
+    name: str
     all_processed_lines: List["CckMproTraceLine"] = field(default_factory=list)
     all_processed_files: List["CckMproTraceFile"] = field(default_factory=list)
     all_problem_enchainement_numero_protocolaire: List["CckMproProblemEnchainementNumeroProtocolaire"] = field(default_factory=list)
