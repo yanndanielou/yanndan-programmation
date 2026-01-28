@@ -31,7 +31,7 @@ class TerminalTechniqueAlarm:
 
     def __post_init__(self) -> None:
         self.end_alarm_line: Optional["TerminalTechniqueArchivesMaintLogLine"] = None
-        self.equipment_name = self.full_text.split("\t")[0]
+        self.equipment_name = self.full_text.split(" ")[0]
         pass
 
 
