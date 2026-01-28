@@ -24,7 +24,7 @@ LIAISON_PATTERN_STR = ".*(?P<liaison_full_name>Liaison (?P<liaison_id>\d+A?B?)).
 LIAISON_PATTERN = re.compile(LIAISON_PATTERN_STR)
 
 
-def save_cck_mpro_lines_in_excel(trace_lines: List["CckMproTraceLine"], excel_output_file_name: str) -> None:
+def save_cck_mpro_lines_in_excel(trace_lines: List["CckMproTraceLine"], output_folder_path: str, excel_output_file_name_without_extension: str) -> None:
     """
     Sauvegarde une liste de CckMproTraceLine dans un fichier Excel.
 
@@ -66,12 +66,12 @@ def save_cck_mpro_lines_in_excel(trace_lines: List["CckMproTraceLine"], excel_ou
     ws.column_dimensions["E"].width = 80
 
     # Sauvegarder le fichier
-    wb.save(excel_output_file_name)
-    logger_config.print_and_log_info(f"Fichier Excel créé: {excel_output_file_name}")
+    wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + ".xlsx")
+    logger_config.print_and_log_info(f"Fichier Excel créé: {excel_output_file_name_without_extension}")
     logger_config.print_and_log_info(f"Total de {len(trace_lines)} lignes sauvegardées")
 
 
-def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTraceLine"], label: str, interval_minutes: int = 10) -> None:
+def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTraceLine"], output_folder_path: str, label: str, interval_minutes: int = 10) -> None:
     if not trace_lines:
         print("La liste des traces est vide.")
         return
@@ -142,7 +142,7 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTrace
     ws[f"B{summary_row}"].alignment = Alignment(horizontal="center")
 
     # Sauvegarder le fichier
-    wb.save(excel_filename)
+    wb.save(output_folder_path + "/" + excel_filename)
     logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
     # Créer et sauvegarder le graphe en HTML avec Plotly
@@ -169,7 +169,7 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTrace
         width=1000,
     )
 
-    fig.write_html(html_filename)
+    fig.write_html(output_folder_path + "/" + html_filename)
     logger_config.print_and_log_info(f"Fichier HTML créé: {html_filename}")
 
     # Afficher le bar graph
