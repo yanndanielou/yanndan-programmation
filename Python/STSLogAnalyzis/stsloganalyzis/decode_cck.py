@@ -39,24 +39,24 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTrace
         current_time += datetime.timedelta(minutes=interval_minutes)
 
     # Compter les éléments dans chaque intervalle
-    interval_counts: Dict[datetime.datetime, int] = Counter()
+    interval_counts: Dict[str, int] = Counter()
     for trace in trace_lines:
         for interval_start in interval_start_times:
             interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
             if interval_start <= trace.decoded_timestamp < interval_end:
-                interval_counts[interval_start] += 1
+                interval_counts[interval_start.strftime("%H:%M") + " -" + interval_end.strftime("%H:%M")] += 1
                 break
 
     # Préparer les données pour le graphe
-    x_labels = [start.strftime("%Y-%m-%d %H:%M") for start in interval_counts.keys()]
+    x_labels = interval_counts.keys()
     y_values = list(interval_counts.values())
 
     # Afficher le bar graph
     plt.figure(figsize=(10, 6))
-    plt.bar(x_labels, y_values, color="skyblue")
+    plt.bar(x_labels, y_values, color="skyblue", width=0.3)
     plt.xlabel("Intervalles de temps (heure début)")
     plt.ylabel("Nombre de CckMproTraceLine")
-    plt.title(label + f" par périodes de {interval_minutes} minutes")
+    plt.title(f"{len(trace_lines)} {label} par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}")
     plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
     plt.show()
