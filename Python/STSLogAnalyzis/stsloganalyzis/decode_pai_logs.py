@@ -64,7 +64,7 @@ class TerminalTechniqueClosableAlarm(TerminalTechniqueAlarm):
 
 @dataclass
 class TerminalTechniqueMccsHAlarm(TerminalTechniqueClosableAlarm):
-pass
+    pass
 
 @dataclass
 class SaatMissingAcknowledgmentTerminalTechniqueAlarm(TerminalTechniqueEventAlarm):
@@ -95,6 +95,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         self.currently_opened_alarms: List[TerminalTechniqueClosableAlarm] = []
         self.ignored_end_alarms_without_alarm_begin: List[TerminalTechniqueClosableAlarm] = []
         self.sahara_alarms: List[SaharaTerminalTechniqueAlarm] = []
+        self.mccs_hs_alarms: List[TerminalTechniqueMccsHAlarm] = []
         self.equipments_with_alarms: List[TerminalTechniqueEquipmentWithAlarms] = []
         self.back_to_past_detected: List[TerminalTechniqueArchivesMaintLogBackToPast] = []
 
@@ -659,6 +660,200 @@ class TerminalTechniqueArchivesMaintLibrary:
         if do_show:
             plt.show()
 
+    def plot_sahara_mccs_back_to_past_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False) -> None:
+        """
+        Génère un bar graph montrant SAHARA, MCCS H et Back to Past par intervalle de temps.
+
+        Args:
+            output_folder_path: Chemin du dossier de sortie
+            interval_minutes: Intervalle de temps en minutes (par défaut 10)
+            do_show: Afficher le graphique matplotlib
+        """
+        if not self.all_processed_lines:
+            logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
+            return
+
+        # Déterminer la période totale
+        start_time = self.all_processed_lines[0].decoded_timestamp
+        end_time = self.all_processed_lines[-1].decoded_timestamp
+
+        # Créer des intervalles de temps
+        interval_start_times: List[datetime.datetime] = []
+        current_time = start_time
+        while current_time <= end_time:
+            interval_start_times.append(current_time)
+            current_time += datetime.timedelta(minutes=interval_minutes)
+
+        # Compter les événements dans chaque intervalle
+        interval_sahara_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+        interval_mccs_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+        interval_back_to_past_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+
+        # Compter les sahara_alarms
+        for sahara_alarm in self.sahara_alarms:
+            timestamp = sahara_alarm.raise_line.decoded_timestamp
+            for interval_start in interval_start_times:
+                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                if interval_start <= timestamp < interval_end:
+                    interval_sahara_counts[(interval_start, interval_end)] += 1
+                    break
+
+        # Compter les mccs_hs_alarms
+        for mccs_alarm in self.mccs_hs_alarms:
+            timestamp = mccs_alarm.raise_line.decoded_timestamp
+            for interval_start in interval_start_times:
+                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                if interval_start <= timestamp < interval_end:
+                    interval_mccs_counts[(interval_start, interval_end)] += 1
+                    break
+
+        # Compter les back_to_past_detected
+        for back_to_past in self.back_to_past_detected:
+            timestamp = back_to_past.previous_line.decoded_timestamp
+            for interval_start in interval_start_times:
+                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                if interval_start <= timestamp < interval_end:
+                    interval_back_to_past_counts[(interval_start, interval_end)] += 1
+                    break
+
+        # Initialiser les compteurs pour les intervalles manquants
+        for interval_start in interval_start_times:
+            interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+            if (interval_start, interval_end) not in interval_sahara_counts:
+                interval_sahara_counts[(interval_start, interval_end)] = 0
+            if (interval_start, interval_end) not in interval_mccs_counts:
+                interval_mccs_counts[(interval_start, interval_end)] = 0
+            if (interval_start, interval_end) not in interval_back_to_past_counts:
+                interval_back_to_past_counts[(interval_start, interval_end)] = 0
+
+        # Préparer les données pour le graphe
+        x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_sahara_counts.keys()]
+        y_sahara = [interval_sahara_counts[(begin, end)] for begin, end in interval_sahara_counts.keys()]
+        y_mccs = [interval_mccs_counts[(begin, end)] for begin, end in interval_sahara_counts.keys()]
+        y_back_to_past = [interval_back_to_past_counts[(begin, end)] for begin, end in interval_sahara_counts.keys()]
+
+        # Créer et exporter les données dans un fichier Excel
+        excel_filename = f"sahara_mccs_back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Summary Events"
+
+        # Ajouter les en-têtes
+        ws["A1"] = "Début Intervalle de temps"
+        ws["B1"] = "Fin Intervalle de temps"
+        ws["C1"] = "Nombre SAHARA"
+        ws["D1"] = "Nombre MCCS H"
+        ws["E1"] = "Nombre Back to Past"
+
+        # Style des en-têtes
+        header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF")
+        for cell in [ws["A1"], ws["B1"], ws["C1"], ws["D1"], ws["E1"]]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        # Ajouter les données
+        for idx, ((interval_begin, interval_end), sahara_count) in enumerate(interval_sahara_counts.items(), start=2):
+            ws[f"A{idx}"] = interval_begin
+            ws[f"B{idx}"] = interval_end
+            ws[f"C{idx}"] = sahara_count
+            ws[f"D{idx}"] = interval_mccs_counts[(interval_begin, interval_end)]
+            ws[f"E{idx}"] = interval_back_to_past_counts[(interval_begin, interval_end)]
+            ws[f"C{idx}"].alignment = Alignment(horizontal="center")
+            ws[f"D{idx}"].alignment = Alignment(horizontal="center")
+            ws[f"E{idx}"].alignment = Alignment(horizontal="center")
+
+        # Ajuster la largeur des colonnes
+        ws.column_dimensions["A"].width = 25
+        ws.column_dimensions["B"].width = 25
+        ws.column_dimensions["C"].width = 20
+        ws.column_dimensions["D"].width = 20
+        ws.column_dimensions["E"].width = 20
+
+        # Ajouter un résumé
+        summary_row = len(interval_sahara_counts) + 3
+        ws[f"A{summary_row}"] = "Total"
+        ws[f"C{summary_row}"] = len(self.sahara_alarms)
+        ws[f"D{summary_row}"] = len(self.mccs_hs_alarms)
+        ws[f"E{summary_row}"] = len(self.back_to_past_detected)
+        ws[f"A{summary_row}"].font = Font(bold=True)
+        ws[f"C{summary_row}"].font = Font(bold=True)
+        ws[f"D{summary_row}"].font = Font(bold=True)
+        ws[f"E{summary_row}"].font = Font(bold=True)
+        ws[f"C{summary_row}"].alignment = Alignment(horizontal="center")
+        ws[f"D{summary_row}"].alignment = Alignment(horizontal="center")
+        ws[f"E{summary_row}"].alignment = Alignment(horizontal="center")
+
+        # Sauvegarder le fichier
+        wb.save(output_folder_path + "/" + excel_filename)
+        logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
+
+        # Créer et sauvegarder le graphe en HTML avec Plotly
+        html_filename = f"sahara_mccs_back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    name="SAHARA",
+                    x=x_labels,
+                    y=y_sahara,
+                    marker=dict(color="gold"),
+                    text=y_sahara,
+                    textposition="auto",
+                ),
+                go.Bar(
+                    name="MCCS H",
+                    x=x_labels,
+                    y=y_mccs,
+                    marker=dict(color="steelblue"),
+                    text=y_mccs,
+                    textposition="auto",
+                ),
+                go.Bar(
+                    name="Back to Past",
+                    x=x_labels,
+                    y=y_back_to_past,
+                    marker=dict(color="orangered"),
+                    text=y_back_to_past,
+                    textposition="auto",
+                ),
+            ]
+        )
+
+        fig.update_layout(
+            title=f"SAHARA, MCCS H et Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
+            xaxis_title="Intervalles de temps (heure début - heure fin)",
+            yaxis_title="Nombre d'événements",
+            barmode="group",
+            hovermode="x unified",
+            template="plotly_white",
+            height=600,
+            width=1200,
+        )
+
+        fig.write_html(output_folder_path + "/" + html_filename)
+        logger_config.print_and_log_info(f"Fichier HTML créé: {html_filename}")
+
+        # Afficher le bar graph matplotlib
+        plt.figure(figsize=(14, 7))
+        x_pos = range(len(x_labels))
+        width = 0.25
+
+        plt.bar([p - width for p in x_pos], y_sahara, width, label="SAHARA", color="gold")
+        plt.bar(x_pos, y_mccs, width, label="MCCS H", color="steelblue")
+        plt.bar([p + width for p in x_pos], y_back_to_past, width, label="Back to Past", color="orangered")
+
+        plt.xlabel("Intervalles de temps (heure début - heure fin)")
+        plt.ylabel("Nombre d'événements")
+        plt.title(
+            f"SAHARA, MCCS H et Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}"
+        )
+        plt.xticks(x_pos, x_labels, rotation=45, ha="right")
+        plt.legend()
+        plt.tight_layout()
+        if do_show:
+            plt.show()
+
 
 @dataclass
 class TerminalTechniqueArchivesMaintFile:
@@ -728,7 +923,9 @@ class TerminalTechniqueArchivesMaintLogLine:
         elif "Absence acquittement SAAT" in self.alarm_full_text:
             self.alarm = SaatMissingAcknowledgmentTerminalTechniqueAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
         elif self.alarm_type == AlarmLineType.DEB_ALA and ("MCCS A HS" in self.alarm_full_text or "MCCS B HS" in self.alarm_full_text):
-            self.alarm = TerminalTechniqueClosableAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
+            self.alarm = TerminalTechniqueMccsHAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
+            self.parent_file.library.mccs_hs_alarms.append(self.alarm)
+
         elif self.alarm_type == AlarmLineType.DEB_ALA:
             self.alarm = TerminalTechniqueClosableAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
         elif self.alarm_type == AlarmLineType.EVT_ALA:
