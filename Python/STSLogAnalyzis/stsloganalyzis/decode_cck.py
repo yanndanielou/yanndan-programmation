@@ -7,6 +7,9 @@ import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, cast, Self
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from common import file_name_utils
 
 import re
 
@@ -17,6 +20,9 @@ from logger import logger_config
 
 LIAISON_PATTERN_STR = ".*(?P<liaison_full_name>Liaison (?P<liaison_id>\d+A?B?)).*"
 LIAISON_PATTERN = re.compile(LIAISON_PATTERN_STR)
+
+
+# def save_cck_mpro_lines_in_excel()
 
 
 def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTraceLine"], label: str, interval_minutes: int = 10) -> None:
@@ -39,18 +45,58 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTrace
         current_time += datetime.timedelta(minutes=interval_minutes)
 
     # Compter les éléments dans chaque intervalle
-    interval_counts: Dict[str, int] = Counter()
+    interval_counts: Dict[(datetime.datetime, datetime.datetime), int] = Counter()
     for trace in trace_lines:
         for interval_start in interval_start_times:
             interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
             if interval_start <= trace.decoded_timestamp < interval_end:
-                interval_counts[interval_start.strftime("%H:%M") + " -" + interval_end.strftime("%H:%M")] += 1
+                interval_counts[(interval_start, interval_end)] += 1
                 break
 
     # Préparer les données pour le graphe
-    x_labels = interval_counts.keys()
+    x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_counts.keys()]
     y_values = list(interval_counts.values())
+    # Créer et exporter les données dans un fichier Excel
+    excel_filename = f"interval_counts_{label.replace(' ', '_')}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Interval Counts"
 
+    # Ajouter les en-têtes
+    ws["A1"] = "Intervalle de temps"
+    ws["B1"] = "Nombre d'éléments"
+
+    # Style des en-têtes
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+    for cell in [ws["A1"], ws["B1"]]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    # Ajouter les données
+    for idx, ((interval_begin, interval_end), count) in enumerate(interval_counts.items(), start=2):
+        ws[f"A{idx}"] = interval_begin
+        ws[f"B{idx}"] = interval_end
+        ws[f"C{idx}"] = count
+        ws[f"C{idx}"].alignment = Alignment(horizontal="center")
+
+    # Ajuster la largeur des colonnes
+    ws.column_dimensions["A"].width = 25
+    ws.column_dimensions["B"].width = 25
+    ws.column_dimensions["C"].width = 15
+
+    # Ajouter un résumé
+    summary_row = len(interval_counts) + 3
+    ws[f"A{summary_row}"] = "Total"
+    ws[f"B{summary_row}"] = len(trace_lines)
+    ws[f"A{summary_row}"].font = Font(bold=True)
+    ws[f"B{summary_row}"].font = Font(bold=True)
+    ws[f"B{summary_row}"].alignment = Alignment(horizontal="center")
+
+    # Sauvegarder le fichier
+    wb.save(excel_filename)
+    logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
     # Afficher le bar graph
     plt.figure(figsize=(10, 6))
     plt.bar(x_labels, y_values, color="skyblue", width=0.3)
