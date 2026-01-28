@@ -31,6 +31,8 @@ class TerminalTechniqueAlarm:
 
     def __post_init__(self) -> None:
         self.end_alarm_line: Optional["TerminalTechniqueArchivesMaintLogLine"] = None
+        self.equipment_name = self.full_text.split("\t")[0]
+        pass
 
 
 @dataclass
@@ -67,6 +69,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         self.all_processed_lines: List["TerminalTechniqueArchivesMaintLogLine"] = []
         self.all_processed_files: List["TerminalTechniqueArchivesMaintFile"] = []
         self.currently_opened_alarms: List[TerminalTechniqueClosableAlarm] = []
+        self.ignored_end_alarm_lines_without_alarm_begin: List[TerminalTechniqueArchivesMaintLogLine] = []
 
     def load_folder(self, folder_full_path: str) -> Self:
 
@@ -80,6 +83,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         assert self.all_processed_lines
 
         logger_config.print_and_log_info(f"{self.name}: currently_opened_alarms:{len(self.currently_opened_alarms)}")
+        assert len(self.ignored_end_alarm_lines_without_alarm_begin) < 10
 
         return self
 
@@ -94,10 +98,10 @@ class TerminalTechniqueArchivesMaintFile:
     def __post_init__(self) -> None:
         self.file_full_path = self.parent_folder_full_path + "\\" + self.file_name
 
-        with logger_config.stopwatch_with_label(f"Open and read file  {self.file_full_path}", inform_beginning=False):
+        with logger_config.stopwatch_with_label(f"Open and read file  {self.file_full_path}", inform_beginning=False, enable_print=False, enabled=False):
             with open(self.file_full_path, mode="r", encoding="ANSI") as file:
                 all_raw_lines = file.readlines()
-                logger_config.print_and_log_info(to_print_and_log=f"File {self.file_full_path} has {len(all_raw_lines)} lines")
+                # logger_config.print_and_log_info(to_print_and_log=f"File {self.file_full_path} has {len(all_raw_lines)} lines")
                 for line_number, line in enumerate(all_raw_lines):
                     if len(line) > 3:
                         processed_line = TerminalTechniqueArchivesMaintLogLine(parent_file=self, full_raw_line=line, line_number=line_number)
@@ -123,7 +127,7 @@ class TerminalTechniqueArchivesMaintLogLine:
         assert len(self.full_raw_line_split_by_tab) == 4
         self.alarm_full_text = self.full_raw_line_split_by_tab[3]
 
-        self.alarm: TerminalTechniqueAlarm = cast(TerminalTechniqueAlarm, None)
+        self.alarm: Optional[TerminalTechniqueAlarm] = None
 
         if self.alarm_type == AlarmLineType.FIN_ALA:
             found_unclosed_alarms = [alarm for alarm in self.parent_file.library.currently_opened_alarms if alarm.full_text == self.alarm_full_text]
@@ -133,15 +137,16 @@ class TerminalTechniqueArchivesMaintLogLine:
                 assert found_unclosed_alarm.end_alarm_line is None
                 self.alarm = found_unclosed_alarm
                 self.alarm.end_alarm_line = self
-
-        if not self.alarm:
-            if "Absence acquittement SAAT" in self.alarm_full_text:
-                self.alarm = SaatMissingAcknowledgmentTerminalTechniqueAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
-            elif self.alarm_type == AlarmLineType.DEB_ALA:
-                self.alarm = TerminalTechniqueClosableAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
-            elif self.alarm_type == AlarmLineType.EVT_ALA:
-                self.alarm = TerminalTechniqueAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
-            elif self.alarm_type == AlarmLineType.EVT_ALA:
-                self.alarm = TerminalTechniqueCsiAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
             else:
-                assert False, f"Alarm type {self.alarm_type} for {self.parent_file.file_name} {self.line_number} {self.alarm_full_text}"
+                self.parent_file.library.ignored_end_alarm_lines_without_alarm_begin.append(self)
+
+        elif "Absence acquittement SAAT" in self.alarm_full_text:
+            self.alarm = SaatMissingAcknowledgmentTerminalTechniqueAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
+        elif self.alarm_type == AlarmLineType.DEB_ALA:
+            self.alarm = TerminalTechniqueClosableAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
+        elif self.alarm_type == AlarmLineType.EVT_ALA:
+            self.alarm = TerminalTechniqueAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
+        elif self.alarm_type == AlarmLineType.CSI:
+            self.alarm = TerminalTechniqueCsiAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
+        else:
+            assert False, f"Alarm type {self.alarm_type} for {self.parent_file.file_name} {self.line_number} {self.alarm_full_text}"
