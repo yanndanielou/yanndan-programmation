@@ -1,22 +1,17 @@
-from collections import Counter
-import matplotlib.pyplot as plt
-import csv
-import os
 import datetime
-import xml.etree.ElementTree as ET
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, cast, Self
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment
-from common import file_name_utils
-import plotly.graph_objects as go
-from enum import Enum, auto
-
+import os
 import re
+from collections import Counter
+from dataclasses import dataclass, field
+from enum import Enum, auto
+from typing import Dict, List, Optional, Self, Tuple
 
-
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+from common import file_name_utils, string_utils
 from logger import logger_config
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, PatternFill
 
 # CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR = "!!! Decoding Error !!!"
 
@@ -91,7 +86,7 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTrace
         current_time += datetime.timedelta(minutes=interval_minutes)
 
     # Compter les éléments dans chaque intervalle
-    interval_counts: Dict[(datetime.datetime, datetime.datetime), int] = Counter()
+    interval_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
     for trace in trace_lines:
         for interval_start in interval_start_times:
             interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
@@ -200,6 +195,12 @@ class EtatLiaisonMpro(Enum):
 
 
 @dataclass
+class CckMproTemporaryLossLink:
+    loss_link_event: "CckMproChangementEtatLiaison"
+    link_back_to_normal_event: "CckMproChangementEtatLiaison"
+
+
+@dataclass
 class CckMproChangementEtatLiaison(CckMproTraceSpecificEvent):
     additional_info: str = ""
 
@@ -207,8 +208,8 @@ class CckMproChangementEtatLiaison(CckMproTraceSpecificEvent):
 
         change_states = self.trace_line.full_raw_line.split("changement d'état : ")[1]
         states = change_states.split(" => ")
-        self.previous_state = EtatLiaisonMpro[states[0]]
-        self.new_state = EtatLiaisonMpro[states[1]]
+        self.previous_state = EtatLiaisonMpro[string_utils.text_to_valid_enum_value_text(states[0])]
+        self.new_state = EtatLiaisonMpro[string_utils.text_to_valid_enum_value_text(states[1])]
 
 
 @dataclass
@@ -217,7 +218,11 @@ class CckMproTraceLibrary:
     all_processed_files: List["CckMproTraceFile"] = field(default_factory=list)
     all_problem_enchainement_numero_protocolaire: List["CckMproProblemEnchainementNumeroProtocolaire"] = field(default_factory=list)
     all_changement_etats_liaisons_mpro: List["CckMproChangementEtatLiaison"] = field(default_factory=list)
-    lines_per_liaison: Dict["CckMproLiaison", List["CckMproTraceLine"]] = field(default_factory=dict)
+    all_changement_etats_liaisons_mpro_per_link: Dict["CckMproLiaison", List["CckMproChangementEtatLiaison"]] = field(default_factory=dict)
+    lines_per_liaison: Dict[Optional["CckMproLiaison"], List["CckMproTraceLine"]] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        self.temporary_loss_link: List[CckMproTemporaryLossLink] = []
 
     def load_folder(self, folder_full_path: str) -> Self:
         for dirpath, dirnames, filenames in os.walk(folder_full_path):
@@ -236,9 +241,29 @@ class CckMproTraceLibrary:
                 assert self.all_processed_lines
         assert self.all_processed_lines
 
+        for changement_etat_liaison_mpro in self.all_changement_etats_liaisons_mpro:
+            assert changement_etat_liaison_mpro.trace_line.liaison
+            if changement_etat_liaison_mpro.trace_line.liaison not in self.all_changement_etats_liaisons_mpro_per_link:
+                self.all_changement_etats_liaisons_mpro_per_link[changement_etat_liaison_mpro.trace_line.liaison] = []
+            self.all_changement_etats_liaisons_mpro_per_link[changement_etat_liaison_mpro.trace_line.liaison].append(changement_etat_liaison_mpro)
+
+        for link in self.all_changement_etats_liaisons_mpro_per_link.keys():  # pylint: disable=consider-iterating-dictionary
+            last_change_to_nok = None
+            for mpro_link_state_change in self.all_changement_etats_liaisons_mpro_per_link[link]:
+                if mpro_link_state_change.new_state == EtatLiaisonMpro.KO:
+                    last_change_to_nok = mpro_link_state_change
+                elif mpro_link_state_change.new_state == EtatLiaisonMpro.OK and mpro_link_state_change.previous_state == EtatLiaisonMpro.KO:
+                    if last_change_to_nok:
+                        self.temporary_loss_link.append(CckMproTemporaryLossLink(loss_link_event=last_change_to_nok, link_back_to_normal_event=mpro_link_state_change))
+                    else:
+                        logger_config.print_and_log_error(f"Cannot finc change to NOK before {mpro_link_state_change}")
+
         logger_config.print_and_log_info(f"{len(self.all_problem_enchainement_numero_protocolaire)} problems enchainement numero protocolaire")
         logger_config.print_and_log_info(f"{len(self.all_changement_etats_liaisons_mpro)} changements états liaisons mpro")
-        logger_config.print_and_log_info(f"{','.join([key.identifier + ':' + str(len(value)) for key, value in self.lines_per_liaison.items()])} changements états liaisons mpro")
+        logger_config.print_and_log_info(f"{len(self.temporary_loss_link)} temporary_loss_link")
+        logger_config.print_and_log_info(
+            f"{','.join([key.identifier if key is not None else "None" + ':' + str(len(value)) for key, value in self.lines_per_liaison.items()])} changements états liaisons mpro"
+        )
 
         return self
 
@@ -250,6 +275,7 @@ pass
 class CckMproLiaison:
     full_name: str
     identifier: str
+    all_lines: List["CckMproTraceLine"] = field(default_factory=list)
 
     def __hash__(self) -> int:
         return hash(self.full_name)
@@ -266,7 +292,7 @@ class CckMproTraceFile:
     def __post_init__(self) -> None:
         self.file_full_path = self.parent_folder_full_path + "/" + self.file_name
 
-        self.lines_per_liaison: Dict[CckMproLiaison, List["CckMproTraceLine"]] = {}
+        self.lines_per_liaison: Dict[Optional[CckMproLiaison], List["CckMproTraceLine"]] = {}
         with logger_config.stopwatch_with_label(f"Open and read CCK Mpro trace file lines {self.file_full_path}"):
             with open(self.file_full_path, mode="r", encoding="ANSI") as file:
                 all_raw_lines = file.readlines()
@@ -277,10 +303,9 @@ class CckMproTraceFile:
                         self.all_changement_etats_liaisons_mpro.append(processed_line.changement_etat_liaison)
                     if processed_line.problem_enchainement_numero_protocolaire:
                         self.all_problem_enchainement_numero_protocolaire.append(processed_line.problem_enchainement_numero_protocolaire)
-                    if processed_line.liaison:
-                        if processed_line.liaison not in self.lines_per_liaison:
-                            self.lines_per_liaison[processed_line.liaison] = []
-                        self.lines_per_liaison[processed_line.liaison].append(processed_line)
+                    if processed_line.liaison not in self.lines_per_liaison:
+                        self.lines_per_liaison[processed_line.liaison] = []
+                    self.lines_per_liaison[processed_line.liaison].append(processed_line)
                     self.all_processed_lines.append(processed_line)
 
         logger_config.print_and_log_info(f"{self.file_full_path}: {len(self.all_processed_lines)} lines found")
@@ -307,6 +332,8 @@ class CckMproTraceLine:
         self.liaison_full_name = match_liaison_pattern.group("liaison_full_name") if match_liaison_pattern else None
         self.liaison_id = match_liaison_pattern.group("liaison_id") if match_liaison_pattern else None
         self.liaison = CckMproLiaison(full_name=self.liaison_full_name, identifier=self.liaison_id) if self.liaison_full_name and self.liaison_id else None
+        if self.liaison:
+            self.liaison.all_lines.append(self)
 
         self.problem_enchainement_numero_protocolaire = (
             CckMproProblemEnchainementNumeroProtocolaire(self) if "le msg a un problème de 'enchainement numero protocolaire'" in self.full_raw_line else None
