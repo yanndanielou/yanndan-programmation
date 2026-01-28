@@ -589,7 +589,7 @@ class CckMproTraceFile:
         self.file_full_path = self.parent_folder_full_path + "/" + self.file_name
 
         self.lines_per_liaison: Dict[Optional[CckMproLiaison], List["CckMproTraceLine"]] = {}
-        with logger_config.stopwatch_with_label(f"Open and read CCK Mpro trace file lines {self.file_full_path}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(f"Open and read CCK Mpro trace file {self.file_full_path}", inform_beginning=True):
             with open(self.file_full_path, mode="r", encoding="ANSI") as file:
                 all_raw_lines = file.readlines()
                 logger_config.print_and_log_info(to_print_and_log=f"File {self.file_full_path} has {len(all_raw_lines)} lines", do_not_print=True)
