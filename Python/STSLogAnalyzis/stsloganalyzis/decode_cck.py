@@ -23,7 +23,8 @@ LIAISON_PATTERN_STR = ".*(?P<liaison_full_name>Liaison (?P<liaison_id>\d+A?B?)).
 LIAISON_PATTERN = re.compile(LIAISON_PATTERN_STR)
 
 
-# def save_cck_mpro_lines_in_excel()
+def save_cck_mpro_lines_in_excel(trace_lines: List["CckMproTraceLine"], excel_output_file_name: str) -> None:
+    pass
 
 
 def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTraceLine"], label: str, interval_minutes: int = 10) -> None:
