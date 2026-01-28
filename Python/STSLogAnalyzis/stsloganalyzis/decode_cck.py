@@ -212,6 +212,7 @@ class CckMproChangementEtatLiaison(CckMproTraceSpecificEvent):
     additional_info: str = ""
 
     def __post_init__(self) -> None:
+        super().__post_init__()
 
         match = LINK_STATE_CHANGE_PATTERN.match(self.trace_line.full_raw_line)
         assert match
