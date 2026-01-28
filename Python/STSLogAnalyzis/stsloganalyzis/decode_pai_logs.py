@@ -995,7 +995,7 @@ class TerminalTechniqueArchivesMaintLogLine:
             else:
                 self.alarm = TerminalTechniqueClosableAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
                 self.alarm.end_alarm_line = self
-                self.parent_file.library.ignored_end_alarms_without_alarm_begin.append(self)
+                self.parent_file.library.ignored_end_alarms_without_alarm_begin.append(self.alarm)
 
         elif "SAHARA" in self.alarm_full_text:
             self.alarm = SaharaTerminalTechniqueAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
@@ -1005,9 +1005,10 @@ class TerminalTechniqueArchivesMaintLogLine:
         elif self.alarm_type == AlarmLineType.DEB_ALA and ("MCCS A HS" in self.alarm_full_text or "MCCS B HS" in self.alarm_full_text):
             self.alarm = TerminalTechniqueMccsHAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
             self.parent_file.library.mccs_hs_alarms.append(self.alarm)
-
+            self.parent_file.library.currently_opened_alarms.append(self.alarm)
         elif self.alarm_type == AlarmLineType.DEB_ALA:
             self.alarm = TerminalTechniqueClosableAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
+            self.parent_file.library.currently_opened_alarms.append(self.alarm)
         elif self.alarm_type == AlarmLineType.EVT_ALA:
             self.alarm = TerminalTechniqueAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
         elif self.alarm_type == AlarmLineType.CSI:
