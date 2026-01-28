@@ -18,13 +18,6 @@ OUTPUT_FOLDER_NAME = "output"
 with logger_config.application_logger("main_pai_analyzis"):
     file_utils.create_folder_if_not_exist(OUTPUT_FOLDER_NAME)
 
-    tt_maint_library = decode_pai_logs.TerminalTechniqueArchivesMaintLibrary("2027-01-27 P81 TT-026396").load_folder(r"D:\temp\2027-01-27 avec hitachi\2027-01-27\PAI81\TT-026396\Archives_maint")
-    tt_maint_library.export_equipments_with_alarms_to_excel(output_folder_path=OUTPUT_FOLDER_NAME, excel_output_file_name_without_extension="Alarms", equipment_names_to_ignore=["81"])
-    tt_maint_library.plot_back_to_past_by_period(output_folder_path=OUTPUT_FOLDER_NAME, interval_minutes=60, do_show=False)
-    tt_maint_library.plot_sahara_alarms_by_period(output_folder_path=OUTPUT_FOLDER_NAME, interval_minutes=60, do_show=False)
-    tt_maint_library.plot_sahara_mccs_back_to_past_by_period(output_folder_path=OUTPUT_FOLDER_NAME, interval_minutes=60, do_show=False)
-    tt_maint_library.plot_alarms_by_period(output_folder_path=OUTPUT_FOLDER_NAME, equipment_names_to_ignore=["81"], interval_minutes=60, do_show=True)  # Optionnel: affiche le graphique matplotlib
-
     cck_libary = decode_cck.CckMproTraceLibrary(name="2027-01-27 avec hitachi").load_folder(r"D:\temp\2027-01-27 avec hitachi\2027-01-27\SIG3\Traces\Traces_MPRO1_1_20260127_15")
     # cck_libary = decode_cck.CckMproTraceLibrary(name="Nuit 20260125 CCU").load_folder(r"C:\Users\fr232487\Downloads\Traces_MPRO1_1_20260125_15_site_ccu")
     cck_libary.export_temporary_loss_link_to_excel(
@@ -37,9 +30,8 @@ with logger_config.application_logger("main_pai_analyzis"):
     decode_cck.save_cck_mpro_lines_in_excel(
         trace_lines=enchainement_protocolaire_lines, output_folder_path=OUTPUT_FOLDER_NAME, excel_output_file_name_without_extension="Problèmes enchainement numéro protocolaire"
     )
-    decode_cck.plot_bar_graph_list_cck_mpro_lines_by_period(
-        trace_lines=enchainement_protocolaire_lines, output_folder_path=OUTPUT_FOLDER_NAME, label="enchainement_protocolaire_lines", interval_minutes=2
-    )
+    pertes_liaisons = [line for line in cck_libary.all_processed_lines if line.changement_etat_liaison and line.changement_etat_liaison.new_state == decode_cck.EtatLiaisonMpro.KO]
+    decode_cck.plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines=pertes_liaisons, output_folder_path=OUTPUT_FOLDER_NAME, label="pertes_liaisons", interval_minutes=2)
 
     pass
     plt.show()

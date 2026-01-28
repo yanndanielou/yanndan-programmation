@@ -206,6 +206,88 @@ class TerminalTechniqueArchivesMaintLibrary:
         total_alarms = sum(len(equipment.alarms) for equipment in self.equipments_with_alarms)
         logger_config.print_and_log_info(f"Total de {total_alarms} alarmes sauvegardées")
 
+        # Ajouter un onglet pour les SAHARA alarms
+        ws_sahara = wb.create_sheet("SAHARA Alarms")
+        headers_sahara = ["Timestamp", "File Name", "Line Number", "Alarm Type", "Full Text"]
+        for col_idx, header in enumerate(headers_sahara, start=1):
+            cell = ws_sahara.cell(row=1, column=col_idx)
+            cell.value = header
+            cell.fill = PatternFill(start_color="FFD966", end_color="FFD966", fill_type="solid")
+            cell.font = Font(bold=True, color="000000")
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        for row_idx, sahara_alarm in enumerate(self.sahara_alarms, start=2):
+            ws_sahara.cell(row=row_idx, column=1).value = sahara_alarm.raise_line.decoded_timestamp
+            ws_sahara.cell(row=row_idx, column=2).value = sahara_alarm.raise_line.parent_file.file_name
+            ws_sahara.cell(row=row_idx, column=3).value = sahara_alarm.raise_line.line_number
+            ws_sahara.cell(row=row_idx, column=4).value = sahara_alarm.alarm_type.name
+            ws_sahara.cell(row=row_idx, column=5).value = sahara_alarm.full_text.strip()
+
+        ws_sahara.column_dimensions["A"].width = 25
+        ws_sahara.column_dimensions["B"].width = 30
+        ws_sahara.column_dimensions["C"].width = 15
+        ws_sahara.column_dimensions["D"].width = 15
+        ws_sahara.column_dimensions["E"].width = 60
+
+        # Ajouter un onglet pour les MCCS H alarms
+        ws_mccs = wb.create_sheet("MCCS H Alarms")
+        headers_mccs = ["Timestamp", "File Name", "Line Number", "Alarm Type", "End Timestamp", "End File Name", "End Line Number", "Full Text"]
+        for col_idx, header in enumerate(headers_mccs, start=1):
+            cell = ws_mccs.cell(row=1, column=col_idx)
+            cell.value = header
+            cell.fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        for row_idx, mccs_alarm in enumerate(self.mccs_hs_alarms, start=2):
+            ws_mccs.cell(row=row_idx, column=1).value = mccs_alarm.raise_line.decoded_timestamp
+            ws_mccs.cell(row=row_idx, column=2).value = mccs_alarm.raise_line.parent_file.file_name
+            ws_mccs.cell(row=row_idx, column=3).value = mccs_alarm.raise_line.line_number
+            ws_mccs.cell(row=row_idx, column=4).value = mccs_alarm.alarm_type.name
+            ws_mccs.cell(row=row_idx, column=5).value = mccs_alarm.end_alarm_line.decoded_timestamp if mccs_alarm.end_alarm_line else "NA"
+            ws_mccs.cell(row=row_idx, column=6).value = mccs_alarm.end_alarm_line.parent_file.file_name if mccs_alarm.end_alarm_line else "NA"
+            ws_mccs.cell(row=row_idx, column=7).value = mccs_alarm.end_alarm_line.line_number if mccs_alarm.end_alarm_line else "NA"
+            ws_mccs.cell(row=row_idx, column=8).value = mccs_alarm.full_text.strip()
+
+        ws_mccs.column_dimensions["A"].width = 25
+        ws_mccs.column_dimensions["B"].width = 30
+        ws_mccs.column_dimensions["C"].width = 15
+        ws_mccs.column_dimensions["D"].width = 15
+        ws_mccs.column_dimensions["E"].width = 25
+        ws_mccs.column_dimensions["F"].width = 30
+        ws_mccs.column_dimensions["G"].width = 15
+        ws_mccs.column_dimensions["H"].width = 60
+
+        # Ajouter un onglet pour les Back to Past events
+        ws_btp = wb.create_sheet("Back to Past")
+        headers_btp = ["Previous Line Timestamp", "Previous Line Number", "Next Line Timestamp", "Next Line Number", "Duration (seconds)"]
+        for col_idx, header in enumerate(headers_btp, start=1):
+            cell = ws_btp.cell(row=1, column=col_idx)
+            cell.value = header
+            cell.fill = PatternFill(start_color="FF6B6B", end_color="FF6B6B", fill_type="solid")
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        for row_idx, back_to_past in enumerate(self.back_to_past_detected, start=2):
+            duration = (back_to_past.next_line.decoded_timestamp - back_to_past.previous_line.decoded_timestamp).total_seconds()
+            ws_btp.cell(row=row_idx, column=1).value = back_to_past.previous_line.decoded_timestamp
+            ws_btp.cell(row=row_idx, column=2).value = back_to_past.previous_line.line_number
+            ws_btp.cell(row=row_idx, column=3).value = back_to_past.next_line.decoded_timestamp
+            ws_btp.cell(row=row_idx, column=4).value = back_to_past.next_line.line_number
+            ws_btp.cell(row=row_idx, column=5).value = duration
+
+        ws_btp.column_dimensions["A"].width = 25
+        ws_btp.column_dimensions["B"].width = 15
+        ws_btp.column_dimensions["C"].width = 25
+        ws_btp.column_dimensions["D"].width = 15
+        ws_btp.column_dimensions["E"].width = 20
+
+        # Sauvegarder le fichier avec tous les onglets
+        wb.save(output_folder_path + "/" + self.name + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
+        logger_config.print_and_log_info(
+            f"Onglets supplémentaires créés: SAHARA Alarms ({len(self.sahara_alarms)}), MCCS H Alarms ({len(self.mccs_hs_alarms)}), Back to Past ({len(self.back_to_past_detected)})"
+        )
+
     def plot_alarms_by_period(self, output_folder_path: str, equipment_names_to_ignore: List[str], interval_minutes: int = 10, do_show: bool = False) -> None:
         """
         Génère un bar graph montrant les événements par intervalle de temps.
@@ -575,7 +657,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     break
 
         # Préparer les données pour le graphe
-        x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_back_to_past_counts.keys()]
+        x_labels = [f"{begin.strftime("%Y%m%d_%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_back_to_past_counts.keys()]
         y_values = list(interval_back_to_past_counts.values())
 
         # Créer et exporter les données dans un fichier Excel
