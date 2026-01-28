@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Self, Tuple
 
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-from common import file_name_utils, string_utils
+from common import file_name_utils, string_utils, custom_iterator
 from logger import logger_config
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -206,6 +206,9 @@ class EtatLiaisonMpro(Enum):
 class CckMproTemporaryLossLink:
     loss_link_event: "CckMproChangementEtatLiaison"
     link_back_to_normal_event: "CckMproChangementEtatLiaison"
+
+    def __post_init__(self) -> None:
+        self.liaison = self.loss_link_event.liaison
 
 
 @dataclass
@@ -458,6 +461,102 @@ class CckMproTraceLibrary:
         plt.tight_layout()
         if do_show:
             plt.show()
+
+    def export_temporary_loss_link_to_excel(self, output_folder_path: str, excel_output_file_name_without_extension: str = "temporary_loss_link") -> None:
+        """
+        Exporte les CckMproTemporaryLossLink dans un fichier Excel.
+
+        Args:
+            output_folder_path: Chemin du dossier de sortie
+            excel_output_file_name_without_extension: Nom du fichier Excel sans extension
+        """
+        if not self.all_temporary_loss_link:
+            logger_config.print_and_log_info("Aucune perte de lien temporaire. Aucun fichier créé.")
+            return
+
+        # Créer un workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Temporary Loss Link"
+
+        # Ajouter les en-têtes
+        headers = [
+            "Liaison",
+            "Loss Link Event Timestamp",
+            "Loss Link Event Line Number",
+            "Link Back to Normal Timestamp",
+            "Duration (seconds)",
+            "Duration (minutes)",
+            "Link Back to Normal Line Number",
+            "Previous Problem Enchainement Timestamp",
+            "Previous Problem Enchainement Line Number",
+            "Previous Problem Enchainement Full Line",
+        ]
+        for col_idx, header in enumerate(headers, start=1):
+            cell = ws.cell(row=1, column=col_idx)
+            cell.value = header
+            cell.fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        # Ajouter les données
+        for row_idx, loss_link in enumerate(self.all_temporary_loss_link, start=2):
+            loss_timestamp = loss_link.loss_link_event.trace_line.decoded_timestamp
+            loss_line_number = loss_link.loss_link_event.trace_line.line_number
+            back_to_normal_timestamp = loss_link.link_back_to_normal_event.trace_line.decoded_timestamp
+            back_to_normal_line_number = loss_link.link_back_to_normal_event.trace_line.line_number
+
+            # Calculer la durée
+            duration_seconds = (back_to_normal_timestamp - loss_timestamp).total_seconds()
+            duration_minutes = duration_seconds / 60
+
+            # Trouver le dernier problème d'enchaînement avant la perte sur cette liaison
+            previous_problem = None
+            previous_problem_timestamp = None
+            previous_problem_line_number = None
+            previous_problem_full_raw_line = None
+
+            liaison = loss_link.loss_link_event.liaison
+            if liaison in self.all_problem_enchainement_numero_protocolaire_per_link:
+                problems_on_liaison = self.all_problem_enchainement_numero_protocolaire_per_link[liaison]
+                # Chercher les problèmes avant la perte
+                problems_before_loss = [p for p in problems_on_liaison if p.trace_line.decoded_timestamp < loss_timestamp]
+                if problems_before_loss:
+                    # Trouver le dernier
+                    previous_problem = max(problems_before_loss, key=lambda p: p.trace_line.decoded_timestamp)
+                    previous_problem_timestamp = previous_problem.trace_line.decoded_timestamp
+                    previous_problem_line_number = previous_problem.trace_line.line_number
+                    previous_problem_full_raw_line = previous_problem.trace_line.full_raw_line
+
+            # Ajouter les données à la ligne
+            column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
+            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = loss_link.liaison.identifier
+            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = loss_timestamp
+            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = loss_line_number
+            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_normal_timestamp
+            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = duration_seconds
+            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = duration_minutes
+            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_normal_line_number
+            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = previous_problem_timestamp if previous_problem else "N/A"
+            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = previous_problem_line_number if previous_problem else "N/A"
+            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = previous_problem_full_raw_line if previous_problem else "N/A"
+
+        # Ajuster la largeur des colonnes
+        ws.column_dimensions["A"].width = 25
+        ws.column_dimensions["B"].width = 20
+        ws.column_dimensions["C"].width = 25
+        ws.column_dimensions["D"].width = 20
+        ws.column_dimensions["E"].width = 20
+        ws.column_dimensions["F"].width = 25
+        ws.column_dimensions["G"].width = 20
+        ws.column_dimensions["H"].width = 20
+        ws.column_dimensions["I"].width = 20
+        ws.column_dimensions["J"].width = 20
+
+        # Sauvegarder le fichier
+        wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + ".xlsx")
+        logger_config.print_and_log_info(f"Fichier Excel créé: {excel_output_file_name_without_extension}.xlsx")
+        logger_config.print_and_log_info(f"Total de {len(self.all_temporary_loss_link)} pertes de lien sauvegardées")
 
 
 pass
