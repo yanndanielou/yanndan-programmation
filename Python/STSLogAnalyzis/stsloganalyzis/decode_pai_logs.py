@@ -154,7 +154,6 @@ class TerminalTechniqueArchivesMaintLibrary:
         # Ajouter les en-têtes
         headers = [
             "Equipment Name",
-            "Alarm Raise Timestamp",
             "Type alarm (class name)",
             "Alarm Type",
             "Raise alarm: Timestamp",

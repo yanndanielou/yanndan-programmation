@@ -64,7 +64,7 @@ def save_cck_mpro_lines_in_excel(trace_lines: List["CckMproTraceLine"], output_f
     ws.column_dimensions["E"].width = 80
 
     # Sauvegarder le fichier
-    output_file_full_path = output_folder_path + "/" + excel_output_file_name_without_extensio + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx"
+    output_file_full_path = output_folder_path + "/" + excel_output_file_name_without_extension + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx"
     wb.save(output_file_full_path)
     logger_config.print_and_log_info(f"Fichier Excel créé: {output_file_full_path}")
     logger_config.print_and_log_info(f"Total de {len(trace_lines)} lignes sauvegardées")
@@ -293,7 +293,7 @@ class CckMproTraceLibrary:
                         if last_change_to_nok:
                             self.all_temporary_loss_link.append(CckMproTemporaryLossLink(loss_link_event=last_change_to_nok, link_back_to_normal_event=mpro_link_state_change))
                         else:
-                            logger_config.print_and_log_error(f"Cannot finc change to NOK before {mpro_link_state_change}")
+                            logger_config.print_and_log_error(f"Cannot find change to NOK before {mpro_link_state_change}")
 
         logger_config.print_and_log_info(f"{len(self.all_problem_enchainement_numero_protocolaire)} problems enchainement numero protocolaire")
         logger_config.print_and_log_info(f"{len(self.all_temporary_loss_link)} temporary_loss_link")
@@ -556,7 +556,7 @@ class CckMproTraceLibrary:
         ws.column_dimensions["J"].width = 20
 
         # Sauvegarder le fichier
-        wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
+        wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
         logger_config.print_and_log_info(f"Fichier Excel créé: {excel_output_file_name_without_extension}.xlsx")
         logger_config.print_and_log_info(f"Total de {len(self.all_temporary_loss_link)} pertes de lien sauvegardées")
 
