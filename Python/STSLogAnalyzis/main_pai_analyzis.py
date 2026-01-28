@@ -19,7 +19,7 @@ with logger_config.application_logger("main_pai_analyzis"):
     file_utils.create_folder_if_not_exist(OUTPUT_FOLDER_NAME)
 
     tt_maint_library = decode_pai_logs.TerminalTechniqueArchivesMaintLibrary("2027-01-27 P81 TT-026396").load_folder(r"D:\temp\2027-01-27 avec hitachi\2027-01-27\PAI81\TT-026396\Archives_maint")
-    tt_maint_library.export_equipments_with_alarms_to_excel(output_folder_path=OUTPUT_FOLDER_NAME, excel_output_file_name_without_extension="Alarms")
+    tt_maint_library.export_equipments_with_alarms_to_excel(output_folder_path=OUTPUT_FOLDER_NAME, excel_output_file_name_without_extension="Alarms", equipment_names_to_ignore=["81"])
 
     cck_libary = decode_cck.CckMproTraceLibrary(name="2027-01-27 avec hitachi").load_folder(r"D:\temp\2027-01-27 avec hitachi\2027-01-27\SIG3\Traces\Traces_MPRO1_1_20260127_15")
     # cck_libary = decode_cck.CckMproTraceLibrary(name="Nuit 20260125 CCU").load_folder(r"C:\Users\fr232487\Downloads\Traces_MPRO1_1_20260125_15_site_ccu")

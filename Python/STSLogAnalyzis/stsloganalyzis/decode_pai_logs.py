@@ -121,7 +121,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         self.equipments_with_alarms.append(equipment)
         return equipment
 
-    def export_equipments_with_alarms_to_excel(self, output_folder_path: str, excel_output_file_name_without_extension: str = "equipments_alarms") -> None:
+    def export_equipments_with_alarms_to_excel(self, output_folder_path: str, equipment_names_to_ignore: List[str], excel_output_file_name_without_extension: str = "equipments_alarms") -> None:
         """
         Exporte tous les équipements et leurs alarmes dans un fichier Excel.
 
@@ -158,15 +158,20 @@ class TerminalTechniqueArchivesMaintLibrary:
         # Ajouter les données
         row_idx = 2
         for equipment in self.equipments_with_alarms:
-            for alarm in equipment.alarms:
-                ws.cell(row=row_idx, column=1).value = equipment.name
-                ws.cell(row=row_idx, column=2).value = alarm.raise_line.decoded_timestamp
-                ws.cell(row=row_idx, column=3).value = alarm.alarm_type.name
-                ws.cell(row=row_idx, column=4).value = type(alarm).__name__
-                ws.cell(row=row_idx, column=5).value = alarm.raise_line.parent_file.file_name
-                ws.cell(row=row_idx, column=6).value = alarm.raise_line.line_number
-                ws.cell(row=row_idx, column=7).value = alarm.full_text.strip()
-                row_idx += 1
+            if equipment.name not in equipment_names_to_ignore:
+                for alarm in equipment.alarms:
+                    column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
+                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = equipment.name
+                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = type(alarm).__name__
+                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.alarm_type.name
+                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.decoded_timestamp
+                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.parent_file.file_name
+                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.line_number
+                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.decoded_timestamp if alarm.end_alarm_lines else "NA"
+                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.parent_file.file_name if alarm.end_alarm_lines else "NA"
+                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_lines.line_number if alarm.end_alarm_lines else "NA"
+                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.full_text.strip()
+                    row_idx += 1
 
         # Ajuster la largeur des colonnes
         ws.column_dimensions["A"].width = 25
