@@ -265,26 +265,29 @@ class CckMproTraceLibrary:
                 assert self.all_processed_lines
         assert self.all_processed_lines
 
-        for changement_etat_liaison_mpro in self.all_changement_etats_liaisons_mpro:
-            if changement_etat_liaison_mpro.liaison not in self.all_changement_etats_liaisons_mpro_per_link:
-                self.all_changement_etats_liaisons_mpro_per_link[changement_etat_liaison_mpro.liaison] = []
-            self.all_changement_etats_liaisons_mpro_per_link[changement_etat_liaison_mpro.liaison].append(changement_etat_liaison_mpro)
+        with logger_config.stopwatch_with_label("Create all_changement_etats_liaisons_mpro_per_link"):
+            for changement_etat_liaison_mpro in self.all_changement_etats_liaisons_mpro:
+                if changement_etat_liaison_mpro.liaison not in self.all_changement_etats_liaisons_mpro_per_link:
+                    self.all_changement_etats_liaisons_mpro_per_link[changement_etat_liaison_mpro.liaison] = []
+                self.all_changement_etats_liaisons_mpro_per_link[changement_etat_liaison_mpro.liaison].append(changement_etat_liaison_mpro)
 
-        for problem_enchainement_numero_protocolaire in self.all_problem_enchainement_numero_protocolaire:
-            if problem_enchainement_numero_protocolaire.liaison not in self.all_problem_enchainement_numero_protocolaire_per_link:
-                self.all_problem_enchainement_numero_protocolaire_per_link[problem_enchainement_numero_protocolaire.liaison] = []
-            self.all_problem_enchainement_numero_protocolaire_per_link[problem_enchainement_numero_protocolaire.liaison].append(problem_enchainement_numero_protocolaire)
+        with logger_config.stopwatch_with_label("Create all_problem_enchainement_numero_protocolaire_per_link"):
+            for problem_enchainement_numero_protocolaire in self.all_problem_enchainement_numero_protocolaire:
+                if problem_enchainement_numero_protocolaire.liaison not in self.all_problem_enchainement_numero_protocolaire_per_link:
+                    self.all_problem_enchainement_numero_protocolaire_per_link[problem_enchainement_numero_protocolaire.liaison] = []
+                self.all_problem_enchainement_numero_protocolaire_per_link[problem_enchainement_numero_protocolaire.liaison].append(problem_enchainement_numero_protocolaire)
 
-        for link in self.all_changement_etats_liaisons_mpro_per_link.keys():  # pylint: disable=consider-iterating-dictionary
-            last_change_to_nok = None
-            for mpro_link_state_change in self.all_changement_etats_liaisons_mpro_per_link[link]:
-                if mpro_link_state_change.new_state == EtatLiaisonMpro.KO:
-                    last_change_to_nok = mpro_link_state_change
-                elif mpro_link_state_change.new_state == EtatLiaisonMpro.OK and mpro_link_state_change.previous_state == EtatLiaisonMpro.KO:
-                    if last_change_to_nok:
-                        self.all_temporary_loss_link.append(CckMproTemporaryLossLink(loss_link_event=last_change_to_nok, link_back_to_normal_event=mpro_link_state_change))
-                    else:
-                        logger_config.print_and_log_error(f"Cannot finc change to NOK before {mpro_link_state_change}")
+        with logger_config.stopwatch_with_label("Create all_temporary_loss_link"):
+            for link in self.all_changement_etats_liaisons_mpro_per_link.keys():  # pylint: disable=consider-iterating-dictionary
+                last_change_to_nok = None
+                for mpro_link_state_change in self.all_changement_etats_liaisons_mpro_per_link[link]:
+                    if mpro_link_state_change.new_state == EtatLiaisonMpro.KO:
+                        last_change_to_nok = mpro_link_state_change
+                    elif mpro_link_state_change.new_state == EtatLiaisonMpro.OK and mpro_link_state_change.previous_state == EtatLiaisonMpro.KO:
+                        if last_change_to_nok:
+                            self.all_temporary_loss_link.append(CckMproTemporaryLossLink(loss_link_event=last_change_to_nok, link_back_to_normal_event=mpro_link_state_change))
+                        else:
+                            logger_config.print_and_log_error(f"Cannot finc change to NOK before {mpro_link_state_change}")
 
         logger_config.print_and_log_info(f"{len(self.all_problem_enchainement_numero_protocolaire)} problems enchainement numero protocolaire")
         logger_config.print_and_log_info(f"{len(self.all_temporary_loss_link)} temporary_loss_link")
@@ -335,7 +338,7 @@ class CckMproTraceFile:
                 logger_config.print_and_log_info(to_print_and_log=f"File {self.file_full_path} has {len(all_raw_lines)} lines", do_not_print=True)
                 for line_number, line in enumerate(all_raw_lines):
                     if line_number % 100000 == 0:
-                        logger_config.print_and_log_info(f"Handle line #{line_number} of {self.file_full_path}")
+                        logger_config.print_and_log_info(f"Handle line {self.file_name}:#{line_number}")
                     processed_line = CckMproTraceLine(parent_file=self, full_raw_line=line, line_number=line_number)
                     if processed_line.changement_etat_liaison:
                         self.all_changement_etats_liaisons_mpro.append(processed_line.changement_etat_liaison)
