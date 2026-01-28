@@ -18,8 +18,8 @@ OUTPUT_FOLDER_NAME = "output"
 with logger_config.application_logger("main_pai_analyzis"):
     file_utils.create_folder_if_not_exist(OUTPUT_FOLDER_NAME)
 
-    cck_libary = decode_cck.CckMproTraceLibrary(name="2027-01-27 avec hitachi").load_folder(r"D:\temp\2027-01-27 avec hitachi\2027-01-27\SIG3\Traces\Traces_MPRO1_1_20260127_15 - Copie")
-    cck_libary = decode_cck.CckMproTraceLibrary(name="Nuit 20260125 CCU").load_folder(r"C:\Users\fr232487\Downloads\Traces_MPRO1_1_20260125_15_site_ccu")
+    cck_libary = decode_cck.CckMproTraceLibrary(name="2027-01-27 avec hitachi").load_folder(r"D:\temp\2027-01-27 avec hitachi\2027-01-27\SIG3\Traces\Traces_MPRO1_1_20260127_15")
+    # cck_libary = decode_cck.CckMproTraceLibrary(name="Nuit 20260125 CCU").load_folder(r"C:\Users\fr232487\Downloads\Traces_MPRO1_1_20260125_15_site_ccu")
     cck_libary.export_temporary_loss_link_to_excel(
         output_folder_path=OUTPUT_FOLDER_NAME, excel_output_file_name_without_extension="temporary_loss_link" + file_name_utils.get_file_suffix_with_current_datetime()
     )
