@@ -71,6 +71,14 @@ class SaatMissingAcknowledgmentTerminalTechniqueAlarm(TerminalTechniqueEventAlar
 
 
 @dataclass
+class SaharaTerminalTechniqueAlarm(TerminalTechniqueEventAlarm):
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.chaine = self.raise_line.alarm_full_text.split(",")[3]
+        self.repetition = int(self.raise_line.alarm_full_text.split(",")[4][0])
+
+
+@dataclass
 class TerminalTechniqueArchivesMaintLogBackToPast:
     previous_line: "TerminalTechniqueArchivesMaintLogLine"
     next_line: "TerminalTechniqueArchivesMaintLogLine"
@@ -85,6 +93,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         self.all_processed_files: List["TerminalTechniqueArchivesMaintFile"] = []
         self.currently_opened_alarms: List[TerminalTechniqueClosableAlarm] = []
         self.ignored_end_alarms_without_alarm_begin: List[TerminalTechniqueClosableAlarm] = []
+        self.sahara_alarms: List[SaharaTerminalTechniqueAlarm] = []
         self.equipments_with_alarms: List[TerminalTechniqueEquipmentWithAlarms] = []
         self.back_to_past_detected: List[TerminalTechniqueArchivesMaintLogBackToPast] = []
 
@@ -167,9 +176,9 @@ class TerminalTechniqueArchivesMaintLibrary:
                     ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.decoded_timestamp
                     ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.parent_file.file_name
                     ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.line_number
-                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.decoded_timestamp if alarm.end_alarm_lines else "NA"
-                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.parent_file.file_name if alarm.end_alarm_lines else "NA"
-                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_lines.line_number if alarm.end_alarm_lines else "NA"
+                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.decoded_timestamp if alarm.end_alarm_line else "NA"
+                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.parent_file.file_name if alarm.end_alarm_line else "NA"
+                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.line_number if alarm.end_alarm_line else "NA"
                     ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.full_text.strip()
                     row_idx += 1
 
@@ -250,6 +259,9 @@ class TerminalTechniqueArchivesMaintLogLine:
                 self.alarm.end_alarm_line = self
                 self.parent_file.library.ignored_end_alarms_without_alarm_begin.append(self)
 
+        elif "SAHARA" in self.alarm_full_text:
+            self.alarm = SaharaTerminalTechniqueAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
+            self.parent_file.library.sahara_alarms.append(self.alarm)
         elif "Absence acquittement SAAT" in self.alarm_full_text:
             self.alarm = SaatMissingAcknowledgmentTerminalTechniqueAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
         elif self.alarm_type == AlarmLineType.DEB_ALA:
