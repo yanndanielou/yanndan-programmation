@@ -3,6 +3,7 @@
 *.txt
 *.png
 *.xls*
+*.html
 /Input/
 /.mypy_cache/
 Dependencies/
