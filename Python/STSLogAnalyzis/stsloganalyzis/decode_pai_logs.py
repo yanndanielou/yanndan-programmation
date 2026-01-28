@@ -24,6 +24,14 @@ class AlarmLineType(Enum):
 
 
 @dataclass
+class TerminalTechniqueEquipmentWithAlarms:
+    name: str
+
+    def __post_init__(self) -> None:
+        self.alarms: List[TerminalTechniqueAlarm] = []
+
+
+@dataclass
 class TerminalTechniqueAlarm:
     raise_line: "TerminalTechniqueArchivesMaintLogLine"
     full_text: str
@@ -32,7 +40,8 @@ class TerminalTechniqueAlarm:
     def __post_init__(self) -> None:
         self.end_alarm_line: Optional["TerminalTechniqueArchivesMaintLogLine"] = None
         self.equipment_name = self.full_text.split(" ")[0]
-        pass
+        self.equipment = self.raise_line.parent_file.library.get_or_create_equipment_with_alarms(self.equipment_name)
+        self.equipment.alarms.append(self)
 
 
 @dataclass
@@ -70,6 +79,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         self.all_processed_files: List["TerminalTechniqueArchivesMaintFile"] = []
         self.currently_opened_alarms: List[TerminalTechniqueClosableAlarm] = []
         self.ignored_end_alarm_lines_without_alarm_begin: List[TerminalTechniqueArchivesMaintLogLine] = []
+        self.equipments_with_alarms: List[TerminalTechniqueEquipmentWithAlarms] = []
 
     def load_folder(self, folder_full_path: str) -> Self:
 
@@ -83,9 +93,21 @@ class TerminalTechniqueArchivesMaintLibrary:
         assert self.all_processed_lines
 
         logger_config.print_and_log_info(f"{self.name}: currently_opened_alarms:{len(self.currently_opened_alarms)}")
+        for equipment in self.equipments_with_alarms:
+            logger_config.print_and_log_info(f"{self.name}: Equipment {equipment.name} has {len(equipment.alarms)} alarms")
         assert len(self.ignored_end_alarm_lines_without_alarm_begin) < 10
 
         return self
+
+    def get_or_create_equipment_with_alarms(self, equipment_name: str) -> "TerminalTechniqueEquipmentWithAlarms":
+        equipments_found = [equipment for equipment in self.equipments_with_alarms if equipment.name == equipment_name]
+        if equipments_found:
+            assert len(equipments_found) == 1
+            return equipments_found[0]
+
+        equipment = TerminalTechniqueEquipmentWithAlarms(name=equipment_name)
+        self.equipments_with_alarms.append(equipment)
+        return equipment
 
 
 @dataclass
