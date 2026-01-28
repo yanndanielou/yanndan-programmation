@@ -469,6 +469,7 @@ class TerminalTechniqueArchivesMaintLogLine:
             if found_unclosed_alarms:
                 assert len(found_unclosed_alarms) == 1
                 found_unclosed_alarm = found_unclosed_alarms[0]
+                self.parent_file.library.currently_opened_alarms.remove(found_unclosed_alarm)
                 assert found_unclosed_alarm.end_alarm_line is None
                 self.alarm = found_unclosed_alarm
                 self.alarm.end_alarm_line = self
