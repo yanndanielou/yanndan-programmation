@@ -99,30 +99,34 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTrace
     # Sauvegarder le fichier
     wb.save(excel_filename)
     logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
-    
+
     # Créer et sauvegarder le graphe en HTML avec Plotly
     html_filename = f"interval_counts_{label.replace(' ', '_')}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
-    fig = go.Figure(data=[go.Bar(
-        x=x_labels,
-        y=y_values,
-        marker=dict(color='skyblue'),
-        text=y_values,
-        textposition='auto',
-    )])
-    
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=x_labels,
+                y=y_values,
+                marker=dict(color="skyblue"),
+                text=y_values,
+                textposition="auto",
+            )
+        ]
+    )
+
     fig.update_layout(
         title=f"{len(trace_lines)} {label} par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
         xaxis_title="Intervalles de temps (heure début - heure fin)",
         yaxis_title="Nombre de CckMproTraceLine",
-        hovermode='x unified',
-        template='plotly_white',
+        hovermode="x unified",
+        template="plotly_white",
         height=600,
         width=1000,
     )
-    
+
     fig.write_html(html_filename)
     logger_config.print_and_log_info(f"Fichier HTML créé: {html_filename}")
-    
+
     # Afficher le bar graph
     plt.figure(figsize=(10, 6))
     plt.bar(x_labels, y_values, color="skyblue", width=0.3)
