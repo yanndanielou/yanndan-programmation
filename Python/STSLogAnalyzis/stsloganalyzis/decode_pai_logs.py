@@ -71,6 +71,12 @@ class SaatMissingAcknowledgmentTerminalTechniqueAlarm(TerminalTechniqueEventAlar
 
 
 @dataclass
+class TerminalTechniqueArchivesMaintLogBackToPast:
+    previous_line: "TerminalTechniqueArchivesMaintLogLine"
+    next_line: "TerminalTechniqueArchivesMaintLogLine"
+
+
+@dataclass
 class TerminalTechniqueArchivesMaintLibrary:
     name: str
 
@@ -78,24 +84,30 @@ class TerminalTechniqueArchivesMaintLibrary:
         self.all_processed_lines: List["TerminalTechniqueArchivesMaintLogLine"] = []
         self.all_processed_files: List["TerminalTechniqueArchivesMaintFile"] = []
         self.currently_opened_alarms: List[TerminalTechniqueClosableAlarm] = []
-        self.ignored_end_alarm_lines_without_alarm_begin: List[TerminalTechniqueArchivesMaintLogLine] = []
+        self.ignored_end_alarms_without_alarm_begin: List[TerminalTechniqueClosableAlarm] = []
         self.equipments_with_alarms: List[TerminalTechniqueEquipmentWithAlarms] = []
+        self.back_to_past_detected: List[TerminalTechniqueArchivesMaintLogBackToPast] = []
 
     def load_folder(self, folder_full_path: str) -> Self:
 
+        last_line = None
         for dirpath, dirnames, filenames in os.walk(folder_full_path):
             for file_name in filenames:
-                file = TerminalTechniqueArchivesMaintFile(parent_folder_full_path=dirpath, file_name=file_name, library=self)
+                file = TerminalTechniqueArchivesMaintFile(parent_folder_full_path=dirpath, file_name=file_name, library=self, last_line=last_line)
+                last_line = file.last_line
                 self.all_processed_files.append(file)
                 self.all_processed_lines += file.all_processed_lines
 
                 assert self.all_processed_lines
         assert self.all_processed_lines
 
+        logger_config.print_and_log_info(f"{self.name}: ignored_end_alarms_without_alarm_begin:{len(self.ignored_end_alarms_without_alarm_begin)}")
         logger_config.print_and_log_info(f"{self.name}: currently_opened_alarms:{len(self.currently_opened_alarms)}")
         for equipment in self.equipments_with_alarms:
             logger_config.print_and_log_info(f"{self.name}: Equipment {equipment.name} has {len(equipment.alarms)} alarms")
-        assert len(self.ignored_end_alarm_lines_without_alarm_begin) < 10
+        assert len(self.ignored_end_alarms_without_alarm_begin) < len(self.all_processed_lines), f"{len(self.ignored_end_alarms_without_alarm_begin)} too meny previously opened alarms"
+        assert len(self.ignored_end_alarms_without_alarm_begin) < 50000, f"{len(self.ignored_end_alarms_without_alarm_begin)} ignored previously opened alarms"
+        assert len(self.currently_opened_alarms) < 1000, f"{len(self.currently_opened_alarms)} opened alarms"
 
         return self
 
@@ -109,12 +121,75 @@ class TerminalTechniqueArchivesMaintLibrary:
         self.equipments_with_alarms.append(equipment)
         return equipment
 
+    def export_equipments_with_alarms_to_excel(self, output_folder_path: str, excel_output_file_name_without_extension: str = "equipments_alarms") -> None:
+        """
+        Exporte tous les équipements et leurs alarmes dans un fichier Excel.
+
+        Args:
+            output_folder_path: Chemin du dossier de sortie
+            excel_output_file_name_without_extension: Nom du fichier Excel sans extension
+        """
+        if not self.equipments_with_alarms:
+            logger_config.print_and_log_info("Aucun équipement avec alarmes. Aucun fichier créé.")
+            return
+
+        # Créer un workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Equipments Alarms"
+
+        # Ajouter les en-têtes
+        headers = [
+            "Equipment Name",
+            "Alarm Raise Timestamp",
+            "Alarm Type",
+            "Alarm Class Name",
+            "File Name",
+            "Line Number",
+            "Full Text",
+        ]
+        for col_idx, header in enumerate(headers, start=1):
+            cell = ws.cell(row=1, column=col_idx)
+            cell.value = header
+            cell.fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        # Ajouter les données
+        row_idx = 2
+        for equipment in self.equipments_with_alarms:
+            for alarm in equipment.alarms:
+                ws.cell(row=row_idx, column=1).value = equipment.name
+                ws.cell(row=row_idx, column=2).value = alarm.raise_line.decoded_timestamp
+                ws.cell(row=row_idx, column=3).value = alarm.alarm_type.name
+                ws.cell(row=row_idx, column=4).value = type(alarm).__name__
+                ws.cell(row=row_idx, column=5).value = alarm.raise_line.parent_file.file_name
+                ws.cell(row=row_idx, column=6).value = alarm.raise_line.line_number
+                ws.cell(row=row_idx, column=7).value = alarm.full_text.strip()
+                row_idx += 1
+
+        # Ajuster la largeur des colonnes
+        ws.column_dimensions["A"].width = 25
+        ws.column_dimensions["B"].width = 25
+        ws.column_dimensions["C"].width = 20
+        ws.column_dimensions["D"].width = 35
+        ws.column_dimensions["E"].width = 30
+        ws.column_dimensions["F"].width = 15
+        ws.column_dimensions["G"].width = 60
+
+        # Sauvegarder le fichier
+        wb.save(output_folder_path + "/" + self.name + excel_output_file_name_without_extension + ".xlsx")
+        logger_config.print_and_log_info(f"Fichier Excel créé: {excel_output_file_name_without_extension}.xlsx")
+        total_alarms = sum(len(equipment.alarms) for equipment in self.equipments_with_alarms)
+        logger_config.print_and_log_info(f"Total de {total_alarms} alarmes sauvegardées")
+
 
 @dataclass
 class TerminalTechniqueArchivesMaintFile:
     parent_folder_full_path: str
     file_name: str
     library: "TerminalTechniqueArchivesMaintLibrary"
+    last_line: Optional["TerminalTechniqueArchivesMaintLogLine"]
     all_processed_lines: List["TerminalTechniqueArchivesMaintLogLine"] = field(default_factory=list)
 
     def __post_init__(self) -> None:
@@ -126,8 +201,9 @@ class TerminalTechniqueArchivesMaintFile:
                 # logger_config.print_and_log_info(to_print_and_log=f"File {self.file_full_path} has {len(all_raw_lines)} lines")
                 for line_number, line in enumerate(all_raw_lines):
                     if len(line) > 3:
-                        processed_line = TerminalTechniqueArchivesMaintLogLine(parent_file=self, full_raw_line=line, line_number=line_number)
+                        processed_line = TerminalTechniqueArchivesMaintLogLine(parent_file=self, full_raw_line=line, line_number=line_number, previous_line=self.last_line)
                         self.all_processed_lines.append(processed_line)
+                        self.last_line = processed_line
 
 
 @dataclass
@@ -135,6 +211,7 @@ class TerminalTechniqueArchivesMaintLogLine:
     parent_file: TerminalTechniqueArchivesMaintFile
     full_raw_line: str
     line_number: int
+    previous_line: Optional["TerminalTechniqueArchivesMaintLogLine"]
 
     def __post_init__(self) -> None:
         self.raw_date_str = self.full_raw_line[0:22]
@@ -145,6 +222,10 @@ class TerminalTechniqueArchivesMaintLogLine:
         # 2025-12-29	01:45:53.30
         self.raw_date_str_with_microseconds = self.raw_date_str + "0000"
         self.decoded_timestamp = datetime.datetime.strptime(self.raw_date_str_with_microseconds, "%Y-%m-%d	%H:%M:%S.%f")
+
+        if self.previous_line and self.previous_line.decoded_timestamp > self.decoded_timestamp:
+            back_to_past = TerminalTechniqueArchivesMaintLogBackToPast(previous_line=self.previous_line, next_line=self)
+            self.parent_file.library.back_to_past_detected.append(back_to_past)
 
         assert len(self.full_raw_line_split_by_tab) == 4
         self.alarm_full_text = self.full_raw_line_split_by_tab[3]
@@ -160,7 +241,9 @@ class TerminalTechniqueArchivesMaintLogLine:
                 self.alarm = found_unclosed_alarm
                 self.alarm.end_alarm_line = self
             else:
-                self.parent_file.library.ignored_end_alarm_lines_without_alarm_begin.append(self)
+                self.alarm = TerminalTechniqueClosableAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
+                self.alarm.end_alarm_line = self
+                self.parent_file.library.ignored_end_alarms_without_alarm_begin.append(self)
 
         elif "Absence acquittement SAAT" in self.alarm_full_text:
             self.alarm = SaatMissingAcknowledgmentTerminalTechniqueAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
