@@ -66,6 +66,7 @@ class TerminalTechniqueClosableAlarm(TerminalTechniqueAlarm):
 class TerminalTechniqueMccsHAlarm(TerminalTechniqueClosableAlarm):
     pass
 
+
 @dataclass
 class SaatMissingAcknowledgmentTerminalTechniqueAlarm(TerminalTechniqueEventAlarm):
     def __post_init__(self) -> None:
@@ -845,9 +846,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
         plt.xlabel("Intervalles de temps (heure début - heure fin)")
         plt.ylabel("Nombre d'événements")
-        plt.title(
-            f"SAHARA, MCCS H et Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}"
-        )
+        plt.title(f"SAHARA, MCCS H et Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}")
         plt.xticks(x_pos, x_labels, rotation=45, ha="right")
         plt.legend()
         plt.tight_layout()
