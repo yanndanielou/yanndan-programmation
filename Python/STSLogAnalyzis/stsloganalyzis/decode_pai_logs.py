@@ -989,7 +989,7 @@ class TerminalTechniqueArchivesMaintLogLine:
             if found_unclosed_alarms:
                 assert (
                     len(found_unclosed_alarms) == 1
-                ), f"{len(found_unclosed_alarms)} unclosed alarms found \n({'\n'.join(alarm.raise_line.full_raw_line for alarm in found_unclosed_alarms)}) for {self.alarm_full_text} when trying to close {self.full_raw_line}"
+                ), f"{len(found_unclosed_alarms)} unclosed alarms found \n({'\n'.join(alarm.raise_line.full_raw_line + " in " + alarm.raise_line.parent_file.file_name + ":"+alarm.raise_line.line_number  for alarm in found_unclosed_alarms)}) for {self.alarm_full_text} when trying to close {self.full_raw_line} in {self.parent_file.file_name}:{self.line_number}"
                 found_unclosed_alarm = found_unclosed_alarms[0]
                 self.parent_file.library.currently_opened_alarms.remove(found_unclosed_alarm)
                 assert found_unclosed_alarm.end_alarm_line is None
