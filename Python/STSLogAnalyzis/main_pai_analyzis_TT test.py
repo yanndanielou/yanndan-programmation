@@ -20,7 +20,7 @@ with logger_config.application_logger("main_pai_analyzis_TT test"):
 
     tt_maint_p81_library = decode_pai_logs.TerminalTechniqueArchivesMaintLibrary("Test").load_folder(r"D:\temp\test")
     for tt_maint_library in [tt_maint_p81_library]:
-        tt_maint_library.export_equipments_with_alarms_to_excel(output_folder_path=OUTPUT_FOLDER_NAME, excel_output_file_name_without_extension="Alarms", equipment_names_to_ignore=["81"])
+        tt_maint_library.export_equipments_with_alarms_to_excel(output_folder_path=OUTPUT_FOLDER_NAME, equipment_names_to_ignore=["81"])
         tt_maint_library.plot_back_to_past_by_period(output_folder_path=OUTPUT_FOLDER_NAME, interval_minutes=60, do_show=False)
         tt_maint_library.plot_sahara_alarms_by_period(output_folder_path=OUTPUT_FOLDER_NAME, interval_minutes=60, do_show=False)
         tt_maint_library.plot_sahara_mccs_back_to_past_by_period(output_folder_path=OUTPUT_FOLDER_NAME, interval_minutes=60, do_show=False)
