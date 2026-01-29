@@ -293,7 +293,7 @@ class CckMproTraceLibrary:
                         if last_change_to_nok:
                             self.all_temporary_loss_link.append(CckMproTemporaryLossLink(loss_link_event=last_change_to_nok, link_back_to_normal_event=mpro_link_state_change))
                         else:
-                            logger_config.print_and_log_error(f"Cannot find change to NOK before {mpro_link_state_change}")
+                            logger_config.print_and_log_error(f"Cannot find change to NOK before {mpro_link_state_change.trace_line.full_raw_line}")
 
         logger_config.print_and_log_info(f"{len(self.all_problem_enchainement_numero_protocolaire)} problems enchainement numero protocolaire")
         logger_config.print_and_log_info(f"{len(self.all_temporary_loss_link)} temporary_loss_link")
