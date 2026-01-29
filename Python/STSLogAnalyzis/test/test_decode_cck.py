@@ -22,7 +22,3 @@ class TestCckMproTraceLine:
 
         cck_mpro_trace_line = decode_cck.CckMproTraceLine(full_raw_line=full_raw_line_str)
         assert cck_mpro_trace_line.decoded_timestamp == expected_timestamp
-
-
-
-cck_file = 
