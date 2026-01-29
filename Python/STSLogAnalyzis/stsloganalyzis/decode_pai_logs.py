@@ -987,9 +987,14 @@ class TerminalTechniqueArchivesMaintLogLine:
         if self.alarm_type == AlarmLineType.FIN_ALA:
             found_unclosed_alarms = [alarm for alarm in self.parent_file.library.currently_opened_alarms if alarm.full_text == self.alarm_full_text]
             if found_unclosed_alarms:
-                assert (
-                    len(found_unclosed_alarms) == 1
-                ), f"{len(found_unclosed_alarms)} unclosed alarms found \n({'\n'.join(alarm.raise_line.full_raw_line + " in " + alarm.raise_line.parent_file.file_name + ":"+alarm.raise_line.line_number  for alarm in found_unclosed_alarms)}) for {self.alarm_full_text} when trying to close {self.full_raw_line} in {self.parent_file.file_name}:{self.line_number}"
+                while len(found_unclosed_alarms) > 1:
+                    never_closed_alarm = found_unclosed_alarms[0]
+                    logger_config.print_and_log_warning(
+                        f"Alarm {never_closed_alarm.full_text} is re-opened at {found_unclosed_alarms[0].raise_line.decoded_timestamp} and not closed between. {len(found_unclosed_alarms)} unclosed alarms found \n({'\n'.join(alarm.raise_line.full_raw_line + " in " + alarm.raise_line.parent_file.file_name + ":"+str(alarm.raise_line.line_number)  for alarm in found_unclosed_alarms)}) for {self.alarm_full_text} when trying to close {self.full_raw_line} in {self.parent_file.file_name}:{self.line_number}"
+                    )
+                    self.parent_file.library.currently_opened_alarms.remove(found_unclosed_alarms[0])
+                    found_unclosed_alarms = [alarm for alarm in self.parent_file.library.currently_opened_alarms if alarm.full_text == self.alarm_full_text]
+
                 found_unclosed_alarm = found_unclosed_alarms[0]
                 self.parent_file.library.currently_opened_alarms.remove(found_unclosed_alarm)
                 assert found_unclosed_alarm.end_alarm_line is None
@@ -1008,6 +1013,7 @@ class TerminalTechniqueArchivesMaintLogLine:
         elif self.alarm_type == AlarmLineType.DEB_ALA and ("MCCS A HS" in self.alarm_full_text or "MCCS B HS" in self.alarm_full_text):
             self.alarm = TerminalTechniqueMccsHAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
             self.parent_file.library.mccs_hs_alarms.append(self.alarm)
+
             self.parent_file.library.currently_opened_alarms.append(self.alarm)
         elif self.alarm_type == AlarmLineType.DEB_ALA:
             self.alarm = TerminalTechniqueClosableAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
