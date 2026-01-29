@@ -142,7 +142,7 @@ class TerminalTechniqueArchivesMaintLibrary:
             equipment_names_to_ignore: Liste des noms d'équipements à ignorer
             excel_output_file_name_without_extension: Nom du fichier Excel sans extension
         """
-        excel_output_file_name_without_extension: str = "equipments_alarms"
+        excel_output_file_name_without_extension: str = self.name + "_all_issues_"
         if not self.equipments_with_alarms:
             logger_config.print_and_log_info("Aucun équipement avec alarmes. Aucun fichier créé.")
             return
@@ -201,7 +201,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         ws.column_dimensions["G"].width = 60
 
         # Sauvegarder le fichier
-        wb.save(output_folder_path + "/" + self.name + "_" + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
+        wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
         logger_config.print_and_log_info(f"Fichier Excel créé: {excel_output_file_name_without_extension}.xlsx")
         total_alarms = sum(len(equipment.alarms) for equipment in self.equipments_with_alarms)
         logger_config.print_and_log_info(f"Total de {total_alarms} alarmes sauvegardées")
@@ -283,7 +283,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         ws_btp.column_dimensions["E"].width = 20
 
         # Sauvegarder le fichier avec tous les onglets
-        wb.save(output_folder_path + "/" + self.name + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
+        wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
         logger_config.print_and_log_info(
             f"Onglets supplémentaires créés: SAHARA Alarms ({len(self.sahara_alarms)}), MCCS H Alarms ({len(self.mccs_hs_alarms)}), Back to Past ({len(self.back_to_past_detected)})"
         )

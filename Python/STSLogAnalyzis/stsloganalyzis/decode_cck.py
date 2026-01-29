@@ -293,6 +293,9 @@ class CckMproTraceLibrary:
                         last_change_to_nok = mpro_link_state_change
                     elif mpro_link_state_change.new_state == EtatLiaisonMpro.OK and mpro_link_state_change.previous_state == EtatLiaisonMpro.KO:
                         if last_change_to_nok:
+                            assert (
+                                last_change_to_nok.trace_line.decoded_timestamp <= mpro_link_state_change.trace_line.decoded_timestamp
+                            ), f"Trace to NOK {last_change_to_nok.trace_line.parent_file.file_name}:{last_change_to_nok.trace_line.line_number} ({last_change_to_nok.trace_line.full_raw_line}) is after change to OK {mpro_link_state_change.trace_line.parent_file.file_name}:{mpro_link_state_change.trace_line.line_number} ({mpro_link_state_change.trace_line.full_raw_line})"
                             self.all_temporary_loss_link.append(CckMproTemporaryLossLink(loss_link_event=last_change_to_nok, link_back_to_normal_event=mpro_link_state_change))
                         else:
                             logger_config.print_and_log_error(f"Cannot find change to NOK before {mpro_link_state_change.trace_line.full_raw_line}")
@@ -622,13 +625,13 @@ class CckMproTraceLine:
 
     def __post_init__(self) -> None:
         self.raw_date_str = self.full_raw_line[1:23]
-        self.year = int(self.raw_date_str[:4])
-        self.month = int(self.raw_date_str[5:7])
-        self.day = int(self.raw_date_str[8:10])
-        self.hour = int(self.raw_date_str[11:13])
-        self.minute = int(self.raw_date_str[14:16])
-        self.second = int(self.raw_date_str[17:19])
-        self.millisecond = int(self.raw_date_str[20:22]) * 10
+        year = int(self.raw_date_str[:4])
+        month = int(self.raw_date_str[5:7])
+        day = int(self.raw_date_str[8:10])
+        hour = int(self.raw_date_str[11:13])
+        minute = int(self.raw_date_str[14:16])
+        second = int(self.raw_date_str[17:19])
+        millisecond = int(self.raw_date_str[20:22]) * 10
 
         match_liaison_pattern = LIAISON_PATTERN.match(self.full_raw_line)
         self.liaison_full_name = match_liaison_pattern.group("liaison_full_name") if match_liaison_pattern else None
@@ -646,5 +649,5 @@ class CckMproTraceLine:
         # self.liaison_name
 
         # self./
-        self.decoded_timestamp = datetime.datetime(year=self.year, month=self.month, day=self.day, hour=self.hour, minute=self.minute, second=self.second, microsecond=self.millisecond * 1000)
+        self.decoded_timestamp = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second, microsecond=millisecond * 1000)
         pass
