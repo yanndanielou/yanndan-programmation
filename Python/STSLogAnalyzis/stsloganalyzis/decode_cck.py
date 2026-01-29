@@ -255,35 +255,37 @@ class CckMproTraceLibrary:
         return liaison
 
     def load_folder(self, folder_full_path: str) -> Self:
-        for dirpath, dirnames, filenames in os.walk(folder_full_path):
-            for file_name in filenames:
-                cck_file = CckMproTraceFile(parent_folder_full_path=dirpath, file_name=file_name, library=self)
-                self.all_processed_files.append(cck_file)
-                self.all_processed_lines += cck_file.all_processed_lines
-                self.all_problem_enchainement_numero_protocolaire += cck_file.all_problem_enchainement_numero_protocolaire
-                self.all_changement_etats_liaisons_mpro += cck_file.all_changement_etats_liaisons_mpro
+        with logger_config.stopwatch_with_label("Load all files", inform_beginning=True, monitor_ram_usage=True):
 
-                for key, value in cck_file.lines_per_liaison.items():
-                    if key not in self.lines_per_liaison:
-                        self.lines_per_liaison[key] = []
-                    self.lines_per_liaison[key] += value
+            for dirpath, dirnames, filenames in os.walk(folder_full_path):
+                for file_name in filenames:
+                    cck_file = CckMproTraceFile(parent_folder_full_path=dirpath, file_name=file_name, library=self)
+                    self.all_processed_files.append(cck_file)
+                    self.all_processed_lines += cck_file.all_processed_lines
+                    self.all_problem_enchainement_numero_protocolaire += cck_file.all_problem_enchainement_numero_protocolaire
+                    self.all_changement_etats_liaisons_mpro += cck_file.all_changement_etats_liaisons_mpro
 
-                assert self.all_processed_lines
-        assert self.all_processed_lines
+                    for key, value in cck_file.lines_per_liaison.items():
+                        if key not in self.lines_per_liaison:
+                            self.lines_per_liaison[key] = []
+                        self.lines_per_liaison[key] += value
 
-        with logger_config.stopwatch_with_label("Create all_changement_etats_liaisons_mpro_per_link"):
+                    assert self.all_processed_lines
+            assert self.all_processed_lines
+
+        with logger_config.stopwatch_with_label("Create all_changement_etats_liaisons_mpro_per_link", inform_beginning=True, monitor_ram_usage=True):
             for changement_etat_liaison_mpro in self.all_changement_etats_liaisons_mpro:
                 if changement_etat_liaison_mpro.liaison not in self.all_changement_etats_liaisons_mpro_per_link:
                     self.all_changement_etats_liaisons_mpro_per_link[changement_etat_liaison_mpro.liaison] = []
                 self.all_changement_etats_liaisons_mpro_per_link[changement_etat_liaison_mpro.liaison].append(changement_etat_liaison_mpro)
 
-        with logger_config.stopwatch_with_label("Create all_problem_enchainement_numero_protocolaire_per_link"):
+        with logger_config.stopwatch_with_label("Create all_problem_enchainement_numero_protocolaire_per_link", monitor_ram_usage=True):
             for problem_enchainement_numero_protocolaire in self.all_problem_enchainement_numero_protocolaire:
                 if problem_enchainement_numero_protocolaire.liaison not in self.all_problem_enchainement_numero_protocolaire_per_link:
                     self.all_problem_enchainement_numero_protocolaire_per_link[problem_enchainement_numero_protocolaire.liaison] = []
                 self.all_problem_enchainement_numero_protocolaire_per_link[problem_enchainement_numero_protocolaire.liaison].append(problem_enchainement_numero_protocolaire)
 
-        with logger_config.stopwatch_with_label("Create all_temporary_loss_link"):
+        with logger_config.stopwatch_with_label("Create all_temporary_loss_link", monitor_ram_usage=True, inform_beginning=True):
             for link in self.all_changement_etats_liaisons_mpro_per_link.keys():  # pylint: disable=consider-iterating-dictionary
                 last_change_to_nok = None
                 for mpro_link_state_change in self.all_changement_etats_liaisons_mpro_per_link[link]:
