@@ -109,7 +109,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         self.ignored_end_alarms_without_alarm_begin: List[TerminalTechniqueClosableAlarm] = []
         self.sahara_alarms: List[SaharaTerminalTechniqueAlarm] = []
         self.mccs_hs_alarms: List[TerminalTechniqueMccsHAlarm] = []
-        self.sessions_alarms: List[TerminalTechniqueMccsHAlarm] = []
+        self.sessions_alarms: List[TerminalTechniqueSessionAlarm] = []
         self.equipments_with_alarms: List[TerminalTechniqueEquipmentWithAlarms] = []
         self.back_to_past_detected: List[TerminalTechniqueArchivesMaintLogBackToPast] = []
 
@@ -556,6 +556,8 @@ class TerminalTechniqueArchivesMaintLibrary:
                 interval_start_times.append(current_time)
                 current_time += datetime.timedelta(minutes=interval_minutes)
 
+            logger_config.print_and_log_info(f"plot_sahara_alarms_by_period: {len(interval_start_times)} intervals of {interval_minutes} minutes between {start_time} and {end_time}")
+
             # Compter les alarmes SAHARA dans chaque intervalle
             interval_sahara_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
             for sahara_alarm in self.sahara_alarms:
@@ -563,6 +565,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 for interval_start in interval_start_times:
                     interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
                     if interval_start <= timestamp < interval_end:
+                        logger_config.print_and_log_info(f"plot_sahara_alarms_by_period: Sahara alarm {sahara_alarm.raise_line.full_raw_line} counted in interval {(interval_start, interval_end)}")
                         interval_sahara_counts[(interval_start, interval_end)] += 1
                         break
 
@@ -1072,7 +1075,7 @@ class TerminalTechniqueArchivesMaintLogLine:
             self.parent_file.library.currently_opened_alarms.append(self.alarm)
             self.parent_file.library.sessions_alarms.append(session_alarm)
 
-        elif self.alarm_type == AlarmLineType.EVT_ALA:
+        elif self.alarm_type in [AlarmLineType.EVT_ALA, AlarmLineType.CMD_ESSAIS, AlarmLineType.CMD_CPT_RENDU]:
             self.alarm = TerminalTechniqueAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
         elif self.alarm_type == AlarmLineType.CSI:
             self.alarm = TerminalTechniqueCsiAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
