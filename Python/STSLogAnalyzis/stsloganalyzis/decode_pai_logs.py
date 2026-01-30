@@ -550,22 +550,30 @@ class TerminalTechniqueArchivesMaintLibrary:
             end_time = self.all_processed_lines[-1].decoded_timestamp
 
             # Créer des intervalles de temps
+            intervals: List[Tuple[datetime.datetime, datetime.datetime]] = []
             interval_start_times: List[datetime.datetime] = []
             current_time = start_time
             while current_time <= end_time:
+                interval_start_time = current_time
                 interval_start_times.append(current_time)
                 current_time += datetime.timedelta(minutes=interval_minutes)
+                interval_end_time = current_time
+                intervals.append((interval_start_time, interval_end_time))
 
             logger_config.print_and_log_info(f"plot_sahara_alarms_by_period: {len(interval_start_times)} intervals of {interval_minutes} minutes between {start_time} and {end_time}")
 
-            # Compter les alarmes SAHARA dans chaque intervalle
             interval_sahara_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+
+            for interval in intervals:
+                interval_sahara_counts[interval] = 0
+
+            # Compter les alarmes SAHARA dans chaque intervalle
             for sahara_alarm in self.sahara_alarms:
                 timestamp = sahara_alarm.raise_line.decoded_timestamp
                 for interval_start in interval_start_times:
                     interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
                     if interval_start <= timestamp < interval_end:
-                        logger_config.print_and_log_info(f"plot_sahara_alarms_by_period: Sahara alarm {sahara_alarm.raise_line.full_raw_line} counted in interval {(interval_start, interval_end)}")
+                        # logger_config.print_and_log_info(f"plot_sahara_alarms_by_period: Sahara alarm {sahara_alarm.raise_line.full_raw_line} counted in interval {(interval_start, interval_end)}")
                         interval_sahara_counts[(interval_start, interval_end)] += 1
                         break
 
@@ -679,14 +687,20 @@ class TerminalTechniqueArchivesMaintLibrary:
             end_time = self.all_processed_lines[-1].decoded_timestamp
 
             # Créer des intervalles de temps
+            intervals: List[Tuple[datetime.datetime, datetime.datetime]] = []
             interval_start_times: List[datetime.datetime] = []
             current_time = start_time
             while current_time <= end_time:
+                interval_start_time = current_time
                 interval_start_times.append(current_time)
                 current_time += datetime.timedelta(minutes=interval_minutes)
+                interval_end_time = current_time
+                intervals.append((interval_start_time, interval_end_time))
 
-            # Compter les back_to_past_detected dans chaque intervalle
             interval_back_to_past_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+            for interval in intervals:
+                interval_back_to_past_counts[interval] = 0
+            # Compter les back_to_past_detected dans chaque intervalle
             for back_to_past in self.back_to_past_detected:
                 timestamp = back_to_past.previous_line.decoded_timestamp
                 for interval_start in interval_start_times:
@@ -805,16 +819,25 @@ class TerminalTechniqueArchivesMaintLibrary:
             end_time = self.all_processed_lines[-1].decoded_timestamp
 
             # Créer des intervalles de temps
+            intervals: List[Tuple[datetime.datetime, datetime.datetime]] = []
             interval_start_times: List[datetime.datetime] = []
             current_time = start_time
             while current_time <= end_time:
+                interval_start_time = current_time
                 interval_start_times.append(current_time)
                 current_time += datetime.timedelta(minutes=interval_minutes)
+                interval_end_time = current_time
+                intervals.append((interval_start_time, interval_end_time))
 
             # Compter les événements dans chaque intervalle
             interval_sahara_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
             interval_mccs_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
             interval_back_to_past_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+
+            for interval in intervals:
+                interval_sahara_counts[interval] = 0
+                interval_mccs_counts[interval] = 0
+                interval_back_to_past_counts[interval] = 0
 
             # Compter les sahara_alarms
             for sahara_alarm in self.sahara_alarms:
