@@ -382,7 +382,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                                     break
 
                 # Préparer les données pour le graphe
-                x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_back_to_past_count.keys()]
+                x_labels = [f"{begin.strftime("('%Y%m%d_%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_back_to_past_count.keys()]
                 y_back_to_past = list(interval_back_to_past_count.values())
                 y_sahara = list(interval_sahara_count.values())
 
@@ -578,7 +578,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                         break
 
             # Préparer les données pour le graphe
-            x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_sahara_counts.keys()]
+            x_labels = [f"{begin.strftime("('%Y%m%d %H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_sahara_counts.keys()]
             y_values = list(interval_sahara_counts.values())
 
             # Créer et exporter les données dans un fichier Excel
@@ -877,7 +877,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     interval_back_to_past_counts[(interval_start, interval_end)] = 0
 
             # Préparer les données pour le graphe
-            x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_sahara_counts.keys()]
+            x_labels = [f"{begin.strftime("('%Y%m%d_%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_sahara_counts.keys()]
             y_sahara = [interval_sahara_counts[(begin, end)] for begin, end in interval_sahara_counts.keys()]
             y_mccs = [interval_mccs_counts[(begin, end)] for begin, end in interval_sahara_counts.keys()]
             y_back_to_past = [interval_back_to_past_counts[(begin, end)] for begin, end in interval_sahara_counts.keys()]
