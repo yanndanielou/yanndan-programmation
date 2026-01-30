@@ -143,157 +143,161 @@ class TerminalTechniqueArchivesMaintLibrary:
             equipment_names_to_ignore: Liste des noms d'équipements à ignorer
             excel_output_file_name_without_extension: Nom du fichier Excel sans extension
         """
-        excel_output_file_name_without_extension: str = self.name + "_all_issues_"
-        if not self.equipments_with_alarms:
-            logger_config.print_and_log_info("Aucun équipement avec alarmes. Aucun fichier créé.")
-            return
 
-        # Créer un workbook
-        wb = Workbook()
-        ws = wb.active
-        ws.title = f"{self.name} Equipments Alarms"
+        try:
+            excel_output_file_name_without_extension: str = self.name + "_all_issues_"
+            if not self.equipments_with_alarms:
+                logger_config.print_and_log_info("Aucun équipement avec alarmes. Aucun fichier créé.")
+                return
 
-        # Ajouter les en-têtes
-        headers = [
-            "Equipment Name",
-            "Type alarm (class name)",
-            "Alarm Type",
-            "Raise alarm: Timestamp",
-            "Raise alarm: File name",
-            "Raise alarm: Line number",
-            "End alarm (if any): Timestamp",
-            "End alarm (if any): File name",
-            "End alarm (if any): Line number",
-            "Full Text",
-        ]
+            # Créer un workbook
+            wb = Workbook()
+            ws = wb.active
+            ws.title = f"{self.name} Equipments Alarms"
 
-        for col_idx, header in enumerate(headers, start=1):
-            cell = ws.cell(row=1, column=col_idx)
-            cell.value = header
-            cell.fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-            cell.font = Font(bold=True, color="FFFFFF")
-            cell.alignment = Alignment(horizontal="center", vertical="center")
+            # Ajouter les en-têtes
+            headers = [
+                "Equipment Name",
+                "Type alarm (class name)",
+                "Alarm Type",
+                "Raise alarm: Timestamp",
+                "Raise alarm: File name",
+                "Raise alarm: Line number",
+                "End alarm (if any): Timestamp",
+                "End alarm (if any): File name",
+                "End alarm (if any): Line number",
+                "Full Text",
+            ]
 
-        # Ajouter les données
-        row_idx = 2
-        for equipment in self.equipments_with_alarms:
-            if equipment.name not in equipment_names_to_ignore:
-                for alarm in equipment.alarms:
-                    column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
-                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = equipment.name
-                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = type(alarm).__name__
-                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.alarm_type.name
-                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.decoded_timestamp
-                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.parent_file.file_name
-                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.line_number
-                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.decoded_timestamp if alarm.end_alarm_line else "NA"
-                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.parent_file.file_name if alarm.end_alarm_line else "NA"
-                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.line_number if alarm.end_alarm_line else "NA"
-                    ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.full_text.strip()
-                    row_idx += 1
+            for col_idx, header in enumerate(headers, start=1):
+                cell = ws.cell(row=1, column=col_idx)
+                cell.value = header
+                cell.fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+                cell.font = Font(bold=True, color="FFFFFF")
+                cell.alignment = Alignment(horizontal="center", vertical="center")
 
-        # Ajuster la largeur des colonnes
-        ws.column_dimensions["A"].width = 25
-        ws.column_dimensions["B"].width = 25
-        ws.column_dimensions["C"].width = 20
-        ws.column_dimensions["D"].width = 35
-        ws.column_dimensions["E"].width = 30
-        ws.column_dimensions["F"].width = 15
-        ws.column_dimensions["G"].width = 60
+            # Ajouter les données
+            row_idx = 2
+            for equipment in self.equipments_with_alarms:
+                if equipment.name not in equipment_names_to_ignore:
+                    for alarm in equipment.alarms:
+                        column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
+                        ws.cell(row=row_idx, column=column_it.postfix_increment()).value = equipment.name
+                        ws.cell(row=row_idx, column=column_it.postfix_increment()).value = type(alarm).__name__
+                        ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.alarm_type.name
+                        ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.decoded_timestamp
+                        ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.parent_file.file_name
+                        ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.line_number
+                        ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.decoded_timestamp if alarm.end_alarm_line else "NA"
+                        ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.parent_file.file_name if alarm.end_alarm_line else "NA"
+                        ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.line_number if alarm.end_alarm_line else "NA"
+                        ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.full_text.strip()
+                        row_idx += 1
 
-        # Sauvegarder le fichier
-        wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
-        logger_config.print_and_log_info(f"Fichier Excel créé: {excel_output_file_name_without_extension}.xlsx")
-        total_alarms = sum(len(equipment.alarms) for equipment in self.equipments_with_alarms)
-        logger_config.print_and_log_info(f"Total de {total_alarms} alarmes sauvegardées")
+            # Ajuster la largeur des colonnes
+            ws.column_dimensions["A"].width = 25
+            ws.column_dimensions["B"].width = 25
+            ws.column_dimensions["C"].width = 20
+            ws.column_dimensions["D"].width = 35
+            ws.column_dimensions["E"].width = 30
+            ws.column_dimensions["F"].width = 15
+            ws.column_dimensions["G"].width = 60
 
-        # Ajouter un onglet pour les SAHARA alarms
-        ws_sahara = wb.create_sheet("SAHARA Alarms")
-        headers_sahara = ["Timestamp", "File Name", "Line Number", "Alarm Type", "Full Text"]
-        for col_idx, header in enumerate(headers_sahara, start=1):
-            cell = ws_sahara.cell(row=1, column=col_idx)
-            cell.value = header
-            cell.fill = PatternFill(start_color="FFD966", end_color="FFD966", fill_type="solid")
-            cell.font = Font(bold=True, color="000000")
-            cell.alignment = Alignment(horizontal="center", vertical="center")
+            # Sauvegarder le fichier
+            wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
+            logger_config.print_and_log_info(f"Fichier Excel créé: {excel_output_file_name_without_extension}.xlsx")
+            total_alarms = sum(len(equipment.alarms) for equipment in self.equipments_with_alarms)
+            logger_config.print_and_log_info(f"Total de {total_alarms} alarmes sauvegardées")
 
-        for row_idx, sahara_alarm in enumerate(self.sahara_alarms, start=2):
-            ws_sahara.cell(row=row_idx, column=1).value = sahara_alarm.raise_line.decoded_timestamp
-            ws_sahara.cell(row=row_idx, column=2).value = sahara_alarm.raise_line.parent_file.file_name
-            ws_sahara.cell(row=row_idx, column=3).value = sahara_alarm.raise_line.line_number
-            ws_sahara.cell(row=row_idx, column=4).value = sahara_alarm.alarm_type.name
-            ws_sahara.cell(row=row_idx, column=5).value = sahara_alarm.full_text.strip()
+            # Ajouter un onglet pour les SAHARA alarms
+            ws_sahara = wb.create_sheet("SAHARA Alarms")
+            headers_sahara = ["Timestamp", "File Name", "Line Number", "Alarm Type", "Full Text"]
+            for col_idx, header in enumerate(headers_sahara, start=1):
+                cell = ws_sahara.cell(row=1, column=col_idx)
+                cell.value = header
+                cell.fill = PatternFill(start_color="FFD966", end_color="FFD966", fill_type="solid")
+                cell.font = Font(bold=True, color="000000")
+                cell.alignment = Alignment(horizontal="center", vertical="center")
 
-        ws_sahara.column_dimensions["A"].width = 25
-        ws_sahara.column_dimensions["B"].width = 30
-        ws_sahara.column_dimensions["C"].width = 15
-        ws_sahara.column_dimensions["D"].width = 15
-        ws_sahara.column_dimensions["E"].width = 60
+            for row_idx, sahara_alarm in enumerate(self.sahara_alarms, start=2):
+                ws_sahara.cell(row=row_idx, column=1).value = sahara_alarm.raise_line.decoded_timestamp
+                ws_sahara.cell(row=row_idx, column=2).value = sahara_alarm.raise_line.parent_file.file_name
+                ws_sahara.cell(row=row_idx, column=3).value = sahara_alarm.raise_line.line_number
+                ws_sahara.cell(row=row_idx, column=4).value = sahara_alarm.alarm_type.name
+                ws_sahara.cell(row=row_idx, column=5).value = sahara_alarm.full_text.strip()
 
-        # Ajouter un onglet pour les MCCS H alarms
-        ws_mccs = wb.create_sheet("MCCS H Alarms")
-        headers_mccs = ["Alarm Type", "Duration in seconds", "Timestamp", "File Name", "Line Number", "End Timestamp", "End File Name", "End Line Number", "Full Text"]
-        for col_idx, header in enumerate(headers_mccs, start=1):
-            cell = ws_mccs.cell(row=1, column=col_idx)
-            cell.value = header
-            cell.fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-            cell.font = Font(bold=True, color="FFFFFF")
-            cell.alignment = Alignment(horizontal="center", vertical="center")
+            ws_sahara.column_dimensions["A"].width = 25
+            ws_sahara.column_dimensions["B"].width = 30
+            ws_sahara.column_dimensions["C"].width = 15
+            ws_sahara.column_dimensions["D"].width = 15
+            ws_sahara.column_dimensions["E"].width = 60
 
-        for row_idx, mccs_alarm in enumerate(self.mccs_hs_alarms, start=2):
-            column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
-            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.alarm_type.name
-            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = (
-                (mccs_alarm.end_alarm_line.decoded_timestamp - mccs_alarm.raise_line.decoded_timestamp).total_seconds() if mccs_alarm.end_alarm_line else None
+            # Ajouter un onglet pour les MCCS H alarms
+            ws_mccs = wb.create_sheet("MCCS H Alarms")
+            headers_mccs = ["Alarm Type", "Duration in seconds", "Timestamp", "File Name", "Line Number", "End Timestamp", "End File Name", "End Line Number", "Full Text"]
+            for col_idx, header in enumerate(headers_mccs, start=1):
+                cell = ws_mccs.cell(row=1, column=col_idx)
+                cell.value = header
+                cell.fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+                cell.font = Font(bold=True, color="FFFFFF")
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+
+            for row_idx, mccs_alarm in enumerate(self.mccs_hs_alarms, start=2):
+                column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
+                ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.alarm_type.name
+                ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = (
+                    (mccs_alarm.end_alarm_line.decoded_timestamp - mccs_alarm.raise_line.decoded_timestamp).total_seconds() if mccs_alarm.end_alarm_line else None
+                )
+                ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.decoded_timestamp
+                ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.parent_file.file_name
+                ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.line_number
+                ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.decoded_timestamp if mccs_alarm.end_alarm_line else "NA"
+                ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.parent_file.file_name if mccs_alarm.end_alarm_line else "NA"
+                ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.line_number if mccs_alarm.end_alarm_line else "NA"
+                ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.full_text.strip()
+
+            ws_mccs.column_dimensions["A"].width = 25
+            ws_mccs.column_dimensions["B"].width = 30
+            ws_mccs.column_dimensions["C"].width = 15
+            ws_mccs.column_dimensions["D"].width = 15
+            ws_mccs.column_dimensions["E"].width = 25
+            ws_mccs.column_dimensions["F"].width = 30
+            ws_mccs.column_dimensions["G"].width = 15
+            ws_mccs.column_dimensions["H"].width = 60
+
+            # Ajouter un onglet pour les Back to Past events
+            ws_btp = wb.create_sheet("Back to Past")
+            headers_btp = ["Previous Line Timestamp", "Previous Line Number", "Next Line Timestamp", "Next Line Number", "Duration (seconds)"]
+            for col_idx, header in enumerate(headers_btp, start=1):
+                cell = ws_btp.cell(row=1, column=col_idx)
+                cell.value = header
+                cell.fill = PatternFill(start_color="FF6B6B", end_color="FF6B6B", fill_type="solid")
+                cell.font = Font(bold=True, color="FFFFFF")
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+
+            for row_idx, back_to_past in enumerate(self.back_to_past_detected, start=2):
+                duration = (back_to_past.next_line.decoded_timestamp - back_to_past.previous_line.decoded_timestamp).total_seconds()
+                column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
+
+                ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.previous_line.decoded_timestamp
+                ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.previous_line.line_number
+                ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.next_line.decoded_timestamp
+                ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.next_line.line_number
+                ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = duration
+
+            ws_btp.column_dimensions["A"].width = 25
+            ws_btp.column_dimensions["B"].width = 15
+            ws_btp.column_dimensions["C"].width = 25
+            ws_btp.column_dimensions["D"].width = 15
+            ws_btp.column_dimensions["E"].width = 20
+
+            # Sauvegarder le fichier avec tous les onglets
+            wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
+            logger_config.print_and_log_info(
+                f"Onglets supplémentaires créés: SAHARA Alarms ({len(self.sahara_alarms)}), MCCS H Alarms ({len(self.mccs_hs_alarms)}), Back to Past ({len(self.back_to_past_detected)})"
             )
-            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.decoded_timestamp
-            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.parent_file.file_name
-            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.line_number
-            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.decoded_timestamp if mccs_alarm.end_alarm_line else "NA"
-            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.parent_file.file_name if mccs_alarm.end_alarm_line else "NA"
-            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.line_number if mccs_alarm.end_alarm_line else "NA"
-            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.full_text.strip()
-
-        ws_mccs.column_dimensions["A"].width = 25
-        ws_mccs.column_dimensions["B"].width = 30
-        ws_mccs.column_dimensions["C"].width = 15
-        ws_mccs.column_dimensions["D"].width = 15
-        ws_mccs.column_dimensions["E"].width = 25
-        ws_mccs.column_dimensions["F"].width = 30
-        ws_mccs.column_dimensions["G"].width = 15
-        ws_mccs.column_dimensions["H"].width = 60
-
-        # Ajouter un onglet pour les Back to Past events
-        ws_btp = wb.create_sheet("Back to Past")
-        headers_btp = ["Previous Line Timestamp", "Previous Line Number", "Next Line Timestamp", "Next Line Number", "Duration (seconds)"]
-        for col_idx, header in enumerate(headers_btp, start=1):
-            cell = ws_btp.cell(row=1, column=col_idx)
-            cell.value = header
-            cell.fill = PatternFill(start_color="FF6B6B", end_color="FF6B6B", fill_type="solid")
-            cell.font = Font(bold=True, color="FFFFFF")
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-
-        for row_idx, back_to_past in enumerate(self.back_to_past_detected, start=2):
-            duration = (back_to_past.next_line.decoded_timestamp - back_to_past.previous_line.decoded_timestamp).total_seconds()
-            column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
-
-            ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.previous_line.decoded_timestamp
-            ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.previous_line.line_number
-            ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.next_line.decoded_timestamp
-            ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.next_line.line_number
-            ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = duration
-
-        ws_btp.column_dimensions["A"].width = 25
-        ws_btp.column_dimensions["B"].width = 15
-        ws_btp.column_dimensions["C"].width = 25
-        ws_btp.column_dimensions["D"].width = 15
-        ws_btp.column_dimensions["E"].width = 20
-
-        # Sauvegarder le fichier avec tous les onglets
-        wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
-        logger_config.print_and_log_info(
-            f"Onglets supplémentaires créés: SAHARA Alarms ({len(self.sahara_alarms)}), MCCS H Alarms ({len(self.mccs_hs_alarms)}), Back to Past ({len(self.back_to_past_detected)})"
-        )
+        except Exception as e:
+            logger_config.print_and_log_exception(e)
 
     def plot_alarms_by_period(self, output_folder_path: str, equipment_names_to_ignore: List[str], interval_minutes: int = 10, do_show: bool = False) -> None:
         """
@@ -305,11 +309,229 @@ class TerminalTechniqueArchivesMaintLibrary:
             interval_minutes: Intervalle de temps en minutes (par défaut 10)
             do_show: Afficher le graphique matplotlib
         """
-        if not self.all_processed_lines:
-            logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
-            return
+        try:
+            if not self.all_processed_lines:
+                logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
+                return
 
-        with logger_config.stopwatch_with_label("plot_alarms_by_period"):
+            with logger_config.stopwatch_with_label("plot_alarms_by_period"):
+
+                # Déterminer la période totale
+                start_time = self.all_processed_lines[0].decoded_timestamp
+                end_time = self.all_processed_lines[-1].decoded_timestamp
+
+                # Créer des intervalles de temps
+                interval_start_times: List[datetime.datetime] = []
+                current_time = start_time
+                while current_time <= end_time:
+                    interval_start_times.append(current_time)
+                    current_time += datetime.timedelta(minutes=interval_minutes)
+
+                # Initialiser les compteurs pour chaque intervalle
+                interval_back_to_past_count: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
+                interval_sahara_count: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
+                interval_equipment_counts: Dict[Tuple[datetime.datetime, datetime.datetime], Dict[str, int]] = {}
+
+                for interval_start in interval_start_times:
+                    interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                    interval_back_to_past_count[(interval_start, interval_end)] = 0
+                    interval_sahara_count[(interval_start, interval_end)] = 0
+                    interval_equipment_counts[(interval_start, interval_end)] = {}
+
+                # Compter les back_to_past_detected
+                for back_to_past in self.back_to_past_detected:
+                    timestamp = back_to_past.previous_line.decoded_timestamp
+                    for interval_start in interval_start_times:
+                        interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                        if interval_start <= timestamp < interval_end:
+                            interval_back_to_past_count[(interval_start, interval_end)] += 1
+                            break
+
+                # Compter les sahara_alarms
+                for sahara_alarm in self.sahara_alarms:
+                    timestamp = sahara_alarm.raise_line.decoded_timestamp
+                    for interval_start in interval_start_times:
+                        interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                        if interval_start <= timestamp < interval_end:
+                            interval_sahara_count[(interval_start, interval_end)] += 1
+                            break
+
+                # Compter les alarmes par équipement
+                for equipment in self.equipments_with_alarms:
+                    if equipment.name not in equipment_names_to_ignore:
+                        for alarm in equipment.alarms:
+                            timestamp = alarm.raise_line.decoded_timestamp
+                            for interval_start in interval_start_times:
+                                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                                if interval_start <= timestamp < interval_end:
+                                    if equipment.name not in interval_equipment_counts[(interval_start, interval_end)]:
+                                        interval_equipment_counts[(interval_start, interval_end)][equipment.name] = 0
+                                    interval_equipment_counts[(interval_start, interval_end)][equipment.name] += 1
+                                    break
+
+                # Préparer les données pour le graphe
+                x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_back_to_past_count.keys()]
+                y_back_to_past = list(interval_back_to_past_count.values())
+                y_sahara = list(interval_sahara_count.values())
+
+                # Récupérer tous les noms d'équipements uniques (en ordre d'apparition)
+                equipment_names: List[str] = []
+                for interval_counts in interval_equipment_counts.values():
+                    for name in interval_counts.keys():
+                        if name not in equipment_names:
+                            equipment_names.append(name)
+
+                # Créer et exporter les données dans un fichier Excel
+                excel_filename = f"alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d')}_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+                wb = Workbook()
+                ws = wb.active
+                ws.title = f"{self.name} Alarms By Period"
+
+                # Ajouter les en-têtes
+                headers = ["Début Intervalle", "Fin Intervalle", "Back to Past", "Sahara"]
+                headers.extend(equipment_names)
+
+                for col_idx, header in enumerate(headers, start=1):
+                    cell = ws.cell(row=1, column=col_idx)
+                    cell.value = header
+                    cell.fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+                    cell.font = Font(bold=True, color="FFFFFF")
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+
+                # Ajouter les données
+                for idx, ((interval_begin, interval_end), back_to_past_count) in enumerate(interval_back_to_past_count.items(), start=2):
+                    ws[f"A{idx}"] = interval_begin
+                    ws[f"B{idx}"] = interval_end
+                    ws[f"C{idx}"] = back_to_past_count
+                    ws[f"D{idx}"] = interval_sahara_count[(interval_begin, interval_end)]
+
+                    for col_idx, equipment_name in enumerate(equipment_names, start=5):
+                        count = interval_equipment_counts[(interval_begin, interval_end)].get(equipment_name, 0)
+                        ws.cell(row=idx, column=col_idx).value = count
+                        ws.cell(row=idx, column=col_idx).alignment = Alignment(horizontal="center")
+
+                    ws[f"C{idx}"].alignment = Alignment(horizontal="center")
+                    ws[f"D{idx}"].alignment = Alignment(horizontal="center")
+
+                # Ajuster la largeur des colonnes
+                ws.column_dimensions["A"].width = 25
+                ws.column_dimensions["B"].width = 25
+                ws.column_dimensions["C"].width = 15
+                ws.column_dimensions["D"].width = 15
+                for col_idx, _ in enumerate(equipment_names, start=5):
+                    col_letter = chr(64 + col_idx)  # Convert number to letter
+                    ws.column_dimensions[col_letter].width = 20
+
+                # Ajouter un résumé
+                summary_row = len(interval_back_to_past_count) + 3
+                ws[f"A{summary_row}"] = "Total"
+                ws[f"C{summary_row}"] = len(self.back_to_past_detected)
+                ws[f"D{summary_row}"] = len(self.sahara_alarms)
+                ws[f"A{summary_row}"].font = Font(bold=True)
+                ws[f"C{summary_row}"].font = Font(bold=True)
+                ws[f"D{summary_row}"].font = Font(bold=True)
+                ws[f"C{summary_row}"].alignment = Alignment(horizontal="center")
+                ws[f"D{summary_row}"].alignment = Alignment(horizontal="center")
+
+                # Sauvegarder le fichier Excel
+                wb.save(output_folder_path + "/" + excel_filename)
+                logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
+
+                # Créer et sauvegarder le graphe en HTML avec Plotly
+                html_filename = f"alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+
+                fig_data = [
+                    go.Bar(
+                        name="Back to Past",
+                        x=x_labels,
+                        y=y_back_to_past,
+                        marker=dict(color="orangered"),
+                        text=y_back_to_past,
+                        textposition="auto",
+                    ),
+                    go.Bar(
+                        name="Sahara",
+                        x=x_labels,
+                        y=y_sahara,
+                        marker=dict(color="gold"),
+                        text=y_sahara,
+                        textposition="auto",
+                    ),
+                ]
+
+                # Ajouter les équipements
+                colors = ["steelblue", "lightseagreen", "mediumseagreen", "lightcoral", "plum", "khaki", "lightcyan", "lightsalmon"]
+                for equipment_idx, equipment_name in enumerate(equipment_names):
+                    y_equipment = [
+                        interval_equipment_counts[(interval_start, interval_start + datetime.timedelta(minutes=interval_minutes))].get(equipment_name, 0) for interval_start in interval_start_times
+                    ]
+                    fig_data.append(
+                        go.Bar(
+                            name=equipment_name,
+                            x=x_labels,
+                            y=y_equipment,
+                            marker=dict(color=colors[equipment_idx % len(colors)]),
+                            text=y_equipment,
+                            textposition="auto",
+                        )
+                    )
+
+                fig = go.Figure(data=fig_data)
+
+                fig.update_layout(
+                    title=f"{self.name} Alarmes par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
+                    xaxis_title="Intervalles de temps (heure début - heure fin)",
+                    yaxis_title="Nombre",
+                    barmode="group",
+                    hovermode="x unified",
+                    template="plotly_white",
+                    height=600,
+                    width=1400,
+                )
+
+                fig.write_html(output_folder_path + "/" + html_filename)
+                logger_config.print_and_log_info(f"Fichier HTML créé: {html_filename}")
+
+                # Afficher le bar graph matplotlib
+                plt.figure(figsize=(16, 8))
+                x_pos = range(len(x_labels))
+                width = 0.8 / (len(equipment_names) + 2)
+
+                plt.bar([p - 0.4 for p in x_pos], y_back_to_past, width, label="Back to Past", color="orangered")
+                plt.bar([p - 0.4 + width for p in x_pos], y_sahara, width, label="Sahara", color="gold")
+
+                for equipment_idx, equipment_name in enumerate(equipment_names):
+                    y_equipment = [
+                        interval_equipment_counts[(interval_start, interval_start + datetime.timedelta(minutes=interval_minutes))].get(equipment_name, 0) for interval_start in interval_start_times
+                    ]
+                    plt.bar([p - 0.4 + width * (2 + equipment_idx) for p in x_pos], y_equipment, width, label=equipment_name, color=colors[equipment_idx % len(colors)])
+
+                plt.xlabel("Intervalles de temps (heure début - heure fin)")
+                plt.ylabel("Nombre")
+                plt.title(f"{self.name} Alarmes par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}")
+                plt.xticks(x_pos, x_labels, rotation=45, ha="right")
+                plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
+                plt.tight_layout()
+                if do_show:
+                    plt.show()
+
+        except Exception as e:
+            logger_config.print_and_log_exception(e)
+
+    def plot_sahara_alarms_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False) -> None:
+        """
+        Génère un bar graph montrant les alarmes SAHARA par intervalle de temps.
+
+        Args:
+            output_folder_path: Chemin du dossier de sortie
+            interval_minutes: Intervalle de temps en minutes (par défaut 10)
+            do_show: Afficher le graphique matplotlib
+        """
+
+        try:
+            if not self.all_processed_lines:
+                logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
+                return
 
             # Déterminer la période totale
             start_time = self.all_processed_lines[0].decoded_timestamp
@@ -322,314 +544,105 @@ class TerminalTechniqueArchivesMaintLibrary:
                 interval_start_times.append(current_time)
                 current_time += datetime.timedelta(minutes=interval_minutes)
 
-            # Initialiser les compteurs pour chaque intervalle
-            interval_back_to_past_count: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
-            interval_sahara_count: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
-            interval_equipment_counts: Dict[Tuple[datetime.datetime, datetime.datetime], Dict[str, int]] = {}
-
-            for interval_start in interval_start_times:
-                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
-                interval_back_to_past_count[(interval_start, interval_end)] = 0
-                interval_sahara_count[(interval_start, interval_end)] = 0
-                interval_equipment_counts[(interval_start, interval_end)] = {}
-
-            # Compter les back_to_past_detected
-            for back_to_past in self.back_to_past_detected:
-                timestamp = back_to_past.previous_line.decoded_timestamp
-                for interval_start in interval_start_times:
-                    interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
-                    if interval_start <= timestamp < interval_end:
-                        interval_back_to_past_count[(interval_start, interval_end)] += 1
-                        break
-
-            # Compter les sahara_alarms
+            # Compter les alarmes SAHARA dans chaque intervalle
+            interval_sahara_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
             for sahara_alarm in self.sahara_alarms:
                 timestamp = sahara_alarm.raise_line.decoded_timestamp
                 for interval_start in interval_start_times:
                     interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
                     if interval_start <= timestamp < interval_end:
-                        interval_sahara_count[(interval_start, interval_end)] += 1
+                        interval_sahara_counts[(interval_start, interval_end)] += 1
                         break
 
-            # Compter les alarmes par équipement
-            for equipment in self.equipments_with_alarms:
-                if equipment.name not in equipment_names_to_ignore:
-                    for alarm in equipment.alarms:
-                        timestamp = alarm.raise_line.decoded_timestamp
-                        for interval_start in interval_start_times:
-                            interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
-                            if interval_start <= timestamp < interval_end:
-                                if equipment.name not in interval_equipment_counts[(interval_start, interval_end)]:
-                                    interval_equipment_counts[(interval_start, interval_end)][equipment.name] = 0
-                                interval_equipment_counts[(interval_start, interval_end)][equipment.name] += 1
-                                break
-
             # Préparer les données pour le graphe
-            x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_back_to_past_count.keys()]
-            y_back_to_past = list(interval_back_to_past_count.values())
-            y_sahara = list(interval_sahara_count.values())
-
-            # Récupérer tous les noms d'équipements uniques (en ordre d'apparition)
-            equipment_names: List[str] = []
-            for interval_counts in interval_equipment_counts.values():
-                for name in interval_counts.keys():
-                    if name not in equipment_names:
-                        equipment_names.append(name)
+            x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_sahara_counts.keys()]
+            y_values = list(interval_sahara_counts.values())
 
             # Créer et exporter les données dans un fichier Excel
-            excel_filename = f"alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d')}_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+            excel_filename = f"sahara_alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
             wb = Workbook()
             ws = wb.active
-            ws.title = f"{self.name} Alarms By Period"
+            ws.title = f"{self.name} Sahara Alarms"
 
             # Ajouter les en-têtes
-            headers = ["Début Intervalle", "Fin Intervalle", "Back to Past", "Sahara"]
-            headers.extend(equipment_names)
+            ws["A1"] = "Début Intervalle de temps"
+            ws["B1"] = "Fin Intervalle de temps"
+            ws["C1"] = "Nombre d'alarmes SAHARA"
 
-            for col_idx, header in enumerate(headers, start=1):
-                cell = ws.cell(row=1, column=col_idx)
-                cell.value = header
-                cell.fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-                cell.font = Font(bold=True, color="FFFFFF")
+            # Style des en-têtes
+            header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+            header_font = Font(bold=True, color="FFFFFF")
+            for cell in [ws["A1"], ws["B1"], ws["C1"]]:
+                cell.fill = header_fill
+                cell.font = header_font
                 cell.alignment = Alignment(horizontal="center", vertical="center")
 
             # Ajouter les données
-            for idx, ((interval_begin, interval_end), back_to_past_count) in enumerate(interval_back_to_past_count.items(), start=2):
+            for idx, ((interval_begin, interval_end), count) in enumerate(interval_sahara_counts.items(), start=2):
                 ws[f"A{idx}"] = interval_begin
                 ws[f"B{idx}"] = interval_end
-                ws[f"C{idx}"] = back_to_past_count
-                ws[f"D{idx}"] = interval_sahara_count[(interval_begin, interval_end)]
-
-                for col_idx, equipment_name in enumerate(equipment_names, start=5):
-                    count = interval_equipment_counts[(interval_begin, interval_end)].get(equipment_name, 0)
-                    ws.cell(row=idx, column=col_idx).value = count
-                    ws.cell(row=idx, column=col_idx).alignment = Alignment(horizontal="center")
-
+                ws[f"C{idx}"] = count
                 ws[f"C{idx}"].alignment = Alignment(horizontal="center")
-                ws[f"D{idx}"].alignment = Alignment(horizontal="center")
 
             # Ajuster la largeur des colonnes
             ws.column_dimensions["A"].width = 25
             ws.column_dimensions["B"].width = 25
-            ws.column_dimensions["C"].width = 15
-            ws.column_dimensions["D"].width = 15
-            for col_idx, _ in enumerate(equipment_names, start=5):
-                col_letter = chr(64 + col_idx)  # Convert number to letter
-                ws.column_dimensions[col_letter].width = 20
+            ws.column_dimensions["C"].width = 25
 
             # Ajouter un résumé
-            summary_row = len(interval_back_to_past_count) + 3
+            summary_row = len(interval_sahara_counts) + 3
             ws[f"A{summary_row}"] = "Total"
-            ws[f"C{summary_row}"] = len(self.back_to_past_detected)
-            ws[f"D{summary_row}"] = len(self.sahara_alarms)
+            ws[f"C{summary_row}"] = len(self.sahara_alarms)
             ws[f"A{summary_row}"].font = Font(bold=True)
             ws[f"C{summary_row}"].font = Font(bold=True)
-            ws[f"D{summary_row}"].font = Font(bold=True)
             ws[f"C{summary_row}"].alignment = Alignment(horizontal="center")
-            ws[f"D{summary_row}"].alignment = Alignment(horizontal="center")
 
-            # Sauvegarder le fichier Excel
+            # Sauvegarder le fichier
             wb.save(output_folder_path + "/" + excel_filename)
             logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
             # Créer et sauvegarder le graphe en HTML avec Plotly
-            html_filename = f"alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
-
-            fig_data = [
-                go.Bar(
-                    name="Back to Past",
-                    x=x_labels,
-                    y=y_back_to_past,
-                    marker=dict(color="orangered"),
-                    text=y_back_to_past,
-                    textposition="auto",
-                ),
-                go.Bar(
-                    name="Sahara",
-                    x=x_labels,
-                    y=y_sahara,
-                    marker=dict(color="gold"),
-                    text=y_sahara,
-                    textposition="auto",
-                ),
-            ]
-
-            # Ajouter les équipements
-            colors = ["steelblue", "lightseagreen", "mediumseagreen", "lightcoral", "plum", "khaki", "lightcyan", "lightsalmon"]
-            for equipment_idx, equipment_name in enumerate(equipment_names):
-                y_equipment = [
-                    interval_equipment_counts[(interval_start, interval_start + datetime.timedelta(minutes=interval_minutes))].get(equipment_name, 0) for interval_start in interval_start_times
-                ]
-                fig_data.append(
+            html_filename = f"sahara_alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+            fig = go.Figure(
+                data=[
                     go.Bar(
-                        name=equipment_name,
                         x=x_labels,
-                        y=y_equipment,
-                        marker=dict(color=colors[equipment_idx % len(colors)]),
-                        text=y_equipment,
+                        y=y_values,
+                        marker=dict(color="gold"),
+                        text=y_values,
                         textposition="auto",
                     )
-                )
-
-            fig = go.Figure(data=fig_data)
+                ]
+            )
 
             fig.update_layout(
-                title=f"{self.name} Alarmes par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
+                title=f"{self.name} {len(self.sahara_alarms)} alarmes SAHARA par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
                 xaxis_title="Intervalles de temps (heure début - heure fin)",
-                yaxis_title="Nombre",
-                barmode="group",
+                yaxis_title="Nombre d'alarmes SAHARA",
                 hovermode="x unified",
                 template="plotly_white",
                 height=600,
-                width=1400,
+                width=1000,
             )
 
             fig.write_html(output_folder_path + "/" + html_filename)
             logger_config.print_and_log_info(f"Fichier HTML créé: {html_filename}")
 
-            # Afficher le bar graph matplotlib
-            plt.figure(figsize=(16, 8))
-            x_pos = range(len(x_labels))
-            width = 0.8 / (len(equipment_names) + 2)
-
-            plt.bar([p - 0.4 for p in x_pos], y_back_to_past, width, label="Back to Past", color="orangered")
-            plt.bar([p - 0.4 + width for p in x_pos], y_sahara, width, label="Sahara", color="gold")
-
-            for equipment_idx, equipment_name in enumerate(equipment_names):
-                y_equipment = [
-                    interval_equipment_counts[(interval_start, interval_start + datetime.timedelta(minutes=interval_minutes))].get(equipment_name, 0) for interval_start in interval_start_times
-                ]
-                plt.bar([p - 0.4 + width * (2 + equipment_idx) for p in x_pos], y_equipment, width, label=equipment_name, color=colors[equipment_idx % len(colors)])
-
+            # Afficher le bar graph
+            plt.figure(figsize=(12, 6))
+            plt.bar(x_labels, y_values, color="gold", width=0.6)
             plt.xlabel("Intervalles de temps (heure début - heure fin)")
-            plt.ylabel("Nombre")
-            plt.title(f"{self.name} Alarmes par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}")
-            plt.xticks(x_pos, x_labels, rotation=45, ha="right")
-            plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
+            plt.ylabel("Nombre d'alarmes SAHARA")
+            plt.title(
+                f"{self.name} {len(self.sahara_alarms)} alarmes SAHARA par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}"
+            )
+            plt.xticks(rotation=45, ha="right")
             plt.tight_layout()
             if do_show:
                 plt.show()
 
-    def plot_sahara_alarms_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False) -> None:
-        """
-        Génère un bar graph montrant les alarmes SAHARA par intervalle de temps.
-
-        Args:
-            output_folder_path: Chemin du dossier de sortie
-            interval_minutes: Intervalle de temps en minutes (par défaut 10)
-            do_show: Afficher le graphique matplotlib
-        """
-        if not self.all_processed_lines:
-            logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
-            return
-
-        # Déterminer la période totale
-        start_time = self.all_processed_lines[0].decoded_timestamp
-        end_time = self.all_processed_lines[-1].decoded_timestamp
-
-        # Créer des intervalles de temps
-        interval_start_times: List[datetime.datetime] = []
-        current_time = start_time
-        while current_time <= end_time:
-            interval_start_times.append(current_time)
-            current_time += datetime.timedelta(minutes=interval_minutes)
-
-        # Compter les alarmes SAHARA dans chaque intervalle
-        interval_sahara_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
-        for sahara_alarm in self.sahara_alarms:
-            timestamp = sahara_alarm.raise_line.decoded_timestamp
-            for interval_start in interval_start_times:
-                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
-                if interval_start <= timestamp < interval_end:
-                    interval_sahara_counts[(interval_start, interval_end)] += 1
-                    break
-
-        # Préparer les données pour le graphe
-        x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_sahara_counts.keys()]
-        y_values = list(interval_sahara_counts.values())
-
-        # Créer et exporter les données dans un fichier Excel
-        excel_filename = f"sahara_alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-        wb = Workbook()
-        ws = wb.active
-        ws.title = f"{self.name} Sahara Alarms"
-
-        # Ajouter les en-têtes
-        ws["A1"] = "Début Intervalle de temps"
-        ws["B1"] = "Fin Intervalle de temps"
-        ws["C1"] = "Nombre d'alarmes SAHARA"
-
-        # Style des en-têtes
-        header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-        header_font = Font(bold=True, color="FFFFFF")
-        for cell in [ws["A1"], ws["B1"], ws["C1"]]:
-            cell.fill = header_fill
-            cell.font = header_font
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-
-        # Ajouter les données
-        for idx, ((interval_begin, interval_end), count) in enumerate(interval_sahara_counts.items(), start=2):
-            ws[f"A{idx}"] = interval_begin
-            ws[f"B{idx}"] = interval_end
-            ws[f"C{idx}"] = count
-            ws[f"C{idx}"].alignment = Alignment(horizontal="center")
-
-        # Ajuster la largeur des colonnes
-        ws.column_dimensions["A"].width = 25
-        ws.column_dimensions["B"].width = 25
-        ws.column_dimensions["C"].width = 25
-
-        # Ajouter un résumé
-        summary_row = len(interval_sahara_counts) + 3
-        ws[f"A{summary_row}"] = "Total"
-        ws[f"C{summary_row}"] = len(self.sahara_alarms)
-        ws[f"A{summary_row}"].font = Font(bold=True)
-        ws[f"C{summary_row}"].font = Font(bold=True)
-        ws[f"C{summary_row}"].alignment = Alignment(horizontal="center")
-
-        # Sauvegarder le fichier
-        wb.save(output_folder_path + "/" + excel_filename)
-        logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
-
-        # Créer et sauvegarder le graphe en HTML avec Plotly
-        html_filename = f"sahara_alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
-        fig = go.Figure(
-            data=[
-                go.Bar(
-                    x=x_labels,
-                    y=y_values,
-                    marker=dict(color="gold"),
-                    text=y_values,
-                    textposition="auto",
-                )
-            ]
-        )
-
-        fig.update_layout(
-            title=f"{self.name} {len(self.sahara_alarms)} alarmes SAHARA par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
-            xaxis_title="Intervalles de temps (heure début - heure fin)",
-            yaxis_title="Nombre d'alarmes SAHARA",
-            hovermode="x unified",
-            template="plotly_white",
-            height=600,
-            width=1000,
-        )
-
-        fig.write_html(output_folder_path + "/" + html_filename)
-        logger_config.print_and_log_info(f"Fichier HTML créé: {html_filename}")
-
-        # Afficher le bar graph
-        plt.figure(figsize=(12, 6))
-        plt.bar(x_labels, y_values, color="gold", width=0.6)
-        plt.xlabel("Intervalles de temps (heure début - heure fin)")
-        plt.ylabel("Nombre d'alarmes SAHARA")
-        plt.title(
-            f"{self.name} {len(self.sahara_alarms)} alarmes SAHARA par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}"
-        )
-        plt.xticks(rotation=45, ha="right")
-        plt.tight_layout()
-        if do_show:
-            plt.show()
+        except Exception as e:
+            logger_config.print_and_log_exception(e)
 
     def plot_back_to_past_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False) -> None:
         """
@@ -640,117 +653,122 @@ class TerminalTechniqueArchivesMaintLibrary:
             interval_minutes: Intervalle de temps en minutes (par défaut 10)
             do_show: Afficher le graphique matplotlib
         """
-        if not self.all_processed_lines:
-            logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
-            return
 
-        # Déterminer la période totale
-        start_time = self.all_processed_lines[0].decoded_timestamp
-        end_time = self.all_processed_lines[-1].decoded_timestamp
+        try:
+            if not self.all_processed_lines:
+                logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
+                return
 
-        # Créer des intervalles de temps
-        interval_start_times: List[datetime.datetime] = []
-        current_time = start_time
-        while current_time <= end_time:
-            interval_start_times.append(current_time)
-            current_time += datetime.timedelta(minutes=interval_minutes)
+            # Déterminer la période totale
+            start_time = self.all_processed_lines[0].decoded_timestamp
+            end_time = self.all_processed_lines[-1].decoded_timestamp
 
-        # Compter les back_to_past_detected dans chaque intervalle
-        interval_back_to_past_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
-        for back_to_past in self.back_to_past_detected:
-            timestamp = back_to_past.previous_line.decoded_timestamp
-            for interval_start in interval_start_times:
-                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
-                if interval_start <= timestamp < interval_end:
-                    interval_back_to_past_counts[(interval_start, interval_end)] += 1
-                    break
+            # Créer des intervalles de temps
+            interval_start_times: List[datetime.datetime] = []
+            current_time = start_time
+            while current_time <= end_time:
+                interval_start_times.append(current_time)
+                current_time += datetime.timedelta(minutes=interval_minutes)
 
-        # Préparer les données pour le graphe
-        x_labels = [f"{begin.strftime("%Y%m%d_%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_back_to_past_counts.keys()]
-        y_values = list(interval_back_to_past_counts.values())
+            # Compter les back_to_past_detected dans chaque intervalle
+            interval_back_to_past_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+            for back_to_past in self.back_to_past_detected:
+                timestamp = back_to_past.previous_line.decoded_timestamp
+                for interval_start in interval_start_times:
+                    interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                    if interval_start <= timestamp < interval_end:
+                        interval_back_to_past_counts[(interval_start, interval_end)] += 1
+                        break
 
-        # Créer et exporter les données dans un fichier Excel
-        excel_filename = f"back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-        wb = Workbook()
-        ws = wb.active
-        ws.title = f"{self.name} Back to Past"
+            # Préparer les données pour le graphe
+            x_labels = [f"{begin.strftime("%Y%m%d_%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_back_to_past_counts.keys()]
+            y_values = list(interval_back_to_past_counts.values())
 
-        # Ajouter les en-têtes
-        ws["A1"] = "Début Intervalle de temps"
-        ws["B1"] = "Fin Intervalle de temps"
-        ws["C1"] = "Nombre d'événements Back to Past"
+            # Créer et exporter les données dans un fichier Excel
+            excel_filename = f"back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+            wb = Workbook()
+            ws = wb.active
+            ws.title = f"{self.name} Back to Past"
 
-        # Style des en-têtes
-        header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-        header_font = Font(bold=True, color="FFFFFF")
-        for cell in [ws["A1"], ws["B1"], ws["C1"]]:
-            cell.fill = header_fill
-            cell.font = header_font
-            cell.alignment = Alignment(horizontal="center", vertical="center")
+            # Ajouter les en-têtes
+            ws["A1"] = "Début Intervalle de temps"
+            ws["B1"] = "Fin Intervalle de temps"
+            ws["C1"] = "Nombre d'événements Back to Past"
 
-        # Ajouter les données
-        for idx, ((interval_begin, interval_end), count) in enumerate(interval_back_to_past_counts.items(), start=2):
-            ws[f"A{idx}"] = interval_begin
-            ws[f"B{idx}"] = interval_end
-            ws[f"C{idx}"] = count
-            ws[f"C{idx}"].alignment = Alignment(horizontal="center")
+            # Style des en-têtes
+            header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+            header_font = Font(bold=True, color="FFFFFF")
+            for cell in [ws["A1"], ws["B1"], ws["C1"]]:
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = Alignment(horizontal="center", vertical="center")
 
-        # Ajuster la largeur des colonnes
-        ws.column_dimensions["A"].width = 25
-        ws.column_dimensions["B"].width = 25
-        ws.column_dimensions["C"].width = 30
+            # Ajouter les données
+            for idx, ((interval_begin, interval_end), count) in enumerate(interval_back_to_past_counts.items(), start=2):
+                ws[f"A{idx}"] = interval_begin
+                ws[f"B{idx}"] = interval_end
+                ws[f"C{idx}"] = count
+                ws[f"C{idx}"].alignment = Alignment(horizontal="center")
 
-        # Ajouter un résumé
-        summary_row = len(interval_back_to_past_counts) + 3
-        ws[f"A{summary_row}"] = "Total"
-        ws[f"C{summary_row}"] = len(self.back_to_past_detected)
-        ws[f"A{summary_row}"].font = Font(bold=True)
-        ws[f"C{summary_row}"].font = Font(bold=True)
-        ws[f"C{summary_row}"].alignment = Alignment(horizontal="center")
+            # Ajuster la largeur des colonnes
+            ws.column_dimensions["A"].width = 25
+            ws.column_dimensions["B"].width = 25
+            ws.column_dimensions["C"].width = 30
 
-        # Sauvegarder le fichier
-        wb.save(output_folder_path + "/" + excel_filename)
-        logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
+            # Ajouter un résumé
+            summary_row = len(interval_back_to_past_counts) + 3
+            ws[f"A{summary_row}"] = "Total"
+            ws[f"C{summary_row}"] = len(self.back_to_past_detected)
+            ws[f"A{summary_row}"].font = Font(bold=True)
+            ws[f"C{summary_row}"].font = Font(bold=True)
+            ws[f"C{summary_row}"].alignment = Alignment(horizontal="center")
 
-        # Créer et sauvegarder le graphe en HTML avec Plotly
-        html_filename = f"back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
-        fig = go.Figure(
-            data=[
-                go.Bar(
-                    x=x_labels,
-                    y=y_values,
-                    marker=dict(color="orangered"),
-                    text=y_values,
-                    textposition="auto",
-                )
-            ]
-        )
+            # Sauvegarder le fichier
+            wb.save(output_folder_path + "/" + excel_filename)
+            logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
-        fig.update_layout(
-            title=f"{self.name} {len(self.back_to_past_detected)} événements Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
-            xaxis_title="Intervalles de temps (heure début - heure fin)",
-            yaxis_title="Nombre d'événements Back to Past",
-            hovermode="x unified",
-            template="plotly_white",
-            height=600,
-            width=1000,
-        )
+            # Créer et sauvegarder le graphe en HTML avec Plotly
+            html_filename = f"back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+            fig = go.Figure(
+                data=[
+                    go.Bar(
+                        x=x_labels,
+                        y=y_values,
+                        marker=dict(color="orangered"),
+                        text=y_values,
+                        textposition="auto",
+                    )
+                ]
+            )
 
-        fig.write_html(output_folder_path + "/" + html_filename)
-        logger_config.print_and_log_info(f"Fichier HTML créé: {html_filename}")
+            fig.update_layout(
+                title=f"{self.name} {len(self.back_to_past_detected)} événements Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
+                xaxis_title="Intervalles de temps (heure début - heure fin)",
+                yaxis_title="Nombre d'événements Back to Past",
+                hovermode="x unified",
+                template="plotly_white",
+                height=600,
+                width=1000,
+            )
 
-        # Afficher le bar graph
-        plt.figure(figsize=(12, 6))
-        plt.bar(x_labels, y_values, color="orangered", width=0.6)
-        plt.xlabel("Intervalles de temps (heure début - heure fin)")
-        plt.ylabel("Nombre d'événements Back to Past")
-        plt.title(
-            f"{self.name} {len(self.back_to_past_detected)} événements Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}"
-        )
-        plt.xticks(rotation=45, ha="right")
-        plt.tight_layout()
-        if do_show:
-            plt.show()
+            fig.write_html(output_folder_path + "/" + html_filename)
+            logger_config.print_and_log_info(f"Fichier HTML créé: {html_filename}")
+
+            # Afficher le bar graph
+            plt.figure(figsize=(12, 6))
+            plt.bar(x_labels, y_values, color="orangered", width=0.6)
+            plt.xlabel("Intervalles de temps (heure début - heure fin)")
+            plt.ylabel("Nombre d'événements Back to Past")
+            plt.title(
+                f"{self.name} {len(self.back_to_past_detected)} événements Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}"
+            )
+            plt.xticks(rotation=45, ha="right")
+            plt.tight_layout()
+            if do_show:
+                plt.show()
+
+        except Exception as e:
+            logger_config.print_and_log_exception(e)
 
     def plot_sahara_mccs_back_to_past_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False) -> None:
         """
@@ -761,188 +779,193 @@ class TerminalTechniqueArchivesMaintLibrary:
             interval_minutes: Intervalle de temps en minutes (par défaut 10)
             do_show: Afficher le graphique matplotlib
         """
-        if not self.all_processed_lines:
-            logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
-            return
 
-        # Déterminer la période totale
-        start_time = self.all_processed_lines[0].decoded_timestamp
-        end_time = self.all_processed_lines[-1].decoded_timestamp
+        try:
+            if not self.all_processed_lines:
+                logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
+                return
 
-        # Créer des intervalles de temps
-        interval_start_times: List[datetime.datetime] = []
-        current_time = start_time
-        while current_time <= end_time:
-            interval_start_times.append(current_time)
-            current_time += datetime.timedelta(minutes=interval_minutes)
+            # Déterminer la période totale
+            start_time = self.all_processed_lines[0].decoded_timestamp
+            end_time = self.all_processed_lines[-1].decoded_timestamp
 
-        # Compter les événements dans chaque intervalle
-        interval_sahara_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
-        interval_mccs_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
-        interval_back_to_past_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+            # Créer des intervalles de temps
+            interval_start_times: List[datetime.datetime] = []
+            current_time = start_time
+            while current_time <= end_time:
+                interval_start_times.append(current_time)
+                current_time += datetime.timedelta(minutes=interval_minutes)
 
-        # Compter les sahara_alarms
-        for sahara_alarm in self.sahara_alarms:
-            timestamp = sahara_alarm.raise_line.decoded_timestamp
+            # Compter les événements dans chaque intervalle
+            interval_sahara_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+            interval_mccs_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+            interval_back_to_past_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+
+            # Compter les sahara_alarms
+            for sahara_alarm in self.sahara_alarms:
+                timestamp = sahara_alarm.raise_line.decoded_timestamp
+                for interval_start in interval_start_times:
+                    interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                    if interval_start <= timestamp < interval_end:
+                        interval_sahara_counts[(interval_start, interval_end)] += 1
+                        break
+
+            # Compter les mccs_hs_alarms
+            for mccs_alarm in self.mccs_hs_alarms:
+                timestamp = mccs_alarm.raise_line.decoded_timestamp
+                for interval_start in interval_start_times:
+                    interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                    if interval_start <= timestamp < interval_end:
+                        interval_mccs_counts[(interval_start, interval_end)] += 1
+                        break
+
+            # Compter les back_to_past_detected
+            for back_to_past in self.back_to_past_detected:
+                timestamp = back_to_past.previous_line.decoded_timestamp
+                for interval_start in interval_start_times:
+                    interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                    if interval_start <= timestamp < interval_end:
+                        interval_back_to_past_counts[(interval_start, interval_end)] += 1
+                        break
+
+            # Initialiser les compteurs pour les intervalles manquants
             for interval_start in interval_start_times:
                 interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
-                if interval_start <= timestamp < interval_end:
-                    interval_sahara_counts[(interval_start, interval_end)] += 1
-                    break
+                if (interval_start, interval_end) not in interval_sahara_counts:
+                    interval_sahara_counts[(interval_start, interval_end)] = 0
+                if (interval_start, interval_end) not in interval_mccs_counts:
+                    interval_mccs_counts[(interval_start, interval_end)] = 0
+                if (interval_start, interval_end) not in interval_back_to_past_counts:
+                    interval_back_to_past_counts[(interval_start, interval_end)] = 0
 
-        # Compter les mccs_hs_alarms
-        for mccs_alarm in self.mccs_hs_alarms:
-            timestamp = mccs_alarm.raise_line.decoded_timestamp
-            for interval_start in interval_start_times:
-                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
-                if interval_start <= timestamp < interval_end:
-                    interval_mccs_counts[(interval_start, interval_end)] += 1
-                    break
+            # Préparer les données pour le graphe
+            x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_sahara_counts.keys()]
+            y_sahara = [interval_sahara_counts[(begin, end)] for begin, end in interval_sahara_counts.keys()]
+            y_mccs = [interval_mccs_counts[(begin, end)] for begin, end in interval_sahara_counts.keys()]
+            y_back_to_past = [interval_back_to_past_counts[(begin, end)] for begin, end in interval_sahara_counts.keys()]
 
-        # Compter les back_to_past_detected
-        for back_to_past in self.back_to_past_detected:
-            timestamp = back_to_past.previous_line.decoded_timestamp
-            for interval_start in interval_start_times:
-                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
-                if interval_start <= timestamp < interval_end:
-                    interval_back_to_past_counts[(interval_start, interval_end)] += 1
-                    break
+            # Créer et exporter les données dans un fichier Excel
+            excel_filename = f"sahara_mccs_back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+            wb = Workbook()
+            ws = wb.active
+            ws.title = f"{self.name} Summary Events"
 
-        # Initialiser les compteurs pour les intervalles manquants
-        for interval_start in interval_start_times:
-            interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
-            if (interval_start, interval_end) not in interval_sahara_counts:
-                interval_sahara_counts[(interval_start, interval_end)] = 0
-            if (interval_start, interval_end) not in interval_mccs_counts:
-                interval_mccs_counts[(interval_start, interval_end)] = 0
-            if (interval_start, interval_end) not in interval_back_to_past_counts:
-                interval_back_to_past_counts[(interval_start, interval_end)] = 0
+            # Ajouter les en-têtes
+            ws["A1"] = "Début Intervalle de temps"
+            ws["B1"] = "Fin Intervalle de temps"
+            ws["C1"] = "Nombre SAHARA"
+            ws["D1"] = "Nombre MCCS H"
+            ws["E1"] = "Nombre Back to Past"
 
-        # Préparer les données pour le graphe
-        x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_sahara_counts.keys()]
-        y_sahara = [interval_sahara_counts[(begin, end)] for begin, end in interval_sahara_counts.keys()]
-        y_mccs = [interval_mccs_counts[(begin, end)] for begin, end in interval_sahara_counts.keys()]
-        y_back_to_past = [interval_back_to_past_counts[(begin, end)] for begin, end in interval_sahara_counts.keys()]
+            # Style des en-têtes
+            header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+            header_font = Font(bold=True, color="FFFFFF")
+            for cell in [ws["A1"], ws["B1"], ws["C1"], ws["D1"], ws["E1"]]:
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = Alignment(horizontal="center", vertical="center")
 
-        # Créer et exporter les données dans un fichier Excel
-        excel_filename = f"sahara_mccs_back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-        wb = Workbook()
-        ws = wb.active
-        ws.title = f"{self.name} Summary Events"
+            # Ajouter les données
+            for idx, ((interval_begin, interval_end), sahara_count) in enumerate(interval_sahara_counts.items(), start=2):
+                ws[f"A{idx}"] = interval_begin
+                ws[f"B{idx}"] = interval_end
+                ws[f"C{idx}"] = sahara_count
+                ws[f"D{idx}"] = interval_mccs_counts[(interval_begin, interval_end)]
+                ws[f"E{idx}"] = interval_back_to_past_counts[(interval_begin, interval_end)]
+                ws[f"C{idx}"].alignment = Alignment(horizontal="center")
+                ws[f"D{idx}"].alignment = Alignment(horizontal="center")
+                ws[f"E{idx}"].alignment = Alignment(horizontal="center")
 
-        # Ajouter les en-têtes
-        ws["A1"] = "Début Intervalle de temps"
-        ws["B1"] = "Fin Intervalle de temps"
-        ws["C1"] = "Nombre SAHARA"
-        ws["D1"] = "Nombre MCCS H"
-        ws["E1"] = "Nombre Back to Past"
+            # Ajuster la largeur des colonnes
+            ws.column_dimensions["A"].width = 25
+            ws.column_dimensions["B"].width = 25
+            ws.column_dimensions["C"].width = 20
+            ws.column_dimensions["D"].width = 20
+            ws.column_dimensions["E"].width = 20
 
-        # Style des en-têtes
-        header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-        header_font = Font(bold=True, color="FFFFFF")
-        for cell in [ws["A1"], ws["B1"], ws["C1"], ws["D1"], ws["E1"]]:
-            cell.fill = header_fill
-            cell.font = header_font
-            cell.alignment = Alignment(horizontal="center", vertical="center")
+            # Ajouter un résumé
+            summary_row = len(interval_sahara_counts) + 3
+            ws[f"A{summary_row}"] = "Total"
+            ws[f"C{summary_row}"] = len(self.sahara_alarms)
+            ws[f"D{summary_row}"] = len(self.mccs_hs_alarms)
+            ws[f"E{summary_row}"] = len(self.back_to_past_detected)
+            ws[f"A{summary_row}"].font = Font(bold=True)
+            ws[f"C{summary_row}"].font = Font(bold=True)
+            ws[f"D{summary_row}"].font = Font(bold=True)
+            ws[f"E{summary_row}"].font = Font(bold=True)
+            ws[f"C{summary_row}"].alignment = Alignment(horizontal="center")
+            ws[f"D{summary_row}"].alignment = Alignment(horizontal="center")
+            ws[f"E{summary_row}"].alignment = Alignment(horizontal="center")
 
-        # Ajouter les données
-        for idx, ((interval_begin, interval_end), sahara_count) in enumerate(interval_sahara_counts.items(), start=2):
-            ws[f"A{idx}"] = interval_begin
-            ws[f"B{idx}"] = interval_end
-            ws[f"C{idx}"] = sahara_count
-            ws[f"D{idx}"] = interval_mccs_counts[(interval_begin, interval_end)]
-            ws[f"E{idx}"] = interval_back_to_past_counts[(interval_begin, interval_end)]
-            ws[f"C{idx}"].alignment = Alignment(horizontal="center")
-            ws[f"D{idx}"].alignment = Alignment(horizontal="center")
-            ws[f"E{idx}"].alignment = Alignment(horizontal="center")
+            # Sauvegarder le fichier
+            wb.save(output_folder_path + "/" + excel_filename)
+            logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
-        # Ajuster la largeur des colonnes
-        ws.column_dimensions["A"].width = 25
-        ws.column_dimensions["B"].width = 25
-        ws.column_dimensions["C"].width = 20
-        ws.column_dimensions["D"].width = 20
-        ws.column_dimensions["E"].width = 20
+            # Créer et sauvegarder le graphe en HTML avec Plotly
+            html_filename = f"sahara_mccs_back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+            fig = go.Figure(
+                data=[
+                    go.Bar(
+                        name="SAHARA",
+                        x=x_labels,
+                        y=y_sahara,
+                        marker=dict(color="gold"),
+                        text=y_sahara,
+                        textposition="auto",
+                    ),
+                    go.Bar(
+                        name="MCCS H",
+                        x=x_labels,
+                        y=y_mccs,
+                        marker=dict(color="steelblue"),
+                        text=y_mccs,
+                        textposition="auto",
+                    ),
+                    go.Bar(
+                        name="Back to Past",
+                        x=x_labels,
+                        y=y_back_to_past,
+                        marker=dict(color="orangered"),
+                        text=y_back_to_past,
+                        textposition="auto",
+                    ),
+                ]
+            )
 
-        # Ajouter un résumé
-        summary_row = len(interval_sahara_counts) + 3
-        ws[f"A{summary_row}"] = "Total"
-        ws[f"C{summary_row}"] = len(self.sahara_alarms)
-        ws[f"D{summary_row}"] = len(self.mccs_hs_alarms)
-        ws[f"E{summary_row}"] = len(self.back_to_past_detected)
-        ws[f"A{summary_row}"].font = Font(bold=True)
-        ws[f"C{summary_row}"].font = Font(bold=True)
-        ws[f"D{summary_row}"].font = Font(bold=True)
-        ws[f"E{summary_row}"].font = Font(bold=True)
-        ws[f"C{summary_row}"].alignment = Alignment(horizontal="center")
-        ws[f"D{summary_row}"].alignment = Alignment(horizontal="center")
-        ws[f"E{summary_row}"].alignment = Alignment(horizontal="center")
+            fig.update_layout(
+                title=f"{self.name} SAHARA, MCCS H et Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
+                xaxis_title="Intervalles de temps (heure début - heure fin)",
+                yaxis_title="Nombre d'événements",
+                barmode="group",
+                hovermode="x unified",
+                template="plotly_white",
+                height=600,
+                width=1200,
+            )
 
-        # Sauvegarder le fichier
-        wb.save(output_folder_path + "/" + excel_filename)
-        logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
+            fig.write_html(output_folder_path + "/" + html_filename)
+            logger_config.print_and_log_info(f"Fichier HTML créé: {html_filename}")
 
-        # Créer et sauvegarder le graphe en HTML avec Plotly
-        html_filename = f"sahara_mccs_back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
-        fig = go.Figure(
-            data=[
-                go.Bar(
-                    name="SAHARA",
-                    x=x_labels,
-                    y=y_sahara,
-                    marker=dict(color="gold"),
-                    text=y_sahara,
-                    textposition="auto",
-                ),
-                go.Bar(
-                    name="MCCS H",
-                    x=x_labels,
-                    y=y_mccs,
-                    marker=dict(color="steelblue"),
-                    text=y_mccs,
-                    textposition="auto",
-                ),
-                go.Bar(
-                    name="Back to Past",
-                    x=x_labels,
-                    y=y_back_to_past,
-                    marker=dict(color="orangered"),
-                    text=y_back_to_past,
-                    textposition="auto",
-                ),
-            ]
-        )
+            # Afficher le bar graph matplotlib
+            plt.figure(figsize=(14, 7))
+            x_pos = range(len(x_labels))
+            width = 0.25
 
-        fig.update_layout(
-            title=f"{self.name} SAHARA, MCCS H et Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
-            xaxis_title="Intervalles de temps (heure début - heure fin)",
-            yaxis_title="Nombre d'événements",
-            barmode="group",
-            hovermode="x unified",
-            template="plotly_white",
-            height=600,
-            width=1200,
-        )
+            plt.bar([p - width for p in x_pos], y_sahara, width, label="SAHARA", color="gold")
+            plt.bar(x_pos, y_mccs, width, label="MCCS H", color="steelblue")
+            plt.bar([p + width for p in x_pos], y_back_to_past, width, label="Back to Past", color="orangered")
 
-        fig.write_html(output_folder_path + "/" + html_filename)
-        logger_config.print_and_log_info(f"Fichier HTML créé: {html_filename}")
+            plt.xlabel("Intervalles de temps (heure début - heure fin)")
+            plt.ylabel("Nombre d'événements")
+            plt.title(f"{self.name} SAHARA, MCCS H et Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}")
+            plt.xticks(x_pos, x_labels, rotation=45, ha="right")
+            plt.legend()
+            plt.tight_layout()
+            if do_show:
+                plt.show()
 
-        # Afficher le bar graph matplotlib
-        plt.figure(figsize=(14, 7))
-        x_pos = range(len(x_labels))
-        width = 0.25
-
-        plt.bar([p - width for p in x_pos], y_sahara, width, label="SAHARA", color="gold")
-        plt.bar(x_pos, y_mccs, width, label="MCCS H", color="steelblue")
-        plt.bar([p + width for p in x_pos], y_back_to_past, width, label="Back to Past", color="orangered")
-
-        plt.xlabel("Intervalles de temps (heure début - heure fin)")
-        plt.ylabel("Nombre d'événements")
-        plt.title(f"{self.name} SAHARA, MCCS H et Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}")
-        plt.xticks(x_pos, x_labels, rotation=45, ha="right")
-        plt.legend()
-        plt.tight_layout()
-        if do_show:
-            plt.show()
+        except Exception as e:
+            logger_config.print_and_log_exception(e)
 
 
 @dataclass
