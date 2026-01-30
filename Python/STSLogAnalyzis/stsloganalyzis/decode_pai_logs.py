@@ -232,7 +232,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
         # Ajouter un onglet pour les MCCS H alarms
         ws_mccs = wb.create_sheet("MCCS H Alarms")
-        headers_mccs = ["Timestamp", "File Name", "Line Number", "Alarm Type", "End Timestamp", "End File Name", "End Line Number", "Full Text"]
+        headers_mccs = ["Alarm Type", "Duration in seconds", "Timestamp", "File Name", "Line Number", "End Timestamp", "End File Name", "End Line Number", "Full Text"]
         for col_idx, header in enumerate(headers_mccs, start=1):
             cell = ws_mccs.cell(row=1, column=col_idx)
             cell.value = header
@@ -241,14 +241,18 @@ class TerminalTechniqueArchivesMaintLibrary:
             cell.alignment = Alignment(horizontal="center", vertical="center")
 
         for row_idx, mccs_alarm in enumerate(self.mccs_hs_alarms, start=2):
-            ws_mccs.cell(row=row_idx, column=1).value = mccs_alarm.raise_line.decoded_timestamp
-            ws_mccs.cell(row=row_idx, column=2).value = mccs_alarm.raise_line.parent_file.file_name
-            ws_mccs.cell(row=row_idx, column=3).value = mccs_alarm.raise_line.line_number
-            ws_mccs.cell(row=row_idx, column=4).value = mccs_alarm.alarm_type.name
-            ws_mccs.cell(row=row_idx, column=5).value = mccs_alarm.end_alarm_line.decoded_timestamp if mccs_alarm.end_alarm_line else "NA"
-            ws_mccs.cell(row=row_idx, column=6).value = mccs_alarm.end_alarm_line.parent_file.file_name if mccs_alarm.end_alarm_line else "NA"
-            ws_mccs.cell(row=row_idx, column=7).value = mccs_alarm.end_alarm_line.line_number if mccs_alarm.end_alarm_line else "NA"
-            ws_mccs.cell(row=row_idx, column=8).value = mccs_alarm.full_text.strip()
+            column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
+            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.alarm_type.name
+            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = (
+                (mccs_alarm.end_alarm_line.decoded_timestamp - mccs_alarm.raise_line.decoded_timestamp).total_seconds() if mccs_alarm.end_alarm_line else None
+            )
+            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.decoded_timestamp
+            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.parent_file.file_name
+            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.line_number
+            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.decoded_timestamp if mccs_alarm.end_alarm_line else "NA"
+            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.parent_file.file_name if mccs_alarm.end_alarm_line else "NA"
+            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.line_number if mccs_alarm.end_alarm_line else "NA"
+            ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.full_text.strip()
 
         ws_mccs.column_dimensions["A"].width = 25
         ws_mccs.column_dimensions["B"].width = 30
@@ -271,11 +275,13 @@ class TerminalTechniqueArchivesMaintLibrary:
 
         for row_idx, back_to_past in enumerate(self.back_to_past_detected, start=2):
             duration = (back_to_past.next_line.decoded_timestamp - back_to_past.previous_line.decoded_timestamp).total_seconds()
-            ws_btp.cell(row=row_idx, column=1).value = back_to_past.previous_line.decoded_timestamp
-            ws_btp.cell(row=row_idx, column=2).value = back_to_past.previous_line.line_number
-            ws_btp.cell(row=row_idx, column=3).value = back_to_past.next_line.decoded_timestamp
-            ws_btp.cell(row=row_idx, column=4).value = back_to_past.next_line.line_number
-            ws_btp.cell(row=row_idx, column=5).value = duration
+            column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
+
+            ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.previous_line.decoded_timestamp
+            ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.previous_line.line_number
+            ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.next_line.decoded_timestamp
+            ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.next_line.line_number
+            ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = duration
 
         ws_btp.column_dimensions["A"].width = 25
         ws_btp.column_dimensions["B"].width = 15
@@ -371,7 +377,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                         equipment_names.append(name)
 
             # Créer et exporter les données dans un fichier Excel
-            excel_filename = f"alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+            excel_filename = f"alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d')}_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
             wb = Workbook()
             ws = wb.active
             ws.title = f"{self.name} Alarms By Period"
