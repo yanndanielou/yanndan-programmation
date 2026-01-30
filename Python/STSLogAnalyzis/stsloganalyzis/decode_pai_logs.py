@@ -20,6 +20,7 @@ class AlarmLineType(Enum):
     EVT_ALA = auto()
     DEB_ALA = auto()
     FIN_ALA = auto()
+    # OUV_SESSION = auto()
     CSI = auto()
 
 
@@ -953,9 +954,13 @@ class TerminalTechniqueArchivesMaintFile:
                 # logger_config.print_and_log_info(to_print_and_log=f"File {self.file_full_path} has {len(all_raw_lines)} lines")
                 for line_number, line in enumerate(all_raw_lines):
                     if len(line) > 3:
-                        processed_line = TerminalTechniqueArchivesMaintLogLine(parent_file=self, full_raw_line=line, line_number=line_number + 1, previous_line=self.last_line)
-                        self.all_processed_lines.append(processed_line)
-                        self.last_line = processed_line
+                        try:
+                            processed_line = TerminalTechniqueArchivesMaintLogLine(parent_file=self, full_raw_line=line, line_number=line_number + 1, previous_line=self.last_line)
+                            self.all_processed_lines.append(processed_line)
+                            self.last_line = processed_line
+                        except Exception as e:
+                            logger_config.print_and_log_exception(e)
+                            logger_config.print_and_log_error(f"Could not process line {line} in {self.file_name} {line_number+1}")
 
 
 @dataclass
