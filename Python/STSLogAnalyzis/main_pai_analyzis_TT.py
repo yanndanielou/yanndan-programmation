@@ -28,7 +28,7 @@ with logger_config.application_logger("main_pai_analyzis_TT"):
         tt_maint_library.plot_sahara_alarms_by_period(output_folder_path=OUTPUT_FOLDER_NAME, interval_minutes=60, do_show=False)
         tt_maint_library.plot_sahara_mccs_back_to_past_by_period(output_folder_path=OUTPUT_FOLDER_NAME, interval_minutes=60, do_show=False)
         tt_maint_library.plot_alarms_by_period(
-            output_folder_path=OUTPUT_FOLDER_NAME, equipment_names_to_ignore=["81", "75"], interval_minutes=60, do_show=True
+            output_folder_path=OUTPUT_FOLDER_NAME, equipment_names_to_ignore=["81", "75"], interval_minutes=60, do_show=False
         )  # Optionnel: affiche le graphique matplotlib
 
     pass
