@@ -151,7 +151,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         # Créer un workbook
         wb = Workbook()
         ws = wb.active
-        ws.title = "Equipments Alarms"
+        ws.title = f"{self.name} Equipments Alarms"
 
         # Ajouter les en-têtes
         headers = [
@@ -374,7 +374,7 @@ class TerminalTechniqueArchivesMaintLibrary:
             excel_filename = f"alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
             wb = Workbook()
             ws = wb.active
-            ws.title = "Alarms By Period"
+            ws.title = f"{self.name} Alarms By Period"
 
             # Ajouter les en-têtes
             headers = ["Début Intervalle", "Fin Intervalle", "Back to Past", "Sahara"]
@@ -468,7 +468,7 @@ class TerminalTechniqueArchivesMaintLibrary:
             fig = go.Figure(data=fig_data)
 
             fig.update_layout(
-                title=f"Alarmes par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
+                title=f"{self.name} Alarmes par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
                 xaxis_title="Intervalles de temps (heure début - heure fin)",
                 yaxis_title="Nombre",
                 barmode="group",
@@ -497,7 +497,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
             plt.xlabel("Intervalles de temps (heure début - heure fin)")
             plt.ylabel("Nombre")
-            plt.title(f"Alarmes par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}")
+            plt.title(f"{self.name} Alarmes par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}")
             plt.xticks(x_pos, x_labels, rotation=45, ha="right")
             plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
             plt.tight_layout()
@@ -546,7 +546,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         excel_filename = f"sahara_alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
         wb = Workbook()
         ws = wb.active
-        ws.title = "Sahara Alarms"
+        ws.title = f"{self.name} Sahara Alarms"
 
         # Ajouter les en-têtes
         ws["A1"] = "Début Intervalle de temps"
@@ -600,7 +600,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         )
 
         fig.update_layout(
-            title=f"{len(self.sahara_alarms)} alarmes SAHARA par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
+            title=f"{self.name} {len(self.sahara_alarms)} alarmes SAHARA par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
             xaxis_title="Intervalles de temps (heure début - heure fin)",
             yaxis_title="Nombre d'alarmes SAHARA",
             hovermode="x unified",
@@ -617,7 +617,9 @@ class TerminalTechniqueArchivesMaintLibrary:
         plt.bar(x_labels, y_values, color="gold", width=0.6)
         plt.xlabel("Intervalles de temps (heure début - heure fin)")
         plt.ylabel("Nombre d'alarmes SAHARA")
-        plt.title(f"{len(self.sahara_alarms)} alarmes SAHARA par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}")
+        plt.title(
+            f"{self.name} {len(self.sahara_alarms)} alarmes SAHARA par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}"
+        )
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
         if do_show:
@@ -665,7 +667,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         excel_filename = f"back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
         wb = Workbook()
         ws = wb.active
-        ws.title = "Back to Past"
+        ws.title = f"{self.name} Back to Past"
 
         # Ajouter les en-têtes
         ws["A1"] = "Début Intervalle de temps"
@@ -719,7 +721,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         )
 
         fig.update_layout(
-            title=f"{len(self.back_to_past_detected)} événements Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
+            title=f"{self.name} {len(self.back_to_past_detected)} événements Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
             xaxis_title="Intervalles de temps (heure début - heure fin)",
             yaxis_title="Nombre d'événements Back to Past",
             hovermode="x unified",
@@ -737,7 +739,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         plt.xlabel("Intervalles de temps (heure début - heure fin)")
         plt.ylabel("Nombre d'événements Back to Past")
         plt.title(
-            f"{len(self.back_to_past_detected)} événements Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}"
+            f"{self.name} {len(self.back_to_past_detected)} événements Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}"
         )
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
@@ -820,7 +822,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         excel_filename = f"sahara_mccs_back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
         wb = Workbook()
         ws = wb.active
-        ws.title = "Summary Events"
+        ws.title = f"{self.name} Summary Events"
 
         # Ajouter les en-têtes
         ws["A1"] = "Début Intervalle de temps"
@@ -905,7 +907,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         )
 
         fig.update_layout(
-            title=f"SAHARA, MCCS H et Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
+            title=f"{self.name} SAHARA, MCCS H et Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
             xaxis_title="Intervalles de temps (heure début - heure fin)",
             yaxis_title="Nombre d'événements",
             barmode="group",
@@ -929,7 +931,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
         plt.xlabel("Intervalles de temps (heure début - heure fin)")
         plt.ylabel("Nombre d'événements")
-        plt.title(f"SAHARA, MCCS H et Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}")
+        plt.title(f"{self.name} SAHARA, MCCS H et Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}")
         plt.xticks(x_pos, x_labels, rotation=45, ha="right")
         plt.legend()
         plt.tight_layout()
