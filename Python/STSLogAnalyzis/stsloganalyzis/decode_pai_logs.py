@@ -159,7 +159,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         try:
             excel_output_file_name_without_extension: str = self.name + "_all_issues_"
             if not self.equipments_with_alarms:
-                logger_config.print_and_log_info("Aucun équipement avec alarmes. Aucun fichier créé.")
+                logger_config.print_and_log_error("Aucun équipement avec alarmes. Aucun fichier créé.")
                 return
 
             # Créer un workbook
@@ -323,7 +323,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         """
         try:
             if not self.all_processed_lines:
-                logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
+                logger_config.print_and_log_error("La liste des traces est vide. Aucun fichier créé.")
                 return
 
             with logger_config.stopwatch_with_label("plot_alarms_by_period"):
@@ -542,7 +542,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
         try:
             if not self.all_processed_lines:
-                logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
+                logger_config.print_and_log_error("La liste des traces est vide. Aucun fichier créé.")
                 return
 
             # Déterminer la période totale
@@ -679,7 +679,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
         try:
             if not self.all_processed_lines:
-                logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
+                logger_config.print_and_log_error("La liste des traces est vide. Aucun fichier créé.")
                 return
 
             # Déterminer la période totale
@@ -811,7 +811,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
         try:
             if not self.all_processed_lines:
-                logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
+                logger_config.print_and_log_error("La liste des traces est vide. Aucun fichier créé.")
                 return
 
             # Déterminer la période totale
