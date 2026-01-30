@@ -20,7 +20,10 @@ class AlarmLineType(Enum):
     EVT_ALA = auto()
     DEB_ALA = auto()
     FIN_ALA = auto()
-    # OUV_SESSION = auto()
+    OUV_SESSION = auto()
+    FERM_SESSION = auto()
+    CMD_ESSAIS = auto()
+    CMD_CPT_RENDU = auto()
     CSI = auto()
 
 
@@ -64,6 +67,14 @@ class TerminalTechniqueClosableAlarm(TerminalTechniqueAlarm):
 
 
 @dataclass
+class TerminalTechniqueSessionAlarm(TerminalTechniqueClosableAlarm):
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.session_name = self.raise_line.alarm_full_text
+
+
+@dataclass
 class TerminalTechniqueMccsHAlarm(TerminalTechniqueClosableAlarm):
     pass
 
@@ -98,6 +109,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         self.ignored_end_alarms_without_alarm_begin: List[TerminalTechniqueClosableAlarm] = []
         self.sahara_alarms: List[SaharaTerminalTechniqueAlarm] = []
         self.mccs_hs_alarms: List[TerminalTechniqueMccsHAlarm] = []
+        self.sessions_alarms: List[TerminalTechniqueMccsHAlarm] = []
         self.equipments_with_alarms: List[TerminalTechniqueEquipmentWithAlarms] = []
         self.back_to_past_detected: List[TerminalTechniqueArchivesMaintLogBackToPast] = []
 
@@ -1020,7 +1032,7 @@ class TerminalTechniqueArchivesMaintLogLine:
 
         self.alarm: Optional[TerminalTechniqueAlarm] = None
 
-        if self.alarm_type == AlarmLineType.FIN_ALA:
+        if self.alarm_type in [AlarmLineType.FIN_ALA, AlarmLineType.FERM_SESSION]:
             found_unclosed_alarms = [alarm for alarm in self.parent_file.library.currently_opened_alarms if alarm.full_text == self.alarm_full_text]
             if found_unclosed_alarms:
                 while len(found_unclosed_alarms) > 1:
@@ -1054,6 +1066,12 @@ class TerminalTechniqueArchivesMaintLogLine:
         elif self.alarm_type == AlarmLineType.DEB_ALA:
             self.alarm = TerminalTechniqueClosableAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
             self.parent_file.library.currently_opened_alarms.append(self.alarm)
+        elif self.alarm_type == AlarmLineType.OUV_SESSION:
+            session_alarm = TerminalTechniqueSessionAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
+            self.alarm = session_alarm
+            self.parent_file.library.currently_opened_alarms.append(self.alarm)
+            self.parent_file.library.sessions_alarms.append(session_alarm)
+
         elif self.alarm_type == AlarmLineType.EVT_ALA:
             self.alarm = TerminalTechniqueAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
         elif self.alarm_type == AlarmLineType.CSI:
