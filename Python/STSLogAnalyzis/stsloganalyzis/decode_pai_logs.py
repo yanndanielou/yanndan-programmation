@@ -1018,6 +1018,63 @@ class TerminalTechniqueArchivesMaintLibrary:
         except Exception as e:
             logger_config.print_and_log_exception(e)
 
+    def dump_all_events_to_text_file(self, output_folder_path: str) -> None:
+        """
+        Dump tous les événements (MCCS H alarms, SAHARA alarms, Back to Past) 
+        dans un fichier texte par ordre chronologique.
+
+        Args:
+            output_folder_path: Chemin du dossier de sortie
+        """
+        try:
+            if not self.all_processed_lines:
+                logger_config.print_and_log_error("La liste des traces est vide. Aucun fichier créé.")
+                return
+
+            # Créer une liste contenant tous les événements avec leurs timestamps
+            events: List[Tuple[datetime.datetime, str, str]] = []
+
+            # Ajouter les MCCS H alarms
+            for mccs_alarm in self.mccs_hs_alarms:
+                timestamp = mccs_alarm.raise_line.decoded_timestamp
+                event_text = f"[MCCS H ALARM] {timestamp} | File: {mccs_alarm.raise_line.parent_file.file_name}:{mccs_alarm.raise_line.line_number} | {mccs_alarm.full_text.strip()}"
+                events.append((timestamp, "MCCS_H", event_text))
+
+            # Ajouter les SAHARA alarms
+            for sahara_alarm in self.sahara_alarms:
+                timestamp = sahara_alarm.raise_line.decoded_timestamp
+                event_text = f"[SAHARA ALARM] {timestamp} | File: {sahara_alarm.raise_line.parent_file.file_name}:{sahara_alarm.raise_line.line_number} | {sahara_alarm.full_text.strip()}"
+                events.append((timestamp, "SAHARA", event_text))
+
+            # Ajouter les Back to Past events
+            for back_to_past in self.back_to_past_detected:
+                timestamp = back_to_past.previous_line.decoded_timestamp
+                next_timestamp = back_to_past.next_line.decoded_timestamp
+                time_diff = (next_timestamp - timestamp).total_seconds()
+                event_text = f"[BACK TO PAST] {timestamp} | Previous: {back_to_past.previous_line.parent_file.file_name}:{back_to_past.previous_line.line_number} | Next: {back_to_past.next_line.parent_file.file_name}:{back_to_past.next_line.line_number} | Jump: {time_diff:.2f}s backward"
+                events.append((timestamp, "BACK_TO_PAST", event_text))
+
+            # Trier tous les événements par timestamp
+            events.sort(key=lambda x: x[0])
+
+            # Écrire dans le fichier texte
+            text_filename = f"all_events_{self.name}_{self.all_processed_lines[0].decoded_timestamp.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.txt"
+            
+            with open(output_folder_path + "/" + text_filename, mode="w", encoding="utf-8") as f:
+                f.write(f"{'='*120}\n")
+                f.write(f"Chronological dump of all events for {self.name}\n")
+                f.write(f"Total events: {len(events)} (MCCS H: {len(self.mccs_hs_alarms)}, SAHARA: {len(self.sahara_alarms)}, Back to Past: {len(self.back_to_past_detected)})\n")
+                f.write(f"{'='*120}\n\n")
+
+                for timestamp, event_type, event_text in events:
+                    f.write(event_text + "\n")
+
+            logger_config.print_and_log_info(f"Fichier texte créé: {text_filename}")
+            logger_config.print_and_log_info(f"Total de {len(events)} événements exportés (MCCS H: {len(self.mccs_hs_alarms)}, SAHARA: {len(self.sahara_alarms)}, Back to Past: {len(self.back_to_past_detected)})")
+
+        except Exception as e:
+            logger_config.print_and_log_exception(e)
+
 
 @dataclass
 class TerminalTechniqueArchivesMaintFile:
