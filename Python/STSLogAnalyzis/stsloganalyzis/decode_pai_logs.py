@@ -1084,6 +1084,128 @@ class TerminalTechniqueArchivesMaintLibrary:
             except Exception as e:
                 logger_config.print_and_log_exception(e)
 
+    def export_sahara_alarms_with_context_to_excel(self, output_folder_path: str) -> None:
+        """
+        Exporte toutes les SAHARA alarms dans un fichier Excel avec le contexte:
+        - Nombre de MCCS H alarms qui précèdent directement l'alarme SAHARA
+        - Nombre de lignes depuis le dernier Back to Past event
+
+        Args:
+            output_folder_path: Chemin du dossier de sortie
+        """
+        try:
+            if not self.sahara_alarms:
+                logger_config.print_and_log_error("Aucune alarme SAHARA. Aucun fichier créé.")
+                return
+
+            # Créer une map pour accès rapide aux alarms par la ligne source
+            mccs_alarms_by_line_index: Dict[int, TerminalTechniqueMccsHAlarm] = {}
+            for mccs_alarm in self.mccs_hs_alarms:
+                # Trouver l'index de la ligne dans all_processed_lines
+                for line_idx, line in enumerate(self.all_processed_lines):
+                    if line is mccs_alarm.raise_line:
+                        mccs_alarms_by_line_index[line_idx] = mccs_alarm
+                        break
+
+            # Créer une map pour accès rapide aux back_to_past par l'index de la ligne
+            back_to_past_by_previous_line_index: Dict[int, TerminalTechniqueArchivesMaintLogBackToPast] = {}
+            for back_to_past in self.back_to_past_detected:
+                for line_idx, line in enumerate(self.all_processed_lines):
+                    if line is back_to_past.previous_line:
+                        back_to_past_by_previous_line_index[line_idx] = back_to_past
+                        break
+
+            # Créer un workbook
+            wb = Workbook()
+            ws = wb.active
+            ws.title = f"{self.name} SAHARA Alarms Context"
+
+            # Ajouter les en-têtes
+            headers = [
+                "Index",
+                "Timestamp",
+                "File Name",
+                "Line Number",
+                "Full Text",
+                "Preceding MCCS H Alarms Count",
+                "Lines Since Last Back to Past"
+            ]
+
+            for col_idx, header in enumerate(headers, start=1):
+                cell = ws.cell(row=1, column=col_idx)
+                cell.value = header
+                cell.fill = PatternFill(start_color="FFD966", end_color="FFD966", fill_type="solid")
+                cell.font = Font(bold=True, color="000000")
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+
+            # Ajouter les données pour chaque SAHARA alarm
+            for row_idx, sahara_alarm in enumerate(self.sahara_alarms, start=2):
+                # Trouver l'index de cette alarme dans all_processed_lines
+                sahara_line_idx = None
+                for line_idx, line in enumerate(self.all_processed_lines):
+                    if line is sahara_alarm.raise_line:
+                        sahara_line_idx = line_idx
+                        break
+
+                # Compter les MCCS H alarms qui précèdent directement
+                mccs_count_preceding = 0
+                if sahara_line_idx is not None:
+                    # Compter en arrière jusqu'à trouver une ligne qui n'est pas une MCCS H alarm
+                    for check_idx in range(sahara_line_idx - 1, -1, -1):
+                        if check_idx in mccs_alarms_by_line_index:
+                            mccs_count_preceding += 1
+                        else:
+                            break
+
+                # Compter les lignes depuis le dernier Back to Past
+                lines_since_last_back_to_past = 0
+                if sahara_line_idx is not None:
+                    last_back_to_past_idx = -1
+                    # Trouver le dernier Back to Past avant cette alarme
+                    for btp_idx in sorted(back_to_past_by_previous_line_index.keys()):
+                        if btp_idx < sahara_line_idx:
+                            last_back_to_past_idx = btp_idx
+                        else:
+                            break
+                    
+                    if last_back_to_past_idx >= 0:
+                        lines_since_last_back_to_past = sahara_line_idx - last_back_to_past_idx
+                    else:
+                        # Pas de Back to Past avant, on compte depuis le début
+                        lines_since_last_back_to_past = sahara_line_idx + 1
+
+                # Remplir les cellules
+                ws.cell(row=row_idx, column=1).value = row_idx - 1
+                ws.cell(row=row_idx, column=2).value = sahara_alarm.raise_line.decoded_timestamp
+                ws.cell(row=row_idx, column=3).value = sahara_alarm.raise_line.parent_file.file_name
+                ws.cell(row=row_idx, column=4).value = sahara_alarm.raise_line.line_number
+                ws.cell(row=row_idx, column=5).value = sahara_alarm.full_text.strip()
+                ws.cell(row=row_idx, column=6).value = mccs_count_preceding
+                ws.cell(row=row_idx, column=7).value = lines_since_last_back_to_past
+
+                # Centrer les colonnes numériques
+                ws.cell(row=row_idx, column=1).alignment = Alignment(horizontal="center")
+                ws.cell(row=row_idx, column=6).alignment = Alignment(horizontal="center")
+                ws.cell(row=row_idx, column=7).alignment = Alignment(horizontal="center")
+
+            # Ajuster la largeur des colonnes
+            ws.column_dimensions["A"].width = 8
+            ws.column_dimensions["B"].width = 25
+            ws.column_dimensions["C"].width = 30
+            ws.column_dimensions["D"].width = 12
+            ws.column_dimensions["E"].width = 60
+            ws.column_dimensions["F"].width = 25
+            ws.column_dimensions["G"].width = 25
+
+            # Sauvegarder le fichier
+            excel_filename = f"sahara_alarms_context_{self.name}_{self.all_processed_lines[0].decoded_timestamp.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+            wb.save(output_folder_path + "/" + excel_filename)
+            logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
+            logger_config.print_and_log_info(f"Total de {len(self.sahara_alarms)} alarmes SAHARA exportées avec contexte")
+
+        except Exception as e:
+            logger_config.print_and_log_exception(e)
+
 
 @dataclass
 class TerminalTechniqueArchivesMaintFile:
