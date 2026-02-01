@@ -1119,9 +1119,9 @@ class TerminalTechniqueArchivesMaintLibrary:
                     rows.append(
                         {
                             "Timestamp": back_to_past.previous_line.decoded_timestamp,
-                            "File name and line number": back_to_past.previous_line.parent_file.file_name + ":" + back_to_past.previous_line.line_number_inside_file,
+                            "File name and line number": back_to_past.previous_line.parent_file.file_name + ":" + str(back_to_past.previous_line.line_number_inside_file),
                             "Lines until next MESD alarms": (
-                                back_to_past.next_mesd_alarms_group.first_line.line_number_in_library - back_to_past.previous_line.line_number_in_library
+                                str(back_to_past.next_mesd_alarms_group.first_line.line_number_in_library - back_to_past.previous_line.line_number_in_library)
                                 if back_to_past.next_mesd_alarms_group
                                 else "No folling MED group"
                             ),
