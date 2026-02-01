@@ -95,7 +95,7 @@ class SaharaTerminalTechniqueAlarm(TerminalTechniqueEventAlarm):
     def __post_init__(self) -> None:
         super().__post_init__()
         if self.last_mesd_alarm_group:
-            self.last_mesd_alarm_group.following_sahara_alarms.append(self.alarm)
+            self.last_mesd_alarm_group.following_sahara_alarms.append(self)
 
         if self.last_back_to_past_detected and not self.last_back_to_past_detected.next_sahara_alarm:
             self.last_back_to_past_detected.next_sahara_alarm = self
@@ -1136,8 +1136,8 @@ class TerminalTechniqueArchivesMaintLibrary:
                                 else "No folling MED group"
                             ),
                             "Lines until next sahara alarms": (
-                                str(back_to_past.next_mesd_alarms_group.first_line.line_number_in_library - back_to_past.previous_line.line_number_in_library)
-                                if back_to_past.next_mesd_alarms_group
+                                str(back_to_past.next_sahara_alarm.first_line.line_number_in_library - back_to_past.previous_line.line_number_in_library)
+                                if back_to_past.next_sahara_alarm
                                 else "No folling SAHARA group"
                             ),
                         }
