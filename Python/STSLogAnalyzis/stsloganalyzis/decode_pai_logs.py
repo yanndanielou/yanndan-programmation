@@ -1222,6 +1222,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     "Group Index",
                     "Line Count",
                     "Start timestamp",
+                    "End timestamp",
                     "group duration (seconds)",
                     "Start File Name",
                     "Start Line Number",
@@ -1245,6 +1246,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_idx - 1
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = len(group.alarm_lines)
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.decoded_timestamp
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_last_line.decoded_timestamp
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (group_last_line.decoded_timestamp - group_first_line.decoded_timestamp).total_seconds()
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.parent_file.file_name
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.line_number
@@ -1253,7 +1255,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
                         (group_first_line.decoded_timestamp - group.last_back_to_past_detected.previous_line.decoded_timestamp).total_seconds() if group.last_back_to_past_detected else "No"
                     )
-                    ws.cell(row=group_idx, column=7).value = (
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
                         (group.following_sahara_alarms[0].raise_line.decoded_timestamp - group_last_line.decoded_timestamp).total_seconds()
                         if group.following_sahara_alarms
                         else "NA (no next sahara alarm until next group)"
@@ -1263,10 +1265,12 @@ class TerminalTechniqueArchivesMaintLibrary:
                 ws.column_dimensions["A"].width = 12
                 ws.column_dimensions["B"].width = 12
                 ws.column_dimensions["C"].width = 25
-                ws.column_dimensions["D"].width = 30
+                ws.column_dimensions["D"].width = 25
                 ws.column_dimensions["E"].width = 12
-                ws.column_dimensions["F"].width = 60
+                ws.column_dimensions["F"].width = 30
                 ws.column_dimensions["G"].width = 18
+                ws.column_dimensions["H"].width = 18
+                ws.column_dimensions["I"].width = 18
 
                 # Save
                 excel_filename = f"{self.name}_mesd_alarms_groups{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
