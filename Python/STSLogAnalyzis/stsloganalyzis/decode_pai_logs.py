@@ -96,6 +96,9 @@ class TerminalTechniqueArchivesMaintLogBackToPast:
     previous_line: "TerminalTechniqueArchivesMaintLogLine"
     next_line: "TerminalTechniqueArchivesMaintLogLine"
 
+    def __post_init__(self) -> None:
+        self.next_mesd_alarms_group: Optional[TerminalTechniqueMesdAlarmsGroup] = None
+
 
 @dataclass
 class TerminalTechniqueMesdAlarmsGroup:
@@ -1423,13 +1426,16 @@ class TerminalTechniqueArchivesMaintLogLine:
 
         if "MESD" in self.alarm.equipment_name:
             if not self.parent_file.library.all_mesd_alarms_groups or self.parent_file.library.all_mesd_alarms_groups[-1].alarm_lines[-1] != self.parent_file.library.all_processed_lines[-1]:
-                self.parent_file.library.all_mesd_alarms_groups.append(
-                    TerminalTechniqueMesdAlarmsGroup(
-                        library=self.parent_file.library,
-                        number_of_group_in_library=len(self.parent_file.library.all_mesd_alarms_groups) + 1,
-                        alarm_lines=[self],
-                        last_back_to_past_detected=self.parent_file.library.back_to_past_detected[-1] if self.parent_file.library.back_to_past_detected else None,
-                    )
+                last_back_to_past_detected = self.parent_file.library.back_to_past_detected[-1] if self.parent_file.library.back_to_past_detected else None
+                alarm_group = TerminalTechniqueMesdAlarmsGroup(
+                    library=self.parent_file.library,
+                    number_of_group_in_library=len(self.parent_file.library.all_mesd_alarms_groups) + 1,
+                    alarm_lines=[self],
+                    last_back_to_past_detected=last_back_to_past_detected,
                 )
+                self.parent_file.library.all_mesd_alarms_groups.append(alarm_group)
+                if last_back_to_past_detected and not last_back_to_past_detected.next_mesd_alarms_group:
+                    last_back_to_past_detected.next_mesd_alarms_group = alarm_group
+
             else:
                 self.parent_file.library.all_mesd_alarms_groups[-1].alarm_lines.append(self)
