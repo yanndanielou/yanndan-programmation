@@ -1,9 +1,10 @@
+import pandas as pd
 import datetime
 import os
 from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Dict, List, Optional, Self, Tuple, cast
+from typing import Dict, List, Optional, Self, Tuple, cast, Any
 
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
@@ -134,7 +135,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         self.mccs_hs_alarms: List[TerminalTechniqueMccsHAlarm] = []
         self.sessions_alarms: List[TerminalTechniqueSessionAlarm] = []
         self.equipments_with_alarms: List[TerminalTechniqueEquipmentWithAlarms] = []
-        self.back_to_past_detected: List[TerminalTechniqueArchivesMaintLogBackToPast] = []
+        self.all_back_to_past_detected: List[TerminalTechniqueArchivesMaintLogBackToPast] = []
         self.mccs_alarms_files_names_and_line_numbers: List[Tuple[str, int]] = []
 
     def load_folder(self, folder_full_path: str) -> Self:
@@ -320,7 +321,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                         cell.font = Font(bold=True, color="FFFFFF")
                         cell.alignment = Alignment(horizontal="center", vertical="center")
 
-                    for row_idx, back_to_past in enumerate(self.back_to_past_detected, start=2):
+                    for row_idx, back_to_past in enumerate(self.all_back_to_past_detected, start=2):
                         duration = (back_to_past.next_line.decoded_timestamp - back_to_past.previous_line.decoded_timestamp).total_seconds()
                         column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
 
@@ -342,7 +343,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 # Sauvegarder le fichier avec tous les onglets
                 wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
                 logger_config.print_and_log_info(
-                    f"Onglets supplémentaires créés: SAHARA Alarms ({len(self.sahara_alarms)}), MCCS H Alarms ({len(self.mccs_hs_alarms)}), Back to Past ({len(self.back_to_past_detected)})"
+                    f"Onglets supplémentaires créés: SAHARA Alarms ({len(self.sahara_alarms)}), MCCS H Alarms ({len(self.mccs_hs_alarms)}), Back to Past ({len(self.all_back_to_past_detected)})"
                 )
             except Exception as e:
                 logger_config.print_and_log_exception(e)
@@ -388,7 +389,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     interval_equipment_counts[(interval_start, interval_end)] = {}
 
                 # Compter les back_to_past_detected
-                for back_to_past in self.back_to_past_detected:
+                for back_to_past in self.all_back_to_past_detected:
                     timestamp = back_to_past.previous_line.decoded_timestamp
                     for interval_start in interval_start_times:
                         interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
@@ -474,7 +475,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 # Ajouter un résumé
                 summary_row = len(interval_back_to_past_count) + 3
                 ws[f"A{summary_row}"] = "Total"
-                ws[f"C{summary_row}"] = len(self.back_to_past_detected)
+                ws[f"C{summary_row}"] = len(self.all_back_to_past_detected)
                 ws[f"D{summary_row}"] = len(self.sahara_alarms)
                 ws[f"A{summary_row}"].font = Font(bold=True)
                 ws[f"C{summary_row}"].font = Font(bold=True)
@@ -740,7 +741,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 for interval in intervals:
                     interval_back_to_past_counts[interval] = 0
                 # Compter les back_to_past_detected dans chaque intervalle
-                for back_to_past in self.back_to_past_detected:
+                for back_to_past in self.all_back_to_past_detected:
                     timestamp = back_to_past.previous_line.decoded_timestamp
                     for interval_start in interval_start_times:
                         interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
@@ -786,7 +787,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 # Ajouter un résumé
                 summary_row = len(interval_back_to_past_counts) + 3
                 ws[f"A{summary_row}"] = "Total"
-                ws[f"C{summary_row}"] = len(self.back_to_past_detected)
+                ws[f"C{summary_row}"] = len(self.all_back_to_past_detected)
                 ws[f"A{summary_row}"].font = Font(bold=True)
                 ws[f"C{summary_row}"].font = Font(bold=True)
                 ws[f"C{summary_row}"].alignment = Alignment(horizontal="center")
@@ -810,7 +811,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 )
 
                 fig.update_layout(
-                    title=f"{self.name} {len(self.back_to_past_detected)} événements Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
+                    title=f"{self.name} {len(self.all_back_to_past_detected)} événements Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime('%Y-%m-%d %H:%M')} et {end_time.strftime('%Y-%m-%d %H:%M')}",
                     xaxis_title="Intervalles de temps (heure début - heure fin)",
                     yaxis_title="Nombre d'événements Back to Past",
                     hovermode="x unified",
@@ -828,7 +829,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 plt.xlabel("Intervalles de temps (heure début - heure fin)")
                 plt.ylabel("Nombre d'événements Back to Past")
                 plt.title(
-                    f"{self.name} {len(self.back_to_past_detected)} événements Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}"
+                    f"{self.name} {len(self.all_back_to_past_detected)} événements Back to Past par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}"
                 )
                 plt.xticks(rotation=45, ha="right")
                 plt.tight_layout()
@@ -898,7 +899,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                             break
 
                 # Compter les back_to_past_detected
-                for back_to_past in self.back_to_past_detected:
+                for back_to_past in self.all_back_to_past_detected:
                     timestamp = back_to_past.previous_line.decoded_timestamp
                     for interval_start in interval_start_times:
                         interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
@@ -966,7 +967,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 ws[f"A{summary_row}"] = "Total"
                 ws[f"C{summary_row}"] = len(self.sahara_alarms)
                 ws[f"D{summary_row}"] = len(self.mccs_hs_alarms)
-                ws[f"E{summary_row}"] = len(self.back_to_past_detected)
+                ws[f"E{summary_row}"] = len(self.all_back_to_past_detected)
                 ws[f"A{summary_row}"].font = Font(bold=True)
                 ws[f"C{summary_row}"].font = Font(bold=True)
                 ws[f"D{summary_row}"].font = Font(bold=True)
@@ -1079,7 +1080,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     events.append((timestamp, "SAHARA", event_text))
 
                 # Ajouter les Back to Past events
-                for back_to_past in self.back_to_past_detected:
+                for back_to_past in self.all_back_to_past_detected:
                     timestamp = back_to_past.previous_line.decoded_timestamp
                     next_timestamp = back_to_past.next_line.decoded_timestamp
                     time_diff = (next_timestamp - timestamp).total_seconds()
@@ -1095,7 +1096,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 with open(output_folder_path + "/" + text_filename, mode="w", encoding="utf-8") as f:
                     f.write(f"{'='*120}\n")
                     f.write(f"Chronological dump of all events for {self.name}\n")
-                    f.write(f"Total events: {len(events)} (MCCS H: {len(self.mccs_hs_alarms)}, SAHARA: {len(self.sahara_alarms)}, Back to Past: {len(self.back_to_past_detected)})\n")
+                    f.write(f"Total events: {len(events)} (MCCS H: {len(self.mccs_hs_alarms)}, SAHARA: {len(self.sahara_alarms)}, Back to Past: {len(self.all_back_to_past_detected)})\n")
                     f.write(f"{'='*120}\n\n")
 
                     for timestamp, event_type, event_text in events:
@@ -1103,31 +1104,37 @@ class TerminalTechniqueArchivesMaintLibrary:
 
                 logger_config.print_and_log_info(f"Fichier texte créé: {text_filename}")
                 logger_config.print_and_log_info(
-                    f"Total de {len(events)} événements exportés (MCCS H: {len(self.mccs_hs_alarms)}, SAHARA: {len(self.sahara_alarms)}, Back to Past: {len(self.back_to_past_detected)})"
+                    f"Total de {len(events)} événements exportés (MCCS H: {len(self.mccs_hs_alarms)}, SAHARA: {len(self.sahara_alarms)}, Back to Past: {len(self.all_back_to_past_detected)})"
                 )
 
             except Exception as e:
                 logger_config.print_and_log_exception(e)
 
-    def last_back_to_past_df(self):
-        import pandas as pd
-        rows = []
-        for g in self.all_mesd_alarms_groups:
-            b = g.last_back_to_past_detected
-            if not b:
-                continue
-            rows.append(
-                {
-                    "group": g.number_of_group_in_library,
-                    "prev_ts": b.previous_line.decoded_timestamp,
-                    "prev_file": b.previous_line.parent_file.file_name,
-                    "prev_line": b.previous_line.line_number_inside_file,
-                    "next_ts": b.next_line.decoded_timestamp,
-                    "next_file": b.next_line.parent_file.file_name,
-                    "next_line": b.next_line.line_number_inside_file,
-                }
-            )
-        return pd.DataFrame(rows)
+    def export_back_to_past_with_context_to_excel(self, output_folder_path: str) -> None:
+
+        with logger_config.stopwatch_with_label(f"{self.name}: export_back_to_past_with_context_to_excel", inform_beginning=False, enable_print=False, enabled=False):
+            try:
+                rows: List[Dict[str, Any]] = []
+                for back_to_past in self.all_back_to_past_detected:
+                    rows.append(
+                        {
+                            "Timestamp": back_to_past.previous_line.decoded_timestamp,
+                            "File name and line number": back_to_past.previous_line.parent_file.file_name + ":" + back_to_past.previous_line.line_number_inside_file,
+                            "Lines until next MESD alarms": (
+                                back_to_past.next_mesd_alarms_group.first_line.line_number_in_library - back_to_past.previous_line.line_number_in_library
+                                if back_to_past.next_mesd_alarms_group
+                                else "No folling MED group"
+                            ),
+                        }
+                    )
+
+                df = pd.DataFrame(rows)
+                filename = f"{self.name}_back_to_past{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+                df.to_excel(output_folder_path + "/" + filename, index=False)
+                logger_config.print_and_log_info(f"Fichier Excel créé: {filename}")
+
+            except Exception as e:
+                logger_config.print_and_log_exception(e)
 
     def export_sahara_alarms_with_context_to_excel(self, output_folder_path: str) -> None:
         """
@@ -1145,7 +1152,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
             # Créer une map pour accès rapide aux back_to_past par l'index de la ligne
             back_to_past_by_previous_line_index: Dict[int, TerminalTechniqueArchivesMaintLogBackToPast] = {}
-            for back_to_past in self.back_to_past_detected:
+            for back_to_past in self.all_back_to_past_detected:
                 for line_idx, line in enumerate(self.all_processed_lines):
                     if line is back_to_past.previous_line:
                         back_to_past_by_previous_line_index[line_idx] = back_to_past
@@ -1388,7 +1395,7 @@ class TerminalTechniqueArchivesMaintLogLine:
 
         if self.previous_line and self.previous_line.decoded_timestamp > self.decoded_timestamp:
             back_to_past = TerminalTechniqueArchivesMaintLogBackToPast(previous_line=self.previous_line, next_line=self)
-            self.parent_file.library.back_to_past_detected.append(back_to_past)
+            self.parent_file.library.all_back_to_past_detected.append(back_to_past)
 
         assert len(self.full_raw_line_split_by_tab) == 4
         self.alarm_full_text = self.full_raw_line_split_by_tab[3]
@@ -1446,7 +1453,7 @@ class TerminalTechniqueArchivesMaintLogLine:
 
         if "MESD" in self.alarm.equipment_name:
             if not self.parent_file.library.all_mesd_alarms_groups or self.parent_file.library.all_mesd_alarms_groups[-1].alarm_lines[-1] != self.parent_file.library.all_processed_lines[-1]:
-                last_back_to_past_detected = self.parent_file.library.back_to_past_detected[-1] if self.parent_file.library.back_to_past_detected else None
+                last_back_to_past_detected = self.parent_file.library.all_back_to_past_detected[-1] if self.parent_file.library.all_back_to_past_detected else None
                 alarm_group = TerminalTechniqueMesdAlarmsGroup(
                     library=self.parent_file.library,
                     number_of_group_in_library=len(self.parent_file.library.all_mesd_alarms_groups) + 1,

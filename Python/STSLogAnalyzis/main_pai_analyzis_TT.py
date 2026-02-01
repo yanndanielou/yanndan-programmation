@@ -17,6 +17,7 @@ with logger_config.application_logger("main_pai_analyzis_TT"):
         tt_maint_library = decode_pai_logs.TerminalTechniqueArchivesMaintLibrary(library_name).load_folder(folder_path)
 
         tt_maint_library.dump_all_events_to_text_file(output_folder_path=OUTPUT_FOLDER_NAME)
+        tt_maint_library.export_back_to_past_with_context_to_excel(output_folder_path=OUTPUT_FOLDER_NAME)
         tt_maint_library.export_mesd_alarms_groups_to_excel(output_folder_path=OUTPUT_FOLDER_NAME)
         tt_maint_library.export_sahara_alarms_with_context_to_excel(output_folder_path=OUTPUT_FOLDER_NAME)
         tt_maint_library.export_equipments_with_alarms_to_excel(output_folder_path=OUTPUT_FOLDER_NAME, equipment_names_to_ignore=["81"])
