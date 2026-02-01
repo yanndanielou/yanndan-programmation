@@ -1228,8 +1228,8 @@ class TerminalTechniqueArchivesMaintLibrary:
                     "Start Line Number",
                     "Last Back to Past timestamp",
                     "Seconds since last back to past",
-                    "Lines until next sahara",
                     "Second tuntil next sahara",
+                    "Lines until next sahara",
                     "First line Full Text",
                 ]
                 for col_idx, header in enumerate(headers, start=1):
@@ -1262,7 +1262,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     )
 
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
-                        self.all_processed_lines.index(group.following_sahara_alarms[0].raise_line) - self.all_processed_lines.index(group_last_line.decoded_timestamp)
+                        self.all_processed_lines.index(group.following_sahara_alarms[0].raise_line) - self.all_processed_lines.index(group_last_line)
                         if group.following_sahara_alarms
                         else "NA (no next sahara alarm until next group)"
                     )
