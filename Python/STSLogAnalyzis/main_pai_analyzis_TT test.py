@@ -15,7 +15,7 @@ from stsloganalyzis import decode_cck, decode_pai_logs
 
 OUTPUT_FOLDER_NAME = "output"
 
-with logger_config.application_logger("main_pai_analyzis"):
+with logger_config.application_logger("main_pai_analyzis_TT"):
     file_utils.create_folder_if_not_exist(OUTPUT_FOLDER_NAME)
 
     tt_maint_p75_light_library = decode_pai_logs.TerminalTechniqueArchivesMaintLibrary("2027-01-27 P75 light_").load_folder(
@@ -33,6 +33,6 @@ with logger_config.application_logger("main_pai_analyzis"):
         tt_maint_library.plot_sahara_mccs_back_to_past_by_period(output_folder_path=OUTPUT_FOLDER_NAME, interval_minutes=60, do_show=False)
         tt_maint_library.plot_alarms_by_period(output_folder_path=OUTPUT_FOLDER_NAME, equipment_names_to_ignore=["81", "75"], interval_minutes=60, do_show=False)
     pass
-    plt.show()
+    # plt.show()
 
 pass
