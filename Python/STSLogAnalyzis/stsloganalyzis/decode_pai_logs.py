@@ -1218,7 +1218,18 @@ class TerminalTechniqueArchivesMaintLibrary:
             ws.title = f"{self.name} MESD Groups"
 
             # Headers
-            headers = ["Group Index", "Line Count", "Timestamp", "File Name", "Line Number", "Full Text", "Last Back to Past"]
+            headers = [
+                "Group Index",
+                "Line Count",
+                "Start timestamp",
+                "group duration",
+                "Start File Name",
+                "Start Line Number",
+                "First line Full Text",
+                "Last Back to Past timestamp",
+                "Seconds since last back to past",
+                "Second to next sahara",
+            ]
             for col_idx, header in enumerate(headers, start=1):
                 cell = ws.cell(row=1, column=col_idx)
                 cell.value = header
@@ -1228,14 +1239,25 @@ class TerminalTechniqueArchivesMaintLibrary:
 
             # Data
             for group_idx, group in enumerate(self.all_mesd_alarms_groups, start=2):
-                first_line = group.alarm_lines[0]
-                ws.cell(row=group_idx, column=1).value = group_idx - 1
-                ws.cell(row=group_idx, column=2).value = len(group.alarm_lines)
-                ws.cell(row=group_idx, column=3).value = first_line.decoded_timestamp
-                ws.cell(row=group_idx, column=4).value = first_line.parent_file.file_name
-                ws.cell(row=group_idx, column=5).value = first_line.line_number
-                ws.cell(row=group_idx, column=6).value = first_line.full_raw_line.strip()
-                ws.cell(row=group_idx, column=7).value = "Yes" if group.last_back_to_past_detected else "No"
+                group_first_line = group.alarm_lines[0]
+                group_last_line = group.alarm_lines[-1]
+                column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
+                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_idx - 1
+                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = len(group.alarm_lines)
+                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.decoded_timestamp
+                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.parent_file.file_name
+                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = (group_last_line.decoded_timestamp - group_first_line.decoded_timestamp).total_seconds()
+                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.line_number
+                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.full_raw_line.strip()
+                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group.last_back_to_past_detected.previous_line.decoded_timestamp if group.last_back_to_past_detected else "No"
+                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = (
+                    (group_first_line.decoded_timestamp - group.last_back_to_past_detected.previous_line.decoded_timestamp).total_seconds() if group.last_back_to_past_detected else "No"
+                )
+                ws.cell(row=group_idx, column=7).value = (
+                    (group.following_sahara_alarms[0].raise_line.decoded_timestamp - group_last_line.decoded_timestamp).total_seconds()
+                    if group.following_sahara_alarms
+                    else "NA (no next sahara alarm until next group)"
+                )
 
             # Adjust column widths
             ws.column_dimensions["A"].width = 12
