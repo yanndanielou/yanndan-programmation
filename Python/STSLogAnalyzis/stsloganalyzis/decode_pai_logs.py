@@ -1109,6 +1109,26 @@ class TerminalTechniqueArchivesMaintLibrary:
             except Exception as e:
                 logger_config.print_and_log_exception(e)
 
+    def last_back_to_past_df(self):
+        import pandas as pd
+        rows = []
+        for g in self.all_mesd_alarms_groups:
+            b = g.last_back_to_past_detected
+            if not b:
+                continue
+            rows.append(
+                {
+                    "group": g.number_of_group_in_library,
+                    "prev_ts": b.previous_line.decoded_timestamp,
+                    "prev_file": b.previous_line.parent_file.file_name,
+                    "prev_line": b.previous_line.line_number_inside_file,
+                    "next_ts": b.next_line.decoded_timestamp,
+                    "next_file": b.next_line.parent_file.file_name,
+                    "next_line": b.next_line.line_number_inside_file,
+                }
+            )
+        return pd.DataFrame(rows)
+
     def export_sahara_alarms_with_context_to_excel(self, output_folder_path: str) -> None:
         """
         Exporte toutes les SAHARA alarms dans un fichier Excel avec le contexte:
