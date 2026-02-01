@@ -24,6 +24,7 @@ with logger_config.application_logger("main_pai_analyzis"):
 
     for tt_maint_library in [tt_maint_p75_light_library]:
         tt_maint_library.dump_all_events_to_text_file(output_folder_path=OUTPUT_FOLDER_NAME)
+        tt_maint_library.export_mesd_alarms_groups_to_excel(output_folder_path=OUTPUT_FOLDER_NAME)
         tt_maint_library.export_sahara_alarms_with_context_to_excel(output_folder_path=OUTPUT_FOLDER_NAME)
         tt_maint_library.export_equipments_with_alarms_to_excel(output_folder_path=OUTPUT_FOLDER_NAME, equipment_names_to_ignore=["81"])
         tt_maint_library.plot_back_to_past_by_period(output_folder_path=OUTPUT_FOLDER_NAME, interval_minutes=60, do_show=False)
