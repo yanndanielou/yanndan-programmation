@@ -1162,9 +1162,9 @@ class TerminalTechniqueArchivesMaintLibrary:
                     mesd_count_preceding += 1
                     currently_parsed_line_index -= 1
 
-                logger_config.print_and_log_info(
-                    f"export_sahara_alarms_with_context_to_excel: {self.all_processed_lines[currently_parsed_line_index-1].alarm.equipment_name}, index {currently_parsed_line_index} is not MEDS. mccs_count_preceding:{mesd_count_preceding}. Current sahara is at position {sahara_alarm.raise_line.line_number_in_library}"
-                )
+                # logger_config.print_and_log_info(
+                #    f"export_sahara_alarms_with_context_to_excel: {self.all_processed_lines[currently_parsed_line_index-1].alarm.equipment_name}, index {currently_parsed_line_index} is not MEDS. mccs_count_preceding:{mesd_count_preceding}. Current sahara is at position {sahara_alarm.raise_line.line_number_in_library}"
+                # )
 
                 # Compter les lignes depuis le dernier Back to Past
                 lines_since_last_back_to_past = 0
