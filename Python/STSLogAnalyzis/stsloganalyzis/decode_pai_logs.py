@@ -89,7 +89,16 @@ class SaatMissingAcknowledgmentTerminalTechniqueAlarm(TerminalTechniqueEventAlar
 
 @dataclass
 class SaharaTerminalTechniqueAlarm(TerminalTechniqueEventAlarm):
-    pass
+    last_back_to_past_detected: Optional["TerminalTechniqueArchivesMaintLogBackToPast"]
+    last_mesd_alarm_group: Optional["TerminalTechniqueMesdAlarmsGroup"]
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.last_mesd_alarm_group:
+            self.last_mesd_alarm_group.following_sahara_alarms.append(self.alarm)
+
+        if self.last_back_to_past_detected and not self.last_back_to_past_detected.next_sahara_alarm:
+            self.last_back_to_past_detected.next_sahara_alarm = self
 
 
 @dataclass
@@ -99,6 +108,7 @@ class TerminalTechniqueArchivesMaintLogBackToPast:
 
     def __post_init__(self) -> None:
         self.next_mesd_alarms_group: Optional[TerminalTechniqueMesdAlarmsGroup] = None
+        self.next_sahara_alarm: Optional[SaharaTerminalTechniqueAlarm] = None
 
 
 @dataclass
@@ -1125,11 +1135,16 @@ class TerminalTechniqueArchivesMaintLibrary:
                                 if back_to_past.next_mesd_alarms_group
                                 else "No folling MED group"
                             ),
+                            "Lines until next sahara alarms": (
+                                str(back_to_past.next_mesd_alarms_group.first_line.line_number_in_library - back_to_past.previous_line.line_number_in_library)
+                                if back_to_past.next_mesd_alarms_group
+                                else "No folling SAHARA group"
+                            ),
                         }
                     )
 
                 df = pd.DataFrame(rows)
-                filename = f"{self.name}_back_to_past{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+                filename = f"{self.name}_back_to_past_with_context{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
                 df.to_excel(output_folder_path + "/" + filename, index=False)
                 logger_config.print_and_log_info(f"Fichier Excel créé: {filename}")
 
@@ -1424,10 +1439,13 @@ class TerminalTechniqueArchivesMaintLogLine:
                 self.parent_file.library.ignored_end_alarms_without_alarm_begin.append(self.alarm)
 
         elif "SAHARA" in self.alarm_full_text:
-            self.alarm = SaharaTerminalTechniqueAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
+            last_back_to_past_detected = self.parent_file.library.all_back_to_past_detected[-1] if self.parent_file.library.all_back_to_past_detected else None
+            last_mesd_alarm_group = self.parent_file.library.all_mesd_alarms_groups[-1] if self.parent_file.library.all_mesd_alarms_groups else None
+            self.alarm = SaharaTerminalTechniqueAlarm(
+                raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type, last_back_to_past_detected=last_back_to_past_detected, last_mesd_alarm_group=last_mesd_alarm_group
+            )
             self.parent_file.library.sahara_alarms.append(self.alarm)
-            if self.parent_file.library.all_mesd_alarms_groups:
-                self.parent_file.library.all_mesd_alarms_groups[-1].following_sahara_alarms.append(self.alarm)
+
         elif "Absence acquittement SAAT" in self.alarm_full_text:
             self.alarm = SaatMissingAcknowledgmentTerminalTechniqueAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
         elif self.alarm_type == AlarmLineType.DEB_ALA and ("MCCS A HS" in self.alarm_full_text or "MCCS B HS" in self.alarm_full_text):
