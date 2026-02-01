@@ -32,5 +32,6 @@ def get_file_name_with_extension_from_full_path(full_path: str) -> str:
     return file_name_with_extension_from_full_path
 
 
-def get_file_suffix_with_current_datetime() -> str:
-    return datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d-%H-%M-%S")
+def get_file_suffix_with_current_datetime(include_underscore: bool = True) -> str:
+    prefix = "_" if include_underscore else ""
+    return prefix + datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d-%H-%M-%S")
