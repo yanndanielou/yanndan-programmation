@@ -1136,7 +1136,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                                 else "No folling MED group"
                             ),
                             "Lines until next sahara alarms": (
-                                str(back_to_past.next_sahara_alarm.first_line.line_number_in_library - back_to_past.previous_line.line_number_in_library)
+                                str(back_to_past.next_sahara_alarm.raise_line.line_number_in_library - back_to_past.previous_line.line_number_in_library)
                                 if back_to_past.next_sahara_alarm
                                 else "No folling SAHARA group"
                             ),
