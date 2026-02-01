@@ -1259,7 +1259,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 # Data
                 for group_idx, group in enumerate(self.all_mesd_alarms_groups, start=2):
                     column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_idx - 1
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.number_of_group_in_library
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = len(group.alarm_lines)
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.first_line.decoded_timestamp
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.last_line.decoded_timestamp
@@ -1270,7 +1270,6 @@ class TerminalTechniqueArchivesMaintLibrary:
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
                         (group.first_line.decoded_timestamp - group.previous_group.last_line.decoded_timestamp).total_seconds() if group.previous_group else "No previous group"
                     )
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (group.last_line.decoded_timestamp - group.first_line.decoded_timestamp).total_seconds()
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.first_line.parent_file.file_name
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.first_line.line_number_inside_file
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
