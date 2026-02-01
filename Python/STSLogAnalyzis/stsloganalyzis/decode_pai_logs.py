@@ -129,7 +129,6 @@ class TerminalTechniqueArchivesMaintLibrary:
                 file = TerminalTechniqueArchivesMaintFile(parent_folder_full_path=dirpath, file_name=file_name, library=self, last_line=last_line)
                 last_line = file.last_line
                 self.all_processed_files.append(file)
-                self.all_processed_lines += file.all_processed_lines
 
                 assert self.all_processed_lines
         assert self.all_processed_lines
@@ -1208,73 +1207,78 @@ class TerminalTechniqueArchivesMaintLibrary:
 
     def export_mesd_alarms_groups_to_excel(self, output_folder_path: str) -> None:
         """Export all MESD alarms groups to Excel."""
-        try:
-            if not self.all_mesd_alarms_groups:
-                logger_config.print_and_log_error("Aucun groupe MESD. Aucun fichier créé.")
-                return
+        with logger_config.stopwatch_with_label(f"Open and read file  {self.file_full_path}", inform_beginning=False, enable_print=False, enabled=False):
 
-            wb = Workbook()
-            ws = wb.active
-            ws.title = f"{self.name} MESD Groups"
+            try:
 
-            # Headers
-            headers = [
-                "Group Index",
-                "Line Count",
-                "Start timestamp",
-                "group duration",
-                "Start File Name",
-                "Start Line Number",
-                "First line Full Text",
-                "Last Back to Past timestamp",
-                "Seconds since last back to past",
-                "Second to next sahara",
-            ]
-            for col_idx, header in enumerate(headers, start=1):
-                cell = ws.cell(row=1, column=col_idx)
-                cell.value = header
-                cell.fill = PatternFill(start_color="70AD47", end_color="70AD47", fill_type="solid")
-                cell.font = Font(bold=True, color="FFFFFF")
-                cell.alignment = Alignment(horizontal="center", vertical="center")
+                if not self.all_mesd_alarms_groups:
+                    logger_config.print_and_log_error("Aucun groupe MESD. Aucun fichier créé.")
+                    return
 
-            # Data
-            for group_idx, group in enumerate(self.all_mesd_alarms_groups, start=2):
-                group_first_line = group.alarm_lines[0]
-                group_last_line = group.alarm_lines[-1]
-                column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
-                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_idx - 1
-                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = len(group.alarm_lines)
-                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.decoded_timestamp
-                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.parent_file.file_name
-                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = (group_last_line.decoded_timestamp - group_first_line.decoded_timestamp).total_seconds()
-                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.line_number
-                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.full_raw_line.strip()
-                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group.last_back_to_past_detected.previous_line.decoded_timestamp if group.last_back_to_past_detected else "No"
-                ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = (
-                    (group_first_line.decoded_timestamp - group.last_back_to_past_detected.previous_line.decoded_timestamp).total_seconds() if group.last_back_to_past_detected else "No"
+                wb = Workbook()
+                ws = wb.active
+                ws.title = f"{self.name} MESD Groups"
+
+                # Headers
+                headers = [
+                    "Group Index",
+                    "Line Count",
+                    "Start timestamp",
+                    "group duration",
+                    "Start File Name",
+                    "Start Line Number",
+                    "First line Full Text",
+                    "Last Back to Past timestamp",
+                    "Seconds since last back to past",
+                    "Second to next sahara",
+                ]
+                for col_idx, header in enumerate(headers, start=1):
+                    cell = ws.cell(row=1, column=col_idx)
+                    cell.value = header
+                    cell.fill = PatternFill(start_color="70AD47", end_color="70AD47", fill_type="solid")
+                    cell.font = Font(bold=True, color="FFFFFF")
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+
+                # Data
+                for group_idx, group in enumerate(self.all_mesd_alarms_groups, start=2):
+                    group_first_line = group.alarm_lines[0]
+                    group_last_line = group.alarm_lines[-1]
+                    column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
+                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_idx - 1
+                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = len(group.alarm_lines)
+                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.decoded_timestamp
+                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.parent_file.file_name
+                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = (group_last_line.decoded_timestamp - group_first_line.decoded_timestamp).total_seconds()
+                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.line_number
+                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.full_raw_line.strip()
+                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group.last_back_to_past_detected.previous_line.decoded_timestamp if group.last_back_to_past_detected else "No"
+                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = (
+                        (group_first_line.decoded_timestamp - group.last_back_to_past_detected.previous_line.decoded_timestamp).total_seconds() if group.last_back_to_past_detected else "No"
+                    )
+                    ws.cell(row=group_idx, column=7).value = (
+                        (group.following_sahara_alarms[0].raise_line.decoded_timestamp - group_last_line.decoded_timestamp).total_seconds()
+                        if group.following_sahara_alarms
+                        else "NA (no next sahara alarm until next group)"
+                    )
+
+                # Adjust column widths
+                ws.column_dimensions["A"].width = 12
+                ws.column_dimensions["B"].width = 12
+                ws.column_dimensions["C"].width = 25
+                ws.column_dimensions["D"].width = 30
+                ws.column_dimensions["E"].width = 12
+                ws.column_dimensions["F"].width = 60
+                ws.column_dimensions["G"].width = 18
+
+                # Save
+                excel_filename = (
+                    f"mesd_alarms_groups_{self.name}_{self.all_processed_lines[0].decoded_timestamp.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
                 )
-                ws.cell(row=group_idx, column=7).value = (
-                    (group.following_sahara_alarms[0].raise_line.decoded_timestamp - group_last_line.decoded_timestamp).total_seconds()
-                    if group.following_sahara_alarms
-                    else "NA (no next sahara alarm until next group)"
-                )
-
-            # Adjust column widths
-            ws.column_dimensions["A"].width = 12
-            ws.column_dimensions["B"].width = 12
-            ws.column_dimensions["C"].width = 25
-            ws.column_dimensions["D"].width = 30
-            ws.column_dimensions["E"].width = 12
-            ws.column_dimensions["F"].width = 60
-            ws.column_dimensions["G"].width = 18
-
-            # Save
-            excel_filename = f"mesd_alarms_groups_{self.name}_{self.all_processed_lines[0].decoded_timestamp.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-            wb.save(output_folder_path + "/" + excel_filename)
-            logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
-            logger_config.print_and_log_info(f"Total de {len(self.all_mesd_alarms_groups)} groupes MESD exportés")
-        except Exception as e:
-            logger_config.print_and_log_exception(e)
+                wb.save(output_folder_path + "/" + excel_filename)
+                logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
+                logger_config.print_and_log_info(f"Total de {len(self.all_mesd_alarms_groups)} groupes MESD exportés")
+            except Exception as e:
+                logger_config.print_and_log_exception(e)
 
 
 @dataclass
@@ -1283,7 +1287,6 @@ class TerminalTechniqueArchivesMaintFile:
     file_name: str
     library: "TerminalTechniqueArchivesMaintLibrary"
     last_line: Optional["TerminalTechniqueArchivesMaintLogLine"]
-    all_processed_lines: List["TerminalTechniqueArchivesMaintLogLine"] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.file_full_path = self.parent_folder_full_path + "\\" + self.file_name
@@ -1296,7 +1299,7 @@ class TerminalTechniqueArchivesMaintFile:
                     if len(line) > 3:
                         try:
                             processed_line = TerminalTechniqueArchivesMaintLogLine(parent_file=self, full_raw_line=line, line_number=line_number + 1, previous_line=self.last_line)
-                            self.all_processed_lines.append(processed_line)
+                            self.library.all_processed_lines.append(processed_line)
                             self.last_line = processed_line
                         except Exception as e:
                             logger_config.print_and_log_exception(e)
@@ -1379,9 +1382,11 @@ class TerminalTechniqueArchivesMaintLogLine:
             assert False, f"Alarm type {self.alarm_type} for {self.parent_file.file_name} {self.line_number} {self.alarm_full_text}"
 
         if "MESD" in self.alarm.equipment_name:
-            if self.parent_file.library.all_mesd_alarms_groups is None or self.parent_file.library.all_mesd_alarms_groups[-1].alarm_lines[-1] != self.parent_file.library.all_processed_lines[-1]:
+            if not self.parent_file.library.all_mesd_alarms_groups or self.parent_file.library.all_mesd_alarms_groups[-1].alarm_lines[-1] != self.parent_file.library.all_processed_lines[-1]:
                 self.parent_file.library.all_mesd_alarms_groups.append(
-                    TerminalTechniqueMesdAlarmsGroup(alarm_lines=[self], last_back_to_past_detected=self.parent_file.library.back_to_past_detected[-1] if self.parent_file.library else None)
+                    TerminalTechniqueMesdAlarmsGroup(
+                        alarm_lines=[self], last_back_to_past_detected=self.parent_file.library.back_to_past_detected[-1] if self.parent_file.library.back_to_past_detected else None
+                    )
                 )
             else:
                 self.parent_file.library.all_mesd_alarms_groups[-1].alarm_lines.append(self)
