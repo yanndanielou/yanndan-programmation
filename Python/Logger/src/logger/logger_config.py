@@ -35,6 +35,7 @@ DEFAULT_CALL_STACK_FRAME_VALUE = 2
 
 log_counts_occurences_per_level: Dict[str, int] = defaultdict(int)
 log_counts_errors_occurences_per_file_and_line: Dict[str, int] = defaultdict(int)
+log_counts_exceptions_occurences_per_file_and_line: Dict[str, int] = defaultdict(int)
 
 
 class MessagesCounterHandler(logging.Handler):
@@ -115,6 +116,10 @@ def print_and_log_warning(to_print_and_log: str, do_not_print: bool = False) -> 
 
 
 def print_and_log_exception(exception_to_print: Exception, additional_text: Optional[str] = None) -> None:
+    log_counts_exceptions_occurences_per_file_and_line[
+        __get_calling_file_name_and_line_number(call_stack_context=0)
+    ] += 1
+
     if additional_text:
         to_print_and_log = f"Exception raised:{additional_text} "
         print_and_log_error(to_print_and_log, call_stack_frame=3)
@@ -193,6 +198,17 @@ def application_logger(application_name: str, logger_level: int = logging.INFO) 
 
     elapsed_time = application_end_time - application_start_time
     to_print_and_log = f"\nErrors stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " errors raised" for item in list(dict(sorted(log_counts_errors_occurences_per_file_and_line.items(), key=lambda item: item[1])).items()))}\n{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s.\nLogger stats: \t{'\t'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts_occurences_per_level.items()))}"
+    if log_counts_exceptions_occurences_per_file_and_line:
+        to_print_and_log += f"\nExceptions logged\n  {
+            "\n".join(
+                str(item[0]) + ": " + str(item[1]) + " exception logged"
+                for item in list(
+                    dict(
+                        sorted(log_counts_exceptions_occurences_per_file_and_line.items(), key=lambda item: item[1])
+                    ).items()
+                )
+            )
+        }"
     print(application_end_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
     logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
 
