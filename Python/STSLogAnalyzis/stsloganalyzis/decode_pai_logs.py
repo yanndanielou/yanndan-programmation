@@ -415,7 +415,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                             equipment_names.append(name)
 
                 # Créer et exporter les données dans un fichier Excel
-                excel_filename = f"alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d')}_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+                excel_filename = f"{self.name}_alarms_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
                 wb = Workbook()
                 ws = wb.active
                 ws.title = f"{self.name} Alarms By Period"
@@ -471,7 +471,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
                 # Créer et sauvegarder le graphe en HTML avec Plotly
-                html_filename = f"alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+                html_filename = f"alarms_by_period_{self.name}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
 
                 fig_data = [
                     go.Bar(
@@ -603,7 +603,7 @@ class TerminalTechniqueArchivesMaintLibrary:
             y_values = list(interval_sahara_counts.values())
 
             # Créer et exporter les données dans un fichier Excel
-            excel_filename = f"sahara_alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+            excel_filename = f"{self.name}_sahara_alarms_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
             wb = Workbook()
             ws = wb.active
             ws.title = f"{self.name} Sahara Alarms"
@@ -646,7 +646,7 @@ class TerminalTechniqueArchivesMaintLibrary:
             logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
             # Créer et sauvegarder le graphe en HTML avec Plotly
-            html_filename = f"sahara_alarms_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+            html_filename = f"sahara_alarms_by_period_{self.name}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
             fig = go.Figure(
                 data=[
                     go.Bar(
@@ -737,7 +737,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 y_values = list(interval_back_to_past_counts.values())
 
                 # Créer et exporter les données dans un fichier Excel
-                excel_filename = f"back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+                excel_filename = f"{self.name}_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
                 wb = Workbook()
                 ws = wb.active
                 ws.title = f"{self.name} Back to Past"
@@ -780,7 +780,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
                 # Créer et sauvegarder le graphe en HTML avec Plotly
-                html_filename = f"back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+                html_filename = f"{self.name}_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.html"
                 fig = go.Figure(
                     data=[
                         go.Bar(
@@ -907,7 +907,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 y_back_to_past = [interval_back_to_past_counts[(begin, end)] for begin, end in interval_sahara_counts.keys()]
 
                 # Créer et exporter les données dans un fichier Excel
-                excel_filename = f"sahara_mccs_back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+                excel_filename = f"{self.name}_sahara_mccs_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
                 wb = Workbook()
                 ws = wb.active
                 ws.title = f"{self.name} Summary Events"
@@ -964,7 +964,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
                 # Créer et sauvegarder le graphe en HTML avec Plotly
-                html_filename = f"sahara_mccs_back_to_past_by_period_{self.name}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+                html_filename = f"{self.name}_sahara_mccs_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.html"
                 fig = go.Figure(
                     data=[
                         go.Bar(
@@ -1072,7 +1072,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 events.sort(key=lambda x: x[0])
 
                 # Écrire dans le fichier texte
-                text_filename = f"all_events_{self.name}_{self.all_processed_lines[0].decoded_timestamp.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.txt"
+                text_filename = f"{self.name}_all_events{file_name_utils.get_file_suffix_with_current_datetime()}.txt"
 
                 with open(output_folder_path + "/" + text_filename, mode="w", encoding="utf-8") as f:
                     f.write(f"{'='*120}\n")
@@ -1195,9 +1195,7 @@ class TerminalTechniqueArchivesMaintLibrary:
             ws.column_dimensions["G"].width = 25
 
             # Sauvegarder le fichier
-            excel_filename = (
-                f"sahara_alarms_context_{self.name}_{self.all_processed_lines[0].decoded_timestamp.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-            )
+            excel_filename = f"{self.name}_sahara_alarms_context{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
             wb.save(output_folder_path + "/" + excel_filename)
             logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
             logger_config.print_and_log_info(f"Total de {len(self.sahara_alarms)} alarmes SAHARA exportées avec contexte")
@@ -1207,7 +1205,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
     def export_mesd_alarms_groups_to_excel(self, output_folder_path: str) -> None:
         """Export all MESD alarms groups to Excel."""
-        with logger_config.stopwatch_with_label(f"export_mesd_alarms_groups_to_excel  {self.name}", inform_beginning=False, enable_print=False, enabled=False):
+        with logger_config.stopwatch_with_label(f"{self.name}: export_mesd_alarms_groups_to_excel", inform_beginning=False, enable_print=False, enabled=False):
 
             try:
 
@@ -1244,15 +1242,15 @@ class TerminalTechniqueArchivesMaintLibrary:
                     group_first_line = group.alarm_lines[0]
                     group_last_line = group.alarm_lines[-1]
                     column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
-                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_idx - 1
-                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = len(group.alarm_lines)
-                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.decoded_timestamp
-                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.parent_file.file_name
-                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = (group_last_line.decoded_timestamp - group_first_line.decoded_timestamp).total_seconds()
-                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.line_number
-                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group_first_line.full_raw_line.strip()
-                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = group.last_back_to_past_detected.previous_line.decoded_timestamp if group.last_back_to_past_detected else "No"
-                    ws.cell(row=group_idx, column=column_it.postfix_decrement()).value = (
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_idx - 1
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = len(group.alarm_lines)
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.decoded_timestamp
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.parent_file.file_name
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (group_last_line.decoded_timestamp - group_first_line.decoded_timestamp).total_seconds()
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.line_number
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.full_raw_line.strip()
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.last_back_to_past_detected.previous_line.decoded_timestamp if group.last_back_to_past_detected else "No"
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
                         (group_first_line.decoded_timestamp - group.last_back_to_past_detected.previous_line.decoded_timestamp).total_seconds() if group.last_back_to_past_detected else "No"
                     )
                     ws.cell(row=group_idx, column=7).value = (
@@ -1271,9 +1269,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 ws.column_dimensions["G"].width = 18
 
                 # Save
-                excel_filename = (
-                    f"mesd_alarms_groups_{self.name}_{self.all_processed_lines[0].decoded_timestamp.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-                )
+                excel_filename = f"{self.name}_mesd_alarms_groups{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
                 wb.save(output_folder_path + "/" + excel_filename)
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
                 logger_config.print_and_log_info(f"Total de {len(self.all_mesd_alarms_groups)} groupes MESD exportés")
