@@ -99,9 +99,22 @@ class TerminalTechniqueArchivesMaintLogBackToPast:
 
 @dataclass
 class TerminalTechniqueMesdAlarmsGroup:
+    library: "TerminalTechniqueArchivesMaintLibrary"
+    number_of_group_in_library: int
     alarm_lines: List["TerminalTechniqueArchivesMaintLogLine"]
     last_back_to_past_detected: Optional[TerminalTechniqueArchivesMaintLogBackToPast]
     following_sahara_alarms: List[SaharaTerminalTechniqueAlarm] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        self.previous_group = self.library.all_mesd_alarms_groups[self.number_of_group_in_library - 2] if self.library.all_mesd_alarms_groups else None
+
+    @property
+    def first_line(self) -> "TerminalTechniqueArchivesMaintLogLine":
+        return self.alarm_lines[0]
+
+    @property
+    def last_line(self) -> "TerminalTechniqueArchivesMaintLogLine":
+        return self.alarm_lines[-1]
 
 
 @dataclass
@@ -1245,18 +1258,23 @@ class TerminalTechniqueArchivesMaintLibrary:
 
                 # Data
                 for group_idx, group in enumerate(self.all_mesd_alarms_groups, start=2):
-                    group_first_line = group.alarm_lines[0]
-                    group_last_line = group.alarm_lines[-1]
                     column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_idx - 1
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = len(group.alarm_lines)
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.decoded_timestamp
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_last_line.decoded_timestamp
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (group_last_line.decoded_timestamp - group_first_line.decoded_timestamp).total_seconds()
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.parent_file.file_name
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.line_number_inside_file
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.first_line.decoded_timestamp
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.last_line.decoded_timestamp
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (group.last_line.decoded_timestamp - group.first_line.decoded_timestamp).total_seconds()
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
-                        (group_first_line.line_number_in_library - group.last_back_to_past_detected.previous_line.line_number_in_library)
+                        (group.first_line.line_number_inside_file - group.previous_group.last_line.line_number_in_library) if group.previous_group else "No previous group"
+                    )
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
+                        (group.first_line.decoded_timestamp - group.previous_group.last_line.decoded_timestamp).total_seconds() if group.previous_group else "No previous group"
+                    )
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (group.last_line.decoded_timestamp - group.first_line.decoded_timestamp).total_seconds()
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.first_line.parent_file.file_name
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.first_line.line_number_inside_file
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
+                        (group.first_line.line_number_in_library - group.last_back_to_past_detected.previous_line.line_number_in_library)
                         if group.last_back_to_past_detected
                         else "No previous back to past"
                     )
@@ -1264,22 +1282,22 @@ class TerminalTechniqueArchivesMaintLibrary:
                         group.last_back_to_past_detected.previous_line.decoded_timestamp if group.last_back_to_past_detected else "No previous back to past"
                     )
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
-                        (group_first_line.decoded_timestamp - group.last_back_to_past_detected.previous_line.decoded_timestamp).total_seconds()
+                        (group.first_line.decoded_timestamp - group.last_back_to_past_detected.previous_line.decoded_timestamp).total_seconds()
                         if group.last_back_to_past_detected
                         else "No previous back to past"
                     )
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
-                        (group.following_sahara_alarms[0].raise_line.decoded_timestamp - group_last_line.decoded_timestamp).total_seconds()
+                        (group.following_sahara_alarms[0].raise_line.decoded_timestamp - group.last_line.decoded_timestamp).total_seconds()
                         if group.following_sahara_alarms
                         else "NA (no next sahara alarm until next group)"
                     )
 
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
-                        group.following_sahara_alarms[0].raise_line.line_number_in_library - group_last_line.line_number_in_library
+                        group.following_sahara_alarms[0].raise_line.line_number_in_library - group.last_line.line_number_in_library
                         if group.following_sahara_alarms
                         else "NA (no next sahara alarm until next group)"
                     )
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.full_raw_line.strip()
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.first_line.full_raw_line.strip()
 
                 # Adjust column widths
                 ws.column_dimensions["A"].width = 12
@@ -1408,7 +1426,10 @@ class TerminalTechniqueArchivesMaintLogLine:
             if not self.parent_file.library.all_mesd_alarms_groups or self.parent_file.library.all_mesd_alarms_groups[-1].alarm_lines[-1] != self.parent_file.library.all_processed_lines[-1]:
                 self.parent_file.library.all_mesd_alarms_groups.append(
                     TerminalTechniqueMesdAlarmsGroup(
-                        alarm_lines=[self], last_back_to_past_detected=self.parent_file.library.back_to_past_detected[-1] if self.parent_file.library.back_to_past_detected else None
+                        library=self.parent_file.library,
+                        number_of_group_in_library=len(self.parent_file.library.all_mesd_alarms_groups) + 1,
+                        alarm_lines=[self],
+                        last_back_to_past_detected=self.parent_file.library.back_to_past_detected[-1] if self.parent_file.library.back_to_past_detected else None,
                     )
                 )
             else:
