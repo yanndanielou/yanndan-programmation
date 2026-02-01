@@ -471,7 +471,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
                 # Créer et sauvegarder le graphe en HTML avec Plotly
-                html_filename = f"alarms_by_period_{self.name}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+                html_filename = f"{self.name}_alarms_by_period_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
 
                 fig_data = [
                     go.Bar(
@@ -646,7 +646,7 @@ class TerminalTechniqueArchivesMaintLibrary:
             logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
             # Créer et sauvegarder le graphe en HTML avec Plotly
-            html_filename = f"sahara_alarms_by_period_{self.name}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+            html_filename = f"{self.name}_sahara_alarms_by_period_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
             fig = go.Figure(
                 data=[
                     go.Bar(
@@ -1222,7 +1222,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     "Group Index",
                     "Line Count",
                     "Start timestamp",
-                    "group duration",
+                    "group duration (seconds)",
                     "Start File Name",
                     "Start Line Number",
                     "First line Full Text",
@@ -1245,8 +1245,8 @@ class TerminalTechniqueArchivesMaintLibrary:
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_idx - 1
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = len(group.alarm_lines)
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.decoded_timestamp
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.parent_file.file_name
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (group_last_line.decoded_timestamp - group_first_line.decoded_timestamp).total_seconds()
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.parent_file.file_name
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.line_number
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.full_raw_line.strip()
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.last_back_to_past_detected.previous_line.decoded_timestamp if group.last_back_to_past_detected else "No"
