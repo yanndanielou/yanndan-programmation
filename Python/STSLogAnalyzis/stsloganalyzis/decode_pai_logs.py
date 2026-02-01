@@ -1240,14 +1240,14 @@ class TerminalTechniqueArchivesMaintLibrary:
                     "group duration (seconds)",
                     "Last (previous) goup: lines since",
                     "Last (previous) goup: duration since (seconds)",
-                    "Start File Name",
-                    "Start Line Number",
+                    "Group - Start File Name",
+                    "Group - Start Line Number",
                     "Last Back to Past - lines until group",
                     "Last Back to Past - timestamp",
                     "Last back to past - seconds until group",
-                    "Second until next sahara",
-                    "Lines until next sahara",
-                    "First line Full Text",
+                    "Second until next sahara alarm",
+                    "Lines until next sahara alarm",
+                    "Group - First line Full Text",
                 ]
                 for col_idx, header in enumerate(headers, start=1):
                     cell = ws.cell(row=1, column=col_idx)
