@@ -29,6 +29,6 @@ with logger_config.application_logger("main_pai_analyzis_TT"):
         )  # Optionnel: affiche le graphique matplotlib
 
     pass
-    plt.show()
+    # plt.show()
 
 pass
