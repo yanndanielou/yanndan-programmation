@@ -1207,7 +1207,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
     def export_mesd_alarms_groups_to_excel(self, output_folder_path: str) -> None:
         """Export all MESD alarms groups to Excel."""
-        with logger_config.stopwatch_with_label(f"Open and read file  {self.file_full_path}", inform_beginning=False, enable_print=False, enabled=False):
+        with logger_config.stopwatch_with_label(f"export_mesd_alarms_groups_to_excel  {self.name}", inform_beginning=False, enable_print=False, enabled=False):
 
             try:
 
