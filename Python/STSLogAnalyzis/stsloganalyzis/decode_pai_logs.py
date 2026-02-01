@@ -1256,7 +1256,7 @@ class TerminalTechniqueArchivesMaintLogLine:
         assert len(self.full_raw_line_split_by_tab) == 4
         self.alarm_full_text = self.full_raw_line_split_by_tab[3]
 
-        self.alarm: Optional[TerminalTechniqueAlarm] = None
+        self.alarm: TerminalTechniqueAlarm = cast("TerminalTechniqueAlarm", None)
 
         if self.alarm_type in [AlarmLineType.FIN_ALA, AlarmLineType.FERM_SESSION]:
             found_unclosed_alarms = [alarm for alarm in self.parent_file.library.currently_opened_alarms if alarm.full_text == self.alarm_full_text]
