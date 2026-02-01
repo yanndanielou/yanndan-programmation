@@ -206,10 +206,10 @@ class TerminalTechniqueArchivesMaintLibrary:
                             ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.alarm_type.name
                             ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.decoded_timestamp
                             ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.parent_file.file_name
-                            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.line_number
+                            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.line_number_inside_file
                             ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.decoded_timestamp if alarm.end_alarm_line else "NA"
                             ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.parent_file.file_name if alarm.end_alarm_line else "NA"
-                            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.line_number if alarm.end_alarm_line else "NA"
+                            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.line_number_inside_file if alarm.end_alarm_line else "NA"
                             ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.full_text.strip()
                             row_idx += 1
 
@@ -243,7 +243,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     for row_idx, sahara_alarm in enumerate(self.sahara_alarms, start=2):
                         ws_sahara.cell(row=row_idx, column=1).value = sahara_alarm.raise_line.decoded_timestamp
                         ws_sahara.cell(row=row_idx, column=2).value = sahara_alarm.raise_line.parent_file.file_name
-                        ws_sahara.cell(row=row_idx, column=3).value = sahara_alarm.raise_line.line_number
+                        ws_sahara.cell(row=row_idx, column=3).value = sahara_alarm.raise_line.line_number_inside_file
                         ws_sahara.cell(row=row_idx, column=4).value = sahara_alarm.alarm_type.name
                         ws_sahara.cell(row=row_idx, column=5).value = sahara_alarm.full_text.strip()
 
@@ -275,10 +275,10 @@ class TerminalTechniqueArchivesMaintLibrary:
                         )
                         ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.decoded_timestamp
                         ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.parent_file.file_name
-                        ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.line_number
+                        ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.line_number_inside_file
                         ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.decoded_timestamp if mccs_alarm.end_alarm_line else "NA"
                         ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.parent_file.file_name if mccs_alarm.end_alarm_line else "NA"
-                        ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.line_number if mccs_alarm.end_alarm_line else "NA"
+                        ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.line_number_inside_file if mccs_alarm.end_alarm_line else "NA"
                         ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.full_text.strip()
 
                     ws_mccs.column_dimensions["A"].width = 25
@@ -309,9 +309,9 @@ class TerminalTechniqueArchivesMaintLibrary:
                         column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
 
                         ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.previous_line.decoded_timestamp
-                        ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.previous_line.line_number
+                        ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.previous_line.line_number_inside_file
                         ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.next_line.decoded_timestamp
-                        ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.next_line.line_number
+                        ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.next_line.line_number_inside_file
                         ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = duration
 
                     ws_btp.column_dimensions["A"].width = 25
@@ -1051,13 +1051,15 @@ class TerminalTechniqueArchivesMaintLibrary:
                 # Ajouter les MCCS H alarms
                 for mccs_alarm in self.mccs_hs_alarms:
                     timestamp = mccs_alarm.raise_line.decoded_timestamp
-                    event_text = f"[MCCS H ALARM] {timestamp} | File: {mccs_alarm.raise_line.parent_file.file_name}:{mccs_alarm.raise_line.line_number} | {mccs_alarm.full_text.strip()}"
+                    event_text = f"[MCCS H ALARM] {timestamp} | File: {mccs_alarm.raise_line.parent_file.file_name}:{mccs_alarm.raise_line.line_number_inside_file} | {mccs_alarm.full_text.strip()}"
                     events.append((timestamp, "MCCS_H", event_text))
 
                 # Ajouter les SAHARA alarms
                 for sahara_alarm in self.sahara_alarms:
                     timestamp = sahara_alarm.raise_line.decoded_timestamp
-                    event_text = f"[SAHARA ALARM] {timestamp} | File: {sahara_alarm.raise_line.parent_file.file_name}:{sahara_alarm.raise_line.line_number} | {sahara_alarm.full_text.strip()}"
+                    event_text = (
+                        f"[SAHARA ALARM] {timestamp} | File: {sahara_alarm.raise_line.parent_file.file_name}:{sahara_alarm.raise_line.line_number_inside_file} | {sahara_alarm.full_text.strip()}"
+                    )
                     events.append((timestamp, "SAHARA", event_text))
 
                 # Ajouter les Back to Past events
@@ -1065,7 +1067,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     timestamp = back_to_past.previous_line.decoded_timestamp
                     next_timestamp = back_to_past.next_line.decoded_timestamp
                     time_diff = (next_timestamp - timestamp).total_seconds()
-                    event_text = f"[BACK TO PAST] {timestamp} | Previous: {back_to_past.previous_line.parent_file.file_name}:{back_to_past.previous_line.line_number} | Next: {back_to_past.next_line.parent_file.file_name}:{back_to_past.next_line.line_number} | Jump: {time_diff:.2f}s backward"
+                    event_text = f"[BACK TO PAST] {timestamp} | Previous: {back_to_past.previous_line.parent_file.file_name}:{back_to_past.previous_line.line_number_inside_file} | Next: {back_to_past.next_line.parent_file.file_name}:{back_to_past.next_line.line_number_inside_file} | Jump: {time_diff:.2f}s backward"
                     events.append((timestamp, "BACK_TO_PAST", event_text))
 
                 # Trier tous les événements par timestamp
@@ -1138,18 +1140,17 @@ class TerminalTechniqueArchivesMaintLibrary:
                         break
 
                 # Compter les MCCS H alarms qui précèdent directement
-                sahara_alarm_index_in_all_processed_lines = self.all_processed_lines.index(sahara_alarm.raise_line)
-                currently_parsed_line_index = sahara_alarm_index_in_all_processed_lines
+                currently_parsed_line_index = sahara_alarm.raise_line.line_number_in_library
                 mesd_count_preceding = 0
                 while "MESD" in self.all_processed_lines[currently_parsed_line_index - 1].alarm.equipment_name:
                     logger_config.print_and_log_info(
-                        f"export_sahara_alarms_with_context_to_excel: {self.all_processed_lines[currently_parsed_line_index-1].alarm.equipment_name}, index {currently_parsed_line_index} is MEDS. Current sahara is at position {sahara_alarm_index_in_all_processed_lines}"
+                        f"export_sahara_alarms_with_context_to_excel: {self.all_processed_lines[currently_parsed_line_index-1].alarm.equipment_name}, index {currently_parsed_line_index} is MEDS. Current sahara is at position {sahara_alarm.raise_line.line_number_in_library}"
                     )
                     mesd_count_preceding += 1
                     currently_parsed_line_index -= 1
 
                 logger_config.print_and_log_info(
-                    f"export_sahara_alarms_with_context_to_excel: {self.all_processed_lines[currently_parsed_line_index-1].alarm.equipment_name}, index {currently_parsed_line_index} is not MEDS. mccs_count_preceding:{mesd_count_preceding}. Current sahara is at position {sahara_alarm_index_in_all_processed_lines}"
+                    f"export_sahara_alarms_with_context_to_excel: {self.all_processed_lines[currently_parsed_line_index-1].alarm.equipment_name}, index {currently_parsed_line_index} is not MEDS. mccs_count_preceding:{mesd_count_preceding}. Current sahara is at position {sahara_alarm.raise_line.line_number_in_library}"
                 )
 
                 # Compter les lignes depuis le dernier Back to Past
@@ -1175,7 +1176,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 ws.cell(row=row_idx, column=column_it.postfix_increment()).value = sahara_alarm.raise_line.decoded_timestamp
                 ws.cell(row=row_idx, column=column_it.postfix_increment()).value = sahara_alarm.raise_line.parent_file.file_full_path
                 ws.cell(row=row_idx, column=column_it.postfix_increment()).value = sahara_alarm.raise_line.parent_file.file_name
-                ws.cell(row=row_idx, column=column_it.postfix_increment()).value = sahara_alarm.raise_line.line_number
+                ws.cell(row=row_idx, column=column_it.postfix_increment()).value = sahara_alarm.raise_line.line_number_inside_file
                 ws.cell(row=row_idx, column=column_it.postfix_increment()).value = sahara_alarm.full_text.strip()
                 ws.cell(row=row_idx, column=column_it.postfix_increment()).value = mesd_count_preceding
                 ws.cell(row=row_idx, column=column_it.postfix_increment()).value = lines_since_last_back_to_past
@@ -1224,11 +1225,14 @@ class TerminalTechniqueArchivesMaintLibrary:
                     "Start timestamp",
                     "End timestamp",
                     "group duration (seconds)",
+                    "Last (previous) goup: lines since",
+                    "Last (previous) goup: duration since (seconds)",
                     "Start File Name",
                     "Start Line Number",
-                    "Last Back to Past timestamp",
-                    "Seconds since last back to past",
-                    "Second tuntil next sahara",
+                    "Last Back to Past - lines until group",
+                    "Last Back to Past - timestamp",
+                    "Last back to past - seconds until group",
+                    "Second until next sahara",
                     "Lines until next sahara",
                     "First line Full Text",
                 ]
@@ -1250,10 +1254,19 @@ class TerminalTechniqueArchivesMaintLibrary:
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_last_line.decoded_timestamp
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (group_last_line.decoded_timestamp - group_first_line.decoded_timestamp).total_seconds()
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.parent_file.file_name
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.line_number
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.last_back_to_past_detected.previous_line.decoded_timestamp if group.last_back_to_past_detected else "No"
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group_first_line.line_number_inside_file
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
-                        (group_first_line.decoded_timestamp - group.last_back_to_past_detected.previous_line.decoded_timestamp).total_seconds() if group.last_back_to_past_detected else "No"
+                        (group_first_line.line_number_in_library - group.last_back_to_past_detected.previous_line.line_number_in_library)
+                        if group.last_back_to_past_detected
+                        else "No previous back to past"
+                    )
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
+                        group.last_back_to_past_detected.previous_line.decoded_timestamp if group.last_back_to_past_detected else "No previous back to past"
+                    )
+                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
+                        (group_first_line.decoded_timestamp - group.last_back_to_past_detected.previous_line.decoded_timestamp).total_seconds()
+                        if group.last_back_to_past_detected
+                        else "No previous back to past"
                     )
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
                         (group.following_sahara_alarms[0].raise_line.decoded_timestamp - group_last_line.decoded_timestamp).total_seconds()
@@ -1262,7 +1275,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     )
 
                     ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
-                        self.all_processed_lines.index(group.following_sahara_alarms[0].raise_line) - self.all_processed_lines.index(group_last_line)
+                        group.following_sahara_alarms[0].raise_line.line_number_in_library - group_last_line.line_number_in_library
                         if group.following_sahara_alarms
                         else "NA (no next sahara alarm until next group)"
                     )
@@ -1306,7 +1319,7 @@ class TerminalTechniqueArchivesMaintFile:
                 for line_number, line in enumerate(all_raw_lines):
                     if len(line) > 3:
                         try:
-                            processed_line = TerminalTechniqueArchivesMaintLogLine(parent_file=self, full_raw_line=line, line_number=line_number + 1, previous_line=self.last_line)
+                            processed_line = TerminalTechniqueArchivesMaintLogLine(parent_file=self, full_raw_line=line, line_number_inside_file=line_number + 1, previous_line=self.last_line)
                             self.library.all_processed_lines.append(processed_line)
                             self.last_line = processed_line
                         except Exception as e:
@@ -1318,10 +1331,12 @@ class TerminalTechniqueArchivesMaintFile:
 class TerminalTechniqueArchivesMaintLogLine:
     parent_file: TerminalTechniqueArchivesMaintFile
     full_raw_line: str
-    line_number: int
+    line_number_inside_file: int
+
     previous_line: Optional["TerminalTechniqueArchivesMaintLogLine"]
 
     def __post_init__(self) -> None:
+        self.line_number_in_library = len(self.parent_file.library.all_processed_lines) + 1
         self.raw_date_str = self.full_raw_line[0:22]
 
         self.full_raw_line_split_by_tab = self.full_raw_line.split("\t")
@@ -1346,7 +1361,7 @@ class TerminalTechniqueArchivesMaintLogLine:
                 while len(found_unclosed_alarms) > 1:
                     never_closed_alarm = found_unclosed_alarms[0]
                     logger_config.print_and_log_warning(
-                        f"Alarm {never_closed_alarm.full_text} is re-opened at {found_unclosed_alarms[0].raise_line.decoded_timestamp} and not closed between. {len(found_unclosed_alarms)} unclosed alarms found \n({'\n'.join(alarm.raise_line.full_raw_line + " in " + alarm.raise_line.parent_file.file_name + ":"+str(alarm.raise_line.line_number)  for alarm in found_unclosed_alarms)}) for {self.alarm_full_text} when trying to close {self.full_raw_line} in {self.parent_file.file_name}:{self.line_number}"
+                        f"Alarm {never_closed_alarm.full_text} is re-opened at {found_unclosed_alarms[0].raise_line.decoded_timestamp} and not closed between. {len(found_unclosed_alarms)} unclosed alarms found \n({'\n'.join(alarm.raise_line.full_raw_line + " in " + alarm.raise_line.parent_file.file_name + ":"+str(alarm.raise_line.line_number_inside_file)  for alarm in found_unclosed_alarms)}) for {self.alarm_full_text} when trying to close {self.full_raw_line} in {self.parent_file.file_name}:{self.line_number_inside_file}"
                     )
                     self.parent_file.library.currently_opened_alarms.remove(found_unclosed_alarms[0])
                     found_unclosed_alarms = [alarm for alarm in self.parent_file.library.currently_opened_alarms if alarm.full_text == self.alarm_full_text]
@@ -1387,7 +1402,7 @@ class TerminalTechniqueArchivesMaintLogLine:
         elif self.alarm_type == AlarmLineType.CSI:
             self.alarm = TerminalTechniqueCsiAlarm(raise_line=self, full_text=self.alarm_full_text, alarm_type=self.alarm_type)
         else:
-            assert False, f"Alarm type {self.alarm_type} for {self.parent_file.file_name} {self.line_number} {self.alarm_full_text}"
+            assert False, f"Alarm type {self.alarm_type} for {self.parent_file.file_name} {self.line_number_inside_file} {self.alarm_full_text}"
 
         if "MESD" in self.alarm.equipment_name:
             if not self.parent_file.library.all_mesd_alarms_groups or self.parent_file.library.all_mesd_alarms_groups[-1].alarm_lines[-1] != self.parent_file.library.all_processed_lines[-1]:
