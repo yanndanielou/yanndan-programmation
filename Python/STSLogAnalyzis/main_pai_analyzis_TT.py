@@ -18,15 +18,13 @@ OUTPUT_FOLDER_NAME = "output"
 with logger_config.application_logger("main_pai_analyzis_TT"):
     file_utils.create_folder_if_not_exist(OUTPUT_FOLDER_NAME)
 
-    tt_maint_p75_light_library = decode_pai_logs.TerminalTechniqueArchivesMaintLibrary("2027-01-27 P75 light_").load_folder(
-        r"D:\temp\2027-01-27 avec hitachi\2027-01-27\PAI75\TT-026401 (TT)\Archives_maint_light"
-    )
+    for library_name, folder_path in [
+        ("2027-01-27 P75 light_", r"D:\temp\2027-01-27 avec hitachi\2027-01-27\PAI75\TT-026401 (TT)\Archives_maint_light"),
+        ("2027-01-27 P81 TT-026396", r"D:\temp\2027-01-27 avec hitachi\2027-01-27\PAI81\TT-026396\Archives_maint"),
+        ("2027-01-27 P75 TT-026396", r"D:\temp\2027-01-27 avec hitachi\2027-01-27\PAI75\TT-026401 (TT)\Archives_maint"),
+    ]:
+        tt_maint_library = decode_pai_logs.TerminalTechniqueArchivesMaintLibrary(library_name).load_folder(folder_path)
 
-    tt_maint_p81_library = decode_pai_logs.TerminalTechniqueArchivesMaintLibrary("2027-01-27 P81 TT-026396").load_folder(r"D:\temp\2027-01-27 avec hitachi\2027-01-27\PAI81\TT-026396\Archives_maint")
-    tt_maint_p75_library = decode_pai_logs.TerminalTechniqueArchivesMaintLibrary("2027-01-27 P75 TT-026396").load_folder(
-        r"D:\temp\2027-01-27 avec hitachi\2027-01-27\PAI75\TT-026401 (TT)\Archives_maint"
-    )
-    for tt_maint_library in [tt_maint_p75_light_library, tt_maint_p81_library, tt_maint_p75_library]:
         tt_maint_library.dump_all_events_to_text_file(output_folder_path=OUTPUT_FOLDER_NAME)
         tt_maint_library.export_mesd_alarms_groups_to_excel(output_folder_path=OUTPUT_FOLDER_NAME)
         tt_maint_library.export_sahara_alarms_with_context_to_excel(output_folder_path=OUTPUT_FOLDER_NAME)
