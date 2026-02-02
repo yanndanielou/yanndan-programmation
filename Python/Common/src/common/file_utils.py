@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import List, Tuple, cast
 
+import natsort
 from logger import logger_config
 
 from common import file_name_utils
@@ -43,12 +44,15 @@ def create_folder_if_not_exist(directory_path: str) -> bool:
         return False
 
 
-def get_files_by_directory_and_file_name_mask(directory_path: str, filename_pattern: str) -> List[str]:
+def get_files_by_directory_and_file_name_mask(directory_path: str, filename_pattern: str, alphanumerical_order: bool = False) -> List[str]:
     files_paths: List[str] = []
     for file in os.listdir(directory_path):
         if fnmatch.fnmatch(file, filename_pattern):
             file_path = os.path.join(directory_path, file)
             files_paths.append(file_path)
+
+    if alphanumerical_order:
+        return natsort.natsorted(files_paths)
     return files_paths
 
 
