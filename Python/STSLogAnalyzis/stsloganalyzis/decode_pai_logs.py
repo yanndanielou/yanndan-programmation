@@ -109,6 +109,9 @@ class TerminalTechniqueArchivesMaintLogBackToPast:
     def __post_init__(self) -> None:
         self.next_mesd_alarms_group: Optional[TerminalTechniqueMesdAlarmsGroup] = None
         self.next_sahara_alarm: Optional[SaharaTerminalTechniqueAlarm] = None
+        self.next_back_to_past: Optional[TerminalTechniqueArchivesMaintLogBackToPast] = None
+        if self.previous_line.parent_file.library.all_back_to_past_detected:
+            self.previous_line.parent_file.library.all_back_to_past_detected[-1].next_back_to_past = self
 
 
 @dataclass
@@ -374,7 +377,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 logger_config.print_and_log_error("La liste des traces est vide. Aucun fichier créé.")
                 return
 
-            with logger_config.stopwatch_with_label("plot_alarms_by_period"):
+            with logger_config.stopwatch_with_label(f"{self.name} plot_alarms_by_period"):
 
                 # Déterminer la période totale
                 start_time = self.all_processed_lines[0].decoded_timestamp
@@ -1130,6 +1133,11 @@ class TerminalTechniqueArchivesMaintLibrary:
                         {
                             "Timestamp": back_to_past.previous_line.decoded_timestamp,
                             "File name and line number": back_to_past.previous_line.parent_file.file_name + ":" + str(back_to_past.previous_line.line_number_inside_file),
+                            "Lines until next back to past": (
+                                str(back_to_past.next_back_to_past.previous_line.line_number_in_library - back_to_past.previous_line.line_number_in_library)
+                                if back_to_past.next_back_to_past
+                                else "No folling back to past"
+                            ),
                             "Lines until next MESD alarms": (
                                 str(back_to_past.next_mesd_alarms_group.first_line.line_number_in_library - back_to_past.previous_line.line_number_in_library)
                                 if back_to_past.next_mesd_alarms_group
@@ -1165,13 +1173,14 @@ class TerminalTechniqueArchivesMaintLibrary:
                 logger_config.print_and_log_error("Aucune alarme SAHARA. Aucun fichier créé.")
                 return
 
-            # Créer une map pour accès rapide aux back_to_past par l'index de la ligne
-            back_to_past_by_previous_line_index: Dict[int, TerminalTechniqueArchivesMaintLogBackToPast] = {}
-            for back_to_past in self.all_back_to_past_detected:
-                for line_idx, line in enumerate(self.all_processed_lines):
-                    if line is back_to_past.previous_line:
-                        back_to_past_by_previous_line_index[line_idx] = back_to_past
-                        break
+            with logger_config.stopwatch_with_label(f"{self.name}: Créer une map pour accès rapide aux back_to_past par l'index de la ligne"):
+                # Créer une map pour accès rapide aux back_to_past par l'index de la ligne
+                back_to_past_by_previous_line_index: Dict[int, TerminalTechniqueArchivesMaintLogBackToPast] = {}
+                for back_to_past in self.all_back_to_past_detected:
+                    for line_idx, line in enumerate(self.all_processed_lines):
+                        if line is back_to_past.previous_line:
+                            back_to_past_by_previous_line_index[line_idx] = back_to_past
+                            break
 
             # Créer un workbook
             wb = Workbook()
@@ -1374,7 +1383,7 @@ class TerminalTechniqueArchivesMaintFile:
     def __post_init__(self) -> None:
         self.file_full_path = self.parent_folder_full_path + "\\" + self.file_name
 
-        with logger_config.stopwatch_with_label(f"Open and read file  {self.file_full_path}", inform_beginning=False, enable_print=False, enabled=False):
+        with logger_config.stopwatch_with_label(f"{self.library.name}: Open and read file  {self.file_full_path}", inform_beginning=False, enable_print=False, enabled=False):
             with open(self.file_full_path, mode="r", encoding="ANSI") as file:
                 all_raw_lines = file.readlines()
                 # logger_config.print_and_log_info(to_print_and_log=f"File {self.file_full_path} has {len(all_raw_lines)} lines")
