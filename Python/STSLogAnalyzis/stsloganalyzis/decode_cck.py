@@ -104,7 +104,7 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(
     x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_counts.keys()]
     y_values = list(interval_counts.values())
     # Créer et exporter les données dans un fichier Excel
-    excel_filename = f"{library_name} interval_counts_{label.replace(' ', '_')}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+    excel_filename = f"{library_name} interval_counts_{label.replace(' ', '_')}_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
     wb = Workbook()
     ws = wb.active
     ws.title = "Interval Counts"
@@ -147,7 +147,7 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(
     logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
     # Créer et sauvegarder le graphe en HTML avec Plotly
-    html_filename = f"interval_counts_{label.replace(' ', '_')}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+    html_filename = f"{library_name}_interval_counts_{label.replace(' ', '_')}_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
     fig = go.Figure(
         data=[
             go.Bar(
@@ -370,7 +370,7 @@ class CckMproTraceLibrary:
         y_loss_link = list(interval_loss_link_count.values())
 
         # Créer et exporter les données dans un fichier Excel
-        excel_filename = f"{self.name} problems_and_loss_link_by_period_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+        excel_filename = f"{self.name} problems_and_loss_link_by_period_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
         wb = Workbook()
         ws = wb.active
         ws.title = "Problems & Loss Link"
@@ -420,7 +420,7 @@ class CckMproTraceLibrary:
         logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
         # Créer et sauvegarder le graphe en HTML avec Plotly
-        html_filename = f"{self.name} problems_and_loss_link_by_period_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+        html_filename = f"{self.name} problems_and_loss_link_by_period_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
         fig = go.Figure(
             data=[
                 go.Bar(
