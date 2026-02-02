@@ -1,4 +1,3 @@
-*.7z
 *.zip
 *.txt
 *.png
@@ -9,3 +8,4 @@
 Dependencies/
 all_possibilities.json
 test*.json
+Input_for_tests/pcap/SAAT_18_LINES.pcapng
