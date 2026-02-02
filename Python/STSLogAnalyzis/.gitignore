@@ -8,4 +8,4 @@
 Dependencies/
 all_possibilities.json
 test*.json
-Input_for_tests/pcap/SAAT_18_LINES.pcapng
+Input_for_tests/pcap/*cc.pcapng
