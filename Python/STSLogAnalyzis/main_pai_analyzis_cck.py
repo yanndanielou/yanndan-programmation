@@ -15,7 +15,7 @@ from stsloganalyzis import decode_cck, decode_pai_logs
 
 OUTPUT_FOLDER_NAME = "output"
 
-with logger_config.application_logger("main_pai_analyzis_cck"):
+with logger_config.application_logger():
     file_utils.create_folder_if_not_exist(OUTPUT_FOLDER_NAME)
 
     for library_name, folder_path in [
