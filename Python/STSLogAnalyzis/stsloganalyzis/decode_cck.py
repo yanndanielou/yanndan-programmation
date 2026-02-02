@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Self, Tuple
 
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-from common import file_name_utils, string_utils, custom_iterator
+from common import file_name_utils, string_utils, custom_iterator, file_utils
 from logger import logger_config
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -22,7 +22,7 @@ LINK_STATE_CHANGE_PATTERN_STR = r".*changement d'état : (?P<old_state>.*) => (?
 LINK_STATE_CHANGE_PATTERN = re.compile(LINK_STATE_CHANGE_PATTERN_STR)
 
 
-def save_cck_mpro_lines_in_excel(trace_lines: List["CckMproTraceLine"], output_folder_path: str, excel_output_file_name_without_extension: str) -> None:
+def save_cck_mpro_lines_in_excel(library_name: str, trace_lines: List["CckMproTraceLine"], output_folder_path: str, excel_output_file_name_without_extension: str) -> None:
     """
     Sauvegarde une liste de CckMproTraceLine dans un fichier Excel.
 
@@ -64,13 +64,15 @@ def save_cck_mpro_lines_in_excel(trace_lines: List["CckMproTraceLine"], output_f
     ws.column_dimensions["E"].width = 80
 
     # Sauvegarder le fichier
-    output_file_full_path = output_folder_path + "/" + excel_output_file_name_without_extension + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx"
+    output_file_full_path = output_folder_path + "/" + library_name + "_" + excel_output_file_name_without_extension + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx"
     wb.save(output_file_full_path)
     logger_config.print_and_log_info(f"Fichier Excel créé: {output_file_full_path}")
     logger_config.print_and_log_info(f"Total de {len(trace_lines)} lignes sauvegardées")
 
 
-def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTraceLine"], output_folder_path: str, label: str, interval_minutes: int = 10, do_show: bool = False) -> None:
+def plot_bar_graph_list_cck_mpro_lines_by_period(
+    library_name: str, trace_lines: List["CckMproTraceLine"], output_folder_path: str, label: str, interval_minutes: int = 10, do_show: bool = False
+) -> None:
     if not trace_lines:
         print("La liste des traces est vide.")
         return
@@ -102,7 +104,7 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTrace
     x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_counts.keys()]
     y_values = list(interval_counts.values())
     # Créer et exporter les données dans un fichier Excel
-    excel_filename = f"interval_counts_{label.replace(' ', '_')}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+    excel_filename = f"{library_name} interval_counts_{label.replace(' ', '_')}_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
     wb = Workbook()
     ws = wb.active
     ws.title = "Interval Counts"
@@ -257,20 +259,20 @@ class CckMproTraceLibrary:
     def load_folder(self, folder_full_path: str) -> Self:
         with logger_config.stopwatch_with_label("Load all files", inform_beginning=True, monitor_ram_usage=True):
 
-            for dirpath, dirnames, filenames in os.walk(folder_full_path):
-                for file_name in filenames:
-                    cck_file = CckMproTraceFile(parent_folder_full_path=dirpath, file_name=file_name, library=self)
-                    self.all_processed_files.append(cck_file)
-                    self.all_processed_lines += cck_file.all_processed_lines
-                    self.all_problem_enchainement_numero_protocolaire += cck_file.all_problem_enchainement_numero_protocolaire
-                    self.all_changement_etats_liaisons_mpro += cck_file.all_changement_etats_liaisons_mpro
+            for file_full_path in file_utils.get_files_by_directory_and_file_name_mask(directory_path=folder_full_path, filename_pattern="Traces_MPRO*.txt", alphanumerical_order=True):
+                file_name = file_name_utils.get_file_name_with_extension_from_full_path(file_full_path)
+                cck_file = CckMproTraceFile(parent_folder_full_path=folder_full_path, file_name=file_name, library=self)
+                self.all_processed_files.append(cck_file)
+                self.all_processed_lines += cck_file.all_processed_lines
+                self.all_problem_enchainement_numero_protocolaire += cck_file.all_problem_enchainement_numero_protocolaire
+                self.all_changement_etats_liaisons_mpro += cck_file.all_changement_etats_liaisons_mpro
 
-                    for key, value in cck_file.lines_per_liaison.items():
-                        if key not in self.lines_per_liaison:
-                            self.lines_per_liaison[key] = []
-                        self.lines_per_liaison[key] += value
+                for key, value in cck_file.lines_per_liaison.items():
+                    if key not in self.lines_per_liaison:
+                        self.lines_per_liaison[key] = []
+                    self.lines_per_liaison[key] += value
 
-                    assert self.all_processed_lines
+                assert self.all_processed_lines
             assert self.all_processed_lines
 
         with logger_config.stopwatch_with_label("Create all_changement_etats_liaisons_mpro_per_link", inform_beginning=True, monitor_ram_usage=True):
@@ -368,7 +370,7 @@ class CckMproTraceLibrary:
         y_loss_link = list(interval_loss_link_count.values())
 
         # Créer et exporter les données dans un fichier Excel
-        excel_filename = f"problems_and_loss_link_by_period_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+        excel_filename = f"{self.name} problems_and_loss_link_by_period_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
         wb = Workbook()
         ws = wb.active
         ws.title = "Problems & Loss Link"
@@ -418,7 +420,7 @@ class CckMproTraceLibrary:
         logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
         # Créer et sauvegarder le graphe en HTML avec Plotly
-        html_filename = f"problems_and_loss_link_by_period_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+        html_filename = f"{self.name} problems_and_loss_link_by_period_{start_time.strftime('%Y%m%d_%H%M%S')}{file_name_utils.get_file_suffix_with_current_datetime()}.html"
         fig = go.Figure(
             data=[
                 go.Bar(
