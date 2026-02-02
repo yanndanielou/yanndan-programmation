@@ -176,12 +176,18 @@ def print_and_log_error(
 
 
 @contextmanager
-def application_logger(application_name: str, logger_level: int = logging.INFO) -> Generator[float, None, None]:
+def application_logger(
+    application_name: Optional[str] = None, logger_level: int = logging.INFO
+) -> Generator[float, None, None]:
 
-    configure_logger_with_timestamp_log_file_suffix(log_file_name_prefix=application_name, logger_level=logger_level)
     previous_stack = inspect.stack(0)[2]
     file_name = previous_stack.filename
     line_number = previous_stack.lineno
+
+    if not application_name:
+        application_name = os.path.basename(os.path.dirname(file_name))
+
+    configure_logger_with_timestamp_log_file_suffix(log_file_name_prefix=application_name, logger_level=logger_level)
     application_start_time = time.time()
 
     calling_file_name_and_line_number = file_name + ":" + str(line_number)
