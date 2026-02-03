@@ -361,7 +361,7 @@ class CckMproTraceLibrary:
 
         # Compter les pertes de lien
         for loss_link in self.all_temporary_loss_link:
-            if maximum_link_loss_duration_to_consider is None or loss_link.duration_in_seconds < maximum_link_loss_duration_to_consider
+            if maximum_link_loss_duration_to_consider is None or loss_link.duration_in_seconds < maximum_link_loss_duration_to_consider:
                 for interval_start in interval_start_times:
                     interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
                     if interval_start <= loss_link.loss_link_event.trace_line.decoded_timestamp < interval_end:
@@ -471,6 +471,90 @@ class CckMproTraceLibrary:
         plt.title(f"Problèmes d'enchaînement et Pertes de lien par périodes de {interval_minutes} minutes entre {start_time.strftime("%Y-%m-%d %H:%M")} et {end_time.strftime("%Y-%m-%d %H:%M")}")
         plt.xticks(x_pos, x_labels, rotation=45, ha="right")
         plt.legend()
+        plt.tight_layout()
+        if do_show:
+            plt.show()
+
+    def plot_loss_link_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False) -> None:
+        """Affiche uniquement les all_temporary_loss_link par intervalle de temps."""
+        if not self.all_processed_lines:
+            logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
+            return
+
+        start_time = self.all_processed_lines[0].decoded_timestamp
+        end_time = self.all_processed_lines[-1].decoded_timestamp
+        interval_start_times: List[datetime.datetime] = []
+        current_time = start_time
+        while current_time <= end_time:
+            interval_start_times.append(current_time)
+            current_time += datetime.timedelta(minutes=interval_minutes)
+
+        interval_loss_link_count: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
+        for interval_start in interval_start_times:
+            interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+            interval_loss_link_count[(interval_start, interval_end)] = 0
+
+        for loss_link in self.all_temporary_loss_link:
+            for interval_start in interval_start_times:
+                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                if interval_start <= loss_link.loss_link_event.trace_line.decoded_timestamp < interval_end:
+                    interval_loss_link_count[(interval_start, interval_end)] += 1
+                    break
+
+        x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_loss_link_count.keys()]
+        y_values = list(interval_loss_link_count.values())
+
+        # Excel
+        excel_filename = f"{self.name}_loss_link_by_period_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Loss Link By Period"
+        ws["A1"] = "Début"
+        ws["B1"] = "Fin"
+        ws["C1"] = "Pertes de lien"
+        header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF")
+        for cell in [ws["A1"], ws["B1"], ws["C1"]]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+        for idx, ((interval_begin, interval_end), count) in enumerate(interval_loss_link_count.items(), start=2):
+            ws[f"A{idx}"] = interval_begin
+            ws[f"B{idx}"] = interval_end
+            ws[f"C{idx}"] = count
+            ws[f"C{idx}"].alignment = Alignment(horizontal="center")
+        ws.column_dimensions["A"].width = 25
+        ws.column_dimensions["B"].width = 25
+        ws.column_dimensions["C"].width = 20
+        summary_row = len(interval_loss_link_count) + 3
+        ws[f"A{summary_row}"] = "Total"
+        ws[f"C{summary_row}"] = len(self.all_temporary_loss_link)
+        ws[f"A{summary_row}"].font = Font(bold=True)
+        ws[f"C{summary_row}"].font = Font(bold=True)
+        wb.save(output_folder_path + "/" + excel_filename)
+        logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
+
+        # HTML
+        html_filename = f"{self.name}_loss_link_by_period_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+        fig = go.Figure(data=[go.Bar(x=x_labels, y=y_values, marker=dict(color="lightskyblue"), text=y_values, textposition="auto")])
+        fig.update_layout(
+            title=f"{len(self.all_temporary_loss_link)} Pertes de lien par périodes de {interval_minutes} minutes",
+            xaxis_title="Intervalles de temps",
+            yaxis_title="Nombre",
+            template="plotly_white",
+            height=600,
+            width=1000,
+        )
+        fig.write_html(output_folder_path + "/" + html_filename)
+        logger_config.print_and_log_info(f"Fichier HTML créé: {html_filename}")
+
+        # Matplotlib
+        plt.figure(figsize=(12, 6))
+        plt.bar(x_labels, y_values, color="lightskyblue", width=0.6)
+        plt.xlabel("Intervalles de temps")
+        plt.ylabel("Nombre de Pertes de lien")
+        plt.title(f"{len(self.all_temporary_loss_link)} Pertes de lien par périodes de {interval_minutes} minutes")
+        plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
         if do_show:
             plt.show()
