@@ -104,7 +104,8 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(
     x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_counts.keys()]
     y_values = list(interval_counts.values())
     # Créer et exporter les données dans un fichier Excel
-    excel_filename = f"{library_name} interval_counts_{label.replace(' ', '_')}_each_{interval_minutes}_min_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+    output_label = f"{library_name} interval_counts {label.replace(' ', '_')} each_{interval_minutes}_min"
+    excel_filename = f"{output_label} {file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
     wb = Workbook()
     ws = wb.active
     ws.title = "Interval Counts"
@@ -147,7 +148,7 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(
     logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
     # Créer et sauvegarder le graphe en HTML avec Plotly
-    html_filename = f"{library_name}_interval_counts_{label.replace(' ', '_')}_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+    html_filename = f"{output_label}_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
     fig = go.Figure(
         data=[
             go.Bar(
@@ -318,7 +319,7 @@ class CckMproTraceLibrary:
 
         return self
 
-    def plot_problems_and_loss_link_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False, maximum_link_loss_duration_to_consider: Optional[int] = None) -> None:
+    def plot_problems_and_loss_link_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False) -> None:
         """
         Génère un bar graph montrant les problèmes d'enchaînement et les pertes de lien par intervalle de temps.
 
@@ -361,12 +362,11 @@ class CckMproTraceLibrary:
 
         # Compter les pertes de lien
         for loss_link in self.all_temporary_loss_link:
-            if maximum_link_loss_duration_to_consider is None or loss_link.duration_in_seconds < maximum_link_loss_duration_to_consider:
-                for interval_start in interval_start_times:
-                    interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
-                    if interval_start <= loss_link.loss_link_event.trace_line.decoded_timestamp < interval_end:
-                        interval_loss_link_count[(interval_start, interval_end)] += 1
-                        break
+            for interval_start in interval_start_times:
+                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                if interval_start <= loss_link.loss_link_event.trace_line.decoded_timestamp < interval_end:
+                    interval_loss_link_count[(interval_start, interval_end)] += 1
+                    break
 
         # Préparer les données pour le graphe
         x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_problems_count.keys()]
@@ -374,7 +374,8 @@ class CckMproTraceLibrary:
         y_loss_link = list(interval_loss_link_count.values())
 
         # Créer et exporter les données dans un fichier Excel
-        excel_filename = f"{self.name} problems_and_loss_link_by_period_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+        output_label = f"{self.name} problems_and_loss_link each_{interval_minutes}_min"
+        excel_filename = f"{output_label} {file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
         wb = Workbook()
         ws = wb.active
         ws.title = "Problems & Loss Link"
@@ -424,7 +425,7 @@ class CckMproTraceLibrary:
         logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
         # Créer et sauvegarder le graphe en HTML avec Plotly
-        html_filename = f"{self.name} problems_and_loss_link_by_period_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+        html_filename = f"{output_label}_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
         fig = go.Figure(
             data=[
                 go.Bar(
@@ -475,7 +476,7 @@ class CckMproTraceLibrary:
         if do_show:
             plt.show()
 
-    def plot_loss_link_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False) -> None:
+    def plot_loss_link_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False, maximum_link_loss_duration_to_consider_in_seconds: Optional[int] = None) -> None:
         """Affiche uniquement les all_temporary_loss_link par intervalle de temps."""
         if not self.all_processed_lines:
             logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")
@@ -495,17 +496,20 @@ class CckMproTraceLibrary:
             interval_loss_link_count[(interval_start, interval_end)] = 0
 
         for loss_link in self.all_temporary_loss_link:
-            for interval_start in interval_start_times:
-                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
-                if interval_start <= loss_link.loss_link_event.trace_line.decoded_timestamp < interval_end:
-                    interval_loss_link_count[(interval_start, interval_end)] += 1
-                    break
+            if maximum_link_loss_duration_to_consider_in_seconds is None or loss_link.duration_in_seconds < maximum_link_loss_duration_to_consider_in_seconds:
+                for interval_start in interval_start_times:
+                    interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                    if interval_start <= loss_link.loss_link_event.trace_line.decoded_timestamp < interval_end:
+                        interval_loss_link_count[(interval_start, interval_end)] += 1
+                        break
 
         x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_loss_link_count.keys()]
         y_values = list(interval_loss_link_count.values())
 
         # Excel
-        excel_filename = f"{self.name}_loss_link_by_period_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+        maximum_link_loss_duration_to_consider_in_seconds_label = f"_greater_{maximum_link_loss_duration_to_consider_in_seconds}_s_" if maximum_link_loss_duration_to_consider_in_seconds else ""
+        output_label = f"{self.name}_loss_link_by_period_{maximum_link_loss_duration_to_consider_in_seconds_label}each_{interval_minutes}_min"
+        excel_filename = f"{output_label}_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
         wb = Workbook()
         ws = wb.active
         ws.title = "Loss Link By Period"
@@ -535,7 +539,7 @@ class CckMproTraceLibrary:
         logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
         # HTML
-        html_filename = f"{self.name}_loss_link_by_period_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+        html_filename = f"{output_label}_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
         fig = go.Figure(data=[go.Bar(x=x_labels, y=y_values, marker=dict(color="lightskyblue"), text=y_values, textposition="auto")])
         fig.update_layout(
             title=f"{len(self.all_temporary_loss_link)} Pertes de lien par périodes de {interval_minutes} minutes",
