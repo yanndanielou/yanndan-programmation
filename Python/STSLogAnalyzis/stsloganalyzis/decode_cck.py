@@ -104,7 +104,7 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(
     x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_counts.keys()]
     y_values = list(interval_counts.values())
     # Créer et exporter les données dans un fichier Excel
-    excel_filename = f"{library_name} interval_counts_{label.replace(' ', '_')}_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+    excel_filename = f"{library_name} interval_counts_{label.replace(' ', '_')}_each_{interval_minutes}_min_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
     wb = Workbook()
     ws = wb.active
     ws.title = "Interval Counts"
@@ -212,6 +212,8 @@ class CckMproTemporaryLossLink:
 
     def __post_init__(self) -> None:
         self.liaison = self.loss_link_event.liaison
+        self.duration = self.link_back_to_normal_event.trace_line.decoded_timestamp - self.loss_link_event.trace_line.decoded_timestamp
+        self.duration_in_seconds = self.duration.total_seconds()
 
 
 @dataclass
@@ -259,7 +261,8 @@ class CckMproTraceLibrary:
     def load_folder(self, folder_full_path: str) -> Self:
         with logger_config.stopwatch_with_label("Load all files", inform_beginning=True, monitor_ram_usage=True):
 
-            for file_full_path in file_utils.get_files_by_directory_and_file_name_mask(directory_path=folder_full_path, filename_pattern="Traces_MPRO*.txt", alphanumerical_order=True):
+            files_found_sorted = file_utils.get_files_by_directory_and_file_name_mask(directory_path=folder_full_path, filename_pattern="Traces_MPRO*.txt", alphanumerical_order=True)
+            for file_full_path in files_found_sorted:
                 file_name = file_name_utils.get_file_name_with_extension_from_full_path(file_full_path)
                 cck_file = CckMproTraceFile(parent_folder_full_path=folder_full_path, file_name=file_name, library=self)
                 self.all_processed_files.append(cck_file)
@@ -315,7 +318,7 @@ class CckMproTraceLibrary:
 
         return self
 
-    def plot_problems_and_loss_link_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False) -> None:
+    def plot_problems_and_loss_link_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False, maximum_link_loss_duration_to_consider: Optional[int] = None) -> None:
         """
         Génère un bar graph montrant les problèmes d'enchaînement et les pertes de lien par intervalle de temps.
 
@@ -358,11 +361,12 @@ class CckMproTraceLibrary:
 
         # Compter les pertes de lien
         for loss_link in self.all_temporary_loss_link:
-            for interval_start in interval_start_times:
-                interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
-                if interval_start <= loss_link.loss_link_event.trace_line.decoded_timestamp < interval_end:
-                    interval_loss_link_count[(interval_start, interval_end)] += 1
-                    break
+            if maximum_link_loss_duration_to_consider is None or loss_link.duration_in_seconds < maximum_link_loss_duration_to_consider
+                for interval_start in interval_start_times:
+                    interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
+                    if interval_start <= loss_link.loss_link_event.trace_line.decoded_timestamp < interval_end:
+                        interval_loss_link_count[(interval_start, interval_end)] += 1
+                        break
 
         # Préparer les données pour le graphe
         x_labels = [f"{begin.strftime("%H:%M")} - {end.strftime("%H:%M")}" for begin, end in interval_problems_count.keys()]
