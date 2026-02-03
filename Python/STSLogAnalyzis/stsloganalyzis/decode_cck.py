@@ -672,6 +672,8 @@ class CckMproTraceLibrary:
                     "timestamp": temporary_loss_link.loss_link_event.trace_line.decoded_timestamp,
                     "duration": temporary_loss_link.duration,
                     "duration in seconds": temporary_loss_link.duration_in_seconds,
+                    "Link down file name": temporary_loss_link.loss_link_event.trace_line.parent_file.file_name,
+                    "Link down line number": temporary_loss_link.loss_link_event.trace_line.line_number,
                 }
             )
 
