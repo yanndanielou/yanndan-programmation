@@ -1,3 +1,5 @@
+import pandas as pd
+
 import datetime
 import os
 import re
@@ -507,7 +509,7 @@ class CckMproTraceLibrary:
         y_values = list(interval_loss_link_count.values())
 
         # Excel
-        maximum_link_loss_duration_to_consider_in_seconds_label = f"_greater_{maximum_link_loss_duration_to_consider_in_seconds}_s_" if maximum_link_loss_duration_to_consider_in_seconds else ""
+        maximum_link_loss_duration_to_consider_in_seconds_label = f"_max_{maximum_link_loss_duration_to_consider_in_seconds}_s_" if maximum_link_loss_duration_to_consider_in_seconds else ""
         output_label = f"{self.name}_loss_link_by_period_{maximum_link_loss_duration_to_consider_in_seconds_label}each_{interval_minutes}_min"
         excel_filename = f"{output_label}_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
         wb = Workbook()
@@ -542,7 +544,7 @@ class CckMproTraceLibrary:
         html_filename = f"{output_label}_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
         fig = go.Figure(data=[go.Bar(x=x_labels, y=y_values, marker=dict(color="lightskyblue"), text=y_values, textposition="auto")])
         fig.update_layout(
-            title=f"{len(self.all_temporary_loss_link)} Pertes de lien par périodes de {interval_minutes} minutes",
+            title=f"{len(self.all_temporary_loss_link)} Pertes de lien par périodes de {interval_minutes} minutes {maximum_link_loss_duration_to_consider_in_seconds_label}",
             xaxis_title="Intervalles de temps",
             yaxis_title="Nombre",
             template="plotly_white",
@@ -660,8 +662,27 @@ class CckMproTraceLibrary:
         logger_config.print_and_log_info(f"Fichier Excel créé: {excel_output_file_name_without_extension}.xlsx")
         logger_config.print_and_log_info(f"Total de {len(self.all_temporary_loss_link)} pertes de lien sauvegardées")
 
+    def dump_temporary_loss_link_to_excel(self, output_folder_path: str) -> None:
 
-pass
+        rows = []
+        for temporary_loss_link in self.all_temporary_loss_link:
+            rows.append(
+                {
+                    "liaison": temporary_loss_link.liaison.full_name,
+                    "timestamp": temporary_loss_link.loss_link_event.trace_line.decoded_timestamp,
+                    "duration": temporary_loss_link.duration,
+                    "duration in seconds": temporary_loss_link.duration_in_seconds,
+                }
+            )
+
+        if not rows:
+            logger_config.print_and_log_info("Aucune ligne à exporter. Aucun fichier créé.")
+            return
+
+        df = pd.DataFrame(rows)
+        filename = f"{self.name}_all_temporary_loss_link_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+        df.to_excel(output_folder_path + "/" + filename, index=False)
+        logger_config.print_and_log_info(f"Fichier Excel créé: {filename}")
 
 
 @dataclass
