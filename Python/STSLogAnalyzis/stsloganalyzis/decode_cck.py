@@ -559,7 +559,7 @@ class CckMproTraceLibrary:
         plt.bar(x_labels, y_values, color="lightskyblue", width=0.6)
         plt.xlabel("Intervalles de temps")
         plt.ylabel("Nombre de Pertes de lien")
-        plt.title(f"{len(self.all_temporary_loss_link)} Pertes de lien par périodes de {interval_minutes} minutes")
+        plt.title(f"{len(self.all_temporary_loss_link)} Pertes de lien par périodes de {interval_minutes} minutes {maximum_link_loss_duration_to_consider_in_seconds_label}")
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
         if do_show:
