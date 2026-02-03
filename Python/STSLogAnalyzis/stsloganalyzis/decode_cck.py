@@ -718,7 +718,7 @@ class CckMproTraceFile:
                 all_raw_lines = file.readlines()
                 logger_config.print_and_log_info(to_print_and_log=f"File {self.file_full_path} has {len(all_raw_lines)} lines", do_not_print=True)
                 for line_number, line in enumerate(all_raw_lines):
-                    if line_number % 100000 == 0:
+                    if line_number > 0 and line_number % 250000 == 0:
                         logger_config.print_and_log_info(f"Handle line {self.file_name}:#{line_number}")
                     processed_line = CckMproTraceLine(parent_file=self, full_raw_line=line, line_number=line_number + 1)
                     if processed_line.changement_etat_liaison:
