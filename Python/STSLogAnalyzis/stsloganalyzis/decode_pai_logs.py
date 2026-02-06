@@ -10,8 +10,6 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from common import custom_iterator, file_name_utils
 from logger import logger_config
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
 
 # CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR = "!!! Decoding Error !!!"
 
@@ -979,23 +977,9 @@ class TerminalTechniqueArchivesMaintLibrary:
                             back_to_past_by_previous_line_index[line_idx] = back_to_past
                             break
 
-            # Créer un workbook
-            wb = Workbook()
-            ws = wb.active
-            ws.title = f"{self.name} SAHARA Alarms Context"
-
-            # Ajouter les en-têtes
-            headers = ["Index", "Timestamp", "File Path", "File Name", "Line Number", "Full Text", "Preceding MESD Alarms Count", "Lines Since Last Back to Past"]
-
-            for col_idx, header in enumerate(headers, start=1):
-                cell = ws.cell(row=1, column=col_idx)
-                cell.value = header
-                cell.fill = PatternFill(start_color="FFD966", end_color="FFD966", fill_type="solid")
-                cell.font = Font(bold=True, color="000000")
-                cell.alignment = Alignment(horizontal="center", vertical="center")
-
-            # Ajouter les données pour chaque SAHARA alarm
-            for row_idx, sahara_alarm in enumerate(self.sahara_alarms, start=2):
+            # Préparer les données pour le DataFrame
+            excel_data: List[Dict[str, Any]] = []
+            for idx, sahara_alarm in enumerate(self.sahara_alarms):
                 # Trouver l'index de cette alarme dans all_processed_lines
                 sahara_line_idx = None
                 for line_idx, line in enumerate(self.all_processed_lines):
@@ -1012,10 +996,6 @@ class TerminalTechniqueArchivesMaintLibrary:
                     )
                     mesd_count_preceding += 1
                     currently_parsed_line_index -= 1
-
-                # logger_config.print_and_log_info(
-                #    f"export_sahara_alarms_with_context_to_excel: {self.all_processed_lines[currently_parsed_line_index-1].alarm.equipment_name}, index {currently_parsed_line_index} is not MEDS. mccs_count_preceding:{mesd_count_preceding}. Current sahara is at position {sahara_alarm.raise_line.line_number_in_library}"
-                # )
 
                 # Compter les lignes depuis le dernier Back to Past
                 lines_since_last_back_to_past = 0
@@ -1034,34 +1014,21 @@ class TerminalTechniqueArchivesMaintLibrary:
                         # Pas de Back to Past avant, on compte depuis le début
                         lines_since_last_back_to_past = sahara_line_idx + 1
 
-                # Remplir les cellules
-                column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
-                ws.cell(row=row_idx, column=column_it.postfix_increment()).value = row_idx - 1
-                ws.cell(row=row_idx, column=column_it.postfix_increment()).value = sahara_alarm.raise_line.decoded_timestamp
-                ws.cell(row=row_idx, column=column_it.postfix_increment()).value = sahara_alarm.raise_line.parent_file.file_full_path
-                ws.cell(row=row_idx, column=column_it.postfix_increment()).value = sahara_alarm.raise_line.parent_file.file_name
-                ws.cell(row=row_idx, column=column_it.postfix_increment()).value = sahara_alarm.raise_line.line_number_inside_file
-                ws.cell(row=row_idx, column=column_it.postfix_increment()).value = sahara_alarm.full_text.strip()
-                ws.cell(row=row_idx, column=column_it.postfix_increment()).value = mesd_count_preceding
-                ws.cell(row=row_idx, column=column_it.postfix_increment()).value = lines_since_last_back_to_past
+                excel_data.append({
+                    "Index": idx,
+                    "Timestamp": sahara_alarm.raise_line.decoded_timestamp,
+                    "File Path": sahara_alarm.raise_line.parent_file.file_full_path,
+                    "File Name": sahara_alarm.raise_line.parent_file.file_name,
+                    "Line Number": sahara_alarm.raise_line.line_number_inside_file,
+                    "Full Text": sahara_alarm.full_text.strip(),
+                    "Preceding MESD Alarms Count": mesd_count_preceding,
+                    "Lines Since Last Back to Past": lines_since_last_back_to_past,
+                })
 
-                # Centrer les colonnes numériques
-                ws.cell(row=row_idx, column=1).alignment = Alignment(horizontal="center")
-                ws.cell(row=row_idx, column=7).alignment = Alignment(horizontal="center")
-                ws.cell(row=row_idx, column=8).alignment = Alignment(horizontal="center")
-
-            # Ajuster la largeur des colonnes
-            ws.column_dimensions["A"].width = 8
-            ws.column_dimensions["B"].width = 25
-            ws.column_dimensions["C"].width = 30
-            ws.column_dimensions["D"].width = 12
-            ws.column_dimensions["E"].width = 60
-            ws.column_dimensions["F"].width = 25
-            ws.column_dimensions["G"].width = 25
-
-            # Sauvegarder le fichier
+            # Créer et sauvegarder le fichier Excel
+            df = pd.DataFrame(excel_data)
             excel_filename = f"{self.name}_sahara_alarms_context{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-            wb.save(output_folder_path + "/" + excel_filename)
+            df.to_excel(output_folder_path + "/" + excel_filename, index=False)
             logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
             logger_config.print_and_log_info(f"Total de {len(self.sahara_alarms)} alarmes SAHARA exportées avec contexte")
 
@@ -1073,97 +1040,35 @@ class TerminalTechniqueArchivesMaintLibrary:
         with logger_config.stopwatch_with_label(f"{self.name}: export_mesd_alarms_groups_to_excel", inform_beginning=False, enable_print=False, enabled=False):
 
             try:
-
                 if not self.all_mesd_alarms_groups:
                     logger_config.print_and_log_error("Aucun groupe MESD. Aucun fichier créé.")
                     return
 
-                wb = Workbook()
-                ws = wb.active
-                ws.title = f"{self.name} MESD Groups"
+                # Préparer les données pour le DataFrame
+                excel_data: List[Dict[str, Any]] = []
+                for group in self.all_mesd_alarms_groups:
+                    excel_data.append({
+                        "Group Index": group.number_of_group_in_library,
+                        "Line Count": len(group.alarm_lines),
+                        "Start timestamp": group.first_line.decoded_timestamp,
+                        "End timestamp": group.last_line.decoded_timestamp,
+                        "group duration (seconds)": (group.last_line.decoded_timestamp - group.first_line.decoded_timestamp).total_seconds(),
+                        "Last (previous) goup: lines since": (group.first_line.line_number_in_library - group.previous_group.last_line.line_number_in_library) if group.previous_group else "No previous group",
+                        "Last (previous) goup: duration since (seconds)": (group.first_line.decoded_timestamp - group.previous_group.last_line.decoded_timestamp).total_seconds() if group.previous_group else "No previous group",
+                        "Group - Start File Name": group.first_line.parent_file.file_name,
+                        "Group - Start Line Number": group.first_line.line_number_inside_file,
+                        "Last Back to Past - lines until group": (group.first_line.line_number_in_library - group.last_back_to_past_detected.previous_line.line_number_in_library) if group.last_back_to_past_detected else "No previous back to past",
+                        "Last Back to Past - timestamp": group.last_back_to_past_detected.previous_line.decoded_timestamp if group.last_back_to_past_detected else "No previous back to past",
+                        "Last back to past - seconds until group": (group.first_line.decoded_timestamp - group.last_back_to_past_detected.previous_line.decoded_timestamp).total_seconds() if group.last_back_to_past_detected else "No previous back to past",
+                        "Second until next sahara alarm": (group.following_sahara_alarms[0].raise_line.decoded_timestamp - group.last_line.decoded_timestamp).total_seconds() if group.following_sahara_alarms else "NA (no next sahara alarm until next group)",
+                        "Lines until next sahara alarm": group.following_sahara_alarms[0].raise_line.line_number_in_library - group.last_line.line_number_in_library if group.following_sahara_alarms else "NA (no next sahara alarm until next group)",
+                        "Group - First line Full Text": group.first_line.full_raw_line.strip(),
+                    })
 
-                # Headers
-                headers = [
-                    "Group Index",
-                    "Line Count",
-                    "Start timestamp",
-                    "End timestamp",
-                    "group duration (seconds)",
-                    "Last (previous) goup: lines since",
-                    "Last (previous) goup: duration since (seconds)",
-                    "Group - Start File Name",
-                    "Group - Start Line Number",
-                    "Last Back to Past - lines until group",
-                    "Last Back to Past - timestamp",
-                    "Last back to past - seconds until group",
-                    "Second until next sahara alarm",
-                    "Lines until next sahara alarm",
-                    "Group - First line Full Text",
-                ]
-                for col_idx, header in enumerate(headers, start=1):
-                    cell = ws.cell(row=1, column=col_idx)
-                    cell.value = header
-                    cell.fill = PatternFill(start_color="70AD47", end_color="70AD47", fill_type="solid")
-                    cell.font = Font(bold=True, color="FFFFFF")
-                    cell.alignment = Alignment(horizontal="center", vertical="center")
-
-                # Data
-                for group_idx, group in enumerate(self.all_mesd_alarms_groups, start=2):
-                    column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.number_of_group_in_library
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = len(group.alarm_lines)
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.first_line.decoded_timestamp
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.last_line.decoded_timestamp
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (group.last_line.decoded_timestamp - group.first_line.decoded_timestamp).total_seconds()
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
-                        (group.first_line.line_number_in_library - group.previous_group.last_line.line_number_in_library) if group.previous_group else "No previous group"
-                    )
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
-                        (group.first_line.decoded_timestamp - group.previous_group.last_line.decoded_timestamp).total_seconds() if group.previous_group else "No previous group"
-                    )
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.first_line.parent_file.file_name
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.first_line.line_number_inside_file
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
-                        (group.first_line.line_number_in_library - group.last_back_to_past_detected.previous_line.line_number_in_library)
-                        if group.last_back_to_past_detected
-                        else "No previous back to past"
-                    )
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
-                        group.last_back_to_past_detected.previous_line.decoded_timestamp if group.last_back_to_past_detected else "No previous back to past"
-                    )
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
-                        (group.first_line.decoded_timestamp - group.last_back_to_past_detected.previous_line.decoded_timestamp).total_seconds()
-                        if group.last_back_to_past_detected
-                        else "No previous back to past"
-                    )
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
-                        (group.following_sahara_alarms[0].raise_line.decoded_timestamp - group.last_line.decoded_timestamp).total_seconds()
-                        if group.following_sahara_alarms
-                        else "NA (no next sahara alarm until next group)"
-                    )
-
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = (
-                        group.following_sahara_alarms[0].raise_line.line_number_in_library - group.last_line.line_number_in_library
-                        if group.following_sahara_alarms
-                        else "NA (no next sahara alarm until next group)"
-                    )
-                    ws.cell(row=group_idx, column=column_it.postfix_increment()).value = group.first_line.full_raw_line.strip()
-
-                # Adjust column widths
-                ws.column_dimensions["A"].width = 12
-                ws.column_dimensions["B"].width = 12
-                ws.column_dimensions["C"].width = 25
-                ws.column_dimensions["D"].width = 25
-                ws.column_dimensions["E"].width = 12
-                ws.column_dimensions["F"].width = 30
-                ws.column_dimensions["G"].width = 18
-                ws.column_dimensions["H"].width = 18
-                ws.column_dimensions["I"].width = 18
-                ws.column_dimensions["J"].width = 18
-
-                # Save
+                # Créer et sauvegarder le fichier Excel
+                df = pd.DataFrame(excel_data)
                 excel_filename = f"{self.name}_mesd_alarms_groups{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-                wb.save(output_folder_path + "/" + excel_filename)
+                df.to_excel(output_folder_path + "/" + excel_filename, index=False)
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
                 logger_config.print_and_log_info(f"Total de {len(self.all_mesd_alarms_groups)} groupes MESD exportés")
             except Exception as e:
