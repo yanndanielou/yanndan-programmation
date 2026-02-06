@@ -10,6 +10,8 @@ with logger_config.application_logger():
     file_utils.create_folder_if_not_exist(OUTPUT_FOLDER_NAME)
 
     for library_name, folder_path in [
+        ("2026-02-06 CrashMesd P81", r"D:\temp\2026-02-06 CrashMesd\TT 81"),
+        ("2026-02-06 CrashMesd P75", r"D:\temp\2026-02-06 CrashMesd\TT P75"),
         ("2027-01-27 P75 light_", r"D:\temp\2027-01-27 avec hitachi\2027-01-27\PAI75\TT-026401 (TT)\Archives_maint_light"),
         ("2027-01-27 P81 TT-026396", r"D:\temp\2027-01-27 avec hitachi\2027-01-27\PAI81\TT-026396\Archives_maint"),
         ("2027-01-27 P75 TT-026396", r"D:\temp\2027-01-27 avec hitachi\2027-01-27\PAI75\TT-026401 (TT)\Archives_maint"),
