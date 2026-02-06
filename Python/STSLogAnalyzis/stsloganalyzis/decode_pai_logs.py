@@ -1383,19 +1383,23 @@ class TerminalTechniqueArchivesMaintFile:
     def __post_init__(self) -> None:
         self.file_full_path = self.parent_folder_full_path + "\\" + self.file_name
 
-        with logger_config.stopwatch_with_label(f"{self.library.name}: Open and read file  {self.file_full_path}", inform_beginning=False, enable_print=False, enabled=False):
-            with open(self.file_full_path, mode="r", encoding="ANSI") as file:
-                all_raw_lines = file.readlines()
-                # logger_config.print_and_log_info(to_print_and_log=f"File {self.file_full_path} has {len(all_raw_lines)} lines")
-                for line_number, line in enumerate(all_raw_lines):
-                    if len(line) > 3:
-                        try:
-                            processed_line = TerminalTechniqueArchivesMaintLogLine(parent_file=self, full_raw_line=line, line_number_inside_file=line_number + 1, previous_line=self.last_line)
-                            self.library.all_processed_lines.append(processed_line)
-                            self.last_line = processed_line
-                        except Exception as e:
-                            logger_config.print_and_log_exception(e)
-                            logger_config.print_and_log_error(f"Could not process line {line} in {self.file_name} {line_number+1}")
+        with logger_config.stopwatch_with_label(f"{self.library.name}: Open and read file  {self.file_full_path}", inform_beginning=True, enable_print=False, enabled=False):
+            try:
+                with open(self.file_full_path, mode="r", encoding="ANSI") as file:
+                    all_raw_lines = file.readlines()
+                    # logger_config.print_and_log_info(to_print_and_log=f"File {self.file_full_path} has {len(all_raw_lines)} lines")
+                    for line_number, line in enumerate(all_raw_lines):
+                        if len(line) > 3:
+                            try:
+                                processed_line = TerminalTechniqueArchivesMaintLogLine(parent_file=self, full_raw_line=line, line_number_inside_file=line_number + 1, previous_line=self.last_line)
+                                self.library.all_processed_lines.append(processed_line)
+                                self.last_line = processed_line
+                            except Exception as e:
+                                logger_config.print_and_log_exception(e)
+                                logger_config.print_and_log_error(f"Could not process line {line} in {self.file_name} {line_number+1}")
+            except OSError as err:
+                logger_config.print_and_log_exception(err)
+                logger_config.print_and_log_error(f"Error while parsing {self.file_full_path }")
 
 
 @dataclass
