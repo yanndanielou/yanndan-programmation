@@ -190,7 +190,6 @@ class TerminalTechniqueArchivesMaintLibrary:
         Args:
             output_folder_path: Chemin du dossier de sortie
             equipment_names_to_ignore: Liste des noms d'équipements à ignorer
-            excel_output_file_name_without_extension: Nom du fichier Excel sans extension
         """
         with logger_config.stopwatch_with_label(f"{self.name} export_equipments_with_alarms_to_excel"):
             try:
@@ -199,164 +198,90 @@ class TerminalTechniqueArchivesMaintLibrary:
                     logger_config.print_and_log_error("Aucun équipement avec alarmes. Aucun fichier créé.")
                     return
 
-                # Créer un workbook
-                wb = Workbook()
-                ws = wb.active
-                ws.title = f"{self.name} Equipments Alarms"
-
-                # Ajouter les en-têtes
-                headers = [
-                    "Equipment Name",
-                    "Type alarm (class name)",
-                    "Alarm Type",
-                    "Raise alarm: Timestamp",
-                    "Raise alarm: File name",
-                    "Raise alarm: Line number",
-                    "End alarm (if any): Timestamp",
-                    "End alarm (if any): File name",
-                    "End alarm (if any): Line number",
-                    "Full Text",
-                ]
-
-                for col_idx, header in enumerate(headers, start=1):
-                    cell = ws.cell(row=1, column=col_idx)
-                    cell.value = header
-                    cell.fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-                    cell.font = Font(bold=True, color="FFFFFF")
-                    cell.alignment = Alignment(horizontal="center", vertical="center")
-
-                # Ajouter les données
-                row_idx = 2
+                # Préparer les données pour les équipements
+                equipment_data: List[Dict[str, Any]] = []
                 for equipment in self.equipments_with_alarms:
                     if equipment.name not in equipment_names_to_ignore:
                         for alarm in equipment.alarms:
-                            column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
-                            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = equipment.name
-                            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = type(alarm).__name__
-                            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.alarm_type.name
-                            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.decoded_timestamp
-                            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.parent_file.file_name
-                            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.raise_line.line_number_inside_file
-                            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.decoded_timestamp if alarm.end_alarm_line else "NA"
-                            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.parent_file.file_name if alarm.end_alarm_line else "NA"
-                            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.end_alarm_line.line_number_inside_file if alarm.end_alarm_line else "NA"
-                            ws.cell(row=row_idx, column=column_it.postfix_increment()).value = alarm.full_text.strip()
-                            row_idx += 1
+                            equipment_data.append({
+                                "Equipment Name": equipment.name,
+                                "Type alarm (class name)": type(alarm).__name__,
+                                "Alarm Type": alarm.alarm_type.name,
+                                "Raise alarm: Timestamp": alarm.raise_line.decoded_timestamp,
+                                "Raise alarm: File name": alarm.raise_line.parent_file.file_name,
+                                "Raise alarm: Line number": alarm.raise_line.line_number_inside_file,
+                                "End alarm (if any): Timestamp": alarm.end_alarm_line.decoded_timestamp if alarm.end_alarm_line else "NA",
+                                "End alarm (if any): File name": alarm.end_alarm_line.parent_file.file_name if alarm.end_alarm_line else "NA",
+                                "End alarm (if any): Line number": alarm.end_alarm_line.line_number_inside_file if alarm.end_alarm_line else "NA",
+                                "Full Text": alarm.full_text.strip(),
+                            })
 
-                # Ajuster la largeur des colonnes
-                ws.column_dimensions["A"].width = 25
-                ws.column_dimensions["B"].width = 25
-                ws.column_dimensions["C"].width = 20
-                ws.column_dimensions["D"].width = 35
-                ws.column_dimensions["E"].width = 30
-                ws.column_dimensions["F"].width = 15
-                ws.column_dimensions["G"].width = 60
+                # Créer le fichier Excel avec plusieurs feuilles
+                excel_filename = output_folder_path + "/" + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx"
+                
+                with pd.ExcelWriter(excel_filename, engine="openpyxl") as writer:
+                    # Feuille Equipments
+                    df_equipment = pd.DataFrame(equipment_data)
+                    df_equipment.to_excel(writer, sheet_name=f"{self.name} Equipments Alarms", index=False)
+                    
+                    # Feuille SAHARA Alarms
+                    try:
+                        sahara_data: List[Dict[str, Any]] = []
+                        for sahara_alarm in self.sahara_alarms:
+                            sahara_data.append({
+                                "Timestamp": sahara_alarm.raise_line.decoded_timestamp,
+                                "File Name": sahara_alarm.raise_line.parent_file.file_name,
+                                "Line Number": sahara_alarm.raise_line.line_number_inside_file,
+                                "Alarm Type": sahara_alarm.alarm_type.name,
+                                "Full Text": sahara_alarm.full_text.strip(),
+                            })
+                        df_sahara = pd.DataFrame(sahara_data)
+                        df_sahara.to_excel(writer, sheet_name="SAHARA Alarms", index=False)
+                    except Exception as e:
+                        logger_config.print_and_log_exception(e)
 
-                # Sauvegarder le fichier
-                wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
+                    # Feuille MCCS H Alarms
+                    try:
+                        mccs_data: List[Dict[str, Any]] = []
+                        for mccs_alarm in self.mccs_hs_alarms:
+                            mccs_data.append({
+                                "Alarm Type": mccs_alarm.alarm_type.name,
+                                "Duration in seconds": (mccs_alarm.end_alarm_line.decoded_timestamp - mccs_alarm.raise_line.decoded_timestamp).total_seconds() if mccs_alarm.end_alarm_line else None,
+                                "Timestamp": mccs_alarm.raise_line.decoded_timestamp,
+                                "File Name": mccs_alarm.raise_line.parent_file.file_name,
+                                "Line Number": mccs_alarm.raise_line.line_number_inside_file,
+                                "End Timestamp": mccs_alarm.end_alarm_line.decoded_timestamp if mccs_alarm.end_alarm_line else "NA",
+                                "End File Name": mccs_alarm.end_alarm_line.parent_file.file_name if mccs_alarm.end_alarm_line else "NA",
+                                "End Line Number": mccs_alarm.end_alarm_line.line_number_inside_file if mccs_alarm.end_alarm_line else "NA",
+                                "Full Text": mccs_alarm.full_text.strip(),
+                            })
+                        df_mccs = pd.DataFrame(mccs_data)
+                        df_mccs.to_excel(writer, sheet_name="MCCS H Alarms", index=False)
+                    except Exception as e:
+                        logger_config.print_and_log_exception(e)
+
+                    # Feuille Back to Past
+                    try:
+                        btp_data: List[Dict[str, Any]] = []
+                        for back_to_past in self.all_back_to_past_detected:
+                            duration = (back_to_past.next_line.decoded_timestamp - back_to_past.previous_line.decoded_timestamp).total_seconds()
+                            btp_data.append({
+                                "Previous Line Timestamp": back_to_past.previous_line.decoded_timestamp,
+                                "Previous Line Number": back_to_past.previous_line.line_number_inside_file,
+                                "Next Line Timestamp": back_to_past.next_line.decoded_timestamp,
+                                "Next Line Number": back_to_past.next_line.line_number_inside_file,
+                                "Duration (seconds)": duration,
+                            })
+                        df_btp = pd.DataFrame(btp_data)
+                        df_btp.to_excel(writer, sheet_name="Back to Past", index=False)
+                    except Exception as e:
+                        logger_config.print_and_log_exception(e)
+
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_output_file_name_without_extension}.xlsx")
                 total_alarms = sum(len(equipment.alarms) for equipment in self.equipments_with_alarms)
                 logger_config.print_and_log_info(f"Total de {total_alarms} alarmes sauvegardées")
-
-                # Ajouter un onglet pour les SAHARA alarms
-                try:
-
-                    ws_sahara = wb.create_sheet("SAHARA Alarms")
-                    headers_sahara = ["Timestamp", "File Name", "Line Number", "Alarm Type", "Full Text"]
-                    for col_idx, header in enumerate(headers_sahara, start=1):
-                        cell = ws_sahara.cell(row=1, column=col_idx)
-                        cell.value = header
-                        cell.fill = PatternFill(start_color="FFD966", end_color="FFD966", fill_type="solid")
-                        cell.font = Font(bold=True, color="000000")
-                        cell.alignment = Alignment(horizontal="center", vertical="center")
-
-                    for row_idx, sahara_alarm in enumerate(self.sahara_alarms, start=2):
-                        ws_sahara.cell(row=row_idx, column=1).value = sahara_alarm.raise_line.decoded_timestamp
-                        ws_sahara.cell(row=row_idx, column=2).value = sahara_alarm.raise_line.parent_file.file_name
-                        ws_sahara.cell(row=row_idx, column=3).value = sahara_alarm.raise_line.line_number_inside_file
-                        ws_sahara.cell(row=row_idx, column=4).value = sahara_alarm.alarm_type.name
-                        ws_sahara.cell(row=row_idx, column=5).value = sahara_alarm.full_text.strip()
-
-                    ws_sahara.column_dimensions["A"].width = 25
-                    ws_sahara.column_dimensions["B"].width = 30
-                    ws_sahara.column_dimensions["C"].width = 15
-                    ws_sahara.column_dimensions["D"].width = 15
-                    ws_sahara.column_dimensions["E"].width = 60
-
-                except Exception as e:
-                    logger_config.print_and_log_exception(e)
-
-                try:
-                    # Ajouter un onglet pour les MCCS H alarms
-                    ws_mccs = wb.create_sheet("MCCS H Alarms")
-                    headers_mccs = ["Alarm Type", "Duration in seconds", "Timestamp", "File Name", "Line Number", "End Timestamp", "End File Name", "End Line Number", "Full Text"]
-                    for col_idx, header in enumerate(headers_mccs, start=1):
-                        cell = ws_mccs.cell(row=1, column=col_idx)
-                        cell.value = header
-                        cell.fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-                        cell.font = Font(bold=True, color="FFFFFF")
-                        cell.alignment = Alignment(horizontal="center", vertical="center")
-
-                    for row_idx, mccs_alarm in enumerate(self.mccs_hs_alarms, start=2):
-                        column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
-                        ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.alarm_type.name
-                        ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = (
-                            (mccs_alarm.end_alarm_line.decoded_timestamp - mccs_alarm.raise_line.decoded_timestamp).total_seconds() if mccs_alarm.end_alarm_line else None
-                        )
-                        ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.decoded_timestamp
-                        ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.parent_file.file_name
-                        ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.raise_line.line_number_inside_file
-                        ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.decoded_timestamp if mccs_alarm.end_alarm_line else "NA"
-                        ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.parent_file.file_name if mccs_alarm.end_alarm_line else "NA"
-                        ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.end_alarm_line.line_number_inside_file if mccs_alarm.end_alarm_line else "NA"
-                        ws_mccs.cell(row=row_idx, column=column_it.postfix_increment()).value = mccs_alarm.full_text.strip()
-
-                    ws_mccs.column_dimensions["A"].width = 25
-                    ws_mccs.column_dimensions["B"].width = 30
-                    ws_mccs.column_dimensions["C"].width = 15
-                    ws_mccs.column_dimensions["D"].width = 15
-                    ws_mccs.column_dimensions["E"].width = 25
-                    ws_mccs.column_dimensions["F"].width = 30
-                    ws_mccs.column_dimensions["G"].width = 15
-                    ws_mccs.column_dimensions["H"].width = 60
-
-                except Exception as e:
-                    logger_config.print_and_log_exception(e)
-
-                try:
-                    # Ajouter un onglet pour les Back to Past events
-                    ws_btp = wb.create_sheet("Back to Past")
-                    headers_btp = ["Previous Line Timestamp", "Previous Line Number", "Next Line Timestamp", "Next Line Number", "Duration (seconds)"]
-                    for col_idx, header in enumerate(headers_btp, start=1):
-                        cell = ws_btp.cell(row=1, column=col_idx)
-                        cell.value = header
-                        cell.fill = PatternFill(start_color="FF6B6B", end_color="FF6B6B", fill_type="solid")
-                        cell.font = Font(bold=True, color="FFFFFF")
-                        cell.alignment = Alignment(horizontal="center", vertical="center")
-
-                    for row_idx, back_to_past in enumerate(self.all_back_to_past_detected, start=2):
-                        duration = (back_to_past.next_line.decoded_timestamp - back_to_past.previous_line.decoded_timestamp).total_seconds()
-                        column_it = custom_iterator.SimpleIntCustomIncrementDecrement(initial_value=1)
-
-                        ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.previous_line.decoded_timestamp
-                        ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.previous_line.line_number_inside_file
-                        ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.next_line.decoded_timestamp
-                        ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = back_to_past.next_line.line_number_inside_file
-                        ws_btp.cell(row=row_idx, column=column_it.postfix_increment()).value = duration
-
-                    ws_btp.column_dimensions["A"].width = 25
-                    ws_btp.column_dimensions["B"].width = 15
-                    ws_btp.column_dimensions["C"].width = 25
-                    ws_btp.column_dimensions["D"].width = 15
-                    ws_btp.column_dimensions["E"].width = 20
-
-                except Exception as e:
-                    logger_config.print_and_log_exception(e)
-
-                # Sauvegarder le fichier avec tous les onglets
-                wb.save(output_folder_path + "/" + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx")
                 logger_config.print_and_log_info(
-                    f"Onglets supplémentaires créés: SAHARA Alarms ({len(self.sahara_alarms)}), MCCS H Alarms ({len(self.mccs_hs_alarms)}), Back to Past ({len(self.all_back_to_past_detected)})"
+                    f"Onglets créés: Equipments ({len(equipment_data)}), SAHARA Alarms ({len(self.sahara_alarms)}), MCCS H Alarms ({len(self.mccs_hs_alarms)}), Back to Past ({len(self.all_back_to_past_detected)})"
                 )
             except Exception as e:
                 logger_config.print_and_log_exception(e)
@@ -446,58 +371,23 @@ class TerminalTechniqueArchivesMaintLibrary:
 
                 # Créer et exporter les données dans un fichier Excel
                 excel_filename = f"{self.name}_alarms_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-                wb = Workbook()
-                ws = wb.active
-                ws.title = f"{self.name} Alarms By Period"
-
-                # Ajouter les en-têtes
-                headers = ["Début Intervalle", "Fin Intervalle", "Back to Past", "Sahara"]
-                headers.extend(equipment_names)
-
-                for col_idx, header in enumerate(headers, start=1):
-                    cell = ws.cell(row=1, column=col_idx)
-                    cell.value = header
-                    cell.fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-                    cell.font = Font(bold=True, color="FFFFFF")
-                    cell.alignment = Alignment(horizontal="center", vertical="center")
-
-                # Ajouter les données
-                for idx, ((interval_begin, interval_end), back_to_past_count) in enumerate(interval_back_to_past_count.items(), start=2):
-                    ws[f"A{idx}"] = interval_begin
-                    ws[f"B{idx}"] = interval_end
-                    ws[f"C{idx}"] = back_to_past_count
-                    ws[f"D{idx}"] = interval_sahara_count[(interval_begin, interval_end)]
-
-                    for col_idx, equipment_name in enumerate(equipment_names, start=5):
+                
+                # Préparer les données pour le DataFrame
+                excel_data: List[Dict[str, Any]] = []
+                for (interval_begin, interval_end), back_to_past_count in interval_back_to_past_count.items():
+                    row_data: Dict[str, Any] = {
+                        "Début Intervalle": interval_begin,
+                        "Fin Intervalle": interval_end,
+                        "Back to Past": back_to_past_count,
+                        "Sahara": interval_sahara_count[(interval_begin, interval_end)],
+                    }
+                    for equipment_name in equipment_names:
                         count = interval_equipment_counts[(interval_begin, interval_end)].get(equipment_name, 0)
-                        ws.cell(row=idx, column=col_idx).value = count
-                        ws.cell(row=idx, column=col_idx).alignment = Alignment(horizontal="center")
-
-                    ws[f"C{idx}"].alignment = Alignment(horizontal="center")
-                    ws[f"D{idx}"].alignment = Alignment(horizontal="center")
-
-                # Ajuster la largeur des colonnes
-                ws.column_dimensions["A"].width = 25
-                ws.column_dimensions["B"].width = 25
-                ws.column_dimensions["C"].width = 15
-                ws.column_dimensions["D"].width = 15
-                for col_idx, _ in enumerate(equipment_names, start=5):
-                    col_letter = chr(64 + col_idx)  # Convert number to letter
-                    ws.column_dimensions[col_letter].width = 20
-
-                # Ajouter un résumé
-                summary_row = len(interval_back_to_past_count) + 3
-                ws[f"A{summary_row}"] = "Total"
-                ws[f"C{summary_row}"] = len(self.all_back_to_past_detected)
-                ws[f"D{summary_row}"] = len(self.sahara_alarms)
-                ws[f"A{summary_row}"].font = Font(bold=True)
-                ws[f"C{summary_row}"].font = Font(bold=True)
-                ws[f"D{summary_row}"].font = Font(bold=True)
-                ws[f"C{summary_row}"].alignment = Alignment(horizontal="center")
-                ws[f"D{summary_row}"].alignment = Alignment(horizontal="center")
-
-                # Sauvegarder le fichier Excel
-                wb.save(output_folder_path + "/" + excel_filename)
+                        row_data[equipment_name] = count
+                    excel_data.append(row_data)
+                
+                df = pd.DataFrame(excel_data)
+                df.to_excel(output_folder_path + "/" + excel_filename, index=False)
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
                 # Créer et sauvegarder le graphe en HTML avec Plotly
@@ -634,45 +524,18 @@ class TerminalTechniqueArchivesMaintLibrary:
 
             # Créer et exporter les données dans un fichier Excel
             excel_filename = f"{self.name}_sahara_alarms_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-            wb = Workbook()
-            ws = wb.active
-            ws.title = f"{self.name} Sahara Alarms"
-
-            # Ajouter les en-têtes
-            ws["A1"] = "Début Intervalle de temps"
-            ws["B1"] = "Fin Intervalle de temps"
-            ws["C1"] = "Nombre d'alarmes SAHARA"
-
-            # Style des en-têtes
-            header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-            header_font = Font(bold=True, color="FFFFFF")
-            for cell in [ws["A1"], ws["B1"], ws["C1"]]:
-                cell.fill = header_fill
-                cell.font = header_font
-                cell.alignment = Alignment(horizontal="center", vertical="center")
-
-            # Ajouter les données
-            for idx, ((interval_begin, interval_end), count) in enumerate(interval_sahara_counts.items(), start=2):
-                ws[f"A{idx}"] = interval_begin
-                ws[f"B{idx}"] = interval_end
-                ws[f"C{idx}"] = count
-                ws[f"C{idx}"].alignment = Alignment(horizontal="center")
-
-            # Ajuster la largeur des colonnes
-            ws.column_dimensions["A"].width = 25
-            ws.column_dimensions["B"].width = 25
-            ws.column_dimensions["C"].width = 25
-
-            # Ajouter un résumé
-            summary_row = len(interval_sahara_counts) + 3
-            ws[f"A{summary_row}"] = "Total"
-            ws[f"C{summary_row}"] = len(self.sahara_alarms)
-            ws[f"A{summary_row}"].font = Font(bold=True)
-            ws[f"C{summary_row}"].font = Font(bold=True)
-            ws[f"C{summary_row}"].alignment = Alignment(horizontal="center")
-
-            # Sauvegarder le fichier
-            wb.save(output_folder_path + "/" + excel_filename)
+            
+            # Préparer les données pour le DataFrame
+            excel_data: List[Dict[str, Any]] = []
+            for (interval_begin, interval_end), count in interval_sahara_counts.items():
+                excel_data.append({
+                    "Début Intervalle de temps": interval_begin,
+                    "Fin Intervalle de temps": interval_end,
+                    "Nombre d'alarmes SAHARA": count,
+                })
+            
+            df = pd.DataFrame(excel_data)
+            df.to_excel(output_folder_path + "/" + excel_filename, index=False)
             logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
             # Créer et sauvegarder le graphe en HTML avec Plotly
@@ -768,45 +631,18 @@ class TerminalTechniqueArchivesMaintLibrary:
 
                 # Créer et exporter les données dans un fichier Excel
                 excel_filename = f"{self.name}_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-                wb = Workbook()
-                ws = wb.active
-                ws.title = f"{self.name} Back to Past"
-
-                # Ajouter les en-têtes
-                ws["A1"] = "Début Intervalle de temps"
-                ws["B1"] = "Fin Intervalle de temps"
-                ws["C1"] = "Nombre d'événements Back to Past"
-
-                # Style des en-têtes
-                header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-                header_font = Font(bold=True, color="FFFFFF")
-                for cell in [ws["A1"], ws["B1"], ws["C1"]]:
-                    cell.fill = header_fill
-                    cell.font = header_font
-                    cell.alignment = Alignment(horizontal="center", vertical="center")
-
-                # Ajouter les données
-                for idx, ((interval_begin, interval_end), count) in enumerate(interval_back_to_past_counts.items(), start=2):
-                    ws[f"A{idx}"] = interval_begin
-                    ws[f"B{idx}"] = interval_end
-                    ws[f"C{idx}"] = count
-                    ws[f"C{idx}"].alignment = Alignment(horizontal="center")
-
-                # Ajuster la largeur des colonnes
-                ws.column_dimensions["A"].width = 25
-                ws.column_dimensions["B"].width = 25
-                ws.column_dimensions["C"].width = 30
-
-                # Ajouter un résumé
-                summary_row = len(interval_back_to_past_counts) + 3
-                ws[f"A{summary_row}"] = "Total"
-                ws[f"C{summary_row}"] = len(self.all_back_to_past_detected)
-                ws[f"A{summary_row}"].font = Font(bold=True)
-                ws[f"C{summary_row}"].font = Font(bold=True)
-                ws[f"C{summary_row}"].alignment = Alignment(horizontal="center")
-
-                # Sauvegarder le fichier
-                wb.save(output_folder_path + "/" + excel_filename)
+                
+                # Préparer les données pour le DataFrame
+                excel_data: List[Dict[str, Any]] = []
+                for (interval_begin, interval_end), count in interval_back_to_past_counts.items():
+                    excel_data.append({
+                        "Début Intervalle de temps": interval_begin,
+                        "Fin Intervalle de temps": interval_end,
+                        "Nombre d'événements Back to Past": count,
+                    })
+                
+                df = pd.DataFrame(excel_data)
+                df.to_excel(output_folder_path + "/" + excel_filename, index=False)
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
                 # Créer et sauvegarder le graphe en HTML avec Plotly
@@ -938,59 +774,20 @@ class TerminalTechniqueArchivesMaintLibrary:
 
                 # Créer et exporter les données dans un fichier Excel
                 excel_filename = f"{self.name}_sahara_mccs_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-                wb = Workbook()
-                ws = wb.active
-                ws.title = f"{self.name} Summary Events"
-
-                # Ajouter les en-têtes
-                ws["A1"] = "Début Intervalle de temps"
-                ws["B1"] = "Fin Intervalle de temps"
-                ws["C1"] = "Nombre SAHARA"
-                ws["D1"] = "Nombre MCCS H"
-                ws["E1"] = "Nombre Back to Past"
-
-                # Style des en-têtes
-                header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-                header_font = Font(bold=True, color="FFFFFF")
-                for cell in [ws["A1"], ws["B1"], ws["C1"], ws["D1"], ws["E1"]]:
-                    cell.fill = header_fill
-                    cell.font = header_font
-                    cell.alignment = Alignment(horizontal="center", vertical="center")
-
-                # Ajouter les données
-                for idx, ((interval_begin, interval_end), sahara_count) in enumerate(interval_sahara_counts.items(), start=2):
-                    ws[f"A{idx}"] = interval_begin
-                    ws[f"B{idx}"] = interval_end
-                    ws[f"C{idx}"] = sahara_count
-                    ws[f"D{idx}"] = interval_mccs_counts[(interval_begin, interval_end)]
-                    ws[f"E{idx}"] = interval_back_to_past_counts[(interval_begin, interval_end)]
-                    ws[f"C{idx}"].alignment = Alignment(horizontal="center")
-                    ws[f"D{idx}"].alignment = Alignment(horizontal="center")
-                    ws[f"E{idx}"].alignment = Alignment(horizontal="center")
-
-                # Ajuster la largeur des colonnes
-                ws.column_dimensions["A"].width = 25
-                ws.column_dimensions["B"].width = 25
-                ws.column_dimensions["C"].width = 20
-                ws.column_dimensions["D"].width = 20
-                ws.column_dimensions["E"].width = 20
-
-                # Ajouter un résumé
-                summary_row = len(interval_sahara_counts) + 3
-                ws[f"A{summary_row}"] = "Total"
-                ws[f"C{summary_row}"] = len(self.sahara_alarms)
-                ws[f"D{summary_row}"] = len(self.mccs_hs_alarms)
-                ws[f"E{summary_row}"] = len(self.all_back_to_past_detected)
-                ws[f"A{summary_row}"].font = Font(bold=True)
-                ws[f"C{summary_row}"].font = Font(bold=True)
-                ws[f"D{summary_row}"].font = Font(bold=True)
-                ws[f"E{summary_row}"].font = Font(bold=True)
-                ws[f"C{summary_row}"].alignment = Alignment(horizontal="center")
-                ws[f"D{summary_row}"].alignment = Alignment(horizontal="center")
-                ws[f"E{summary_row}"].alignment = Alignment(horizontal="center")
-
-                # Sauvegarder le fichier
-                wb.save(output_folder_path + "/" + excel_filename)
+                
+                # Préparer les données pour le DataFrame
+                excel_data: List[Dict[str, Any]] = []
+                for (interval_begin, interval_end), sahara_count in interval_sahara_counts.items():
+                    excel_data.append({
+                        "Début Intervalle de temps": interval_begin,
+                        "Fin Intervalle de temps": interval_end,
+                        "Nombre SAHARA": sahara_count,
+                        "Nombre MCCS H": interval_mccs_counts[(interval_begin, interval_end)],
+                        "Nombre Back to Past": interval_back_to_past_counts[(interval_begin, interval_end)],
+                    })
+                
+                df = pd.DataFrame(excel_data)
+                df.to_excel(output_folder_path + "/" + excel_filename, index=False)
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
                 # Créer et sauvegarder le graphe en HTML avec Plotly
