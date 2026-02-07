@@ -191,7 +191,6 @@ class TerminalTechniqueArchivesMaintLibrary:
         """
         with logger_config.stopwatch_with_label(f"{self.name} export_equipments_with_alarms_to_excel"):
             try:
-                excel_output_file_name_without_extension: str = self.name + "_all_issues_"
                 if not self.equipments_with_alarms:
                     logger_config.print_and_log_error("Aucun équipement avec alarmes. Aucun fichier créé.")
                     return
@@ -201,48 +200,56 @@ class TerminalTechniqueArchivesMaintLibrary:
                 for equipment in self.equipments_with_alarms:
                     if equipment.name not in equipment_names_to_ignore:
                         for alarm in equipment.alarms:
-                            equipment_data.append({
-                                "Equipment Name": equipment.name,
-                                "Type alarm (class name)": type(alarm).__name__,
-                                "Alarm Type": alarm.alarm_type.name,
-                                "Raise alarm: Timestamp": alarm.raise_line.decoded_timestamp,
-                                "Raise alarm: File name": alarm.raise_line.parent_file.file_name,
-                                "Raise alarm: Line number": alarm.raise_line.line_number_inside_file,
-                                "End alarm (if any): Timestamp": alarm.end_alarm_line.decoded_timestamp if alarm.end_alarm_line else "NA",
-                                "End alarm (if any): File name": alarm.end_alarm_line.parent_file.file_name if alarm.end_alarm_line else "NA",
-                                "End alarm (if any): Line number": alarm.end_alarm_line.line_number_inside_file if alarm.end_alarm_line else "NA",
-                                "Full Text": alarm.full_text.strip(),
-                            })
+                            equipment_data.append(
+                                {
+                                    "Equipment Name": equipment.name,
+                                    "Type alarm (class name)": type(alarm).__name__,
+                                    "Alarm Type": alarm.alarm_type.name,
+                                    "Raise alarm: Timestamp": alarm.raise_line.decoded_timestamp,
+                                    "Raise alarm: File name": alarm.raise_line.parent_file.file_name,
+                                    "Raise alarm: Line number": alarm.raise_line.line_number_inside_file,
+                                    "End alarm (if any): Timestamp": alarm.end_alarm_line.decoded_timestamp if alarm.end_alarm_line else "NA",
+                                    "End alarm (if any): File name": alarm.end_alarm_line.parent_file.file_name if alarm.end_alarm_line else "NA",
+                                    "End alarm (if any): Line number": alarm.end_alarm_line.line_number_inside_file if alarm.end_alarm_line else "NA",
+                                    "Full Text": alarm.full_text.strip(),
+                                }
+                            )
 
-                # Créer le fichier Excel avec plusieurs feuilles
-                excel_filename = output_folder_path + "/" + excel_output_file_name_without_extension + "_" + file_name_utils.get_file_suffix_with_current_datetime() + ".xlsx"
-                
-                with pd.ExcelWriter(excel_filename, engine="openpyxl") as writer:
-                    # Feuille Equipments
+                # Créer plusieurs fichiers CSV (un par 'feuille')
+                suffix = file_name_utils.get_file_suffix_with_current_datetime()
+
+                try:
                     df_equipment = pd.DataFrame(equipment_data)
-                    df_equipment.to_excel(writer, sheet_name=f"{self.name} Equipments Alarms", index=False)
-                    
-                    # Feuille SAHARA Alarms
-                    try:
-                        sahara_data: List[Dict[str, Any]] = []
-                        for sahara_alarm in self.sahara_alarms:
-                            sahara_data.append({
+                    equipments_csv = output_folder_path + "/" + f"{self.name}_equipments_with_alarms_all_{suffix}.csv"
+                    df_equipment.to_csv(equipments_csv, index=False)
+                except Exception as e:
+                    logger_config.print_and_log_exception(e)
+
+                # SAHARA
+                try:
+                    sahara_data: List[Dict[str, Any]] = []
+                    for sahara_alarm in self.sahara_alarms:
+                        sahara_data.append(
+                            {
                                 "Timestamp": sahara_alarm.raise_line.decoded_timestamp,
                                 "File Name": sahara_alarm.raise_line.parent_file.file_name,
                                 "Line Number": sahara_alarm.raise_line.line_number_inside_file,
                                 "Alarm Type": sahara_alarm.alarm_type.name,
                                 "Full Text": sahara_alarm.full_text.strip(),
-                            })
-                        df_sahara = pd.DataFrame(sahara_data)
-                        df_sahara.to_excel(writer, sheet_name="SAHARA Alarms", index=False)
-                    except Exception as e:
-                        logger_config.print_and_log_exception(e)
+                            }
+                        )
+                    df_sahara = pd.DataFrame(sahara_data)
+                    sahara_csv = output_folder_path + "/" + f"{self.name}_equipments_with_alarms_sahara_alarms_{suffix}.csv"
+                    df_sahara.to_csv(sahara_csv, index=False)
+                except Exception as e:
+                    logger_config.print_and_log_exception(e)
 
-                    # Feuille MCCS H Alarms
-                    try:
-                        mccs_data: List[Dict[str, Any]] = []
-                        for mccs_alarm in self.mccs_hs_alarms:
-                            mccs_data.append({
+                # MCCS H
+                try:
+                    mccs_data: List[Dict[str, Any]] = []
+                    for mccs_alarm in self.mccs_hs_alarms:
+                        mccs_data.append(
+                            {
                                 "Alarm Type": mccs_alarm.alarm_type.name,
                                 "Duration in seconds": (mccs_alarm.end_alarm_line.decoded_timestamp - mccs_alarm.raise_line.decoded_timestamp).total_seconds() if mccs_alarm.end_alarm_line else None,
                                 "Timestamp": mccs_alarm.raise_line.decoded_timestamp,
@@ -252,34 +259,39 @@ class TerminalTechniqueArchivesMaintLibrary:
                                 "End File Name": mccs_alarm.end_alarm_line.parent_file.file_name if mccs_alarm.end_alarm_line else "NA",
                                 "End Line Number": mccs_alarm.end_alarm_line.line_number_inside_file if mccs_alarm.end_alarm_line else "NA",
                                 "Full Text": mccs_alarm.full_text.strip(),
-                            })
-                        df_mccs = pd.DataFrame(mccs_data)
-                        df_mccs.to_excel(writer, sheet_name="MCCS H Alarms", index=False)
-                    except Exception as e:
-                        logger_config.print_and_log_exception(e)
+                            }
+                        )
+                    df_mccs = pd.DataFrame(mccs_data)
+                    mccs_csv = output_folder_path + "/" + f"{self.name}_equipments_with_alarms__mccs_h_alarms_{suffix}.csv"
+                    df_mccs.to_csv(mccs_csv, index=False)
+                except Exception as e:
+                    logger_config.print_and_log_exception(e)
 
-                    # Feuille Back to Past
-                    try:
-                        btp_data: List[Dict[str, Any]] = []
-                        for back_to_past in self.all_back_to_past_detected:
-                            duration = (back_to_past.next_line.decoded_timestamp - back_to_past.previous_line.decoded_timestamp).total_seconds()
-                            btp_data.append({
+                # Back to Past
+                try:
+                    btp_data: List[Dict[str, Any]] = []
+                    for back_to_past in self.all_back_to_past_detected:
+                        duration = (back_to_past.next_line.decoded_timestamp - back_to_past.previous_line.decoded_timestamp).total_seconds()
+                        btp_data.append(
+                            {
                                 "Previous Line Timestamp": back_to_past.previous_line.decoded_timestamp,
                                 "Previous Line Number": back_to_past.previous_line.line_number_inside_file,
                                 "Next Line Timestamp": back_to_past.next_line.decoded_timestamp,
                                 "Next Line Number": back_to_past.next_line.line_number_inside_file,
                                 "Duration (seconds)": duration,
-                            })
-                        df_btp = pd.DataFrame(btp_data)
-                        df_btp.to_excel(writer, sheet_name="Back to Past", index=False)
-                    except Exception as e:
-                        logger_config.print_and_log_exception(e)
+                            }
+                        )
+                    df_btp = pd.DataFrame(btp_data)
+                    btp_csv = output_folder_path + "/" + f"{self.name}_equipments_with_alarms_back_to_past_{suffix}.csv"
+                    df_btp.to_csv(btp_csv, index=False)
+                except Exception as e:
+                    logger_config.print_and_log_exception(e)
 
-                logger_config.print_and_log_info(f"Fichier Excel créé: {excel_output_file_name_without_extension}.xlsx")
+                logger_config.print_and_log_info(f"Fichiers CSV créés avec suffixe: {suffix}")
                 total_alarms = sum(len(equipment.alarms) for equipment in self.equipments_with_alarms)
                 logger_config.print_and_log_info(f"Total de {total_alarms} alarmes sauvegardées")
                 logger_config.print_and_log_info(
-                    f"Onglets créés: Equipments ({len(equipment_data)}), SAHARA Alarms ({len(self.sahara_alarms)}), MCCS H Alarms ({len(self.mccs_hs_alarms)}), Back to Past ({len(self.all_back_to_past_detected)})"
+                    f"Fichiers créés: Equipments ({len(equipment_data)}), SAHARA Alarms ({len(self.sahara_alarms)}), MCCS H Alarms ({len(self.mccs_hs_alarms)}), Back to Past ({len(self.all_back_to_past_detected)})"
                 )
             except Exception as e:
                 logger_config.print_and_log_exception(e)
@@ -369,7 +381,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
                 # Créer et exporter les données dans un fichier Excel
                 excel_filename = f"{self.name}_alarms_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-                
+
                 # Préparer les données pour le DataFrame
                 excel_data: List[Dict[str, Any]] = []
                 for (interval_begin, interval_end), back_to_past_count in interval_back_to_past_count.items():
@@ -383,7 +395,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                         count = interval_equipment_counts[(interval_begin, interval_end)].get(equipment_name, 0)
                         row_data[equipment_name] = count
                     excel_data.append(row_data)
-                
+
                 df = pd.DataFrame(excel_data)
                 df.to_excel(output_folder_path + "/" + excel_filename, index=False)
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
@@ -522,16 +534,18 @@ class TerminalTechniqueArchivesMaintLibrary:
 
             # Créer et exporter les données dans un fichier Excel
             excel_filename = f"{self.name}_sahara_alarms_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-            
+
             # Préparer les données pour le DataFrame
             excel_data: List[Dict[str, Any]] = []
             for (interval_begin, interval_end), count in interval_sahara_counts.items():
-                excel_data.append({
-                    "Début Intervalle de temps": interval_begin,
-                    "Fin Intervalle de temps": interval_end,
-                    "Nombre d'alarmes SAHARA": count,
-                })
-            
+                excel_data.append(
+                    {
+                        "Début Intervalle de temps": interval_begin,
+                        "Fin Intervalle de temps": interval_end,
+                        "Nombre d'alarmes SAHARA": count,
+                    }
+                )
+
             df = pd.DataFrame(excel_data)
             df.to_excel(output_folder_path + "/" + excel_filename, index=False)
             logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
@@ -629,16 +643,18 @@ class TerminalTechniqueArchivesMaintLibrary:
 
                 # Créer et exporter les données dans un fichier Excel
                 excel_filename = f"{self.name}_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-                
+
                 # Préparer les données pour le DataFrame
                 excel_data: List[Dict[str, Any]] = []
                 for (interval_begin, interval_end), count in interval_back_to_past_counts.items():
-                    excel_data.append({
-                        "Début Intervalle de temps": interval_begin,
-                        "Fin Intervalle de temps": interval_end,
-                        "Nombre d'événements Back to Past": count,
-                    })
-                
+                    excel_data.append(
+                        {
+                            "Début Intervalle de temps": interval_begin,
+                            "Fin Intervalle de temps": interval_end,
+                            "Nombre d'événements Back to Past": count,
+                        }
+                    )
+
                 df = pd.DataFrame(excel_data)
                 df.to_excel(output_folder_path + "/" + excel_filename, index=False)
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
@@ -772,18 +788,20 @@ class TerminalTechniqueArchivesMaintLibrary:
 
                 # Créer et exporter les données dans un fichier Excel
                 excel_filename = f"{self.name}_sahara_mccs_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-                
+
                 # Préparer les données pour le DataFrame
                 excel_data: List[Dict[str, Any]] = []
                 for (interval_begin, interval_end), sahara_count in interval_sahara_counts.items():
-                    excel_data.append({
-                        "Début Intervalle de temps": interval_begin,
-                        "Fin Intervalle de temps": interval_end,
-                        "Nombre SAHARA": sahara_count,
-                        "Nombre MCCS H": interval_mccs_counts[(interval_begin, interval_end)],
-                        "Nombre Back to Past": interval_back_to_past_counts[(interval_begin, interval_end)],
-                    })
-                
+                    excel_data.append(
+                        {
+                            "Début Intervalle de temps": interval_begin,
+                            "Fin Intervalle de temps": interval_end,
+                            "Nombre SAHARA": sahara_count,
+                            "Nombre MCCS H": interval_mccs_counts[(interval_begin, interval_end)],
+                            "Nombre Back to Past": interval_back_to_past_counts[(interval_begin, interval_end)],
+                        }
+                    )
+
                 df = pd.DataFrame(excel_data)
                 df.to_excel(output_folder_path + "/" + excel_filename, index=False)
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
@@ -1014,16 +1032,18 @@ class TerminalTechniqueArchivesMaintLibrary:
                         # Pas de Back to Past avant, on compte depuis le début
                         lines_since_last_back_to_past = sahara_line_idx + 1
 
-                excel_data.append({
-                    "Index": idx,
-                    "Timestamp": sahara_alarm.raise_line.decoded_timestamp,
-                    "File Path": sahara_alarm.raise_line.parent_file.file_full_path,
-                    "File Name": sahara_alarm.raise_line.parent_file.file_name,
-                    "Line Number": sahara_alarm.raise_line.line_number_inside_file,
-                    "Full Text": sahara_alarm.full_text.strip(),
-                    "Preceding MESD Alarms Count": mesd_count_preceding,
-                    "Lines Since Last Back to Past": lines_since_last_back_to_past,
-                })
+                excel_data.append(
+                    {
+                        "Index": idx,
+                        "Timestamp": sahara_alarm.raise_line.decoded_timestamp,
+                        "File Path": sahara_alarm.raise_line.parent_file.file_full_path,
+                        "File Name": sahara_alarm.raise_line.parent_file.file_name,
+                        "Line Number": sahara_alarm.raise_line.line_number_inside_file,
+                        "Full Text": sahara_alarm.full_text.strip(),
+                        "Preceding MESD Alarms Count": mesd_count_preceding,
+                        "Lines Since Last Back to Past": lines_since_last_back_to_past,
+                    }
+                )
 
             # Créer et sauvegarder le fichier Excel
             df = pd.DataFrame(excel_data)
@@ -1047,23 +1067,45 @@ class TerminalTechniqueArchivesMaintLibrary:
                 # Préparer les données pour le DataFrame
                 excel_data: List[Dict[str, Any]] = []
                 for group in self.all_mesd_alarms_groups:
-                    excel_data.append({
-                        "Group Index": group.number_of_group_in_library,
-                        "Line Count": len(group.alarm_lines),
-                        "Start timestamp": group.first_line.decoded_timestamp,
-                        "End timestamp": group.last_line.decoded_timestamp,
-                        "group duration (seconds)": (group.last_line.decoded_timestamp - group.first_line.decoded_timestamp).total_seconds(),
-                        "Last (previous) goup: lines since": (group.first_line.line_number_in_library - group.previous_group.last_line.line_number_in_library) if group.previous_group else "No previous group",
-                        "Last (previous) goup: duration since (seconds)": (group.first_line.decoded_timestamp - group.previous_group.last_line.decoded_timestamp).total_seconds() if group.previous_group else "No previous group",
-                        "Group - Start File Name": group.first_line.parent_file.file_name,
-                        "Group - Start Line Number": group.first_line.line_number_inside_file,
-                        "Last Back to Past - lines until group": (group.first_line.line_number_in_library - group.last_back_to_past_detected.previous_line.line_number_in_library) if group.last_back_to_past_detected else "No previous back to past",
-                        "Last Back to Past - timestamp": group.last_back_to_past_detected.previous_line.decoded_timestamp if group.last_back_to_past_detected else "No previous back to past",
-                        "Last back to past - seconds until group": (group.first_line.decoded_timestamp - group.last_back_to_past_detected.previous_line.decoded_timestamp).total_seconds() if group.last_back_to_past_detected else "No previous back to past",
-                        "Second until next sahara alarm": (group.following_sahara_alarms[0].raise_line.decoded_timestamp - group.last_line.decoded_timestamp).total_seconds() if group.following_sahara_alarms else "NA (no next sahara alarm until next group)",
-                        "Lines until next sahara alarm": group.following_sahara_alarms[0].raise_line.line_number_in_library - group.last_line.line_number_in_library if group.following_sahara_alarms else "NA (no next sahara alarm until next group)",
-                        "Group - First line Full Text": group.first_line.full_raw_line.strip(),
-                    })
+                    excel_data.append(
+                        {
+                            "Group Index": group.number_of_group_in_library,
+                            "Line Count": len(group.alarm_lines),
+                            "Start timestamp": group.first_line.decoded_timestamp,
+                            "End timestamp": group.last_line.decoded_timestamp,
+                            "group duration (seconds)": (group.last_line.decoded_timestamp - group.first_line.decoded_timestamp).total_seconds(),
+                            "Last (previous) goup: lines since": (
+                                (group.first_line.line_number_in_library - group.previous_group.last_line.line_number_in_library) if group.previous_group else "No previous group"
+                            ),
+                            "Last (previous) goup: duration since (seconds)": (
+                                (group.first_line.decoded_timestamp - group.previous_group.last_line.decoded_timestamp).total_seconds() if group.previous_group else "No previous group"
+                            ),
+                            "Group - Start File Name": group.first_line.parent_file.file_name,
+                            "Group - Start Line Number": group.first_line.line_number_inside_file,
+                            "Last Back to Past - lines until group": (
+                                (group.first_line.line_number_in_library - group.last_back_to_past_detected.previous_line.line_number_in_library)
+                                if group.last_back_to_past_detected
+                                else "No previous back to past"
+                            ),
+                            "Last Back to Past - timestamp": group.last_back_to_past_detected.previous_line.decoded_timestamp if group.last_back_to_past_detected else "No previous back to past",
+                            "Last back to past - seconds until group": (
+                                (group.first_line.decoded_timestamp - group.last_back_to_past_detected.previous_line.decoded_timestamp).total_seconds()
+                                if group.last_back_to_past_detected
+                                else "No previous back to past"
+                            ),
+                            "Second until next sahara alarm": (
+                                (group.following_sahara_alarms[0].raise_line.decoded_timestamp - group.last_line.decoded_timestamp).total_seconds()
+                                if group.following_sahara_alarms
+                                else "NA (no next sahara alarm until next group)"
+                            ),
+                            "Lines until next sahara alarm": (
+                                group.following_sahara_alarms[0].raise_line.line_number_in_library - group.last_line.line_number_in_library
+                                if group.following_sahara_alarms
+                                else "NA (no next sahara alarm until next group)"
+                            ),
+                            "Group - First line Full Text": group.first_line.full_raw_line.strip(),
+                        }
+                    )
 
                 # Créer et sauvegarder le fichier Excel
                 df = pd.DataFrame(excel_data)
