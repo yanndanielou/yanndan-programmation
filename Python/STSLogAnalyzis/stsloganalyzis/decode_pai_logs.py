@@ -380,7 +380,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                             equipment_names.append(name)
 
                 # Créer et exporter les données dans un fichier Excel
-                excel_filename = f"{self.name}_alarms_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+                excel_filename = f"{self.name}_stats_alarms_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
 
                 # Préparer les données pour le DataFrame
                 excel_data: List[Dict[str, Any]] = []
@@ -401,7 +401,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
                 # Créer et sauvegarder le graphe en HTML avec Plotly
-                html_filename = f"{self.name}_alarms_by_period_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+                html_filename = f"{self.name}_stats_alarms_by_period_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
 
                 fig_data = [
                     go.Bar(
@@ -533,7 +533,7 @@ class TerminalTechniqueArchivesMaintLibrary:
             y_values = list(interval_sahara_counts.values())
 
             # Créer et exporter les données dans un fichier Excel
-            excel_filename = f"{self.name}_sahara_alarms_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+            excel_filename = f"{self.name}_stats_sahara_alarms_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
 
             # Préparer les données pour le DataFrame
             excel_data: List[Dict[str, Any]] = []
@@ -551,7 +551,7 @@ class TerminalTechniqueArchivesMaintLibrary:
             logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
             # Créer et sauvegarder le graphe en HTML avec Plotly
-            html_filename = f"{self.name}_sahara_alarms_by_period_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+            html_filename = f"{self.name}_stats_sahara_alarms_by_period_{file_name_utils.get_file_suffix_with_current_datetime()}.html"
             fig = go.Figure(
                 data=[
                     go.Bar(
@@ -642,7 +642,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 y_values = list(interval_back_to_past_counts.values())
 
                 # Créer et exporter les données dans un fichier Excel
-                excel_filename = f"{self.name}_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+                excel_filename = f"{self.name}_stats_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
 
                 # Préparer les données pour le DataFrame
                 excel_data: List[Dict[str, Any]] = []
@@ -660,7 +660,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
                 # Créer et sauvegarder le graphe en HTML avec Plotly
-                html_filename = f"{self.name}_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+                html_filename = f"{self.name}_stats_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.html"
                 fig = go.Figure(
                     data=[
                         go.Bar(
@@ -787,7 +787,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 y_back_to_past = [interval_back_to_past_counts[(begin, end)] for begin, end in interval_sahara_counts.keys()]
 
                 # Créer et exporter les données dans un fichier Excel
-                excel_filename = f"{self.name}_sahara_mccs_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+                excel_filename = f"{self.name}_stats_sahara_mccs_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
 
                 # Préparer les données pour le DataFrame
                 excel_data: List[Dict[str, Any]] = []
@@ -807,7 +807,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
 
                 # Créer et sauvegarder le graphe en HTML avec Plotly
-                html_filename = f"{self.name}_sahara_mccs_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.html"
+                html_filename = f"{self.name}_stats_sahara_mccs_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.html"
                 fig = go.Figure(
                     data=[
                         go.Bar(
@@ -1055,9 +1055,9 @@ class TerminalTechniqueArchivesMaintLibrary:
         except Exception as e:
             logger_config.print_and_log_exception(e)
 
-    def export_mesd_alarms_groups_to_excel(self, output_folder_path: str) -> None:
+    def export_mesd_alarms_groups_with_context_to_excel(self, output_folder_path: str) -> None:
         """Export all MESD alarms groups to Excel."""
-        with logger_config.stopwatch_with_label(f"{self.name}: export_mesd_alarms_groups_to_excel", inform_beginning=False, enable_print=False, enabled=False):
+        with logger_config.stopwatch_with_label(f"{self.name}: export_mesd_alarms_groups_with_context_to_excel", inform_beginning=False, enable_print=False, enabled=False):
 
             try:
                 if not self.all_mesd_alarms_groups:
@@ -1109,7 +1109,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
                 # Créer et sauvegarder le fichier Excel
                 df = pd.DataFrame(excel_data)
-                excel_filename = f"{self.name}_mesd_alarms_groups{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+                excel_filename = f"{self.name}_mesd_alarms_groups_with_context_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
                 df.to_excel(output_folder_path + "/" + excel_filename, index=False)
                 logger_config.print_and_log_info(f"Fichier Excel créé: {excel_filename}")
                 logger_config.print_and_log_info(f"Total de {len(self.all_mesd_alarms_groups)} groupes MESD exportés")

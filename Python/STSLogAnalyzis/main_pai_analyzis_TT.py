@@ -10,6 +10,7 @@ with logger_config.application_logger():
     file_utils.create_folder_if_not_exist(OUTPUT_FOLDER_NAME)
 
     for library_name, folder_path in [
+        ("NEXT-16351 - Déconnexion rare mais permanente du MESD", r"C:\Users\fr232487\Downloads\TT-026401+(TerminalTechnique)\TT-026401 (TerminalTechnique)\Z_Archives_maint"),
         ("2026-02-06 CrashMesd P81", r"D:\temp\2026-02-06 CrashMesd\TT 81"),
         ("2026-02-06 CrashMesd P75", r"D:\temp\2026-02-06 CrashMesd\TT P75"),
         ("2027-01-27 P75 light_", r"D:\temp\2027-01-27 avec hitachi\2027-01-27\PAI75\TT-026401 (TT)\Archives_maint_light"),
@@ -20,7 +21,7 @@ with logger_config.application_logger():
 
         tt_maint_library.dump_all_events_to_text_file(output_folder_path=OUTPUT_FOLDER_NAME)
         tt_maint_library.export_back_to_past_with_context_to_excel(output_folder_path=OUTPUT_FOLDER_NAME)
-        tt_maint_library.export_mesd_alarms_groups_to_excel(output_folder_path=OUTPUT_FOLDER_NAME)
+        tt_maint_library.export_mesd_alarms_groups_with_context_to_excel(output_folder_path=OUTPUT_FOLDER_NAME)
         tt_maint_library.export_sahara_alarms_with_context_to_excel(output_folder_path=OUTPUT_FOLDER_NAME)
         tt_maint_library.export_equipments_with_alarms_to_excel(output_folder_path=OUTPUT_FOLDER_NAME, equipment_names_to_ignore=["81"])
         tt_maint_library.plot_back_to_past_by_period(output_folder_path=OUTPUT_FOLDER_NAME, interval_minutes=60, do_show=False)
