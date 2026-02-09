@@ -3,3 +3,4 @@ last*.txt
 /.mypy_cache/
 *.bin
 Sudokus/
+sandbox.py
