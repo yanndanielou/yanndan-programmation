@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, Set
 
 import matplotlib.pyplot
 import pandas
@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from common import file_name_utils
 from logger import logger_config
 
-from polarionextractanalysis import polarion_data_model
+from polarionextractanalysis import polarion_data_model, constants
 
 EXCEL_FILE_EXTENSION = ".xlsx"
 
@@ -65,8 +65,8 @@ def create_baregraph_work_item_number_cumulative_by_status(output_directory_path
 
     with logger_config.stopwatch_with_label("create_baregraph_work_item_number_cumulative_by_status"):
         # Collect data for all work item types and statuses
-        data_dict = {}
-        all_statuses = set()
+        data_dict: Dict[str, Dict[str, int]] = {}
+        all_statuses: Set[constants.PolarionStatus] = set()
 
         for work_item_type in polarion_library.work_item_library.all_work_items_by_type.keys():
             work_items = polarion_library.work_item_library.all_work_items_by_type[work_item_type]
@@ -122,6 +122,110 @@ def create_baregraph_work_item_number_by_company(output_directory_path: str, pol
         fig = go.Figure(data=[go.Bar(x=pivot["Company"], y=pivot["count"], marker=dict(color="#9a95d1"))])
         fig.update_layout(title="Work Items per Company", xaxis_title="Company", yaxis_title="Number of work items", hovermode="x unified", width=figure_width)
         fig.write_html(f"{output_directory_path}/{common_output_label}{file_name_utils.get_file_suffix_with_current_datetime()}.html")
+
+
+def create_baregraph_work_item_number_by_company_stacked_by_status(output_directory_path: str, polarion_library: polarion_data_model.PolarionLibrary) -> None:
+    """
+    For each work item type, create a stacked bar chart where each bar is a Company
+    and segments are counts per Status (different colors per status). Saves PNG and HTML.
+    """
+    with logger_config.stopwatch_with_label(f"create_baregraph_work_item_number_by_company_stacked_by_status, all"):
+        work_items = polarion_library.work_item_library.all_work_items
+
+        # Build rows: one row per assignee -> company + status
+        rows = []
+        for work_item in work_items:
+            status = work_item.attributes.status.name
+            for assignee in work_item.assignees:
+                company = assignee.user_definition.company.full_name if assignee.user_definition and assignee.user_definition.company else "Unknown"
+                rows.append({"Company": company, "Status": status, "count": 1})
+
+        assert rows
+
+        df = pandas.DataFrame(rows)
+        pivot = df.pivot_table(index="Company", columns="Status", values="count", aggfunc="sum")
+
+        # Ensure consistent company order (descending total)
+        pivot["_total"] = pivot.sum(axis=1)
+        pivot = pivot.sort_values("_total", ascending=False).drop(columns=["_total"])
+
+        # Save PNG using pandas (stacked)
+        pivot.plot.bar(use_index=True, stacked=True, rot=90, colormap="tab20")
+        common_output_label = "baregraph_work_item_all_per_company_stacked_status"
+        matplotlib.pyplot.tight_layout()
+        matplotlib.pyplot.savefig(f"{output_directory_path}/{common_output_label}{file_name_utils.get_file_suffix_with_current_datetime()}.png")
+        matplotlib.pyplot.close()
+
+        # Create interactive HTML with Plotly
+        companies = pivot.index.tolist()
+        statuses = pivot.columns.tolist()
+        figure_width = max(800, len(companies) * 150)
+        fig = go.Figure()
+        for status in statuses:
+            fig.add_trace(go.Bar(x=companies, y=pivot[status].tolist(), name=status))
+
+        fig.update_layout(
+            title=f"All - Work Items per Company by Status (Stacked)",
+            xaxis_title="Company",
+            yaxis_title="Number of work items",
+            barmode="stack",
+            hovermode="x unified",
+            width=figure_width,
+        )
+        fig.write_html(f"{output_directory_path}/{common_output_label}{file_name_utils.get_file_suffix_with_current_datetime()}.html")
+
+
+def create_baregraph_work_item_number_by_company_stacked_by_status_per_type(output_directory_path: str, polarion_library: polarion_data_model.PolarionLibrary) -> None:
+    """
+    For each work item type, create a stacked bar chart where each bar is a Company
+    and segments are counts per Status (different colors per status). Saves PNG and HTML.
+    """
+    for work_item_type in polarion_library.work_item_library.all_work_items_by_type.keys():
+        with logger_config.stopwatch_with_label(f"create_baregraph_work_item_number_by_company_stacked_by_status_per_type, type {work_item_type.name}"):
+            work_items = polarion_library.work_item_library.all_work_items_by_type[work_item_type]
+
+            # Build rows: one row per assignee -> company + status
+            rows = []
+            for work_item in work_items:
+                status = work_item.attributes.status.name
+                for assignee in work_item.assignees:
+                    company = assignee.user_definition.company.full_name if assignee.user_definition and assignee.user_definition.company else "Unknown"
+                    rows.append({"Company": company, "Status": status, "count": 1})
+
+            if not rows:
+                continue
+
+            df = pandas.DataFrame(rows)
+            pivot = df.pivot_table(index="Company", columns="Status", values="count", aggfunc="sum")
+
+            # Ensure consistent company order (descending total)
+            pivot["_total"] = pivot.sum(axis=1)
+            pivot = pivot.sort_values("_total", ascending=False).drop(columns=["_total"])
+
+            # Save PNG using pandas (stacked)
+            pivot.plot.bar(use_index=True, stacked=True, rot=90, colormap="tab20")
+            common_output_label = f"baregraph_work_item_{work_item_type.name}_per_company_stacked_status"
+            matplotlib.pyplot.tight_layout()
+            matplotlib.pyplot.savefig(f"{output_directory_path}/{common_output_label}{file_name_utils.get_file_suffix_with_current_datetime()}.png")
+            matplotlib.pyplot.close()
+
+            # Create interactive HTML with Plotly
+            companies = pivot.index.tolist()
+            statuses = pivot.columns.tolist()
+            figure_width = max(800, len(companies) * 150)
+            fig = go.Figure()
+            for status in statuses:
+                fig.add_trace(go.Bar(x=companies, y=pivot[status].tolist(), name=status))
+
+            fig.update_layout(
+                title=f"{work_item_type.name} - Work Items per Company by Status (Stacked)",
+                xaxis_title="Company",
+                yaxis_title="Number of work items",
+                barmode="stack",
+                hovermode="x unified",
+                width=figure_width,
+            )
+            fig.write_html(f"{output_directory_path}/{common_output_label}{file_name_utils.get_file_suffix_with_current_datetime()}.html")
 
 
 def create_baregraph_work_item_number_by_company_per_type(output_directory_path: str, polarion_library: polarion_data_model.PolarionLibrary) -> None:
