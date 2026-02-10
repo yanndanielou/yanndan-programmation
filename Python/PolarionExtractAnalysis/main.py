@@ -21,7 +21,7 @@ def main() -> None:
 
         polarion_library = polarion_data_model.PolarionLibrary(users_input_json_file_path=users_input_json_file_path, work_items_input_json_file_path=work_items_input_json_file_path)
 
-        create_graphs.create_baregraph_work_item_per_user(users_library=polarion_library.users_library)
+        create_graphs.create_baregraph_work_item_per_user(output_directory_path=OUTPUT_DIRECTORY_NAME, users_library=polarion_library.users_library)
 
         dump_to_excel.dump_companies_to_excel_file(users_library=polarion_library.users_library, output_directory_path=OUTPUT_DIRECTORY_NAME)
         dump_to_excel.dump_users_to_excel_file(users_library=polarion_library.users_library, output_directory_path=OUTPUT_DIRECTORY_NAME)
