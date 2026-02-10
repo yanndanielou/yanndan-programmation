@@ -2,7 +2,7 @@ import os
 
 from logger import logger_config
 
-from polarionextractanalysis import dump_to_excel, polarion_data_model
+from polarionextractanalysis import dump_to_excel, polarion_data_model, create_graphs
 
 DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
 OUTPUT_DIRECTORY_NAME = "output"
@@ -20,6 +20,8 @@ def main() -> None:
         work_items_input_json_file_path = DEFAULT_DOWNLOAD_DIRECTORY + "/" + "Extraction_POLARION_Full.json"
 
         polarion_library = polarion_data_model.PolarionLibrary(users_input_json_file_path=users_input_json_file_path, work_items_input_json_file_path=work_items_input_json_file_path)
+
+        create_graphs.create_baregraph_work_item_per_user(users_library=polarion_library.users_library)
 
         dump_to_excel.dump_companies_to_excel_file(users_library=polarion_library.users_library, output_directory_path=OUTPUT_DIRECTORY_NAME)
         dump_to_excel.dump_users_to_excel_file(users_library=polarion_library.users_library, output_directory_path=OUTPUT_DIRECTORY_NAME)
