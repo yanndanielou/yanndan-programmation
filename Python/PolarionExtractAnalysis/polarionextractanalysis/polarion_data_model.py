@@ -20,41 +20,55 @@ EXCEL_FILE_EXTENSION = ".xlsx"
 
 
 class PolarionUser:
-    def __init__(self, users_library: "UsersLibrary", type_enum: PolarionUserItemType, identifier: str) -> None:
+    def __init__(self, users_library: "UsersLibrary", as_json_dict: Dict) -> None:
         self.users_library = users_library
-        self.type_enum = type_enum
-        self.identifier = identifier
+        self.identifier = as_json_dict["id"]
+        self.type_enum = PolarionUserItemType[string_utils.text_to_valid_enum_value_text(as_json_dict["type"])]
+        attributes = as_json_dict["attributes"]
+        self.full_name = attributes["name"]
+        self.email = attributes["email"] if "email" in attributes else None
+        self.initials = attributes["initials"]
         self.all_work_items_assigned: List[PolarionWorkItem] = []
-        self.entity_name = self.users_library.all_users_with_entity_dict[identifier] if identifier in self.users_library.all_users_with_entity_dict else None
+        entity_name = cast(str, self.email).split("@")[-1] if self.email else None
+        self.entity_name = "SNCF" if entity_name and "sncf" in entity_name.lower() else entity_name
 
 
 class UsersLibrary:
-    def __init__(self) -> None:
+    def __init__(self, input_json_file_path: str) -> None:
         self.all_users: List[PolarionUser] = []
 
+        self.users_by_identifier: Dict[str, PolarionUser] = {}
         self.all_users_with_entity_dict: Dict[str, str] = {}
         self.all_users_by_entity: Dict[str, List[str]] = {}
+        self.all_not_parsed_because_errors_users_as_json: List[str] = []
 
-        for entity_name in ["atos", "siemens"]:
+        with logger_config.stopwatch_with_label(f"User library {input_json_file_path} creation"):
 
-            with open(f"input/{entity_name}_users_data.txt", "r", encoding="utf-8") as user_and_role_data_text_file:
-                users_data = [user.strip() for user in user_and_role_data_text_file.readlines()]
-                assert users_data
-                self.all_users_by_entity[entity_name.upper()] = users_data
-                for user_data in users_data:
-                    self.all_users_with_entity_dict[user_data] = entity_name.upper()
-                logger_config.print_and_log_info(f"{len(users_data)} {entity_name} users created : {','.join(users_data)}")
+            with logger_config.stopwatch_with_label(f"Read {input_json_file_path} file"):
+                with open(input_json_file_path, "r", encoding="utf-8") as file:
+                    all_items_as_json = json.load(file)
+                    assert isinstance(all_items_as_json, list)
 
-    def get_or_create_user_by_type_and_identifier(self, type_raw: str, identifier: str) -> PolarionUser:
-        type_enum = PolarionUserItemType[string_utils.text_to_valid_enum_value_text(type_raw)]
-        users_found = [user for user in self.all_users if user.identifier == identifier and user.type_enum == type_enum]
-        if not users_found:
-            user_created = PolarionUser(users_library=self, type_enum=type_enum, identifier=identifier)
-            self.all_users.append(user_created)
-            return self.get_or_create_user_by_type_and_identifier(type_raw=type_raw, identifier=identifier)
-        else:
-            assert len(users_found) == 1
-            return users_found[0]
+            with logger_config.stopwatch_with_label(f"Create {len(all_items_as_json)} users from parsed json file"):
+                for user_as_json in all_items_as_json:
+                    try:
+                        assert isinstance(user_as_json, dict)
+                        user = PolarionUser(users_library=self, as_json_dict=user_as_json)
+                        assert user.identifier not in self.users_by_identifier
+                        self.users_by_identifier[user.identifier] = user
+                        self.all_users.append(user)
+                    except KeyError as key_err:
+                        logger_config.print_and_log_exception(key_err)
+                        self.all_not_parsed_because_errors_users_as_json.append(user_as_json)
+
+            logger_config.print_and_log_info(f"{len(self.all_users)} work items created. {len(self.all_not_parsed_because_errors_users_as_json)} could not be created")
+            pass
+
+    def get_user_by_identifier(self, identifier: str) -> PolarionUser:
+        users_found = [user for user in self.all_users if user.identifier == identifier]
+        assert users_found, f"user {identifier} not found"
+        assert len(users_found) == 1
+        return users_found[0]
 
     def dump_to_excel_file(self, output_directory_path: str) -> None:
 
@@ -77,10 +91,10 @@ class UsersLibrary:
 
 
 class PolarionLibrary:
-    def __init__(self, input_json_file_path: str) -> None:
+    def __init__(self, input_json_file_path: str, users_library: UsersLibrary) -> None:
         self.all_work_items: List[PolarionWorkItem] = []
         self.all_not_parsed_because_errors_work_items_as_json: List[Dict] = []
-        self.users_library = UsersLibrary()
+        self.users_library = users_library
 
         with logger_config.stopwatch_with_label(f"Library {input_json_file_path} creation"):
 
@@ -165,8 +179,7 @@ class PolarionWorkItem:
         if "data" in assignees_raw:
             assignees_data_raw = assignees_raw["data"]
             for assignee_raw_data in assignees_data_raw:
-                user_type_raw = assignee_raw_data["type"]
                 user_identifier = assignee_raw_data["id"]
-                assignee = library.users_library.get_or_create_user_by_type_and_identifier(type_raw=user_type_raw, identifier=user_identifier)
+                assignee = library.users_library.get_user_by_identifier(identifier=user_identifier)
                 self.assignees.append(assignee)
                 assignee.all_work_items_assigned.append(self)
