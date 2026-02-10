@@ -92,3 +92,67 @@ def create_baregraph_work_item_number_cumulative_by_status(output_directory_path
 
         common_output_label = "baregraph_work_item_cumulative_per_status"
         fig.write_html(f"{output_directory_path}/{common_output_label}{file_name_utils.get_file_suffix_with_current_datetime()}.html")
+
+
+def create_baregraph_work_item_number_by_company(output_directory_path: str, polarion_library: polarion_data_model.PolarionLibrary) -> None:
+
+    with logger_config.stopwatch_with_label("create_baregraph_work_item_number_by_company"):
+        # Build rows: one row per assignee -> company
+        rows = []
+        for work_item in polarion_library.work_item_library.all_work_items:
+            for assignee in work_item.assignees:
+                company = assignee.user_definition.company.full_name if assignee.user_definition and assignee.user_definition.company else "Unknown"
+                rows.append({"Company": company, "count": 1})
+
+        if not rows:
+            return
+
+        df = pandas.DataFrame(rows)
+        # Use a pivot-style aggregation: sum of 'count' per Company
+        pivot = df.pivot_table(index="Company", values="count", aggfunc="sum").reset_index().sort_values("count", ascending=False)
+
+        # Save PNG using pandas/matplotlib
+        pivot.plot.bar(use_index=True, x="Company", y="count", rot=90, color="#9a95d1")
+        common_output_label = "baregraph_work_item_per_company"
+        matplotlib.pyplot.savefig(f"{output_directory_path}/{common_output_label}{file_name_utils.get_file_suffix_with_current_datetime()}.png")
+
+        # Create interactive HTML with Plotly
+        num_bars = len(pivot)
+        figure_width = max(800, num_bars * 150)
+        fig = go.Figure(data=[go.Bar(x=pivot["Company"], y=pivot["count"], marker=dict(color="#9a95d1"))])
+        fig.update_layout(title="Work Items per Company", xaxis_title="Company", yaxis_title="Number of work items", hovermode="x unified", width=figure_width)
+        fig.write_html(f"{output_directory_path}/{common_output_label}{file_name_utils.get_file_suffix_with_current_datetime()}.html")
+
+
+def create_baregraph_work_item_number_by_company_per_type(output_directory_path: str, polarion_library: polarion_data_model.PolarionLibrary) -> None:
+    for work_item_type in polarion_library.work_item_library.all_work_items_by_type.keys():
+
+        work_items = polarion_library.work_item_library.all_work_items_by_type[work_item_type]
+        with logger_config.stopwatch_with_label(f"create_baregraph_work_item_number_by_company {work_item_type.name}, {len(work_items)} work items"):
+
+            # Build rows: one row per assignee -> company
+            rows = []
+            for work_item in work_items:
+                for assignee in work_item.assignees:
+                    company = assignee.user_definition.company.full_name if assignee.user_definition and assignee.user_definition.company else "Unknown"
+                    rows.append({"Company": company, "count": 1})
+
+            if not rows:
+                logger_config.print_and_log_warning(f"create_baregraph_work_item_number_by_company_per_type: no data for {work_item_type.name}")
+                continue
+
+            df = pandas.DataFrame(rows)
+            # Use a pivot-style aggregation: sum of 'count' per Company
+            pivot = df.pivot_table(index="Company", values="count", aggfunc="sum").reset_index().sort_values("count", ascending=False)
+
+            # Save PNG using pandas/matplotlib
+            pivot.plot.bar(use_index=True, x="Company", y="count", rot=90, color="#9a95d1")
+            common_output_label = f"baregraph_work_item_per_company {work_item_type.name}"
+            matplotlib.pyplot.savefig(f"{output_directory_path}/{common_output_label}{file_name_utils.get_file_suffix_with_current_datetime()}.png")
+
+            # Create interactive HTML with Plotly
+            num_bars = len(pivot)
+            figure_width = max(800, num_bars * 150)
+            fig = go.Figure(data=[go.Bar(x=pivot["Company"], y=pivot["count"], marker=dict(color="#9a95d1"))])
+            fig.update_layout(title=f"{work_item_type.name} per Company", xaxis_title="Company", yaxis_title=f"Number of {work_item_type.name}", hovermode="x unified", width=figure_width)
+            fig.write_html(f"{output_directory_path}/{common_output_label}{file_name_utils.get_file_suffix_with_current_datetime()}.html")
