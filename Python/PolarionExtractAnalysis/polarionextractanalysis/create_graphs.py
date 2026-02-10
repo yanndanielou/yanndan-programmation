@@ -67,43 +67,34 @@ def create_baregraph_work_item_number_cumulative_by_status(output_directory_path
         # Collect data for all work item types and statuses
         data_dict = {}
         all_statuses = set()
-        
+
         for work_item_type in polarion_library.work_item_library.all_work_items_by_type.keys():
             work_items = polarion_library.work_item_library.all_work_items_by_type[work_item_type]
             found_status = set([work_item.attributes.status for work_item in work_items])
             all_statuses.update(found_status)
-            
+
             data_dict[work_item_type.name] = {}
             for status in found_status:
                 count = len([work_item for work_item in work_items if work_item.attributes.status == status])
                 data_dict[work_item_type.name][status.name] = count
-        
+
         # Fill missing status values with 0
         for work_item_type in data_dict.keys():
             for status in all_statuses:
                 if status.name not in data_dict[work_item_type]:
                     data_dict[work_item_type][status.name] = 0
-        
+
         # Create stacked bar chart with Plotly
         fig = go.Figure()
-        
+
         for status in sorted([s.name for s in all_statuses]):
-            values = [data_dict[wit].get(status, 0) for wit in sorted(data_dict.keys())]
-            fig.add_trace(go.Bar(
-                x=sorted(data_dict.keys()),
-                y=values,
-                name=status
-            ))
-        
+            present_keys = sorted([wit for wit in sorted(data_dict.keys()) if data_dict[wit].get(status, 0) > 0])
+            values = [data_dict[wit].get(status, 0) for wit in sorted(data_dict.keys()) if data_dict[wit].get(status, 0) > 0]
+
+            fig.add_trace(go.Bar(x=sorted(present_keys), y=values, name=status))
+
         figure_width = max(800, len(data_dict) * 150)
-        fig.update_layout(
-            title="Work Items per Type by Status (Stacked)",
-            xaxis_title="Work Item Type",
-            yaxis_title="Number of work items",
-            barmode="stack",
-            hovermode="x unified",
-            width=figure_width
-        )
-        
+        fig.update_layout(title="Work Items per Type by Status (Stacked)", xaxis_title="Work Item Type", yaxis_title="Number of work items", barmode="stack", hovermode="x unified", width=figure_width)
+
         common_output_label = "baregraph_work_item_cumulative_per_status"
         fig.write_html(f"{output_directory_path}/{common_output_label}{file_name_utils.get_file_suffix_with_current_datetime()}.html")
