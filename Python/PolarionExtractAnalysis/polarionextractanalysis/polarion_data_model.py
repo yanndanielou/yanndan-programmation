@@ -14,6 +14,8 @@ from polarionextractanalysis.constants import (
     PolarionWorkItemType,
 )
 
+EXCEL_FILE_EXTENSION = ".xlsx"
+
 
 class PolarionUser:
     def __init__(self, users_library: "UsersLibrary", type_enum: PolarionUserItemType, identifier: str) -> None:
@@ -40,7 +42,7 @@ class UsersLibrary:
 
     def dump_to_excel_file(self, output_directory_path: str) -> None:
 
-        excel_file_name = "all_users_" + file_name_utils.get_file_suffix_with_current_datetime()
+        excel_file_name = "all_users_" + file_name_utils.get_file_suffix_with_current_datetime() + EXCEL_FILE_EXTENSION
         excel_file_path = output_directory_path + "/" + excel_file_name
         with logger_config.stopwatch_with_label(f"Dump users to excel file {excel_file_name}"):
             df = pd.DataFrame(
@@ -63,27 +65,30 @@ class PolarionLibrary:
         self.all_not_parsed_because_errors_work_items_as_json: List[Dict] = []
         self.users_library = UsersLibrary()
 
-        with open(input_json_file_path, "r", encoding="utf-8") as file:
-            all_work_items_as_json = json.load(file)
+        with logger_config.stopwatch_with_label(f"Library {input_json_file_path} creation"):
 
-            assert isinstance(all_work_items_as_json, list)
-            logger_config.print_and_log_info(f"{len(all_work_items_as_json)} objects found")
+            with logger_config.stopwatch_with_label(f"Read {input_json_file_path} file"):
+                with open(input_json_file_path, "r", encoding="utf-8") as file:
+                    all_work_items_as_json = json.load(file)
+                    assert isinstance(all_work_items_as_json, list)
+                    # logger_config.print_and_log_info(f"{len(all_work_items_as_json)} objects found")
 
-        for work_item_as_json in all_work_items_as_json:
-            try:
-                assert isinstance(work_item_as_json, dict)
-                work_item = PolarionWorkItem(library=self, work_item_as_json_dict=work_item_as_json)
-                self.all_work_items.append(work_item)
-            except KeyError as key_err:
-                logger_config.print_and_log_exception(key_err)
-                self.all_not_parsed_because_errors_work_items_as_json.append(work_item_as_json)
+            with logger_config.stopwatch_with_label(f"Create {len(all_work_items_as_json)} work items from parsed json file"):
+                for work_item_as_json in all_work_items_as_json:
+                    try:
+                        assert isinstance(work_item_as_json, dict)
+                        work_item = PolarionWorkItem(library=self, work_item_as_json_dict=work_item_as_json)
+                        self.all_work_items.append(work_item)
+                    except KeyError as key_err:
+                        logger_config.print_and_log_exception(key_err)
+                        self.all_not_parsed_because_errors_work_items_as_json.append(work_item_as_json)
 
-        logger_config.print_and_log_info(f"{len(self.all_work_items)} work items created. {len(self.all_not_parsed_because_errors_work_items_as_json)} could not be created")
-        pass
+            logger_config.print_and_log_info(f"{len(self.all_work_items)} work items created. {len(self.all_not_parsed_because_errors_work_items_as_json)} could not be created")
+            pass
 
     def dump_to_excel_file(self, output_directory_path: str) -> None:
 
-        excel_file_name = "all_work_items_" + file_name_utils.get_file_suffix_with_current_datetime()
+        excel_file_name = "all_work_items_" + file_name_utils.get_file_suffix_with_current_datetime() + EXCEL_FILE_EXTENSION
         excel_file_path = output_directory_path + "/" + excel_file_name
         with logger_config.stopwatch_with_label(f"Dump all work items to excel file {excel_file_name}"):
             df = pd.DataFrame(
