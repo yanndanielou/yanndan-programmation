@@ -25,6 +25,8 @@ class PolarionLibrary:
             except KeyError as key_err:
                 logger_config.print_and_log_exception(key_err)
                 self.all_not_parsed_because_errors_work_items_as_json.append(workitem_as_json)
+
+        logger_config.print_and_log_info(f"{len(self.all_work_items)} work items created. {len(self.all_not_parsed_because_errors_work_items_as_json)} could not be created")
         pass
 
 
@@ -33,29 +35,26 @@ class PolarionProject:
     identifier: str
 
 
-@dataclass
-class PolarionRelationships:
-    type: PolarionAttributeType
-
-
 class PolarionAttributes:
-    def __init__(self, attributes_as_json: Dict) -> None:
-        self.type = PolarionAttributeType[string_utils.text_to_valid_enum_value_text(attributes_as_json["type"])]
-        self.identifier = cast(str, attributes_as_json["id"])
+    def __init__(self, attributes_as_json_dict: Dict) -> None:
+        self.type = PolarionAttributeType[string_utils.text_to_valid_enum_value_text(attributes_as_json_dict["type"])]
+        self.identifier = cast(str, attributes_as_json_dict["id"])
         assert isinstance(self.identifier, str)
-        self.title = cast(str, attributes_as_json["title"])
+        self.title = cast(str, attributes_as_json_dict["title"])
         assert isinstance(self.title, str)
-        self.severity = PolarionSeverity[string_utils.text_to_valid_enum_value_text(attributes_as_json["severity"])]
-        raw_created_timestamp = cast(str, attributes_as_json["created"])
+        self.severity = PolarionSeverity[string_utils.text_to_valid_enum_value_text(attributes_as_json_dict["severity"])] if "severity" in attributes_as_json_dict else None
+        raw_created_timestamp = cast(str, attributes_as_json_dict["created"])
         self.created_timestamp = datetime.fromisoformat(raw_created_timestamp)
-        self.updated_timestamp = datetime.fromisoformat(cast(str, attributes_as_json["updated"]))
+        self.updated_timestamp = datetime.fromisoformat(cast(str, attributes_as_json_dict["updated"]))
 
 
 class PolarionWorkItem:
 
-    def __init__(self, workitem_as_json: Dict) -> None:
-        self.type = PolarionWorkItemType[string_utils.text_to_valid_enum_value_text(workitem_as_json["type"])]
-        self.identifier = workitem_as_json["id"]
-        self.attributes = PolarionAttributes(workitem_as_json["attributes"])
+    def __init__(self, workitem_as_json_dict: Dict) -> None:
+        self.type = PolarionWorkItemType[string_utils.text_to_valid_enum_value_text(workitem_as_json_dict["type"])]
+        self.identifier = workitem_as_json_dict["id"]
+        self.attributes = PolarionAttributes(workitem_as_json_dict["attributes"])
         self.attributes.identifier
-        relationships = PolarionRelationships(workitem_as_json["relationships"])
+        # self.relationships = PolarionRelationships(workitem_as_json_dict["relationships"])
+        self.project_name = workitem_as_json_dict["relationships"]["project"]["data"]["id"]
+        pass
