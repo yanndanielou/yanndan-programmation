@@ -19,6 +19,12 @@ from polarionextractanalysis.constants import (
 EXCEL_FILE_EXTENSION = ".xlsx"
 
 
+class PolarionUserCompany:
+    def __init__(self, full_name: str) -> None:
+        self.full_name = full_name
+        self.all_users: List[PolarionUser] = []
+
+
 class PolarionUser:
     def __init__(self, users_library: "UsersLibrary", as_json_dict: Dict) -> None:
         self.users_library = users_library
@@ -29,12 +35,17 @@ class PolarionUser:
         self.email = attributes["email"] if "email" in attributes else None
         self.initials = attributes["initials"]
         self.all_work_items_assigned: List[PolarionWorkItem] = []
-        entity_name = cast(str, self.email).split("@")[-1] if self.email else None
-        self.entity_name = "SNCF" if entity_name and "sncf" in entity_name.lower() else entity_name
+        entity_name = cast(str, self.email).split("@")[-1].upper() if self.email else None
+        entity_name = "SNCF" if entity_name and "sncf" in entity_name.lower() else entity_name
+        entity_name = "ATOS" if entity_name and "eviden" in entity_name.lower() else entity_name
+        self.entity_name = entity_name
+        self.company = users_library.get_or_create_user_company_user_by_full_name(self.entity_name if self.entity_name else "Unknown")
+        self.company.all_users.append(self)
 
 
 class UsersLibrary:
     def __init__(self, input_json_file_path: str) -> None:
+        self.all_companies: List[PolarionUserCompany] = []
         self.all_users: List[PolarionUser] = []
 
         self.users_by_identifier: Dict[str, PolarionUser] = {}
@@ -70,6 +81,14 @@ class UsersLibrary:
         assert len(users_found) == 1
         return users_found[0]
 
+    def get_or_create_user_company_user_by_full_name(self, full_name: str) -> PolarionUserCompany:
+        found = [company for company in self.all_companies if company.full_name == full_name]
+        if not found:
+            self.all_companies.append(PolarionUserCompany(full_name))
+            return self.get_or_create_user_company_user_by_full_name(full_name)
+        assert len(found) == 1
+        return found[0]
+
     def dump_to_excel_file(self, output_directory_path: str) -> None:
 
         excel_file_name = "all_users_" + file_name_utils.get_file_suffix_with_current_datetime() + EXCEL_FILE_EXTENSION
@@ -80,11 +99,27 @@ class UsersLibrary:
                     {
                         "type": user.type_enum.name if user.type_enum is not None else None,
                         "identifier": user.identifier,
-                        "Entity name": user.entity_name,
+                        "Company name": user.entity_name,
+                        "Company": user.company.full_name,
                         "Number of work items": len(user.all_work_items_assigned),
                         "work_items": ",".join(w.long_identifier for w in user.all_work_items_assigned),
                     }
                     for user in self.all_users
+                ]
+            )
+            df.to_excel(excel_file_path, index=False)
+
+        excel_file_name = "all_companies_" + file_name_utils.get_file_suffix_with_current_datetime() + EXCEL_FILE_EXTENSION
+        excel_file_path = output_directory_path + "/" + excel_file_name
+        with logger_config.stopwatch_with_label(f"Dump companies to excel file {excel_file_name}"):
+            df = pd.DataFrame(
+                [
+                    {
+                        "Full name": company.full_name,
+                        "Number of Users": len(company.all_users),
+                        "Users": ",".join(user.full_name for user in company.all_users),
+                    }
+                    for company in self.all_companies
                 ]
             )
             df.to_excel(excel_file_path, index=False)
