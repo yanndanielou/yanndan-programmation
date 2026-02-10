@@ -9,7 +9,6 @@ DISPLAY_OUTPUT = False
 
 
 def main() -> None:
-    """Main function"""
 
     with logger_config.application_logger():
         input_file = r"C:\Users\fr232487\Downloads\Extraction_POLARION_Full.json"
@@ -23,5 +22,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    # sys.argv[1:]
     main()
