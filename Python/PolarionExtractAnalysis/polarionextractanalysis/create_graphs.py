@@ -74,18 +74,18 @@ def create_baregraph_work_item_number_cumulative_by_status(output_directory_path
             all_statuses.update(found_status)
 
             data_dict[work_item_type.name] = {}
-            for status in found_status:
-                count = len([work_item for work_item in work_items if work_item.attributes.status == status])
-                data_dict[work_item_type.name][status.name] = count
+            for status_enum in found_status:
+                count = len([work_item for work_item in work_items if work_item.attributes.status == status_enum])
+                data_dict[work_item_type.name][status_enum.name] = count
 
         # Create stacked bar chart with Plotly
         fig = go.Figure()
 
-        for status in sorted([s.name for s in all_statuses]):
-            present_keys = sorted([wit for wit in sorted(data_dict.keys()) if data_dict[wit].get(status, 0) > 0])
-            values = [data_dict[wit].get(status, 0) for wit in present_keys]
+        for status_str in sorted([s.name for s in all_statuses]):
+            present_keys = sorted([wit for wit in sorted(data_dict.keys()) if data_dict[wit].get(status_str, 0) > 0])
+            values = [data_dict[wit].get(status_str, 0) for wit in present_keys]
 
-            fig.add_trace(go.Bar(x=sorted(present_keys), y=values, name=status))
+            fig.add_trace(go.Bar(x=sorted(present_keys), y=values, name=status_str))
 
         figure_width = max(800, len(data_dict) * 150)
         fig.update_layout(title="Work Items per Type by Status (Stacked)", xaxis_title="Work Item Type", yaxis_title="Number of work items", barmode="stack", hovermode="x unified", width=figure_width)
@@ -129,7 +129,7 @@ def create_baregraph_work_item_number_by_company_stacked_by_status(output_direct
     For each work item type, create a stacked bar chart where each bar is a Company
     and segments are counts per Status (different colors per status). Saves PNG and HTML.
     """
-    with logger_config.stopwatch_with_label(f"create_baregraph_work_item_number_by_company_stacked_by_status, all"):
+    with logger_config.stopwatch_with_label("create_baregraph_work_item_number_by_company_stacked_by_status, all"):
         work_items = polarion_library.work_item_library.all_work_items
 
         # Build rows: one row per assignee -> company + status
@@ -165,7 +165,7 @@ def create_baregraph_work_item_number_by_company_stacked_by_status(output_direct
             fig.add_trace(go.Bar(x=companies, y=pivot[status].tolist(), name=status))
 
         fig.update_layout(
-            title=f"All - Work Items per Company by Status (Stacked)",
+            title="All - Work Items per Company by Status (Stacked)",
             xaxis_title="Company",
             yaxis_title="Number of work items",
             barmode="stack",

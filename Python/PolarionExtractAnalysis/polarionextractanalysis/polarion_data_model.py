@@ -11,7 +11,6 @@ from polarionextractanalysis.constants import (
     PolarionSeverity,
     PolarionStatus,
     PolarionUserItemType,
-    PolarionWorkItemType,
 )
 
 

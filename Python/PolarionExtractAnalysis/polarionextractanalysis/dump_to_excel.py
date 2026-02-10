@@ -75,7 +75,7 @@ def dump_work_items_to_excel_file(work_items_library: polarion_data_model.Polari
                 {
                     "identifier": work_item.attributes.identifier,
                     "type": work_item.attributes.type.name,
-                    "Project": work_item.project,
+                    "Project": work_item.project.identifier,
                     "Status": work_item.attributes.status.name,
                     "Created timestamp": work_item.created_timestamp.replace(tzinfo=None),
                     "Updated timestamp": work_item.updated_timestamp.replace(tzinfo=None),
