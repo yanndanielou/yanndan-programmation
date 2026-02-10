@@ -35,9 +35,10 @@ class PolarionUser:
         self.email = attributes["email"] if "email" in attributes else None
         self.initials = attributes["initials"]
         self.all_work_items_assigned: List[PolarionWorkItem] = []
-        entity_name = cast(str, self.email).split("@")[-1].upper() if self.email else None
+        entity_name = cast(str, self.email).split("@")[-1] if self.email else None
         entity_name = "SNCF" if entity_name and "sncf" in entity_name.lower() else entity_name
         entity_name = "ATOS" if entity_name and "eviden" in entity_name.lower() else entity_name
+        entity_name = entity_name.split(".")[0].upper() if entity_name else entity_name
         self.entity_name = entity_name
         self.company = users_library.get_or_create_user_company_user_by_full_name(self.entity_name if self.entity_name else "Unknown")
         self.company.all_users.append(self)
