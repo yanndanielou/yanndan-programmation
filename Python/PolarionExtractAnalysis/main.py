@@ -2,7 +2,7 @@ import os
 
 from logger import logger_config
 
-from polarionextractanalysis import polarion_data_model
+from polarionextractanalysis import dump_to_excel, polarion_data_model
 
 DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
 OUTPUT_DIRECTORY_NAME = "output"
@@ -16,10 +16,15 @@ def main() -> None:
         if not os.path.exists(OUTPUT_DIRECTORY_NAME):
             os.mkdir(OUTPUT_DIRECTORY_NAME)
 
-        users_library = polarion_data_model.UsersLibrary(input_json_file_path=DEFAULT_DOWNLOAD_DIRECTORY + "/" + "Extraction_POLARION_User.json")
-        library = polarion_data_model.PolarionLibrary(input_json_file_path=DEFAULT_DOWNLOAD_DIRECTORY + "/" + "Extraction_POLARION_Full.json", users_library=users_library)
-        library.dump_to_excel_file(output_directory_path=OUTPUT_DIRECTORY_NAME)
-        library.users_library.dump_to_excel_file(output_directory_path=OUTPUT_DIRECTORY_NAME)
+        users_input_json_file_path = DEFAULT_DOWNLOAD_DIRECTORY + "/" + "Extraction_POLARION_User.json"
+        work_items_input_json_file_path = DEFAULT_DOWNLOAD_DIRECTORY + "/" + "Extraction_POLARION_Full.json"
+
+        polarion_library = polarion_data_model.PolarionLibrary(users_input_json_file_path=users_input_json_file_path, work_items_input_json_file_path=work_items_input_json_file_path)
+
+        dump_to_excel.dump_companies_to_excel_file(users_library=polarion_library.users_library, output_directory_path=OUTPUT_DIRECTORY_NAME)
+        dump_to_excel.dump_users_to_excel_file(users_library=polarion_library.users_library, output_directory_path=OUTPUT_DIRECTORY_NAME)
+        dump_to_excel.dump_projects_to_excel_file(project_library=polarion_library.project_library, output_directory_path=OUTPUT_DIRECTORY_NAME)
+        dump_to_excel.dump_work_items_to_excel_file(work_items_library=polarion_library.work_item_library, output_directory_path=OUTPUT_DIRECTORY_NAME)
 
 
 if __name__ == "__main__":
