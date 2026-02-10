@@ -8,7 +8,7 @@ from logger import logger_config
 
 
 def split_json_files_containing_list_to_files(
-    input_file_path: str, output_directory: str, ouput_file_prefix: str, attribute_to_use_in_file_name: Optional[str] = None, pretty_print: bool = True
+    input_file_path: str, output_directory: str, output_file_prefix: str, attribute_to_use_in_file_name: Optional[str] = None, pretty_print: bool = True
 ) -> None:
     """
     Divise une liste d'objets contenus dans un fichier en fichiers JSON individuels.
@@ -35,7 +35,7 @@ def split_json_files_containing_list_to_files(
         logger_config.print_and_log_error("Erreur : Le fichier d'entrée doit contenir une liste JSON.")
         return
 
-    logger_config.print_and_log_info(f"{len(input_list)} objects {ouput_file_prefix} found")
+    logger_config.print_and_log_info(f"{len(input_list)} objects {output_file_prefix} found")
 
     # Crée le répertoire de sortie s'il n'existe pas
     if not os.path.exists(output_directory):
@@ -45,7 +45,7 @@ def split_json_files_containing_list_to_files(
     for index, obj in enumerate(input_list):
         identifier = obj[attribute_to_use_in_file_name] if attribute_to_use_in_file_name and attribute_to_use_in_file_name in obj else f"{index + 1}"
         output_file_options_suffix = "_pretty" if pretty_print else ""
-        output_file_name = string_utils.format_filename(f"{ouput_file_prefix}{identifier}_{output_file_options_suffix}.json")
+        output_file_name = string_utils.format_filename(f"{output_file_prefix}{identifier}_{output_file_options_suffix}.json")
         output_file_path = os.path.join(output_directory, output_file_name)
 
         # Options pour le formatage du JSON
@@ -56,6 +56,6 @@ def split_json_files_containing_list_to_files(
                 json.dump(obj, file, **json_options)
 
             if index > 1 and index % (round(len(input_list) / 10)) == 0:
-                logger_config.print_and_log_info(f"{index+1}th / {len(input_list)} ({round((index+1)/len(input_list)*100,2)}%) file {ouput_file_prefix} created")
+                logger_config.print_and_log_info(f"{index+1}th / {len(input_list)} ({round((index+1)/len(input_list)*100,2)}%) file {output_file_prefix} created")
         except Exception as e:
             logger_config.print_and_log_error(f"Erreur lors de l'écriture de l'objet {index + 1}: {e}")
