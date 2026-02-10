@@ -1,10 +1,18 @@
 import json
-from typing import Dict, List, cast
 from dataclasses import dataclass
-from polarionextractanalysis.constants import PolarionWorkItemType, PolarionAttributeType, PolarionSeverity, PolarionUserItemType
 from datetime import datetime
+from typing import Dict, List, cast
+
+import pandas as pd
+from common import string_utils, file_name_utils
 from logger import logger_config
-from common import string_utils
+
+from polarionextractanalysis.constants import (
+    PolarionAttributeType,
+    PolarionSeverity,
+    PolarionUserItemType,
+    PolarionWorkItemType,
+)
 
 
 class PolarionUser:
@@ -29,6 +37,24 @@ class UsersLibrary:
         else:
             assert len(users_found) == 1
             return users_found[0]
+
+    def dump_to_excel_file(self, output_directory_path: str) -> None:
+
+        excel_file_name = "all_users_" + file_name_utils.get_file_suffix_with_current_datetime()
+        excel_file_path = output_directory_path + "/" + excel_file_name
+        with logger_config.stopwatch_with_label(f"Dump users to excel file {excel_file_name}"):
+            df = pd.DataFrame(
+                [
+                    {
+                        "type": user.type_enum.name if user.type_enum is not None else None,
+                        "identifier": user.identifier,
+                        "Number of work items": len(user.all_work_items_assigned),
+                        "work_items": ",".join(w.identifier for w in user.all_work_items_assigned),
+                    }
+                    for user in self.all_users
+                ]
+            )
+            df.to_excel(excel_file_path, index=False)
 
 
 class PolarionLibrary:
@@ -55,6 +81,27 @@ class PolarionLibrary:
         logger_config.print_and_log_info(f"{len(self.all_work_items)} work items created. {len(self.all_not_parsed_because_errors_work_items_as_json)} could not be created")
         pass
 
+    def dump_to_excel_file(self, output_directory_path: str) -> None:
+
+        excel_file_name = "all_work_items_" + file_name_utils.get_file_suffix_with_current_datetime()
+        excel_file_path = output_directory_path + "/" + excel_file_name
+        with logger_config.stopwatch_with_label(f"Dump all work items to excel file {excel_file_name}"):
+            df = pd.DataFrame(
+                [
+                    {
+                        "identifier": work_item.identifier,
+                        "type": work_item.item_type,
+                        "Project name": work_item.project_name,
+                        "Created timestamp": work_item.created_timestamp,
+                        "Updated timestamp": work_item.updated_timestamp,
+                        "Number users assigned": len(work_item.assignees),
+                        "Users assigned": ",".join(w.identifier for w in work_item.assignees),
+                    }
+                    for work_item in self.all_work_items
+                ]
+            )
+            df.to_excel(excel_file_path, index=False)
+
 
 @dataclass
 class PolarionProject:
@@ -78,7 +125,7 @@ class PolarionWorkItem:
 
     def __init__(self, library: PolarionLibrary, work_item_as_json_dict: Dict) -> None:
         self.library = library
-        self.type = PolarionWorkItemType[string_utils.text_to_valid_enum_value_text(work_item_as_json_dict["type"])]
+        self.item_type = PolarionWorkItemType[string_utils.text_to_valid_enum_value_text(work_item_as_json_dict["type"])]
         self.identifier = work_item_as_json_dict["id"]
         self.attributes = PolarionAttributes(work_item_as_json_dict["attributes"])
         self.attributes.identifier = work_item_as_json_dict["attributes"]["id"]
