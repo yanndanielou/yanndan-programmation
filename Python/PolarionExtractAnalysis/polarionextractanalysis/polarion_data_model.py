@@ -105,6 +105,7 @@ class PolarionWorkItemLibrary:
         self.polarion_library = polarion_library
         self.all_work_items: List[PolarionWorkItem] = []
         self.all_not_parsed_because_errors_work_items_as_json: List[Dict] = []
+        self.all_work_items_by_type: Dict[PolarionAttributeType, List[PolarionWorkItem]] = []
 
         with logger_config.stopwatch_with_label(f"Library {input_json_file_path} creation"):
 
@@ -119,6 +120,11 @@ class PolarionWorkItemLibrary:
                         assert isinstance(work_item_as_json, dict)
                         work_item = PolarionWorkItem(polarion_library=self.polarion_library, work_item_as_json_dict=work_item_as_json)
                         self.all_work_items.append(work_item)
+
+                        if work_item.item_type not in self.all_work_items_by_type:
+                            self.all_work_items_by_type[work_item.attributes.type] = []
+                        self.all_work_items_by_type[work_item.attributes.type].append(work_item)
+
                     except KeyError as key_err:
                         logger_config.print_and_log_exception(key_err)
                         self.all_not_parsed_because_errors_work_items_as_json.append(work_item_as_json)
