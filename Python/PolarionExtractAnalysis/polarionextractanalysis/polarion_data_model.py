@@ -121,7 +121,7 @@ class PolarionWorkItemLibrary:
                         work_item = PolarionWorkItem(polarion_library=self.polarion_library, work_item_as_json_dict=work_item_as_json)
                         self.all_work_items.append(work_item)
 
-                        if work_item.item_type not in self.all_work_items_by_type:
+                        if work_item.attributes.type not in self.all_work_items_by_type:
                             self.all_work_items_by_type[work_item.attributes.type] = []
                         self.all_work_items_by_type[work_item.attributes.type].append(work_item)
 
@@ -175,7 +175,7 @@ class PolarionWorkItem:
 
     def __init__(self, polarion_library: PolarionLibrary, work_item_as_json_dict: Dict) -> None:
         self.library = polarion_library
-        self.item_type = PolarionWorkItemType[string_utils.text_to_valid_enum_value_text(work_item_as_json_dict["type"])]
+        # self.item_type = PolarionWorkItemType[string_utils.text_to_valid_enum_value_text(work_item_as_json_dict["type"])]
         self.long_identifier = work_item_as_json_dict["id"]
         self.attributes = PolarionAttributes(work_item_as_json_dict["attributes"])
         self.short_identifier = self.attributes.identifier
