@@ -1,6 +1,10 @@
 from enum import Enum, auto
 
 
+class PolarionUserItemType(Enum):
+    USERS = auto()
+
+
 class PolarionWorkItemType(Enum):
     WORKITEMS = auto()
 
