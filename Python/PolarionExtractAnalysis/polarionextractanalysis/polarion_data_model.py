@@ -25,7 +25,7 @@ class PolarionUser:
         self.type_enum = type_enum
         self.identifier = identifier
         self.all_work_items_assigned: List[PolarionWorkItem] = []
-        self.entity_name = self.users_library.all_users_with_entity_dict[identifier] if users_library in self.users_library.all_users_with_entity_dict else None
+        self.entity_name = self.users_library.all_users_with_entity_dict[identifier] if identifier in self.users_library.all_users_with_entity_dict else None
 
 
 class UsersLibrary:
@@ -38,7 +38,7 @@ class UsersLibrary:
         for entity_name in ["atos", "siemens"]:
 
             with open(f"input/{entity_name}_users_data.txt", "r", encoding="utf-8") as user_and_role_data_text_file:
-                users_data = user_and_role_data_text_file.readlines()
+                users_data = [user.strip() for user in user_and_role_data_text_file.readlines()]
                 assert users_data
                 self.all_users_by_entity[entity_name.upper()] = users_data
                 for user_data in users_data:
@@ -112,9 +112,9 @@ class PolarionLibrary:
                 [
                     {
                         "identifier": work_item.identifier,
-                        "type": work_item.item_type,
+                        "type": work_item.attributes.type.name,
                         "Project name": work_item.project_name,
-                        "Status (raw)": work_item.attributes.status_raw,
+                        "Status": work_item.attributes.status.name,
                         "Created timestamp": work_item.created_timestamp.replace(tzinfo=None),
                         "Updated timestamp": work_item.updated_timestamp.replace(tzinfo=None),
                         "Entity assigned": ",".join(set(w.entity_name for w in work_item.assignees if w.entity_name)),
@@ -143,7 +143,7 @@ class PolarionAttributes:
         raw_created_timestamp = cast(str, attributes_as_json_dict["created"])
         self.created_timestamp = datetime.fromisoformat(raw_created_timestamp)
         self.updated_timestamp = datetime.fromisoformat(cast(str, attributes_as_json_dict["updated"]))
-        self.status_raw = PolarionStatus[string_utils.text_to_valid_enum_value_text(attributes_as_json_dict["status"])]
+        self.status = PolarionStatus[string_utils.text_to_valid_enum_value_text(attributes_as_json_dict["status"])]
 
 
 class PolarionWorkItem:
