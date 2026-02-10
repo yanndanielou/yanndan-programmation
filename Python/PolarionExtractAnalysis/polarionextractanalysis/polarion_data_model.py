@@ -1,10 +1,11 @@
 import json
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List, cast
+from typing import Dict, List, Tuple, cast
 
 import pandas as pd
-from common import string_utils, file_name_utils
+from common import file_name_utils, string_utils
 from logger import logger_config
 
 from polarionextractanalysis.constants import (
@@ -23,11 +24,25 @@ class PolarionUser:
         self.type_enum = type_enum
         self.identifier = identifier
         self.all_work_items_assigned: List[PolarionWorkItem] = []
+        self.entity_name = self.users_library.all_users_with_entity_dict[identifier] if users_library in self.users_library.all_users_with_entity_dict else None
 
 
 class UsersLibrary:
     def __init__(self) -> None:
         self.all_users: List[PolarionUser] = []
+
+        self.all_users_with_entity_dict: Dict[str, str] = {}
+        self.all_users_by_entity: Dict[str, List[str]] = {}
+
+        for entity_name in ["atos", "siemens"]:
+
+            with open(f"input/{entity_name}_users_data.txt", "r", encoding="utf-8") as user_and_role_data_text_file:
+                users_data = user_and_role_data_text_file.readlines()
+                assert users_data
+                self.all_users_by_entity[entity_name.upper()] = users_data
+                for user_data in users_data:
+                    self.all_users_with_entity_dict[user_data] = entity_name.upper()
+                logger_config.print_and_log_info(f"{len(users_data)} {entity_name} users created : {','.join(users_data)}")
 
     def get_or_create_user_by_type_and_identifier(self, type_raw: str, identifier: str) -> PolarionUser:
         type_enum = PolarionUserItemType[string_utils.text_to_valid_enum_value_text(type_raw)]
@@ -50,6 +65,7 @@ class UsersLibrary:
                     {
                         "type": user.type_enum.name if user.type_enum is not None else None,
                         "identifier": user.identifier,
+                        "Entity name": user.entity_name,
                         "Number of work items": len(user.all_work_items_assigned),
                         "work_items": ",".join(w.identifier for w in user.all_work_items_assigned),
                     }
@@ -97,8 +113,8 @@ class PolarionLibrary:
                         "identifier": work_item.identifier,
                         "type": work_item.item_type,
                         "Project name": work_item.project_name,
-                        "Created timestamp": work_item.created_timestamp,
-                        "Updated timestamp": work_item.updated_timestamp,
+                        "Created timestamp": work_item.created_timestamp.replace(tzinfo=None),
+                        "Updated timestamp": work_item.updated_timestamp.replace(tzinfo=None),
                         "Number users assigned": len(work_item.assignees),
                         "Users assigned": ",".join(w.identifier for w in work_item.assignees),
                     }
