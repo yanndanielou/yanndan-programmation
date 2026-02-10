@@ -78,18 +78,12 @@ def create_baregraph_work_item_number_cumulative_by_status(output_directory_path
                 count = len([work_item for work_item in work_items if work_item.attributes.status == status])
                 data_dict[work_item_type.name][status.name] = count
 
-        # Fill missing status values with 0
-        for work_item_type in data_dict.keys():
-            for status in all_statuses:
-                if status.name not in data_dict[work_item_type]:
-                    data_dict[work_item_type][status.name] = 0
-
         # Create stacked bar chart with Plotly
         fig = go.Figure()
 
         for status in sorted([s.name for s in all_statuses]):
             present_keys = sorted([wit for wit in sorted(data_dict.keys()) if data_dict[wit].get(status, 0) > 0])
-            values = [data_dict[wit].get(status, 0) for wit in sorted(data_dict.keys()) if data_dict[wit].get(status, 0) > 0]
+            values = [data_dict[wit].get(status, 0) for wit in present_keys]
 
             fig.add_trace(go.Bar(x=sorted(present_keys), y=values, name=status))
 
