@@ -11,6 +11,7 @@ from logger import logger_config
 from polarionextractanalysis.constants import (
     PolarionAttributeType,
     PolarionSeverity,
+    PolarionStatus,
     PolarionUserItemType,
     PolarionWorkItemType,
 )
@@ -113,8 +114,10 @@ class PolarionLibrary:
                         "identifier": work_item.identifier,
                         "type": work_item.item_type,
                         "Project name": work_item.project_name,
+                        "Status (raw)": work_item.attributes.status_raw,
                         "Created timestamp": work_item.created_timestamp.replace(tzinfo=None),
                         "Updated timestamp": work_item.updated_timestamp.replace(tzinfo=None),
+                        "Entity assigned": ",".join(set(w.entity_name for w in work_item.assignees if w.entity_name)),
                         "Number users assigned": len(work_item.assignees),
                         "Users assigned": ",".join(w.identifier for w in work_item.assignees),
                     }
@@ -140,6 +143,7 @@ class PolarionAttributes:
         raw_created_timestamp = cast(str, attributes_as_json_dict["created"])
         self.created_timestamp = datetime.fromisoformat(raw_created_timestamp)
         self.updated_timestamp = datetime.fromisoformat(cast(str, attributes_as_json_dict["updated"]))
+        self.status_raw = PolarionStatus[string_utils.text_to_valid_enum_value_text(attributes_as_json_dict["status"])]
 
 
 class PolarionWorkItem:
@@ -151,6 +155,7 @@ class PolarionWorkItem:
         self.attributes = PolarionAttributes(work_item_as_json_dict["attributes"])
         self.attributes.identifier = work_item_as_json_dict["attributes"]["id"]
         # self.relationships = PolarionRelationships(work_item_as_json_dict["relationships"])
+
         self.project_name = work_item_as_json_dict["relationships"]["project"]["data"]["id"]
         self.created_timestamp = datetime.fromisoformat(work_item_as_json_dict["attributes"]["created"])
         self.updated_timestamp = datetime.fromisoformat(work_item_as_json_dict["attributes"]["updated"])
