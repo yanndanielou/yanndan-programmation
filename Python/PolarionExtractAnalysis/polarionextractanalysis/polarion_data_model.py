@@ -68,7 +68,7 @@ class UsersLibrary:
                         "identifier": user.identifier,
                         "Entity name": user.entity_name,
                         "Number of work items": len(user.all_work_items_assigned),
-                        "work_items": ",".join(w.identifier for w in user.all_work_items_assigned),
+                        "work_items": ",".join(w.long_identifier for w in user.all_work_items_assigned),
                     }
                     for user in self.all_users
                 ]
@@ -111,7 +111,7 @@ class PolarionLibrary:
             df = pd.DataFrame(
                 [
                     {
-                        "identifier": work_item.identifier,
+                        "identifier": work_item.attributes.identifier,
                         "type": work_item.attributes.type.name,
                         "Project name": work_item.project_name,
                         "Status": work_item.attributes.status.name,
@@ -151,8 +151,9 @@ class PolarionWorkItem:
     def __init__(self, library: PolarionLibrary, work_item_as_json_dict: Dict) -> None:
         self.library = library
         self.item_type = PolarionWorkItemType[string_utils.text_to_valid_enum_value_text(work_item_as_json_dict["type"])]
-        self.identifier = work_item_as_json_dict["id"]
+        self.long_identifier = work_item_as_json_dict["id"]
         self.attributes = PolarionAttributes(work_item_as_json_dict["attributes"])
+        self.short_identifier = self.attributes.identifier
         self.attributes.identifier = work_item_as_json_dict["attributes"]["id"]
         # self.relationships = PolarionRelationships(work_item_as_json_dict["relationships"])
 
