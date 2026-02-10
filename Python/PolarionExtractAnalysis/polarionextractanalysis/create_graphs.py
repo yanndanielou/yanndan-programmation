@@ -57,7 +57,7 @@ def create_baregraph_work_item_number_by_status_by_type(output_directory_path: s
             num_bars = len(df)
             figure_width = max(800, num_bars * 100)
             fig = go.Figure(data=[go.Bar(x=df["Status"], y=df[f"Number of work items {work_item_type}"], marker=dict(color="#9a95d1"), width=0.1)])
-            fig.update_layout(title=f"{work_item_type} per status", xaxis_title="Status", yaxis_title="Number of work items", hovermode="x unified", width=figure_width)
+            fig.update_layout(title=f"{work_item_type.name} per status", xaxis_title="Status", yaxis_title="Number of work items", hovermode="x unified", width=figure_width)
             fig.write_html(f"{output_directory_path}/{common_output_label}{file_name_utils.get_file_suffix_with_current_datetime()}.html")
 
 
