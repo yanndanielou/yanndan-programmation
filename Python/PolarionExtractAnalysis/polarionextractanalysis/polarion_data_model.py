@@ -117,6 +117,7 @@ class PolarionWorkItemLibrary:
                 for work_item_as_json in all_work_items_as_json:
                     try:
                         assert isinstance(work_item_as_json, dict)
+                        work_item: PolarionWorkItem
                         if work_item_as_json["attributes"]["type"] == "secondRegard":
                             work_item = PolarionSecondRegardWorkItem(polarion_library=self.polarion_library, work_item_as_json_dict=work_item_as_json)
                         elif work_item_as_json["attributes"]["type"] == "FAN_Titulaire":
