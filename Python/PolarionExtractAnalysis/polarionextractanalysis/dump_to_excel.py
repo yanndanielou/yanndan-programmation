@@ -77,6 +77,8 @@ def dump_work_items_to_excel_file(work_items_library: polarion_data_model.Polari
                     "type": work_item.attributes.type.name,
                     "Project": work_item.project.identifier,
                     "Status": work_item.attributes.status.name,
+                    "Author": work_item.author.user_definition.full_name,
+                    "Author company": work_item.author.user_definition.company.full_name,
                     "Created timestamp": work_item.created_timestamp.replace(tzinfo=None),
                     "Updated timestamp": work_item.updated_timestamp.replace(tzinfo=None),
                     "Companies assigned": ",".join(set(w.user_definition.company.full_name for w in work_item.assignees)),
