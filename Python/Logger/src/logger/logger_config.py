@@ -105,13 +105,24 @@ def print_and_log_info(to_print_and_log: str, do_not_print: bool = False) -> Non
     logging.info(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
 
-def print_and_log_warning(to_print_and_log: str, do_not_print: bool = False) -> None:
+def print_and_log_warning(
+    to_print_and_log: str,
+    do_not_print: bool = False,
+    call_stack_frame: int = DEFAULT_CALL_STACK_FRAME_VALUE,
+) -> None:
     """Print in standard output and log in file as info level"""
     log_timestamp = time.asctime(time.localtime(time.time()))
 
     # pylint: disable=line-too-long
     if not do_not_print:
-        print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + str() + to_print_and_log)
+        print(
+            log_timestamp
+            + "\t"
+            + __get_calling_file_name_and_line_number(call_stack_frame=call_stack_frame)
+            + "\t"
+            + str()
+            + to_print_and_log
+        )
     logging.warning(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
 
@@ -122,10 +133,10 @@ def print_and_log_exception(exception_to_print: Exception, additional_text: Opti
 
     if additional_text:
         to_print_and_log = f"Exception raised:{additional_text} "
-        print_and_log_error(to_print_and_log, call_stack_frame=3)
+        print_and_log_warning(to_print_and_log, call_stack_frame=3)
 
     print_and_log_error(to_print_and_log=f"Exception raised, content:{str(exception_to_print)}", call_stack_frame=3)
-    print_and_log_error(
+    print_and_log_warning(
         to_print_and_log=f"Exception raised, type:{exception_to_print.__class__.__name__}", call_stack_frame=3
     )
 
