@@ -24,10 +24,18 @@ class PolarionAttributeType(Enum):
 
 class PolarionFanDestinataire(Enum):
     TITULAIRE_SIEMENS = auto()
+    TITULAIRE_ALSTOM = auto()
+    TITULAIRE_THALES = auto()
+    TITULAIRE_EVIDEN = auto()
 
 
 class PolarionFanTestEnvironment(Enum):
     PFB = "PLATEFORME_BORD"
+    SIFOR = "SIFOR"
+    BE = "BE_GAGNY"
+    LE = "Ligne_Est"
+    LEO = "Ligne_Est_Ouest"
+    PFS = "Plateforme_Systeme_Ou_Covasec"
 
 
 class PolarionSeverity(Enum):

@@ -70,22 +70,37 @@ def dump_work_items_to_excel_file(work_items_library: polarion_data_model.Polari
     excel_file_name = "all_work_items_" + file_name_utils.get_file_suffix_with_current_datetime() + EXCEL_FILE_EXTENSION
     excel_file_path = output_directory_path + "/" + excel_file_name
     with logger_config.stopwatch_with_label(f"Dump all work items to excel file {excel_file_name}"):
-        df = pd.DataFrame(
-            [
-                {
-                    "identifier": work_item.attributes.identifier,
-                    "type": work_item.attributes.type.name,
-                    "Project": work_item.project.identifier,
-                    "Status": work_item.attributes.status.name,
-                    "Author": work_item.author.user_definition.full_name,
-                    "Author company": work_item.author.user_definition.company.full_name,
-                    "Created timestamp": work_item.created_timestamp.replace(tzinfo=None),
-                    "Updated timestamp": work_item.updated_timestamp.replace(tzinfo=None),
-                    "Companies assigned": ",".join(set(w.user_definition.company.full_name for w in work_item.assignees)),
-                    "Number users assigned": len(work_item.assignees),
-                    "Users assigned": ",".join(w.user_definition.full_name for w in work_item.assignees),
-                }
-                for work_item in work_items_library.all_work_items
-            ]
-        )
+        rows = []
+        for work_item in work_items_library.all_work_items:
+            row = {
+                "identifier": work_item.attributes.identifier,
+                "type": work_item.attributes.type.name,
+                "Project": work_item.project.identifier,
+                "Status": work_item.attributes.status.name,
+                "Author": work_item.author.user_definition.full_name,
+                "Author company": work_item.author.user_definition.company.full_name,
+                "Created timestamp": work_item.created_timestamp.replace(tzinfo=None),
+                "Updated timestamp": work_item.updated_timestamp.replace(tzinfo=None),
+                "Companies assigned": ",".join(set(w.user_definition.company.full_name for w in work_item.assignees)),
+                "Number users assigned": len(work_item.assignees),
+                "Users assigned": ",".join(w.user_definition.full_name for w in work_item.assignees),
+            }
+
+            if isinstance(work_item, polarion_data_model.PolarionSecondRegardWorkItem):
+                row["SR_theme"] = getattr(work_item, "theme", None)
+
+            if isinstance(work_item, polarion_data_model.PolarionFicheAnomalieTitulaireWorkItem):
+                row["FAN_titulaire_Element"] = getattr(work_item, "suspected_element", None)
+                row["FAN_titulaire_Environnement"] = getattr(work_item, "environment", None)
+
+            if isinstance(work_item, polarion_data_model.PolarionFicheAnomalieWorkItem):
+                row["FAN_suspected_element"] = getattr(work_item, "suspected_element", None)
+                row["FAN_next_reference"] = getattr(work_item, "next_reference", None)
+                row["FAN_destinataire"] = work_item.destinataire.name if getattr(work_item, "destinataire", None) is not None else None
+                row["FAN_test_environment"] = work_item.test_environment.name if work_item.test_environment else None
+                row["FAN_ref_anomalie_destinataire"] = work_item.ref_anomalie_destinataire
+
+            rows.append(row)
+
+        df = pd.DataFrame(rows)
         df.to_excel(excel_file_path, index=False)

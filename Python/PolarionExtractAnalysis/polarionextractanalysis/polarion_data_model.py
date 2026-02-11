@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List, cast
+from typing import Dict, List, cast, Optional
 
 from common import string_utils
 from logger import logger_config
@@ -16,27 +16,56 @@ class PolarionUserCompany:
 
 
 class PolarionUserDefinition:
-    def __init__(self, users_library: "PolarionUsersLibrary", as_json_dict: Dict) -> None:
+    def __init__(self, users_library: "PolarionUsersLibrary", build_data: "PolarionUserDefinition.BuildData") -> None:
         self.users_library = users_library
-        self.identifier = as_json_dict["id"]
-        self.type_enum = PolarionUserItemType[string_utils.text_to_valid_enum_value_text(as_json_dict["type"])]
-        attributes = as_json_dict["attributes"]
-        self.full_name = attributes["name"]
-        self.email = attributes["email"] if "email" in attributes else None
-        self.initials = attributes["initials"]
-        self.all_work_items_assigned: List[PolarionWorkItem] = []
-        entity_name = cast(str, self.email).split("@")[-1] if self.email else None
-        entity_name = "SNCF" if entity_name and "sncf" in entity_name.lower() else entity_name
-        entity_name = "ATOS" if entity_name and "eviden" in entity_name.lower() else entity_name
-        entity_name = entity_name.split(".")[0].upper() if entity_name else entity_name
-        self.company = users_library.get_or_create_user_company_user_by_full_name(entity_name if entity_name else "Unknown")
+        self.build_data = build_data
+        self.identifier = build_data.identifier
+        self.type_enum = build_data.type_enum
+        self.full_name = build_data.full_name
+        self.company = users_library.get_or_create_user_company_user_by_full_name(build_data.entity_name if build_data.entity_name else "Unknown")
         self.company.all_users_definitions.append(self)
+
+    @dataclass
+    class BuildData:
+        identifier: str
+        type_enum: PolarionUserItemType
+        full_name: str
+        email: Optional[str]
+        entity_name: Optional[str]
+        initials: str
+
+    class Builder:
+        @staticmethod
+        def build_with_json_dict(users_library: "PolarionUsersLibrary", as_json_dict: Dict) -> "PolarionUserDefinition":
+
+            attributes = as_json_dict["attributes"]
+            email = attributes["email"] if "email" in attributes else None
+            entity_name = cast(str, email).split("@")[-1] if email else None
+            entity_name = "SNCF" if entity_name and "sncf" in entity_name.lower() else entity_name
+            entity_name = "ATOS" if entity_name and "eviden" in entity_name.lower() else entity_name
+            entity_name = entity_name.split(".")[0].upper() if entity_name else entity_name
+            build_data = PolarionUserDefinition.BuildData(
+                full_name=attributes["name"],
+                email=email,
+                initials=attributes["initials"],
+                identifier=as_json_dict["id"],
+                type_enum=PolarionUserItemType[string_utils.text_to_valid_enum_value_text(as_json_dict["type"])],
+                entity_name=entity_name,
+            )
+            user_definition = PolarionUserDefinition(users_library=users_library, build_data=build_data)
+            return user_definition
 
 
 class PolarionUser:
-    def __init__(self, users_library: "PolarionUsersLibrary", as_json_dict: Dict) -> None:
-        self.user_definition = PolarionUserDefinition(users_library=users_library, as_json_dict=as_json_dict)
+    def __init__(self, user_definition: "PolarionUserDefinition") -> None:
+        self.user_definition = user_definition
         self.all_work_items_assigned: List[PolarionWorkItem] = []
+
+    class Builder:
+        @staticmethod
+        def build_with_json_dict(users_library: "PolarionUsersLibrary", as_json_dict: Dict) -> "PolarionUser":
+            user_definition = PolarionUserDefinition.Builder.build_with_json_dict(users_library=users_library, as_json_dict=as_json_dict)
+            return PolarionUser(user_definition=user_definition)
 
 
 class PolarionUsersLibrary:
@@ -62,7 +91,7 @@ class PolarionUsersLibrary:
                 for user_as_json in all_items_as_json:
                     try:
                         assert isinstance(user_as_json, dict)
-                        user = PolarionUser(users_library=self, as_json_dict=user_as_json)
+                        user = PolarionUser.Builder.build_with_json_dict(users_library=self, as_json_dict=user_as_json)
                         assert user.user_definition.identifier not in self.users_by_identifier
                         self.users_by_identifier[user.user_definition.identifier] = user
                         self.all_users.append(user)
@@ -72,9 +101,24 @@ class PolarionUsersLibrary:
 
             logger_config.print_and_log_info(f"{len(self.all_users)} work items created. {len(self.all_not_parsed_because_errors_users_as_json)} could not be created")
 
-    def get_user_by_identifier(self, identifier: str) -> PolarionUser:
+    def get_user_by_identifier(self, identifier: str, search_label_context: str = "unknown context") -> PolarionUser:
         users_found = [user for user in self.all_users if user.user_definition.identifier == identifier]
-        assert users_found, f"user {identifier} not found"
+        try:
+            assert users_found, f"user {identifier} not found. Context:{search_label_context}"
+        except AssertionError as err:
+            logger_config.print_and_log_exception(err)
+            reference = f"Not_found_{identifier}"
+            self.all_users.append(
+                PolarionUser(
+                    PolarionUserDefinition(
+                        users_library=self,
+                        build_data=PolarionUserDefinition.BuildData(
+                            identifier=identifier, type_enum=PolarionUserItemType.USERS, full_name=reference, email=reference, entity_name=None, initials=reference
+                        ),
+                    )
+                )
+            )
+            return self.get_user_by_identifier(identifier=identifier)
         assert len(users_found) == 1
         return users_found[0]
 
@@ -135,6 +179,7 @@ class PolarionWorkItemLibrary:
 
                     except KeyError as key_err:
                         logger_config.print_and_log_exception(key_err)
+                        logger_config.print_and_log_error(f"Could not create item {work_item_as_json["id"]}")
                         self.all_not_parsed_because_errors_work_items_as_json.append(work_item_as_json)
 
             logger_config.print_and_log_info(f"{len(self.all_work_items)} work items created. {len(self.all_not_parsed_because_errors_work_items_as_json)} could not be created")
@@ -195,14 +240,14 @@ class PolarionWorkItem:
         self.created_timestamp = datetime.fromisoformat(work_item_as_json_dict["attributes"]["created"])
         self.updated_timestamp = datetime.fromisoformat(work_item_as_json_dict["attributes"]["updated"])
         author_raw = work_item_as_json_dict["relationships"]["author"]["data"]
-        self.author = polarion_library.users_library.get_user_by_identifier(identifier=author_raw["id"])
+        self.author = polarion_library.users_library.get_user_by_identifier(identifier=author_raw["id"], search_label_context=f"Author {self.short_identifier}")
         self.assignees: List[PolarionUser] = []
         assignees_raw = cast(Dict[str, List[Dict[str, str]]], work_item_as_json_dict["relationships"]["assignee"])
         if "data" in assignees_raw:
             assignees_data_raw = assignees_raw["data"]
             for assignee_raw_data in assignees_data_raw:
                 user_identifier = assignee_raw_data["id"]
-                assignee = polarion_library.users_library.get_user_by_identifier(identifier=user_identifier)
+                assignee = polarion_library.users_library.get_user_by_identifier(identifier=user_identifier, search_label_context=f"Author {self.short_identifier}")
                 self.assignees.append(assignee)
                 assignee.all_work_items_assigned.append(self)
 
@@ -216,15 +261,17 @@ class PolarionSecondRegardWorkItem(PolarionWorkItem):
 class PolarionFicheAnomalieTitulaireWorkItem(PolarionWorkItem):
     def __init__(self, polarion_library: PolarionLibrary, work_item_as_json_dict: Dict) -> None:
         super().__init__(polarion_library=polarion_library, work_item_as_json_dict=work_item_as_json_dict)
-        self.suspected_element = cast(str, work_item_as_json_dict["attributes"]["Element"])
-        self.environment = cast(str, work_item_as_json_dict["attributes"]["Environnement"])
+        self.suspected_element = cast(str, work_item_as_json_dict["attributes"]["Element"]) if "Element" in work_item_as_json_dict["attributes"] else None
+        self.environment = cast(str, work_item_as_json_dict["attributes"]["Environnement"]) if "Environnement" in work_item_as_json_dict["attributes"] else None
 
 
 class PolarionFicheAnomalieWorkItem(PolarionWorkItem):
     def __init__(self, polarion_library: PolarionLibrary, work_item_as_json_dict: Dict) -> None:
         super().__init__(polarion_library=polarion_library, work_item_as_json_dict=work_item_as_json_dict)
-        self.suspected_element = cast(str, work_item_as_json_dict["attributes"]["FAN_element_suspecte"])
+        self.suspected_element = cast(str, work_item_as_json_dict["attributes"]["FAN_element_suspecte"]) if "FAN_element_suspecte" in work_item_as_json_dict["attributes"] else None
         self.next_reference = cast(str, work_item_as_json_dict["attributes"]["NEXT_reference"])
         self.destinataire = PolarionFanDestinataire[string_utils.text_to_valid_enum_value_text(cast(str, work_item_as_json_dict["attributes"]["FAN_destinataire"]))]
-        self.test_environment = PolarionFanTestEnvironment[cast(str, work_item_as_json_dict["attributes"]["FAN_moyen_test"])]
-        self.ref_anomalie_destinataire = PolarionFanTestEnvironment[cast(str, work_item_as_json_dict["attributes"]["FAN_ref_anomalie_destinataire"])]
+        self.test_environment = PolarionFanTestEnvironment[cast(str, work_item_as_json_dict["attributes"]["FAN_moyen_test"])] if "FAN_moyen_test" in work_item_as_json_dict["attributes"] else None
+        self.ref_anomalie_destinataire = (
+            cast(str, work_item_as_json_dict["attributes"]["FAN_ref_anomalie_destinataire"]) if "FAN_ref_anomalie_destinataire" in work_item_as_json_dict["attributes"] else None
+        )
