@@ -117,7 +117,12 @@ class PolarionWorkItemLibrary:
                 for work_item_as_json in all_work_items_as_json:
                     try:
                         assert isinstance(work_item_as_json, dict)
-                        work_item = PolarionWorkItem(polarion_library=self.polarion_library, work_item_as_json_dict=work_item_as_json)
+                        if work_item_as_json["attributes"]["type"] == "secondRegard":
+                            work_item = PolarionSecondRegardWorkItem(polarion_library=self.polarion_library, work_item_as_json_dict=work_item_as_json)
+                        elif work_item_as_json["attributes"]["type"] == "FAN_Titulaire":
+                            work_item = PolarionFicheAnomalieTitulaireWorkItem(polarion_library=self.polarion_library, work_item_as_json_dict=work_item_as_json)
+                        else:
+                            work_item = PolarionWorkItem(polarion_library=self.polarion_library, work_item_as_json_dict=work_item_as_json)
                         self.all_work_items.append(work_item)
 
                         if work_item.attributes.type not in self.all_work_items_by_type:
@@ -185,6 +190,8 @@ class PolarionWorkItem:
         self.project.all_work_items.append(self)
         self.created_timestamp = datetime.fromisoformat(work_item_as_json_dict["attributes"]["created"])
         self.updated_timestamp = datetime.fromisoformat(work_item_as_json_dict["attributes"]["updated"])
+        author_raw = work_item_as_json_dict["relationships"]["author"]["data"]
+        self.author = polarion_library.users_library.get_user_by_identifier(identifier=author_raw["id"])
         self.assignees: List[PolarionUser] = []
         assignees_raw = cast(Dict[str, List[Dict[str, str]]], work_item_as_json_dict["relationships"]["assignee"])
         if "data" in assignees_raw:
@@ -194,3 +201,16 @@ class PolarionWorkItem:
                 assignee = polarion_library.users_library.get_user_by_identifier(identifier=user_identifier)
                 self.assignees.append(assignee)
                 assignee.all_work_items_assigned.append(self)
+
+
+class PolarionSecondRegardWorkItem(PolarionWorkItem):
+    def __init__(self, polarion_library: PolarionLibrary, work_item_as_json_dict: Dict) -> None:
+        super().__init__(polarion_library=polarion_library, work_item_as_json_dict=work_item_as_json_dict)
+        self.theme = cast(str, work_item_as_json_dict["attributes"]["SR_theme"])
+
+
+class PolarionFicheAnomalieTitulaireWorkItem(PolarionWorkItem):
+    def __init__(self, polarion_library: PolarionLibrary, work_item_as_json_dict: Dict) -> None:
+        super().__init__(polarion_library=polarion_library, work_item_as_json_dict=work_item_as_json_dict)
+        self.suspected_element = cast(str, work_item_as_json_dict["attributes"]["Element"])
+        self.environment = cast(str, work_item_as_json_dict["attributes"]["Environnement"])
