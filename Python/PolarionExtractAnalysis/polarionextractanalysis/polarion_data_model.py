@@ -7,6 +7,7 @@ from common import string_utils
 from logger import logger_config
 
 from polarionextractanalysis.constants import PolarionAttributeType, PolarionSeverity, PolarionStatus, PolarionUserItemType, PolarionFanDestinataire, PolarionFanTestEnvironment
+from polarionextractanalysis.param import WHITE_LIST_UNKNOWN_USER_IDS
 
 
 class PolarionUserCompany:
@@ -80,6 +81,9 @@ class PolarionUsersLibrary:
 
         self.polarion_library = polarion_library
 
+        for unknown_user_id in WHITE_LIST_UNKNOWN_USER_IDS:
+            self.add_unknown_user(unknown_user_id)
+
         with logger_config.stopwatch_with_label(f"User library {input_json_file_path} creation"):
 
             with logger_config.stopwatch_with_label(f"Read {input_json_file_path} file"):
@@ -101,23 +105,27 @@ class PolarionUsersLibrary:
 
             logger_config.print_and_log_info(f"{len(self.all_users)} work items created. {len(self.all_not_parsed_because_errors_users_as_json)} could not be created")
 
+    def add_unknown_user(self, unknown_user_id: str) -> PolarionUser:
+        reference = f"Not_found_{unknown_user_id}"
+        user = PolarionUser(
+            PolarionUserDefinition(
+                users_library=self,
+                build_data=PolarionUserDefinition.BuildData(
+                    identifier=unknown_user_id, type_enum=PolarionUserItemType.USERS, full_name=reference, email=reference, entity_name=None, initials=reference
+                ),
+            )
+        )
+
+        self.all_users.append(user)
+        return user
+
     def get_user_by_identifier(self, identifier: str, search_label_context: str = "unknown context") -> PolarionUser:
         users_found = [user for user in self.all_users if user.user_definition.identifier == identifier]
         try:
             assert users_found, f"user {identifier} not found. Context:{search_label_context}"
         except AssertionError as err:
             logger_config.print_and_log_exception(err)
-            reference = f"Not_found_{identifier}"
-            self.all_users.append(
-                PolarionUser(
-                    PolarionUserDefinition(
-                        users_library=self,
-                        build_data=PolarionUserDefinition.BuildData(
-                            identifier=identifier, type_enum=PolarionUserItemType.USERS, full_name=reference, email=reference, entity_name=None, initials=reference
-                        ),
-                    )
-                )
-            )
+            self.add_unknown_user(identifier)
             return self.get_user_by_identifier(identifier=identifier)
         assert len(users_found) == 1
         return users_found[0]
