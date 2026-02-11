@@ -22,6 +22,14 @@ class PolarionAttributeType(Enum):
     SFT = auto()
 
 
+class PolarionFanDestinataire(Enum):
+    TITULAIRE_SIEMENS = auto()
+
+
+class PolarionFanTestEnvironment(Enum):
+    PFB = "PLATEFORME_BORD"
+
+
 class PolarionSeverity(Enum):
     NON_BLOQUANTE = auto()
     BLOQUANTE_SANS_IMPACT_SECURITE = auto()

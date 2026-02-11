@@ -6,12 +6,7 @@ from typing import Dict, List, cast
 from common import string_utils
 from logger import logger_config
 
-from polarionextractanalysis.constants import (
-    PolarionAttributeType,
-    PolarionSeverity,
-    PolarionStatus,
-    PolarionUserItemType,
-)
+from polarionextractanalysis.constants import PolarionAttributeType, PolarionSeverity, PolarionStatus, PolarionUserItemType, PolarionFanDestinataire, PolarionFanTestEnvironment
 
 
 class PolarionUserCompany:
@@ -103,6 +98,9 @@ class PolarionWorkItemLibrary:
     def __init__(self, input_json_file_path: str, polarion_library: PolarionLibrary) -> None:
         self.polarion_library = polarion_library
         self.all_work_items: List[PolarionWorkItem] = []
+        self.all_second_regards: List[PolarionSecondRegardWorkItem] = []
+        self.all_fans: List[PolarionFicheAnomalieWorkItem] = []
+        self.all_fans_titulaires: List[PolarionFicheAnomalieTitulaireWorkItem] = []
         self.all_not_parsed_because_errors_work_items_as_json: List[Dict] = []
         self.all_work_items_by_type: Dict[PolarionAttributeType, List[PolarionWorkItem]] = {}
 
@@ -120,8 +118,13 @@ class PolarionWorkItemLibrary:
                         work_item: PolarionWorkItem
                         if work_item_as_json["attributes"]["type"] == "secondRegard":
                             work_item = PolarionSecondRegardWorkItem(polarion_library=self.polarion_library, work_item_as_json_dict=work_item_as_json)
+                            self.all_second_regards.append(work_item)
                         elif work_item_as_json["attributes"]["type"] == "FAN_Titulaire":
                             work_item = PolarionFicheAnomalieTitulaireWorkItem(polarion_library=self.polarion_library, work_item_as_json_dict=work_item_as_json)
+                            self.all_fans_titulaires.append(work_item)
+                        elif work_item_as_json["attributes"]["type"] == "FAN":
+                            work_item = PolarionFicheAnomalieWorkItem(polarion_library=self.polarion_library, work_item_as_json_dict=work_item_as_json)
+                            self.all_fans.append(work_item)
                         else:
                             work_item = PolarionWorkItem(polarion_library=self.polarion_library, work_item_as_json_dict=work_item_as_json)
                         self.all_work_items.append(work_item)
@@ -215,3 +218,13 @@ class PolarionFicheAnomalieTitulaireWorkItem(PolarionWorkItem):
         super().__init__(polarion_library=polarion_library, work_item_as_json_dict=work_item_as_json_dict)
         self.suspected_element = cast(str, work_item_as_json_dict["attributes"]["Element"])
         self.environment = cast(str, work_item_as_json_dict["attributes"]["Environnement"])
+
+
+class PolarionFicheAnomalieWorkItem(PolarionWorkItem):
+    def __init__(self, polarion_library: PolarionLibrary, work_item_as_json_dict: Dict) -> None:
+        super().__init__(polarion_library=polarion_library, work_item_as_json_dict=work_item_as_json_dict)
+        self.suspected_element = cast(str, work_item_as_json_dict["attributes"]["FAN_element_suspecte"])
+        self.next_reference = cast(str, work_item_as_json_dict["attributes"]["NEXT_reference"])
+        self.destinataire = PolarionFanDestinataire[string_utils.text_to_valid_enum_value_text(cast(str, work_item_as_json_dict["attributes"]["FAN_destinataire"]))]
+        self.test_environment = PolarionFanTestEnvironment[cast(str, work_item_as_json_dict["attributes"]["FAN_moyen_test"])]
+        self.ref_anomalie_destinataire = PolarionFanTestEnvironment[cast(str, work_item_as_json_dict["attributes"]["FAN_ref_anomalie_destinataire"])]
