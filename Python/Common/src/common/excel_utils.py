@@ -1,4 +1,6 @@
 # Standard
+import inspect
+import os
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -14,8 +16,6 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from win32com.client import Dispatch, gencache
-import os
-
 
 # import pywintypes
 from xlsxwriter.utility import xl_cell_to_rowcol, xl_col_to_name
@@ -367,7 +367,7 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
         number_of_columns_to_remove = len(columns_to_remove_names)
 
         with logger_config.stopwatch_with_label(
-            f"remove_columns_with_xlwings input_excel_file_path:{workbook_dml.name}, sheet_name:{sheet_name}, {number_of_columns_to_remove} columns to remove: names:{columns_to_remove_names}",
+            f"{inspect.stack(0)[0].function}:  input_excel_file_path:{workbook_dml.name}, sheet_name:{sheet_name}, {number_of_columns_to_remove} columns to remove: names:{columns_to_remove_names}",
             inform_beginning=True,
         ):
 
@@ -375,7 +375,7 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
 
             # Obtenir toutes les valeurs de la première ligne
             at_beginning_headers: List[str] = sht.range("A1").expand("right").value
-            logger_config.print_and_log_info(f"At beginning, {len(at_beginning_headers)} headers: {at_beginning_headers}")
+            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: At beginning, {len(at_beginning_headers)} headers: {at_beginning_headers}")
 
             if removal_operation_type == ColumnRemovalOperationType.ALL_COLUMNS_AT_ONCE:
 
@@ -383,19 +383,19 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
                 for colum_it, column_name_to_remove in enumerate(columns_to_remove_names):
                     col_index_starting_0 = at_beginning_headers.index(column_name_to_remove)
                     all_col_initial_index_to_remove.append(col_index_starting_0)
-                logger_config.print_and_log_info(f"all_col_initial_index_to_remove: {all_col_initial_index_to_remove}")
+                logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: all_col_initial_index_to_remove: {all_col_initial_index_to_remove}")
 
                 all_col_initial_index_to_remove_sorted = list(reversed(sorted(all_col_initial_index_to_remove)))
-                logger_config.print_and_log_info(f"all_col_initial_index_to_remove_sorted: {all_col_initial_index_to_remove_sorted}")
+                logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: all_col_initial_index_to_remove_sorted: {all_col_initial_index_to_remove_sorted}")
 
                 all_columns_letters_to_remove = [xl_col_to_name(col_index) for col_index in all_col_initial_index_to_remove]
-                logger_config.print_and_log_info(f"all_columns_letters_to_remove: {all_columns_letters_to_remove}")
+                logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: all_columns_letters_to_remove: {all_columns_letters_to_remove}")
 
                 all_columns_letters_to_remove_range = ",".join([f"{letter}:{letter}" for letter in all_columns_letters_to_remove])
-                logger_config.print_and_log_info(f"all_columns_letters_to_remove_range: {all_columns_letters_to_remove_range}")
+                logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: all_columns_letters_to_remove_range: {all_columns_letters_to_remove_range}")
 
                 with logger_config.stopwatch_with_label(
-                    label=f"Removing range {all_columns_letters_to_remove_range} columns {all_columns_letters_to_remove}",
+                    label=f"{inspect.stack(0)[0].function}: Removing range {all_columns_letters_to_remove_range} columns {all_columns_letters_to_remove}",
                     inform_beginning=True,
                 ):
                     sht.range(all_columns_letters_to_remove_range).api.Delete(DeleteShiftDirection.xlShiftToLeft)
@@ -414,17 +414,17 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
                 for colum_it, column_name_to_remove in enumerate(columns_to_remove_names):
                     # Obtenir toutes les valeurs de la première ligne
                     headers_found_in_excel = sht.range("A1").expand("right").value
-                    logger_config.print_and_log_info(f"{len(headers_found_in_excel)} headers:{headers_found_in_excel}")
+                    logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: {len(headers_found_in_excel)} headers:{headers_found_in_excel}")
 
                     if column_name_to_remove in headers_found_in_excel:
 
                         # Trouver l'index de la colonne à supprimer
                         logger_config.print_and_log_info(
-                            f"removing {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}%"
+                            f"{inspect.stack(0)[0].function}: removing {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}%"
                         )
                         col_index_starting_0 = headers_found_in_excel.index(column_name_to_remove)
                         col_letter = xl_col_to_name(col_index_starting_0)
-                        logger_config.print_and_log_info(f"col_index:{col_index_starting_0}, col_letter:{col_letter}")
+                        logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: col_index:{col_index_starting_0}, col_letter:{col_letter}")
                         with logger_config.stopwatch_with_label(
                             label=f"Removing {colum_it+1}/{number_of_columns_to_remove}th column {column_name_to_remove} with index(starting0):{col_index_starting_0}, letter:{col_letter}.  {round((colum_it+1)/number_of_columns_to_remove*100,2)}%",
                             inform_beginning=False,
@@ -441,10 +441,10 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
                                 col_index_starting_1 = headers_found_in_excel.index(column_name_to_remove) + 1
                                 sht.range((1, col_index_starting_1), (sht.cells.last_cell.row, col_index_starting_1)).delete()  # Supprimer la colonne
                     else:
-                        logger_config.print_and_log_error(f"Column {column_name_to_remove} not found in excel among {headers_found_in_excel}")
+                        logger_config.print_and_log_error(f"{inspect.stack(0)[0].function}: Column {column_name_to_remove} not found in excel among {headers_found_in_excel}")
 
             at_end_headers: List[str] = sht.range("A1").expand("right").value
-            logger_config.print_and_log_info(f"At the end, {len(at_end_headers)} headers: {at_end_headers}")
+            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: At the end, {len(at_end_headers)} headers: {at_end_headers}")
 
 
 @dataclass
@@ -585,11 +585,11 @@ def remove_columns_with_openpyxl(
 ) -> str:
     with file_utils.temporary_copy_of_file(remove_columns_instruction.input_excel_file_path) as temp_xlsm_file_full_path:
         with logger_config.stopwatch_with_label(
-            f"remove_columns_with_openpyxl input_excel_file_path:{remove_columns_instruction.input_excel_file_path}, sheet_name:{remove_columns_instruction.sheet_name}, file_to_create_path:{remove_columns_instruction.file_to_create_path}, columns_to_remove_names:{remove_columns_instruction.columns_to_remove_names}",
+            f"{inspect.stack(0)[0].function} input_excel_file_path:{remove_columns_instruction.input_excel_file_path}, sheet_name:{remove_columns_instruction.sheet_name}, file_to_create_path:{remove_columns_instruction.file_to_create_path}, columns_to_remove_names:{remove_columns_instruction.columns_to_remove_names}",
             inform_beginning=True,
         ):
 
-            with logger_config.stopwatch_with_label(label=f"Open {temp_xlsm_file_full_path}", inform_beginning=True):
+            with logger_config.stopwatch_with_label(label=f"{inspect.stack(0)[0].function} :Open {temp_xlsm_file_full_path}", inform_beginning=True):
                 workbook = openpyxl.load_workbook(temp_xlsm_file_full_path)
 
             worksheet = workbook[remove_columns_instruction.sheet_name]
@@ -598,7 +598,7 @@ def remove_columns_with_openpyxl(
             first_row = next(rows)
             at_beginning_headers = [c.value for c in first_row]
 
-            logger_config.print_and_log_info(f"At beginning, {len(at_beginning_headers)} headers: {at_beginning_headers}")
+            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: At beginning, {len(at_beginning_headers)} headers: {at_beginning_headers}")
 
             number_of_columns_to_remove = len(remove_columns_instruction.columns_to_remove_names)
 
@@ -608,12 +608,14 @@ def remove_columns_with_openpyxl(
                 rows = worksheet.iter_rows(min_row=1, max_row=1)
                 first_row = next(rows)
                 headers_found_in_excel = [c.value for c in first_row]
-                logger_config.print_and_log_info(f"{len(headers_found_in_excel)} headers:{headers_found_in_excel}")
+                logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: {len(headers_found_in_excel)} headers:{headers_found_in_excel}")
 
                 if column_name_to_remove in headers_found_in_excel:
 
                     # Trouver l'index de la colonne à supprimer
-                    logger_config.print_and_log_info(f"removing {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}%")
+                    logger_config.print_and_log_info(
+                        f"{inspect.stack(0)[0].function}: removing {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}%"
+                    )
 
                     col_index_starting_0 = headers_found_in_excel.index(column_name_to_remove)
                     col_index_starting_1 = headers_found_in_excel.index(column_name_to_remove) + 1
@@ -626,7 +628,7 @@ def remove_columns_with_openpyxl(
                         worksheet.delete_cols(col_index_starting_1)
 
                 else:
-                    logger_config.print_and_log_error(f"Column {column_name_to_remove} not found in excel among {headers_found_in_excel}")
+                    logger_config.print_and_log_error(f"{inspect.stack(0)[0].function}: Column {column_name_to_remove} not found in excel among {headers_found_in_excel}")
 
             save_and_close_workbook(workbook, remove_columns_instruction.file_to_create_path)
             return remove_columns_instruction.file_to_create_path
@@ -638,7 +640,7 @@ def remove_columns_with_xlwings(
 ) -> str:
     with file_utils.temporary_copy_of_file(remove_columns_instruction.input_excel_file_path) as temp_file_full_path:
         with logger_config.stopwatch_with_label(
-            f"remove_columns_with_xlwings input_excel_file_path:{remove_columns_instruction.input_excel_file_path}, sheet_name:{remove_columns_instruction.sheet_name}, file_to_create_path:{remove_columns_instruction.file_to_create_path}, columns_to_remove_names:{remove_columns_instruction.columns_to_remove_names}",
+            f" input_excel_file_path:{remove_columns_instruction.input_excel_file_path}, sheet_name:{remove_columns_instruction.sheet_name}, file_to_create_path:{remove_columns_instruction.file_to_create_path}, columns_to_remove_names:{remove_columns_instruction.columns_to_remove_names}",
             inform_beginning=True,
         ):
             workbook_dml = XlWingsOpenWorkbookOperation(input_excel_file_path=temp_file_full_path, excel_visibility=excel_visibility).do()
