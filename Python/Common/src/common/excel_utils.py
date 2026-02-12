@@ -585,7 +585,7 @@ def remove_columns_with_openpyxl(
 ) -> str:
     with file_utils.temporary_copy_of_file(remove_columns_instruction.input_excel_file_path) as temp_xlsm_file_full_path:
         with logger_config.stopwatch_with_label(
-            f"remove_columns_with_xlwings input_excel_file_path:{remove_columns_instruction.input_excel_file_path}, sheet_name:{remove_columns_instruction.sheet_name}, file_to_create_path:{remove_columns_instruction.file_to_create_path}, columns_to_remove_names:{remove_columns_instruction.columns_to_remove_names}",
+            f"remove_columns_with_openpyxl input_excel_file_path:{remove_columns_instruction.input_excel_file_path}, sheet_name:{remove_columns_instruction.sheet_name}, file_to_create_path:{remove_columns_instruction.file_to_create_path}, columns_to_remove_names:{remove_columns_instruction.columns_to_remove_names}",
             inform_beginning=True,
         ):
 
