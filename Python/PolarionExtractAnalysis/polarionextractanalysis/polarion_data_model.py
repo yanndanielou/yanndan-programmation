@@ -270,7 +270,11 @@ class PolarionFicheAnomalieTitulaireWorkItem(PolarionWorkItem):
     def __init__(self, polarion_library: PolarionLibrary, work_item_as_json_dict: Dict) -> None:
         super().__init__(polarion_library=polarion_library, work_item_as_json_dict=work_item_as_json_dict)
         self.suspected_element = cast(str, work_item_as_json_dict["attributes"]["Element"]) if "Element" in work_item_as_json_dict["attributes"] else None
-        self.environment = cast(str, work_item_as_json_dict["attributes"]["Environnement"]) if "Environnement" in work_item_as_json_dict["attributes"] else None
+        self.environment = (
+            PolarionFanTestEnvironment[string_utils.text_to_valid_enum_value_text(cast(str, work_item_as_json_dict["attributes"]["Environnement"]))]
+            if "Environnement" in work_item_as_json_dict["attributes"]
+            else None
+        )
 
 
 class PolarionFicheAnomalieWorkItem(PolarionWorkItem):

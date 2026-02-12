@@ -77,6 +77,7 @@ def dump_work_items_to_excel_file(work_items_library: polarion_data_model.Polari
                 "type": work_item.attributes.type.name,
                 "Project": work_item.project.identifier,
                 "Status": work_item.attributes.status.name,
+                "title": work_item.attributes.title,
                 "Author": work_item.author.user_definition.full_name,
                 "Author company": work_item.author.user_definition.company.full_name,
                 "Created timestamp": work_item.created_timestamp.replace(tzinfo=None),
@@ -87,17 +88,17 @@ def dump_work_items_to_excel_file(work_items_library: polarion_data_model.Polari
             }
 
             if isinstance(work_item, polarion_data_model.PolarionSecondRegardWorkItem):
-                row["SR_theme"] = getattr(work_item, "theme", None)
+                row["SR_theme"] = work_item.theme
 
             if isinstance(work_item, polarion_data_model.PolarionFicheAnomalieTitulaireWorkItem):
-                row["FAN_titulaire_Element"] = getattr(work_item, "suspected_element", None)
-                row["FAN_titulaire_Environnement"] = getattr(work_item, "environment", None)
+                row["FAN_titulaire_Element"] = work_item.suspected_element
+                row["FAN_titulaire_Environnement"] = work_item.environment.value
 
             if isinstance(work_item, polarion_data_model.PolarionFicheAnomalieWorkItem):
-                row["FAN_suspected_element"] = getattr(work_item, "suspected_element", None)
-                row["FAN_next_reference"] = getattr(work_item, "next_reference", None)
-                row["FAN_destinataire"] = work_item.destinataire.name if getattr(work_item, "destinataire", None) is not None else None
-                row["FAN_test_environment"] = work_item.test_environment.name if work_item.test_environment else None
+                row["FAN_suspected_element"] = work_item.suspected_element
+                row["FAN_next_reference"] = work_item.next_reference
+                row["FAN_destinataire"] = work_item.destinataire.name if work_item.destinataire is not None else None
+                row["FAN_test_environment"] = work_item.test_environment.value if work_item.test_environment else None
                 row["FAN_ref_anomalie_destinataire"] = work_item.ref_anomalie_destinataire
 
             rows.append(row)
