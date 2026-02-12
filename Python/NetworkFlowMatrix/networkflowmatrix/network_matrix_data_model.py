@@ -96,9 +96,7 @@ class EquipmentInFlowMatrix:
         return name in network_flow_matrix.all_matrix_flow_equipments_by_name
 
     @staticmethod
-    def get_or_create_if_not_exist_by_name_and_ip(
-        network_flow_matrix: "NetworkFlowMatrix", name: str, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix, raw_ip_address: str
-    ) -> "EquipmentInFlowMatrix":
+    def get_or_create_if_not_exist(network_flow_matrix: "NetworkFlowMatrix", name: str, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix, raw_ip_address: str) -> "EquipmentInFlowMatrix":
         if EquipmentInFlowMatrix.is_existing_by_name(network_flow_matrix, name):
             equipment = network_flow_matrix.all_matrix_flow_equipments_by_name[name]
             if subsystem_detected_in_flow_matrix not in equipment.all_subsystems_detected_in_flow_matrix:
@@ -283,7 +281,7 @@ class FlowEndPoint:
                         matrix_line_id_referencing=self.matrix_line_identifier,
                     )
 
-                equipment_detected_in_flow_matrix = EquipmentInFlowMatrix.get_or_create_if_not_exist_by_name_and_ip(
+                equipment_detected_in_flow_matrix = EquipmentInFlowMatrix.get_or_create_if_not_exist(
                     network_flow_matrix=self.network_flow_matrix, name=equipment_name, subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix, raw_ip_address=eqpt_ip_address_raw
                 )
                 self.equipments_detected_in_flow_matrix.append(equipment_detected_in_flow_matrix)
