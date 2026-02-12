@@ -34,6 +34,20 @@ def temporary_copy_of_file(input_file_full_path: str) -> Generator[str, None, No
     shutil.rmtree(temp_dir_path)
 
 
+def remove_folder_and_recreate_it_empty(directory_path: str) -> bool:
+    remove_folder_even_if_not_empty(directory_path)
+    return create_folder_if_not_exist(directory_path)
+
+
+def remove_folder_even_if_not_empty(directory_path: str) -> bool:
+    if os.path.exists(directory_path):
+        shutil.rmtree(directory_path)
+        return True
+    else:
+        logger_config.print_and_log_info(f"Folder {directory_path} did not exist")
+        return False
+
+
 def create_folder_if_not_exist(directory_path: str) -> bool:
     if not os.path.exists(directory_path):
         logger_config.print_and_log_info(f"Create folder {directory_path}")
