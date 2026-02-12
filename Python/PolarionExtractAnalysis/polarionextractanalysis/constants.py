@@ -36,6 +36,11 @@ class PolarionFanTestEnvironment(Enum):
     LE = "Ligne_Est"
     LEO = "Ligne_Est_Ouest"
     PFS = "Plateforme_Systeme_Ou_Covasec"
+    SITH_CLOUD = "SITH_CLOUD"
+    PFI3G = "PFI3G"
+    LO = "Line Ouest"
+    PFSF = "DGII_SF"
+    PS = "Plateforme simplifiée"
 
 
 class PolarionSeverity(Enum):
