@@ -1,4 +1,5 @@
 from typing import Dict
+import shutil
 
 from common import file_utils, json_encoders
 from logger import logger_config
@@ -7,6 +8,7 @@ from networkflowmatrix import network_conf_files_descriptions_data, network_matr
 
 if __name__ == "__main__":
     with logger_config.application_logger("networkflowmatrix"):
+        shutil.rmtree(constants.OUTPUT_PARENT_DIRECTORY_NAME)
         equipments_library = (
             equipments.NetworkConfFilesEquipmentsLibrary()
             .Builder()
