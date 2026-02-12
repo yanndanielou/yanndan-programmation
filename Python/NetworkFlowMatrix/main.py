@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
         with logger_config.stopwatch_with_label("Build matrix", inform_beginning=True, monitor_ram_usage=True):
             network_flow_matrix = network_matrix_data_model.NetworkFlowMatrix.Builder.build_with_excel_file(
-                excel_file_full_path="Input_Downloaded/NExTEO-S-271000-02-0125-00_Matrice_de_Flux_V15-03Draft.xlsm", sheet_name="Matrice_de_Flux_SITE"
+                excel_file_full_path="Input_Downloaded/NExTEO-S-271000-02-0125-00_Matrice_de_Flux_V15-04.xlsm", sheet_name="Matrice_de_Flux_SITE"
             )
 
         network_flow_matrix.match_equipments_with_network_conf_files(equipments_library)
