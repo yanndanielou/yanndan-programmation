@@ -523,7 +523,7 @@ class NetworkFlowMatrix:
                     "equipments_on_multiple_subsystems;"
                     + equipments_on_multiple_subsystems.name
                     + ";All subsystems found:"
-                    + ",".join(equipments_on_multiple_subsystems.all_subsystems_detected_in_flow_matrix)
+                    + ",".join([subsystem.name for subsystem in equipments_on_multiple_subsystems.all_subsystems_detected_in_flow_matrix])
                     + "\n"
                 )
 
