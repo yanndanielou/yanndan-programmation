@@ -25,7 +25,7 @@ def subsystem_to_dict(subsystem: "SubSystemInFlowMatrix", with_equipment: bool) 
         return {"subsystem_name": subsystem.name}
 
 
-def equipment_to_dict(equipment: "EquipmentInFLowMatrix", with_subsystem: bool) -> Dict:
+def equipment_to_dict(equipment: "EquipmentInFlowMatrix", with_subsystem: bool) -> Dict:
     if with_subsystem:
         new_var = {
             "equipment_name": equipment.name,
@@ -79,7 +79,7 @@ class SubSystemInFlowMatrix:
         return subsystem
 
     def __init__(self, name: str, network_flow_matrix: "NetworkFlowMatrix") -> None:
-        self.all_equipments_detected_in_flow_matrix: List["EquipmentInFLowMatrix"] = []
+        self.all_equipments_detected_in_flow_matrix: List["EquipmentInFlowMatrix"] = []
         self.name = name
         self.network_flow_matrix = network_flow_matrix
 
@@ -89,23 +89,23 @@ class PortInFLowMatrix:
         pass
 
 
-class EquipmentInFLowMatrix:
+class EquipmentInFlowMatrix:
 
     @staticmethod
     def is_existing_by_name(network_flow_matrix: "NetworkFlowMatrix", name: str) -> bool:
         return name in network_flow_matrix.all_matrix_flow_equipments_by_name
 
     @staticmethod
-    def get_existing_by_name(network_flow_matrix: "NetworkFlowMatrix", name: str) -> Optional["EquipmentInFLowMatrix"]:
-        if EquipmentInFLowMatrix.is_existing_by_name(network_flow_matrix, name):
+    def get_existing_by_name(network_flow_matrix: "NetworkFlowMatrix", name: str) -> Optional["EquipmentInFlowMatrix"]:
+        if EquipmentInFlowMatrix.is_existing_by_name(network_flow_matrix, name):
             return network_flow_matrix.all_matrix_flow_equipments_by_name[name]
         return None
 
     @staticmethod
     def get_or_create_if_not_exist_by_name_and_ip(
         network_flow_matrix: "NetworkFlowMatrix", name: str, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix, raw_ip_address: str
-    ) -> "EquipmentInFLowMatrix":
-        if EquipmentInFLowMatrix.is_existing_by_name(network_flow_matrix, name):
+    ) -> "EquipmentInFlowMatrix":
+        if EquipmentInFlowMatrix.is_existing_by_name(network_flow_matrix, name):
             equipment = network_flow_matrix.all_matrix_flow_equipments_by_name[name]
             if subsystem_detected_in_flow_matrix not in equipment.all_subsystems_detected_in_flow_matrix:
                 equipment.all_subsystems_detected_in_flow_matrix.append(subsystem_detected_in_flow_matrix)
@@ -115,7 +115,7 @@ class EquipmentInFLowMatrix:
 
             equipment.raw_ip_addresses.add(raw_ip_address)
             return equipment
-        equipment = EquipmentInFLowMatrix(name=name, subsystem_detected_in_flow_matrix=subsystem_detected_in_flow_matrix, network_flow_matrix=network_flow_matrix)
+        equipment = EquipmentInFlowMatrix(name=name, subsystem_detected_in_flow_matrix=subsystem_detected_in_flow_matrix, network_flow_matrix=network_flow_matrix)
         equipment.raw_ip_addresses.add(raw_ip_address)
         network_flow_matrix.all_matrix_flow_equipments_by_name[name] = equipment
         network_flow_matrix.all_matrix_flow_equipments_definitions_instances.append(equipment)
@@ -149,7 +149,7 @@ class FlowEndPoint:
 
         self.raw_ip_addresses: List[str] = []
 
-        self.equipments_detected_in_flow_matrix: List[EquipmentInFLowMatrix] = []
+        self.equipments_detected_in_flow_matrix: List[EquipmentInFlowMatrix] = []
         self.equipments_names: List[str] = [equipment_name.strip().upper() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.strip() != ""]
 
         self.network_flow_matrix_line: "NetworkFlowMatrixLine" = cast("NetworkFlowMatrixLine", None)
@@ -289,7 +289,7 @@ class FlowEndPoint:
                         matrix_line_id_referencing=self.matrix_line_identifier,
                     )
 
-                equipment_detected_in_flow_matrix = EquipmentInFLowMatrix.get_or_create_if_not_exist_by_name_and_ip(
+                equipment_detected_in_flow_matrix = EquipmentInFlowMatrix.get_or_create_if_not_exist_by_name_and_ip(
                     network_flow_matrix=self.network_flow_matrix, name=equipment_name, subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix, raw_ip_address=eqpt_ip_address_raw
                 )
                 self.equipments_detected_in_flow_matrix.append(equipment_detected_in_flow_matrix)
@@ -413,8 +413,8 @@ class NetworkFlowMatrix:
     all_equipments_names: Set[str] = field(default_factory=set)
     all_equipments_names_with_subsystem: set[Tuple[str, str]] = field(default_factory=set)
 
-    all_matrix_flow_equipments_definitions_instances: List["EquipmentInFLowMatrix"] = field(default_factory=list)
-    all_matrix_flow_equipments_by_name: Dict[str, "EquipmentInFLowMatrix"] = field(default_factory=dict)
+    all_matrix_flow_equipments_definitions_instances: List["EquipmentInFlowMatrix"] = field(default_factory=list)
+    all_matrix_flow_equipments_by_name: Dict[str, "EquipmentInFlowMatrix"] = field(default_factory=dict)
 
     all_matrix_flow_subsystems_definitions_instances: List["SubSystemInFlowMatrix"] = field(default_factory=list)
     all_matrix_flow_subsystems_definitions_instances_by_name: Dict[str, "SubSystemInFlowMatrix"] = field(default_factory=dict)
@@ -530,11 +530,7 @@ class NetworkFlowMatrix:
         with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_subsystems_in_flow_matrix.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
             for subsystem in sorted(self.all_matrix_flow_subsystems_definitions_instances, key=lambda x: x.name):
                 matrix_all_unknown_equipments_file.write(
-                    "All_subsystems;"
-                    + subsystem.name
-                    + ";All equipments found:"
-                    + ",".join([subsystem.name for subsystem in equipments_on_multiple_subsystems.all_subsystems_detected_in_flow_matrix])
-                    + "\n"
+                    "All_subsystems;" + subsystem.name + ";All equipments found:" + ",".join([equipment.name for equipment in subsystem.all_equipments_detected_in_flow_matrix]) + "\n"
                 )
 
         json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
