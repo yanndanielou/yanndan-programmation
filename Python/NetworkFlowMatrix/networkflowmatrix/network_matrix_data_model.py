@@ -459,6 +459,20 @@ class NetworkFlowMatrix:
                     line.source.match_equipments_with_network_conf_files(equipments_library)
                     line.destination.match_equipments_with_network_conf_files(equipments_library)
 
+        self.check_consistency()
+        self.create_reports_after_matching_network_conf_files(equipments_library)
+
+    def check_consistency(self) -> None:
+
+        with logger_config.stopwatch_with_label("check_consistency", inform_beginning=True):
+
+            with logger_config.stopwatch_with_label("Check that equipment in network matrix is defined with the same subsystem"):
+                for equipment in self.all_matrix_flow_equipments_definitions_instances:
+                    all_subsystems = equipment.all_subsystems_detected_in_flow_matrix
+                    if len(all_subsystems) > 1:
+                        logger_config.print_and_log_error(f"Equipment {equipment.name} is defined with several subsystems {[subsystem.name for subsystem in all_subsystems]}")
+
+    def create_reports_after_matching_network_conf_files(self, equipments_library: equipments.NetworkConfFilesEquipmentsLibrary) -> None:
         logger_config.print_and_log_warning(f"After scanning network flow matrix, {len(equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake)} wrong IP address definition")
         logger_config.print_and_log_warning(
             f"'\n'{'\nWrong IP:'.join([wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake + ";"+ wrong_ip.raw_ip_address+";"+ ",".join(wrong_ip.equipments_names_having_genuinely_this_ip_address) +";" +",".join([str(matrix_line) for matrix_line in wrong_ip.matrix_line_ids_referencing]) for wrong_ip in equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake])}"
@@ -498,6 +512,18 @@ class NetworkFlowMatrix:
                     + ",".join(not_found_eqpt.alternative_names_matching_ip)
                     + ";"
                     + ",".join([str(matrix_line) for matrix_line in not_found_eqpt.matrix_line_ids_referencing])
+                    + "\n"
+                )
+
+        with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments_on_multiple_subsystems.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
+            for equipments_on_multiple_subsystems in sorted(
+                [equipment for equipment in self.all_matrix_flow_equipments_definitions_instances if len(equipment.all_subsystems_detected_in_flow_matrix) > 1], key=lambda x: x.name
+            ):
+                matrix_all_unknown_equipments_file.write(
+                    "equipments_on_multiple_subsystems;"
+                    + equipments_on_multiple_subsystems.name
+                    + ";All subsystems found:"
+                    + ",".join(equipments_on_multiple_subsystems.all_subsystems_detected_in_flow_matrix)
                     + "\n"
                 )
 
