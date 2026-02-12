@@ -234,7 +234,7 @@ def configure_logger_with_timestamp_log_file_suffix(
     log_file_name_prefix: str, log_file_extension: str = "log", logger_level: int = logging.INFO
 ) -> None:
     log_file_name = (
-        f"{log_file_name_prefix}_{file_name_utils.get_file_suffix_with_current_datetime()}.{log_file_extension}"
+        f"{log_file_name_prefix}{file_name_utils.get_file_suffix_with_current_datetime()}.{log_file_extension}"
     )
     configure_logger_with_exact_file_name(log_file_name, logger_level)
 
