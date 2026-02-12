@@ -592,7 +592,7 @@ class NetworkFlowMatrix:
                     + "-".join(
                         [
                             type_it + ":" + ",".join([str(line_identifier_int) for line_identifier_int in line_identifiers])
-                            for type_it, line_identifiers in equipment.all_subsystems_detected_in_flow_matrix_with_lines_identifiers.items()
+                            for type_it, line_identifiers in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers.items()
                         ]
                     )
                     + "\n"
