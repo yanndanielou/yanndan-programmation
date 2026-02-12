@@ -527,6 +527,16 @@ class NetworkFlowMatrix:
                     + "\n"
                 )
 
+        with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_subsystems_in_flow_matrix.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
+            for subsystem in sorted(self.all_matrix_flow_subsystems_definitions_instances, key=lambda x: x.name):
+                matrix_all_unknown_equipments_file.write(
+                    "All_subsystems;"
+                    + subsystem.name
+                    + ";All equipments found:"
+                    + ",".join([subsystem.name for subsystem in equipments_on_multiple_subsystems.all_subsystems_detected_in_flow_matrix])
+                    + "\n"
+                )
+
         json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
             equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_wrong_ip.json"
         )
