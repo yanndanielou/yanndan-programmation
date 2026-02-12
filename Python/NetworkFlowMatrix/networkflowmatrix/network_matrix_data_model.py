@@ -386,7 +386,7 @@ class FlowDestination(FlowEndPoint):
             matrice_line_identifier_raw_str = cast(str, row["ID"])
             matrice_line_identifier = int(matrice_line_identifier_raw_str)
             subsystem_raw = row["dst \nss-système"]
-            type_raw = row["dst\ntype"]
+            type_raw = row["dst\nType"]
             equipments_raw = row["dst \nÉquipement"]
             detail_raw = row["dst\nDétail"]
             quantity_raw = row["dst \nQté"]
