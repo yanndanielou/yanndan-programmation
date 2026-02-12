@@ -78,7 +78,7 @@ class SubSystemInFlowMatrix:
         self.network_flow_matrix = network_flow_matrix
 
 
-class PortInFLowMatrix:
+class PortInFlowMatrix:
     def __init__(self, raw_port: Optional[str | int]) -> None:
         pass
 
@@ -90,30 +90,39 @@ class EquipmentInFlowMatrix:
         return name in network_flow_matrix.all_matrix_flow_equipments_by_name
 
     @staticmethod
-    def get_or_create_if_not_exist(network_flow_matrix: "NetworkFlowMatrix", name: str, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix, raw_ip_address: str) -> "EquipmentInFlowMatrix":
+    def get_or_create_equipment_if_not_exist(
+        network_flow_matrix: "NetworkFlowMatrix", name: str, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix, raw_ip_address: str, matrix_line_identifier: int
+    ) -> "EquipmentInFlowMatrix":
         if EquipmentInFlowMatrix.is_existing_by_name(network_flow_matrix, name):
             equipment = network_flow_matrix.all_matrix_flow_equipments_by_name[name]
-            if subsystem_detected_in_flow_matrix not in equipment.all_subsystems_detected_in_flow_matrix:
-                equipment.all_subsystems_detected_in_flow_matrix.append(subsystem_detected_in_flow_matrix)
-
-            if equipment not in subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix:
-                subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix.append(equipment)
-
             equipment.raw_ip_addresses.add(raw_ip_address)
             return equipment
-        equipment = EquipmentInFlowMatrix(name=name, subsystem_detected_in_flow_matrix=subsystem_detected_in_flow_matrix, network_flow_matrix=network_flow_matrix)
+        equipment = EquipmentInFlowMatrix(name=name, network_flow_matrix=network_flow_matrix)
         equipment.raw_ip_addresses.add(raw_ip_address)
         network_flow_matrix.all_matrix_flow_equipments_by_name[name] = equipment
         network_flow_matrix.all_matrix_flow_equipments_definitions_instances.append(equipment)
         subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix.append(equipment)
         return equipment
 
-    def __init__(self, name: str, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix, network_flow_matrix: "NetworkFlowMatrix") -> None:
+    def __init__(self, name: str, network_flow_matrix: "NetworkFlowMatrix") -> None:
         self.raw_ip_addresses: Set[str] = set()
         # self.ip_addresses: List[ipaddress.IPv4Address] = []
-        self.all_subsystems_detected_in_flow_matrix: List[SubSystemInFlowMatrix] = [subsystem_detected_in_flow_matrix]
+        self.all_subsystems_detected_in_flow_matrix: List[SubSystemInFlowMatrix] = []
+        self.all_subsystems_detected_in_flow_matrix_with_lines_identifiers: Dict[SubSystemInFlowMatrix, List[int]] = {}
+
         self.name = name
         self.network_flow_matrix = network_flow_matrix
+
+    def add_subsystems_detected_in_flow_matrix_with_lines_identifiers(self, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix, matrix_line_identifier: int) -> None:
+        if subsystem_detected_in_flow_matrix not in self.all_subsystems_detected_in_flow_matrix_with_lines_identifiers:
+            self.all_subsystems_detected_in_flow_matrix_with_lines_identifiers[subsystem_detected_in_flow_matrix] = []
+        self.all_subsystems_detected_in_flow_matrix_with_lines_identifiers[subsystem_detected_in_flow_matrix].append(matrix_line_identifier)
+
+        if subsystem_detected_in_flow_matrix not in self.all_subsystems_detected_in_flow_matrix:
+            self.all_subsystems_detected_in_flow_matrix.append(subsystem_detected_in_flow_matrix)
+
+        if self not in subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix:
+            subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix.append(self)
 
 
 @dataclass
@@ -144,8 +153,6 @@ class FlowEndPoint:
             self.ip_raw = None
         else:
             self.raw_ip_addresses = [raw_ip.strip() for raw_ip in self.ip_raw.split("\n")]
-
-        # self.ip_address = [ipaddress.IPv4Address(raw_ip_raw) for raw_ip_raw in self.raw_ip_addresses]
 
         self.subsystem_detected_in_flow_matrix = SubSystemInFlowMatrix.get_or_create_if_not_exist_by_name(network_flow_matrix=self.network_flow_matrix, name=self.subsystem_raw.strip().upper())
 
@@ -275,8 +282,15 @@ class FlowEndPoint:
                         matrix_line_id_referencing=self.matrix_line_identifier,
                     )
 
-                equipment_detected_in_flow_matrix = EquipmentInFlowMatrix.get_or_create_if_not_exist(
-                    network_flow_matrix=self.network_flow_matrix, name=equipment_name, subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix, raw_ip_address=eqpt_ip_address_raw
+                equipment_detected_in_flow_matrix = EquipmentInFlowMatrix.get_or_create_equipment_if_not_exist(
+                    network_flow_matrix=self.network_flow_matrix,
+                    name=equipment_name,
+                    subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix,
+                    raw_ip_address=eqpt_ip_address_raw,
+                    matrix_line_identifier=self.matrix_line_identifier,
+                )
+                equipment_detected_in_flow_matrix.add_subsystems_detected_in_flow_matrix_with_lines_identifiers(
+                    subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix, matrix_line_identifier=self.matrix_line_identifier
                 )
                 self.equipments_detected_in_flow_matrix.append(equipment_detected_in_flow_matrix)
                 self.network_flow_matrix.all_equipments_names_with_subsystem.add((equipment_name, self.subsystem_raw))
@@ -500,16 +514,42 @@ class NetworkFlowMatrix:
                     + ",".join([str(matrix_line) for matrix_line in not_found_eqpt.matrix_line_ids_referencing])
                     + "\n"
                 )
-
+        with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
+            for equipment in sorted(self.all_matrix_flow_equipments_definitions_instances, key=lambda x: x.name):
+                matrix_all_unknown_equipments_file.write(
+                    "Equipments;"
+                    + equipment.name
+                    + f";{len(equipment.all_subsystems_detected_in_flow_matrix)} subsystems found:"
+                    + ",".join([subsystem.name for subsystem in equipment.all_subsystems_detected_in_flow_matrix])
+                    + ";All subsystems found with number of line identifier:"
+                    + "-".join([subsystem.name + ":" + str(len(line_identifiers)) for subsystem, line_identifiers in equipment.all_subsystems_detected_in_flow_matrix_with_lines_identifiers.items()])
+                    + ";All subsystems found with line identifier:"
+                    + "-".join(
+                        [
+                            subsystem.name + ":" + ",".join([str(line_identifier_int) for line_identifier_int in line_identifiers])
+                            for subsystem, line_identifiers in equipment.all_subsystems_detected_in_flow_matrix_with_lines_identifiers.items()
+                        ]
+                    )
+                    + "\n"
+                )
         with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments_on_multiple_subsystems.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
-            for equipments_on_multiple_subsystems in sorted(
+            for equipment in sorted(
                 [equipment for equipment in self.all_matrix_flow_equipments_definitions_instances if len(equipment.all_subsystems_detected_in_flow_matrix) > 1], key=lambda x: x.name
             ):
                 matrix_all_unknown_equipments_file.write(
-                    "equipments_on_multiple_subsystems;"
-                    + equipments_on_multiple_subsystems.name
-                    + ";All subsystems found:"
-                    + ",".join([subsystem.name for subsystem in equipments_on_multiple_subsystems.all_subsystems_detected_in_flow_matrix])
+                    ""
+                    + equipment.name
+                    + f";{len(equipment.all_subsystems_detected_in_flow_matrix)} subsystems:"
+                    + ",".join([subsystem.name for subsystem in equipment.all_subsystems_detected_in_flow_matrix])
+                    + ";Subsystems with number of occurences:"
+                    + "-".join([subsystem.name + ":" + str(len(line_identifiers)) for subsystem, line_identifiers in equipment.all_subsystems_detected_in_flow_matrix_with_lines_identifiers.items()])
+                    + ";Subsystems with line ids:"
+                    + "-".join(
+                        [
+                            subsystem.name + ":" + ",".join([str(line_identifier_int) for line_identifier_int in line_identifiers])
+                            for subsystem, line_identifiers in equipment.all_subsystems_detected_in_flow_matrix_with_lines_identifiers.items()
+                        ]
+                    )
                     + "\n"
                 )
 
