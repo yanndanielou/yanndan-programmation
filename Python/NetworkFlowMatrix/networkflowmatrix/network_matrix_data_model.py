@@ -63,12 +63,6 @@ class SubSystemInFlowMatrix:
         return name in network_flow_matrix.all_matrix_flow_subsystems_definitions_instances_by_name
 
     @staticmethod
-    def get_existing_by_name(network_flow_matrix: "NetworkFlowMatrix", name: str) -> Optional["SubSystemInFlowMatrix"]:
-        if SubSystemInFlowMatrix.is_existing_by_name(network_flow_matrix, name):
-            return network_flow_matrix.all_matrix_flow_subsystems_definitions_instances_by_name[name]
-        return None
-
-    @staticmethod
     def get_or_create_if_not_exist_by_name(network_flow_matrix: "NetworkFlowMatrix", name: str) -> "SubSystemInFlowMatrix":
         if SubSystemInFlowMatrix.is_existing_by_name(network_flow_matrix, name):
             return network_flow_matrix.all_matrix_flow_subsystems_definitions_instances_by_name[name]
