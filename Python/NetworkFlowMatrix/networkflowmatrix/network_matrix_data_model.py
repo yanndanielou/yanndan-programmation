@@ -1,4 +1,5 @@
 import ipaddress
+import pandas
 import json
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple, cast
@@ -153,6 +154,7 @@ class FlowEndPoint:
 
     def __post_init__(self) -> None:
 
+        self.type_raw = self.type_raw.strip() if isinstance(self.type_raw, str) else ""
         self.raw_ip_addresses: List[str] = []
 
         self.equipments_detected_in_flow_matrix: List[EquipmentInFlowMatrix] = []
@@ -597,6 +599,34 @@ class NetworkFlowMatrix:
                     )
                     + "\n"
                 )
+
+        rows = []
+        for equipment in self.all_matrix_flow_equipments_definitions_instances:
+            row = {
+                "Name": equipment.name,
+                "Number of subsystems": len(equipment.all_subsystems_detected_in_flow_matrix),
+                "Subsystems": ",".join([subsystem.name for subsystem in equipment.all_subsystems_detected_in_flow_matrix]),
+                "Subsystems with associated lines": ",".join(
+                    [
+                        subsystem.name + ":" + "-".join([str(line_identifier_int) for line_identifier_int in line_identifiers])
+                        for subsystem, line_identifiers in equipment.all_subsystems_detected_in_flow_matrix_with_lines_identifiers.items()
+                    ]
+                ),
+                "Number of types": [subsystem.name for subsystem in equipment.all_subsystems_detected_in_flow_matrix],
+                "Types": ",".join(equipment.all_types_detected_in_flow_matrix),
+            }
+            for subsystem, lines_identifiers in equipment.all_subsystems_detected_in_flow_matrix_with_lines_identifiers.items():
+                row["Subsystem " + subsystem.name + " number of lines"] = len(lines_identifiers)
+                row["Subsystem " + subsystem.name + " lines"] = ",".join(str(line_identifier_str) for line_identifier_str in lines_identifiers)
+
+            for type, lines_identifiers in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers.items():
+                row["Type " + subsystem.name + " number of lines"] = len(lines_identifiers)
+                row["Type " + subsystem.name + " lines"] = ",".join(str(line_identifier_str) for line_identifier_str in lines_identifiers)
+
+            rows.append(row)
+
+        df = pandas.DataFrame(rows)
+        df.to_excel(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments_in_flow_matrix.xlsx", index=False)
 
         with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_subsystems_in_flow_matrix.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
             for subsystem in sorted(self.all_matrix_flow_subsystems_definitions_instances, key=lambda x: x.name):
