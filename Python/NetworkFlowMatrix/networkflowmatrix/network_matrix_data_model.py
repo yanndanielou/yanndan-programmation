@@ -619,9 +619,9 @@ class NetworkFlowMatrix:
                 row["Subsystem " + subsystem.name + " number of lines"] = len(lines_identifiers)
                 row["Subsystem " + subsystem.name + " lines"] = ",".join(str(line_identifier_str) for line_identifier_str in lines_identifiers)
 
-            for type, lines_identifiers in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers.items():
-                row["Type " + subsystem.name + " number of lines"] = len(lines_identifiers)
-                row["Type " + subsystem.name + " lines"] = ",".join(str(line_identifier_str) for line_identifier_str in lines_identifiers)
+            for type_str, lines_identifiers in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers.items():
+                row["Type " + type_str + " number of lines"] = len(lines_identifiers)
+                row["Type " + type_str + " lines"] = ",".join(str(line_identifier_str) for line_identifier_str in lines_identifiers)
 
             rows.append(row)
 
