@@ -18,6 +18,7 @@ from networkflowmatrix.network_conf_files import (
 
 from networkflowmatrix.groups import GroupDefinition
 from networkflowmatrix.seclab import SeclabSide
+from networkflowmatrix.network_entity_provider import NetworkEntityProvider
 import networkflowmatrix.manual_equipments_builder
 from collections import namedtuple
 
@@ -48,6 +49,7 @@ class StdRadioNetworkConfV2Description(ExcelInputFileDescription):
         self.ip_reseau_std_radio_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP RESEAU STD RADIO",
             seclab_side=SeclabSide.BORD,
+            network_provider=NetworkEntityProvider.STS,
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
@@ -78,6 +80,7 @@ class RadioLayoutR841Description(ExcelInputFileDescription):
         self.ip_reseau_std_radio_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="AP CBTC",
             seclab_side=SeclabSide.BORD,
+            network_provider=NetworkEntityProvider.STS,
             rows_to_ignore=[],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
@@ -122,6 +125,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
         self.ip_ats_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP ATS",
             seclab_side=SeclabSide.SOL,
+            network_provider=NetworkEntityProvider.STS,
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
@@ -134,6 +138,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
         self.ip_reseau_std_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP RESEAU STD",
             seclab_side=SeclabSide.SOL,
+            network_provider=NetworkEntityProvider.STS,
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
@@ -163,6 +168,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
         self.ip_cbtc_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP CBTC",
             seclab_side=SeclabSide.SOL,
+            network_provider=NetworkEntityProvider.STS,
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
@@ -211,6 +217,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
         self.ip_mats: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP MATS",
             seclab_side=SeclabSide.SOL,
+            network_provider=NetworkEntityProvider.STS,
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
@@ -257,6 +264,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
             tab_name="IP RESEAU PCC",
             equipment_ids_white_list_to_accept_only=networkflowmatrix.manual_equipments_builder.STD_FIREWALL_EQUIPMENT_NAMES,
             seclab_side=SeclabSide.SOL,
+            network_provider=NetworkEntityProvider.STS,
             rows_to_ignore=[0, 1, 2, 4, 5],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
@@ -271,6 +279,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
             tab_name="IP RESEAU PCC",
             equipment_ids_black_list_to_ignore=networkflowmatrix.manual_equipments_builder.STD_FIREWALL_EQUIPMENT_NAMES,
             seclab_side=SeclabSide.SOL,
+            network_provider=NetworkEntityProvider.STS,
             rows_to_ignore=[0, 1, 2, 4, 5],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
@@ -285,6 +294,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
         self.ip_csr_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP CSR",
             seclab_side=SeclabSide.BORD,
+            network_provider=NetworkEntityProvider.STS,
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
@@ -320,6 +330,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
         self.ip_pmb_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP PMB",
             seclab_side=SeclabSide.SOL,
+            network_provider=NetworkEntityProvider.STS,
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_ids_black_list_to_ignore=["EVG-P22-PMB", "NSY-P26-PMB", "EVG-P22-IMPR", "NSY-P26-IMPR"],
             equipment_definitions=[
@@ -350,6 +361,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
         self.ip_pai_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP PAI",
             seclab_side=SeclabSide.SOL,
+            network_provider=NetworkEntityProvider.STS,
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
@@ -407,6 +419,7 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
             EquipmentDefinitionTab(
                 tab_name="@IP TU",
                 seclab_side=SeclabSide.BORD,
+                network_provider=NetworkEntityProvider.STS,
                 rows_to_ignore=[0, 1, 2, 3, 4, 6],
                 equipment_definitions=[
                     InsideTrainEquipmentDefinitionColumn(
@@ -464,6 +477,7 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
             EquipmentDefinitionTab(
                 tab_name="@IP TU",
                 seclab_side=SeclabSide.BORD,
+                network_provider=NetworkEntityProvider.STS,
                 rows_to_ignore=[0, 1, 2, 3, 4, 6],
                 equipment_definitions=[
                     InsideTrainEquipmentDefinitionColumn(
@@ -522,6 +536,7 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
             EquipmentDefinitionTab(
                 tab_name="@IP NExTEO VLAN",
                 seclab_side=SeclabSide.BORD,
+                network_provider=NetworkEntityProvider.STS,
                 rows_to_ignore=list(range(0, 13)) + [14, 15],
                 equipment_definitions=[
                     InsideTrainEquipmentDefinitionColumn(
@@ -572,6 +587,7 @@ class BordAddressPlanV9Description(ExcelInputFileDescription):
             EquipmentDefinitionTab(
                 tab_name="@IP Mgt SW",
                 seclab_side=SeclabSide.BORD,
+                network_provider=NetworkEntityProvider.STS,
                 rows_to_ignore=list(range(0, 10)) + [11, 12],
                 equipment_definitions=[
                     InsideTrainEquipmentDefinitionColumn(

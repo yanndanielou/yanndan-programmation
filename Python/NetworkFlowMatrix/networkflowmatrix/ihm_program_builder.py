@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, List, Optional, cast
 import pandas
 from logger import logger_config
 
-from networkflowmatrix import network_conf_files, seclab
+from networkflowmatrix import network_conf_files, seclab, network_entity_provider
 from networkflowmatrix.groups import GroupDefinition
 
 if TYPE_CHECKING:
@@ -60,6 +60,7 @@ class IhmProgrammConfFile(network_conf_files.GenericConfFile):
                         name=name,
                         source_label_for_creation=f"{excel_file_full_path}/{"P2-4"}",
                         seclab_side=seclab.SeclabSide.SOL,
+                        network_provider=network_entity_provider.NetworkEntityProvider.INFRACOM_OR_INFRANET,
                     )
                     all_equipments_found.append(equipment)
                     ip_address = adresses_raw.replace("(1)", "").replace(" ", "")
@@ -127,6 +128,7 @@ class FdiffClientsConfFile(network_conf_files.GenericConfFile):
                         name="FDIFF_CLIENT_" + emplacement_raw + "_" + terminal_raw,
                         source_label_for_creation=f"{excel_file_full_path}",
                         seclab_side=seclab.SeclabSide.SOL,
+                        network_provider=network_entity_provider.NetworkEntityProvider.INFRANET,
                     )
                     all_equipments_found.append(equipment)
 

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, cast
 from common import json_encoders
 from logger import logger_config
 
-from networkflowmatrix import constants, seclab
+from networkflowmatrix import constants, seclab, network_entity_provider
 
 if TYPE_CHECKING:
     from networkflowmatrix.network_conf_files import (
@@ -70,6 +70,7 @@ class NetworkConfFilesDefinedEquipment:
     name: str
     source_label: str
     library: "NetworkConfFilesEquipmentsLibrary"
+    network_provider: network_entity_provider.NetworkEntityProvider
     _equipment_types: Set[str] = field(default_factory=set)
     _alternative_identifiers: Set[str] = field(default_factory=set)
     ip_addresses: List["NetworkConfFilesDefinedIpAddress"] = field(default_factory=list)
@@ -241,9 +242,13 @@ class NetworkConfFilesEquipmentsLibrary:
                     assert id(obj) not in seen_ids
                     seen_ids.add(id(obj))
 
-        with logger_config.stopwatch_with_label("Check that all equipment is at a seclab side"):
+        with logger_config.stopwatch_with_label("Check that each equipment is at a seclab side"):
             for eqpt in self.all_network_conf_files_defined_equipments:
                 logger_config.print_and_log_error_if(condition=eqpt.seclab_side is None, to_print_and_log=f"Seclab side not defined for {eqpt.name}, source {eqpt.source_label}")
+
+        with logger_config.stopwatch_with_label("Check that each equipment is in a specific network provider"):
+            for eqpt in self.all_network_conf_files_defined_equipments:
+                logger_config.print_and_log_error_if(condition=eqpt.network_provider is None, to_print_and_log=f"Network provider not defined for {eqpt.name}, source {eqpt.source_label}")
 
     def print_stats(self) -> None:
         logger_config.print_and_log_info(f"The network conf files library contains {len(self.all_network_conf_files_defined_equipments)} equipments in total")
@@ -296,13 +301,15 @@ class NetworkConfFilesEquipmentsLibrary:
             return self.network_conf_files_defined_equipments_by_id[name]
         return None
 
-    def get_or_create_network_conf_file_eqpt_if_not_exist_by_name(self, name: str, source_label_for_creation: str, seclab_side: Optional[seclab.SeclabSide]) -> "NetworkConfFilesDefinedEquipment":
+    def get_or_create_network_conf_file_eqpt_if_not_exist_by_name(
+        self, name: str, source_label_for_creation: str, seclab_side: Optional[seclab.SeclabSide], network_provider: network_entity_provider.NetworkEntityProvider
+    ) -> "NetworkConfFilesDefinedEquipment":
         if self.is_existing_network_conf_file_eqpt_by_name(name):
             return self.network_conf_files_defined_equipments_by_id[name]
 
         if not seclab_side:
             seclab_side = seclab.get_seclab_side_from_equipment_name(name)
-        equipment = NetworkConfFilesDefinedEquipment(name=name, library=self, source_label=source_label_for_creation, seclab_side=seclab_side)
+        equipment = NetworkConfFilesDefinedEquipment(name=name, library=self, source_label=source_label_for_creation, seclab_side=seclab_side, network_provider=network_provider)
         self.network_conf_files_defined_equipments_by_id[name] = equipment
         self.all_network_conf_files_defined_equipments.append(equipment)
 
