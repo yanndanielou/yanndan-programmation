@@ -2,12 +2,22 @@ import pandas
 from typing import Optional
 
 
-def string_optional_element(row: pandas.Series, column_name: str) -> Optional[str]:
+def optional_element_as_string(row: pandas.Series, column_name: str) -> Optional[str]:
     raw_value = row[column_name]
-    if isinstance(raw_value, str):
-        return raw_value
+    value_as_str = str(raw_value)
+    if value_as_str not in ["nan"]:
+        return value_as_str
     else:
         return None
+
+
+def element_as_casted_int(row: pandas.Series, column_name: str) -> int:
+    raw_value = row[column_name]
+    if isinstance(raw_value, int):
+        return raw_value
+    else:
+        as_int = int(raw_value)
+        return as_int
 
 
 def is_string_element_at_value(row: pandas.Series, column_name: str, tested_value: str) -> bool:
