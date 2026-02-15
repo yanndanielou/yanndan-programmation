@@ -479,7 +479,14 @@ class NetworkFlowMatrix:
                     line.destination.match_equipments_with_network_conf_files(equipments_library)
 
         self.check_consistency()
+
+        self.check_flow_are_correctly_tagged_on_sncf_network()
+
         self.create_reports_after_matching_network_conf_files(equipments_library)
+
+    def check_flow_are_correctly_tagged_on_sncf_network(self) -> bool:
+
+        return False
 
     def check_consistency(self) -> None:
 
@@ -654,7 +661,7 @@ class NetworkFlowMatrixLine:
     mes_raw: Optional[str]
     prod_mig_essais: Optional[constants.ProdMigrationEssai]
     modification_type: Optional[constants.MatrixFlowModificationType]
-    on_sncf_network: bool
+    declared_on_sncf_network_on_matrix: bool
 
     source: FlowSource
     destination: FlowDestination
@@ -678,7 +685,7 @@ class NetworkFlowMatrixLine:
             mes_raw = pandas_utils.optional_element_as_optional_string(row, "MES")
             prod_mig_essais_raw = pandas_utils.optional_element_as_optional_string(row, "Prod/Migration/EssaisTemporaire")
             prod_mig_essais = constants.ProdMigrationEssai[prod_mig_essais_raw] if prod_mig_essais_raw else None
-            on_sncf_network = True if pandas_utils.optional_element_as_optional_string(row, "Sur Réseau SNCF") else False
+            declared_on_sncf_network_on_matrix = True if pandas_utils.optional_element_as_optional_string(row, "Sur Réseau SNCF") else False
 
             name_raw = cast(str, row["Lien de com. complet\n(Auto)"])
             sol_bord_raw = cast(str, row["S/B"])
@@ -707,7 +714,7 @@ class NetworkFlowMatrixLine:
                 type_raw=type_raw,
                 modification_type=modification_type,
                 mes_raw=mes_raw,
-                on_sncf_network=on_sncf_network,
+                declared_on_sncf_network_on_matrix=declared_on_sncf_network_on_matrix,
                 prod_mig_essais=prod_mig_essais,
             )
             source.network_flow_matrix_line = network_flow_matrix_line
