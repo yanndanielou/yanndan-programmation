@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple, cast
 
 import pandas
-from common import file_utils, json_encoders, string_utils
+from common import file_utils, json_encoders, string_utils, pandas_utils
 from logger import logger_config
 
 from networkflowmatrix import constants, equipments
@@ -344,8 +344,7 @@ class FlowSource(FlowEndPoint):
 
         @staticmethod
         def build_with_row(row: pandas.Series, network_flow_matrix: "NetworkFlowMatrix") -> "FlowSource":
-            matrice_line_identifier_raw_str = cast(str, row["ID"])
-            matrice_line_identifier = int(matrice_line_identifier_raw_str)
+            matrice_line_identifier = pandas_utils.element_as_casted_int(row, "ID")
             subsystem_raw = row["src \nss-système"]
             type_raw = row["src \nType"]
             equipment_raw = row["src \nÉquipement"]
@@ -385,8 +384,7 @@ class FlowDestination(FlowEndPoint):
 
         @staticmethod
         def build_with_row(row: pandas.Series, network_flow_matrix: "NetworkFlowMatrix") -> "FlowDestination":
-            matrice_line_identifier_raw_str = cast(str, row["ID"])
-            matrice_line_identifier = int(matrice_line_identifier_raw_str)
+            matrice_line_identifier = pandas_utils.element_as_casted_int(row, "ID")
             subsystem_raw = row["dst \nss-système"]
             type_raw = row["dst\nType"]
             equipments_raw = row["dst \nÉquipement"]
@@ -645,8 +643,6 @@ class NetworkFlowMatrix:
 class NetworkFlowMatrixLine:
     network_flow_matrix: NetworkFlowMatrix
     identifier_int: int
-    identifier_raw: str
-    is_deleted: bool
     modif_raw_str: str
     name_raw: str
     sol_bord_raw: str
@@ -655,6 +651,10 @@ class NetworkFlowMatrixLine:
     type_raw: str
     protocole_applicative_raw: str
     protocole_transport_raw: str
+    mes_raw: Optional[str]
+    prod_mig_essais: Optional[constants.ProdMigrationEssai]
+    modification_type: Optional[constants.MatrixFlowModificationType]
+    on_sncf_network: bool
 
     source: FlowSource
     destination: FlowDestination
@@ -663,17 +663,23 @@ class NetworkFlowMatrixLine:
 
         @staticmethod
         def build_with_row(row: pandas.Series, network_flow_matrix: NetworkFlowMatrix) -> Optional["NetworkFlowMatrixLine"]:
-            identifier_raw_str = cast(str, row["ID"])
-            modif_raw_str = str(row["Modif"])
-            is_deleted = str(modif_raw_str) == "D"
-            if str(identifier_raw_str) in ["nan"]:
+            identifier_raw_str = pandas_utils.optional_element_as_optional_string(row, "ID")
+            if identifier_raw_str is None:
                 logger_config.print_and_log_warning(f"Empty row with identifier {identifier_raw_str}")
                 return None
-            identifier_raw_str = cast(str, row["ID"])
-            if str(identifier_raw_str) in ["nan", "%%%"]:
+            if identifier_raw_str in ["nan", "%%%"]:
                 logger_config.print_and_log_warning(f"Invalid row with identifier {identifier_raw_str}")
                 return None
-            identifier_int = int(identifier_raw_str)
+
+            identifier_int = pandas_utils.element_as_casted_int(row, "ID")
+
+            modif_raw_str = pandas_utils.optional_element_as_optional_string(row, "Modif")
+            modification_type = constants.MatrixFlowModificationType[modif_raw_str.upper()] if modif_raw_str else None
+            mes_raw = pandas_utils.optional_element_as_optional_string(row, "MES")
+            prod_mig_essais_raw = pandas_utils.optional_element_as_optional_string(row, "Prod/Migration/EssaisTemporaire")
+            prod_mig_essais = constants.ProdMigrationEssai[prod_mig_essais_raw] if prod_mig_essais_raw else None
+            on_sncf_network = True if pandas_utils.optional_element_as_optional_string(row, "Sur Réseau SNCF") else False
+
             name_raw = cast(str, row["Lien de com. complet\n(Auto)"])
             sol_bord_raw = cast(str, row["S/B"])
 
@@ -689,9 +695,7 @@ class NetworkFlowMatrixLine:
             network_flow_matrix_line = NetworkFlowMatrixLine(
                 network_flow_matrix=network_flow_matrix,
                 modif_raw_str=modif_raw_str,
-                is_deleted=is_deleted,
                 destination=destination,
-                identifier_raw=identifier_raw_str,
                 identifier_int=identifier_int,
                 name_raw=name_raw,
                 sol_bord_raw=sol_bord_raw,
@@ -701,6 +705,10 @@ class NetworkFlowMatrixLine:
                 protocole_transport_raw=protocole_transport_raw,
                 traffic_direction_raw=traffic_direction_raw,
                 type_raw=type_raw,
+                modification_type=modification_type,
+                mes_raw=mes_raw,
+                on_sncf_network=on_sncf_network,
+                prod_mig_essais=prod_mig_essais,
             )
             source.network_flow_matrix_line = network_flow_matrix_line
             destination.network_flow_matrix_line = network_flow_matrix_line
@@ -708,7 +716,7 @@ class NetworkFlowMatrixLine:
             return network_flow_matrix_line
 
     def __post_init__(self) -> None:
-        self.identifier_int = int(self.identifier_raw)
+        self.is_deleted = self.modification_type == constants.MatrixFlowModificationType.D
 
 
 class NetworkFlowMacro:
