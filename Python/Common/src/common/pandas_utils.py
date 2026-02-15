@@ -2,7 +2,7 @@ import pandas
 from typing import Optional
 
 
-def optional_element_as_string(row: pandas.Series, column_name: str) -> Optional[str]:
+def optional_element_as_optional_string(row: pandas.Series, column_name: str) -> Optional[str]:
     raw_value = row[column_name]
     value_as_str = str(raw_value)
     if value_as_str not in ["nan"]:
