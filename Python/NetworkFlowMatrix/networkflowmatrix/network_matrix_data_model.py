@@ -492,6 +492,9 @@ class NetworkFlowMatrix:
         with logger_config.stopwatch_with_label({inspect.stack(0)[0].function}, inform_beginning=True):
 
             for flow in self.network_flow_matrix_lines:
+                all_network_entity_providers = flow.get_all_network_entity_providers()
+                sncf_network_detected = flow.get_all_network_entity_providers().intersection(set(all_network_entity_providers))
+                on_sncf_network_detected = len(sncf_network_detected) > 0
                 on_sncf_network_detected = (
                     network_entity_provider.NetworkEntityProvider.INFRACOM in flow.get_all_network_entity_providers()
                     or network_entity_provider.NetworkEntityProvider.INFRANET in flow.get_all_network_entity_providers()
@@ -499,7 +502,7 @@ class NetworkFlowMatrix:
                 )
                 if on_sncf_network_detected != flow.declared_on_sncf_network_on_matrix:
                     logger_config.print_and_log_error(
-                        f"{inspect.stack(0)[0].function}: Flow {flow.identifier_int} {flow.full_label_auto} defined as {flow.declared_on_sncf_network_on_matrix_raw_str} but should be declared {on_sncf_network_detected}"
+                        f"{inspect.stack(0)[0].function}: Flow {flow.identifier_int} {flow.full_label_auto_one_line} defined as {flow.declared_on_sncf_network_on_matrix_raw_str} but should be declared {on_sncf_network_detected}"
                     )
 
             return False
@@ -667,7 +670,7 @@ class NetworkFlowMatrixLine:
     network_flow_matrix: NetworkFlowMatrix
     identifier_int: int
     modif_raw_str: str
-    full_label_auto: str
+    full_label_auto_multiline: str
     sol_bord_raw: str
     seclab_raw: str
     traffic_direction_raw: str
@@ -722,7 +725,7 @@ class NetworkFlowMatrixLine:
                 modif_raw_str=modif_raw_str,
                 destination=destination,
                 identifier_int=identifier_int,
-                full_label_auto=full_label_auto,
+                full_label_auto_multiline=full_label_auto,
                 sol_bord_raw=sol_bord_raw,
                 source=source,
                 seclab_raw=seclab_raw,
@@ -743,6 +746,7 @@ class NetworkFlowMatrixLine:
 
     def __post_init__(self) -> None:
         self.is_deleted = self.modification_type == constants.MatrixFlowModificationType.D
+        self.full_label_auto_one_line = self.full_label_auto_multiline.replace("\n", "\t")
 
     def get_all_network_entity_providers(self) -> Set[network_entity_provider.NetworkEntityProvider]:
         source_providers = set([equipment.network_provider for equipment in self.source.network_conf_files_equipments_detected])
