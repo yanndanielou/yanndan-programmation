@@ -669,8 +669,7 @@ class NetworkFlowMatrix:
 
             rows.append(row)
 
-        df = pandas.DataFrame(rows)
-        df.to_excel(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments_in_flow_matrix.xlsx", index=False)
+        pandas.DataFrame(rows).to_excel(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments_in_flow_matrix.xlsx", index=False)
 
         with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_subsystems_in_flow_matrix.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
             for subsystem in sorted(self.all_matrix_flow_subsystems_definitions_instances, key=lambda x: x.name):
