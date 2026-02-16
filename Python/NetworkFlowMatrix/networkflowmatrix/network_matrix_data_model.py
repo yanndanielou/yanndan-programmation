@@ -680,7 +680,7 @@ class NetworkFlowMatrix:
         json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
             equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_wrong_ip.json"
         )
-
+        equipments_library.create_reports_after_matching_with_flow_matrix()
         equipments_library.dump_to_json_file(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/all_equipments_in_conf_files.json")
 
 

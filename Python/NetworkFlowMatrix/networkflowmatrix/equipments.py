@@ -386,6 +386,9 @@ class NetworkConfFilesEquipmentsLibrary:
 
         return equipment
 
+    def create_reports_after_matching_with_flow_matrix(self) -> None:
+        self.dump_to_json_file(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/all_equipments_in_conf_files.json")
+
     def dump_to_json_file(self, output_json_file_full_path: str) -> None:
         data_to_dump: List[Tuple] = []
         for equipment in self.all_network_conf_files_defined_equipments:
