@@ -434,6 +434,7 @@ class FlowDestination(FlowEndPoint):
 @dataclass
 class NetworkFlowMatrix:
     network_flow_matrix_lines: List["NetworkFlowMatrixLine"] = field(default_factory=list)
+    network_flow_matrix_lines_not_deleted: List["NetworkFlowMatrixLine"] = field(default_factory=list)
     network_flow_matrix_lines_by_identifier: Dict[int, "NetworkFlowMatrixLine"] = field(default_factory=dict)
 
     all_equipments_names: Set[str] = field(default_factory=set)
@@ -454,6 +455,7 @@ class NetworkFlowMatrix:
             logger_config.print_and_log_info(to_print_and_log=f"Flow matrix {excel_file_full_path} columns  {main_data_frame.columns[:4]} ...")
 
             network_flow_matrix_lines: List[NetworkFlowMatrixLine] = []
+            network_flow_matrix_lines_not_deleted: List[NetworkFlowMatrixLine] = []
             network_flow_matrix_lines_by_identifier: Dict[int, "NetworkFlowMatrixLine"] = {}
 
             network_flow_matrix = NetworkFlowMatrix()
@@ -463,9 +465,12 @@ class NetworkFlowMatrix:
                 if network_flow_matrix_line:
                     network_flow_matrix_lines.append(network_flow_matrix_line)
                     network_flow_matrix_lines_by_identifier[network_flow_matrix_line.identifier_int] = network_flow_matrix_line
+                    if not network_flow_matrix_line.is_deleted:
+                        network_flow_matrix_lines_not_deleted.append(network_flow_matrix_line)
 
             network_flow_matrix.network_flow_matrix_lines = network_flow_matrix_lines
             network_flow_matrix.network_flow_matrix_lines_by_identifier = network_flow_matrix_lines_by_identifier
+            network_flow_matrix.network_flow_matrix_lines_not_deleted = network_flow_matrix_lines_not_deleted
 
             assert network_flow_matrix.network_flow_matrix_lines, "matrix is empty"
             assert network_flow_matrix.network_flow_matrix_lines_by_identifier, "matrix is empty"
@@ -494,7 +499,8 @@ class NetworkFlowMatrix:
     def check_flow_are_correctly_tagged_on_sncf_network(self) -> bool:
         with logger_config.stopwatch_with_label({inspect.stack(0)[0].function}, inform_beginning=True):
 
-            for matrix_line in self.network_flow_matrix_lines:
+            assert self.network_flow_matrix_lines_not_deleted
+            for matrix_line in self.network_flow_matrix_lines_not_deleted:
 
                 if matrix_line.is_sncf_network_detected() != matrix_line.declared_on_sncf_network_on_matrix:
                     logger_config.print_and_log_error(
