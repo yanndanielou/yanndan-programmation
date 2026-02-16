@@ -1,15 +1,14 @@
+import inspect
 import ipaddress
-import pandas
 import json
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple, cast
 
 import pandas
-from common import file_utils, json_encoders, string_utils, pandas_utils
+from common import file_utils, json_encoders, pandas_utils, string_utils
 from logger import logger_config
 
-from networkflowmatrix import constants, equipments
-
+from networkflowmatrix import constants, equipments, network_entity_provider
 
 INVALID_IP_ADDRESS = "INVALID_IP_ADDRESS"
 MISSING_IP_ADDRESS = "MISSING_IP_ADDRESS"
@@ -157,7 +156,8 @@ class FlowEndPoint:
         self.type_raw = self.type_raw.strip() if isinstance(self.type_raw, str) else ""
         self.raw_ip_addresses: List[str] = []
 
-        self.equipments_detected_in_flow_matrix: List[EquipmentInFlowMatrix] = []
+        self.network_flow_equipments_detected: List[EquipmentInFlowMatrix] = []
+        self.network_conf_files_equipments_detected: List[equipments.NetworkConfFilesDefinedEquipment] = []
         self.equipments_names: List[str] = [equipment_name.strip().upper() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.strip() != ""]
 
         self.network_flow_matrix_line: "NetworkFlowMatrixLine" = cast("NetworkFlowMatrixLine", None)
@@ -228,9 +228,9 @@ class FlowEndPoint:
                 self.network_flow_matrix.all_equipments_names.add(equipment_name)
 
                 if len(self.raw_ip_addresses) <= index_ip_addr and len(self.raw_ip_addresses) > 1:
-                    equipment_in_network_conf_file_by_name = equipments_library.get_existing_equipment_by_name(expected_equipment_name=equipment_name, allow_not_exact_name=True)
+                    self.equipment_in_network_conf_file_by_name = equipments_library.get_existing_equipment_by_name(expected_equipment_name=equipment_name, allow_not_exact_name=True)
                     logger_config.print_and_log_error(
-                        to_print_and_log=f"Error at line {self.matrix_line_identifier}: no IP found for {equipment_name} (not enough lines). In network conf, equipment {(equipment_in_network_conf_file_by_name.name+ ' with Ip: ' if equipment_in_network_conf_file_by_name else 'Not found')} {",".join([ip.ip_raw for ip in equipment_in_network_conf_file_by_name.ip_addresses]) if equipment_in_network_conf_file_by_name else 'found'}"
+                        to_print_and_log=f"Error at line {self.matrix_line_identifier}: no IP found for {equipment_name} (not enough lines). In network conf, equipment {(self.equipment_in_network_conf_file_by_name.name+ ' with Ip: ' if self.equipment_in_network_conf_file_by_name else 'Not found')} {",".join([ip.ip_raw for ip in self.equipment_in_network_conf_file_by_name.ip_addresses]) if self.equipment_in_network_conf_file_by_name else 'found'}"
                     )
                     eqpt_ip_address_raw = INVALID_IP_ADDRESS
                     equipments_library.add_wrong_or_unknown_ip_address_in_matrix_flow(
@@ -267,31 +267,35 @@ class FlowEndPoint:
                             matrix_line_id_referencing=self.matrix_line_identifier,
                         )
 
-                equipment_in_network_conf_file_by_name = equipments_library.get_existing_equipment_by_name(expected_equipment_name=equipment_name, allow_not_exact_name=True)
-                equipments_in_network_conf_file_matching_ip_address = equipments_library.get_existing_equipment_by_raw_ip_address(eqpt_ip_address_raw)
-                equipments_in_network_conf_file_matching_group = equipments_library.get_existing_equipments_by_group(
+                self.equipment_in_network_conf_file_by_name = equipments_library.get_existing_equipment_by_name(expected_equipment_name=equipment_name, allow_not_exact_name=True)
+                if self.equipment_in_network_conf_file_by_name:
+                    self.network_conf_files_equipments_detected.append(self.equipment_in_network_conf_file_by_name)
+                self.equipments_in_network_conf_file_matching_ip_address = equipments_library.get_existing_equipment_by_raw_ip_address(eqpt_ip_address_raw)
+
+                self.equipments_in_network_conf_file_matching_group = equipments_library.get_existing_equipments_by_group(
                     expected_group_name=equipment_name, expected_group_subnet_and_mask=eqpt_ip_address_raw
                 )
+                self.network_conf_files_equipments_detected += self.equipments_in_network_conf_file_matching_ip_address + self.equipments_in_network_conf_file_matching_group
 
-                if not equipment_in_network_conf_file_by_name and not equipments_in_network_conf_file_matching_group:
+                if not self.equipment_in_network_conf_file_by_name and not self.equipments_in_network_conf_file_matching_group:
                     # Equipment not defined
                     equipments_library.add_not_found_equipment_but_defined_in_network_flow_matrix(
                         equipment_name=equipment_name,
                         eqpt_ip_address_raw=eqpt_ip_address_raw,
                         matrix_line_id_referencing=self.matrix_line_identifier,
-                        equipments_in_network_conf_file_matching_ip_address=equipments_in_network_conf_file_matching_ip_address,
+                        equipments_in_network_conf_file_matching_ip_address=self.equipments_in_network_conf_file_matching_ip_address,
                     )
 
-                elif equipment_in_network_conf_file_by_name and eqpt_ip_address_raw not in [ip.ip_raw for ip in equipment_in_network_conf_file_by_name.ip_addresses]:
+                elif self.equipment_in_network_conf_file_by_name and eqpt_ip_address_raw not in [ip.ip_raw for ip in self.equipment_in_network_conf_file_by_name.ip_addresses]:
                     # Equipment found but IP not found in this eqpt
                     logger_config.print_and_log_error(
-                        to_print_and_log=f"At line {self.matrix_line_identifier}: equipment {equipment_name} defined with {eqpt_ip_address_raw}, but this IP is not defined for this equipment in network conf files. Known IP are {','.join([ip.ip_raw for ip in equipment_in_network_conf_file_by_name.ip_addresses])}. This IP is defined for {','.join([eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address])}",
+                        to_print_and_log=f"At line {self.matrix_line_identifier}: equipment {equipment_name} defined with {eqpt_ip_address_raw}, but this IP is not defined for this equipment in network conf files. Known IP are {','.join([ip.ip_raw for ip in self.equipment_in_network_conf_file_by_name.ip_addresses])}. This IP is defined for {','.join([eqpt.name for eqpt in self.equipments_in_network_conf_file_matching_ip_address])}",
                         do_not_print=True,
                     )
                     equipments_library.add_wrong_or_unknown_ip_address_in_matrix_flow(
                         wrong_equipment_name_allocated_to_this_ip_by_mistake=equipment_name,
                         raw_ip_address=eqpt_ip_address_raw,
-                        equipments_names_having_genuinely_this_ip_address=set([eqpt.name for eqpt in equipments_in_network_conf_file_matching_ip_address]),
+                        equipments_names_having_genuinely_this_ip_address=set([eqpt.name for eqpt in self.equipments_in_network_conf_file_matching_ip_address]),
                         matrix_line_id_referencing=self.matrix_line_identifier,
                     )
 
@@ -310,7 +314,7 @@ class FlowEndPoint:
                     type_detected_in_flow_matrix=self.type_raw, matrix_line_identifier=self.matrix_line_identifier
                 )
 
-                self.equipments_detected_in_flow_matrix.append(equipment_detected_in_flow_matrix)
+                self.network_flow_equipments_detected.append(equipment_detected_in_flow_matrix)
                 self.network_flow_matrix.all_equipments_names_with_subsystem.add((equipment_name, self.subsystem_raw))
 
                 assert equipment_detected_in_flow_matrix in self.subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix
@@ -485,8 +489,20 @@ class NetworkFlowMatrix:
         self.create_reports_after_matching_network_conf_files(equipments_library)
 
     def check_flow_are_correctly_tagged_on_sncf_network(self) -> bool:
+        with logger_config.stopwatch_with_label({inspect.stack(0)[0].function}, inform_beginning=True):
 
-        return False
+            for flow in self.network_flow_matrix_lines:
+                on_sncf_network_detected = (
+                    network_entity_provider.NetworkEntityProvider.INFRACOM in flow.get_all_network_entity_providers()
+                    or network_entity_provider.NetworkEntityProvider.INFRANET in flow.get_all_network_entity_providers()
+                    or network_entity_provider.NetworkEntityProvider.INFRACOM_OR_INFRANET in flow.get_all_network_entity_providers()
+                )
+                if on_sncf_network_detected != flow.declared_on_sncf_network_on_matrix:
+                    logger_config.print_and_log_error(
+                        f"{inspect.stack(0)[0].function}: Flow {flow.identifier_int} {flow.full_label_auto} defined as {flow.declared_on_sncf_network_on_matrix_raw_str} but should be declared {on_sncf_network_detected}"
+                    )
+
+            return False
 
     def check_consistency(self) -> None:
 
@@ -651,7 +667,7 @@ class NetworkFlowMatrixLine:
     network_flow_matrix: NetworkFlowMatrix
     identifier_int: int
     modif_raw_str: str
-    name_raw: str
+    full_label_auto: str
     sol_bord_raw: str
     seclab_raw: str
     traffic_direction_raw: str
@@ -662,6 +678,7 @@ class NetworkFlowMatrixLine:
     prod_mig_essais: Optional[constants.ProdMigrationEssai]
     modification_type: Optional[constants.MatrixFlowModificationType]
     declared_on_sncf_network_on_matrix: bool
+    declared_on_sncf_network_on_matrix_raw_str: str
 
     source: FlowSource
     destination: FlowDestination
@@ -685,9 +702,10 @@ class NetworkFlowMatrixLine:
             mes_raw = pandas_utils.optional_element_as_optional_string(row, "MES")
             prod_mig_essais_raw = pandas_utils.optional_element_as_optional_string(row, "Prod/Migration/EssaisTemporaire")
             prod_mig_essais = constants.ProdMigrationEssai[prod_mig_essais_raw] if prod_mig_essais_raw else None
+            declared_on_sncf_network_on_matrix_raw_str = pandas_utils.optional_element_as_optional_string(row, "Sur Réseau SNCF")
             declared_on_sncf_network_on_matrix = True if pandas_utils.optional_element_as_optional_string(row, "Sur Réseau SNCF") else False
 
-            name_raw = cast(str, row["Lien de com. complet\n(Auto)"])
+            full_label_auto = cast(str, row["Lien de com. complet\n(Auto)"])
             sol_bord_raw = cast(str, row["S/B"])
 
             protocole_applicative_raw = row["Protocole\nApplicatif"]
@@ -704,7 +722,7 @@ class NetworkFlowMatrixLine:
                 modif_raw_str=modif_raw_str,
                 destination=destination,
                 identifier_int=identifier_int,
-                name_raw=name_raw,
+                full_label_auto=full_label_auto,
                 sol_bord_raw=sol_bord_raw,
                 source=source,
                 seclab_raw=seclab_raw,
@@ -715,6 +733,7 @@ class NetworkFlowMatrixLine:
                 modification_type=modification_type,
                 mes_raw=mes_raw,
                 declared_on_sncf_network_on_matrix=declared_on_sncf_network_on_matrix,
+                declared_on_sncf_network_on_matrix_raw_str=declared_on_sncf_network_on_matrix_raw_str,
                 prod_mig_essais=prod_mig_essais,
             )
             source.network_flow_matrix_line = network_flow_matrix_line
@@ -724,6 +743,11 @@ class NetworkFlowMatrixLine:
 
     def __post_init__(self) -> None:
         self.is_deleted = self.modification_type == constants.MatrixFlowModificationType.D
+
+    def get_all_network_entity_providers(self) -> Set[network_entity_provider.NetworkEntityProvider]:
+        source_providers = set([equipment.network_provider for equipment in self.source.network_conf_files_equipments_detected])
+        destination_providers = set([equipment.network_provider for equipment in self.destination.network_conf_files_equipments_detected])
+        return source_providers.union(destination_providers)
 
 
 class NetworkFlowMacro:
