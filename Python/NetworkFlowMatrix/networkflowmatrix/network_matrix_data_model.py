@@ -169,6 +169,9 @@ class FlowEndPoint:
 
         self.subsystem_detected_in_flow_matrix = SubSystemInFlowMatrix.get_or_create_if_not_exist_by_name(network_flow_matrix=self.network_flow_matrix, name=self.subsystem_raw.strip().upper())
 
+    def get_all_network_entity_providers(self) -> Set[network_entity_provider.NetworkEntityProvider]:
+        return set([equipment.network_provider for equipment in self.network_conf_files_equipments_detected])
+
     def match_equipments_with_network_conf_files(self, equipments_library: equipments.NetworkConfFilesEquipmentsLibrary) -> None:
 
         if len(self.equipments_names) > len(self.raw_ip_addresses) and len(self.raw_ip_addresses) > 1:
@@ -491,18 +494,11 @@ class NetworkFlowMatrix:
     def check_flow_are_correctly_tagged_on_sncf_network(self) -> bool:
         with logger_config.stopwatch_with_label({inspect.stack(0)[0].function}, inform_beginning=True):
 
-            for flow in self.network_flow_matrix_lines:
-                all_network_entity_providers = flow.get_all_network_entity_providers()
-                sncf_network_detected = flow.get_all_network_entity_providers().intersection(set(all_network_entity_providers))
-                on_sncf_network_detected = len(sncf_network_detected) > 0
-                on_sncf_network_detected = (
-                    network_entity_provider.NetworkEntityProvider.INFRACOM in flow.get_all_network_entity_providers()
-                    or network_entity_provider.NetworkEntityProvider.INFRANET in flow.get_all_network_entity_providers()
-                    or network_entity_provider.NetworkEntityProvider.INFRACOM_OR_INFRANET in flow.get_all_network_entity_providers()
-                )
-                if on_sncf_network_detected != flow.declared_on_sncf_network_on_matrix:
+            for matrix_line in self.network_flow_matrix_lines:
+
+                if matrix_line.is_sncf_network_detected() != matrix_line.declared_on_sncf_network_on_matrix:
                     logger_config.print_and_log_error(
-                        f"{inspect.stack(0)[0].function}: Flow {flow.identifier_int} {flow.full_label_auto_one_line} defined as {flow.declared_on_sncf_network_on_matrix_raw_str} but should be declared {on_sncf_network_detected}"
+                        f"{inspect.stack(0)[0].function}: Flow {matrix_line.identifier_int} {matrix_line.full_label_auto_one_line} defined as {matrix_line.declared_on_sncf_network_on_matrix_raw_str} but should be declared {matrix_line.is_sncf_network_detected()}"
                     )
 
             return False
@@ -510,6 +506,13 @@ class NetworkFlowMatrix:
     def check_consistency(self) -> None:
 
         with logger_config.stopwatch_with_label("check_consistency", inform_beginning=True):
+
+            with logger_config.stopwatch_with_label("Check that all matrix lines have source and destination on a known network"):
+                for matrix_line in self.network_flow_matrix_lines:
+                    if not len(matrix_line.source.get_all_network_entity_providers()):
+                        logger_config.print_and_log_error(f"Line {matrix_line.identifier_int}, {matrix_line.full_label_auto_one_line}: source does not have known network")
+                    if not len(matrix_line.destination.get_all_network_entity_providers()):
+                        logger_config.print_and_log_error(f"Line {matrix_line.identifier_int}, {matrix_line.full_label_auto_one_line}: destination does not have known network")
 
             with logger_config.stopwatch_with_label("Check that equipment in network matrix is always defined with the same subsystem"):
                 for equipment in self.all_matrix_flow_equipments_definitions_instances:
@@ -528,6 +531,20 @@ class NetworkFlowMatrix:
         logger_config.print_and_log_warning(
             f"'\n'{'\nWrong IP:'.join([wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake + ";"+ wrong_ip.raw_ip_address+";"+ ",".join(wrong_ip.equipments_names_having_genuinely_this_ip_address) +";" +",".join([str(matrix_line) for matrix_line in wrong_ip.matrix_line_ids_referencing]) for wrong_ip in equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake])}"
         )
+        for directory_path in [constants.OUTPUT_PARENT_DIRECTORY_NAME]:
+            file_utils.create_folder_if_not_exist(directory_path)
+
+        pandas.DataFrame(
+            [
+                {
+                    "identifier": matrix_line.identifier_int,
+                    "detected on sncf network": "" if matrix_line.is_deleted else "X" if matrix_line.is_sncf_network_detected() else "",
+                    "source providers": [provider.name for provider in matrix_line.source.get_all_network_entity_providers()],
+                    "destination providers": [provider.name for provider in matrix_line.destination.get_all_network_entity_providers()],
+                }
+                for matrix_line in self.network_flow_matrix_lines
+            ]
+        ).to_excel(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/flow_on_sncf_network_detection.xlsx", index=False)
 
         with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_wrong_ip.txt", mode="w", encoding="utf-8") as matrix_wrong_ip_file:
             for wrong_ip in sorted(equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake, key=lambda x: x.wrong_equipment_name_allocated_to_this_ip_by_mistake):
@@ -542,9 +559,6 @@ class NetworkFlowMatrix:
                     + ",".join([str(matrix_line) for matrix_line in wrong_ip.matrix_line_ids_referencing])
                     + "\n"
                 )
-
-        for directory_path in [constants.OUTPUT_PARENT_DIRECTORY_NAME]:
-            file_utils.create_folder_if_not_exist(directory_path)
 
         dump_matrix_subsystems_to_json(self, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_subsystems_in_flow_matrix.json")
         dump_matrix_equipments_to_json(self, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments_in_flow_matrix.json")
@@ -749,9 +763,13 @@ class NetworkFlowMatrixLine:
         self.full_label_auto_one_line = self.full_label_auto_multiline.replace("\n", "\t")
 
     def get_all_network_entity_providers(self) -> Set[network_entity_provider.NetworkEntityProvider]:
-        source_providers = set([equipment.network_provider for equipment in self.source.network_conf_files_equipments_detected])
-        destination_providers = set([equipment.network_provider for equipment in self.destination.network_conf_files_equipments_detected])
-        return source_providers.union(destination_providers)
+        all_providers = self.source.get_all_network_entity_providers().union(self.destination.get_all_network_entity_providers())
+        # assert self.is_deleted or all_providers, f"Line {self.identifier_int}, no network detected"
+        return all_providers
+
+    def is_sncf_network_detected(self) -> bool:
+        sncf_networks_detected = self.get_all_network_entity_providers().intersection(set(network_entity_provider.SNCF_NETWORKS))
+        return len(sncf_networks_detected) > 0
 
 
 class NetworkFlowMacro:
