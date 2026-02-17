@@ -64,6 +64,9 @@ class TypeDefinedInFlowMatrix:
         self.all_equipments_containing_it: List[EquipmentDefinedInFlowMatrix] = []
         self.all_endpoints: List[FlowEndPoint] = []
 
+    def __hash__(self) -> int:
+        return hash(self.name)
+
 
 class SubSystemDefinedInFlowMatrix:
 
