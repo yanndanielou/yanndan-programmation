@@ -11,6 +11,9 @@ class NetworkFlowMatrixApplication:
     equipments_library_builder: equipments.NetworkConfFilesEquipmentsLibrary.Builder
     network_flow_matrix_builder: network_matrix_data_model.NetworkFlowMatrix.Builder
 
+    def __post_init__(self) -> None:
+        self.run()
+
     def run(self) -> None:
 
         file_utils.remove_folder_and_recreate_it_empty(constants.OUTPUT_PARENT_DIRECTORY_NAME)
