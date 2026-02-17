@@ -36,16 +36,18 @@ def create_reports_after_matching_network_conf_files_and_flow_matrix(
 
 
 def create_report_network_conf_files_groups(equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
-    values_as_list_dict = [
-        {
-            "Group definition": group.definition,
-            "Number of equipments": len(group.equipments),
-            "Equipments": ",".join([equipment.name for equipment in group.equipments]),
-        }
-        for group in equipments_library.all_groups
-    ]
 
-    save_rows_to_output_files(rows_as_list_dict=values_as_list_dict, file_base_name="network_conf_files_groups")
+    save_rows_to_output_files(
+        rows_as_list_dict=[
+            {
+                "Group definition": group.definition,
+                "Number of equipments": len(group.equipments),
+                "Equipments": ",".join([equipment.name for equipment in group.equipments]),
+            }
+            for group in equipments_library.all_groups
+        ],
+        file_base_name="network_conf_files_groups",
+    )
 
 
 def create_dump_network_conf_files_library(equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary", output_json_file_full_path: str) -> None:
@@ -80,66 +82,66 @@ def create_dump_network_conf_files_library(equipments_library: "equipments.Netwo
 
 def create_reports_wrong_ip(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
 
-    values_as_list_dict = [
-        {
-            "Wrong IP": wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake,
-            "detected on sncf network": wrong_ip.raw_ip_address,
-            "source providers": ",".join(wrong_ip.equipments_names_having_genuinely_this_ip_address),
-            "destination providers": ",".join([str(matrix_line) for matrix_line in wrong_ip.matrix_line_ids_referencing]),
-        }
-        for wrong_ip in sorted(equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake, key=lambda x: x.wrong_equipment_name_allocated_to_this_ip_by_mistake)
-    ]
-
-    save_rows_to_output_files(rows_as_list_dict=values_as_list_dict, file_base_name="matrix_wrong_ip")
+    save_rows_to_output_files(
+        rows_as_list_dict=[
+            {
+                "Wrong IP": wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake,
+                "detected on sncf network": wrong_ip.raw_ip_address,
+                "source providers": ",".join(wrong_ip.equipments_names_having_genuinely_this_ip_address),
+                "destination providers": ",".join([str(matrix_line) for matrix_line in wrong_ip.matrix_line_ids_referencing]),
+            }
+            for wrong_ip in sorted(equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake, key=lambda x: x.wrong_equipment_name_allocated_to_this_ip_by_mistake)
+        ],
+        file_base_name="matrix_wrong_ip",
+    )
 
 
 def create_report_flows_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
-    values_as_list_dict = [
-        {
-            "identifier": matrix_line.identifier_int,
-            "detected on sncf network": "" if matrix_line.is_deleted else "X" if matrix_line.is_sncf_network_detected() else "",
-            "source providers": [provider.name for provider in matrix_line.source.get_all_network_entity_providers()],
-            "destination providers": [provider.name for provider in matrix_line.destination.get_all_network_entity_providers()],
-        }
-        for matrix_line in network_flow_matrix.network_flow_matrix_lines
-    ]
 
-    save_rows_to_output_files(rows_as_list_dict=values_as_list_dict, file_base_name="flow_on_sncf_network_detection")
+    save_rows_to_output_files(
+        rows_as_list_dict=[
+            {
+                "identifier": matrix_line.identifier_int,
+                "detected on sncf network": "" if matrix_line.is_deleted else "X" if matrix_line.is_sncf_network_detected() else "",
+                "source providers": [provider.name for provider in matrix_line.source.get_all_network_entity_providers()],
+                "destination providers": [provider.name for provider in matrix_line.destination.get_all_network_entity_providers()],
+            }
+            for matrix_line in network_flow_matrix.network_flow_matrix_lines
+        ],
+        file_base_name="flow_on_sncf_network_detection",
+    )
 
 
 def create_report_subsystems_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
 
-    with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_subsystems.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
-        for subsystem in sorted(network_flow_matrix.all_matrix_flow_subsystems_definitions_instances, key=lambda x: x.name):
-            matrix_all_unknown_equipments_file.write(
-                "All_subsystems;" + subsystem.name + ";All equipments found:" + ",".join([equipment.name for equipment in subsystem.all_equipments_detected_in_flow_matrix]) + "\n"
-            )
-
-    values_as_list_dict = [
-        {
-            "Type name": subsystem.name,
-            "Number of matrix flow equipments": len(subsystem.all_equipments_detected_in_flow_matrix),
-            "matrix flow equipments": ",".join([equipment.name for equipment in subsystem.all_equipments_detected_in_flow_matrix]),
-        }
-        for subsystem in network_flow_matrix.all_matrix_flow_subsystems_definitions_instances
-    ]
-    save_rows_to_output_files(rows_as_list_dict=values_as_list_dict, file_base_name="matrix_all_subsystems")
+    save_rows_to_output_files(
+        rows_as_list_dict=[
+            {
+                "Type name": subsystem.name,
+                "Number of matrix flow equipments": len(subsystem.all_equipments_detected_in_flow_matrix),
+                "matrix flow equipments": ",".join([equipment.name for equipment in subsystem.all_equipments_detected_in_flow_matrix]),
+            }
+            for subsystem in network_flow_matrix.all_matrix_flow_subsystems_definitions_instances
+        ],
+        file_base_name="matrix_all_subsystems",
+    )
 
 
 def create_report_types_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
 
-    values_as_list_dict = [
-        {
-            "Type name": type_it.name,
-            "Number of network conf files equipments": len(type_it.network_conf_files_equipments_detected),
-            "Network conf files equipments": ",".join([equipment.name for equipment in type_it.network_conf_files_equipments_detected]),
-            "Number of matrix flow equipments": len(type_it.network_flow_matrix_equipments_detected),
-            "matrix flow equipments": ",".join([equipment.name for equipment in type_it.network_flow_matrix_equipments_detected]),
-        }
-        for type_it in network_flow_matrix.all_types_defined
-    ]
-
-    save_rows_to_output_files(rows_as_list_dict=values_as_list_dict, file_base_name="matrix_all_types")
+    save_rows_to_output_files(
+        rows_as_list_dict=[
+            {
+                "Type name": type_it.name,
+                "Number of network conf files equipments": len(type_it.network_conf_files_equipments_detected),
+                "Network conf files equipments": ",".join([equipment.name for equipment in type_it.network_conf_files_equipments_detected]),
+                "Number of matrix flow equipments": len(type_it.network_flow_matrix_equipments_detected),
+                "matrix flow equipments": ",".join([equipment.name for equipment in type_it.network_flow_matrix_equipments_detected]),
+            }
+            for type_it in network_flow_matrix.all_types_defined
+        ],
+        file_base_name="matrix_all_types",
+    )
 
 
 def create_report_equipments_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
