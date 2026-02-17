@@ -129,18 +129,22 @@ def create_report_subsystems_synthesis(network_flow_matrix: "network_matrix_data
 
 
 def create_report_types_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
-    pandas.DataFrame(
-        [
-            {
-                "Type name": type_it.name,
-                "Number of network conf files equipments": len(type_it.network_conf_files_equipments_detected),
-                "Network conf files equipments": ",".join([equipment.name for equipment in type_it.network_conf_files_equipments_detected]),
-                "Number of matrix flow equipments": len(type_it.network_flow_matrix_equipments_detected),
-                "matrix flow equipments": ",".join([equipment.name for equipment in type_it.network_flow_matrix_equipments_detected]),
-            }
-            for type_it in network_flow_matrix.all_types_defined
-        ]
-    ).to_excel(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_types.xlsx", index=False)
+
+    values_as_list_dict = [
+        {
+            "Type name": type_it.name,
+            "Number of network conf files equipments": len(type_it.network_conf_files_equipments_detected),
+            "Network conf files equipments": ",".join([equipment.name for equipment in type_it.network_conf_files_equipments_detected]),
+            "Number of matrix flow equipments": len(type_it.network_flow_matrix_equipments_detected),
+            "matrix flow equipments": ",".join([equipment.name for equipment in type_it.network_flow_matrix_equipments_detected]),
+        }
+        for type_it in network_flow_matrix.all_types_defined
+    ]
+
+    file_name_without_suffix = "matrix_all_types"
+    file_path_without_suffix = f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/{file_name_without_suffix}"
+    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(values_as_list_dict, f"{file_path_without_suffix}.json")
+    pandas.DataFrame(values_as_list_dict).to_excel(f"{file_path_without_suffix}.xlsx", index=False)
 
 
 def create_report_equipments_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
