@@ -140,7 +140,7 @@ def create_report_types_synthesis(network_flow_matrix: "network_matrix_data_mode
             }
             for type_it in network_flow_matrix.all_types_defined
         ]
-    ).to_excel(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/netork_flow_types.xlsx", index=False)
+    ).to_excel(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_types.xlsx", index=False)
 
 
 def create_report_equipments_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
