@@ -137,6 +137,9 @@ class NetworkConfFilesDefinedEquipment:
                 assert id(obj) not in seen_ids, f"{self.library._network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw]} is defined several times by {ip_address_raw} "
                 seen_ids.add(id(obj))
 
+    def __hash__(self) -> int:
+        return hash((self.name, self.source_label))
+
 
 class NetworkConfFilesEquipmentsLibrary:
 
