@@ -69,6 +69,7 @@ def create_reports_after_matching_network_conf_files_and_flow_matrix(
     create_report_equipments_synthesis(network_flow_matrix, equipments_library)
     create_report_flows_synthesis(network_flow_matrix, equipments_library)
     create_report_subsystems_synthesis(network_flow_matrix, equipments_library)
+    create_report_types_synthesis(network_flow_matrix, equipments_library)
 
     equipments_library.create_reports_after_matching_with_flow_matrix()
 
@@ -125,6 +126,21 @@ def create_report_subsystems_synthesis(network_flow_matrix: "network_matrix_data
             matrix_all_unknown_equipments_file.write(
                 "All_subsystems;" + subsystem.name + ";All equipments found:" + ",".join([equipment.name for equipment in subsystem.all_equipments_detected_in_flow_matrix]) + "\n"
             )
+
+
+def create_report_types_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
+    pandas.DataFrame(
+        [
+            {
+                "Type name": type_it.name,
+                "Number of network conf files equipments": len(type_it.network_conf_files_equipments_detected),
+                "Network conf files equipments": ",".join([equipment.name for equipment in type_it.network_conf_files_equipments_detected]),
+                "Number of matrix flow equipments": len(type_it.network_flow_matrix_equipments_detected),
+                "matrix flow equipments": ",".join([equipment.name for equipment in type_it.network_flow_matrix_equipments_detected]),
+            }
+            for type_it in network_flow_matrix.all_types_defined
+        ]
+    ).to_excel(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/netork_flow_types.xlsx", index=False)
 
 
 def create_report_equipments_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:

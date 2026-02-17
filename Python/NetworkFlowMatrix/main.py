@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
         with logger_config.stopwatch_with_label("Create matrix builder", inform_beginning=True, monitor_ram_usage=True):
             network_flow_matrix_builder = network_matrix_data_model.NetworkFlowMatrix.Builder().excel_file(
-                excel_file_full_path="Input_Downloaded/NExTEO-S-271000-02-0125-00_Matrice_de_Flux_V15-05 Sans Diff.xlsm", sheet_name="Matrice_de_Flux_SITE"
+                excel_file_full_path="Input_Downloaded/NExTEO-S-271000-02-0125-00_Matrice_de_Flux_V15-04.xlsm", sheet_name="Matrice_de_Flux_SITE"
             )
 
         application.NetworkFlowMatrixApplication(equipments_library_builder=equipments_library_builder, network_flow_matrix_builder=network_flow_matrix_builder)

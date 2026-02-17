@@ -34,7 +34,7 @@ class TypeDefinedInFlowMatrix:
         return hash(self.name)
 
     @property
-    def network_flow_equipments_detected(self) -> Set["EquipmentDefinedInFlowMatrix"]:
+    def network_flow_matrix_equipments_detected(self) -> Set["EquipmentDefinedInFlowMatrix"]:
         all_network_flow_equipments_detected: Set[EquipmentDefinedInFlowMatrix] = set()
         for endpoint in self._all_endpoints:
             all_network_flow_equipments_detected.update(endpoint.network_flow_equipments_detected)
