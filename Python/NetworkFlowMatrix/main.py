@@ -1,9 +1,12 @@
-from typing import Dict
-
-from common import file_utils, json_encoders
+from common import file_utils
 from logger import logger_config
 
-from networkflowmatrix import network_conf_files_descriptions_data, network_matrix_data_model, equipments, constants
+from networkflowmatrix import (
+    constants,
+    equipments,
+    network_conf_files_descriptions_data,
+    network_matrix_data_model,
+)
 
 if __name__ == "__main__":
     with logger_config.application_logger("networkflowmatrix"):
@@ -28,6 +31,3 @@ if __name__ == "__main__":
             )
 
         network_flow_matrix.match_equipments_with_network_conf_files(equipments_library)
-
-        equipments_library.dump_to_json_file(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/all_equipments_in_conf_files_after_matching_network_matrix.json")
-        pass

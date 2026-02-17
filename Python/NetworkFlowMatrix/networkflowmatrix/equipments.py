@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, cast
 from common import json_encoders
 from logger import logger_config
 
-from networkflowmatrix import constants, seclab, network_entity_provider
+from networkflowmatrix import constants, network_entity_provider, seclab
 
 if TYPE_CHECKING:
     from networkflowmatrix.network_conf_files import (
