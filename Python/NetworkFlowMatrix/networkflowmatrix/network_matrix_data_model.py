@@ -1,6 +1,6 @@
 import inspect
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple, cast
+from typing import Dict, List, Optional, Self, Set, Tuple, cast
 
 import pandas
 from common import pandas_utils, string_utils
@@ -446,35 +446,28 @@ class NetworkFlowMatrix:
     all_matrix_flow_subsystems_definitions_instances_by_name: Dict[str, "SubSystemDefinedInFlowMatrix"] = field(default_factory=dict)
 
     class Builder:
+        def __init__(self) -> None:
+            self.network_flow_matrix = NetworkFlowMatrix()
 
-        @staticmethod
-        def build_with_excel_file(excel_file_full_path: str, sheet_name: str = "Matrice_de_Flux_SITE") -> "NetworkFlowMatrix":
+        def excel_file(self, excel_file_full_path: str, sheet_name: str = "Matrice_de_Flux_SITE") -> Self:
             main_data_frame = pandas.read_excel(excel_file_full_path, skiprows=[0, 1, 2, 3, 4], sheet_name=sheet_name)
             logger_config.print_and_log_info(to_print_and_log=f"Flow matrix {excel_file_full_path} has {len(main_data_frame)} items")
             logger_config.print_and_log_info(to_print_and_log=f"Flow matrix {excel_file_full_path} columns  {main_data_frame.columns[:4]} ...")
 
-            network_flow_matrix_lines: List[NetworkFlowMatrixLine] = []
-            network_flow_matrix_lines_not_deleted: List[NetworkFlowMatrixLine] = []
-            network_flow_matrix_lines_by_identifier: Dict[int, "NetworkFlowMatrixLine"] = {}
-
-            network_flow_matrix = NetworkFlowMatrix()
-
             for _, row in main_data_frame.iterrows():
-                network_flow_matrix_line = NetworkFlowMatrixLine.Builder.build_with_row(row=row, network_flow_matrix=network_flow_matrix)
+                network_flow_matrix_line = NetworkFlowMatrixLine.Builder.build_with_row(row=row, network_flow_matrix=self.network_flow_matrix)
                 if network_flow_matrix_line:
-                    network_flow_matrix_lines.append(network_flow_matrix_line)
-                    network_flow_matrix_lines_by_identifier[network_flow_matrix_line.identifier_int] = network_flow_matrix_line
+                    self.network_flow_matrix.network_flow_matrix_lines.append(network_flow_matrix_line)
+                    self.network_flow_matrix.network_flow_matrix_lines_by_identifier[network_flow_matrix_line.identifier_int] = network_flow_matrix_line
                     if not network_flow_matrix_line.is_deleted:
-                        network_flow_matrix_lines_not_deleted.append(network_flow_matrix_line)
+                        self.network_flow_matrix.network_flow_matrix_lines_not_deleted.append(network_flow_matrix_line)
 
-            network_flow_matrix.network_flow_matrix_lines = network_flow_matrix_lines
-            network_flow_matrix.network_flow_matrix_lines_by_identifier = network_flow_matrix_lines_by_identifier
-            network_flow_matrix.network_flow_matrix_lines_not_deleted = network_flow_matrix_lines_not_deleted
+            return self
 
-            assert network_flow_matrix.network_flow_matrix_lines, "matrix is empty"
-            assert network_flow_matrix.network_flow_matrix_lines_by_identifier, "matrix is empty"
-
-            return network_flow_matrix
+        def build(self) -> "NetworkFlowMatrix":
+            assert self.network_flow_matrix.network_flow_matrix_lines, "matrix is empty"
+            assert self.network_flow_matrix.network_flow_matrix_lines_by_identifier, "matrix is empty"
+            return self.network_flow_matrix
 
     def get_line_by_identifier(self, identifier: int) -> Optional["NetworkFlowMatrixLine"]:
         return self.network_flow_matrix_lines_by_identifier[identifier]

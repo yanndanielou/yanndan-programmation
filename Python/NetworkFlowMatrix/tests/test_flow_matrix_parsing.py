@@ -9,9 +9,7 @@ from networkflowmatrix.network_matrix_data_model import (
 
 @pytest.fixture(scope="session", name="parse_flow_matrix_file_v15_01_and_build_objects_fixture")
 def parse_flow_matrix_file_and_build_objects() -> NetworkFlowMatrix:
-    network_flow_matrix = NetworkFlowMatrix.Builder.build_with_excel_file(
-        excel_file_full_path="Input_Downloaded/NExTEO-S-271000-02-0125-00_Matrice_de_Flux_V15-01Draft.xlsm", sheet_name="Matrice_de_Flux_SITE"
-    )
+    network_flow_matrix = NetworkFlowMatrix.Builder.excel_file(excel_file_full_path="Input_Downloaded/NExTEO-S-271000-02-0125-00_Matrice_de_Flux_V15-01Draft.xlsm", sheet_name="Matrice_de_Flux_SITE")
     return network_flow_matrix
 
 
