@@ -80,29 +80,17 @@ def create_dump_network_conf_files_library(equipments_library: "equipments.Netwo
 
 def create_reports_wrong_ip(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
 
-    logger_config.print_and_log_warning(f"After scanning network flow matrix, {len(equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake)} wrong IP address definition")
+    values_as_list_dict = [
+        {
+            "Wrong IP": wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake,
+            "detected on sncf network": wrong_ip.raw_ip_address,
+            "source providers": ",".join(wrong_ip.equipments_names_having_genuinely_this_ip_address),
+            "destination providers": ",".join([str(matrix_line) for matrix_line in wrong_ip.matrix_line_ids_referencing]),
+        }
+        for wrong_ip in sorted(equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake, key=lambda x: x.wrong_equipment_name_allocated_to_this_ip_by_mistake)
+    ]
 
-    logger_config.print_and_log_warning(
-        f"'\n'{'\nWrong IP:'.join([wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake + ";"+ wrong_ip.raw_ip_address+";"+ ",".join(wrong_ip.equipments_names_having_genuinely_this_ip_address) +";" +",".join([str(matrix_line) for matrix_line in wrong_ip.matrix_line_ids_referencing]) for wrong_ip in equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake])}"
-    )
-
-    with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_wrong_ip.txt", mode="w", encoding="utf-8") as matrix_wrong_ip_file:
-        for wrong_ip in sorted(equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake, key=lambda x: x.wrong_equipment_name_allocated_to_this_ip_by_mistake):
-            matrix_wrong_ip_file.write(
-                "Wrong IP:"
-                + wrong_ip.wrong_equipment_name_allocated_to_this_ip_by_mistake
-                + ";"
-                + wrong_ip.raw_ip_address
-                + ";"
-                + ",".join(wrong_ip.equipments_names_having_genuinely_this_ip_address)
-                + ";"
-                + ",".join([str(matrix_line) for matrix_line in wrong_ip.matrix_line_ids_referencing])
-                + "\n"
-            )
-
-    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
-        equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_wrong_ip.json"
-    )
+    save_rows_to_output_files(rows_as_list_dict=values_as_list_dict, file_base_name="matrix_wrong_ip")
 
 
 def create_report_flows_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
