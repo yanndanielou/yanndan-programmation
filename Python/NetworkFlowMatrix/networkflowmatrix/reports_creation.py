@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING, Dict, Any, List
+from typing import TYPE_CHECKING, Dict, Any, List, Tuple
 
 import pandas
 from common import file_utils, json_encoders
@@ -12,48 +12,6 @@ if TYPE_CHECKING:
         equipments,
         network_matrix_data_model,
     )
-
-
-def subsystem_to_dict(subsystem: "network_matrix_data_model.SubSystemDefinedInFlowMatrix", with_equipment: bool) -> Dict:
-    if with_equipment:
-        return {
-            "subsystem_name": subsystem.name,
-            "subsystem_number_equipments": len(subsystem.all_equipments_detected_in_flow_matrix),
-            "subsystem_all_equipments": [equipment_to_dict(eq, False) for eq in subsystem.all_equipments_detected_in_flow_matrix],
-        }
-    else:
-        return {"subsystem_name": subsystem.name}
-
-
-def equipment_to_dict(equipment: "network_matrix_data_model.EquipmentDefinedInFlowMatrix", with_subsystem: bool) -> Dict:
-    if with_subsystem:
-        new_var = {
-            "equipment_name": equipment.name,
-            "equipment_ip_addresses": [str(ip) for ip in equipment.raw_ip_addresses],
-            "equipment_number_of_subsystems_detected_in_flow_matrix": len(equipment.all_subsystems_detected_in_flow_matrix),
-            "equipment_all_subsystems_detected_in_flow_matrix": [subsystem_to_dict(subsys, False) for subsys in equipment.all_subsystems_detected_in_flow_matrix],
-        }
-    else:
-        new_var = {"equipment_name": equipment.name, "equipment_ip_addresses": [str(ip) for ip in equipment.raw_ip_addresses]}
-
-    return new_var
-
-
-def dump_matrix_subsystems_to_json(network_flow_matrix_to_dump: "network_matrix_data_model.NetworkFlowMatrix", filepath: str) -> None:
-    data = [
-        subsystem_to_dict(subsystem, with_equipment=True) for subsystem in sorted(network_flow_matrix_to_dump.all_matrix_flow_subsystems_definitions_instances, key=lambda subsystem: subsystem.name)
-    ]
-
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-
-def dump_matrix_equipments_to_json(network_flow_matrix_to_dump: "network_matrix_data_model.NetworkFlowMatrix", filepath: str) -> None:
-    data = [
-        equipment_to_dict(equipment, with_subsystem=True) for equipment in sorted(network_flow_matrix_to_dump.all_matrix_flow_equipments_definitions_instances, key=lambda subsystem: subsystem.name)
-    ]
-    with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
 
 
 def create_reports_after_matching_network_conf_files_and_flow_matrix(
@@ -70,11 +28,54 @@ def create_reports_after_matching_network_conf_files_and_flow_matrix(
     create_report_flows_synthesis(network_flow_matrix, equipments_library)
     create_report_subsystems_synthesis(network_flow_matrix, equipments_library)
     create_report_types_synthesis(network_flow_matrix, equipments_library)
+    create_report_network_conf_files_groups(equipments_library)
 
-    equipments_library.create_reports_after_matching_with_flow_matrix()
+    create_dump_network_conf_files_library(equipments_library, "all_equipments_in_conf_files_after_matching_network_matrix")
 
-    equipments_library.dump_to_json_file(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/all_equipments_in_conf_files_after_matching_network_matrix.json")
     pass
+
+
+def create_report_network_conf_files_groups(equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
+    values_as_list_dict = [
+        {
+            "Group definition": group.definition,
+            "Number of equipments": len(group.equipments),
+            "Equipments": ",".join([equipment.name for equipment in group.equipments]),
+        }
+        for group in equipments_library.all_groups
+    ]
+
+    save_rows_to_output_files(rows_as_list_dict=values_as_list_dict, file_base_name="network_conf_files_groups")
+
+
+def create_dump_network_conf_files_library(equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary", output_json_file_full_path: str) -> None:
+    data_to_dump: List[Tuple] = []
+    for equipment in equipments_library.all_network_conf_files_defined_equipments:
+        data_to_dump.append(
+            (
+                f"name:{equipment.name}",
+                f"Source:{equipment.source_label}",
+                f"Types:{', '.join(list(equipment.equipment_types))}",
+                f"Seclab:{equipment.seclab_side}",
+                f"Alternative ids:{', '.join([str(alter) for alter in equipment.alternative_identifiers])}",
+                f"Ip:{', '.join([ip.ip_raw for ip in equipment.ip_addresses])}",
+                f"Groups:{', '.join([group.definition.name + ' ' + group.definition.subnet_and_mask for  group in equipment.groups])}",
+            )
+        )
+
+    for group in equipments_library.all_groups:
+        data_to_dump.append(
+            (
+                group.definition,
+                "Equipments:"
+                + ",".join(
+                    [equipment.name for equipment in group.equipments],
+                ),
+            )
+        )
+
+    output_json_file_full_path = f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/all_equipments_in_conf_files_after_matching_network_matrix.json"
+    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(data_to_dump, output_json_file_full_path)
 
 
 def create_reports_wrong_ip(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
@@ -119,9 +120,8 @@ def create_report_flows_synthesis(network_flow_matrix: "network_matrix_data_mode
 
 
 def create_report_subsystems_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
-    dump_matrix_subsystems_to_json(network_flow_matrix, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_subsystems_in_flow_matrix.json")
 
-    with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_subsystems_in_flow_matrix.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
+    with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_subsystems.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
         for subsystem in sorted(network_flow_matrix.all_matrix_flow_subsystems_definitions_instances, key=lambda x: x.name):
             matrix_all_unknown_equipments_file.write(
                 "All_subsystems;" + subsystem.name + ";All equipments found:" + ",".join([equipment.name for equipment in subsystem.all_equipments_detected_in_flow_matrix]) + "\n"
@@ -129,13 +129,11 @@ def create_report_subsystems_synthesis(network_flow_matrix: "network_matrix_data
 
     values_as_list_dict = [
         {
-            "Type name": type_it.name,
-            "Number of network conf files equipments": len(type_it.network_conf_files_equipments_detected),
-            "Network conf files equipments": ",".join([equipment.name for equipment in type_it.network_conf_files_equipments_detected]),
-            "Number of matrix flow equipments": len(type_it.network_flow_matrix_equipments_detected),
-            "matrix flow equipments": ",".join([equipment.name for equipment in type_it.network_flow_matrix_equipments_detected]),
+            "Type name": subsystem.name,
+            "Number of matrix flow equipments": len(subsystem.all_equipments_detected_in_flow_matrix),
+            "matrix flow equipments": ",".join([equipment.name for equipment in subsystem.all_equipments_detected_in_flow_matrix]),
         }
-        for type_it in network_flow_matrix.all_matrix_flow_subsystems_definitions_instances
+        for subsystem in network_flow_matrix.all_matrix_flow_subsystems_definitions_instances
     ]
     save_rows_to_output_files(rows_as_list_dict=values_as_list_dict, file_base_name="matrix_all_subsystems")
 
@@ -157,7 +155,6 @@ def create_report_types_synthesis(network_flow_matrix: "network_matrix_data_mode
 
 
 def create_report_equipments_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
-    dump_matrix_equipments_to_json(network_flow_matrix, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments_in_flow_matrix.json")
     json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
         equipments_library.not_found_equipments_but_defined_in_flow_matrix, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_unknown_equipments.json"
     )
@@ -211,7 +208,6 @@ def create_report_equipments_synthesis(network_flow_matrix: "network_matrix_data
 
 
 def create_report_unknown_equipment(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
-    dump_matrix_equipments_to_json(network_flow_matrix, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments_in_flow_matrix.json")
     json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
         equipments_library.not_found_equipments_but_defined_in_flow_matrix, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_unknown_equipments.json"
     )

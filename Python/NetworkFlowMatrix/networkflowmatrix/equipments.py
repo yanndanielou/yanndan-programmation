@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, cast
 from common import json_encoders
 from logger import logger_config
 
-from networkflowmatrix import constants, network_entity_provider, seclab
+from networkflowmatrix import constants, network_entity_provider, seclab, reports_creation
 
 if TYPE_CHECKING:
     from networkflowmatrix.network_conf_files import (
@@ -181,7 +181,7 @@ class NetworkConfFilesEquipmentsLibrary:
             manual_group_definitions.construct_manual_groups(self.equipments_library_being_created)
             self.equipments_library_being_created.print_stats()
             self.equipments_library_being_created.check_consistency()
-            self.equipments_library_being_created.dump_to_json_file(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/all_equipments_in_conf_files_before_matching_network_matrix.json")
+            reports_creation.create_dump_network_conf_files_library(self.equipments_library_being_created, "all_equipments_in_conf_files_before_matching_network_matrix")
 
             return self.equipments_library_being_created
 
@@ -388,34 +388,3 @@ class NetworkConfFilesEquipmentsLibrary:
         equipment.matrix_line_ids_referencing.append(matrix_line_id_referencing)
 
         return equipment
-
-    def create_reports_after_matching_with_flow_matrix(self) -> None:
-        self.dump_to_json_file(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/all_equipments_in_conf_files.json")
-
-    def dump_to_json_file(self, output_json_file_full_path: str) -> None:
-        data_to_dump: List[Tuple] = []
-        for equipment in self.all_network_conf_files_defined_equipments:
-            data_to_dump.append(
-                (
-                    f"name:{equipment.name}",
-                    f"Source:{equipment.source_label}",
-                    f"Types:{', '.join(list(equipment.equipment_types))}",
-                    f"Seclab:{equipment.seclab_side}",
-                    f"Alternative ids:{', '.join([str(alter) for alter in equipment.alternative_identifiers])}",
-                    f"Ip:{', '.join([ip.ip_raw for ip in equipment.ip_addresses])}",
-                    f"Groups:{', '.join([group.definition.name + ' ' + group.definition.subnet_and_mask for  group in equipment.groups])}",
-                )
-            )
-
-        for group in self.all_groups:
-            data_to_dump.append(
-                (
-                    group.definition,
-                    "Equipments:"
-                    + ",".join(
-                        [equipment.name for equipment in group.equipments],
-                    ),
-                )
-            )
-
-        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(data_to_dump, output_json_file_full_path)
