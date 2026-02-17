@@ -1,5 +1,5 @@
-import json
-from typing import TYPE_CHECKING, Dict, Any, List, Tuple
+import inspect
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 import pandas
 from common import file_utils, json_encoders
@@ -18,22 +18,23 @@ def create_reports_after_matching_network_conf_files_and_flow_matrix(
     network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary"
 ) -> None:
 
-    file_utils.create_folder_if_not_exist(constants.OUTPUT_PARENT_DIRECTORY_NAME)
+    with logger_config.stopwatch_with_label({inspect.stack(0)[0].function}, inform_beginning=True):
+        file_utils.create_folder_if_not_exist(constants.OUTPUT_PARENT_DIRECTORY_NAME)
 
-    create_reports_wrong_ip(network_flow_matrix, equipments_library)
-    create_report_flows_synthesis(network_flow_matrix, equipments_library)
-    create_report_equipments_on_multiple_subsystems(network_flow_matrix, equipments_library)
-    create_report_equipments_on_multiple_types(network_flow_matrix, equipments_library)
-    create_report_equipments_synthesis(network_flow_matrix, equipments_library)
-    create_report_flows_synthesis(network_flow_matrix, equipments_library)
-    create_report_subsystems_synthesis(network_flow_matrix, equipments_library)
-    create_report_types_synthesis(network_flow_matrix, equipments_library)
-    create_report_network_conf_files_groups(equipments_library)
-    create_report_unknown_equipment(equipments_library)
+        create_reports_wrong_ip(network_flow_matrix, equipments_library)
+        create_report_flows_synthesis(network_flow_matrix, equipments_library)
+        create_report_equipments_on_multiple_subsystems(network_flow_matrix, equipments_library)
+        create_report_equipments_on_multiple_types(network_flow_matrix, equipments_library)
+        create_report_equipments_synthesis(network_flow_matrix, equipments_library)
+        create_report_flows_synthesis(network_flow_matrix, equipments_library)
+        create_report_subsystems_synthesis(network_flow_matrix, equipments_library)
+        create_report_types_synthesis(network_flow_matrix, equipments_library)
+        create_report_network_conf_files_groups(equipments_library)
+        create_report_unknown_equipment(equipments_library)
 
-    create_dump_network_conf_files_library(equipments_library, "all_equipments_in_conf_files_after_matching_network_matrix")
+        create_dump_network_conf_files_library(equipments_library, "all_equipments_in_conf_files_after_matching_network_matrix")
 
-    pass
+        pass
 
 
 def create_report_network_conf_files_groups(equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
@@ -146,30 +147,6 @@ def create_report_types_synthesis(network_flow_matrix: "network_matrix_data_mode
 
 
 def create_report_equipments_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
-    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
-        equipments_library.not_found_equipments_but_defined_in_flow_matrix, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_unknown_equipments.json"
-    )
-    with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
-        for equipment in sorted(network_flow_matrix.all_matrix_flow_equipments_definitions_instances, key=lambda x: x.name):
-            matrix_all_unknown_equipments_file.write(
-                "Equipments;"
-                + equipment.name
-                + f";{len(equipment.all_types_names_detected_in_flow_matrix)} types found:"
-                + ",".join(equipment.all_types_names_detected_in_flow_matrix)
-                + f";{len(equipment.all_subsystems_detected_in_flow_matrix)} subsystems found:"
-                + ",".join([subsystem.name for subsystem in equipment.all_subsystems_detected_in_flow_matrix])
-                + ";All subsystems found with number of line identifier:"
-                + ",".join([subsystem.name + ":" + str(len(line_identifiers)) for subsystem, line_identifiers in equipment.all_subsystems_detected_in_flow_matrix_with_lines_identifiers.items()])
-                + ";All subsystems found with line identifier:"
-                + ",".join(
-                    [
-                        subsystem.name + ":" + ",".join([str(line_identifier_int) for line_identifier_int in line_identifiers])
-                        for subsystem, line_identifiers in equipment.all_subsystems_detected_in_flow_matrix_with_lines_identifiers.items()
-                    ]
-                )
-                + "\n"
-            )
-
     rows = []
     for equipment in network_flow_matrix.all_matrix_flow_equipments_definitions_instances:
         row = {
@@ -267,7 +244,8 @@ def create_report_equipments_on_multiple_types(network_flow_matrix: "network_mat
 
 
 def save_rows_to_output_files(rows_as_list_dict: List[Dict[str, Any]], file_base_name: str) -> None:
-    file_path_without_suffix = f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/{file_base_name}"
-    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(rows_as_list_dict, f"{file_path_without_suffix}.json")
-    pandas.DataFrame(rows_as_list_dict).to_excel(f"{file_path_without_suffix}.xlsx", index=False)
-    pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.csv", index=False)
+    with logger_config.stopwatch_with_label(f"{inspect.stack(0)[0].function} for {len(rows_as_list_dict)} lines to {file_base_name}", inform_beginning=True):
+        file_path_without_suffix = f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/{file_base_name}"
+        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(rows_as_list_dict, f"{file_path_without_suffix}.json")
+        pandas.DataFrame(rows_as_list_dict).to_excel(f"{file_path_without_suffix}.xlsx", index=False)
+        pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.csv", index=False)
