@@ -307,8 +307,8 @@ class NetworkConfFilesEquipmentsLibrary:
         if self.is_existing_network_conf_file_eqpt_by_name(name):
             return self.network_conf_files_defined_equipments_by_id[name]
 
-        if not seclab_side:
-            seclab_side = seclab.get_seclab_side_from_equipment_name(name)
+        assert seclab_side
+
         equipment = NetworkConfFilesDefinedEquipment(name=name, library=self, source_label=source_label_for_creation, seclab_side=seclab_side, network_provider=network_provider)
         self.network_conf_files_defined_equipments_by_id[name] = equipment
         self.all_network_conf_files_defined_equipments.append(equipment)
