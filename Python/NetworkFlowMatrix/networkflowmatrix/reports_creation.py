@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Any, List
 
 import pandas
 from common import file_utils, json_encoders
@@ -105,17 +105,17 @@ def create_reports_wrong_ip(network_flow_matrix: "network_matrix_data_model.Netw
 
 
 def create_report_flows_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
-    pandas.DataFrame(
-        [
-            {
-                "identifier": matrix_line.identifier_int,
-                "detected on sncf network": "" if matrix_line.is_deleted else "X" if matrix_line.is_sncf_network_detected() else "",
-                "source providers": [provider.name for provider in matrix_line.source.get_all_network_entity_providers()],
-                "destination providers": [provider.name for provider in matrix_line.destination.get_all_network_entity_providers()],
-            }
-            for matrix_line in network_flow_matrix.network_flow_matrix_lines
-        ]
-    ).to_excel(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/flow_on_sncf_network_detection.xlsx", index=False)
+    values_as_list_dict = [
+        {
+            "identifier": matrix_line.identifier_int,
+            "detected on sncf network": "" if matrix_line.is_deleted else "X" if matrix_line.is_sncf_network_detected() else "",
+            "source providers": [provider.name for provider in matrix_line.source.get_all_network_entity_providers()],
+            "destination providers": [provider.name for provider in matrix_line.destination.get_all_network_entity_providers()],
+        }
+        for matrix_line in network_flow_matrix.network_flow_matrix_lines
+    ]
+
+    save_rows_to_output_files(rows_as_list_dict=values_as_list_dict, file_base_name="flow_on_sncf_network_detection")
 
 
 def create_report_subsystems_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
@@ -126,6 +126,18 @@ def create_report_subsystems_synthesis(network_flow_matrix: "network_matrix_data
             matrix_all_unknown_equipments_file.write(
                 "All_subsystems;" + subsystem.name + ";All equipments found:" + ",".join([equipment.name for equipment in subsystem.all_equipments_detected_in_flow_matrix]) + "\n"
             )
+
+    values_as_list_dict = [
+        {
+            "Type name": type_it.name,
+            "Number of network conf files equipments": len(type_it.network_conf_files_equipments_detected),
+            "Network conf files equipments": ",".join([equipment.name for equipment in type_it.network_conf_files_equipments_detected]),
+            "Number of matrix flow equipments": len(type_it.network_flow_matrix_equipments_detected),
+            "matrix flow equipments": ",".join([equipment.name for equipment in type_it.network_flow_matrix_equipments_detected]),
+        }
+        for type_it in network_flow_matrix.all_matrix_flow_subsystems_definitions_instances
+    ]
+    save_rows_to_output_files(rows_as_list_dict=values_as_list_dict, file_base_name="matrix_all_subsystems")
 
 
 def create_report_types_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
@@ -141,10 +153,7 @@ def create_report_types_synthesis(network_flow_matrix: "network_matrix_data_mode
         for type_it in network_flow_matrix.all_types_defined
     ]
 
-    file_name_without_suffix = "matrix_all_types"
-    file_path_without_suffix = f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/{file_name_without_suffix}"
-    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(values_as_list_dict, f"{file_path_without_suffix}.json")
-    pandas.DataFrame(values_as_list_dict).to_excel(f"{file_path_without_suffix}.xlsx", index=False)
+    save_rows_to_output_files(rows_as_list_dict=values_as_list_dict, file_base_name="matrix_all_types")
 
 
 def create_report_equipments_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
@@ -198,7 +207,7 @@ def create_report_equipments_synthesis(network_flow_matrix: "network_matrix_data
 
         rows.append(row)
 
-    pandas.DataFrame(rows).to_excel(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments_in_flow_matrix.xlsx", index=False)
+    save_rows_to_output_files(rows, "matrix_all_equipments_in_flow_matrix")
 
 
 def create_report_unknown_equipment(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
@@ -267,3 +276,10 @@ def create_report_equipments_on_multiple_types(network_flow_matrix: "network_mat
                 )
                 + "\n"
             )
+
+
+def save_rows_to_output_files(rows_as_list_dict: List[Dict[str, Any]], file_base_name: str) -> None:
+    file_path_without_suffix = f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/{file_base_name}"
+    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(rows_as_list_dict, f"{file_path_without_suffix}.json")
+    pandas.DataFrame(rows_as_list_dict).to_excel(f"{file_path_without_suffix}.xlsx", index=False)
+    pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.csv", index=False)
