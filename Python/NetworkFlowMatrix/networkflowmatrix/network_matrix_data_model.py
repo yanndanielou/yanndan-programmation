@@ -1,5 +1,4 @@
 import inspect
-import ipaddress
 import json
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple, cast
@@ -14,7 +13,7 @@ INVALID_IP_ADDRESS = "INVALID_IP_ADDRESS"
 MISSING_IP_ADDRESS = "MISSING_IP_ADDRESS"
 
 
-def subsystem_to_dict(subsystem: "SubSystemInFlowMatrix", with_equipment: bool) -> Dict:
+def subsystem_to_dict(subsystem: "SubSystemDefinedInFlowMatrix", with_equipment: bool) -> Dict:
     if with_equipment:
         return {
             "subsystem_name": subsystem.name,
@@ -25,7 +24,7 @@ def subsystem_to_dict(subsystem: "SubSystemInFlowMatrix", with_equipment: bool) 
         return {"subsystem_name": subsystem.name}
 
 
-def equipment_to_dict(equipment: "EquipmentInFlowMatrix", with_subsystem: bool) -> Dict:
+def equipment_to_dict(equipment: "EquipmentDefinedInFlowMatrix", with_subsystem: bool) -> Dict:
     if with_subsystem:
         new_var = {
             "equipment_name": equipment.name,
@@ -56,24 +55,34 @@ def dump_matrix_equipments_to_json(network_flow_matrix_to_dump: "NetworkFlowMatr
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
-class SubSystemInFlowMatrix:
+@dataclass
+class TypeDefinedInFlowMatrix:
+    name: str
+
+    def __post_init__(self) -> None:
+        self.all_matrix_lines_containing_it: List[NetworkFlowMatrixLine] = []
+        self.all_equipments_containing_it: List[EquipmentDefinedInFlowMatrix] = []
+        self.all_endpoints: List[FlowEndPoint] = []
+
+
+class SubSystemDefinedInFlowMatrix:
 
     @staticmethod
     def is_existing_by_name(network_flow_matrix: "NetworkFlowMatrix", name: str) -> bool:
         return name in network_flow_matrix.all_matrix_flow_subsystems_definitions_instances_by_name
 
     @staticmethod
-    def get_or_create_if_not_exist_by_name(network_flow_matrix: "NetworkFlowMatrix", name: str) -> "SubSystemInFlowMatrix":
-        if SubSystemInFlowMatrix.is_existing_by_name(network_flow_matrix, name):
+    def get_or_create_if_not_exist_by_name(network_flow_matrix: "NetworkFlowMatrix", name: str) -> "SubSystemDefinedInFlowMatrix":
+        if SubSystemDefinedInFlowMatrix.is_existing_by_name(network_flow_matrix, name):
             return network_flow_matrix.all_matrix_flow_subsystems_definitions_instances_by_name[name]
-        subsystem = SubSystemInFlowMatrix(network_flow_matrix=network_flow_matrix, name=name)
+        subsystem = SubSystemDefinedInFlowMatrix(network_flow_matrix=network_flow_matrix, name=name)
         network_flow_matrix.all_matrix_flow_subsystems_definitions_instances_by_name[name] = subsystem
         network_flow_matrix.all_matrix_flow_subsystems_definitions_instances.append(subsystem)
 
         return subsystem
 
     def __init__(self, name: str, network_flow_matrix: "NetworkFlowMatrix") -> None:
-        self.all_equipments_detected_in_flow_matrix: List["EquipmentInFlowMatrix"] = []
+        self.all_equipments_detected_in_flow_matrix: List["EquipmentDefinedInFlowMatrix"] = []
         self.name = name
         self.network_flow_matrix = network_flow_matrix
 
@@ -83,7 +92,7 @@ class PortInFlowMatrix:
         pass
 
 
-class EquipmentInFlowMatrix:
+class EquipmentDefinedInFlowMatrix:
 
     @staticmethod
     def is_existing_by_name(network_flow_matrix: "NetworkFlowMatrix", name: str) -> bool:
@@ -91,13 +100,13 @@ class EquipmentInFlowMatrix:
 
     @staticmethod
     def get_or_create_equipment_if_not_exist(
-        network_flow_matrix: "NetworkFlowMatrix", name: str, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix, raw_ip_address: str, matrix_line_identifier: int
-    ) -> "EquipmentInFlowMatrix":
-        if EquipmentInFlowMatrix.is_existing_by_name(network_flow_matrix, name):
+        network_flow_matrix: "NetworkFlowMatrix", name: str, subsystem_detected_in_flow_matrix: SubSystemDefinedInFlowMatrix, raw_ip_address: str
+    ) -> "EquipmentDefinedInFlowMatrix":
+        if EquipmentDefinedInFlowMatrix.is_existing_by_name(network_flow_matrix, name):
             equipment = network_flow_matrix.all_matrix_flow_equipments_by_name[name]
             equipment.raw_ip_addresses.add(raw_ip_address)
             return equipment
-        equipment = EquipmentInFlowMatrix(name=name, network_flow_matrix=network_flow_matrix)
+        equipment = EquipmentDefinedInFlowMatrix(name=name, network_flow_matrix=network_flow_matrix)
         equipment.raw_ip_addresses.add(raw_ip_address)
         network_flow_matrix.all_matrix_flow_equipments_by_name[name] = equipment
         network_flow_matrix.all_matrix_flow_equipments_definitions_instances.append(equipment)
@@ -107,16 +116,20 @@ class EquipmentInFlowMatrix:
     def __init__(self, name: str, network_flow_matrix: "NetworkFlowMatrix") -> None:
         self.raw_ip_addresses: Set[str] = set()
         # self.ip_addresses: List[ipaddress.IPv4Address] = []
-        self.all_subsystems_detected_in_flow_matrix: List[SubSystemInFlowMatrix] = []
-        self.all_subsystems_detected_in_flow_matrix_with_lines_identifiers: Dict[SubSystemInFlowMatrix, List[int]] = {}
+        self.all_subsystems_detected_in_flow_matrix: List[SubSystemDefinedInFlowMatrix] = []
+        self.all_subsystems_detected_in_flow_matrix_with_lines_identifiers: Dict[SubSystemDefinedInFlowMatrix, List[int]] = {}
 
-        self.all_types_detected_in_flow_matrix: Set[str] = set()
-        self.all_types_detected_in_flow_matrix_with_lines_identifiers: Dict[str, List[int]] = {}
+        self.all_types_detected_in_flow_matrix: Set[TypeDefinedInFlowMatrix] = set()
+        self.all_types_detected_in_flow_matrix_with_lines_identifiers: Dict[TypeDefinedInFlowMatrix, List[int]] = {}
 
         self.name = name
         self.network_flow_matrix = network_flow_matrix
 
-    def add_subsystem_detected_in_flow_matrix_with_lines_identifiers(self, subsystem_detected_in_flow_matrix: SubSystemInFlowMatrix, matrix_line_identifier: int) -> None:
+    @property
+    def all_types_names_detected_in_flow_matrix(self) -> List[str]:
+        return [type_it.name for type_it in self.all_types_detected_in_flow_matrix]
+
+    def add_subsystem_detected_in_flow_matrix_with_lines_identifiers(self, subsystem_detected_in_flow_matrix: SubSystemDefinedInFlowMatrix, matrix_line_identifier: int) -> None:
         if subsystem_detected_in_flow_matrix not in self.all_subsystems_detected_in_flow_matrix_with_lines_identifiers:
             self.all_subsystems_detected_in_flow_matrix_with_lines_identifiers[subsystem_detected_in_flow_matrix] = []
         self.all_subsystems_detected_in_flow_matrix_with_lines_identifiers[subsystem_detected_in_flow_matrix].append(matrix_line_identifier)
@@ -127,7 +140,7 @@ class EquipmentInFlowMatrix:
         if self not in subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix:
             subsystem_detected_in_flow_matrix.all_equipments_detected_in_flow_matrix.append(self)
 
-    def add_type_detected_in_flow_matrix_with_lines_identifiers(self, type_detected_in_flow_matrix: str, matrix_line_identifier: int) -> None:
+    def add_type_detected_in_flow_matrix_with_lines_identifiers(self, type_detected_in_flow_matrix: TypeDefinedInFlowMatrix, matrix_line_identifier: int) -> None:
         if type_detected_in_flow_matrix not in self.all_types_detected_in_flow_matrix_with_lines_identifiers:
             self.all_types_detected_in_flow_matrix_with_lines_identifiers[type_detected_in_flow_matrix] = []
         self.all_types_detected_in_flow_matrix_with_lines_identifiers[type_detected_in_flow_matrix].append(matrix_line_identifier)
@@ -154,9 +167,11 @@ class FlowEndPoint:
     def __post_init__(self) -> None:
 
         self.type_raw = self.type_raw.strip() if isinstance(self.type_raw, str) else ""
+        self.network_matrix_defined_type = self.network_flow_matrix.get_or_create_type_if_not_exist_by_name(self.type_raw)
+        self.network_matrix_defined_type.all_endpoints.append(self)
         self.raw_ip_addresses: List[str] = []
 
-        self.network_flow_equipments_detected: List[EquipmentInFlowMatrix] = []
+        self.network_flow_equipments_detected: List[EquipmentDefinedInFlowMatrix] = []
         self.network_conf_files_equipments_detected: List[equipments.NetworkConfFilesDefinedEquipment] = []
         self.equipments_names: List[str] = [equipment_name.strip().upper() for equipment_name in self.equipment_cell_raw.split("\n") if equipment_name.strip() != ""]
 
@@ -167,7 +182,7 @@ class FlowEndPoint:
         else:
             self.raw_ip_addresses = [raw_ip.strip() for raw_ip in self.ip_raw.split("\n")]
 
-        self.subsystem_detected_in_flow_matrix = SubSystemInFlowMatrix.get_or_create_if_not_exist_by_name(network_flow_matrix=self.network_flow_matrix, name=self.subsystem_raw.strip().upper())
+        self.subsystem_detected_in_flow_matrix = SubSystemDefinedInFlowMatrix.get_or_create_if_not_exist_by_name(network_flow_matrix=self.network_flow_matrix, name=self.subsystem_raw.strip().upper())
 
     def get_all_network_entity_providers(self) -> Set[network_entity_provider.NetworkEntityProvider]:
         return set([equipment.network_provider for equipment in self.network_conf_files_equipments_detected])
@@ -302,19 +317,18 @@ class FlowEndPoint:
                         matrix_line_id_referencing=self.matrix_line_identifier,
                     )
 
-                equipment_detected_in_flow_matrix = EquipmentInFlowMatrix.get_or_create_equipment_if_not_exist(
+                equipment_detected_in_flow_matrix = EquipmentDefinedInFlowMatrix.get_or_create_equipment_if_not_exist(
                     network_flow_matrix=self.network_flow_matrix,
                     name=equipment_name,
                     subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix,
                     raw_ip_address=eqpt_ip_address_raw,
-                    matrix_line_identifier=self.matrix_line_identifier,
                 )
                 equipment_detected_in_flow_matrix.add_subsystem_detected_in_flow_matrix_with_lines_identifiers(
                     subsystem_detected_in_flow_matrix=self.subsystem_detected_in_flow_matrix, matrix_line_identifier=self.matrix_line_identifier
                 )
 
                 equipment_detected_in_flow_matrix.add_type_detected_in_flow_matrix_with_lines_identifiers(
-                    type_detected_in_flow_matrix=self.type_raw, matrix_line_identifier=self.matrix_line_identifier
+                    type_detected_in_flow_matrix=self.network_matrix_defined_type, matrix_line_identifier=self.matrix_line_identifier
                 )
 
                 self.network_flow_equipments_detected.append(equipment_detected_in_flow_matrix)
@@ -437,14 +451,16 @@ class NetworkFlowMatrix:
     network_flow_matrix_lines_not_deleted: List["NetworkFlowMatrixLine"] = field(default_factory=list)
     network_flow_matrix_lines_by_identifier: Dict[int, "NetworkFlowMatrixLine"] = field(default_factory=dict)
 
+    all_types_defined: List[TypeDefinedInFlowMatrix] = []
+
     all_equipments_names: Set[str] = field(default_factory=set)
     all_equipments_names_with_subsystem: set[Tuple[str, str]] = field(default_factory=set)
 
-    all_matrix_flow_equipments_definitions_instances: List["EquipmentInFlowMatrix"] = field(default_factory=list)
-    all_matrix_flow_equipments_by_name: Dict[str, "EquipmentInFlowMatrix"] = field(default_factory=dict)
+    all_matrix_flow_equipments_definitions_instances: List["EquipmentDefinedInFlowMatrix"] = field(default_factory=list)
+    all_matrix_flow_equipments_by_name: Dict[str, "EquipmentDefinedInFlowMatrix"] = field(default_factory=dict)
 
-    all_matrix_flow_subsystems_definitions_instances: List["SubSystemInFlowMatrix"] = field(default_factory=list)
-    all_matrix_flow_subsystems_definitions_instances_by_name: Dict[str, "SubSystemInFlowMatrix"] = field(default_factory=dict)
+    all_matrix_flow_subsystems_definitions_instances: List["SubSystemDefinedInFlowMatrix"] = field(default_factory=list)
+    all_matrix_flow_subsystems_definitions_instances_by_name: Dict[str, "SubSystemDefinedInFlowMatrix"] = field(default_factory=dict)
 
     class Builder:
 
@@ -528,9 +544,9 @@ class NetworkFlowMatrix:
 
             with logger_config.stopwatch_with_label("Check that equipment in network matrix is always defined with the same type"):
                 for equipment in self.all_matrix_flow_equipments_definitions_instances:
-                    all_types = equipment.all_types_detected_in_flow_matrix
-                    if len(all_types) > 1:
-                        logger_config.print_and_log_error(f"Equipment {equipment.name} is defined with several types {','.join(all_types)}")
+                    all_types_names = equipment.all_types_names_detected_in_flow_matrix
+                    if len(all_types_names) > 1:
+                        logger_config.print_and_log_error(f"Equipment {equipment.name} is defined with several types {','.join(all_types_names)}")
 
     def create_reports_after_matching_network_conf_files(self, equipments_library: equipments.NetworkConfFilesEquipmentsLibrary) -> None:
         logger_config.print_and_log_warning(f"After scanning network flow matrix, {len(equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake)} wrong IP address definition")
@@ -590,8 +606,8 @@ class NetworkFlowMatrix:
                 matrix_all_unknown_equipments_file.write(
                     "Equipments;"
                     + equipment.name
-                    + f";{len(equipment.all_types_detected_in_flow_matrix)} types found:"
-                    + ",".join(equipment.all_types_detected_in_flow_matrix)
+                    + f";{len(equipment.all_types_names_detected_in_flow_matrix)} types found:"
+                    + ",".join(equipment.all_types_names_detected_in_flow_matrix)
                     + f";{len(equipment.all_subsystems_detected_in_flow_matrix)} subsystems found:"
                     + ",".join([subsystem.name for subsystem in equipment.all_subsystems_detected_in_flow_matrix])
                     + ";All subsystems found with number of line identifier:"
@@ -626,18 +642,20 @@ class NetworkFlowMatrix:
                     + "\n"
                 )
         with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments_with_multiple_types.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
-            for equipment in sorted([equipment for equipment in self.all_matrix_flow_equipments_definitions_instances if len(equipment.all_types_detected_in_flow_matrix) > 1], key=lambda x: x.name):
+            for equipment in sorted(
+                [equipment for equipment in self.all_matrix_flow_equipments_definitions_instances if len(equipment.all_types_names_detected_in_flow_matrix) > 1], key=lambda x: x.name
+            ):
                 matrix_all_unknown_equipments_file.write(
                     ""
                     + equipment.name
-                    + f";{len(equipment.all_types_detected_in_flow_matrix)} Types:"
-                    + ",".join(equipment.all_types_detected_in_flow_matrix)
+                    + f";{len(equipment.all_types_detected_in_flow_matrix_with_lines_identifiers)} Types:"
+                    + ",".join(type_it.name for type_it in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers)
                     + ";Types with number of occurences:"
-                    + "-".join([type_it + ":" + str(len(line_identifiers)) for type_it, line_identifiers in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers.items()])
+                    + "-".join([type_it.name + ":" + str(len(line_identifiers)) for type_it, line_identifiers in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers.items()])
                     + ";Types with line ids:"
                     + "-".join(
                         [
-                            type_it + ":" + ",".join([str(line_identifier_int) for line_identifier_int in line_identifiers])
+                            type_it.name + ":" + ",".join([str(line_identifier_int) for line_identifier_int in line_identifiers])
                             for type_it, line_identifiers in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers.items()
                         ]
                     )
@@ -657,15 +675,15 @@ class NetworkFlowMatrix:
                     ]
                 ),
                 "Number of types": [subsystem.name for subsystem in equipment.all_subsystems_detected_in_flow_matrix],
-                "Types": ",".join(equipment.all_types_detected_in_flow_matrix),
+                "Types": ",".join(equipment.all_types_names_detected_in_flow_matrix),
             }
             for subsystem, lines_identifiers in equipment.all_subsystems_detected_in_flow_matrix_with_lines_identifiers.items():
                 row["Subsystem " + subsystem.name + " number of lines"] = len(lines_identifiers)
                 row["Subsystem " + subsystem.name + " lines"] = ",".join(str(line_identifier_str) for line_identifier_str in lines_identifiers)
 
-            for type_str, lines_identifiers in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers.items():
-                row["Type " + type_str + " number of lines"] = len(lines_identifiers)
-                row["Type " + type_str + " lines"] = ",".join(str(line_identifier_str) for line_identifier_str in lines_identifiers)
+            for type_it, lines_identifiers in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers.items():
+                row["Type " + type_it.name + " number of lines"] = len(lines_identifiers)
+                row["Type " + type_it.name + " lines"] = ",".join(str(line_identifier_str) for line_identifier_str in lines_identifiers)
 
             rows.append(row)
 
@@ -681,7 +699,15 @@ class NetworkFlowMatrix:
             equipments_library.wrong_equipment_name_allocated_to_this_ip_by_mistake, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_wrong_ip.json"
         )
         equipments_library.create_reports_after_matching_with_flow_matrix()
-        equipments_library.dump_to_json_file(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/all_equipments_in_conf_files.json")
+
+    def get_or_create_type_if_not_exist_by_name(self, name: str) -> "TypeDefinedInFlowMatrix":
+        existing_types = [type_found for type_found in self.all_types_defined if type_found.name == name]
+        if existing_types:
+            assert len(existing_types) == 1, f"Type {name} found {len(existing_types)} times"
+            return existing_types[0]
+
+        self.all_types_defined.append(TypeDefinedInFlowMatrix(name))
+        return self.get_or_create_type_if_not_exist_by_name(name)
 
 
 @dataclass
