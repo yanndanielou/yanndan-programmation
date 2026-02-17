@@ -451,7 +451,7 @@ class NetworkFlowMatrix:
     network_flow_matrix_lines_not_deleted: List["NetworkFlowMatrixLine"] = field(default_factory=list)
     network_flow_matrix_lines_by_identifier: Dict[int, "NetworkFlowMatrixLine"] = field(default_factory=dict)
 
-    all_types_defined: List[TypeDefinedInFlowMatrix] = []
+    all_types_defined: List[TypeDefinedInFlowMatrix] = field(default_factory=list)
 
     all_equipments_names: Set[str] = field(default_factory=set)
     all_equipments_names_with_subsystem: set[Tuple[str, str]] = field(default_factory=set)
