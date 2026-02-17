@@ -29,6 +29,7 @@ def create_reports_after_matching_network_conf_files_and_flow_matrix(
     create_report_subsystems_synthesis(network_flow_matrix, equipments_library)
     create_report_types_synthesis(network_flow_matrix, equipments_library)
     create_report_network_conf_files_groups(equipments_library)
+    create_report_unknown_equipment(equipments_library)
 
     create_dump_network_conf_files_library(equipments_library, "all_equipments_in_conf_files_after_matching_network_matrix")
 
@@ -197,71 +198,72 @@ def create_report_equipments_synthesis(network_flow_matrix: "network_matrix_data
     save_rows_to_output_files(rows, "matrix_all_equipments_in_flow_matrix")
 
 
-def create_report_unknown_equipment(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
-    json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
-        equipments_library.not_found_equipments_but_defined_in_flow_matrix, f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_unknown_equipments.json"
+def create_report_unknown_equipment(equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
+
+    save_rows_to_output_files(
+        rows_as_list_dict=[
+            {
+                "Not found equipment name": not_found_eqpt.name,
+                "IP Address": not_found_eqpt.raw_ip_address,
+                "Other equipments matching": ",".join(not_found_eqpt.alternative_names_matching_ip),
+                "Matrix lines ids": ",".join([str(matrix_line_id) for matrix_line_id in not_found_eqpt.matrix_line_ids_referencing]),
+            }
+            for not_found_eqpt in sorted(equipments_library.not_found_equipments_but_defined_in_flow_matrix, key=lambda x: x.name)
+        ],
+        file_base_name="matrix_all_unknown_equipments",
     )
-    with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_unknown_equipments.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
-        for not_found_eqpt in sorted(equipments_library.not_found_equipments_but_defined_in_flow_matrix, key=lambda x: x.name):
-            matrix_all_unknown_equipments_file.write(
-                "Not Found;"
-                + not_found_eqpt.name
-                + ";IP address:"
-                + not_found_eqpt.raw_ip_address
-                + ";Other equipment matching:"
-                + ",".join(not_found_eqpt.alternative_names_matching_ip)
-                + ";"
-                + ",".join([str(matrix_line) for matrix_line in not_found_eqpt.matrix_line_ids_referencing])
-                + "\n"
-            )
 
 
 def create_report_equipments_on_multiple_subsystems(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
 
-    with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments_on_multiple_subsystems.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
-        for equipment in sorted(
-            [equipment for equipment in network_flow_matrix.all_matrix_flow_equipments_definitions_instances if len(equipment.all_subsystems_detected_in_flow_matrix) > 1], key=lambda x: x.name
-        ):
-            matrix_all_unknown_equipments_file.write(
-                ""
-                + equipment.name
-                + f";{len(equipment.all_subsystems_detected_in_flow_matrix)} subsystems:"
-                + ",".join([subsystem.name for subsystem in equipment.all_subsystems_detected_in_flow_matrix])
-                + ";Subsystems with number of occurences:"
-                + "-".join([subsystem.name + ":" + str(len(line_identifiers)) for subsystem, line_identifiers in equipment.all_subsystems_detected_in_flow_matrix_with_lines_identifiers.items()])
-                + ";Subsystems with line ids:"
-                + "-".join(
+    save_rows_to_output_files(
+        rows_as_list_dict=[
+            {
+                "Equipment name": equipment.name,
+                "Number of subsystems": len(equipment.all_subsystems_detected_in_flow_matrix),
+                "subsystems": ",".join(type_it.name for type_it in equipment.all_subsystems_detected_in_flow_matrix),
+                "subsystems with number of occurences": "-".join(
+                    [subsystem.name + ":" + str(len(line_identifiers)) for subsystem, line_identifiers in equipment.all_subsystems_detected_in_flow_matrix_with_lines_identifiers.items()]
+                ),
+                "subsystems with line ids": "-".join(
                     [
                         subsystem.name + ":" + ",".join([str(line_identifier_int) for line_identifier_int in line_identifiers])
                         for subsystem, line_identifiers in equipment.all_subsystems_detected_in_flow_matrix_with_lines_identifiers.items()
                     ]
-                )
-                + "\n"
+                ),
+            }
+            for equipment in sorted(
+                [equipment for equipment in network_flow_matrix.all_matrix_flow_equipments_definitions_instances if len(equipment.all_subsystems_detected_in_flow_matrix) > 1], key=lambda x: x.name
             )
+        ],
+        file_base_name="matrix_all_equipments_on_multiple_subsystems",
+    )
 
 
 def create_report_equipments_on_multiple_types(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
 
-    with open(f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/matrix_all_equipments_with_multiple_types.txt", mode="w", encoding="utf-8") as matrix_all_unknown_equipments_file:
-        for equipment in sorted(
-            [equipment for equipment in network_flow_matrix.all_matrix_flow_equipments_definitions_instances if len(equipment.all_types_names_detected_in_flow_matrix) > 1], key=lambda x: x.name
-        ):
-            matrix_all_unknown_equipments_file.write(
-                ""
-                + equipment.name
-                + f";{len(equipment.all_types_detected_in_flow_matrix_with_lines_identifiers)} Types:"
-                + ",".join(type_it.name for type_it in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers)
-                + ";Types with number of occurences:"
-                + "-".join([type_it.name + ":" + str(len(line_identifiers)) for type_it, line_identifiers in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers.items()])
-                + ";Types with line ids:"
-                + "-".join(
+    save_rows_to_output_files(
+        rows_as_list_dict=[
+            {
+                "Equipment name": equipment.name,
+                "Number of types": len(equipment.all_types_detected_in_flow_matrix_with_lines_identifiers),
+                "Types": ",".join(type_it.name for type_it in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers),
+                "Types with number of occurences": "-".join(
+                    [type_it.name + ":" + str(len(line_identifiers)) for type_it, line_identifiers in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers.items()]
+                ),
+                "Types with line ids": "-".join(
                     [
                         type_it.name + ":" + ",".join([str(line_identifier_int) for line_identifier_int in line_identifiers])
                         for type_it, line_identifiers in equipment.all_types_detected_in_flow_matrix_with_lines_identifiers.items()
                     ]
-                )
-                + "\n"
+                ),
+            }
+            for equipment in sorted(
+                [equipment for equipment in network_flow_matrix.all_matrix_flow_equipments_definitions_instances if len(equipment.all_types_names_detected_in_flow_matrix) > 1], key=lambda x: x.name
             )
+        ],
+        file_base_name="matrix_all_equipments_with_multiple_types",
+    )
 
 
 def save_rows_to_output_files(rows_as_list_dict: List[Dict[str, Any]], file_base_name: str) -> None:
