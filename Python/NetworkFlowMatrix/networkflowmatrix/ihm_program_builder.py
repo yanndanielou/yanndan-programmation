@@ -21,13 +21,13 @@ class IhmProgrammConfFile(network_conf_files.GenericConfFile):
 
     class IhmProgrammRevenueServiceByEquipmentName(revenue_services.RevenueServiceToEquipmentMatchingStrategy):
 
-        def get_revenue_service_for_equipment(self, equipment: "NetworkConfFilesDefinedEquipment") -> revenue_services.RevenueService:
+        def _do_get_revenue_service_for_equipment(self, equipment: "NetworkConfFilesDefinedEquipment") -> revenue_services.RevenueService:
             if "diffusion" in equipment.name:
-                return revenue_services.RevenueService.ATS3
+                return revenue_services.ATS3
             elif "PM Type E" in equipment.name:
-                return revenue_services.RevenueService.ATS2
+                return revenue_services.ATS2
             else:
-                return revenue_services.RevenueService.ATS1
+                return revenue_services.ATS1
 
     class Builder:
 

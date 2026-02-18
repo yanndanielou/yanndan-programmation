@@ -5,7 +5,7 @@ import pandas
 from common import file_utils, json_encoders
 from logger import logger_config
 
-from networkflowmatrix import constants
+from networkflowmatrix import constants, revenue_services
 
 if TYPE_CHECKING:
     from networkflowmatrix import (
@@ -28,7 +28,9 @@ def create_reports_after_matching_network_conf_files_and_flow_matrix(
         create_report_equipments_synthesis(network_flow_matrix, equipments_library)
         create_report_flows_synthesis(network_flow_matrix, equipments_library)
         create_report_subsystems_synthesis(network_flow_matrix, equipments_library)
-        create_report_types_synthesis(network_flow_matrix, equipments_library)
+        create_report_matrix_flow_types_synthesis(network_flow_matrix, equipments_library)
+        create_report_network_conf_files_types_synthesis(network_flow_matrix, equipments_library)
+        create_report_network_conf_files_revenue_services_synthesis(network_flow_matrix, equipments_library)
         create_report_network_conf_files_groups(equipments_library)
         create_report_unknown_equipment(equipments_library)
 
@@ -58,7 +60,7 @@ def create_dump_network_conf_files_library(equipments_library: "equipments.Netwo
         {
             "name": f"{equipment.name}",
             "Source": f"{equipment.source_label}",
-            "Types": f"{', '.join(list(equipment.equipment_types))}",
+            "Types": f"{', '.join(list(equipment.equipment_types_names))}",
             "Seclab": f"{equipment.seclab_side}",
             "Alternative ids": f"{', '.join([str(alter) for alter in equipment.alternative_identifiers])}",
             "Ip": f"{', '.join([ip.ip_raw for ip in equipment.ip_addresses])}",
@@ -131,7 +133,7 @@ def create_report_subsystems_synthesis(network_flow_matrix: "network_matrix_data
     )
 
 
-def create_report_types_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
+def create_report_matrix_flow_types_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
 
     save_rows_to_output_files(
         rows_as_list_dict=[
@@ -145,6 +147,38 @@ def create_report_types_synthesis(network_flow_matrix: "network_matrix_data_mode
             for type_it in network_flow_matrix.all_types_defined
         ],
         file_base_name="matrix_all_types",
+    )
+
+
+def create_report_network_conf_files_types_synthesis(network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary") -> None:
+
+    save_rows_to_output_files(
+        rows_as_list_dict=[
+            {
+                "Type name": type_it.name,
+                "Number of network conf files equipments": len(type_it.all_network_conf_files_equipments_containing_it),
+                "Network conf files equipments": ",".join([equipment.name for equipment in type_it.all_network_conf_files_equipments_containing_it]),
+            }
+            for type_it in equipments_library.all_types_detected_in_network_conf_files
+        ],
+        file_base_name="network_conf_files_types",
+    )
+
+
+def create_report_network_conf_files_revenue_services_synthesis(
+    network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary"
+) -> None:
+
+    save_rows_to_output_files(
+        rows_as_list_dict=[
+            {
+                "Revenue service": revenue_service.name,
+                "Number of network conf files equipments": len(revenue_service.all_network_conf_files_equipments_containing_it),
+                "Network conf files equipments": ",".join([equipment.name for equipment in revenue_service.all_network_conf_files_equipments_containing_it]),
+            }
+            for revenue_service in revenue_services.ALL_REVENUES_SERVICES
+        ],
+        file_base_name="network_conf_files_revenue_services",
     )
 
 

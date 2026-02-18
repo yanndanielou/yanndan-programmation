@@ -265,6 +265,9 @@ class GenericConfFile:
         logger_config.print_and_log_info(f"{self.name}: {len(self.all_equipments)} equipment found")
         logger_config.print_and_log_info(f"So far, the library contains {len(self.equipments_library.all_network_conf_files_defined_equipments)} equipments in total")
 
+        for equipment_built in self.all_equipments:
+            equipment_built.compute_revenue_service()
+
 
 @dataclass
 class NetworkConfFile(GenericConfFile):
@@ -394,7 +397,7 @@ class NetworkConfFile(GenericConfFile):
                 for equipment in all_equipments_found_in_excel:
                     assert equipment
                     if not equipment.ip_addresses or len(equipment.ip_addresses) == 0:
-                        logger_config.print_and_log_error(f"Equipment {equipment.name} Type:{",".join(equipment.equipment_types)} Source:{equipment.source_label} has no IP address defined")
+                        logger_config.print_and_log_error(f"Equipment {equipment.name} Type:{",".join(equipment.equipment_types_names)} Source:{equipment.source_label} has no IP address defined")
 
             conf_file = NetworkConfFile(
                 name=excel_file_full_path,

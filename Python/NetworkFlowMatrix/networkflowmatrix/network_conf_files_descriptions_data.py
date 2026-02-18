@@ -1,28 +1,32 @@
+import inspect
 import os
+from collections import namedtuple
 from dataclasses import dataclass
-from typing import List
+from typing import TYPE_CHECKING, List
+
+from logger import logger_config
 
 from common import file_name_utils
 
+import networkflowmatrix.manual_equipments_builder
+from networkflowmatrix import revenue_services
+from networkflowmatrix.groups import GroupDefinition
 from networkflowmatrix.network_conf_files import (
-    EquipmentDefinitionTab,
     EquipmentDefinitionColumn,
-    InsideTrainEquipmentDefinitionColumn,
+    EquipmentDefinitionTab,
     ExcelColumnDefinitionByColumnExcelId,
     ExcelColumnDefinitionByColumnTitle,
     ForcedStrValueInformationDefinition,
+    InsideTrainEquipmentDefinitionColumn,
     MulticastIpDefinitionColumnsInTab,
     TrainByCcIdColumnDefinition,
     UnicastIpDefinitionColumnsInTab,
 )
-
-from networkflowmatrix import revenue_services
-from networkflowmatrix.groups import GroupDefinition
-from networkflowmatrix.seclab import SeclabSide
 from networkflowmatrix.network_entity_provider import NetworkEntityProvider
-import networkflowmatrix.manual_equipments_builder
-from collections import namedtuple
+from networkflowmatrix.seclab import SeclabSide
 
+if TYPE_CHECKING:
+    from networkflowmatrix.equipments import NetworkConfFilesDefinedEquipment
 # import ipaddress
 
 
@@ -123,6 +127,20 @@ class RadioLayoutR841Description(ExcelInputFileDescription):
 
 
 class SolStdNetworkConfV11Description(ExcelInputFileDescription):
+
+    class SolStdNetworkConfRevenueServiceByEquipmentName(revenue_services.RevenueServiceToEquipmentMatchingStrategy):
+
+        def _do_get_revenue_service_for_equipment(self, equipment: "NetworkConfFilesDefinedEquipment") -> revenue_services.RevenueService:
+            if not equipment.equipment_types:
+                logger_config.print_and_log_error(f"Equipment {equipment.name} from source {equipment.source_label} has no type")
+                return revenue_services.ATS2  # Might be PMMM
+
+            equipment_type = list(equipment.equipment_types)[0]
+            if "RAD" == equipment_type.name:
+                return revenue_services.ATS2
+            else:
+                return revenue_services.ATS1
+
     def __init__(self) -> None:
 
         self.ip_ats_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
@@ -287,7 +305,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
             tab_name="IP RESEAU PCC",
             equipment_ids_black_list_to_ignore=networkflowmatrix.manual_equipments_builder.STD_FIREWALL_EQUIPMENT_NAMES,
             seclab_side=SeclabSide.SOL,
-            revenue_service_definition_fonction=revenue_services.DependingOnEquipmentNameRevenueServiceToEquipmentMatchingStrategy(),
+            revenue_service_definition_fonction=SolStdNetworkConfV11Description.SolStdNetworkConfRevenueServiceByEquipmentName(),
             network_provider=NetworkEntityProvider.STS,
             rows_to_ignore=[0, 1, 2, 4, 5],
             equipment_definitions=[
