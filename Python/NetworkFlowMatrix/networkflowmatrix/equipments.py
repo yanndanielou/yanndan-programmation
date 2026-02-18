@@ -17,12 +17,7 @@ if TYPE_CHECKING:
 
 from collections import defaultdict
 
-from networkflowmatrix import (
-    ihm_program_builder,
-    manual_equipments_builder,
-    manual_group_definitions,
-    names_equivalences,
-)
+from networkflowmatrix import ihm_program_builder, manual_equipments_builder, manual_group_definitions, names_equivalences, revenue_services
 from networkflowmatrix.groups import Group, GroupDefinition
 from networkflowmatrix.network_conf_files import NetworkConfFile
 
@@ -71,6 +66,7 @@ class NetworkConfFilesDefinedEquipment:
     source_label: str
     library: "NetworkConfFilesEquipmentsLibrary"
     network_provider: network_entity_provider.NetworkEntityProvider
+    revenue_service_definition_fonction: revenue_services.RevenueServiceToEquipmentMatchingStrategy
     _equipment_types: Set[str] = field(default_factory=set)
     _alternative_identifiers: Set[str] = field(default_factory=set)
     ip_addresses: List["NetworkConfFilesDefinedIpAddress"] = field(default_factory=list)
@@ -85,6 +81,8 @@ class NetworkConfFilesDefinedEquipment:
             alternative_names = [key for key, val in self.library.names_equivalences_manager.names_equivalences_data.items() if val == self.name]
             for alternative_name in alternative_names:
                 self.add_alternative_identifier(alternative_name)
+
+        self.revenue_service = self.revenue_service_definition_fonction.get_revenue_service_for_equipment(self)
 
     @property
     def equipment_types(self) -> Set[str]:
@@ -305,14 +303,26 @@ class NetworkConfFilesEquipmentsLibrary:
         return None
 
     def get_or_create_network_conf_file_eqpt_if_not_exist_by_name(
-        self, name: str, source_label_for_creation: str, seclab_side: Optional[seclab.SeclabSide], network_provider: network_entity_provider.NetworkEntityProvider
+        self,
+        name: str,
+        source_label_for_creation: str,
+        seclab_side: Optional[seclab.SeclabSide],
+        network_provider: network_entity_provider.NetworkEntityProvider,
+        revenue_service_definition_strategy: revenue_services.RevenueServiceToEquipmentMatchingStrategy,
     ) -> "NetworkConfFilesDefinedEquipment":
         if self.is_existing_network_conf_file_eqpt_by_name(name):
             return self.network_conf_files_defined_equipments_by_id[name]
 
-        assert seclab_side
+            assert seclab_side
 
-        equipment = NetworkConfFilesDefinedEquipment(name=name, library=self, source_label=source_label_for_creation, seclab_side=seclab_side, network_provider=network_provider)
+        equipment = NetworkConfFilesDefinedEquipment(
+            name=name,
+            library=self,
+            source_label=source_label_for_creation,
+            seclab_side=seclab_side,
+            network_provider=network_provider,
+            revenue_service_definition_fonction=revenue_service_definition_strategy,
+        )
         self.network_conf_files_defined_equipments_by_id[name] = equipment
         self.all_network_conf_files_defined_equipments.append(equipment)
 

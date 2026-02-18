@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, List, Optional, cast
 import pandas
 from logger import logger_config
 
-from networkflowmatrix import network_conf_files, seclab, network_entity_provider
+from networkflowmatrix import network_conf_files, seclab, network_entity_provider, revenue_services
 from networkflowmatrix.groups import GroupDefinition
 
 if TYPE_CHECKING:
@@ -18,6 +18,16 @@ if TYPE_CHECKING:
 
 @dataclass
 class IhmProgrammConfFile(network_conf_files.GenericConfFile):
+
+    class IhmProgrammRevenueServiceByEquipmentName(revenue_services.RevenueServiceToEquipmentMatchingStrategy):
+
+        def get_revenue_service_for_equipment(self, equipment: "NetworkConfFilesDefinedEquipment") -> revenue_services.RevenueService:
+            if "diffusion" in equipment.name:
+                return revenue_services.RevenueService.ATS3
+            elif "PM Type E" in equipment.name:
+                return revenue_services.RevenueService.ATS2
+            else:
+                return revenue_services.RevenueService.ATS1
 
     class Builder:
 
@@ -61,6 +71,7 @@ class IhmProgrammConfFile(network_conf_files.GenericConfFile):
                         source_label_for_creation=f"{excel_file_full_path}/{"P2-4"}",
                         seclab_side=seclab.SeclabSide.SOL,
                         network_provider=network_entity_provider.NetworkEntityProvider.INFRACOM_OR_INFRANET,
+                        revenue_service_definition_strategy=IhmProgrammConfFile.IhmProgrammRevenueServiceByEquipmentName(),
                     )
                     all_equipments_found.append(equipment)
                     ip_address = adresses_raw.replace("(1)", "").replace(" ", "")
@@ -129,6 +140,7 @@ class FdiffClientsConfFile(network_conf_files.GenericConfFile):
                         source_label_for_creation=f"{excel_file_full_path}",
                         seclab_side=seclab.SeclabSide.SOL,
                         network_provider=network_entity_provider.NetworkEntityProvider.INFRANET,
+                        revenue_service_definition_strategy=revenue_services.AlwaysATS1RevenueService(),
                     )
                     all_equipments_found.append(equipment)
 

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from networkflowmatrix.network_conf_files_descriptions_data import ExcelInputFileDescription
     from networkflowmatrix.groups import GroupDefinition
 
-from networkflowmatrix import constants, seclab, network_entity_provider
+from networkflowmatrix import constants, revenue_services, seclab, network_entity_provider
 
 
 @dataclass
@@ -201,9 +201,10 @@ class EquipmentDefinitionTab:
     rows_to_ignore: List[int]
     equipment_definitions: List[EquipmentDefinitionColumn]
     network_provider: Optional[network_entity_provider.NetworkEntityProvider]
+    seclab_side: seclab.SeclabSide
     equipment_ids_white_list_to_accept_only: Optional[List[str]] = None
     equipment_ids_black_list_to_ignore: List[str] = field(default_factory=list)
-    seclab_side: Optional[seclab.SeclabSide] = None
+    revenue_service_definition_fonction: revenue_services.RevenueServiceToEquipmentMatchingStrategy = revenue_services.DependingOnEquipmentTypeRevenueServiceToEquipmentMatchingStrategy()
 
 
 class TrainIdentifierDefinition(ABC):
@@ -347,6 +348,7 @@ class NetworkConfFile(GenericConfFile):
                                         source_label_for_creation=f"{excel_file_full_path}/{equipment_definition_tab.tab_name}",
                                         seclab_side=equipment_definition_tab.seclab_side,
                                         network_provider=equipment_definition_tab.network_provider,
+                                        revenue_service_definition_strategy=equipment_definition_tab.revenue_service_definition_fonction,
                                     )
                                     all_equipments_found_in_current_equipment_definition.append(equipment)
                                     all_equipments_found_in_current_tab.append(equipment)
