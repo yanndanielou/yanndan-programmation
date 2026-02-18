@@ -92,7 +92,7 @@ def dump_work_items_to_excel_file(work_items_library: polarion_data_model.Polari
 
             if isinstance(work_item, polarion_data_model.PolarionFicheAnomalieTitulaireWorkItem):
                 row["FAN_titulaire_Element"] = work_item.suspected_element
-                row["FAN_titulaire_Environnement"] = work_item.environment.value
+                row["FAN_titulaire_Environnement"] = work_item.environment.value if work_item.environment else None
 
             if isinstance(work_item, polarion_data_model.PolarionFicheAnomalieWorkItem):
                 row["FAN_suspected_element"] = work_item.suspected_element
