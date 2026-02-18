@@ -18,7 +18,7 @@ def create_reports_after_matching_network_conf_files_and_flow_matrix(
     network_flow_matrix: "network_matrix_data_model.NetworkFlowMatrix", equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary"
 ) -> None:
 
-    with logger_config.stopwatch_with_label({inspect.stack(0)[0].function}, inform_beginning=True):
+    with logger_config.stopwatch_with_label(f"{inspect.stack(0)[0].function}", inform_beginning=True):
         file_utils.create_folder_if_not_exist(constants.OUTPUT_PARENT_DIRECTORY_NAME)
 
         create_reports_wrong_ip(network_flow_matrix, equipments_library)
@@ -52,33 +52,35 @@ def create_report_network_conf_files_groups(equipments_library: "equipments.Netw
     )
 
 
-def create_dump_network_conf_files_library(equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary", output_json_file_full_path: str) -> None:
-    data_to_dump: List[Tuple] = []
-    for equipment in equipments_library.all_network_conf_files_defined_equipments:
-        data_to_dump.append(
-            (
-                f"name:{equipment.name}",
-                f"Source:{equipment.source_label}",
-                f"Types:{', '.join(list(equipment.equipment_types))}",
-                f"Seclab:{equipment.seclab_side}",
-                f"Alternative ids:{', '.join([str(alter) for alter in equipment.alternative_identifiers])}",
-                f"Ip:{', '.join([ip.ip_raw for ip in equipment.ip_addresses])}",
-                f"Groups:{', '.join([group.definition.name + ' ' + group.definition.subnet_and_mask for  group in equipment.groups])}",
-            )
-        )
+def create_dump_network_conf_files_library(equipments_library: "equipments.NetworkConfFilesEquipmentsLibrary", output_json_file_base_name: str) -> None:
 
-    for group in equipments_library.all_groups:
-        data_to_dump.append(
-            (
-                group.definition,
-                "Equipments:"
-                + ",".join(
-                    [equipment.name for equipment in group.equipments],
-                ),
-            )
-        )
+    data_to_dump_equipment = [
+        {
+            "name": f"{equipment.name}",
+            "Source": f"{equipment.source_label}",
+            "Types": f"{', '.join(list(equipment.equipment_types))}",
+            "Seclab": f"{equipment.seclab_side}",
+            "Alternative ids": f"{', '.join([str(alter) for alter in equipment.alternative_identifiers])}",
+            "Ip": f"{', '.join([ip.ip_raw for ip in equipment.ip_addresses])}",
+            "Groups": f"{', '.join([group.definition.name + ' ' + group.definition.subnet_and_mask for  group in equipment.groups])}",
+        }
+        for equipment in equipments_library.all_network_conf_files_defined_equipments
+    ]
+    save_rows_to_output_files(data_to_dump_equipment, f"{output_json_file_base_name}_equipments")
 
-    output_json_file_full_path = f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/all_equipments_in_conf_files_after_matching_network_matrix.json"
+    data_to_dump_groups = [
+        {
+            "group definition": group.definition,
+            "Equipments": ",".join(
+                [equipment.name for equipment in group.equipments],
+            ),
+        }
+        for group in equipments_library.all_groups
+    ]
+    save_rows_to_output_files(data_to_dump_groups, f"{output_json_file_base_name}_groups")
+    data_to_dump = data_to_dump_equipment + data_to_dump_groups
+
+    output_json_file_full_path = f"{constants.OUTPUT_PARENT_DIRECTORY_NAME}/{output_json_file_base_name}.json"
     json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(data_to_dump, output_json_file_full_path)
 
 

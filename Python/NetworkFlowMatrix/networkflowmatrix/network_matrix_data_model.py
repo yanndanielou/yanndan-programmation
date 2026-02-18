@@ -484,12 +484,10 @@ class NetworkFlowMatrix:
 
         self.check_consistency()
 
-        self.check_flow_are_correctly_tagged_on_sncf_network()
-
         reports_creation.create_reports_after_matching_network_conf_files_and_flow_matrix(self, equipments_library)
 
     def check_flow_are_correctly_tagged_on_sncf_network(self) -> bool:
-        with logger_config.stopwatch_with_label({inspect.stack(0)[0].function}, inform_beginning=True):
+        with logger_config.stopwatch_with_label(f"{inspect.stack(0)[0].function}", inform_beginning=True):
 
             assert self.network_flow_matrix_lines_not_deleted
             for matrix_line in self.network_flow_matrix_lines_not_deleted:
@@ -504,6 +502,7 @@ class NetworkFlowMatrix:
     def check_consistency(self) -> None:
 
         with logger_config.stopwatch_with_label("check_consistency", inform_beginning=True):
+            self.check_flow_are_correctly_tagged_on_sncf_network()
 
             with logger_config.stopwatch_with_label("Check that all matrix lines have source and destination on a known network"):
                 for matrix_line in self.network_flow_matrix_lines:
