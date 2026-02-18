@@ -202,9 +202,9 @@ class EquipmentDefinitionTab:
     equipment_definitions: List[EquipmentDefinitionColumn]
     network_provider: Optional[network_entity_provider.NetworkEntityProvider]
     seclab_side: seclab.SeclabSide
+    revenue_service_definition_fonction: revenue_services.RevenueServiceToEquipmentMatchingStrategy
     equipment_ids_white_list_to_accept_only: Optional[List[str]] = None
     equipment_ids_black_list_to_ignore: List[str] = field(default_factory=list)
-    revenue_service_definition_fonction: revenue_services.RevenueServiceToEquipmentMatchingStrategy = revenue_services.DependingOnEquipmentTypeRevenueServiceToEquipmentMatchingStrategy()
 
 
 class TrainIdentifierDefinition(ABC):

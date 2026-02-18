@@ -128,7 +128,7 @@ class RadioLayoutR841Description(ExcelInputFileDescription):
 
 class SolStdNetworkConfV11Description(ExcelInputFileDescription):
 
-    class SolStdNetworkConfRevenueServiceByEquipmentName(revenue_services.RevenueServiceToEquipmentMatchingStrategy):
+    class IpReseauPccNetworkConfRevenueServiceByEquipmentName(revenue_services.RevenueServiceToEquipmentMatchingStrategy):
 
         def _do_get_revenue_service_for_equipment(self, equipment: "NetworkConfFilesDefinedEquipment") -> revenue_services.RevenueService:
             if not equipment.equipment_types:
@@ -141,13 +141,31 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
             else:
                 return revenue_services.ATS1
 
+    class IpAtsNetworkConfRevenueServiceByEquipmentName(revenue_services.RevenueServiceToEquipmentMatchingStrategy):
+
+        def _do_get_revenue_service_for_equipment(self, equipment: "NetworkConfFilesDefinedEquipment") -> revenue_services.RevenueService:
+            if not equipment.equipment_types:
+                logger_config.print_and_log_error(f"Equipment {equipment.name} from source {equipment.source_label} has no type")
+                return revenue_services.ATS2  # Might be PMMM
+
+            equipment_type = list(equipment.equipment_types)[0]
+            match equipment_type.name:
+                case "VCL":
+                    return revenue_services.TO_BE_CANCELLED
+                case "RESTOS":
+                    return revenue_services.TO_BE_DEFINED
+                case "REG":
+                    return revenue_services.ATS2Plus
+                case _:
+                    return revenue_services.ATS1
+
     def __init__(self) -> None:
 
         self.ip_ats_tab: EquipmentDefinitionTab = EquipmentDefinitionTab(
             tab_name="IP ATS",
             seclab_side=SeclabSide.SOL,
             network_provider=NetworkEntityProvider.STS,
-            revenue_service_definition_fonction=revenue_services.DependingOnEquipmentTypeRevenueServiceToEquipmentMatchingStrategy(),
+            revenue_service_definition_fonction=SolStdNetworkConfV11Description.IpAtsNetworkConfRevenueServiceByEquipmentName(),
             rows_to_ignore=[0, 1, 2, 3, 4, 6, 7],
             equipment_definitions=[
                 EquipmentDefinitionColumn(
@@ -305,7 +323,7 @@ class SolStdNetworkConfV11Description(ExcelInputFileDescription):
             tab_name="IP RESEAU PCC",
             equipment_ids_black_list_to_ignore=networkflowmatrix.manual_equipments_builder.STD_FIREWALL_EQUIPMENT_NAMES,
             seclab_side=SeclabSide.SOL,
-            revenue_service_definition_fonction=SolStdNetworkConfV11Description.SolStdNetworkConfRevenueServiceByEquipmentName(),
+            revenue_service_definition_fonction=SolStdNetworkConfV11Description.IpReseauPccNetworkConfRevenueServiceByEquipmentName(),
             network_provider=NetworkEntityProvider.STS,
             rows_to_ignore=[0, 1, 2, 4, 5],
             equipment_definitions=[
