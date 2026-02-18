@@ -73,6 +73,7 @@ class IhmProgrammConfFile(network_conf_files.GenericConfFile):
                         network_provider=network_entity_provider.NetworkEntityProvider.INFRACOM_OR_INFRANET,
                         revenue_service_definition_strategy=IhmProgrammConfFile.IhmProgrammRevenueServiceByEquipmentName(),
                     )
+                    equipment.add_equipment_type(module)
                     all_equipments_found.append(equipment)
                     ip_address = adresses_raw.replace("(1)", "").replace(" ", "")
                     try:

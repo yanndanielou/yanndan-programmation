@@ -174,7 +174,7 @@ def create_report_network_conf_files_revenue_services_synthesis(
             {
                 "Revenue service": revenue_service.name,
                 "Number of network conf files equipments": len(revenue_service.all_network_conf_files_equipments_containing_it),
-                "Network conf files equipments": ",".join([equipment.name for equipment in revenue_service.all_network_conf_files_equipments_containing_it]),
+                "Network conf files equipments": [equipment.name for equipment in revenue_service.all_network_conf_files_equipments_containing_it],
             }
             for revenue_service in revenue_services.ALL_REVENUES_SERVICES
         ],

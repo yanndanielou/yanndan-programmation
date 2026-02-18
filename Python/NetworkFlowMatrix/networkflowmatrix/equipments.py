@@ -1,10 +1,16 @@
+import inspect
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, cast
 
 from common import json_encoders
 from logger import logger_config
 
-from networkflowmatrix import constants, network_entity_provider, seclab, reports_creation
+from networkflowmatrix import (
+    constants,
+    network_entity_provider,
+    reports_creation,
+    seclab,
+)
 
 if TYPE_CHECKING:
     from networkflowmatrix.network_conf_files import (
@@ -17,7 +23,13 @@ if TYPE_CHECKING:
 
 from collections import defaultdict
 
-from networkflowmatrix import ihm_program_builder, manual_equipments_builder, manual_group_definitions, names_equivalences, revenue_services
+from networkflowmatrix import (
+    ihm_program_builder,
+    manual_equipments_builder,
+    manual_group_definitions,
+    names_equivalences,
+    revenue_services,
+)
 from networkflowmatrix.groups import Group, GroupDefinition
 from networkflowmatrix.network_conf_files import NetworkConfFile
 
@@ -61,16 +73,36 @@ class NotFoundEquipmentButDefinedInMatrixFlow:
 
 
 @dataclass
+class NetworkConfFilesDefinedType:
+    name: str
+
+    def __post_init__(self) -> None:
+        self._all_network_conf_files_equipments_containing_it: List["NetworkConfFilesDefinedEquipment"] = []
+
+    def add_network_conf_files_equipment(self, network_conf_files_equipment: "NetworkConfFilesDefinedEquipment") -> None:
+        if network_conf_files_equipment not in self._all_network_conf_files_equipments_containing_it:
+            self._all_network_conf_files_equipments_containing_it.append(network_conf_files_equipment)
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    @property
+    def all_network_conf_files_equipments_containing_it(self) -> List["NetworkConfFilesDefinedEquipment"]:
+        return self._all_network_conf_files_equipments_containing_it
+
+
+@dataclass
 class NetworkConfFilesDefinedEquipment:
     name: str
     source_label: str
     library: "NetworkConfFilesEquipmentsLibrary"
     network_provider: network_entity_provider.NetworkEntityProvider
-    revenue_service_definition_fonction: revenue_services.RevenueServiceToEquipmentMatchingStrategy
-    _equipment_types: Set[str] = field(default_factory=set)
+    revenue_service_definition_strategy: revenue_services.RevenueServiceToEquipmentMatchingStrategy
+    _equipment_types: Set[NetworkConfFilesDefinedType] = field(default_factory=set)
     _alternative_identifiers: Set[str] = field(default_factory=set)
     ip_addresses: List["NetworkConfFilesDefinedIpAddress"] = field(default_factory=list)
     seclab_side: seclab.SeclabSide = cast(seclab.SeclabSide, None)
+
     groups: List[Group] = field(default_factory=list)
 
     def __post_init__(self) -> None:
@@ -82,11 +114,19 @@ class NetworkConfFilesDefinedEquipment:
             for alternative_name in alternative_names:
                 self.add_alternative_identifier(alternative_name)
 
-        self.revenue_service = self.revenue_service_definition_fonction.get_revenue_service_for_equipment(self)
+        self.revenue_service = cast(revenue_services.RevenueService, None)
+
+    def compute_revenue_service(self) -> None:
+        if not self.revenue_service:
+            self.revenue_service = self.revenue_service_definition_strategy.get_revenue_service_for_equipment(self)
 
     @property
-    def equipment_types(self) -> Set[str]:
+    def equipment_types(self) -> Set[NetworkConfFilesDefinedType]:
         return self._equipment_types
+
+    @property
+    def equipment_types_names(self) -> Set[str]:
+        return set([type_it.name for type_it in self._equipment_types])
 
     @property
     def alternative_identifiers(self) -> Set[str]:
@@ -98,18 +138,18 @@ class NetworkConfFilesDefinedEquipment:
         self._alternative_identifiers.add(alternative_identifier)
         self.library.network_conf_files_defined_equipments_by_id[alternative_identifier] = self
 
-    def add_equipment_type(self, equipment_type: str) -> None:
-        assert equipment_type
-        assert isinstance(equipment_type, str)
+    def add_equipment_type(self, equipment_raw_type: str) -> None:
+        assert equipment_raw_type
+        assert isinstance(equipment_raw_type, str)
+        equipment_type = self.library.get_or_create_type_if_not_exist_by_name(equipment_raw_type)
         self._equipment_types.add(equipment_type)
+        equipment_type.add_network_conf_files_equipment(self)
 
-        # logger_config.print_and_log_info(f"Equipment {self.name}: add type {equipment_type}")
+        if equipment_raw_type not in self.library.network_conf_files_defined_equipments_by_type:
+            self.library.network_conf_files_defined_equipments_by_type[equipment_raw_type] = []
 
-        if equipment_type not in self.library.network_conf_files_defined_equipments_by_type:
-            self.library.network_conf_files_defined_equipments_by_type[equipment_type] = []
-
-        if self not in self.library.network_conf_files_defined_equipments_by_type[equipment_type]:
-            self.library.network_conf_files_defined_equipments_by_type[equipment_type].append(self)
+        if self not in self.library.network_conf_files_defined_equipments_by_type[equipment_raw_type]:
+            self.library.network_conf_files_defined_equipments_by_type[equipment_raw_type].append(self)
 
     def add_ip_address(self, ip_address: "NetworkConfFilesDefinedIpAddress") -> None:
         assert ip_address not in self.ip_addresses, f"{self.name} has already ip {ip_address}"
@@ -125,7 +165,7 @@ class NetworkConfFilesDefinedEquipment:
                 self.library._network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw] = []
 
             if self in self.library._network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw]:
-                logger_config.print_and_log_error(f"IP address {ip_address_raw} already defined. {self.name} {self._equipment_types} Will exist twice")
+                logger_config.print_and_log_error(f"IP address {ip_address_raw} already defined. {self.name} {','.join([self.equipment_types_names])} Will exist twice")
 
             self.library._network_conf_files_defined_equipments_by_raw_ip_addresses[ip_address_raw].append(self)
 
@@ -185,6 +225,7 @@ class NetworkConfFilesEquipmentsLibrary:
 
     def __init__(self) -> None:
         self.all_network_conf_files_defined_equipments: List[NetworkConfFilesDefinedEquipment] = []
+        self.all_types_detected_in_network_conf_files: List[NetworkConfFilesDefinedType] = []
         self.network_conf_files_defined_equipments_by_id: Dict[str, NetworkConfFilesDefinedEquipment] = {}
         self.network_conf_files_defined_equipments_by_type: Dict[str, List[NetworkConfFilesDefinedEquipment]] = defaultdict()
         self._network_conf_files_defined_equipments_by_raw_ip_addresses: Dict[str, List[NetworkConfFilesDefinedEquipment]] = {}
@@ -246,6 +287,14 @@ class NetworkConfFilesEquipmentsLibrary:
         with logger_config.stopwatch_with_label("Check that each equipment is at a seclab side"):
             for eqpt in self.all_network_conf_files_defined_equipments:
                 logger_config.print_and_log_error_if(condition=eqpt.seclab_side is None, to_print_and_log=f"Seclab side not defined for {eqpt.name}, source {eqpt.source_label}")
+
+        with logger_config.stopwatch_with_label("Check that each equipment is allocated to a revenue service"):
+            for eqpt in self.all_network_conf_files_defined_equipments:
+                logger_config.print_and_log_error_if(condition=eqpt.revenue_service is None, to_print_and_log=f"Revenue service not defined for {eqpt.name}, source {eqpt.source_label}")
+
+        with logger_config.stopwatch_with_label("Check that each equipment is allocated to a type service"):
+            for eqpt in self.all_network_conf_files_defined_equipments:
+                logger_config.print_and_log_error_if(condition=len(eqpt.equipment_types) < 1, to_print_and_log=f"Type is not defined for {eqpt.name}, source {eqpt.source_label}")
 
         with logger_config.stopwatch_with_label("Check that each equipment is in a specific network provider"):
             for eqpt in self.all_network_conf_files_defined_equipments:
@@ -321,7 +370,7 @@ class NetworkConfFilesEquipmentsLibrary:
             source_label=source_label_for_creation,
             seclab_side=seclab_side,
             network_provider=network_provider,
-            revenue_service_definition_fonction=revenue_service_definition_strategy,
+            revenue_service_definition_strategy=revenue_service_definition_strategy,
         )
         self.network_conf_files_defined_equipments_by_id[name] = equipment
         self.all_network_conf_files_defined_equipments.append(equipment)
@@ -398,3 +447,13 @@ class NetworkConfFilesEquipmentsLibrary:
         equipment.matrix_line_ids_referencing.append(matrix_line_id_referencing)
 
         return equipment
+
+    def get_or_create_type_if_not_exist_by_name(self, name: str) -> NetworkConfFilesDefinedType:
+        existing_types = [type_found for type_found in self.all_types_detected_in_network_conf_files if type_found.name == name]
+        if existing_types:
+            assert len(existing_types) == 1, f"Type {name} found {len(existing_types)} times"
+            return existing_types[0]
+
+        self.all_types_detected_in_network_conf_files.append(NetworkConfFilesDefinedType(name))
+        logger_config.print_and_log_info(f"{inspect.stack(0)[0].function} create type {name}")
+        return self.get_or_create_type_if_not_exist_by_name(name)
