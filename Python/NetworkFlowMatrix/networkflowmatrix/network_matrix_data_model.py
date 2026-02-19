@@ -573,8 +573,8 @@ class NetworkFlowMatrixLine:
             mes_raw = pandas_utils.optional_element_as_optional_string(row, "MES")
             prod_mig_essais_raw = pandas_utils.optional_element_as_optional_string(row, "Prod/Migration/EssaisTemporaire")
             prod_mig_essais = constants.ProdMigrationEssai[prod_mig_essais_raw] if prod_mig_essais_raw else None
-            declared_on_sncf_network_on_matrix_raw_str = pandas_utils.optional_element_as_optional_string(row, "Sur Réseau SNCF")
-            declared_on_sncf_network_on_matrix = True if pandas_utils.optional_element_as_optional_string(row, "Sur Réseau SNCF") else False
+            declared_on_sncf_network_on_matrix_raw_str = pandas_utils.optional_element_as_optional_string(row, "Sur réseau SNCF")
+            declared_on_sncf_network_on_matrix = True if pandas_utils.optional_element_as_optional_string(row, "Sur réseau SNCF") else False
 
             full_label_auto = cast(str, row["Lien de com. complet\n(Auto)"])
             sol_bord_raw = cast(str, row["S/B"])
