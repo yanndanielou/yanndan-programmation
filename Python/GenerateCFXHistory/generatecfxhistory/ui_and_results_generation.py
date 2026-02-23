@@ -354,7 +354,7 @@ def produce_baregraph_number_of_cfx(
                     mplcursors.cursor(patch, hover=HoverMode.Transient).connect("add", create_tooltip_handler(tooltip_data[tooltip_idx]))
                     tooltip_idx += 1
 
-        plt.show()
+        # plt.show()
 
     if generation_instructions.by_current_owner_role:
 

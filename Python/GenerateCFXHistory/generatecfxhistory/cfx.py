@@ -217,8 +217,20 @@ class ChampFXLibrary:
                         if not previous_current_owner_name or not new_current_owner_name:
                             logger_config.print_and_log_error(f"Invalid current owner change history for {cfx_id}, from {previous_current_owner_name} to {new_current_owner_name}. {cfx_history_field}")
 
-                        previous_owner = self._cfx_users_library.get_cfx_user_by_full_name(previous_current_owner_name) if previous_current_owner_name else self._cfx_users_library.unknown_user
-                        new_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(new_current_owner_name) if new_current_owner_name else self._cfx_users_library.unknown_user
+                        previous_owner = (
+                            self._cfx_users_library.get_cfx_user_by_full_name(
+                                full_name=previous_current_owner_name, context_in_case_of_error=f"{cfx_id} current owner changed from {previous_current_owner_name} to {new_current_owner_name}"
+                            )
+                            if previous_current_owner_name
+                            else self._cfx_users_library.unknown_user
+                        )
+                        new_owner: role.CfxUser = (
+                            self._cfx_users_library.get_cfx_user_by_full_name(
+                                full_name=new_current_owner_name, context_in_case_of_error=f"{cfx_id} current owner changed from {previous_current_owner_name} to {new_current_owner_name}"
+                            )
+                            if new_current_owner_name
+                            else self._cfx_users_library.unknown_user
+                        )
 
                         change_current_owner_action: ChangeCurrentOwnerAction = ChangeCurrentOwnerAction(
                             _cfx_request=cfx_entry, _previous_owner=previous_owner, _new_owner=new_owner, _timestamp=cfx_history_field.change_timestamp.replace(tzinfo=None)
