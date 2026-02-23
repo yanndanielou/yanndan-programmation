@@ -52,7 +52,7 @@ class DownloadAndCleanDMLApplication:
         dml_file_path = self.remove_excel_external_links(dml_file_path)
         dml_file_path = self.remove_useless_ranges(dml_file_path)
         # dml_file_path_standard_excel = self.convert_excel_to_standard_xslx(dml_file_path)
-        dml_file_path_openpyxl = self.remove_useless_columns_with_openpyxl(dml_file_path)
+        # dml_file_path_openpyxl = self.remove_useless_columns_with_openpyxl(dml_file_path)
         dml_file_path_xlwings = self.remove_useless_columns_with_xlwings(dml_file_path)
 
         dml_file_path = file_utils.rename_file_and_wait_if_is_locked(dml_file_path_xlwings, param.DML_FILE_CLEANED_FINAL_PATH)
