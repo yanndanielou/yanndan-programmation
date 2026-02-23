@@ -112,7 +112,7 @@ class AllCFXCompleteHistoryExport:
                         cfx_processed.add(cfx_id)
 
                         if len(cfx_processed) % 200 == 0:
-                            logger_config.print_and_log_info(f"Number of CFX processed:{len(cfx_processed)}. Just processed {cfx_id}")
+                            logger_config.print_and_log_info(f"Number of CFX processed:{len(cfx_processed)}/{len(all_cfx_complete_extended_histories_text_files_contents)}. Just processed {cfx_id}")
 
         logger_config.print_and_log_info(f"cfx_extended_history_text_file_content_split_by_cfx:{len(all_cfx_complete_history)}")
 

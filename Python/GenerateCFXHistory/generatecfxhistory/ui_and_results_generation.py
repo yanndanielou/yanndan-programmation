@@ -3,7 +3,7 @@ import datetime
 import os
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import List, Optional, cast, Dict
+from typing import List, Optional, cast, Dict, Any
 
 import matplotlib.pyplot as plt
 import mplcursors
@@ -343,7 +343,7 @@ def produce_baregraph_number_of_cfx(
             tooltip_data.append(f"State: {state}\nCount: {count}")
 
         # Helper function to create a closure that captures the correct text
-        def create_tooltip_handler(text):
+        def create_tooltip_handler(text: str) -> Any:
             return lambda sel: sel.annotation.set_text(text)
 
         # Add cursor tooltips to all bar patches
@@ -353,8 +353,6 @@ def produce_baregraph_number_of_cfx(
                 if tooltip_idx < len(tooltip_data):
                     mplcursors.cursor(patch, hover=HoverMode.Transient).connect("add", create_tooltip_handler(tooltip_data[tooltip_idx]))
                     tooltip_idx += 1
-
-        # plt.show()
 
     if generation_instructions.by_current_owner_role:
 
@@ -416,14 +414,14 @@ def produce_baregraph_number_of_cfx(
                 tooltip_data.append(f"SubSystem: {subsystem}\nState: {state}\nCount: {count}")
 
         # Helper function to create a closure that captures the correct text
-        def create_tooltip_handler(text):
+        def create_tooltip_handler(text: str) -> Any:
             return lambda sel: sel.annotation.set_text(text)
 
         # Add cursor tooltips to all bar patches
         tooltip_idx = 0
         for container in ax.containers:
             for patch in container:
-                if tooltip_idx < len(tooltip_data):
+                if tooltip_idx < len(tooltip_data):)
                     mplcursors.cursor(patch, hover=HoverMode.Transient).connect("add", create_tooltip_handler(tooltip_data[tooltip_idx]))
                     tooltip_idx += 1
 
@@ -435,7 +433,10 @@ def produce_baregraph_number_of_cfx(
         ax.grid(axis="y", alpha=0.3)
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
-        plt.show()
+
+    # Display plot if required
+    # if generation_instructions.display_output_plots:
+    # plt.show()
 
 
 def produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
