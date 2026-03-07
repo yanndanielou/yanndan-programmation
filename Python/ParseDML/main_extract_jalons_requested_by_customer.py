@@ -95,7 +95,7 @@ def main() -> None:
             with logger_config.stopwatch_with_label(f"Load and parse {len(main_data_frame)} DML lines"):
                 for index, (_, row) in enumerate(main_data_frame.iterrows()):
                     code_moe_ged_raw = row["Code GED MOE"]
-                    jalons_raw = row["Jalon fourniture"]
+                    jalons_raw = row["Jalon fourniture"] if "Jalon fourniture" in row else row["Jalon Fourniture"]
                     version_raw = row["Version"]
                     title_raw = row["Titre Document"]
 
