@@ -18,7 +18,7 @@ CUSTOMER_INPUT_EXCEL_FILES: List[Tuple[str, List[int]]] = [
     ("Input/2025-12-09 - I3G-NEXT-2025-LP-DPR-1517_V14_V41-00.xlsm", [0]),
     ("Input/2026-01-30 - I3G-NEXT-2026-LE-DPR-0075_V14_V41-00_filtered.xlsx", []),
 ]
-OUTPUT_PARENT_DIRECTORY_NAME = "Output"
+OUTPUT_PARENT_DIRECTORY_NAME = "Reports"
 MAGIC_VALUE_SEPARATOR = str(uuid.uuid4())
 
 
@@ -124,87 +124,90 @@ def main() -> None:
                         jalon.docs_codes_ged_moe.add(doc_line.code_ged_moe)
                         doc_line.add_jalon(jalon)
 
-        logger_config.print_and_log_info(f"{len(all_jalons)} jalons found: \n{'\n'.join([jalon.name for jalon in all_jalons])}")
-        logger_config.print_and_log_info(f"{len(all_jalons)} jalons found")
+            logger_config.print_and_log_info(f"{len(all_jalons)} jalons found: \n{'\n'.join([jalon.name for jalon in all_jalons])}")
+            logger_config.print_and_log_info(f"{len(all_jalons)} jalons found")
 
-        assert all_jalons
-        for jalon in all_jalons:
-            assert jalon.name
-            assert jalon.docs_codes_ged_moe, f"Jalon {jalon.name} has no doc"
-
-        assert all_docs
-        assert all_doc_lines
-
-        for directory_path in [OUTPUT_PARENT_DIRECTORY_NAME]:
-            file_utils.create_folder_if_not_exist(directory_path)
-
-        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(all_jalons, f"{OUTPUT_PARENT_DIRECTORY_NAME}/{file_name_utils.get_file_suffix_with_current_datetime()}_all_jalons.json")
-
-        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
-            [(doc.code_ged_moe, [jalon.name for jalon in doc.unique_jalons]) for doc in all_docs if doc.unique_jalons],
-            f"{OUTPUT_PARENT_DIRECTORY_NAME}/{file_name_utils.get_file_suffix_with_current_datetime()}_all_docs_with_jalons.json",
-        )
-
-        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
-            [doc.code_ged_moe for doc in all_docs if not doc.unique_jalons],
-            f"{OUTPUT_PARENT_DIRECTORY_NAME}/{file_name_utils.get_file_suffix_with_current_datetime()}_all_docs_without_jalons.json",
-        )
-
-        jalons_added_warnings: List[str] = []
-
-        with logger_config.stopwatch_with_label("Detect change jalons dans un doc"):
-            for doc in all_docs:
-                previous_jalons: List[Jalon] = doc.lines[0]._jalons
-                for current_line in doc.lines[1:]:
-                    new_jalons_added = [jalon for jalon in current_line._jalons if jalon not in previous_jalons]
-                    old_jalons_removed = [jalon for jalon in previous_jalons if jalon not in current_line._jalons]
-
-                    if previous_jalons:
-                        if new_jalons_added:
-                            to_warn = f"Jalons {[jalon.name for jalon in new_jalons_added]} added in doc {doc.code_ged_moe}, in version {current_line.version} : previous jalons:{", ".join([jalon.name for jalon in previous_jalons])}, now {", ".join([jalon.name for jalon in current_line._jalons])}"
-                            jalons_added_warnings.append(to_warn)
-                            logger_config.print_and_log_warning(to_warn)
-                            previous_jalons = previous_jalons + new_jalons_added
-
-                    if current_line._jalons:
-                        if old_jalons_removed:
-                            logger_config.print_and_log_info(
-                                f"Jalons {[jalon.name for jalon in old_jalons_removed]} removed in doc {doc.code_ged_moe}, in version {current_line.version} : previous jalons:{", ".join([jalon.name for jalon in previous_jalons])}, now {", ".join([jalon.name for jalon in current_line._jalons])}"
-                            )
-
-        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
-            jalons_added_warnings,
-            f"{OUTPUT_PARENT_DIRECTORY_NAME}/{file_name_utils.get_file_suffix_with_current_datetime()}_jalons_added_warnings.json",
-        )
-
-        with logger_config.application_logger("ParseDML"):
-            dml_file_content_built = parse_dml.DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path=param.DML_FILE_WITH_USELESS_RANGES)
-
-            all_jalon_reports_status: List[parse_dml.DocumentsStatusReport] = []
-
+            assert all_jalons
             for jalon in all_jalons:
-                jalon_report_status = parse_dml.DocumentsStatusReport.Builder.build_by_code_ged_moe(
-                    name=jalon.name, dml_file_content=dml_file_content_built, codes_ged_moe=list(jalon.docs_codes_ged_moe)
-                )
-                # jalon_report_status.write_full_report_to_excel()
-                # jalon_report_status.write_synthetic_report_to_excel(warn_if_doc_deleted=True)
-                all_jalon_reports_status.append(jalon_report_status)
+                assert jalon.name
+                assert jalon.docs_codes_ged_moe, f"Jalon {jalon.name} has no doc"
 
-        all_rows_temptative_1 = [
-            row for jalon_report_status in jalon_report_status.prepare_synthetic_report_to_excel(warn_if_doc_deleted=True, include_report_name=True) for jalon_report_status in all_jalon_reports_status
-        ]
+            assert all_docs
+            assert all_doc_lines
 
-        all_rows = [jalon_report_status.prepare_synthetic_report_to_excel(warn_if_doc_deleted=True, include_report_name=True) for jalon_report_status in all_jalon_reports_status]
-        all_rows_combined = list(itertools.chain.from_iterable(all_rows))
+            for directory_path in [OUTPUT_PARENT_DIRECTORY_NAME]:
+                file_utils.create_folder_if_not_exist(directory_path)
 
-        df = pandas.DataFrame(all_rows_combined)
+            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(all_jalons, f"{OUTPUT_PARENT_DIRECTORY_NAME}/{file_name_utils.get_file_suffix_with_current_datetime()}_all_jalons.json")
 
-        # Ensure output directory exists (in case it was removed after instantiation)
-        os.makedirs("Reports", exist_ok=True)
+            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
+                [(doc.code_ged_moe, [jalon.name for jalon in doc.unique_jalons]) for doc in all_docs if doc.unique_jalons],
+                f"{OUTPUT_PARENT_DIRECTORY_NAME}/{file_name_utils.get_file_suffix_with_current_datetime()}_all_docs_with_jalons.json",
+            )
 
-        report_full_path = f"Reports/full_report_all_jalons{customer_input_file_base_name}_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
-        df.to_excel(report_full_path, index=False)
-        logger_config.print_and_log_info(f"Wrote {len(df)} rows to {report_full_path}")
+            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
+                [doc.code_ged_moe for doc in all_docs if not doc.unique_jalons],
+                f"{OUTPUT_PARENT_DIRECTORY_NAME}/{file_name_utils.get_file_suffix_with_current_datetime()}_all_docs_without_jalons.json",
+            )
+
+            jalons_added_warnings: List[str] = []
+
+            with logger_config.stopwatch_with_label("Detect change jalons dans un doc"):
+                for doc in all_docs:
+                    previous_jalons: List[Jalon] = doc.lines[0]._jalons
+                    for current_line in doc.lines[1:]:
+                        new_jalons_added = [jalon for jalon in current_line._jalons if jalon not in previous_jalons]
+                        old_jalons_removed = [jalon for jalon in previous_jalons if jalon not in current_line._jalons]
+
+                        if previous_jalons:
+                            if new_jalons_added:
+                                to_warn = f"Jalons {[jalon.name for jalon in new_jalons_added]} added in doc {doc.code_ged_moe}, in version {current_line.version} : previous jalons:{", ".join([jalon.name for jalon in previous_jalons])}, now {", ".join([jalon.name for jalon in current_line._jalons])}"
+                                jalons_added_warnings.append(to_warn)
+                                logger_config.print_and_log_warning(to_warn)
+                                previous_jalons = previous_jalons + new_jalons_added
+
+                        if current_line._jalons:
+                            if old_jalons_removed:
+                                logger_config.print_and_log_info(
+                                    f"Jalons {[jalon.name for jalon in old_jalons_removed]} removed in doc {doc.code_ged_moe}, in version {current_line.version} : previous jalons:{", ".join([jalon.name for jalon in previous_jalons])}, now {", ".join([jalon.name for jalon in current_line._jalons])}"
+                                )
+
+            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(
+                jalons_added_warnings,
+                f"{OUTPUT_PARENT_DIRECTORY_NAME}/{file_name_utils.get_file_suffix_with_current_datetime()}_jalons_added_warnings.json",
+            )
+
+            with logger_config.application_logger("ParseDML"):
+                dml_file_content_built = parse_dml.DmlFileContent.Builder.build_with_excel_file(dml_excel_file_full_path=param.DML_FILE_WITH_USELESS_RANGES)
+
+                all_jalon_reports_status: List[parse_dml.DocumentsStatusReport] = []
+
+                for jalon in all_jalons:
+                    try:
+                        jalon_report_status = parse_dml.DocumentsStatusReport.Builder.build_by_code_ged_moe(
+                            name=jalon.name, dml_file_content=dml_file_content_built, codes_ged_moe=list(jalon.docs_codes_ged_moe)
+                        )
+                        # jalon_report_status.write_full_report_to_excel()
+                        # jalon_report_status.write_synthetic_report_to_excel(warn_if_doc_deleted=True)
+                        all_jalon_reports_status.append(jalon_report_status)
+                    except AssertionError as ass:
+                        logger_config.print_and_log_exception(ass)
+                        logger_config.print_and_log_error(f"Could not create report for jalon {jalon.name} for {customer_input_file_base_name}")
+
+            all_rows_temptative_1 = [
+                row
+                for jalon_report_status in jalon_report_status.prepare_synthetic_report_to_excel(warn_if_doc_deleted=True, include_report_name=True)
+                for jalon_report_status in all_jalon_reports_status
+            ]
+
+            all_rows = [jalon_report_status.prepare_synthetic_report_to_excel(warn_if_doc_deleted=True, include_report_name=True) for jalon_report_status in all_jalon_reports_status]
+            all_rows_combined = list(itertools.chain.from_iterable(all_rows))
+
+            df = pandas.DataFrame(all_rows_combined)
+
+            report_full_path = f"{OUTPUT_PARENT_DIRECTORY_NAME}/full_report_all_jalons{customer_input_file_base_name}_{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
+            df.to_excel(report_full_path, index=False)
+            logger_config.print_and_log_info(f"Wrote {len(df)} rows to {report_full_path}")
 
 
 if __name__ == "__main__":
