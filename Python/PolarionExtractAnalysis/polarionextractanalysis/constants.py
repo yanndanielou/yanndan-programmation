@@ -20,6 +20,7 @@ class PolarionAttributeType(Enum):
     SDT = auto()
     HEADING = auto()
     SFT = auto()
+    SCNRTESTSYS = auto()
 
 
 class PolarionFanDestinataire(Enum):

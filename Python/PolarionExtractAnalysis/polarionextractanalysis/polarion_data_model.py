@@ -103,7 +103,7 @@ class PolarionUsersLibrary:
                         logger_config.print_and_log_exception(key_err)
                         self.all_not_parsed_because_errors_users_as_json.append(user_as_json)
 
-            logger_config.print_and_log_info(f"{len(self.all_users)} work items created. {len(self.all_not_parsed_because_errors_users_as_json)} could not be created")
+            logger_config.print_and_log_info(f"{len(self.all_users)} users created. {len(self.all_not_parsed_because_errors_users_as_json)} could not be created")
 
     def add_unknown_user(self, unknown_user_id: str) -> PolarionUser:
         reference = f"Not_found_{unknown_user_id}"
@@ -192,6 +192,9 @@ class PolarionWorkItemLibrary:
 
             logger_config.print_and_log_info(f"{len(self.all_work_items)} work items created. {len(self.all_not_parsed_because_errors_work_items_as_json)} could not be created")
 
+            for not_parsed_because_errors_work_item_as_json in self.all_not_parsed_because_errors_work_items_as_json:
+                logger_config.print_and_log_error(f"{not_parsed_because_errors_work_item_as_json["id"]} : not created")
+
 
 @dataclass
 class PolarionProjectLibrary:
@@ -263,7 +266,7 @@ class PolarionWorkItem:
 class PolarionSecondRegardWorkItem(PolarionWorkItem):
     def __init__(self, polarion_library: PolarionLibrary, work_item_as_json_dict: Dict) -> None:
         super().__init__(polarion_library=polarion_library, work_item_as_json_dict=work_item_as_json_dict)
-        self.theme = cast(str, work_item_as_json_dict["attributes"]["SR_theme"])
+        self.theme = cast(str, work_item_as_json_dict["attributes"]["SR_theme"]) if "SR_theme" in work_item_as_json_dict["attributes"] else None
 
 
 class PolarionFicheAnomalieTitulaireWorkItem(PolarionWorkItem):
