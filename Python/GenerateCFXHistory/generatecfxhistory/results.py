@@ -52,7 +52,7 @@ class AllResultsPerDates:
     def get_state_counts_per_timestamp(self) -> List[dict[State, int]]:
         return [results.count_by_state for results in self.timestamp_results]
 
-    def compute_cumulative_counts(self) -> None:
+    def compute_cumulative_counts_number_of_state_per_date(self) -> None:
         self.cumulative_counts = {state: [] for state in self.present_states_ordered()}
         for one_timestamp in self.timestamp_results:
             for state in self.present_states_ordered():

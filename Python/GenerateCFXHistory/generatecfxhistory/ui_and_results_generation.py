@@ -3,7 +3,7 @@ import datetime
 import os
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import List, Optional, Set, cast
+from typing import List, Optional, cast, Dict, Any
 
 import matplotlib.pyplot as plt
 import mplcursors
@@ -20,16 +20,10 @@ from generatecfxhistory.dates_generators import (
     DatesGenerator,
     DecreasingIntervalDatesGenerator,
 )
-from generatecfxhistory.filters import (
-    ChampFxFilter,
-    ChampFxFilterFieldProject,
-    ChampFxFilterFieldSubsystem,
-    ChampFXRoleDependingOnDateFilter,
-)
+from generatecfxhistory.filters import ChampFxFilter, ChampFxFilterFieldProject, ChampFxFilterFieldSubsystem, ChampFXRoleDependingOnDateFilter, ChampFXtStaticCriteriaFilter
 from generatecfxhistory.results import (
     AllResultsPerDates,
     AllResultsPerDatesWithDebugDetails,
-    OneTimestampResult,
 )
 from generatecfxhistory.role import SubSystem
 
@@ -63,27 +57,41 @@ class RepresentationType(enums_utils.NameBasedEnum):
 @dataclass
 class GenerationInstructions:
     output_directory_name: str
-    generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS
-    project_in_case_of_generate_by_project_instruction_one_project: Optional[str] = None
-    cfx_filters: List[ChampFxFilter] = field(default_factory=list)
     create_html_file: bool = True
-    create_excel_file: bool = True
     display_output_plots: bool = True
-    dump_all_cfx_ids_in_json: bool = True
     create_screenshot: bool = True
-    dates_generator: DatesGenerator = DecreasingIntervalDatesGenerator()
 
 
 @dataclass
-class GenerationInstructionsForLibary(GenerationInstructions):
+class NumberOfCfxStatePerDateGenerationInstructions(GenerationInstructions):
+    cfx_filters: List[ChampFxFilter] = field(default_factory=list)
+    create_excel_file: bool = True
+    dump_all_cfx_ids_in_json: bool = True
+    dates_generator: DatesGenerator = DecreasingIntervalDatesGenerator()
+    generate_by_project_instruction: GenerateByProjectInstruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS
+    project_in_case_of_generate_by_project_instruction_one_project: Optional[str] = None
+
+
+@dataclass
+class NumberOfCfxStatePerDateGenerationInstructionsForLibrary(NumberOfCfxStatePerDateGenerationInstructions):
     for_global: bool = True
     for_each_subsystem: bool = False
     for_each_current_owner_per_date: bool = False
 
 
-def produce_results_and_displays(
+@dataclass
+class NumberOfCfxByCriteriaGenerationInstructionsForLibrary(GenerationInstructions):
+    static_criteria_filters: List[ChampFXtStaticCriteriaFilter] = field(default_factory=list)
+    by_subsystem: bool = False
+    by_current_owner_role: bool = False
+    for_global: bool = False
+    states_to_take_into_account_black_list: Optional[List[State]] = None
+    states_to_take_into_account_white_list: Optional[List[State]] = None
+
+
+def produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
     cfx_library: ChampFXLibrary,
-    generation_instructions: GenerationInstructions,
+    generation_instructions: NumberOfCfxStatePerDateGenerationInstructions,
     display_without_cumulative_eras: bool,
     display_with_cumulative_eras: bool,
 ) -> None:
@@ -102,7 +110,7 @@ def produce_results_and_displays(
                 generation_instructions_copy.generate_by_project_instruction = GenerateByProjectInstruction.ONLY_ONE_PROJECT
                 generation_instructions_copy.project_in_case_of_generate_by_project_instruction_one_project = project
 
-                produce_results_and_displays(
+                produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
                     cfx_library=cfx_library,
                     generation_instructions=generation_instructions_copy,
                     display_without_cumulative_eras=display_without_cumulative_eras,
@@ -114,7 +122,7 @@ def produce_results_and_displays(
 
             generation_instructions_copy = copy.deepcopy(generation_instructions)
             generation_instructions_copy.generate_by_project_instruction = GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS
-            produce_results_and_displays(
+            produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
                 cfx_library=cfx_library,
                 generation_instructions=generation_instructions_copy,
                 display_without_cumulative_eras=display_without_cumulative_eras,
@@ -123,7 +131,7 @@ def produce_results_and_displays(
 
             generation_instructions_copy = copy.deepcopy(generation_instructions)
             generation_instructions_copy.generate_by_project_instruction = GenerateByProjectInstruction.BY_PROJECT
-            produce_results_and_displays(
+            produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
                 cfx_library=cfx_library,
                 generation_instructions=generation_instructions_copy,
                 display_without_cumulative_eras=display_without_cumulative_eras,
@@ -144,7 +152,7 @@ def produce_results_and_displays(
         )
 
     with logger_config.stopwatch_alert_if_exceeds_duration("compute_cumulative_counts", duration_threshold_to_alert_info_in_s=0.1):
-        all_results_to_display.compute_cumulative_counts()
+        all_results_to_display.compute_cumulative_counts_number_of_state_per_date()
 
     generation_label_for_valid_file_name = string_utils.format_filename(generation_label).lstrip()
     generic_output_files_path_without_suffix_and_extension = f"{generation_instructions.output_directory_name}/{generation_label_for_valid_file_name}"
@@ -172,11 +180,13 @@ def produce_results_and_displays(
 
     if generation_instructions.create_excel_file:
         with logger_config.stopwatch_with_label(label=f"produce_excel_output_file,  {generation_label}", inform_beginning=True):
-            produce_excel_output_file(output_excel_file=f"{generic_output_files_path_without_suffix_and_extension}.xlsx", all_results_to_display=all_results_to_display)
+            produce_excel_output_file_results_number_of_cfx_by_state_per_date(
+                output_excel_file=f"{generic_output_files_path_without_suffix_and_extension}.xlsx", all_results_to_display=all_results_to_display
+            )
 
     if display_with_cumulative_eras:
         with logger_config.stopwatch_with_label(label=f"produce_displays cumulative,  {generation_label}", inform_beginning=True, monitor_ram_usage=True):
-            produce_displays_and_create_html(
+            produce_displays_and_create_html_number_of_cfx_by_state_per_date(
                 generation_instructions=generation_instructions,
                 use_cumulative=True,
                 all_results_to_display=all_results_to_display,
@@ -186,7 +196,7 @@ def produce_results_and_displays(
             )
     if display_without_cumulative_eras:
         with logger_config.stopwatch_with_label(label=f"produce_displays numbers, filter {generation_label} library {cfx_library.label}", inform_beginning=True, monitor_ram_usage=True):
-            produce_displays_and_create_html(
+            produce_displays_and_create_html_number_of_cfx_by_state_per_date(
                 generation_instructions=generation_instructions,
                 use_cumulative=False,
                 all_results_to_display=all_results_to_display,
@@ -196,10 +206,10 @@ def produce_results_and_displays(
             )
 
 
-def produce_excel_output_file(output_excel_file: str, all_results_to_display: AllResultsPerDatesWithDebugDetails) -> None:
+def produce_excel_output_file_results_number_of_cfx_by_state_per_date(output_excel_file: str, all_results_to_display: AllResultsPerDatesWithDebugDetails) -> None:
     # Convert data to DataFrame for Excel output
 
-    state_counts_per_timestamp: List[dict[State, int]] = all_results_to_display.get_state_counts_per_timestamp()
+    state_counts_per_timestamp: List[Dict[State, int]] = all_results_to_display.get_state_counts_per_timestamp()
     all_timestamps: List[datetime.datetime] = all_results_to_display.get_all_timestamps()
 
     # Convert state enumerations to their names for DataFrame columns
@@ -212,8 +222,8 @@ def produce_excel_output_file(output_excel_file: str, all_results_to_display: Al
         data_for_excel.to_excel(writer, sheet_name="CFX State Counts")
 
 
-def produce_displays_and_create_html(
-    generation_instructions: GenerationInstructions,
+def produce_displays_and_create_html_number_of_cfx_by_state_per_date(
+    generation_instructions: NumberOfCfxStatePerDateGenerationInstructions,
     use_cumulative: bool,
     all_results_to_display: AllResultsPerDates,
     window_title: str,
@@ -294,14 +304,149 @@ def produce_displays_and_create_html(
     logger_config.print_and_log_current_ram_usage(prefix="After UI computation", previous_reference_rss_value_and_label=[before_plots_computation_ram_rss, "Compared to before UI computation"])
 
 
-def produce_results_and_displays_for_libary(
+def produce_baregraph_number_of_cfx(
     cfx_library: ChampFXLibrary,
-    generation_instructions: GenerationInstructionsForLibary,
+    generation_instructions: NumberOfCfxByCriteriaGenerationInstructionsForLibrary,
 ) -> None:
 
     if generation_instructions.for_global:
 
-        produce_results_and_displays(
+        # Get cfx matching filter
+        all_cfx_to_consider = cfx_library.get_all_cfx_matching_filters(static_criteria_filters=generation_instructions.static_criteria_filters)
+        logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx: {len(all_cfx_to_consider)} CFX to consider")
+
+        all_cfx_to_consider_per_subsystem_per_state_dict: Dict[State, int] = {}
+        all_cfx_to_consider_per_state_list: List[int] = []
+        for state_it in State:
+            all_cfx_to_consider_per_subsystem_per_state_dict[state_it] = 0
+            all_cfx_to_consider_per_state_list.append(0)
+
+        for cfx_entry in all_cfx_to_consider:
+            all_cfx_to_consider_per_subsystem_per_state_dict[cfx_entry._state] += 1
+
+        # Remove key of 0 values
+        all_cfx_to_consider_per_subsystem_per_state_dict = {state: count for state, count in all_cfx_to_consider_per_subsystem_per_state_dict.items() if count != 0}
+
+        logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx. all_cfx_to_consider_per_state: {all_cfx_to_consider_per_subsystem_per_state_dict}")
+
+        # Create figure and bar chart
+        fig, ax = plt.subplots(figsize=(12, 6))
+        plt.bar(range(len(all_cfx_to_consider_per_subsystem_per_state_dict)), list(all_cfx_to_consider_per_subsystem_per_state_dict.values()), align="center")
+        plt.xticks(range(len(all_cfx_to_consider_per_subsystem_per_state_dict)), list(all_cfx_to_consider_per_subsystem_per_state_dict.keys()))
+        plt.title("Number of CFX per state")
+        plt.xlabel("State")
+        plt.ylabel("Number of CFX")
+
+        # Add tooltips
+        tooltip_data = []
+        for state, count in all_cfx_to_consider_per_subsystem_per_state_dict.items():
+            tooltip_data.append(f"State: {state}\nCount: {count}")
+
+        # Helper function to create a closure that captures the correct text
+        def create_tooltip_handler(text: str) -> Any:
+            return lambda sel: sel.annotation.set_text(text)
+
+        # Add cursor tooltips to all bar patches
+        tooltip_idx = 0
+        for container in ax.containers:
+            for patch in container:
+                if tooltip_idx < len(tooltip_data):
+                    mplcursors.cursor(patch, hover=HoverMode.Transient).connect("add", create_tooltip_handler(tooltip_data[tooltip_idx]))
+                    tooltip_idx += 1
+
+    if generation_instructions.by_current_owner_role:
+
+        # Get cfx matching filter
+        all_cfx_to_consider = cfx_library.get_all_cfx_matching_filters(static_criteria_filters=generation_instructions.static_criteria_filters)
+        logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx: {len(all_cfx_to_consider)} CFX to consider")
+
+        all_cfx_to_consider_per_subsystem_per_state_dict: Dict[SubSystem, Dict[State, int]] = {}
+        for subsystem_it in SubSystem:
+            all_cfx_to_consider_per_subsystem_per_state_dict[subsystem_it] = {}
+            for state_it in State:
+                all_cfx_to_consider_per_subsystem_per_state_dict[subsystem_it][state_it] = 0
+
+        logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx. Empty all_cfx_to_consider_per_subsystem_per_state_dict: {all_cfx_to_consider_per_subsystem_per_state_dict}")
+
+        for cfx_entry in all_cfx_to_consider:
+            cfx_current_owner_role = cfx_entry._current_owner_role
+            cfx_state = cfx_entry._state
+            all_cfx_to_consider_per_subsystem_per_state_dict[cfx_current_owner_role][cfx_state] += 1
+
+        logger_config.print_and_log_info(f"produce_baregraph_number_of_cfx. all_cfx_to_consider_per_subsystem_per_state_dict: {all_cfx_to_consider_per_subsystem_per_state_dict}")
+        # Remove key of 0 values for states
+        for subsystem_it in SubSystem:
+            all_cfx_to_consider_per_subsystem_per_state_dict[subsystem_it] = {
+                number_of_cfx_by_state: count for number_of_cfx_by_state, count in all_cfx_to_consider_per_subsystem_per_state_dict[subsystem_it].items() if count != 0
+            }
+
+        logger_config.print_and_log_info(
+            f"produce_baregraph_number_of_cfx. after removing 0 States of each subsystem, all_cfx_to_consider_per_subsystem_per_state_dict: {all_cfx_to_consider_per_subsystem_per_state_dict}"
+        )
+        # Remove subsystem who don't have any state
+        all_cfx_to_consider_per_subsystem_per_state_dict = {states: dict_by_state for states, dict_by_state in all_cfx_to_consider_per_subsystem_per_state_dict.items() if dict_by_state != {}}
+
+        logger_config.print_and_log_info(
+            f"produce_baregraph_number_of_cfx. after removing subsystem with no state, all_cfx_to_consider_per_subsystem_per_state_dict: {all_cfx_to_consider_per_subsystem_per_state_dict}"
+        )
+
+        # Convert nested dict to DataFrame
+        data = []
+        for subsystem_it, state_dict in all_cfx_to_consider_per_subsystem_per_state_dict.items():
+            for state_it, count in state_dict.items():
+                data.append({"SubSystem": str(subsystem_it), "State": str(state_it), "Count": count, "StateValue": state_it.value})
+
+        df = pd.DataFrame(data)
+
+        # Create grouped bar chart
+        fig, ax = plt.subplots(figsize=(12, 6))
+        df_pivot = df.pivot(index="SubSystem", columns="State", values="Count").fillna(0)
+        # Sort columns (States) by their enum value
+        state_order = sorted(df_pivot.columns, key=lambda x: df[df["State"] == x]["StateValue"].iloc[0])
+        df_pivot = df_pivot[state_order]
+        df_pivot.plot(kind="bar", ax=ax, width=0.8)
+
+        # Add tooltips with mplcursors for each bar
+        tooltip_data = []
+        for idx, subsystem in enumerate(df_pivot.index):
+            for state in df_pivot.columns:
+                count = int(df_pivot.loc[subsystem, state])
+                tooltip_data.append(f"SubSystem: {subsystem}\nState: {state}\nCount: {count}")
+
+        # Helper function to create a closure that captures the correct text
+        def create_tooltip_handler(text: str) -> Any:
+            return lambda sel: sel.annotation.set_text(text)
+
+        # Add cursor tooltips to all bar patches
+        tooltip_idx = 0
+        for container in ax.containers:
+            for patch in container:
+                if tooltip_idx < len(tooltip_data):)
+                    mplcursors.cursor(patch, hover=HoverMode.Transient).connect("add", create_tooltip_handler(tooltip_data[tooltip_idx]))
+                    tooltip_idx += 1
+
+        # Customize the plot
+        ax.set_xlabel("State", fontsize=12, fontweight="bold")
+        ax.set_ylabel("Count", fontsize=12, fontweight="bold")
+        ax.set_title("CFX Count by SubSystem and State", fontsize=14, fontweight="bold")
+        ax.legend(title="States", bbox_to_anchor=(1.05, 1), loc="upper left")
+        ax.grid(axis="y", alpha=0.3)
+        plt.xticks(rotation=45, ha="right")
+        plt.tight_layout()
+
+    # Display plot if required
+    # if generation_instructions.display_output_plots:
+    # plt.show()
+
+
+def produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
+    cfx_library: ChampFXLibrary,
+    generation_instructions: NumberOfCfxStatePerDateGenerationInstructionsForLibrary,
+) -> None:
+
+    if generation_instructions.for_global:
+
+        produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
             cfx_library=cfx_library,
             generation_instructions=generation_instructions,
             display_without_cumulative_eras=True,
@@ -316,7 +461,7 @@ def produce_results_and_displays_for_libary(
                 ChampFxFilter(role_depending_on_date_filter=ChampFXRoleDependingOnDateFilter(roles_at_date_allowed=[subsystem]))
             ]
             with logger_config.stopwatch_with_label(label=f"{cfx_library.label} produce_results_and_displays for {subsystem.name}", inform_beginning=True, monitor_ram_usage=True):
-                produce_results_and_displays(
+                produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
                     cfx_library=cfx_library,
                     generation_instructions=generation_instructions_copy,
                     display_without_cumulative_eras=False,
@@ -329,7 +474,7 @@ def produce_results_and_displays_for_libary(
                 generation_instructions_copy = copy.deepcopy(generation_instructions)
                 generation_instructions_copy.cfx_filters = generation_instructions_copy.cfx_filters + [ChampFxFilter(field_filters=[ChampFxFilterFieldSubsystem(field_accepted_values=[subsystem])])]
 
-                produce_results_and_displays(
+                produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
                     cfx_library=cfx_library,
                     generation_instructions=generation_instructions_copy,
                     display_without_cumulative_eras=False,

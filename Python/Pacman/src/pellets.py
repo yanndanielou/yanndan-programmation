@@ -1,0 +1,75 @@
+import pygame
+from vector import Vector2
+from constants import *
+import constants
+from typing import List
+import numpy as np
+import numpy
+
+
+class Pellet(object):
+    def __init__(self, row: int, column: int) -> None:
+        self.name = constants.PELLET
+        self.position = Vector2(column * constants.TILEWIDTH, row * constants.TILEHEIGHT)
+        self.color = constants.WHITE
+        self.radius = int(2 * constants.TILEWIDTH / 16)
+        self.collideRadius = 2 * constants.TILEWIDTH / 16
+        self.points = 10
+        self.visible = True
+
+    def render(self, screen: pygame.surface.SurfaceType) -> None:
+        if self.visible:
+            adjust = Vector2(constants.TILEWIDTH, constants.TILEHEIGHT) / 2
+            p = self.position + adjust
+            pygame.draw.circle(screen, self.color, p.asInt(), self.radius)
+
+
+class PowerPellet(Pellet):
+    def __init__(self, row: int, column: int) -> None:
+        Pellet.__init__(self, row, column)
+        self.name = constants.POWERPELLET
+        self.radius = int(8 * constants.TILEWIDTH / 16)
+        self.points = 50
+        self.flashTime = 0.2
+        self.timer: float = 0
+
+    def update(self, dt: float) -> None:
+        self.timer += dt
+        if self.timer >= self.flashTime:
+            self.visible = not self.visible
+            self.timer = 0
+
+
+class PelletGroup:
+    def __init__(self, pelletfile: str) -> None:
+        self.pelletList: List[Pellet] = []
+        self.powerpellets: List[PowerPellet] = []
+        self.createPelletList(pelletfile)
+        self.numEaten = 0
+
+    def update(self, dt: float) -> None:
+        for powerpellet in self.powerpellets:
+            powerpellet.update(dt)
+
+    def createPelletList(self, pelletfile: str) -> None:
+        data = self.readPelletfile(pelletfile)
+        for row in range(data.shape[0]):
+            for col in range(data.shape[1]):
+                if data[row][col] in [".", "+"]:
+                    self.pelletList.append(Pellet(row, col))
+                elif data[row][col] in ["P", "p"]:
+                    pp = PowerPellet(row, col)
+                    self.pelletList.append(pp)
+                    self.powerpellets.append(pp)
+
+    def readPelletfile(self, textfile: str) -> numpy.ndarray:
+        return np.loadtxt(textfile, dtype="<U1")
+
+    def isEmpty(self) -> bool:
+        if len(self.pelletList) == 0:
+            return True
+        return False
+
+    def render(self, screen: pygame.surface.Surface) -> None:
+        for pellet in self.pelletList:
+            pellet.render(screen)

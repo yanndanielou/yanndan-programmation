@@ -1,0 +1,43 @@
+
+[project]
+name = "parsedml" # REQUIRED, is the only field that cannot be marked as dynamic.
+version = "0.0.0" # REQUIRED, although can be dynamic
+description = "Parse DML"
+
+[project.optional-dependencies]
+dev = ["check-manifest"]
+test = ["coverage"]
+
+[tool.pylint.'MESSAGES CONTROL']
+[tool.pylint]
+disable = ["C0114", "C0115", "C0116"]  # Désactivation de certaines règles
+#missing-function-docstring
+#missing-module-docstring
+#Missing class docstringPylintC0115:missing-class-docstring
+max-line-length = 210
+
+[tool.mypy]
+# Disallow functions or methods without type annotations
+disallow_untyped_defs = true
+# Disallow calls to functions or methods without type annotations
+disallow_untyped_calls = true
+# Enforce type annotations for partially defined functions
+disallow_incomplete_defs = true
+# Check untyped function definitions even if they are not called
+check_untyped_defs = true
+# Warn if a function returns a value of type "Any"
+warn_return_any = true
+# Ignore missing imports (useful for third-party libraries without type hints)
+ignore_missing_imports = true
+# Warn if configurations are defined but unused
+warn_unused_configs = true
+# Enable strict checks for optional types (e.g., Optional[str])
+strict_optional = true
+# Warn about redundant type casts
+warn_redundant_casts = true
+# Warn about unnecessary "type: ignore" comments
+warn_unused_ignores = true
+
+
+[tool.black]
+line-length = 200

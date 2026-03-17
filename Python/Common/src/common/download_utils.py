@@ -44,9 +44,13 @@ def get_files_and_modification_time(directory_path: str, filename_pattern: str) 
 class DownloadFileDetector:
 
     @dataclass
+    class RetryInCaseOfErrorAction:
+        max_number_of_retry: Optional[int] = None
+
+    @dataclass
     class FileMoveAfterDownloadAction:
         final_path: str
-        retry_in_case_of_error: bool = False
+        retry_in_case_of_error: Optional["DownloadFileDetector.RetryInCaseOfErrorAction"] = None
 
     directory_path: str
     filename_pattern: str
@@ -91,13 +95,41 @@ class DownloadFileDetector:
             time.sleep(1)
             current_file_size = os.path.getsize(file_path)
             if current_file_size == previous_file_size:
-                logger_config.print_and_log_info(f"{self.label_with_separator}Size of {file_path} is stable to {humanize.naturalsize(current_file_size)}. Do not wait anymore")
+                logger_config.print_and_log_info(f"{self.label_with_separator}Size of {file_path} is stable at {humanize.naturalsize(current_file_size)}. Do not wait anymore")
                 return
 
             logger_config.print_and_log_info(
                 f"{self.label_with_separator}Size of {file_path} changed from {humanize.naturalsize(previous_file_size)} to {humanize.naturalsize(current_file_size)}. Keep waiting"
             )
             previous_file_size = current_file_size
+
+    def _move_file_after_download_if_needed(self, file_detected_path: str) -> str:
+
+        if self.file_move_after_download_action:
+            logger_config.print_and_log_info(f"{self.label_with_separator}File downloaded : {file_detected_path}, will be moved to {self.file_move_after_download_action.final_path}")
+            move_success = False
+
+            retry_in_case_of_error = self.file_move_after_download_action.retry_in_case_of_error
+
+            if retry_in_case_of_error:
+
+                number_of_retried_performed = 0
+                while not move_success and (retry_in_case_of_error.max_number_of_retry is None or retry_in_case_of_error.max_number_of_retry > number_of_retried_performed):
+                    try:
+                        shutil.move(file_detected_path, self.file_move_after_download_action.final_path)
+                        move_success = True
+                    except PermissionError:
+                        # logger_config.print_and_log_exception(permErr)
+                        logger_config.print_and_log_error(f"{self.label_with_separator}File " + file_detected_path + " is used. Release it")
+                        number_of_retried_performed += 1
+                        time.sleep(number_of_retried_performed)
+            else:
+                shutil.move(file_detected_path, self.file_move_after_download_action.final_path)
+
+            return self.file_move_after_download_action.final_path
+
+        else:
+            return file_detected_path
 
     def monitor_download_by_polling(self) -> Optional[str]:
 
@@ -116,25 +148,10 @@ class DownloadFileDetector:
                 logger_config.print_and_log_info(f"{self.label_with_separator}File download found after manual scan:{file_detected_path}")
                 self.wait_for_file_size_is_stable(file_path=file_detected_path)
 
-                if self.file_move_after_download_action:
-                    logger_config.print_and_log_info(f"{self.label_with_separator}File downloaded : {file_detected_path}, will be moved to {self.file_move_after_download_action.final_path}")
-                    move_success = False
+                return self._move_file_after_download_if_needed(file_detected_path)
 
-                    if self.file_move_after_download_action.retry_in_case_of_error:
-                        while not move_success:
-                            try:
-                                shutil.move(file_detected_path, self.file_move_after_download_action.final_path)
-                                move_success = True
-                            except PermissionError:
-                                # logger_config.print_and_log_exception(permErr)
-                                logger_config.print_and_log_error("{self.label_with_separator}File " + file_detected_path + " is used. Relase it")
-                                time.sleep(1)
-                    else:
-                        shutil.move(file_detected_path, self.file_move_after_download_action.final_path)
-
-                    return self.file_move_after_download_action.final_path
-
-                return file_detected_path
+        logger_config.print_and_log_error(f"{self.label_with_separator}Timeout raised when trying to download {self.filename_pattern}")
+        return None
 
     def monitor_download_automatically_with_event_handler(self) -> Optional[str]:
         download_event_handler = DownloadEventHandler(self.filename_pattern)
@@ -158,25 +175,8 @@ class DownloadFileDetector:
                     logger_config.print_and_log_info(f"{self.label_with_separator}File download found after manual scan:{file_detected_path}")
                     self.wait_for_file_size_is_stable(file_path=file_detected_path)
 
-                    if self.file_move_after_download_action:
-                        logger_config.print_and_log_info(f"{self.label_with_separator}File downloaded : {file_detected_path}, will be moved to {self.file_move_after_download_action.final_path}")
-                        move_success = False
+                    return self._move_file_after_download_if_needed(file_detected_path)
 
-                        if self.file_move_after_download_action.retry_in_case_of_error:
-                            while not move_success:
-                                try:
-                                    shutil.move(file_detected_path, self.file_move_after_download_action.final_path)
-                                    move_success = True
-                                except PermissionError:
-                                    # logger_config.print_and_log_exception(permErr)
-                                    logger_config.print_and_log_error("{self.label_with_separator}File " + file_detected_path + " is used. Relase it")
-                                    time.sleep(1)
-                        else:
-                            shutil.move(file_detected_path, self.file_move_after_download_action.final_path)
-
-                        return self.file_move_after_download_action.final_path
-
-                    return file_detected_path
         except KeyboardInterrupt:
             observer.stop()
             logger_config.print_and_log_warning(f"{self.label_with_separator}KeyboardInterrupt")

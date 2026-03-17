@@ -61,7 +61,8 @@ class PcapDissector:
             raise ValueError("Capture not loaded. Call 'load_capture()' first.")
 
         for packet in self.capture:
-            print(packet.pretty_print())
+            packet = cast(pyshark.packet.packet.Packet, packet)
+            packet.pretty_print()
 
     def fill_dictionnary_for_each_packet(self) -> None:
 

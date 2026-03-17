@@ -3,11 +3,13 @@ import fnmatch
 import os
 import shutil
 import tempfile
+import time
 from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Tuple, cast
 
+import natsort
 from logger import logger_config
 
 from common import file_name_utils
@@ -32,6 +34,20 @@ def temporary_copy_of_file(input_file_full_path: str) -> Generator[str, None, No
     shutil.rmtree(temp_dir_path)
 
 
+def remove_folder_and_recreate_it_empty(directory_path: str) -> bool:
+    remove_folder_even_if_not_empty(directory_path)
+    return create_folder_if_not_exist(directory_path)
+
+
+def remove_folder_even_if_not_empty(directory_path: str) -> bool:
+    if os.path.exists(directory_path):
+        shutil.rmtree(directory_path)
+        return True
+    else:
+        logger_config.print_and_log_info(f"Folder {directory_path} did not exist")
+        return False
+
+
 def create_folder_if_not_exist(directory_path: str) -> bool:
     if not os.path.exists(directory_path):
         logger_config.print_and_log_info(f"Create folder {directory_path}")
@@ -42,12 +58,15 @@ def create_folder_if_not_exist(directory_path: str) -> bool:
         return False
 
 
-def get_files_by_directory_and_file_name_mask(directory_path: str, filename_pattern: str) -> List[str]:
+def get_files_by_directory_and_file_name_mask(directory_path: str, filename_pattern: str, alphanumerical_order: bool = False) -> List[str]:
     files_paths: List[str] = []
     for file in os.listdir(directory_path):
         if fnmatch.fnmatch(file, filename_pattern):
             file_path = os.path.join(directory_path, file)
             files_paths.append(file_path)
+
+    if alphanumerical_order:
+        return natsort.natsorted(files_paths)
     return files_paths
 
 
@@ -56,3 +75,16 @@ def get_files_modification_time(files_paths: List[str]) -> List[Tuple[str, datet
     for file_path in files_paths:
         files_and_modified_time.append((file_path, datetime.fromtimestamp(os.path.getmtime(file_path))))
     return files_and_modified_time
+
+
+def rename_file_and_wait_if_is_locked(origin_path: str, dest_path: str) -> str:
+
+    success = False
+    while not success:
+        try:
+            return cast(str, shutil.copy(origin_path, dest_path))
+        except Exception as e:
+            logger_config.print_and_log_exception(e)
+            logger_config.print_and_log_error(f"Could not copy to :{dest_path}, must be used")
+            time.sleep(1)
+    assert False

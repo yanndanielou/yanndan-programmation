@@ -18,8 +18,14 @@ class TestWithoutDiacritics:
 
 
 class TestSeparators:
-    def test_right_part_after_last_occurence(self) -> None:
-        assert string_utils.right_part_after_last_occurence("abcde", "d") == "e"
+
+    @pytest.mark.parametrize("input_string, separator, expected_result", [("abcde", "d", "e")])
+    def test_right_part_after_last_occurence(self, input_string: str, separator: str, expected_result: str) -> None:
+        assert string_utils.right_part_after_last_occurence(input_string, separator) == expected_result
+
+    @pytest.mark.parametrize("input_string, separator, expected_result", [("abc", "b", "a"), ("abcde", "d", "abc"), ("abcdeabcde", "d", "abcdeabc")])
+    def test_left_part_after_last_occurence(self, input_string: str, separator: str, expected_result: str) -> None:
+        assert string_utils.left_part_after_last_occurence(input_string, separator) == expected_result
 
 
 class TestApplicationWithoutHmi:
@@ -87,6 +93,8 @@ class TestTextToValidEnumValueText:
         CHANGE_INTERNAL = auto()
         N_A_CHANGE_REQUEST = auto()
         AFFECTED_PACKAGE_IS_NOT_INSTALLED = auto()
+        NON_EXAMINE = auto()
+        PAS_DE_FA = auto()
 
     # fmt: off
     text_to_valid_enum_value_text = ["no fix change",
@@ -94,7 +102,10 @@ class TestTextToValidEnumValueText:
     "not-A-bug",
     "Change, internal",
     "Affected package is not installed.",
-    "N/A (Change Request)"] 
+    "N/A (Change Request)",
+    "pas de FA ",
+    "Non examiné ",
+    "Non examiné",] 
     # fmt: on
 
     @pytest.mark.parametrize("raw_text", text_to_valid_enum_value_text)

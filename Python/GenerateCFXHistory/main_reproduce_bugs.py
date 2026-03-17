@@ -5,7 +5,7 @@ from typing import Set, Dict, Any
 from dateutil import relativedelta
 from logger import logger_config
 
-from generatecfxhistory import cfx
+from generatecfxhistory import cfx, inputs
 from generatecfxhistory import ui_and_results_generation, release_role_mapping, role
 
 OUTPUT_DIRECTORY_NAME = "output_all_projects"
@@ -22,7 +22,7 @@ def main() -> None:
             os.mkdir(OUTPUT_DIRECTORY_NAME)
 
         cfx_inputs = (
-            cfx.ChampFxInputsBuilder()
+            inputs.ChampFxInputsWithFilesBuilder()
             .add_champfx_details_excel_files_by_directory_and_file_name_mask(directory_path="Input_Downloaded", filename_pattern="details_project_other_projects.xlsx")
             .add_champfx_states_changes_excel_files_by_directory_and_file_name_mask(directory_path="Input_Downloaded", filename_pattern="states_changes_other_projects.xlsx")
             .build()
@@ -36,7 +36,7 @@ def main() -> None:
         for cfx_entry in champfx_library.get_all_cfx():
             assert cfx_entry.get_oldest_change_action_by_new_state(cfx.State.SUBMITTED), cfx_entry.cfx_id
 
-        ui_and_results_generation.produce_results_and_displays_for_libary(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=champfx_library,
             output_directory_name=OUTPUT_DIRECTORY_NAME,
             for_global=True,
@@ -48,7 +48,7 @@ def main() -> None:
             generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
         )
 
-        ui_and_results_generation.produce_results_and_displays_for_libary(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=champfx_library,
             output_directory_name=OUTPUT_DIRECTORY_NAME,
             for_global=True,
@@ -63,7 +63,7 @@ def main() -> None:
             generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
         )
 
-        ui_and_results_generation.produce_results_and_displays_for_libary(
+        ui_and_results_generation.produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
             cfx_library=champfx_library,
             output_directory_name=OUTPUT_DIRECTORY_NAME,
             for_global=True,
@@ -78,7 +78,7 @@ def main() -> None:
             generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
         )
 
-        ui_and_results_generation.produce_results_and_displays(
+        ui_and_results_generation.produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
             cfx_library=champfx_library,
             output_directory_name=OUTPUT_DIRECTORY_NAME,
             display_without_cumulative_eras=False,
@@ -94,7 +94,7 @@ def main() -> None:
             generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
         )
 
-        ui_and_results_generation.produce_results_and_displays(
+        ui_and_results_generation.produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
             cfx_library=champfx_library,
             output_directory_name=OUTPUT_DIRECTORY_NAME,
             display_without_cumulative_eras=False,

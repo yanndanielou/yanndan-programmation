@@ -30,3 +30,12 @@ class TestFileName:
     )
     def test_file_name(self, full_path: str, expected_file_name: str) -> None:
         assert file_name_utils.get_file_name_without_extension_from_full_path(full_path) == expected_file_name
+
+
+class TestFileFolder:
+    @pytest.mark.parametrize(
+        "full_path, expected_directory_path",
+        [("Input_for_tests\\main_word.docx", "Input_for_tests"), ("Input_for_tests/main_word.docx", "Input_for_tests"), (r"Input_for_tests\main_word.docx", "Input_for_tests")],
+    )
+    def test_file_directory(self, full_path: str, expected_directory_path: str) -> None:
+        assert file_name_utils.get_file_folder_from_full_path(full_path) == expected_directory_path

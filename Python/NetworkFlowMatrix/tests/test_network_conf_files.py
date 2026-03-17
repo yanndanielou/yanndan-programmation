@@ -5,49 +5,57 @@ import pytest
 from tests import secret_tests_data
 
 from networkflowmatrix.network_conf_files import (
-    NetworkConfFilesEquipmentsLibrary,
     NetworkConfFile,
 )
 
+from networkflowmatrix.equipments import (
+    NetworkConfFilesEquipmentsLibrary,
+)
+
 from networkflowmatrix.network_conf_files_descriptions_data import (
-    SolStdNetworkConfV10Description,
+    SolStdNetworkConfV11Description,
 )
 
 
 @pytest.fixture(scope="session", name="parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture")
-def parse_std_sol_dossier_conf_v10_file_and_build_objects() -> NetworkConfFile:
+def parse_std_sol_dossier_conf_v11_file_and_build_objects() -> NetworkConfFile:
     equipments_library = NetworkConfFilesEquipmentsLibrary()
     dossier_conf = NetworkConfFile.Builder.build_with_excel_file(
         equipments_library=equipments_library,
-        excel_file_full_path=SolStdNetworkConfV10Description().excel_file_full_path,
-        equipment_definition_tabs=SolStdNetworkConfV10Description().all_tabs_definition,
+        excel_file_full_path=SolStdNetworkConfV11Description().excel_file_full_path,
+        equipment_definition_tabs=SolStdNetworkConfV11Description().all_tabs_definition,
     )
     return dossier_conf
 
 
-class TestSolStdNetworkV10ConfFileTabIpCbtcOnly:
+class TestSolStdNetworkV11ConfFileTabIpCbtcOnly:
     def test_no_error(self) -> None:
         equipments_library = NetworkConfFilesEquipmentsLibrary()
         std_sol_dossier_conf = NetworkConfFile.Builder.build_with_excel_file(
             equipments_library=equipments_library,
-            excel_file_full_path=SolStdNetworkConfV10Description().excel_file_full_path,
-            equipment_definition_tabs=[SolStdNetworkConfV10Description().ip_cbtc_tab],
+            excel_file_full_path=SolStdNetworkConfV11Description().excel_file_full_path,
+            equipment_definition_tabs=[SolStdNetworkConfV11Description().ip_cbtc_tab],
         )
         assert std_sol_dossier_conf
+        assert std_sol_dossier_conf.all_equipments
+        assert std_sol_dossier_conf.equipment_definition_tabs
+        assert equipments_library.all_network_conf_files_defined_equipments
+        assert equipments_library._network_conf_files_defined_equipments_by_raw_ip_addresses
+        assert equipments_library.network_conf_files_defined_equipments_by_id
 
     def all_ip_definitions_have_decoded_ip_addresses(self) -> None:
         equipments_library = NetworkConfFilesEquipmentsLibrary()
         std_sol_dossier_conf = NetworkConfFile.Builder.build_with_excel_file(
             equipments_library=equipments_library,
-            excel_file_full_path=SolStdNetworkConfV10Description().excel_file_full_path,
-            equipment_definition_tabs=[SolStdNetworkConfV10Description().ip_cbtc_tab],
+            excel_file_full_path=SolStdNetworkConfV11Description().excel_file_full_name,
+            equipment_definition_tabs=[SolStdNetworkConfV11Description().ip_cbtc_tab],
         )
         assert std_sol_dossier_conf
 
 
-class TestSolStdNetworkV10FullConfFile:
+class TestSolStdNetworkV11FullConfFile:
     def test_no_empty_ip_address(self, parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture: NetworkConfFile) -> None:
-        for network_conf_files_defined_equipment in parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture.equipments_library.network_conf_files_defined_equipments:
+        for network_conf_files_defined_equipment in parse_std_sol_dossier_conf_v10_file_and_build_objects_fixture.equipments_library.all_network_conf_files_defined_equipments:
             for ip_address in network_conf_files_defined_equipment.ip_addresses:
                 ip_address.check_valid_and_raise_if_error()
 
@@ -70,8 +78,8 @@ class TestSolStdNetworkV10FullConfFile:
         equipments_library = NetworkConfFilesEquipmentsLibrary()
         std_sol_dossier_conf = NetworkConfFile.Builder.build_with_excel_file(
             equipments_library=equipments_library,
-            excel_file_full_path=SolStdNetworkConfV10Description().excel_file_full_path,
-            equipment_definition_tabs=[SolStdNetworkConfV10Description().ip_pmb_tab],
+            excel_file_full_path=SolStdNetworkConfV11Description().excel_file_full_name,
+            equipment_definition_tabs=[SolStdNetworkConfV11Description().ip_pmb_tab],
         )
         equipment_that_must_have_no_address = std_sol_dossier_conf.equipments_library.get_existing_network_conf_file_eqpt_by_name(equipment_name)
         assert equipment_that_must_have_no_address

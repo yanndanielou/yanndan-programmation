@@ -9,7 +9,11 @@ from logger import logger_config
 
 
 if TYPE_CHECKING:
-    from networkflowmatrix.equipments import TrainUnbreakableSingleUnit, Equipment, NetworkConfFilesEquipmentsLibrary, NetworkConfFilesDefinedEquipment
+    from networkflowmatrix.equipments import TrainUnbreakableSingleUnit, NetworkConfFilesEquipmentsLibrary, NetworkConfFilesDefinedEquipment
+    from networkflowmatrix.network_conf_files_descriptions_data import ExcelInputFileDescription
+    from networkflowmatrix.groups import GroupDefinition
+
+from networkflowmatrix import constants, revenue_services, seclab, network_entity_provider
 
 
 @dataclass
@@ -24,9 +28,9 @@ class NetworkConfFilesDefinedIpAddress(ABC):
 
 @dataclass
 class NetworkConfFilesDefinedUnicastIpAddress(NetworkConfFilesDefinedIpAddress):
-    mask: str
+    mask: Optional[str]
     gateway: Optional[str]
-    vlan_name: str | int
+    vlan_name: Optional[str | int]
     gateway_is_optional: bool
     mask_is_optional: bool
 
@@ -50,12 +54,6 @@ class InformationDefinitionBase(ABC):
         pass
 
 
-class ForcedNoneValueInformationDefinition(InformationDefinitionBase):
-
-    def get_value(self, row: pandas.Series) -> Optional[str] | Optional[int]:
-        return None
-
-
 @dataclass
 class ForcedIntValueInformationDefinition(InformationDefinitionBase):
     value: Optional[int]
@@ -67,6 +65,9 @@ class ForcedIntValueInformationDefinition(InformationDefinitionBase):
 @dataclass
 class ForcedStrValueInformationDefinition(InformationDefinitionBase):
     value: Optional[str]
+
+    def get_value(self, row: pandas.Series) -> Optional[str] | Optional[int]:
+        return self.value
 
 
 @dataclass
@@ -103,40 +104,58 @@ class IpDefinitionColumnsInTab(ABC):
     all_ip_addresses_found: List[NetworkConfFilesDefinedIpAddress] = field(default_factory=list)
 
     @abstractmethod
-    def build_with_row(self, row: pandas.Series) -> NetworkConfFilesDefinedIpAddress:
+    def build_with_row(self, row: pandas.Series, equipments_library: "NetworkConfFilesEquipmentsLibrary", equipment_definition: "EquipmentDefinitionColumn") -> NetworkConfFilesDefinedIpAddress:
         pass
 
 
 @dataclass
 class UnicastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
-    equipment_vlan_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("VLAN ID"))
-    equipment_mask_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Masque"))
-    equipment_gateway_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Passerelle"))
+    equipment_vlan_column_definition: Optional[InformationDefinitionBase] = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("VLAN ID"))
+    equipment_mask_column_definition: Optional[InformationDefinitionBase] = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Masque"))
+    equipment_gateway_column_definition: Optional[InformationDefinitionBase] = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Passerelle"))
     gateway_is_optional: bool = False
     mask_is_optional: bool = False
 
-    def build_with_row(self, row: pandas.Series) -> NetworkConfFilesDefinedIpAddress:
+    def build_with_row(self, row: pandas.Series, equipments_library: "NetworkConfFilesEquipmentsLibrary", equipment_definition: "EquipmentDefinitionColumn") -> NetworkConfFilesDefinedIpAddress:
         equipment_raw_ip_address = cast(str, self.equipment_ip_address_column_definition.get_value(row))
 
-        assert equipment_raw_ip_address and isinstance(equipment_raw_ip_address, str), f"\n Ip address: {equipment_raw_ip_address}\nRow: {row}"
+        assert equipment_raw_ip_address and isinstance(equipment_raw_ip_address, str), f"\n Ip address: {equipment_raw_ip_address}\nRow: {row[:3]}"
 
         # ip_address = NetworkConfFilesDefinedUnicasttIpAddress(ip_raw=)
-        equipment_vlan = cast(int, self.equipment_vlan_column_definition.get_value(row))
+        if self.equipment_vlan_column_definition:
+            equipment_vlan = cast(int, self.equipment_vlan_column_definition.get_value(row))
 
-        assert equipment_vlan
-        assert (
-            isinstance(equipment_vlan, str) or isinstance(equipment_vlan, int) or isinstance(equipment_vlan, float)
-        ), f"{row} {self.equipment_gateway_column_definition} column {self.equipment_vlan_column_definition} is {equipment_vlan}"
+            assert equipment_vlan
+            assert (
+                isinstance(equipment_vlan, str) or isinstance(equipment_vlan, int) or isinstance(equipment_vlan, float)
+            ), f"{row} {self.equipment_gateway_column_definition} column {self.equipment_vlan_column_definition} is {equipment_vlan}"
+        else:
+            equipment_vlan = None
 
         equipment_ip_label = self.forced_label
 
-        equipment_raw_mask = cast(str, self.equipment_mask_column_definition.get_value(row))
-        assert self.mask_is_optional or equipment_raw_mask and isinstance(equipment_raw_mask, str)
+        if self.equipment_mask_column_definition:
+            equipment_raw_mask = cast(str, self.equipment_mask_column_definition.get_value(row))
+            assert self.mask_is_optional or equipment_raw_mask and isinstance(equipment_raw_mask, str)
+        else:
+            equipment_raw_mask = None
 
-        equipment_raw_gateway: Optional[str] = cast(str, self.equipment_gateway_column_definition.get_value(row))
-        if not isinstance(equipment_raw_gateway, str):
+        if self.equipment_gateway_column_definition:
+            equipment_raw_gateway: Optional[str] = cast(str, self.equipment_gateway_column_definition.get_value(row))
+            if isinstance(equipment_raw_gateway, str):
+                for gateway_equipment_name in equipment_definition.gateway_equipments_names:
+                    gateway_equipment = equipments_library.get_existing_equipment_by_name(expected_equipment_name=gateway_equipment_name, allow_not_exact_name=False)
+                    assert gateway_equipment, f"Could not find gateway equipment {gateway_equipment_name}"
+                    if equipment_raw_gateway not in [gateway_ip.ip_raw for gateway_ip in gateway_equipment.ip_addresses]:
+                        logger_config.print_and_log_info(
+                            f"{gateway_equipment_name}: add IP {equipment_raw_gateway} because is gateway of {equipment_definition.equipment_name_column_definition.get_value(row)} for {equipment_raw_ip_address}"
+                        )
+                        gateway_equipment.add_ip_address(NetworkConfFilesDefinedIpAddress(ip_raw=equipment_raw_gateway, label=f"Gateway of {equipment_ip_label}"))
+            else:
+                equipment_raw_gateway = None
+            assert self.gateway_is_optional or equipment_raw_gateway and isinstance(equipment_raw_gateway, str), f"{equipment_raw_ip_address} has no gateway"
+        else:
             equipment_raw_gateway = None
-        assert self.gateway_is_optional or equipment_raw_gateway and isinstance(equipment_raw_gateway, str), f"{equipment_raw_ip_address} has no gateway"
 
         ip_address = NetworkConfFilesDefinedUnicastIpAddress(
             ip_raw=equipment_raw_ip_address,
@@ -155,7 +174,7 @@ class UnicastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
 class MulticastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
     group_multicast: str = ""
 
-    def build_with_row(self, row: pandas.Series) -> NetworkConfFilesDefinedIpAddress:
+    def build_with_row(self, row: pandas.Series, equipments_library: "NetworkConfFilesEquipmentsLibrary", equipment_definition: "EquipmentDefinitionColumn") -> NetworkConfFilesDefinedIpAddress:
         equipment_raw_ip_address = cast(str, self.equipment_ip_address_column_definition.get_value(row))
         assert equipment_raw_ip_address and isinstance(equipment_raw_ip_address, str), f"\n Ip address: {equipment_raw_ip_address}\nRow: {row}"
 
@@ -167,13 +186,25 @@ class MulticastIpDefinitionColumnsInTab(IpDefinitionColumnsInTab):
 
 
 @dataclass
+class EquipmentDefinitionColumn:
+    equipment_type_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Type"))
+    equipment_ip_definitions: List["IpDefinitionColumnsInTab"] = field(default_factory=list)
+    equipment_name_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equipement"))
+    equipment_alternative_name_definition: Optional[InformationDefinitionBase] = None
+    groups_definitions: List["GroupDefinition"] = field(default_factory=list)
+    gateway_equipments_names: List[str] = field(default_factory=list)
+
+
+@dataclass
 class EquipmentDefinitionTab:
     tab_name: str
     rows_to_ignore: List[int]
-    equipment_type_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Type"))
-    equipment_ip_definitions: List["IpDefinitionColumnsInTab"] = field(default_factory=list)
-    equipment_name_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equipement"))
-    equipment_alternative_name_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("Equip_ID"))
+    equipment_definitions: List[EquipmentDefinitionColumn]
+    network_provider: Optional[network_entity_provider.NetworkEntityProvider]
+    seclab_side: seclab.SeclabSide
+    revenue_service_definition_fonction: revenue_services.RevenueServiceToEquipmentMatchingStrategy
+    equipment_ids_white_list_to_accept_only: Optional[List[str]] = None
+    equipment_ids_black_list_to_ignore: List[str] = field(default_factory=list)
 
 
 class TrainIdentifierDefinition(ABC):
@@ -183,17 +214,24 @@ class TrainIdentifierDefinition(ABC):
         pass
 
 
+@dataclass
 class TrainByCcIdColumnDefinition(TrainIdentifierDefinition):
 
-    def __init__(self) -> None:
-        self.cc_id_column_definition: InformationDefinitionBase = ExcelColumnDefinitionByColumnTitle("Type")
+    cc_id_column_definition: InformationDefinitionBase = field(default_factory=lambda: ExcelColumnDefinitionByColumnTitle("CC_ID"))
 
     def get_train(self, row: pandas.Series, equipment_library: "NetworkConfFilesEquipmentsLibrary") -> "TrainUnbreakableSingleUnit":
         cc_id = self.cc_id_column_definition.get_value(row)
-        assert cc_id
+        assert isinstance(cc_id, int) or isinstance(cc_id, float)
+        cc_id = int(cc_id)
+        if cc_id in constants.TO_IGNORE_TRAINS_IDS:
+            logger_config.print_and_log_info(f"Ignore cc_id {cc_id} because in black list {constants.TO_IGNORE_TRAINS_IDS}")
+            return [train for train in equipment_library.all_ignored_trains_unbreakable_units if train.cc_id == cc_id][0]
         assert isinstance(cc_id, int)
+        assert cc_id
+        assert cc_id > 0
+        # assert isinstance(cc_id, int)
         train = equipment_library.get_existing_train_unbreakable_unit_by_cc_id(cc_id=cc_id)
-        assert train
+        assert train, f"Could not find train with CC id {cc_id}"
         return train
 
 
@@ -212,64 +250,161 @@ class TrainByEmuIdColumnDefinition(TrainIdentifierDefinition):
 
 
 @dataclass
-class InsideTrainEquipmentDefinitionTab(EquipmentDefinitionTab):
+class InsideTrainEquipmentDefinitionColumn(EquipmentDefinitionColumn):
     train_identifier_definition: TrainIdentifierDefinition = field(default_factory=TrainByCcIdColumnDefinition)
 
 
 @dataclass
-class NetworkConfFile:
-    excel_file_full_path: str
+class GenericConfFile:
     all_equipments: List["NetworkConfFilesDefinedEquipment"]
     equipments_library: "NetworkConfFilesEquipmentsLibrary"
+    name: str
+
+    def __post_init__(self) -> None:
+        assert self.all_equipments, f"{self.name} did not produce any equipment"
+        logger_config.print_and_log_info(f"{self.name}: {len(self.all_equipments)} equipment found")
+        logger_config.print_and_log_info(f"So far, the library contains {len(self.equipments_library.all_network_conf_files_defined_equipments)} equipments in total")
+
+        for equipment_built in self.all_equipments:
+            equipment_built.compute_revenue_service()
+
+
+@dataclass
+class NetworkConfFile(GenericConfFile):
+    excel_file_full_path: str
     equipment_definition_tabs: List[EquipmentDefinitionTab]
 
     class Builder:
 
         @staticmethod
+        def build_with_excel_descriptions(equipments_library: "NetworkConfFilesEquipmentsLibrary", excel_descriptions: List["ExcelInputFileDescription"]) -> List["NetworkConfFile"]:
+            network_conf_files: List["NetworkConfFile"] = []
+            for excel_description in excel_descriptions:
+                network_conf_files.append(NetworkConfFile.Builder.build_with_excel_description(equipments_library, excel_description))
+            return network_conf_files
+
+        @staticmethod
+        def build_with_excel_description(equipments_library: "NetworkConfFilesEquipmentsLibrary", excel_description: "ExcelInputFileDescription") -> "NetworkConfFile":
+            return NetworkConfFile.Builder.build_with_excel_file(equipments_library, excel_description.excel_file_full_path, excel_description.all_tabs_definition)
+
+        @staticmethod
         def build_with_excel_file(equipments_library: "NetworkConfFilesEquipmentsLibrary", excel_file_full_path: str, equipment_definition_tabs: List[EquipmentDefinitionTab]) -> "NetworkConfFile":
+            all_equipments_found_in_excel: List[NetworkConfFilesDefinedEquipment] = []
 
             for equipment_definition_tab in equipment_definition_tabs:
 
-                with logger_config.stopwatch_with_label(f"Load {excel_file_full_path} sheet {equipment_definition_tab.tab_name}", monitor_ram_usage=True, inform_beginning=True):
-                    main_data_frame = pandas.read_excel(excel_file_full_path, skiprows=equipment_definition_tab.rows_to_ignore, sheet_name=equipment_definition_tab.tab_name)
+                with logger_config.stopwatch_with_label(f"Load and handle {excel_file_full_path} sheet {equipment_definition_tab.tab_name}", monitor_ram_usage=True, inform_beginning=True):
+
+                    with logger_config.stopwatch_with_label(f"Read excel {excel_file_full_path} sheet {equipment_definition_tab.tab_name}", monitor_ram_usage=True, inform_beginning=True):
+                        main_data_frame = pandas.read_excel(excel_file_full_path, skiprows=equipment_definition_tab.rows_to_ignore, sheet_name=equipment_definition_tab.tab_name)
                     logger_config.print_and_log_info(f"{excel_file_full_path} {equipment_definition_tab.tab_name} has {len(main_data_frame)} items")
                     logger_config.print_and_log_info(f" {excel_file_full_path} {equipment_definition_tab.tab_name} columns  {main_data_frame.columns[:4]} ...")
 
-                    all_equipments_found: List[NetworkConfFilesDefinedEquipment] = []
+                    for equipment_it, equipment_definition in enumerate(equipment_definition_tab.equipment_definitions):
+                        with logger_config.stopwatch_with_label(
+                            f"Handle {equipment_it}th equipment definition of {excel_file_full_path} sheet {equipment_definition_tab.tab_name}", monitor_ram_usage=True, inform_beginning=True
+                        ):
 
-                    for _, row in main_data_frame.iterrows():
+                            all_equipments_found_in_current_tab: List[NetworkConfFilesDefinedEquipment] = []
+                            all_equipments_found_in_current_equipment_definition: List[NetworkConfFilesDefinedEquipment] = []
 
-                        equipment_name = cast(str, equipment_definition_tab.equipment_name_column_definition.get_value(row))
-                        equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(name=equipment_name)
-                        all_equipments_found.append(equipment)
+                            for usefull_raw_number, row in main_data_frame.iterrows():
 
-                        equipment_type = cast(str, equipment_definition_tab.equipment_type_column_definition.get_value(row))
-                        equipment.equipment_types.add(equipment_type)
+                                number_of_null_columns = sum(row.isnull())
+                                number_of_na_columns = sum(row.isna())
+                                number_of_not_null_columns = sum(row.notnull())
+                                number_of_not_na_columns = sum(row.notna())
 
-                        equipment_alternative_identifier = cast(str, equipment_definition_tab.equipment_alternative_name_column_definition.get_value(row))
-                        equipment.alternative_identifiers.add(equipment_alternative_identifier)
+                                if number_of_not_null_columns == 0:
+                                    logger_config.print_and_log_warning(
+                                        f"Ignore {usefull_raw_number} th row in {excel_file_full_path} tab {equipment_definition_tab.tab_name} because seems null ({number_of_null_columns} null columns, {number_of_not_null_columns} not null columns, {number_of_na_columns} na columns, {number_of_not_na_columns} not na columns): {row[:3]}"
+                                    )
+                                    continue
 
-                        for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
+                                equipment_name = cast(str, equipment_definition.equipment_name_column_definition.get_value(row))
 
-                            equipment_raw_ip_address = cast(str, ip_address_definition.equipment_ip_address_column_definition.get_value(row))
-                            if not isinstance(equipment_raw_ip_address, str) and ip_address_definition.can_be_empty:
-                                continue
+                                if equipment_definition_tab.equipment_ids_white_list_to_accept_only and equipment_name not in equipment_definition_tab.equipment_ids_white_list_to_accept_only:
+                                    logger_config.print_and_log_info(
+                                        f"Ignore {equipment_name} equipment in {excel_file_full_path} sheet {equipment_definition_tab.tab_name} because not in white list {equipment_definition_tab.equipment_ids_white_list_to_accept_only}"
+                                    )
+                                    continue
 
-                            ip_address = ip_address_definition.build_with_row(row)
+                                if equipment_name in equipment_definition_tab.equipment_ids_black_list_to_ignore:
+                                    logger_config.print_and_log_info(
+                                        f"Ignore {equipment_name} equipment in {excel_file_full_path} sheet {equipment_definition_tab.tab_name} because in black list {equipment_definition_tab.equipment_ids_black_list_to_ignore}"
+                                    )
+                                    continue
 
-                            equipment.ip_addresses.append(ip_address)
-                            assert len(equipment.ip_addresses) < 10, f"{equipment_name}\n{[ip.ip_raw for ip in equipment.ip_addresses]}\n\n{equipment}"
+                                if isinstance(equipment_definition, InsideTrainEquipmentDefinitionColumn):
+                                    train = equipment_definition.train_identifier_definition.get_train(row, equipments_library)
+                                    assert train
 
-                    for ip_address_definition in equipment_definition_tab.equipment_ip_definitions:
-                        assert ip_address_definition.all_ip_addresses_found
-                        assert len(ip_address_definition.all_ip_addresses_found) > 1
+                                    if train in equipments_library.all_ignored_trains_unbreakable_units:
+                                        logger_config.print_and_log_info(f"Ignore row {row[:3]} because train with cc_id {train.cc_id} is in black list {constants.TO_IGNORE_TRAINS_IDS}")
+                                        continue
 
-                    logger_config.print_and_log_info(f"{excel_file_full_path} tab {equipment_definition_tab.tab_name}: {len(all_equipments_found)} equipment found")
+                                    equipment_name = f"TRAIN_CC_{train.cc_id}_{equipment_name}"
+
+                                if isinstance(equipment_name, str):
+                                    equipment = equipments_library.get_or_create_network_conf_file_eqpt_if_not_exist_by_name(
+                                        name=equipment_name,
+                                        source_label_for_creation=f"{excel_file_full_path}/{equipment_definition_tab.tab_name}",
+                                        seclab_side=equipment_definition_tab.seclab_side,
+                                        network_provider=equipment_definition_tab.network_provider,
+                                        revenue_service_definition_strategy=equipment_definition_tab.revenue_service_definition_fonction,
+                                    )
+                                    all_equipments_found_in_current_equipment_definition.append(equipment)
+                                    all_equipments_found_in_current_tab.append(equipment)
+                                    all_equipments_found_in_excel.append(equipment)
+
+                                    equipment_type_raw = equipment_definition.equipment_type_definition.get_value(row)
+                                    if isinstance(equipment_type_raw, str):
+                                        equipment.add_equipment_type(equipment_type_raw)
+
+                                    if equipment_definition.equipment_alternative_name_definition:
+                                        equipment_alternative_identifier_raw = equipment_definition.equipment_alternative_name_definition.get_value(row)
+                                        if isinstance(equipment_alternative_identifier_raw, str):
+                                            equipment.add_alternative_identifier(equipment_alternative_identifier_raw)
+
+                                    for group_definition in equipment_definition.groups_definitions:
+                                        equipments_library.get_or_create_group_and_add_equipment(group_definition, equipment)
+
+                                    for ip_address_definition in equipment_definition.equipment_ip_definitions:
+
+                                        equipment_raw_ip_address = cast(str, ip_address_definition.equipment_ip_address_column_definition.get_value(row))
+                                        if not isinstance(equipment_raw_ip_address, str) and ip_address_definition.can_be_empty:
+                                            continue
+
+                                        ip_address = ip_address_definition.build_with_row(row, equipments_library, equipment_definition)
+
+                                        equipment.add_ip_address(ip_address)
+                                        assert len(equipment.ip_addresses) < 10, f"{equipment_name}\n{[ip.ip_raw for ip in equipment.ip_addresses]}\n\n{equipment}"
+                                else:
+                                    logger_config.print_and_log_error(
+                                        f"In {excel_file_full_path} tab {equipment_definition_tab.tab_name} Could not create {usefull_raw_number+1}th object with invalid id {equipment_name} for row {row[:3]}"
+                                    )
+
+                            for ip_address_definition in equipment_definition.equipment_ip_definitions:
+                                assert ip_address_definition.all_ip_addresses_found
+                                assert len(ip_address_definition.all_ip_addresses_found) > 1
+                        logger_config.print_and_log_info(
+                            f"Equipment definition in {excel_file_full_path} {equipment_definition_tab.tab_name}: {len(all_equipments_found_in_current_equipment_definition)} equipment found"
+                        )
+
+                    logger_config.print_and_log_info(f"Equipment definition tab {excel_file_full_path} {equipment_definition_tab.tab_name}: {len(all_equipments_found_in_current_tab)} equipment found")
+
+            with logger_config.stopwatch_with_label(f"Check that each equipment have an IP address {excel_file_full_path}"):
+                for equipment in all_equipments_found_in_excel:
+                    assert equipment
+                    if not equipment.ip_addresses or len(equipment.ip_addresses) == 0:
+                        logger_config.print_and_log_error(f"Equipment {equipment.name} Type:{",".join(equipment.equipment_types_names)} Source:{equipment.source_label} has no IP address defined")
 
             conf_file = NetworkConfFile(
-                equipments_library=equipments_library, excel_file_full_path=excel_file_full_path, all_equipments=all_equipments_found, equipment_definition_tabs=equipment_definition_tabs
+                name=excel_file_full_path,
+                equipments_library=equipments_library,
+                excel_file_full_path=excel_file_full_path,
+                all_equipments=all_equipments_found_in_excel,
+                equipment_definition_tabs=equipment_definition_tabs,
             )
-
-            logger_config.print_and_log_info(f"{excel_file_full_path}: {len(all_equipments_found)} equipment found")
 
             return conf_file

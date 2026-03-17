@@ -36,6 +36,7 @@ class SubSystem(enums_utils.NameBasedEnum):
     SW_TESTS_SECU = cast("SubSystem", auto())
     V3 = cast("SubSystem", auto())
     TCR3 = cast("SubSystem", auto())
+    SECLAB = cast("SubSystem", auto())
 
 
 class WorkPackage:
@@ -148,8 +149,10 @@ class CfxUserLibrary(CfxLibraryBase):
         full_name_to_consider = full_name.lower()
         return full_name_to_consider in self._cfx_user_by_full_name_lower
 
-    def get_cfx_user_by_full_name(self, full_name: str) -> CfxUser:
+    def get_cfx_user_by_full_name(self, full_name: str, context_in_case_of_error: Optional[str] = None) -> CfxUser:
         full_name_to_consider = full_name.lower()
+        if context_in_case_of_error:
+            assert full_name_to_consider in self._cfx_user_by_full_name_lower, f"Context {context_in_case_of_error}, user {full_name_to_consider} not found"
         return self._cfx_user_by_full_name_lower[full_name_to_consider]
 
 

@@ -16,7 +16,7 @@ from generatecfxhistory.constants import (
     RejectionCause,
     State,
 )
-from generatecfxhistory.filters import ChampFxFilter, ChampFXtSaticCriteriaFilter, ChampFXWhitelistFilter
+from generatecfxhistory.filters import ChampFxFilter, ChampFXtStaticCriteriaFilter, ChampFXWhitelistFilter
 from generatecfxhistory.inputs import ChampFxInputs, ChampFxCreationData
 from generatecfxhistory.dates_generators import DatesGenerator
 from generatecfxhistory.results import AllResultsPerDatesWithDebugDetails, OneTimestampResult
@@ -85,7 +85,7 @@ class ChampFXLibrary:
         self,
         cfx_inputs: ChampFxInputs,
         allow_cfx_creation_errors: bool = False,
-        champfx_filters: Optional[List["ChampFXtSaticCriteriaFilter"]] = None,
+        champfx_filters: Optional[List["ChampFXtStaticCriteriaFilter"]] = None,
         label: Optional[str] = None,
     ):
         if champfx_filters is None:
@@ -143,7 +143,7 @@ class ChampFXLibrary:
         return self._cfx_users_library
 
     @property
-    def champfx_filters(self) -> List[ChampFXtSaticCriteriaFilter]:
+    def champfx_filters(self) -> List[ChampFXtStaticCriteriaFilter]:
         return self._champfx_filters
 
     def create_cfx_entry(self, champfx_creation_data: "ChampFxCreationData") -> "ChampFXEntry":
@@ -217,8 +217,20 @@ class ChampFXLibrary:
                         if not previous_current_owner_name or not new_current_owner_name:
                             logger_config.print_and_log_error(f"Invalid current owner change history for {cfx_id}, from {previous_current_owner_name} to {new_current_owner_name}. {cfx_history_field}")
 
-                        previous_owner = self._cfx_users_library.get_cfx_user_by_full_name(previous_current_owner_name) if previous_current_owner_name else self._cfx_users_library.unknown_user
-                        new_owner: role.CfxUser = self._cfx_users_library.get_cfx_user_by_full_name(new_current_owner_name) if new_current_owner_name else self._cfx_users_library.unknown_user
+                        previous_owner = (
+                            self._cfx_users_library.get_cfx_user_by_full_name(
+                                full_name=previous_current_owner_name, context_in_case_of_error=f"{cfx_id} current owner changed from {previous_current_owner_name} to {new_current_owner_name}"
+                            )
+                            if previous_current_owner_name
+                            else self._cfx_users_library.unknown_user
+                        )
+                        new_owner: role.CfxUser = (
+                            self._cfx_users_library.get_cfx_user_by_full_name(
+                                full_name=new_current_owner_name, context_in_case_of_error=f"{cfx_id} current owner changed from {previous_current_owner_name} to {new_current_owner_name}"
+                            )
+                            if new_current_owner_name
+                            else self._cfx_users_library.unknown_user
+                        )
 
                         change_current_owner_action: ChangeCurrentOwnerAction = ChangeCurrentOwnerAction(
                             _cfx_request=cfx_entry, _previous_owner=previous_owner, _new_owner=new_owner, _timestamp=cfx_history_field.change_timestamp.replace(tzinfo=None)
@@ -258,6 +270,19 @@ class ChampFXLibrary:
             result[state].append(cfx_entry)
 
         return result
+
+    def get_all_cfx_matching_filters(self, static_criteria_filters: List[ChampFXtStaticCriteriaFilter]) -> List["ChampFXEntry"]:
+        all_cfx_matching: List[ChampFXEntry] = []
+
+        if not static_criteria_filters:
+            return self.get_all_cfx()
+
+        else:
+            for cfx_entry in self.get_all_cfx():
+                if all(cfx_filter.match_cfx_entry_with_cache(cfx_entry) for cfx_filter in static_criteria_filters):
+                    all_cfx_matching.append(cfx_entry)
+
+        return all_cfx_matching
 
     def gather_state_counts_for_each_date(self, dates_generator: DatesGenerator, cfx_filters: Optional[List["ChampFxFilter"]] = None) -> AllResultsPerDatesWithDebugDetails:
 

@@ -30,7 +30,7 @@ def prepare_data(year: int, all_results_to_display: results.AllResultsPerDates) 
         one_result_timestamp.consolidate_present_states()
         all_results_to_display.timestamp_results.append(one_result_timestamp)
 
-    all_results_to_display.compute_cumulative_counts()
+    all_results_to_display.compute_cumulative_counts_number_of_state_per_date()
     return all_dates
 
 
@@ -42,7 +42,7 @@ class TestNoMemoryLeakWhenDisplay:
         initial_ram_rss = psutil.Process(os.getpid()).memory_info().rss
         previous_ram_rss = initial_ram_rss
         for iter_number in range(1, 1):
-            ui_and_results_generation.produce_displays_and_create_html(
+            ui_and_results_generation.produce_displays_and_create_html_number_of_cfx_by_state_per_date(
                 use_cumulative=True,
                 all_results_to_display=all_results_to_display,
                 create_html_file=False,
@@ -73,7 +73,7 @@ class TestNoMemoryLeakWhenNoDisplay:
         initial_ram_rss = psutil.Process(os.getpid()).memory_info().rss
         previous_ram_rss = initial_ram_rss
         for iter_number in range(1, 20):
-            ui_and_results_generation.produce_displays_and_create_html(
+            ui_and_results_generation.produce_displays_and_create_html_number_of_cfx_by_state_per_date(
                 use_cumulative=True,
                 all_results_to_display=all_results_to_display,
                 create_html_file=False,

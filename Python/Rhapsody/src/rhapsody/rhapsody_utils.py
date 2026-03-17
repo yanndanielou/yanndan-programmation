@@ -31,7 +31,7 @@ def download_files_from_rhapsody(download_files_instructions: List[DownloadFileI
 
     with logger_config.stopwatch_with_label(f"download_files_from_rhapsody {len(download_files_instructions)} files"):
 
-        driver = web_driver_utils.create_webdriver_firefox(web_driver_utils.BrowserVisibilityType.REGULAR)
+        driver = web_driver_utils.create_webdriver_firefox(web_driver_utils.BrowserVisibilityType.NOT_VISIBLE_AKA_HEADLESS)
         driver.get(RHAPSODY_HOME_PAGE_LINK)
 
         with logger_config.stopwatch_with_label("download_file_from_rhapsody: additional waiting time:"):

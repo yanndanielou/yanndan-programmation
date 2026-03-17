@@ -17,14 +17,14 @@ from common import download_utils, file_utils, web_driver_utils
 from logger import logger_config
 
 # Third Party
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
-# Current programm
+# Current program
 import connexion_param
 
 CFX_FILES_DOWNLOADED_PATTERN_WITHOUT_EXTENSION = "QueryResult*"
@@ -36,7 +36,7 @@ DEFAULT_DOWNLOAD_DIRECTORY = os.path.expandvars(r"%userprofile%\downloads")
 
 CREATE_PARSED_EXTENDED_HISTORY_FILES = False
 
-CREATE_PARSED_CURRENT_OWNNER_MODIFICATIONS_JSON_FILES = False
+CREATE_PARSED_CURRENT_OWNER_MODIFICATIONS_JSON_FILES = False
 
 DEFAULT_DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = False
 # DEFAULT_DO_NOT_OPEN_WEBSITE_AND_TREAT_PREVIOUS_RESULTS = True
@@ -47,6 +47,7 @@ PROJECT_MANUAL_SELECTION_DETAIL_QUERY_ID = 66977872
 PROJECT_MANUAL_SELECTION_CHANGE_STATE_QUERY_ID = 66875867
 NEXT_ATS_EXTENDED_HISTORY_QUERY_ID = 65753660
 NEXT_ATS_CMC_QUERY_ID = 63323368
+NEXT_LINKS_CFX_QUERY_ID = 69467605
 
 EXCEL_FILE_EXTENSION = ".xlsx"
 TEXT_FILE_EXTENSION = ".txt"
@@ -64,8 +65,11 @@ class QueryOutputFileType(Enum):
     def get_file_extension(self) -> str:
         return TEXT_FILE_EXTENSION if self == QueryOutputFileType.TXT_EXPORT else EXCEL_FILE_EXTENSION
 
-    def get_file_download_dropdown_menu_option_text(self) -> str:
+    def get_file_download_dropdown_menu_option_text_french(self) -> str:
         return "Exporter vers un fichier texte" if self == QueryOutputFileType.TXT_EXPORT else "Exporter vers un tableur Excel"
+
+    def get_file_download_dropdown_menu_option_text_english(self) -> str:
+        return "Export to a Text File" if self == QueryOutputFileType.TXT_EXPORT else "Export to an Excel Spreadsheet"
 
 
 @dataclass
@@ -389,13 +393,14 @@ class SaveCfxRequestMultipagesResultsApplication:
 
         self.create_webdriver_and_login()
 
-        self.generate_and_download_query_results_for_project_filters(
-            change_state_cfx_query=CfxQuery(
-                query_id=NEXT_ATS_CMC_QUERY_ID,
-                output_file_name_without_extension="nextatsp_CMC",
-                output_file_type=QueryOutputFileType.EXCEL_EXPORT,
+        for query_id, output_file_name_without_extension in [(NEXT_ATS_CMC_QUERY_ID, "nextatsp_CMC"), (NEXT_LINKS_CFX_QUERY_ID, "next_links_cfx")]:
+            self.generate_and_download_query_results_for_project_filters(
+                change_state_cfx_query=CfxQuery(
+                    query_id=query_id,
+                    output_file_name_without_extension=output_file_name_without_extension,
+                    output_file_type=QueryOutputFileType.EXCEL_EXPORT,
+                )
             )
-        )
 
         self.generate_and_download_query_results_for_project_filters(
             change_state_cfx_query=CfxQuery(
@@ -617,13 +622,21 @@ class SaveCfxRequestMultipagesResultsApplication:
         ):
             arrow_to_acces_export.click()
 
-        export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'" + change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text() + "')]")
+        try:
+            export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'" + change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text_french() + "')]")
+        except NoSuchElementException:
+            logger_config.print_and_log_warning(
+                f"Could not find {change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text_french()}, try {change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text_english()}"
+            )
+            export_button = self.driver.find_element(By.XPATH, "//td[contains(text(),'" + change_state_cfx_query.output_file_type.get_file_download_dropdown_menu_option_text_english() + "')]")
 
         download_file_detector = download_utils.DownloadFileDetector(
             directory_path=self.web_browser_download_directory,
             filename_pattern=CFX_FILES_DOWNLOADED_PATTERN_WITHOUT_EXTENSION + change_state_cfx_query.output_file_type.get_file_extension(),
             timeout_in_seconds=150,
-            file_move_after_download_action=download_utils.DownloadFileDetector.FileMoveAfterDownloadAction(final_path=file_to_create_path_with_extension),
+            file_move_after_download_action=download_utils.DownloadFileDetector.FileMoveAfterDownloadAction(
+                final_path=file_to_create_path_with_extension, retry_in_case_of_error=download_utils.DownloadFileDetector.RetryInCaseOfErrorAction(max_number_of_retry=100)
+            ),
             label=change_state_cfx_query.label,
         )
 

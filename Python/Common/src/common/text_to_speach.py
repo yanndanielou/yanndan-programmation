@@ -27,11 +27,15 @@ class TextToSpeechManager:
             sentence = self.queue.get()
             if sentence is None:
                 break
+
+            logger_config.print_and_log_info(f"pyttsx3_engine. Will say: {sentence}")
             self.pyttsx3_engine.say(sentence)
+            logger_config.print_and_log_info(f"pyttsx3_engine. Will runAndWait {sentence}")
             self.pyttsx3_engine.runAndWait()
+            logger_config.print_and_log_info(f"pyttsx3_engine. Has runAndWait {sentence}")
 
     def synthetise_and_play_sentence(self, sentence: str, blocking: bool = True) -> None:
-        logger_config.print_and_log_info(f"synthetise_and_play_sentence: {sentence}, blocking:{blocking}")
+        logger_config.print_and_log_info(f"Synthetise_and_play_sentence: {sentence}, blocking:{blocking}")
 
         if blocking:
             # Wait for any existing non-blocking process to complete
