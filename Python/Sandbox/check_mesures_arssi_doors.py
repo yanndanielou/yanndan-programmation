@@ -11,7 +11,13 @@ class Mesure:
     full_text: str
 
     def __post_init__(self) -> None:
-        self.cleaned_text = self.full_text.replace("�uvre", "oeuvre").replace("�", "")
+        # Attempt to fix encoding issues by re-encoding as latin1 and decoding as utf8
+        try:
+            self.cleaned_text = self.full_text.encode("latin1").decode("utf8")
+        except (UnicodeDecodeError, UnicodeEncodeError) as exc:
+            # Fallback to the original cleaning if encoding fix fails
+            logger_config.print_and_log_exception(exc)
+            self.cleaned_text = self.full_text.replace("�uvre", "oeuvre").replace("�", "")
 
 
 def perform_check(parsed_mesures: List[Mesure], other_source_mesures: List[Mesure], parse_mesure_label: str, other_source_mesure_label: str) -> None:
