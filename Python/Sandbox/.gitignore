@@ -4,3 +4,4 @@ last*.txt
 *.bin
 Sudokus/
 sandbox.py
+output/
