@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import List
+import unicodedata
 
 import pandas
 from logger import logger_config
@@ -11,13 +12,19 @@ class Mesure:
     full_text: str
 
     def __post_init__(self) -> None:
-        # Attempt to fix encoding issues by re-encoding as latin1 and decoding as utf8
+        text = self.full_text
+
+        # Try common mojibake repair path (windows-1252 -> utf-8), else ignore
         try:
-            self.cleaned_text = self.full_text.encode("latin1").decode("utf8")
-        except (UnicodeDecodeError, UnicodeEncodeError) as exc:
-            # Fallback to the original cleaning if encoding fix fails
-            logger_config.print_and_log_exception(exc)
-            self.cleaned_text = self.full_text.replace("�uvre", "oeuvre").replace("�", "")
+            text = text.encode("cp1252", errors="replace").decode("utf8", errors="replace")
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            text = self.full_text
+
+        text = text.replace("�uvre", "oeuvre").replace("�", "")
+        text = text.replace("œ", "oe").replace("Œ", "OE").replace("  ", " ")
+        text = unicodedata.normalize("NFC", text)
+
+        self.cleaned_text = text
 
 
 def perform_check(parsed_mesures: List[Mesure], other_source_mesures: List[Mesure], parse_mesure_label: str, other_source_mesure_label: str) -> None:
@@ -64,14 +71,14 @@ with logger_config.application_logger():
         arssi_id = row["REQ Imported ID"]
         full_text_doors = row["Allocation Mesures Sous-système"]
         doors_mesures.append(Mesure(arssi_id=arssi_id, full_text=full_text_doors))
-    logger_config.print_and_log_info(f"{len(doors_mesures)} doors_mesures\n{'\n'.join(str(doors_mesures))}")
+    logger_config.print_and_log_info(f"{len(doors_mesures)} doors_mesures")  # \n{'\n'.join(str(doors_mesures))}")
 
     for index, (_, row) in enumerate(arssi_v8_doors_data_frame.iterrows()):
         arssi_id = row["ID"]
         full_text = row["Description"]
         arssi_v8_mesures.append(Mesure(arssi_id=arssi_id, full_text=full_text))
 
-    logger_config.print_and_log_info(f"{len(arssi_v8_mesures)} arssi_v8_mesures\n{'\n'.join(str(arssi_v8_mesures))}")
+    logger_config.print_and_log_info(f"{len(arssi_v8_mesures)} arssi_v8_mesures")  # \n{'\n'.join(str(arssi_v8_mesures))}")
 
     perform_check(
         parsed_mesures=arssi_v8_mesures,
