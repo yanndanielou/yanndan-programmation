@@ -720,7 +720,7 @@ class SaveCfxRequestMultipagesResultsApplication:
 def main() -> None:
     """Main function"""
 
-    with logger_config.application_logger("save_cfx_requests_to_files"):
+    with logger_config.application_logger(log_file_suffix_before_extension="save_cfx_requests_to_files"):
         output_parent_directory_name = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
         logger_config.print_and_log_info(f"output_parent_directory_name: {output_parent_directory_name}")
 
