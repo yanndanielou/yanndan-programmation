@@ -188,7 +188,9 @@ def print_and_log_error(
 
 @contextmanager
 def application_logger(
-    application_name: Optional[str] = None, logger_level: int = logging.INFO
+    application_name: Optional[str] = None,
+    logger_level: int = logging.INFO,
+    log_file_suffix_before_extension: Optional[str] = None,
 ) -> Generator[float, None, None]:
 
     previous_stack = inspect.stack(0)[2]
@@ -198,7 +200,11 @@ def application_logger(
     if not application_name:
         application_name = os.path.basename(os.path.dirname(file_name))
 
-    configure_logger_with_timestamp_log_file_suffix(log_file_name_prefix=application_name, logger_level=logger_level)
+    configure_logger_with_timestamp_log_file_suffix(
+        log_file_name_prefix=application_name,
+        logger_level=logger_level,
+        log_file_suffix_before_extension=log_file_suffix_before_extension,
+    )
     application_start_time = time.time()
 
     calling_file_name_and_line_number = file_name + ":" + str(line_number)
@@ -231,11 +237,16 @@ def application_logger(
 
 
 def configure_logger_with_timestamp_log_file_suffix(
-    log_file_name_prefix: str, log_file_extension: str = "log", logger_level: int = logging.INFO
+    log_file_name_prefix: str,
+    log_file_extension: str = "log",
+    logger_level: int = logging.INFO,
+    log_file_suffix_before_extension: Optional[str] = None,
 ) -> None:
-    log_file_name = (
-        f"{log_file_name_prefix}{file_name_utils.get_file_suffix_with_current_datetime()}.{log_file_extension}"
+
+    log_file_suffix_before_extension = (
+        "" if not log_file_suffix_before_extension else f"_{log_file_suffix_before_extension}"
     )
+    log_file_name = f"{log_file_name_prefix}{file_name_utils.get_file_suffix_with_current_datetime()}{log_file_suffix_before_extension}.{log_file_extension}"
     configure_logger_with_exact_file_name(log_file_name, logger_level)
 
 
