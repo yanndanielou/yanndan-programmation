@@ -85,6 +85,7 @@ class DecodedMessage:
             self.unit_fields: List[DecodedMessage.XmlMessageFieldUnit] = []
             self.field_name_with_record_prefix = field_name_with_record_prefix
             self.decoded_message = decoded_message
+            self.bits_extracted: str = ""
 
     class XmlMessageFieldUnit(ABC):
         @abstractmethod
@@ -320,9 +321,9 @@ class XmlMessageDecoder:
         all_chars: List[str] = []
 
         for i in range(0, xml_decoded_field_macro.dim):
-            bits_extracted = self.extract_bits(self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
+            xml_decoded_field_macro.bits_extracted = self.extract_bits(self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
 
-            current_char = self.convert_bits_ascii_char(bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
+            current_char = self.convert_bits_ascii_char(xml_decoded_field_macro.bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
             all_chars.append(current_char)
             self.decoded_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix + "_" + str(i)] = current_char
 
@@ -337,8 +338,8 @@ class XmlMessageDecoder:
 
         assert self.decoded_message is not None
 
-        bits_extracted = self.extract_bits(self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
-        field_value = self.convert_bits_bitfield(bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
+        xml_decoded_field_macro.bits_extracted = self.extract_bits(self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
+        field_value = self.convert_bits_bitfield(xml_decoded_field_macro.bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
         self.decoded_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_value
 
         DecodedMessage.XmlMessageFieldBitfield(field_macro=xml_decoded_field_macro, value=field_value)
@@ -350,8 +351,8 @@ class XmlMessageDecoder:
         all_values: List[int] = []
 
         for _ in range(0, xml_decoded_field_macro.dim):
-            bits_extracted = self.extract_bits(self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
-            field_value = self.convert_bits_int(bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
+            xml_decoded_field_macro.bits_extracted = self.extract_bits(self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
+            field_value = self.convert_bits_int(xml_decoded_field_macro.bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
             # self.decoded_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_value
 
             all_values.append(field_value)
@@ -365,8 +366,8 @@ class XmlMessageDecoder:
 
         field_table_values: List[str | int] = []
 
-        bits_extracted = self.extract_bits(self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
-        field_value = self.convert_bits_int(bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
+        xml_decoded_field_macro.bits_extracted = self.extract_bits(self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
+        field_value = self.convert_bits_int(xml_decoded_field_macro.bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
         self.decoded_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_value
 
         field_table_values.append(field_value)
