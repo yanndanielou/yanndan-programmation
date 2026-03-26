@@ -120,9 +120,11 @@ class DecodedMessage:
             self.value = value
 
     class XmlMessageFieldInt(XmlMessageFieldUnit):
-        def __init__(self, field_macro: "DecodedMessage.XmlMessageFieldMacro", value: int | List[int]):
+        def __init__(self, field_macro: "DecodedMessage.XmlMessageFieldMacro", unsigned_value: int | List[int], signed_value: int | List[int]):
             super().__init__(field_macro=field_macro, decoded_message=field_macro.decoded_message, index=0)
-            self.value = value
+            self.value = unsigned_value
+            self.unsigned_value = unsigned_value
+            self.signed_value = signed_value
 
     @dataclass
     class XmlMessageEnumerationValue:
@@ -281,14 +283,23 @@ class XmlMessageDecoder:
     @staticmethod
     def convert_bits_ascii_char(combined_bits: str, start_bit: int, bit_length: int) -> str:
         # Extract the substring of the combined bits and convert to an integer
-        result_int = XmlMessageDecoder.convert_bits_int(combined_bits=combined_bits, start_bit=start_bit, bit_length=bit_length)
+        result_int = XmlMessageDecoder.convert_bits_unsigned_int(combined_bits=combined_bits, start_bit=start_bit, bit_length=bit_length)
         return chr(result_int)
 
     @staticmethod
-    def convert_bits_int(combined_bits: str, start_bit: int, bit_length: int) -> int:
+    def convert_bits_unsigned_int(combined_bits: str, start_bit: int, bit_length: int) -> int:
         # Extract the substring of the combined bits and convert to an integer
         bit_segment = XmlMessageDecoder.convert_bits_bitfield(combined_bits=combined_bits, start_bit=start_bit, bit_length=bit_length)
         return int(bit_segment, 2)
+
+    @staticmethod
+    def convert_bits_signed_int(combined_bits: str, start_bit: int, bit_length: int) -> int:
+        # Extract the substring of the combined bits and convert to a signed integer
+        bit_segment = XmlMessageDecoder.convert_bits_bitfield(combined_bits=combined_bits, start_bit=start_bit, bit_length=bit_length)
+        value = int(bit_segment, 2)
+        if value >= (1 << (bit_length - 1)):
+            value -= 1 << bit_length
+        return value
 
     def _parse_selector(self, record: ET.Element, parent_record: DecodedMessage.XmlMessageRecordUnit) -> None:
 
@@ -348,31 +359,33 @@ class XmlMessageDecoder:
 
         assert self.decoded_message is not None
 
-        all_values: List[int] = []
+        all_signed_values: List[int] = []
+        all_unsigned_values: List[int] = []
 
         for _ in range(0, xml_decoded_field_macro.dim):
             xml_decoded_field_macro.bits_extracted = self.extract_bits(self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
-            field_value = self.convert_bits_int(xml_decoded_field_macro.bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
+            field_unsigned_value = self.convert_bits_unsigned_int(xml_decoded_field_macro.bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
+            all_unsigned_values.append(field_unsigned_value)
+
+            field_signed_value = self.convert_bits_signed_int(xml_decoded_field_macro.bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
+            all_signed_values.append(field_signed_value)
             # self.decoded_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_value
 
-            all_values.append(field_value)
-
-        field = DecodedMessage.XmlMessageFieldInt(field_macro=xml_decoded_field_macro, value=all_values)
-        self.decoded_message.decoded_fields_flat_directory[field.long_name] = all_values
+        field = DecodedMessage.XmlMessageFieldInt(field_macro=xml_decoded_field_macro, unsigned_value=all_unsigned_values, signed_value=all_signed_values)
+        self.decoded_message.decoded_fields_flat_directory[field.long_name] = all_unsigned_values
 
     def _parse_single_int_type_field(self, xml_decoded_field_macro: DecodedMessage.XmlMessageFieldMacro) -> None:
 
         assert self.decoded_message is not None
 
-        field_table_values: List[str | int] = []
-
         xml_decoded_field_macro.bits_extracted = self.extract_bits(self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
-        field_value = self.convert_bits_int(xml_decoded_field_macro.bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
-        self.decoded_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_value
+        field_unsigned_value = self.convert_bits_unsigned_int(xml_decoded_field_macro.bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
+        self.decoded_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_unsigned_value
+        self.decoded_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix + "_as_unsigned"] = field_unsigned_value
+        field_signed_value = self.convert_bits_signed_int(xml_decoded_field_macro.bits_extracted, self.decoded_message.current_bit_index, xml_decoded_field_macro.size_bits)
+        self.decoded_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix + "_as_signed"] = field_signed_value
 
-        field_table_values.append(field_value)
-
-        DecodedMessage.XmlMessageFieldInt(field_macro=xml_decoded_field_macro, value=field_value)
+        DecodedMessage.XmlMessageFieldInt(field_macro=xml_decoded_field_macro, unsigned_value=field_unsigned_value, signed_value=field_signed_value)
 
     def _parse_int_type_field(self, xml_decoded_field_macro: DecodedMessage.XmlMessageFieldMacro) -> None:
 
