@@ -36,6 +36,17 @@ class CasseBrique:
         self.GREEN = (0, 255, 0)
         self.BLUE = (0, 0, 255)
 
+        # Configuration menu
+        self.menu_items = [
+            {"label": "Ralentir balle", "shortcut": "S", "action": self.reduce_ball_speed},
+            {"label": "Suppr. brique aléatoire", "shortcut": "P", "action": self.remove_random_brick},
+            {"label": "Suppr. toutes briques", "shortcut": "A", "action": self.remove_all_bricks},
+            {"label": "Modifier taille paddle", "shortcut": "O", "action": self.prompt_paddle_size},
+            {"label": "Paddle -10", "shortcut": "-", "action": lambda: self.change_paddle_width(-10)},
+            {"label": "Paddle +10", "shortcut": "+", "action": lambda: self.change_paddle_width(10)},
+        ]
+        self.menu_buttons = []
+
         # Initialiser le jeu
         self.reset_game()
 
@@ -121,9 +132,16 @@ class CasseBrique:
                     self.change_paddle_width(10)
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_x, mouse_y = event.pos
+                if self.status_bar_height <= mouse_y <= self.status_bar_height + self.menu_bar_height:
+                    for button in self.menu_buttons:
+                        if button["rect"].collidepoint(mouse_x, mouse_y):
+                            button["action"]()
+                            break
+                    continue
+
                 mods = pygame.key.get_mods()
                 if mods & pygame.KMOD_CTRL and mods & pygame.KMOD_ALT:
-                    mouse_x, mouse_y = event.pos
                     for brick in list(self.bricks):
                         if brick.collidepoint(mouse_x, mouse_y):
                             self.bricks.remove(brick)
@@ -271,19 +289,18 @@ class CasseBrique:
         menu_height = self.menu_bar_height
         pygame.draw.rect(self.screen, (50, 50, 50), (0, self.status_bar_height, self.screen_width, menu_height))
         font = pygame.font.SysFont(None, 20)
-        menu_items = [
-            "S: ralentir balle",
-            "P: supprimer brique au hasard",
-            "A: supprimer toutes les briques",
-            "O: modifier taille paddle",
-            "-: paddle -10",
-            "+: paddle +10",
-        ]
+
+        self.menu_buttons = []
         x = 10
-        for item in menu_items:
-            text = font.render(item, True, self.WHITE)
-            self.screen.blit(text, (x, self.status_bar_height + (menu_height - text.get_height()) // 2))
-            x += text.get_width() + 20
+        for item in self.menu_items:
+            label_text = f"{item['shortcut']} : {item['label']}"
+            text_surface = font.render(label_text, True, self.WHITE)
+            self.screen.blit(text_surface, (x, self.status_bar_height + (menu_height - text_surface.get_height()) // 2))
+
+            button_rect = pygame.Rect(x - 5, self.status_bar_height, text_surface.get_width() + 10, menu_height)
+            self.menu_buttons.append({"rect": button_rect, "action": item["action"]})
+
+            x += text_surface.get_width() + 20
 
     def draw_game(self) -> None:
         self.screen.fill((0, 0, 0))
