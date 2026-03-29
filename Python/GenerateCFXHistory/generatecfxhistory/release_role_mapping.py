@@ -76,4 +76,5 @@ next_atsp_release_subsystem_mapping: dict[SubSystem, list[str]] = {
     SubSystem.ATC_MANAGER: ["Matériels complémentaires"],
     SubSystem.SAF: ["Fiabilité"],
     SubSystem.INSTALLATION: ["SBL", "S004_Module Installation"],
+    SubSystem.COC_COM_OMT_SSI_INFRA: ["S002_Subsystem SSI"],
 }

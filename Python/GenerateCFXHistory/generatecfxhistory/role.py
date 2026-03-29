@@ -37,6 +37,7 @@ class SubSystem(enums_utils.NameBasedEnum):
     V3 = cast("SubSystem", auto())
     TCR3 = cast("SubSystem", auto())
     SECLAB = cast("SubSystem", auto())
+    COC_COM_OMT_SSI_INFRA = cast("SubSystem", auto())
 
 
 class WorkPackage:
