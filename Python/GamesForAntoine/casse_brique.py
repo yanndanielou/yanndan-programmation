@@ -20,6 +20,9 @@ class CasseBrique:
 
         self.clock = pygame.time.Clock()
 
+        # Barre d'état
+        self.status_bar_height = 40
+
         # Couleurs
         self.WHITE = (255, 255, 255)
         self.RED = (255, 0, 0)
@@ -41,10 +44,20 @@ class CasseBrique:
 
     def setup_level(self, index: int):
         level_data = self.levels[index]
-        self.paddle = pygame.Rect(self.screen_width // 2 - level_data["player_width"] // 2, self.screen_height - 30, level_data["player_width"], level_data["player_height"])
+        self.paddle = pygame.Rect(
+            self.screen_width // 2 - level_data["player_width"] // 2,
+            self.screen_height - 30 - self.status_bar_height,
+            level_data["player_width"],
+            level_data["player_height"],
+        )
         self.paddle_speed = level_data["player_speed"]
 
-        self.ball = pygame.Rect(self.screen_width // 2, self.screen_height // 2, level_data["ball_size"], level_data["ball_size"])
+        self.ball = pygame.Rect(
+            self.screen_width // 2,
+            self.screen_height // 2,
+            level_data["ball_size"],
+            level_data["ball_size"],
+        )
         self.ball_speed_x = level_data["ball_speed_x"]
         self.ball_speed_y = level_data["ball_speed_y"]
 
@@ -56,7 +69,12 @@ class CasseBrique:
         for i, row in enumerate(config):
             for j, brick_present in enumerate(row):
                 if brick_present:
-                    brick = pygame.Rect(j * 100 + 10, i * 30 + 10, 80, 20)
+                    brick = pygame.Rect(
+                        j * 100 + 10,
+                        i * 30 + 10 + self.status_bar_height,
+                        80,
+                        20,
+                    )
                     self.bricks.append(brick)
 
     def run(self):
@@ -89,7 +107,7 @@ class CasseBrique:
         # Collision avec les murs
         if self.ball.x <= 0 or self.ball.x >= self.screen_width - self.ball.width:
             self.ball_speed_x *= -1
-        if self.ball.y <= 0:
+        if self.ball.y <= self.status_bar_height:
             self.ball_speed_y *= -1
 
         # Collision avec la raquette
@@ -124,15 +142,29 @@ class CasseBrique:
     def draw_game(self):
         self.screen.fill((0, 0, 0))
 
+        # Barre d'état en haut de l'écran
+        status_bar_height = 40
+        pygame.draw.rect(self.screen, (30, 30, 30), (0, 0, self.screen_width, status_bar_height))
+
+        font = pygame.font.SysFont(None, 32)
+        score_text = font.render(f"Score: {self.score}", True, self.WHITE)
+        level_text = font.render(f"Niveau: {self.level_index + 1}", True, self.WHITE)
+        lives_text = font.render(f"Vies: {self.lives}", True, self.WHITE)
+
+        sep = 20
+        x = 10
+        self.screen.blit(score_text, (x, (status_bar_height - score_text.get_height()) // 2))
+        x += score_text.get_width() + sep
+        self.screen.blit(level_text, (x, (status_bar_height - level_text.get_height()) // 2))
+        x += level_text.get_width() + sep
+        self.screen.blit(lives_text, (x, (status_bar_height - lives_text.get_height()) // 2))
+
+        # Dessiner la zone de jeu
         pygame.draw.rect(self.screen, self.GREEN, self.paddle)
         pygame.draw.ellipse(self.screen, self.WHITE, self.ball)
 
         for brick in self.bricks:
             pygame.draw.rect(self.screen, self.RED, brick)
-
-        font = pygame.font.SysFont(None, 36)
-        score_text = font.render(f"Score: {self.score} Level: {self.level_index + 1} Lives: {self.lives}", True, self.WHITE)
-        self.screen.blit(score_text, (10, 10))
 
         pygame.display.flip()
 
