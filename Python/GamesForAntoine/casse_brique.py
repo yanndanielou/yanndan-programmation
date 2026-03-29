@@ -100,6 +100,16 @@ class CasseBrique:
                 pygame.quit()
                 sys.exit()
 
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mods = pygame.key.get_mods()
+                if mods & pygame.KMOD_CTRL and mods & pygame.KMOD_ALT:
+                    mouse_x, mouse_y = event.pos
+                    for brick in list(self.bricks):
+                        if brick.collidepoint(mouse_x, mouse_y):
+                            self.bricks.remove(brick)
+                            self.score += 10
+                            break
+
     def update_game(self) -> None:
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
