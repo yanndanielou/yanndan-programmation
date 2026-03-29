@@ -140,7 +140,8 @@ class MazeGame:
         new_position = (x + dx, y + dy)
         if self.maze[new_position[0]][new_position[1]] != WALL_CASE_CONTENT:
             self.player_pos = new_position
-            print(f"Moved player {dx} {dy} to {new_position}")
+            current_position_is_in_best_solution = self.player_pos in self.best_solution_path
+            print(f"Moved player {dx} {dy} to {new_position}. current_position_is_in_best_solution:{current_position_is_in_best_solution}")
 
         else:
             print(f"Could not move player {dx} {dy} to {new_position}")
