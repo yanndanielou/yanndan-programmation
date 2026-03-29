@@ -1,5 +1,6 @@
 import pygame
 import pygame.constants
+from pygame.locals import K_EQUALS, MOUSEBUTTONDOWN, MOUSEBUTTONUP, QUIT, KEYDOWN, K_SPACE, K_MINUS, K_PLUS, K_KP_MINUS, K_KP_PLUS, K_p, K_a, K_s, K_o  # pylint: disable=[no-name-in-module]
 import sys
 import json
 import random
@@ -109,29 +110,30 @@ class CasseBrique:
 
     def handle_events(self) -> None:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
 
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_p:
+            if event.type == KEYDOWN:
+                if event.key == K_p:
                     # raccourci po: supprimer une brique aléatoire
                     self.remove_random_brick()
-                elif event.key == pygame.K_a:
+                elif event.key == K_a:
                     # supprimer toutes les briques
                     self.remove_all_bricks()
-                elif event.key == pygame.K_s:
+                elif event.key == K_s:
                     # diminuer la vitesse de la balle
                     self.reduce_ball_speed()
-                elif event.key == pygame.K_o:
+                elif event.key == K_o:
                     # modifier taille de la raquette (popup)
                     self.prompt_paddle_size()
-                elif event.key == pygame.K_MINUS or event.key == pygame.K_KP_MINUS:
+                elif event.key == K_MINUS or event.key == K_KP_MINUS:
                     self.change_paddle_width(-10)
-                elif event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS or event.key == pygame.K_KP_PLUS:
+                elif event.key == K_PLUS or event.key == K_EQUALS or event.key == K_KP_PLUS:
                     self.change_paddle_width(10)
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                logger_config.print_and_log_info(f"Mouse button down")
                 mouse_x, mouse_y = event.pos
                 if self.status_bar_height <= mouse_y <= self.status_bar_height + self.menu_bar_height:
                     for button in self.menu_buttons:
