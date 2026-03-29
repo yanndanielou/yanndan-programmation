@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import pygame
 from pygame import Rect, Surface
-from typing import Dict, Tuple, Literal
+from typing import Dict, Tuple, Literal, Any
 
 from game import high_scores_utils
 
@@ -19,7 +19,7 @@ class GameOver(Exception):
     """Exception used for its control flow properties"""
 
 
-def get_sound(filename):
+def get_sound(filename: str) -> None:
     pass
     # return pygame.mixer.Sound(os.path.join(os.path.dirname(__file__), "resources", filename))
 
@@ -204,7 +204,7 @@ class Matris(object):
         else:
             raise GameOver("Sucker!")
 
-    def place_shadow(self) -> Tuple[Dict[bytes, bytes] | Literal[False]]:
+    def place_shadow(self) -> Dict[Tuple[int, int], Any] | bool:
         """
         Draws shadow of tetromino so player can see where it will be placed
         """
@@ -216,7 +216,7 @@ class Matris(object):
 
         return self.blend(position=position, shadow=True)
 
-    def fits_in_matrix(self, shape, position):
+    def fits_in_matrix(self, shape: Any, position: Tuple[int, int]) -> Tuple[int, int] | bool:
         """
         Checks if tetromino fits on the board
         """
@@ -228,7 +228,7 @@ class Matris(object):
 
         return position
 
-    def request_rotation(self):
+    def request_rotation(self) -> int | bool:
         """
         Checks if tetromino can rotate
         Returns the tetromino's rotation position if possible
@@ -256,7 +256,7 @@ class Matris(object):
         else:
             return False
 
-    def request_movement(self, direction):
+    def request_movement(self, direction: str) -> Tuple[int, int] | bool:
         """
         Checks if teteromino can move in the given direction and returns its new position if movement is possible
         """
@@ -280,7 +280,7 @@ class Matris(object):
         else:
             return False
 
-    def rotated(self, rotation=None):
+    def rotated(self, rotation: int | None = None) -> Any:
         """
         Rotates tetromino
         """
@@ -288,7 +288,7 @@ class Matris(object):
             rotation = self.tetromino_rotation
         return rotate(self.current_tetromino.shape, rotation)
 
-    def block(self, color, shadow=False):
+    def block(self, color: str, shadow: bool = False) -> pygame.Surface:
         """
         Sets visual information for tetromino
         """
@@ -315,7 +315,7 @@ class Matris(object):
 
         return border
 
-    def lock_tetromino(self):
+    def lock_tetromino(self) -> None:
         """
         This method is called whenever the falling tetromino "dies". `self.matrix` is updated,
         the lines are counted and cleared, and a new tetromino is chosen.
@@ -349,7 +349,7 @@ class Matris(object):
 
         self.needs_redraw = True
 
-    def remove_lines(self):
+    def remove_lines(self) -> int:
         """
         Removes lines from the board
         """
@@ -373,7 +373,7 @@ class Matris(object):
 
         return len(lines)
 
-    def blend(self, shape=None, position=None, matrix=None, shadow=False):
+    def blend(self, shape: Any = None, position: Tuple[int, int] | None = None, matrix: Dict[Tuple[int, int], Any] | None = None, shadow: bool = False) -> Dict[Tuple[int, int], Any] | bool:
         """
         Does `shape` at `position` fit in `matrix`? If so, return a new copy of `matrix` where all
         the squares of `shape` have been placed in `matrix`. Otherwise, return False.
@@ -405,7 +405,7 @@ class Matris(object):
 
         return copy
 
-    def construct_surface_of_next_tetromino(self):
+    def construct_surface_of_next_tetromino(self) -> pygame.Surface:
         """
         Draws the image of the next tetromino
         """
@@ -446,7 +446,7 @@ class Game(object):
             except GameOver:
                 return
 
-    def redraw(self):
+    def redraw(self) -> None:
         """
         Redraws the information panel and next termoino panel
         """
@@ -497,7 +497,7 @@ class Game(object):
 
         self.screen.blit(area, area.get_rect(bottom=HEIGHT - MATRIS_OFFSET, centerx=TRICKY_CENTERX))
 
-    def blit_next_tetromino(self, tetromino_surf):
+    def blit_next_tetromino(self, tetromino_surf: pygame.Surface) -> None:
         """
         Draws the next tetromino in a box to the side of the board
         """
@@ -515,7 +515,7 @@ class Game(object):
         self.screen.blit(area, area.get_rect(top=MATRIS_OFFSET, centerx=TRICKY_CENTERX))
 
 
-def construct_nightmare_background(size):
+def construct_nightmare_background(size: Tuple[int, int]) -> pygame.Surface:
     """
     Constructs background image
     """
