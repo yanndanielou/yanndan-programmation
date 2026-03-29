@@ -421,7 +421,7 @@ def produce_baregraph_number_of_cfx(
         tooltip_idx = 0
         for container in ax.containers:
             for patch in container:
-                if tooltip_idx < len(tooltip_data):)
+                if tooltip_idx < len(tooltip_data):
                     mplcursors.cursor(patch, hover=HoverMode.Transient).connect("add", create_tooltip_handler(tooltip_data[tooltip_idx]))
                     tooltip_idx += 1
 
