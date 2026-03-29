@@ -1,9 +1,12 @@
 import pygame
+import pygame.constants
 import sys
 import json
 from typing import List, Dict
 
 from logger import logger_config
+
+LEVELS_FILE_NAME = "casse_brique_levels.json"
 
 
 class CasseBrique:
@@ -35,17 +38,22 @@ class CasseBrique:
         self.reset_game()
 
     def load_levels(self) -> List[Dict]:
-        with open("casse_brique_levels.json", "r") as file:
+        logger_config.print_and_log_info(f"Load levels from file {LEVELS_FILE_NAME}")
+        with open(LEVELS_FILE_NAME, "r") as file:
             return json.load(file)
 
     def reset_game(self) -> None:
+        logger_config.print_and_log_info("reset_game")
+
         self.level_index = 0
         self.score = 0
         self.lives = 3
         self.setup_level(self.level_index)
 
-    def setup_level(self, index: int) -> None:
-        level_data = self.levels[index]
+    def setup_level(self, level_index: int) -> None:
+        logger_config.print_and_log_info(f"setup_level {level_index}")
+
+        level_data = self.levels[level_index]
         self.paddle = pygame.Rect(
             self.screen_width // 2 - level_data["player_width"] // 2,
             self.screen_height - 30 - self.status_bar_height,
@@ -63,7 +71,7 @@ class CasseBrique:
         self.ball_speed_x = level_data["ball_speed_x"]
         self.ball_speed_y = level_data["ball_speed_y"]
 
-        self.bricks = []
+        self.bricks: List[pygame.Rect] = []
         self.create_bricks(level_data["brick_configuration"])
 
     def create_bricks(self, config: List[List[int]]) -> None:
@@ -117,29 +125,48 @@ class CasseBrique:
             self.ball_speed_y *= -1
 
         # Collision avec les briques
-        for brick in self.bricks:
-            if self.ball.colliderect(brick):
-                self.ball_speed_y *= -1
-                self.bricks.remove(brick)
-                self.score += 10
-                break
+        self.check_bricks_collision()
 
         # Balle perdue
         if self.ball.y >= self.screen_height:
-            self.lives -= 1
-            if self.lives > 0:
-                self.ball.x, self.ball.y = self.screen_width // 2, self.screen_height // 2
-            else:
-                self.show_game_over()
+            self.on_ball_lost()
 
         # Passage au niveau suivant
         if not self.bricks:
-            self.level_index += 1
-            if self.level_index < len(self.levels):
-                self.setup_level(self.level_index)
-            else:
-                logger_config.print_and_log_info(f"All Levels Complete! Total Score:{self.score}")
-                self.reset_game()
+            self.switch_to_next_level()
+
+    def check_bricks_collision(self) -> None:
+        for brick in self.bricks:
+            if self.ball.colliderect(brick):
+                self.on_brick_touched(brick)
+                break
+
+    def on_brick_touched(self, brick: pygame.Rect) -> None:
+        self.ball_speed_y *= -1
+        self.bricks.remove(brick)
+        self.score += 10
+
+    def on_ball_lost(self) -> None:
+        self.lives -= 1
+        logger_config.print_and_log_info(f"Ball lost!. Now: {self.lives} lives")
+        if self.lives > 0:
+            self.ball.x, self.ball.y = self.screen_width // 2, self.screen_height // 2
+            logger_config.print_and_log_info("Put back ball on field")
+
+        else:
+            logger_config.print_and_log_info("Game over")
+
+            self.show_game_over()
+
+    def switch_to_next_level(self) -> None:
+        self.level_index += 1
+        logger_config.print_and_log_info(f"Switch to next level {self.level_index}")
+
+        if self.level_index < len(self.levels):
+            self.setup_level(self.level_index)
+        else:
+            logger_config.print_and_log_info(f"All Levels Complete! Total Score:{self.score}")
+            self.reset_game()
 
     def draw_game(self) -> None:
         self.screen.fill((0, 0, 0))
