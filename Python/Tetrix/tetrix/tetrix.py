@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import pygame
 from pygame import Rect, Surface
+from typing import Dict, Tuple, Literal
 
 from game import high_scores_utils
 
@@ -45,7 +46,8 @@ VISIBLE_MATRIX_HEIGHT = MATRIX_HEIGHT - 2
 
 
 class Matris(object):
-    def __init__(self):
+    def __init__(self, screen: pygame.Surface) -> None:
+        self.screen = screen
         self.surface = screen.subsurface(Rect((MATRIS_OFFSET + BORDERWIDTH, MATRIS_OFFSET + BORDERWIDTH), (MATRIX_WIDTH * BLOCKSIZE, (MATRIX_HEIGHT - 2) * BLOCKSIZE)))
 
         self.matrix = dict()
@@ -62,7 +64,7 @@ class Matris(object):
         self.next_tetromino = random.choice(list_of_tetrominoes)
         self.set_tetrominoes()
         self.tetromino_rotation = 0
-        self.downwards_timer = 0
+        self.downwards_timer: float = 0
 
         self.movement_keys = {"left": 0, "right": 0}
         self.movement_keys_speed = 0.05
@@ -84,7 +86,7 @@ class Matris(object):
         self.linescleared_sound = get_sound("linecleared.wav")
         self.highscorebeaten_sound = get_sound("highscorebeaten.wav")
 
-    def set_tetrominoes(self):
+    def set_tetrominoes(self) -> None:
         """
         Sets information for the current and next tetrominos
         """
@@ -96,7 +98,7 @@ class Matris(object):
         self.tetromino_block = self.block(self.current_tetromino.color)
         self.shadow_block = self.block(self.current_tetromino.color, shadow=True)
 
-    def hard_drop(self):
+    def hard_drop(self) -> None:
         """
         Instantly places tetrominos in the cells below
         """
@@ -107,7 +109,7 @@ class Matris(object):
 
         self.lock_tetromino()
 
-    def update(self, timepassed):
+    def update(self, timepassed: float) -> None:
         """
         Main game loop
         """
@@ -169,7 +171,7 @@ class Matris(object):
 
         return self.needs_redraw
 
-    def draw_surface(self):
+    def draw_surface(self) -> None:
         """
         Draws the image of the current tetromino
         """
@@ -188,7 +190,7 @@ class Matris(object):
 
                     self.surface.blit(with_tetromino[(y, x)][1], block_location)
 
-    def gameover(self, full_exit=False) -> None:
+    def gameover(self, full_exit: bool = False) -> None:
         """
         Gameover occurs when a new tetromino does not fit after the old one has died, either
         after a "natural" drop or a hard drop by the player. That is why `self.lock_tetromino`
@@ -202,7 +204,7 @@ class Matris(object):
         else:
             raise GameOver("Sucker!")
 
-    def place_shadow(self):
+    def place_shadow(self) -> Tuple[Dict[bytes, bytes] | Literal[False]]:
         """
         Draws shadow of tetromino so player can see where it will be placed
         """
@@ -418,16 +420,17 @@ class Matris(object):
 
 
 class Game(object):
-    def main(self, screen):
+    def main(self, screen: pygame.Surface) -> None:
         """
         Main loop for game
         Redraws scores and next tetromino each time the loop is passed through
         """
         clock = pygame.time.Clock()
 
-        self.matris = Matris()
+        self.screen = screen
+        self.matris = Matris(screen)
 
-        screen.blit(construct_nightmare(screen.get_size()), (0, 0))
+        screen.blit(construct_nightmare_background(screen.get_size()), (0, 0))
 
         matris_border = Surface((MATRIX_WIDTH * BLOCKSIZE + BORDERWIDTH * 2, VISIBLE_MATRIX_HEIGHT * BLOCKSIZE + BORDERWIDTH * 2))
         matris_border.fill(BORDERCOLOR)
@@ -455,7 +458,7 @@ class Game(object):
 
         pygame.display.flip()
 
-    def blit_info(self):
+    def blit_info(self) -> None:
         """
         Draws information panel
         """
@@ -492,7 +495,7 @@ class Game(object):
         area.blit(linessurf, (0, levelsurf.get_rect().height + scoresurf.get_rect().height))
         area.blit(combosurf, (0, levelsurf.get_rect().height + scoresurf.get_rect().height + linessurf.get_rect().height))
 
-        screen.blit(area, area.get_rect(bottom=HEIGHT - MATRIS_OFFSET, centerx=TRICKY_CENTERX))
+        self.screen.blit(area, area.get_rect(bottom=HEIGHT - MATRIS_OFFSET, centerx=TRICKY_CENTERX))
 
     def blit_next_tetromino(self, tetromino_surf):
         """
@@ -509,10 +512,10 @@ class Game(object):
         center = areasize / 2 - tetromino_surf_size / 2
         area.blit(tetromino_surf, (center, center))
 
-        screen.blit(area, area.get_rect(top=MATRIS_OFFSET, centerx=TRICKY_CENTERX))
+        self.screen.blit(area, area.get_rect(top=MATRIS_OFFSET, centerx=TRICKY_CENTERX))
 
 
-def construct_nightmare(size):
+def construct_nightmare_background(size):
     """
     Constructs background image
     """
@@ -535,9 +538,14 @@ def construct_nightmare(size):
     return surf
 
 
-if __name__ == "__main__":
+def main() -> None:
+
     pygame.init()
 
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Tetrix")
     Game().main(screen)
+
+
+if __name__ == "__main__":
+    main()
