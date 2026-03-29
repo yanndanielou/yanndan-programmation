@@ -172,8 +172,8 @@ class CasseBrique:
         self.screen.fill((0, 0, 0))
 
         # Barre d'état en haut de l'écran
-        status_bar_height = 40
-        pygame.draw.rect(self.screen, (30, 30, 30), (0, 0, self.screen_width, status_bar_height))
+        upper_status_bar_height = 40
+        pygame.draw.rect(self.screen, (30, 30, 30), (0, 0, self.screen_width, upper_status_bar_height))
 
         font = pygame.font.SysFont(None, 32)
         score_text = font.render(f"Score: {self.score}", True, self.WHITE)
@@ -182,11 +182,11 @@ class CasseBrique:
 
         sep = 20
         x = 10
-        self.screen.blit(score_text, (x, (status_bar_height - score_text.get_height()) // 2))
+        self.screen.blit(score_text, (x, (upper_status_bar_height - score_text.get_height()) // 2))
         x += score_text.get_width() + sep
-        self.screen.blit(level_text, (x, (status_bar_height - level_text.get_height()) // 2))
+        self.screen.blit(level_text, (x, (upper_status_bar_height - level_text.get_height()) // 2))
         x += level_text.get_width() + sep
-        self.screen.blit(lives_text, (x, (status_bar_height - lives_text.get_height()) // 2))
+        self.screen.blit(lives_text, (x, (upper_status_bar_height - lives_text.get_height()) // 2))
 
         # Dessiner la zone de jeu
         pygame.draw.rect(self.screen, self.GREEN, self.paddle)
