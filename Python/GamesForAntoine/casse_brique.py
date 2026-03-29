@@ -3,6 +3,8 @@ import sys
 import json
 from typing import List, Dict
 
+from logger import logger_config
+
 
 class CasseBrique:
     def __init__(self) -> None:
@@ -36,13 +38,13 @@ class CasseBrique:
         with open("casse_brique_levels.json", "r") as file:
             return json.load(file)
 
-    def reset_game(self):
+    def reset_game(self) -> None:
         self.level_index = 0
         self.score = 0
         self.lives = 3
         self.setup_level(self.level_index)
 
-    def setup_level(self, index: int):
+    def setup_level(self, index: int) -> None:
         level_data = self.levels[index]
         self.paddle = pygame.Rect(
             self.screen_width // 2 - level_data["player_width"] // 2,
@@ -64,7 +66,7 @@ class CasseBrique:
         self.bricks = []
         self.create_bricks(level_data["brick_configuration"])
 
-    def create_bricks(self, config: List[List[int]]):
+    def create_bricks(self, config: List[List[int]]) -> None:
         self.bricks.clear()
         for i, row in enumerate(config):
             for j, brick_present in enumerate(row):
@@ -77,20 +79,20 @@ class CasseBrique:
                     )
                     self.bricks.append(brick)
 
-    def run(self):
+    def run(self) -> None:
         while True:
             self.handle_events()
             self.update_game()
             self.draw_game()
             self.clock.tick(60)
 
-    def handle_events(self):
+    def handle_events(self) -> None:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
-    def update_game(self):
+    def update_game(self) -> None:
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
             self.paddle.x -= self.paddle_speed
@@ -136,10 +138,10 @@ class CasseBrique:
             if self.level_index < len(self.levels):
                 self.setup_level(self.level_index)
             else:
-                print("All Levels Complete! Total Score:", self.score)
+                logger_config.print_and_log_info(f"All Levels Complete! Total Score:{self.score}")
                 self.reset_game()
 
-    def draw_game(self):
+    def draw_game(self) -> None:
         self.screen.fill((0, 0, 0))
 
         # Barre d'état en haut de l'écran
@@ -168,7 +170,7 @@ class CasseBrique:
 
         pygame.display.flip()
 
-    def show_game_over(self):
+    def show_game_over(self) -> None:
         overlay = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         self.screen.blit(overlay, (0, 0))
@@ -198,5 +200,10 @@ class CasseBrique:
         sys.exit()
 
 
+def main() -> None:
+    with logger_config.application_logger(log_file_suffix_before_extension="casse_brique"):
+        CasseBrique().run()
+
+
 if __name__ == "__main__":
-    CasseBrique().run()
+    main()
