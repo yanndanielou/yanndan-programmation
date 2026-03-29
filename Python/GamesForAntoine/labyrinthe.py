@@ -14,7 +14,7 @@ FREE_CASE_CONTENT = " "
 
 
 class MazeGame:
-    def __init__(self, root: tk.Tk, embedded_in_other_application: bool, size: int = 50) -> None:
+    def __init__(self, root: tk.Tk, embedded_in_other_application: bool, size: int = 17) -> None:
 
         print(f"Initial recursion limit : {sys.getrecursionlimit()}")
         sys.setrecursionlimit(15000)
@@ -24,7 +24,8 @@ class MazeGame:
         self.size = size
         self.root = root
         self.root.title("Maze Game")
-        self.canvas = tk.Canvas(root, width=400, height=400, bg="white")
+        self.status_bar_height = 24
+        self.canvas = tk.Canvas(root, width=400, height=400 + self.status_bar_height, bg="white")
         self.canvas.pack()
         self.cell_size = 400 // self.size
         self.best_solution_path: List[Tuple[int, int]] = []
@@ -32,7 +33,9 @@ class MazeGame:
         self.maze, self.best_solution_path = self.generate_maze_with_solution()
         self.player_pos = (1, 1)
 
-        # self.print()
+        self.move_count = 0
+        self.current_position_is_in_best_solution = False
+        self.current_position_is_in_best_solution = self.is_current_position_is_in_best_solution()
 
         self.root.bind("<KeyPress>", self.key_press)
         self.draw_maze()
@@ -117,10 +120,16 @@ class MazeGame:
         with logger_config.stopwatch_with_label("draw_maze"):
 
             self.canvas.delete("all")
+
+            # Barre de statut en haut
+            self.canvas.create_rectangle(0, 0, 400, self.status_bar_height, fill="#dddddd", outline="#999999")
+            status_text = f"Coups joués: {self.move_count} | " f"Coups solution: {len(self.best_solution_path)} | " f"Dans meilleure solution = {self.current_position_is_in_best_solution}"
+            self.canvas.create_text(200, self.status_bar_height / 2, text=status_text, font=("Arial", 10), fill="black")
+
             for i in range(self.size):
                 for j in range(self.size):
                     x1 = j * self.cell_size
-                    y1 = i * self.cell_size
+                    y1 = self.status_bar_height + i * self.cell_size
                     x2 = x1 + self.cell_size
                     y2 = y1 + self.cell_size
 
@@ -135,13 +144,18 @@ class MazeGame:
 
                     self.canvas.create_rectangle(x1, y1, x2, y2, fill=fill)
 
+    def is_current_position_is_in_best_solution(self) -> bool:
+        self.current_position_is_in_best_solution = self.player_pos in self.best_solution_path
+        return self.current_position_is_in_best_solution
+
     def move_player(self, dx: int, dy: int) -> None:
         x, y = self.player_pos
         new_position = (x + dx, y + dy)
         if self.maze[new_position[0]][new_position[1]] != WALL_CASE_CONTENT:
             self.player_pos = new_position
-            current_position_is_in_best_solution = self.player_pos in self.best_solution_path
-            print(f"Moved player {dx} {dy} to {new_position}. current_position_is_in_best_solution:{current_position_is_in_best_solution}")
+            self.move_count += 1
+            self.current_position_is_in_best_solution = self.player_pos in self.best_solution_path
+            print(f"Moved player {dx} {dy} to {new_position}. " f"current_position_is_in_best_solution:{self.current_position_is_in_best_solution}")
 
         else:
             print(f"Could not move player {dx} {dy} to {new_position}")
