@@ -1,10 +1,12 @@
 import tkinter as tk
+from tkinter import Menu
 import random
 from typing import List, Tuple, Dict
 
 from logger import logger_config
 import logging
 import sys
+import os
 
 
 EXIT_CASE_CONTENT = "E"
@@ -28,6 +30,9 @@ class MazeGame:
         self.canvas = tk.Canvas(root, width=400, height=400 + self.status_bar_height, bg="white")
         self.canvas.pack()
         self.cell_size = 400 // self.size
+
+        self.create_menu_bar()
+
         self.best_solution_path: List[Tuple[int, int]] = []
 
         self.maze, self.best_solution_path = self.generate_maze_with_solution()
@@ -39,6 +44,16 @@ class MazeGame:
 
         self.root.bind("<KeyPress>", self.key_press)
         self.draw_maze()
+
+    def create_menu_bar(self) -> None:
+        menu_bar = Menu(self.root)
+
+        menu_file = Menu(menu_bar, tearoff=0)
+        menu_file.add_command(label="New", command=self.generate_maze_with_solution)
+        menu_file.add_separator()
+        menu_file.add_command(label="Exit", command=self.root.quit)
+        menu_bar.add_cascade(label="File", menu=menu_file)
+        self.root.config(menu=menu_bar)
 
     def generate_maze_with_solution(self) -> Tuple[List[List[str]], List[Tuple[int, int]]]:
         with logger_config.stopwatch_with_label("generate_maze_with_solution"):
