@@ -6,7 +6,6 @@ from typing import List, Tuple, Dict
 from logger import logger_config
 import logging
 import sys
-import os
 
 
 EXIT_CASE_CONTENT = "E"
