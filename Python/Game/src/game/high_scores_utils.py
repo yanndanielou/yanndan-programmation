@@ -1,9 +1,7 @@
 import os
 
-DEFAULT_SCORE_FILE = os.path.join(os.path.dirname(__file__), ".highscores")
 
-
-def load_score(scorefile: str = DEFAULT_SCORE_FILE) -> int:
+def load_score(scorefile: str) -> int:
     """Returns the highest score, or 0 if no one has scored yet"""
     try:
         with open(scorefile) as file:
@@ -14,7 +12,7 @@ def load_score(scorefile: str = DEFAULT_SCORE_FILE) -> int:
     return scores[0] if scores else 0
 
 
-def write_score(scorefile: str = DEFAULT_SCORE_FILE,score: int) -> None:
+def write_score(score: int, scorefile: str) -> None:
     """
     Writes score to file.
     """
