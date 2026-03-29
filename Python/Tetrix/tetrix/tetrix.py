@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import pygame
 from pygame import Rect, Surface
-from typing import Dict, Tuple, Literal, Any
+from typing import Dict, Tuple, Any
 
 from game import high_scores_utils
 
