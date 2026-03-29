@@ -2,6 +2,7 @@ import pygame
 import pygame.constants
 import sys
 import json
+import random
 from typing import List, Dict
 
 from logger import logger_config
@@ -27,6 +28,7 @@ class CasseBrique:
 
         # Barre d'état
         self.status_bar_height = 40
+        self.menu_bar_height = 20
 
         # Couleurs
         self.WHITE = (255, 255, 255)
@@ -81,7 +83,7 @@ class CasseBrique:
                 if brick_present:
                     brick = pygame.Rect(
                         j * 100 + 10,
-                        i * 30 + 10 + self.status_bar_height,
+                        i * 30 + 10 + self.status_bar_height + self.menu_bar_height,
                         80,
                         20,
                     )
@@ -99,6 +101,24 @@ class CasseBrique:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    # raccourci po: supprimer une brique aléatoire
+                    self.remove_random_brick()
+                elif event.key == pygame.K_a:
+                    # supprimer toutes les briques
+                    self.remove_all_bricks()
+                elif event.key == pygame.K_s:
+                    # diminuer la vitesse de la balle
+                    self.reduce_ball_speed()
+                elif event.key == pygame.K_o:
+                    # modifier taille de la raquette (popup)
+                    self.prompt_paddle_size()
+                elif event.key == pygame.K_MINUS or event.key == pygame.K_KP_MINUS:
+                    self.change_paddle_width(-10)
+                elif event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS or event.key == pygame.K_KP_PLUS:
+                    self.change_paddle_width(10)
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mods = pygame.key.get_mods()
@@ -127,7 +147,7 @@ class CasseBrique:
         # Collision avec les murs
         if self.ball.x <= 0 or self.ball.x >= self.screen_width - self.ball.width:
             self.ball_speed_x *= -1
-        if self.ball.y <= self.status_bar_height:
+        if self.ball.y <= self.status_bar_height + self.menu_bar_height:
             self.ball_speed_y *= -1
 
         # Collision avec la raquette
@@ -178,12 +198,98 @@ class CasseBrique:
             logger_config.print_and_log_info(f"All Levels Complete! Total Score:{self.score}")
             self.reset_game()
 
+    def reduce_ball_speed(self) -> None:
+        self.ball_speed_x *= 0.8
+        self.ball_speed_y *= 0.8
+        logger_config.print_and_log_info(f"Ball speed reduced: ({self.ball_speed_x:.2f}, {self.ball_speed_y:.2f})")
+
+    def remove_random_brick(self) -> None:
+        if self.bricks:
+            random_brick = random.choice(self.bricks)
+            self.bricks.remove(random_brick)
+            self.score += 10
+            logger_config.print_and_log_info("Random brick removed")
+
+    def remove_all_bricks(self) -> None:
+        removed = len(self.bricks)
+        self.bricks.clear()
+        self.score += removed * 10
+        logger_config.print_and_log_info(f"All bricks removed ({removed})")
+
+    def change_paddle_width(self, delta: int) -> None:
+        min_width = 20
+        max_width = self.screen_width
+        new_width = max(min_width, min(max_width, self.paddle.width + delta))
+        self.paddle.width = new_width
+        self.paddle.x = max(0, min(self.screen_width - self.paddle.width, self.paddle.x))
+        logger_config.print_and_log_info(f"Paddle width changed to {new_width}")
+
+    def prompt_paddle_size(self) -> None:
+        prompt_text = "Entrez nouvelle largeur de la raquette (20-800) :"
+        current_input = ""
+        running = True
+
+        while running:
+            self.screen.fill((0, 0, 0))
+            self.draw_menu_bar()
+
+            font = pygame.font.SysFont(None, 32)
+            prompt_surface = font.render(prompt_text, True, self.WHITE)
+            input_surface = font.render(current_input + "_", True, self.WHITE)
+
+            self.screen.blit(prompt_surface, (20, 120))
+            self.screen.blit(input_surface, (20, 160))
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        try:
+                            new_width = int(current_input)
+                            if 20 <= new_width <= self.screen_width:
+                                self.paddle.width = new_width
+                                self.paddle.x = max(0, min(self.screen_width - self.paddle.width, self.paddle.x))
+                                logger_config.print_and_log_info(f"Paddle width set by prompt: {new_width}")
+                                running = False
+                            else:
+                                current_input = ""
+                        except ValueError:
+                            current_input = ""
+                    elif event.key == pygame.K_BACKSPACE:
+                        current_input = current_input[:-1]
+                    elif event.unicode.isdigit():
+                        current_input += event.unicode
+                    elif event.key == pygame.K_ESCAPE:
+                        running = False
+
+            self.clock.tick(30)
+
+    def draw_menu_bar(self) -> None:
+        menu_height = self.menu_bar_height
+        pygame.draw.rect(self.screen, (50, 50, 50), (0, self.status_bar_height, self.screen_width, menu_height))
+        font = pygame.font.SysFont(None, 20)
+        menu_items = [
+            "S: ralentir balle",
+            "P: supprimer brique au hasard",
+            "A: supprimer toutes les briques",
+            "O: modifier taille paddle",
+            "-: paddle -10",
+            "+: paddle +10",
+        ]
+        x = 10
+        for item in menu_items:
+            text = font.render(item, True, self.WHITE)
+            self.screen.blit(text, (x, self.status_bar_height + (menu_height - text.get_height()) // 2))
+            x += text.get_width() + 20
+
     def draw_game(self) -> None:
         self.screen.fill((0, 0, 0))
 
         # Barre d'état en haut de l'écran
-        upper_status_bar_height = 40
-        pygame.draw.rect(self.screen, (30, 30, 30), (0, 0, self.screen_width, upper_status_bar_height))
+        pygame.draw.rect(self.screen, (30, 30, 30), (0, 0, self.screen_width, self.status_bar_height))
 
         font = pygame.font.SysFont(None, 32)
         score_text = font.render(f"Score: {self.score}", True, self.WHITE)
@@ -192,11 +298,14 @@ class CasseBrique:
 
         sep = 20
         x = 10
-        self.screen.blit(score_text, (x, (upper_status_bar_height - score_text.get_height()) // 2))
+        self.screen.blit(score_text, (x, (self.status_bar_height - score_text.get_height()) // 2))
         x += score_text.get_width() + sep
-        self.screen.blit(level_text, (x, (upper_status_bar_height - level_text.get_height()) // 2))
+        self.screen.blit(level_text, (x, (self.status_bar_height - level_text.get_height()) // 2))
         x += level_text.get_width() + sep
-        self.screen.blit(lives_text, (x, (upper_status_bar_height - lives_text.get_height()) // 2))
+        self.screen.blit(lives_text, (x, (self.status_bar_height - lives_text.get_height()) // 2))
+
+        # Barre de menu
+        self.draw_menu_bar()
 
         # Dessiner la zone de jeu
         pygame.draw.rect(self.screen, self.GREEN, self.paddle)
