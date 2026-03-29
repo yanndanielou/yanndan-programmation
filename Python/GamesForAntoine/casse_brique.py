@@ -110,8 +110,7 @@ class CasseBrique:
             if self.lives > 0:
                 self.ball.x, self.ball.y = self.screen_width // 2, self.screen_height // 2
             else:
-                print("Game Over! Score:", self.score)
-                self.reset_game()
+                self.show_game_over()
 
         # Passage au niveau suivant
         if not self.bricks:
@@ -136,6 +135,35 @@ class CasseBrique:
         self.screen.blit(score_text, (10, 10))
 
         pygame.display.flip()
+
+    def show_game_over(self):
+        overlay = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        self.screen.blit(overlay, (0, 0))
+
+        font_big = pygame.font.SysFont(None, 72)
+        font_small = pygame.font.SysFont(None, 48)
+        text1 = font_big.render("GAME OVER", True, self.RED)
+        text2 = font_small.render(f"Score: {self.score}", True, self.WHITE)
+        text3 = font_small.render("Appuyez sur espace pour quitter", True, self.WHITE)
+
+        self.screen.blit(text1, ((self.screen_width - text1.get_width()) // 2, 200))
+        self.screen.blit(text2, ((self.screen_width - text2.get_width()) // 2, 300))
+        self.screen.blit(text3, ((self.screen_width - text3.get_width()) // 2, 380))
+
+        pygame.display.flip()
+
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    waiting = False
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    waiting = False
+            self.clock.tick(30)
+
+        pygame.quit()
+        sys.exit()
 
 
 if __name__ == "__main__":
