@@ -138,6 +138,7 @@ class CasseBrique:
                 if self.status_bar_height <= mouse_y <= self.status_bar_height + self.menu_bar_height:
                     for button in self.menu_buttons:
                         if button["rect"].collidepoint(mouse_x, mouse_y):
+                            logger_config.print_and_log_info(f"Clicked on {button["action"]} button")
                             button["action"]()
                             break
                     continue
