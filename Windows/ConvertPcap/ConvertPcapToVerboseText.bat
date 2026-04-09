@@ -3,6 +3,8 @@ SETLOCAL EnableDelayedExpansion
 
 @SET INPUT_PCAP_FILE_WITH_EXTENSION=%1
 
+@IF NOT DEFINED INPUT_PCAP_FILE_WITH_EXTENSION @ECHO You must give a wireshark capture as parameter. Just drag and drop the .pcap file to this program & pause & exit
+
 @for %%A IN (%INPUT_PCAP_FILE_WITH_EXTENSION%) DO (@SET input_file_extension="%%~xA")
 @echo input_file_extension:%input_file_extension%
 
