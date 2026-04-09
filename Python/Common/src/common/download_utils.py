@@ -120,7 +120,7 @@ class DownloadFileDetector:
                         move_success = True
                     except PermissionError:
                         # logger_config.print_and_log_exception(permErr)
-                        logger_config.print_and_log_error(f"{self.label_with_separator}File " + file_detected_path + " is used. Release it")
+                        logger_config.print_and_log_error(f"{self.label_with_separator}File {file_detected_path} is used. Release it. Will wait {number_of_retried_performed} seconds")
                         number_of_retried_performed += 1
                         time.sleep(number_of_retried_performed)
             else:
