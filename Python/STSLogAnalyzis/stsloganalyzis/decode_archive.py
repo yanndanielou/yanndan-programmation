@@ -165,8 +165,11 @@ class SqlArchArchiveLine(ArchiveLine):
         print("Date:", self.date_raw)
         print("Tags:", self.tags)
 
-    def print_and_log_with_fields(self, fields_names_to_print: List[str]) -> None:
-        to_print_and_log = f"{self.date_raw}\t{self.id_field}\t"
+    def _get_print_prefix(self) -> str:
+        return f"{self.date_raw}\t{self.id_field}\t"
+
+    def print_and_log_with_following_fields(self, fields_names_to_print: List[str]) -> None:
+        to_print_and_log = self._get_print_prefix()
         assert self.decoded_message
         assert self.decoded_message.all_fields_by_name
         for field_name_to_print in fields_names_to_print:
@@ -175,3 +178,13 @@ class SqlArchArchiveLine(ArchiveLine):
 
         logger_config.print_and_log_info(to_print_and_log=to_print_and_log)
         pass
+
+    def print_and_log_with_all_fields(self) -> None:
+        fields_names_to_print: List[str] = []
+        if self.decoded_message:
+            fields_names_to_print += self.decoded_message.all_fields_by_name.keys()
+            self.print_and_log_with_following_fields(fields_names_to_print)
+        else:
+            to_print_and_log = self._get_print_prefix()
+            to_print_and_log += ", new state=" + self.get_new_state_str()
+            logger_config.print_and_log_info(to_print_and_log=to_print_and_log)
