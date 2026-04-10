@@ -1,20 +1,23 @@
 import json
-from typing import Dict, cast, List, Optional
+from enum import Enum
+from typing import Dict, List, Optional, cast
 
 from logger import logger_config
 
-from stsloganalyzis import decode_message, decode_action_set_content
+from stsloganalyzis import decode_action_set_content, decode_message
 
 
-ARCHIVE_VERSION_LINE_TAG = "VERSIONS"
-ARCHIVE_SQLARCH_LINE_TAG = "SQLARCH"
-ARCHIVE_SPMQ_LINE_TAG = "SPMQ"
-ARCHIVE_ALARM_LINE_TAG = "ALARM"
+class ArchiveLineTag(Enum):
+    VERSION = "VERSIONS"
+    SQLARCH = "SQLARCH"
+    SPMQ = "SPMQ"
+    ALARM = "ALARM"
 
-ARCHIVE_VERSION_LINE_PREFIX = '{"' + ARCHIVE_VERSION_LINE_TAG + '":{'
-ARCHIVE_SQLARCH_LINE_PREFIX = '{"' + ARCHIVE_SQLARCH_LINE_TAG + '":{'
-ARCHIVE_SPMQ_LINE_PREFIX = '{"' + ARCHIVE_SPMQ_LINE_TAG + '":{'
-ARCHIVE_ALARM_LINE_PREFIX = '{"' + ARCHIVE_ALARM_LINE_TAG + '":{'
+
+ARCHIVE_VERSION_LINE_PREFIX = '{"' + ArchiveLineTag.VERSION.value + '":{'
+ARCHIVE_SQLARCH_LINE_PREFIX = '{"' + ArchiveLineTag.SQLARCH.value + '":{'
+ARCHIVE_SPMQ_LINE_PREFIX = '{"' + ArchiveLineTag.SPMQ.value + '":{'
+ARCHIVE_ALARM_LINE_PREFIX = '{"' + ArchiveLineTag.ALARM.value + '":{'
 
 
 class ArchiveDecoder:
@@ -28,11 +31,13 @@ class ArchiveDecoder:
 class ArchiveExtract:
     def __init__(self) -> None:
         self.all_archive_lines: List[ArchiveLine] = []
-        self.all_archive_lines_by_type: Dict[str, List[ArchiveLine]] = dict()
+        self.all_archive_lines_by_type: Dict[ArchiveLineTag, List[ArchiveLine]] = dict()
         self.all_sqlarch_lines: List[SqlArchArchiveLine] = []
         self.all_version_lines: List[VersionArchiveLine] = []
         self.all_spmq_lines: List[ArchiveLine] = []
         self.all_alarm_lines: List[ArchiveLine] = []
+
+        self.previous_line_by_id: Dict[str, SqlArchArchiveLine] = dict()
 
     def decode_all_lines(self, archive_decoder: ArchiveDecoder) -> int:
         number_of_lines_decoded = 0
@@ -66,9 +71,9 @@ class ArchiveExtract:
         archive_line_type = archive_line.tag
 
         if archive_line_type not in self.all_archive_lines_by_type:
-            self.all_archive_lines_by_type[archive_line_type] = []
+            self.all_archive_lines_by_type[ArchiveLineTag[archive_line_type]] = []
 
-        self.all_archive_lines_by_type[archive_line_type].append(archive_line)
+        self.all_archive_lines_by_type[ArchiveLineTag[archive_line_type]].append(archive_line)
 
 
 class ArchiveLinesSet(ArchiveExtract):
