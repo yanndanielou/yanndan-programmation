@@ -48,12 +48,20 @@ def main() -> None:
             action_set_content_csv_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv", messages_list_csv_file_full_path=messages_list_csv_file_full_path, xml_directory_path=xml_directory_path
         )
 
-        archive_file = decode_archive.ArchiveFile(file_full_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29\CFX00921734_FU.json")
-        archive_file.decode_all_lines(archive_decoder=archive_decoder)
+        archive_library = (
+            decode_archive.ArchiveLibrary.Builder()
+            .add_archive_file(file_full_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29\CFX00921734_FU.json")
+            .add_archive_decoder(archive_decoder=archive_decoder)
+            .build()
+        )
+        archive_library.get_all_signal_types()
 
-        for archive_line in archive_file.all_sqlarch_lines:
-            if "_ZC_ATS_MAL" in archive_line.id_field:
-                archive_line.print_and_log_with_fields(
+        for sqlarch_archive_line in archive_library.all_sqlarch_lines:
+            sqlarch_archive_line.print_all_changes_since_previous(
+                white_list_signal_types=[decode_archive.SqlArchLineSignalType.TSA, decode_archive.SqlArchLineSignalType.TS, decode_archive.SqlArchLineSignalType.TCA]
+            )
+            """if "_ZC_ATS_MAL" in sqlarch_archive_line.id_field:
+                sqlarch_archive_line.print_and_log_with_following_fields(
                     [
                         "CCId1",
                         "MALType",
@@ -65,9 +73,9 @@ def main() -> None:
                         "ExtRearOffset",
                     ]
                 )
-            elif archive_line.id_field == "M_TRAIN_CC_48_CC_EQPT_TRACKING":
+            elif sqlarch_archive_line.id_field == "M_TRAIN_CC_48_CC_EQPT_TRACKING":
 
-                archive_line.print_and_log_with_fields(
+                sqlarch_archive_line.print_and_log_with_following_fields(
                     [
                         "NvFrontSegId",
                         "NvFrontOffset",
@@ -86,13 +94,16 @@ def main() -> None:
                 )
                 pass
 
-        for action_set_message_archive in messages_205:
-            archive_line = decode_archive.SqlArchArchiveLine(action_set_message_archive)
-            archive_line.decode_message(archive_decoder=archive_decoder)
+            else:
+                sqlarch_archive_line.print_and_log_with_all_fields()"""
 
-            if archive_line.decoded_message:
-                decoded_message = archive_line.decoded_message
-                decoded_fields_flat_directory = archive_line.decoded_message.decoded_fields_flat_directory
+        archive_library = decode_archive.ArchiveLibrary.Builder().add_raw_archives_json_lines(raw_archives_json_lines=messages_205).add_archive_decoder(archive_decoder=archive_decoder).build()
+
+        for sqlarch_archive_line in archive_library.all_sqlarch_lines:
+
+            if sqlarch_archive_line.decoded_message:
+                decoded_message = sqlarch_archive_line.decoded_message
+                decoded_fields_flat_directory = sqlarch_archive_line.decoded_message.decoded_fields_flat_directory
                 # print(archive_line.decoded_message.all_fields_by_name["SoftVersionPart1"].value)
                 pass
 
