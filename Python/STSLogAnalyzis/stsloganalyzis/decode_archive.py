@@ -1,8 +1,10 @@
 import json
 from enum import Enum
-from typing import Dict, List, Optional, cast, Self
+from typing import Dict, List, Optional, Self, cast
 
 from logger import logger_config
+
+from abc import ABC, abstractmethod
 
 from stsloganalyzis import decode_action_set_content, decode_message
 
@@ -33,7 +35,7 @@ class ArchiveLibrary:
         def __init__(self) -> None:
             self._library = ArchiveLibrary()
 
-            self.archive_inputs: List[ArchiveFile | ArchiveLinesSet] = []
+            self.archive_inputs: List[ArchiveSource] = []
             self.archive_decoder: Optional[ArchiveDecoder] = None
 
         def with_raw_archives_json_lines(self, raw_archives_json_lines: List[str]) -> Self:
@@ -59,9 +61,10 @@ class ArchiveLibrary:
             return self._library
 
     def __init__(self) -> None:
-        self.archive_inputs: List["ArchiveFile" | "ArchiveLinesSet"] = []
+        self.archive_inputs: List["ArchiveSource"] = []
         self.all_archive_lines: List[ArchiveLine] = []
         self.all_archive_lines_by_type: Dict[ArchiveLineTag, List[ArchiveLine]] = dict()
+        self._latest_sqlarch_line_by_id: Dict[str, SqlArchArchiveLine] = dict()
         self.all_sqlarch_lines: List[SqlArchArchiveLine] = []
         self.all_version_lines: List[VersionArchiveLine] = []
         self.all_spmq_lines: List[ArchiveLine] = []
@@ -69,9 +72,10 @@ class ArchiveLibrary:
 
         self.previous_line_by_id: Dict[str, SqlArchArchiveLine] = dict()
 
-    def handle_input(self, archive_input: "ArchiveFile" | "ArchiveLinesSet") -> int:
+    def handle_input(self, archive_input: "ArchiveSource") -> int:
         self.archive_inputs.append(archive_input)
 
+        line_number = 0
         for line_number, line in enumerate(archive_input.get_all_archive_file_lines()):
             self._process_archive_raw_line(line_number=line_number, line=line, parent=archive_input)
 
@@ -86,21 +90,23 @@ class ArchiveLibrary:
 
         return number_of_lines_decoded
 
-    def _process_archive_raw_line(self, line_number: int, line: str, parent: "ArchiveFile" | "ArchiveLinesSet") -> None:
+    def _process_archive_raw_line(self, line_number: int, line: str, parent: "ArchiveSource") -> None:
 
-        archive_line = ArchiveLine(full_raw_archive_line=line)
+        archive_line: ArchiveLine
 
         if line.startswith(ARCHIVE_VERSION_LINE_PREFIX):
-            archive_line = VersionArchiveLine(full_raw_archive_line=line)
+            archive_line = VersionArchiveLine(full_raw_archive_line=line, parent=parent)
             self.all_version_lines.append(archive_line)
         elif line.startswith(ARCHIVE_SQLARCH_LINE_PREFIX):
-            archive_line = SqlArchArchiveLine(full_raw_archive_line=line)
+            archive_line = SqlArchArchiveLine(full_raw_archive_line=line, parent=parent)
+            self._latest_sqlarch_line_by_id[archive_line.id_field] = archive_line
+
             self.all_sqlarch_lines.append(archive_line)
         elif line.startswith(ARCHIVE_SPMQ_LINE_PREFIX):
-            archive_line = ArchiveLine(full_raw_archive_line=line)
+            archive_line = ArchiveLine(full_raw_archive_line=line, parent=parent)
             self.all_spmq_lines.append(archive_line)
         elif line.startswith(ARCHIVE_ALARM_LINE_PREFIX):
-            archive_line = ArchiveLine(full_raw_archive_line=line)
+            archive_line = ArchiveLine(full_raw_archive_line=line, parent=parent)
             self.all_alarm_lines.append(archive_line)
         else:
             logger_config.print_and_log_error(f"Unsupported line {line_number}:" + line)
@@ -114,7 +120,13 @@ class ArchiveLibrary:
         self.all_archive_lines_by_type[ArchiveLineTag[archive_line_type]].append(archive_line)
 
 
-class ArchiveLinesSet:
+class ArchiveSource(ABC):
+    @abstractmethod
+    def get_all_archive_file_lines(self) -> List[str]:
+        pass
+
+
+class ArchiveLinesSet(ArchiveSource):
     def __init__(self, raw_archives_json_lines: List[str]) -> None:
         logger_config.print_and_log_info(f"Archive lines set has {len(raw_archives_json_lines)} lines")
         self.raw_archives_json_lines = raw_archives_json_lines
@@ -123,7 +135,7 @@ class ArchiveLinesSet:
         return self.raw_archives_json_lines
 
 
-class ArchiveFile:
+class ArchiveFile(ArchiveSource):
     def __init__(self, file_full_path: str) -> None:
         self.file_full_path = file_full_path
 
@@ -140,8 +152,8 @@ class ArchiveFile:
 
 
 class ArchiveLine:
-    def __init__(self, full_raw_archive_line: str) -> None:
-
+    def __init__(self, full_raw_archive_line: str, parent: ArchiveSource) -> None:
+        self.parent = parent
         self.full_raw_archive_line = full_raw_archive_line
         # Parsing JSON string
         self.full_archive_line_as_json: Dict = json.loads(full_raw_archive_line)
@@ -159,16 +171,16 @@ class ArchiveLine:
 
 
 class VersionArchiveLine(ArchiveLine):
-    def __init__(self, full_raw_archive_line: str) -> None:
-        super().__init__(full_raw_archive_line=full_raw_archive_line)
+    def __init__(self, full_raw_archive_line: str, parent: ArchiveSource) -> None:
+        super().__init__(full_raw_archive_line=full_raw_archive_line, parent=parent)
 
 
 class SqlArchArchiveLine(ArchiveLine):
-    def __init__(self, full_raw_archive_line: str) -> None:
-        super().__init__(full_raw_archive_line=full_raw_archive_line)
+    def __init__(self, full_raw_archive_line: str, parent: ArchiveSource) -> None:
+        super().__init__(full_raw_archive_line=full_raw_archive_line, parent=parent)
 
         # Accessing specific fields
-        self.sqlarch_json_section: Dict = self.full_archive_line_as_json["SQLARCH"]
+        self.sqlarch_json_section: Dict[str, str | int] = self.full_archive_line_as_json["SQLARCH"]
 
         # Accessing specific fields
         self.caller = self.sqlarch_json_section.get("caller")
@@ -176,8 +188,8 @@ class SqlArchArchiveLine(ArchiveLine):
         self.eqp = self.sqlarch_json_section.get("eqp")
         self.eqp_id = self.sqlarch_json_section.get("eqpId")
         self.exe_st = self.sqlarch_json_section.get("exeSt")
-        self.id_field = self.sqlarch_json_section.get("id")
-        assert self.id_field
+        self.id_field = str(self.sqlarch_json_section.get("id"))
+        assert self.id_field is not None
         assert isinstance(self.id_field, str)
         self.jdb = self.sqlarch_json_section.get("jdb")
         self.label = self.sqlarch_json_section.get("label")
