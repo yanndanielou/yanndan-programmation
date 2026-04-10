@@ -1,9 +1,18 @@
 import json
+import re
 from enum import Enum
-from typing import Dict, List, Optional, Self, cast, Set
+from typing import Callable, Dict, List, Optional, Self, cast, Set
 
 from common import file_utils
 from logger import logger_config
+
+ArchiveLineFilter = Callable[[str, "ArchiveSource"], bool]
+
+
+class ArchiveLineFilterOnIdType(Enum):
+    BEGIN_WITH_STRING = "BEGIN_WITH_STRING"
+    MATCHES_REGEX = "MATCHES_REGEX"
+
 
 from abc import ABC, abstractmethod
 
@@ -49,6 +58,8 @@ class ArchiveLibrary:
 
             self.archive_inputs: List[ArchiveSource] = []
             self.archive_decoder: Optional[ArchiveDecoder] = None
+            self.whitelist_filters: List[ArchiveLineFilter] = []
+            self.blacklist_filters: List[ArchiveLineFilter] = []
 
         def add_raw_archives_json_lines(self, raw_archives_json_lines: List[str]) -> Self:
             self.archive_inputs.append(ArchiveLinesSet(raw_archives_json_lines=raw_archives_json_lines))
@@ -63,12 +74,40 @@ class ArchiveLibrary:
             self.archive_inputs.append(ArchiveFile(file_full_path=file_full_path))
             return self
 
+        def add_whitelist_filter_based_on_id_term(self, filter_text: str, filterOnIdType: ArchiveLineFilterOnIdType) -> Self:
+            self.whitelist_filters.append(self._build_id_filter(filter_text, filterOnIdType))
+            return self
+
+        def add_blacklist_filter_based_on_id_term(self, filter_text: str, filterOnIdType: ArchiveLineFilterOnIdType) -> Self:
+            self.blacklist_filters.append(self._build_id_filter(filter_text, filterOnIdType))
+            return self
+
+        def _build_id_filter(self, filter_text: str, filterOnIdType: ArchiveLineFilterOnIdType) -> ArchiveLineFilter:
+            def archive_line_filter(line: str, _parent: "ArchiveSource") -> bool:
+                if not line.startswith(ARCHIVE_SQLARCH_LINE_PREFIX):
+                    return True
+                try:
+                    line_json = json.loads(line)
+                    sqlarch_section = line_json.get("SQLARCH", {})
+                    id_value = str(sqlarch_section.get("id", ""))
+                except (TypeError, ValueError, json.JSONDecodeError):
+                    return False
+
+                if filterOnIdType == ArchiveLineFilterOnIdType.BEGIN_WITH_STRING:
+                    return id_value.startswith(filter_text)
+                else:
+                    return re.search(filter_text, id_value) is not None
+
+            return archive_line_filter
+
         def add_archive_decoder(self, archive_decoder: ArchiveDecoder) -> Self:
             assert self.archive_decoder is None
             self.archive_decoder = archive_decoder
             return self
 
         def build(self) -> "ArchiveLibrary":
+            self._library.sqlarch_archive_lines_whitelist_filters = self.whitelist_filters
+            self._library.sqlarch_archive_lines_blacklist_filters = self.blacklist_filters
 
             for archive_input in self.archive_inputs:
                 self._library.handle_input(archive_input)
@@ -86,6 +125,8 @@ class ArchiveLibrary:
         self.all_version_lines: List[VersionArchiveLine] = []
         self.all_spmq_lines: List[ArchiveLine] = []
         self.all_alarm_lines: List[ArchiveLine] = []
+        self.sqlarch_archive_lines_whitelist_filters: List[ArchiveLineFilter] = []
+        self.sqlarch_archive_lines_blacklist_filters: List[ArchiveLineFilter] = []
 
         self.previous_line_by_id: Dict[str, SqlArchArchiveLine] = dict()
 
@@ -107,6 +148,17 @@ class ArchiveLibrary:
 
         return number_of_lines_decoded
 
+    def _passes_sqlarch_archive_line_filters(self, line: str, parent: "ArchiveSource") -> bool:
+        # Check whitelist: all whitelist filters must pass (return True)
+        if self.sqlarch_archive_lines_whitelist_filters and not all(f(line, parent) for f in self.sqlarch_archive_lines_whitelist_filters):
+            return False
+
+        # Check blacklist: all blacklist filters must pass (return True, meaning no match)
+        if self.sqlarch_archive_lines_blacklist_filters and not all(f(line, parent) for f in self.sqlarch_archive_lines_blacklist_filters):
+            return False
+
+        return True
+
     def _process_archive_raw_line(self, line_number: int, line: str, parent: "ArchiveSource") -> None:
 
         archive_line: ArchiveLine
@@ -115,6 +167,10 @@ class ArchiveLibrary:
             archive_line = VersionArchiveLine(full_raw_archive_line=line, parent=parent)
             self.all_version_lines.append(archive_line)
         elif line.startswith(ARCHIVE_SQLARCH_LINE_PREFIX):
+
+            if not self._passes_sqlarch_archive_line_filters(line=line, parent=parent):
+                return
+
             archive_line = SqlArchArchiveLine(full_raw_archive_line=line, parent=parent, last_sqlarch_line_by_id=self._last_sqlarch_line_by_id)
             self._last_sqlarch_line_by_id[archive_line.id_field] = archive_line
 
@@ -137,10 +193,7 @@ class ArchiveLibrary:
         self.all_archive_lines_by_type[ArchiveLineTag[archive_line_type]].append(archive_line)
 
     def get_all_signal_types(self) -> Set[str]:
-        ret: Set[str] = set()
-        signal_types_list = [line.signal_type_raw for line in self.all_sqlarch_lines]
-        signal_types_set = set(signal_types_list)
-        return signal_types_set
+        return {line.signal_type_raw for line in self.all_sqlarch_lines}
 
 
 class ArchiveSource(ABC):
@@ -274,7 +327,6 @@ class SqlArchArchiveLine(ArchiveLine):
             to_print_and_log += f", {field_name_to_print}:{self.decoded_message.get_field_value_human_readable(field_name_to_print)}"
 
         logger_config.print_and_log_info(to_print_and_log=to_print_and_log)
-        pass
 
     def print_and_log_with_all_fields(self) -> None:
         fields_names_to_print: List[str] = []
