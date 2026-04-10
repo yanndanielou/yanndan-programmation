@@ -175,6 +175,19 @@ class DecodedMessage:
         size_bits = len(self.hex_bytes) * 8
         return self.current_bit_index == size_bits
 
+    def get_field_value_human_readable(self, field_name: str) -> str | int:
+        field_by_name = self.all_fields_by_name[field_name]
+        if isinstance(field_by_name, list):
+            logger_config.print_and_log_error(f"<Not supported field {field_name} of type {type(field_name)}")
+            return f"Not supported field {field_name} of type {type(field_name)}"
+
+        assert field_by_name.value is not None
+        if isinstance(field_by_name.value, list):
+            human_value = "".join(field_by_name.value)
+            logger_config.print_and_log_error(f"Not supported field {field_name} of type {type(field_name)}")
+            return f"Unsupported {human_value}"
+        return field_by_name.value
+
 
 class HLFDecoder:
 
