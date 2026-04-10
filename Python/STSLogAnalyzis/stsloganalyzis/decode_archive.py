@@ -268,11 +268,22 @@ class SqlArchArchiveLine(ArchiveLine):
 
         previous_date = self.previous_line_for_this_id.get_date_raw_str()
 
-        for field_name, new_value in self.all_fields_dict.items():
-            if field_name == "date_raw":
-                continue
+        if self.decoded_message is None:
+            # If no decoded message, only show newSt change
+            previous_new_st = self.previous_line_for_this_id.get_new_state_str()
+            new_new_st = self.get_new_state_str()
+            if previous_new_st != new_new_st:
+                logger_config.print_and_log_info(f"{previous_date}\t{self.id_field}\tnewSt\t{previous_new_st} -> {new_new_st}")
+        else:
+            # If decoded message exists, show only decoded message fields that changed
+            if self.previous_line_for_this_id.decoded_message:
+                for field_name in self.decoded_message.all_fields_by_name.keys():
+                    new_field = self.decoded_message.all_fields_by_name.get(field_name)
+                    previous_field = self.previous_line_for_this_id.decoded_message.all_fields_by_name.get(field_name)
 
-            previous_value = self.previous_line_for_this_id.all_fields_dict.get(field_name)
+                    if new_field and previous_field:
+                        new_value = self.decoded_message.get_field_value_human_readable(field_name)
+                        previous_value = self.previous_line_for_this_id.decoded_message.get_field_value_human_readable(field_name)
 
-            if previous_value != new_value:
-                logger_config.print_and_log_info(f"{previous_date}\t{field_name}\t{previous_value} -> {new_value}")
+                        if new_value != previous_value:
+                            logger_config.print_and_log_info(f"{previous_date}\t{self.id_field}\t{field_name}\t{previous_value} -> {new_value}")

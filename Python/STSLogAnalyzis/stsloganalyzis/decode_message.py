@@ -178,14 +178,17 @@ class DecodedMessage:
     def get_field_value_human_readable(self, field_name: str) -> str | int:
         field_by_name = self.all_fields_by_name[field_name]
         if isinstance(field_by_name, list):
-            logger_config.print_and_log_error(f"<Not supported field {field_name} of type {type(field_name)}")
-            return f"Not supported field {field_name} of type {type(field_name)}"
+            human_value = "<" + ",".join([str(field.value) for field in field_by_name]) + ">"
+            # logger_config.print_and_log_error(f"<Not supported field {field_name} of type {type(field_name)}")
+            # return f"Not supported field {field_name} of type {type(field_name)}"
+            return human_value
 
         assert field_by_name.value is not None
         if isinstance(field_by_name.value, list):
-            human_value = "".join([str(value) for value in field_by_name.value])
-            logger_config.print_and_log_error(f"Not supported field {field_name} of type {type(field_name)}")
-            return f"Unsupported {human_value}"
+            # human_value = "".join([str(value) for value in field_by_name.value])
+            human_value = "<" + ",".join([str(value) for value in field_by_name.value]) + ">"
+            # logger_config.print_and_log_error(f"Not supported field {field_name} of type {type(field_name)}")
+            return human_value
         return field_by_name.value
 
 
