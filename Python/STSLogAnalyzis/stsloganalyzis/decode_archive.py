@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import Dict, List, Optional, Self, cast
+from typing import Dict, List, Optional, Self, cast, Set
 
 from logger import logger_config
 
@@ -14,6 +14,17 @@ class ArchiveLineTag(Enum):
     SQLARCH = "SQLARCH"
     SPMQ = "SPMQ"
     ALARM = "ALARM"
+
+
+class SqlArchLineSignalType(Enum):
+    TRAIN = "TRAIN"
+    TCA = "OUTGOING_MESSAGES"
+    TSA = "INCOMMING_MESSAGES"
+    TG = "TG"
+    SY = "Syntheses"
+    TS = "TS"
+    CR = "ACKNOWLEDGE"
+    TB = "TRACKING_BLOCK"
 
 
 ARCHIVE_VERSION_LINE_PREFIX = '{"' + ArchiveLineTag.VERSION.value + '":{'
@@ -119,6 +130,12 @@ class ArchiveLibrary:
 
         self.all_archive_lines_by_type[ArchiveLineTag[archive_line_type]].append(archive_line)
 
+    def get_all_signal_types(self) -> Set[str]:
+        ret: Set[str] = set()
+        signal_types_list = [line.signal_type_raw for line in self.all_sqlarch_lines]
+        signal_types_set = set(signal_types_list)
+        return signal_types_set
+
 
 class ArchiveSource(ABC):
     @abstractmethod
@@ -189,6 +206,8 @@ class SqlArchArchiveLine(ArchiveLine):
         self.eqp_id = self.sqlarch_json_section.get("eqpId")
         self.exe_st = self.sqlarch_json_section.get("exeSt")
         self.id_field = str(self.sqlarch_json_section.get("id"))
+        self.signal_type_raw = str(self.sqlarch_json_section.get("sigT"))
+        self.signal_type = SqlArchLineSignalType[self.signal_type_raw] if self.signal_type_raw else None
         assert self.id_field is not None
         assert isinstance(self.id_field, str)
 
@@ -261,29 +280,38 @@ class SqlArchArchiveLine(ArchiveLine):
             to_print_and_log += ", new state=" + self.get_new_state_str()
             logger_config.print_and_log_info(to_print_and_log=to_print_and_log)
 
-    def print_all_changes_since_previous(self) -> None:
-        if not self.previous_line_for_this_id:
-            logger_config.print_and_log_info(f"{self.date_raw} No previous line for ID {self.id_field}")
-            return
+    def print_all_changes_since_previous(self, white_list_signal_types: Optional[List[SqlArchLineSignalType]]) -> None:
 
-        previous_date = self.previous_line_for_this_id.get_date_raw_str()
+        field_names_to_ignore = ["Time"]
 
-        if self.decoded_message is None:
-            # If no decoded message, only show newSt change
-            previous_new_st = self.previous_line_for_this_id.get_new_state_str()
-            new_new_st = self.get_new_state_str()
-            if previous_new_st != new_new_st:
-                logger_config.print_and_log_info(f"{previous_date}\t{self.id_field}\tnewSt\t{previous_new_st} -> {new_new_st}")
-        else:
-            # If decoded message exists, show only decoded message fields that changed
-            if self.previous_line_for_this_id.decoded_message:
-                for field_name in self.decoded_message.all_fields_by_name.keys():
-                    new_field = self.decoded_message.all_fields_by_name.get(field_name)
-                    previous_field = self.previous_line_for_this_id.decoded_message.all_fields_by_name.get(field_name)
+        if white_list_signal_types is None or self.signal_type in white_list_signal_types:
 
-                    if new_field and previous_field:
-                        new_value = self.decoded_message.get_field_value_human_readable(field_name)
-                        previous_value = self.previous_line_for_this_id.decoded_message.get_field_value_human_readable(field_name)
+            if not self.previous_line_for_this_id:
+                if self.decoded_message is None:
+                    logger_config.print_and_log_info(f"{self.date_raw} No previous line for ID {self.id_field}, now {self.get_new_state_str()}")
+                else:
+                    logger_config.print_and_log_info(f"{self.date_raw} No previous line for ID {self.id_field}")
+                return
 
-                        if new_value != previous_value:
-                            logger_config.print_and_log_info(f"{previous_date}\t{self.id_field}\t{field_name}\t{previous_value} -> {new_value}")
+            previous_date = self.previous_line_for_this_id.get_date_raw_str()
+
+            if self.decoded_message is None:
+                # If no decoded message, only show newSt change
+                previous_new_st = self.previous_line_for_this_id.get_new_state_str()
+                new_new_st = self.get_new_state_str()
+                if previous_new_st != new_new_st:
+                    logger_config.print_and_log_info(f"{previous_date}\t{self.id_field}\tnewSt\t{previous_new_st} -> {new_new_st}")
+            else:
+                # If decoded message exists, show only decoded message fields that changed
+                if self.previous_line_for_this_id.decoded_message:
+                    for field_name in self.decoded_message.all_fields_by_name.keys():
+                        if field_name not in field_names_to_ignore:
+                            new_field = self.decoded_message.all_fields_by_name.get(field_name)
+                            previous_field = self.previous_line_for_this_id.decoded_message.all_fields_by_name.get(field_name)
+
+                            if new_field and previous_field:
+                                new_value = self.decoded_message.get_field_value_human_readable(field_name)
+                                previous_value = self.previous_line_for_this_id.decoded_message.get_field_value_human_readable(field_name)
+
+                                if new_value != previous_value:
+                                    logger_config.print_and_log_info(f"{previous_date}\t{self.id_field}\t{field_name}\t{previous_value} -> {new_value}")
