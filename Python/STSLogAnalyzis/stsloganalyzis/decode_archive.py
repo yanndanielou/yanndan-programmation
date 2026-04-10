@@ -199,7 +199,7 @@ class ArchiveLibrary:
 
     def decode_all_lines(self, archive_decoder: ArchiveDecoder) -> int:
         number_of_lines_decoded = 0
-        with logger_config.stopwatch_with_label(f"Decode all {len(self.all_sqlarch_lines)} lines"):
+        with logger_config.stopwatch_with_label(f"Decode all {len(self.all_sqlarch_lines)} lines", monitor_ram_usage=True):
 
             for sqlarch_line in self.all_sqlarch_lines:
                 sqlarch_line.decode_message(archive_decoder)
