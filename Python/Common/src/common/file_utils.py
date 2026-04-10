@@ -67,7 +67,7 @@ def get_files_by_directory_and_file_name_mask(directory_path: str, filename_patt
 
     if alphanumerical_order:
         return natsort.natsorted(files_paths)
-    return files_paths
+    return sorted(files_paths, key=os.path.getmtime)
 
 
 def get_files_modification_time(files_paths: List[str]) -> List[Tuple[str, datetime]]:
