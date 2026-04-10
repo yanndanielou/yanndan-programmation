@@ -58,7 +58,12 @@ def main() -> None:
 
         for sqlarch_archive_line in archive_library.all_sqlarch_lines:
             sqlarch_archive_line.print_all_changes_since_previous(
-                white_list_signal_types=[decode_archive.SqlArchLineSignalType.TSA, decode_archive.SqlArchLineSignalType.TS, decode_archive.SqlArchLineSignalType.TCA]
+                white_list_signal_types=[
+                    decode_archive.SqlArchLineSignalType.TSA,
+                    decode_archive.SqlArchLineSignalType.TS,
+                    decode_archive.SqlArchLineSignalType.TG,
+                    decode_archive.SqlArchLineSignalType.TCA,
+                ]
             )
             """if "_ZC_ATS_MAL" in sqlarch_archive_line.id_field:
                 sqlarch_archive_line.print_and_log_with_following_fields(
