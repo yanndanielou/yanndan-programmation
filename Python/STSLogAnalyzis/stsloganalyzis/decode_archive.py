@@ -21,7 +21,7 @@ from stsloganalyzis import decode_action_set_content, decode_message
 
 
 class ArchiveLineTag(Enum):
-    VERSION = "VERSIONS"
+    VERSIONS = "VERSIONS"
     SQLARCH = "SQLARCH"
     SPMQ = "SPMQ"
     ALARM = "ALARM"
@@ -96,7 +96,7 @@ class SignalTypeFilter(Filter):
             return False
 
 
-ARCHIVE_VERSION_LINE_PREFIX = '{"' + ArchiveLineTag.VERSION.value + '":{'
+ARCHIVE_VERSION_LINE_PREFIX = '{"' + ArchiveLineTag.VERSIONS.value + '":{'
 ARCHIVE_SQLARCH_LINE_PREFIX = '{"' + ArchiveLineTag.SQLARCH.value + '":{'
 ARCHIVE_SPMQ_LINE_PREFIX = '{"' + ArchiveLineTag.SPMQ.value + '":{'
 ARCHIVE_ALARM_LINE_PREFIX = '{"' + ArchiveLineTag.ALARM.value + '":{'
@@ -310,7 +310,7 @@ class ArchiveFile(ArchiveSource):
 
     def _open_and_get_all_archive_file_lines(self) -> List[str]:
 
-        with logger_config.stopwatch_with_label(f"Open and read archive file lines {self.file_full_path}"):
+        with logger_config.stopwatch_with_label(f"Open and read archive file lines {self.file_full_path}", monitor_ram_usage=True):
             with open(self.file_full_path, mode="r", encoding="utf-8") as file:
                 all_raw_lines = file.readlines()
                 logger_config.print_and_log_info(f"Archive file {self.file_full_path} has {len(all_raw_lines)} lines")
