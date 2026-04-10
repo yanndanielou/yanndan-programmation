@@ -40,6 +40,8 @@ class ArchiveFile:
         self.all_spmq_lines: List[ArchiveLine] = []
         self.all_alarm_lines: List[ArchiveLine] = []
 
+        self._open_and_read_archive_file_lines()
+
     def decode_all_lines(self, archive_decoder: ArchiveDecoder) -> int:
         number_of_lines_decoded = 0
         with logger_config.stopwatch_with_label(f"Decode all lines {self.file_full_path}"):
@@ -49,7 +51,7 @@ class ArchiveFile:
 
         return number_of_lines_decoded
 
-    def open_and_read_archive_file_lines(self) -> None:
+    def _open_and_read_archive_file_lines(self) -> None:
 
         with logger_config.stopwatch_with_label(f"Open and read archive file lines {self.file_full_path}"):
             with open(self.file_full_path, mode="r", encoding="utf-8") as file:
@@ -120,6 +122,7 @@ class SqlArchArchiveLine(ArchiveLine):
         self.eqp_id = self.sqlarch_json_section.get("eqpId")
         self.exe_st = self.sqlarch_json_section.get("exeSt")
         self.id_field = self.sqlarch_json_section.get("id")
+        assert isinstance(self.id_field, str)
         self.jdb = self.sqlarch_json_section.get("jdb")
         self.label = self.sqlarch_json_section.get("label")
         self.loc = self.sqlarch_json_section.get("loc")
@@ -161,3 +164,14 @@ class SqlArchArchiveLine(ArchiveLine):
 
         print("Date:", self.date_raw)
         print("Tags:", self.tags)
+
+    def print_and_log_with_fields(self, fields_names_to_print: List[str]) -> None:
+        to_print_and_log = f"{self.date_raw}\t{self.id_field}\t"
+        assert self.decoded_message
+        assert self.decoded_message.all_fields_by_name
+        for field_name_to_print in fields_names_to_print:
+            assert self.decoded_message.all_fields_by_name[field_name_to_print]
+            to_print_and_log += f"{field_name_to_print}:{self.decoded_message.all_fields_by_name[field_name_to_print].value}"
+
+        logger_config.print_and_log_info(to_print_and_log=to_print_and_log)
+        pass
