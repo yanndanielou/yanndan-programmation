@@ -38,15 +38,15 @@ class ArchiveLibrary:
             self.archive_inputs: List[ArchiveSource] = []
             self.archive_decoder: Optional[ArchiveDecoder] = None
 
-        def with_raw_archives_json_lines(self, raw_archives_json_lines: List[str]) -> Self:
+        def add_raw_archives_json_lines(self, raw_archives_json_lines: List[str]) -> Self:
             self.archive_inputs.append(ArchiveLinesSet(raw_archives_json_lines=raw_archives_json_lines))
             return self
 
-        def with_archive_file(self, file_full_path: str) -> Self:
+        def add_archive_file(self, file_full_path: str) -> Self:
             self.archive_inputs.append(ArchiveFile(file_full_path=file_full_path))
             return self
 
-        def with_archive_decoder(self, archive_decoder: ArchiveDecoder) -> Self:
+        def add_archive_decoder(self, archive_decoder: ArchiveDecoder) -> Self:
             assert self.archive_decoder is None
             self.archive_decoder = archive_decoder
             return self
@@ -64,7 +64,7 @@ class ArchiveLibrary:
         self.archive_inputs: List["ArchiveSource"] = []
         self.all_archive_lines: List[ArchiveLine] = []
         self.all_archive_lines_by_type: Dict[ArchiveLineTag, List[ArchiveLine]] = dict()
-        self._latest_sqlarch_line_by_id: Dict[str, SqlArchArchiveLine] = dict()
+        self._last_sqlarch_line_by_id: Dict[str, SqlArchArchiveLine] = dict()
         self.all_sqlarch_lines: List[SqlArchArchiveLine] = []
         self.all_version_lines: List[VersionArchiveLine] = []
         self.all_spmq_lines: List[ArchiveLine] = []
@@ -98,8 +98,8 @@ class ArchiveLibrary:
             archive_line = VersionArchiveLine(full_raw_archive_line=line, parent=parent)
             self.all_version_lines.append(archive_line)
         elif line.startswith(ARCHIVE_SQLARCH_LINE_PREFIX):
-            archive_line = SqlArchArchiveLine(full_raw_archive_line=line, parent=parent)
-            self._latest_sqlarch_line_by_id[archive_line.id_field] = archive_line
+            archive_line = SqlArchArchiveLine(full_raw_archive_line=line, parent=parent, last_sqlarch_line_by_id=Dict[str, SqlArchArchiveLine])
+            self._last_sqlarch_line_by_id[archive_line.id_field] = archive_line
 
             self.all_sqlarch_lines.append(archive_line)
         elif line.startswith(ARCHIVE_SPMQ_LINE_PREFIX):
@@ -176,7 +176,7 @@ class VersionArchiveLine(ArchiveLine):
 
 
 class SqlArchArchiveLine(ArchiveLine):
-    def __init__(self, full_raw_archive_line: str, parent: ArchiveSource) -> None:
+    def __init__(self, full_raw_archive_line: str, parent: ArchiveSource, last_sqlarch_line_by_id: Dict[str, "SqlArchArchiveLine"]) -> None:
         super().__init__(full_raw_archive_line=full_raw_archive_line, parent=parent)
 
         # Accessing specific fields
@@ -191,6 +191,9 @@ class SqlArchArchiveLine(ArchiveLine):
         self.id_field = str(self.sqlarch_json_section.get("id"))
         assert self.id_field is not None
         assert isinstance(self.id_field, str)
+
+        self.previous_line_for_this_id = last_sqlarch_line_by_id[self.id_field] if self.id_field in last_sqlarch_line_by_id else None
+
         self.jdb = self.sqlarch_json_section.get("jdb")
         self.label = self.sqlarch_json_section.get("label")
         self.loc = self.sqlarch_json_section.get("loc")
