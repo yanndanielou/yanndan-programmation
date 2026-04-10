@@ -24,7 +24,7 @@ class TestDecodeOneArchiveFile:
         )
 
         archive_file = decode_archive.ArchiveFile(r"Input\archive_2025_07_22\NEXTFileArchiveServer_365.json")
-        archive_file._open_and_read_archive_file_lines()
+        archive_file.get_all_archive_file_lines()
         archive_file.decode_all_lines(archive_decoder=archive_decoder)
         assert len(archive_file.all_version_lines) == 1
         assert len(archive_file.all_sqlarch_lines) > 100

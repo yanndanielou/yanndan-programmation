@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import Dict, List, Optional, cast
+from typing import Dict, List, Optional, cast, Self
 
 from logger import logger_config
 
@@ -28,8 +28,38 @@ class ArchiveDecoder:
         self.message_decoder = decode_message.MessageDecoder(xml_directory_path=xml_directory_path, action_set_content_decoder=self.action_set_content_decoder)
 
 
-class ArchiveExtract:
+class ArchiveLibrary:
+    class Builder:
+        def __init__(self) -> None:
+            self._library = ArchiveLibrary()
+
+            self.archive_inputs: List[ArchiveFile | ArchiveLinesSet] = []
+            self.archive_decoder: Optional[ArchiveDecoder] = None
+
+        def with_raw_archives_json_lines(self, raw_archives_json_lines: List[str]) -> Self:
+            self.archive_inputs.append(ArchiveLinesSet(raw_archives_json_lines=raw_archives_json_lines))
+            return self
+
+        def with_archive_file(self, file_full_path: str) -> Self:
+            self.archive_inputs.append(ArchiveFile(file_full_path=file_full_path))
+            return self
+
+        def with_archive_decoder(self, archive_decoder: ArchiveDecoder) -> Self:
+            assert self.archive_decoder is None
+            self.archive_decoder = archive_decoder
+            return self
+
+        def build(self) -> "ArchiveLibrary":
+
+            for archive_input in self.archive_inputs:
+                self._library.handle_input(archive_input)
+
+            if self.archive_decoder:
+                self._library.decode_all_lines(archive_decoder=self.archive_decoder)
+            return self._library
+
     def __init__(self) -> None:
+        self.archive_inputs: List["ArchiveFile" | "ArchiveLinesSet"] = []
         self.all_archive_lines: List[ArchiveLine] = []
         self.all_archive_lines_by_type: Dict[ArchiveLineTag, List[ArchiveLine]] = dict()
         self.all_sqlarch_lines: List[SqlArchArchiveLine] = []
@@ -38,6 +68,14 @@ class ArchiveExtract:
         self.all_alarm_lines: List[ArchiveLine] = []
 
         self.previous_line_by_id: Dict[str, SqlArchArchiveLine] = dict()
+
+    def handle_input(self, archive_input: "ArchiveFile" | "ArchiveLinesSet") -> int:
+        self.archive_inputs.append(archive_input)
+
+        for line_number, line in enumerate(archive_input.get_all_archive_file_lines()):
+            self._process_archive_raw_line(line_number=line_number, line=line, parent=archive_input)
+
+        return line_number
 
     def decode_all_lines(self, archive_decoder: ArchiveDecoder) -> int:
         number_of_lines_decoded = 0
@@ -48,7 +86,7 @@ class ArchiveExtract:
 
         return number_of_lines_decoded
 
-    def _process_archive_raw_line(self, line_number: int, line: str) -> None:
+    def _process_archive_raw_line(self, line_number: int, line: str, parent: "ArchiveFile" | "ArchiveLinesSet") -> None:
 
         archive_line = ArchiveLine(full_raw_archive_line=line)
 
@@ -76,33 +114,29 @@ class ArchiveExtract:
         self.all_archive_lines_by_type[ArchiveLineTag[archive_line_type]].append(archive_line)
 
 
-class ArchiveLinesSet(ArchiveExtract):
-    def __init__(self, raw_archives_json_lines: List[str], archive_decoder: ArchiveDecoder) -> None:
-        super().__init__()
+class ArchiveLinesSet:
+    def __init__(self, raw_archives_json_lines: List[str]) -> None:
         logger_config.print_and_log_info(f"Archive lines set has {len(raw_archives_json_lines)} lines")
-        for line_number, line in enumerate(raw_archives_json_lines):
-            self._process_archive_raw_line(line_number=line_number, line=line)
+        self.raw_archives_json_lines = raw_archives_json_lines
 
-        if archive_decoder:
-            self.decode_all_lines(archive_decoder=archive_decoder)
+    def get_all_archive_file_lines(self) -> List[str]:
+        return self.raw_archives_json_lines
 
 
-class ArchiveFile(ArchiveExtract):
-    def __init__(self, file_full_path: str, archive_decoder: ArchiveDecoder) -> None:
-        super().__init__()
+class ArchiveFile:
+    def __init__(self, file_full_path: str) -> None:
         self.file_full_path = file_full_path
-        self._open_and_read_archive_file_lines()
-        if archive_decoder:
-            self.decode_all_lines(archive_decoder=archive_decoder)
 
-    def _open_and_read_archive_file_lines(self) -> None:
+    def get_all_archive_file_lines(self) -> List[str]:
+        return self._open_and_get_all_archive_file_lines()
+
+    def _open_and_get_all_archive_file_lines(self) -> List[str]:
 
         with logger_config.stopwatch_with_label(f"Open and read archive file lines {self.file_full_path}"):
             with open(self.file_full_path, mode="r", encoding="utf-8") as file:
                 all_raw_lines = file.readlines()
                 logger_config.print_and_log_info(f"Archive file {self.file_full_path} has {len(all_raw_lines)} lines")
-                for line_number, line in enumerate(all_raw_lines):
-                    self._process_archive_raw_line(line_number=line_number, line=line)
+                return all_raw_lines
 
 
 class ArchiveLine:
