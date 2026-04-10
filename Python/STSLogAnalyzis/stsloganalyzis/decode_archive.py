@@ -122,6 +122,7 @@ class SqlArchArchiveLine(ArchiveLine):
         self.eqp_id = self.sqlarch_json_section.get("eqpId")
         self.exe_st = self.sqlarch_json_section.get("exeSt")
         self.id_field = self.sqlarch_json_section.get("id")
+        assert self.id_field
         assert isinstance(self.id_field, str)
         self.jdb = self.sqlarch_json_section.get("jdb")
         self.label = self.sqlarch_json_section.get("label")
@@ -174,7 +175,8 @@ class SqlArchArchiveLine(ArchiveLine):
         assert self.decoded_message.all_fields_by_name
         for field_name_to_print in fields_names_to_print:
             assert self.decoded_message.all_fields_by_name[field_name_to_print]
-            to_print_and_log += f"{field_name_to_print}:{self.decoded_message.all_fields_by_name[field_name_to_print].value}"
+            # to_print_and_log += f"{field_name_to_print}:{self.decoded_message.all_fields_by_name[field_name_to_print].value}"
+            to_print_and_log += f", {field_name_to_print}:{self.decoded_message.get_field_value_human_readable(field_name_to_print)}"
 
         logger_config.print_and_log_info(to_print_and_log=to_print_and_log)
         pass
