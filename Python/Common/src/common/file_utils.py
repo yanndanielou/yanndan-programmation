@@ -7,12 +7,19 @@ import time
 from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime
+from enum import Enum
 from typing import List, Tuple, cast
 
 import natsort
 from logger import logger_config
 
 from common import file_name_utils
+
+
+class FileSortOrder(Enum):
+    ALPHABETICAL = "alphabetical"
+    TIMESTAMP_OLDER_TO_NEWER = "timestamp_older_to_newer"
+    NO_SORTING = "timestamp"
 
 
 def get_temporary_copy_of_file(input_file_full_path: str) -> Tuple[str, str]:
@@ -58,16 +65,23 @@ def create_folder_if_not_exist(directory_path: str) -> bool:
         return False
 
 
-def get_files_by_directory_and_file_name_mask(directory_path: str, filename_pattern: str, alphanumerical_order: bool = False) -> List[str]:
+def get_files_by_directory_and_file_name_mask(
+    directory_path: str,
+    filename_pattern: str,
+    file_sort_order: FileSortOrder = FileSortOrder.NO_SORTING,
+) -> List[str]:
     files_paths: List[str] = []
     for file in os.listdir(directory_path):
         if fnmatch.fnmatch(file, filename_pattern):
             file_path = os.path.join(directory_path, file)
             files_paths.append(file_path)
 
-    if alphanumerical_order:
+    if file_sort_order == FileSortOrder.ALPHABETICAL:
         return natsort.natsorted(files_paths)
-    return sorted(files_paths, key=os.path.getmtime)
+    elif file_sort_order == FileSortOrder.TIMESTAMP_OLDER_TO_NEWER:
+        return sorted(files_paths, key=os.path.getmtime)
+    else:
+        return files_paths
 
 
 def get_files_modification_time(files_paths: List[str]) -> List[Tuple[str, datetime]]:
