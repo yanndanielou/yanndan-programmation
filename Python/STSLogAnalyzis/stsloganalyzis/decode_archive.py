@@ -27,12 +27,6 @@ class ArchiveDecoder:
 
 class ArchiveExtract:
     def __init__(self) -> None:
-        pass
-
-
-class ArchiveFile:
-    def __init__(self, file_full_path: str) -> None:
-        self.file_full_path = file_full_path
         self.all_archive_lines: List[ArchiveLine] = []
         self.all_archive_lines_by_type: Dict[str, List[ArchiveLine]] = dict()
         self.all_sqlarch_lines: List[SqlArchArchiveLine] = []
@@ -40,16 +34,61 @@ class ArchiveFile:
         self.all_spmq_lines: List[ArchiveLine] = []
         self.all_alarm_lines: List[ArchiveLine] = []
 
-        self._open_and_read_archive_file_lines()
-
     def decode_all_lines(self, archive_decoder: ArchiveDecoder) -> int:
         number_of_lines_decoded = 0
-        with logger_config.stopwatch_with_label(f"Decode all lines {self.file_full_path}"):
+        with logger_config.stopwatch_with_label(f"Decode all {len(self.all_sqlarch_lines)} lines"):
 
             for sqlarch_line in self.all_sqlarch_lines:
                 sqlarch_line.decode_message(archive_decoder)
 
         return number_of_lines_decoded
+
+    def _process_archive_raw_line(self, line_number: int, line: str) -> None:
+
+        archive_line = ArchiveLine(full_raw_archive_line=line)
+
+        if line.startswith(ARCHIVE_VERSION_LINE_PREFIX):
+            archive_line = VersionArchiveLine(full_raw_archive_line=line)
+            self.all_version_lines.append(archive_line)
+        elif line.startswith(ARCHIVE_SQLARCH_LINE_PREFIX):
+            archive_line = SqlArchArchiveLine(full_raw_archive_line=line)
+            self.all_sqlarch_lines.append(archive_line)
+        elif line.startswith(ARCHIVE_SPMQ_LINE_PREFIX):
+            archive_line = ArchiveLine(full_raw_archive_line=line)
+            self.all_spmq_lines.append(archive_line)
+        elif line.startswith(ARCHIVE_ALARM_LINE_PREFIX):
+            archive_line = ArchiveLine(full_raw_archive_line=line)
+            self.all_alarm_lines.append(archive_line)
+        else:
+            logger_config.print_and_log_error(f"Unsupported line {line_number}:" + line)
+
+        self.all_archive_lines.append(archive_line)
+        archive_line_type = archive_line.tag
+
+        if archive_line_type not in self.all_archive_lines_by_type:
+            self.all_archive_lines_by_type[archive_line_type] = []
+
+        self.all_archive_lines_by_type[archive_line_type].append(archive_line)
+
+
+class ArchiveLinesSet(ArchiveExtract):
+    def __init__(self, raw_archives_json_lines: List[str], archive_decoder: ArchiveDecoder) -> None:
+        super().__init__()
+        logger_config.print_and_log_info(f"Archive lines set has {len(raw_archives_json_lines)} lines")
+        for line_number, line in enumerate(raw_archives_json_lines):
+            self._process_archive_raw_line(line_number=line_number, line=line)
+
+        if archive_decoder:
+            self.decode_all_lines(archive_decoder=archive_decoder)
+
+
+class ArchiveFile(ArchiveExtract):
+    def __init__(self, file_full_path: str, archive_decoder: ArchiveDecoder) -> None:
+        super().__init__()
+        self.file_full_path = file_full_path
+        self._open_and_read_archive_file_lines()
+        if archive_decoder:
+            self.decode_all_lines(archive_decoder=archive_decoder)
 
     def _open_and_read_archive_file_lines(self) -> None:
 
@@ -58,30 +97,7 @@ class ArchiveFile:
                 all_raw_lines = file.readlines()
                 logger_config.print_and_log_info(f"Archive file {self.file_full_path} has {len(all_raw_lines)} lines")
                 for line_number, line in enumerate(all_raw_lines):
-                    archive_line = ArchiveLine(full_raw_archive_line=line)
-
-                    if line.startswith(ARCHIVE_VERSION_LINE_PREFIX):
-                        archive_line = VersionArchiveLine(full_raw_archive_line=line)
-                        self.all_version_lines.append(archive_line)
-                    elif line.startswith(ARCHIVE_SQLARCH_LINE_PREFIX):
-                        archive_line = SqlArchArchiveLine(full_raw_archive_line=line)
-                        self.all_sqlarch_lines.append(archive_line)
-                    elif line.startswith(ARCHIVE_SPMQ_LINE_PREFIX):
-                        archive_line = ArchiveLine(full_raw_archive_line=line)
-                        self.all_spmq_lines.append(archive_line)
-                    elif line.startswith(ARCHIVE_ALARM_LINE_PREFIX):
-                        archive_line = ArchiveLine(full_raw_archive_line=line)
-                        self.all_alarm_lines.append(archive_line)
-                    else:
-                        logger_config.print_and_log_error(f"Unsupported line {line_number}:" + line)
-
-                    self.all_archive_lines.append(archive_line)
-                    archive_line_type = archive_line.tag
-
-                    if archive_line_type not in self.all_archive_lines_by_type:
-                        self.all_archive_lines_by_type[archive_line_type] = []
-
-                    self.all_archive_lines_by_type[archive_line_type].append(archive_line)
+                    self._process_archive_raw_line(line_number=line_number, line=line)
 
 
 class ArchiveLine:

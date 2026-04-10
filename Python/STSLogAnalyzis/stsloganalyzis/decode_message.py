@@ -183,7 +183,7 @@ class DecodedMessage:
 
         assert field_by_name.value is not None
         if isinstance(field_by_name.value, list):
-            human_value = "".join(field_by_name.value)
+            human_value = "".join([str(value) for value in field_by_name.value])
             logger_config.print_and_log_error(f"Not supported field {field_name} of type {type(field_name)}")
             return f"Unsupported {human_value}"
         return field_by_name.value
