@@ -98,7 +98,7 @@ class ArchiveLibrary:
             archive_line = VersionArchiveLine(full_raw_archive_line=line, parent=parent)
             self.all_version_lines.append(archive_line)
         elif line.startswith(ARCHIVE_SQLARCH_LINE_PREFIX):
-            archive_line = SqlArchArchiveLine(full_raw_archive_line=line, parent=parent, last_sqlarch_line_by_id=Dict[str, SqlArchArchiveLine])
+            archive_line = SqlArchArchiveLine(full_raw_archive_line=line, parent=parent, last_sqlarch_line_by_id=self._last_sqlarch_line_by_id)
             self._last_sqlarch_line_by_id[archive_line.id_field] = archive_line
 
             self.all_sqlarch_lines.append(archive_line)
@@ -260,3 +260,19 @@ class SqlArchArchiveLine(ArchiveLine):
             to_print_and_log = self._get_print_prefix()
             to_print_and_log += ", new state=" + self.get_new_state_str()
             logger_config.print_and_log_info(to_print_and_log=to_print_and_log)
+
+    def print_all_changes_since_previous(self) -> None:
+        if not self.previous_line_for_this_id:
+            logger_config.print_and_log_info(f"{self.date_raw} No previous line for ID {self.id_field}")
+            return
+
+        previous_date = self.previous_line_for_this_id.get_date_raw_str()
+
+        for field_name, new_value in self.all_fields_dict.items():
+            if field_name == "date_raw":
+                continue
+
+            previous_value = self.previous_line_for_this_id.all_fields_dict.get(field_name)
+
+            if previous_value != new_value:
+                logger_config.print_and_log_info(f"{previous_date}\t{field_name}\t{previous_value} -> {new_value}")
