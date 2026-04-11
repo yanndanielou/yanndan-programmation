@@ -264,7 +264,11 @@ class CckMproTraceLibrary:
     def load_folder(self, folder_full_path: str) -> Self:
         with logger_config.stopwatch_with_label("Load all files", inform_beginning=True, monitor_ram_usage=True):
 
-            files_found_sorted = file_utils.get_files_by_directory_and_file_name_mask(directory_path=folder_full_path, filename_pattern="Traces_MPRO*.txt", alphanumerical_order=True)
+            files_found_sorted = file_utils.get_files_by_directory_and_file_name_mask(
+                directory_path=folder_full_path,
+                filename_pattern="Traces_MPRO*.txt",
+                file_sort_order=file_utils.FileSortOrder.ALPHABETICAL,
+            )
             for file_full_path in files_found_sorted:
                 file_name = file_name_utils.get_file_name_with_extension_from_full_path(file_full_path)
                 cck_file = CckMproTraceFile(parent_folder_full_path=folder_full_path, file_name=file_name, library=self)
