@@ -1,6 +1,8 @@
 from stsloganalyzis import decode_archive, decode_message, decode_action_set_content
 from logger import logger_config
+from typing import Dict, Any, List
 
+OUTPUT_DIRECTORY = "output"
 
 messages_205 = [
     '{"SQLARCH":{"caller":"","catAla":0,"eqp":"PAS 05","eqpId":"EQ_PAS_05_PAS_05","exeSt":"","id":"M_PAS_05_ZC_ATS_OP_AWS","jdb":false,"label":"PAS_05 : ZC_ATS_OP_AWS [205]","loc":"PAS 05","locale":"2026-03-30T19:08:25.921+02:00","newSt":"00 00 00 00 00 00 00 00 00 00 00 40 42 00 00 00 00 00 01 01 01 01 01 01 00 00 00 00 01 01 01 01 01 01 01 01 01 01 00 00 01 01 01 01 01 00 01 00 01 00 00 01 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 40 00 09 6A 61 00 01 19 40 28 E8 ","oldSt":"","orders":"","sigT":"TSA","tstamp":"2026-03-30T19:08:25.700+02:00","utc_locale":"2026-03-30T17:08:25.921+01:00"},"date":"2026-03-30T19:08:25.921+02:00","tags":["SQLARCH"]}',
@@ -39,13 +41,24 @@ def main() -> None:
 
         messages_list_csv_file_full_path = r"D:\NEXT\Data\Csv\NEXT_message.csv"
         xml_directory_path = r"D:\NEXT\Data\Xml"
-        csv_file_file_path = r"D:\NEXT\Data\Csv\ACTION_SET.csv"
-        message_manager = decode_message.InvariantMessagesManager(messages_list_csv_file_full_path=r"D:\NEXT\Data\Csv\NEXT_message.csv")
-        message_decoder = decode_message.XmlMessageDecoder(xml_directory_path=r"D:\NEXT\Data\Xml")
-        action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(csv_file_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv")
 
         archive_decoder = decode_archive.ArchiveDecoder(
             action_set_content_csv_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv", messages_list_csv_file_full_path=messages_list_csv_file_full_path, xml_directory_path=xml_directory_path
+        )
+
+        archive_library = (
+            decode_archive.ArchiveLibrary.Builder()
+            # .add_archive_files(directory_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29", filename_pattern="NEXTFileArchiveServer_*.json")
+            .add_archive_file(file_full_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29\CFX00921734_FU.json")
+            .add_archive_decoder(archive_decoder=archive_decoder)
+            .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("NB_ACTIVE_SCRUTATION", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
+            .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("NB_PASSIVE_SCRUTATION", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
+            .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("QUESTION_NUMBER_ISSUED", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
+            .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("NB_RESPONSE_ACTIVE_SCRUTATION", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
+            .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("NB_RESPONSE_PASSIVE_SCRUTATION", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
+            .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("ACTIVE_QUESTION_NUMBER_RECEIVED", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
+            .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("PASSIVE_QUESTION_NUMBER_RECEIVED", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
+            .build()
         )
 
         archive_library = (
@@ -63,16 +76,19 @@ def main() -> None:
             .build()
         )
         archive_library.get_all_signal_types()
+        archive_library.create_reports_all_sqlarch_changes_since_previous(
+            white_list_signal_types=[
+                decode_archive.SqlArchLineSignalType.TSA,
+                decode_archive.SqlArchLineSignalType.TS,
+                decode_archive.SqlArchLineSignalType.TG,
+                decode_archive.SqlArchLineSignalType.TCA,
+            ],
+            output_directory_path=OUTPUT_DIRECTORY,
+            also_print_and_log=False,
+        )
 
         for sqlarch_archive_line in archive_library.all_sqlarch_lines:
-            sqlarch_archive_line.print_all_changes_since_previous(
-                white_list_signal_types=[
-                    decode_archive.SqlArchLineSignalType.TSA,
-                    decode_archive.SqlArchLineSignalType.TS,
-                    decode_archive.SqlArchLineSignalType.TG,
-                    decode_archive.SqlArchLineSignalType.TCA,
-                ]
-            )
+
             """if "_ZC_ATS_MAL" in sqlarch_archive_line.id_field:
                 sqlarch_archive_line.print_and_log_with_following_fields(
                     [
