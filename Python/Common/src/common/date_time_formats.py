@@ -1,14 +1,21 @@
 # -*-coding:Utf-8 -*
-""" Date time formats """
+"""Date time formats"""
+from datetime import timedelta
+
+
+def format_duration_timedelta_to_string(duration_timedelta: timedelta) -> str:
+    return format_duration_to_string(duration_timedelta.seconds)
+
+
 def format_duration_to_string(duration_in_seconds_as_float: float) -> str:
-    """ Formatter for duration """
-    milliseconds = int(duration_in_seconds_as_float*1000) % 1000
+    """Formatter for duration"""
+    milliseconds = int(duration_in_seconds_as_float * 1000) % 1000
 
     duration_in_seconds_as_int = int(duration_in_seconds_as_float)
 
     hours, remainder = divmod(duration_in_seconds_as_int, 3600)
     minutes, seconds = divmod(remainder, 60)
 
-    result = f'{int(hours):02}:{int(minutes):02}:{int(seconds):02}.{int(milliseconds):03}'
+    result = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}.{int(milliseconds):03}"
 
     return result

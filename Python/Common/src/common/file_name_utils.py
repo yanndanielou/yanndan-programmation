@@ -27,6 +27,11 @@ def get_file_folder_from_full_path(full_path: str) -> str:
     return file_folder_full_path
 
 
+def get_directory_name_from_directory_full_path(full_path: str) -> str:
+    file_folder_full_path = pathlib.Path(full_path).name
+    return file_folder_full_path
+
+
 def get_file_name_with_extension_from_full_path(full_path: str) -> str:
     file_name_with_extension_from_full_path = pathlib.Path(full_path).name
     return file_name_with_extension_from_full_path

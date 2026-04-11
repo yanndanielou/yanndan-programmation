@@ -2,9 +2,10 @@ import json
 import re
 from collections import OrderedDict
 from enum import Enum
+from dateutil import parser
 from typing import Any, Callable, Dict, List, Optional, Self, Set, cast
 
-from common import file_name_utils, file_utils, reports_utils
+from common import file_name_utils, file_utils, reports_utils, date_time_formats
 from logger import logger_config
 
 ArchiveLineFilter = Callable[[str, "ArchiveSource"], bool]
@@ -137,7 +138,7 @@ class ArchiveLibrary:
             for file_full_path in file_utils.get_files_by_directory_and_file_name_mask(directory_path, filename_pattern, file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER):
                 self.add_archive_file(file_full_path=file_full_path)
             if not self._label_is_forced:
-                self._library.label = f"Folder{file_name_utils.get_file_folder_from_full_path(directory_path)}"
+                self._library.label = f"Folder{file_name_utils.get_directory_name_from_directory_full_path(directory_path)}"
 
             return self
 
@@ -331,6 +332,7 @@ class ArchiveLine:
 
         # Access global fields
         self.date_raw = self.full_archive_line_as_json["date"]
+        self.date = parser.parse(self.date_raw)
         self.tags: List[str] = self.full_archive_line_as_json["tags"]
         self.tag: str = self.tags[0]
 
@@ -451,7 +453,18 @@ class SqlArchArchiveLine(ArchiveLine):
                 previous_new_st = self.previous_line_for_this_id.get_new_state_str()
                 new_new_st = self.get_new_state_str()
                 if previous_new_st != new_new_st:
-                    return OrderedDict({"date": previous_date, "id": self.id_field, "field": "newSt", "old_value": previous_new_st, "new_value": new_new_st})
+                    return OrderedDict(
+                        {
+                            "date": previous_date,
+                            "id": self.id_field,
+                            "field": "newSt",
+                            "old_value": previous_new_st,
+                            "new_value": new_new_st,
+                            "change_value": f"{previous_new_st} -> {new_new_st}",
+                            "time_delta": date_time_formats.format_duration_timedelta_to_string(self.date - self.previous_line_for_this_id.date),
+                            "old_timestamp": self.previous_line_for_this_id.date_raw,
+                        }
+                    )
             else:
                 # If decoded message exists, show only decoded message fields that changed
                 if self.previous_line_for_this_id.decoded_message:
@@ -473,6 +486,8 @@ class SqlArchArchiveLine(ArchiveLine):
                                             "field": field_name,
                                             "old_value": previous_value,
                                             "new_value": new_value,
+                                            "change_value": f"{previous_value} -> {new_value}",
+                                            "time_delta": date_time_formats.format_duration_timedelta_to_string(self.date - self.previous_line_for_this_id.date),
                                             "old_timestamp": self.previous_line_for_this_id.date_raw,
                                         }
                                     )
