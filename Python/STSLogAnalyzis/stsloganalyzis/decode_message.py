@@ -1,9 +1,10 @@
 import csv
 import datetime
+import os
 import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Optional, cast
+from typing import ClassVar, Dict, List, Optional, cast
 
 from logger import logger_config
 
@@ -260,6 +261,8 @@ class XmlMessageDecoder:
     BIG_ENDIAN_BIT_SET = "BigEndianBitSet"
     BIG_ENDIAN_ASCII_CHAR = "BigEndianASCIIChar"
 
+    _parsed_xml_files_by_path: ClassVar[Dict[str, ET.Element]] = {}
+
     def __init__(self, xml_directory_path: str) -> None:
         self.xml_directory_path = xml_directory_path
         self.cached_messages_by_id: Dict[int, ET.Element] = dict()
@@ -492,15 +495,19 @@ class XmlMessageDecoder:
                 elif element.tag == "field":
                     self._parse_field(element=element, xml_message_record_unit=xml_message_record_unit, record_prefix=record_prefix)
 
-    @staticmethod
-    def get_xml_file_root(message_number: int, xml_directory_path: str) -> Optional[ET.Element]:
+    @classmethod
+    def get_xml_file_root(cls, message_number: int, xml_directory_path: str) -> Optional[ET.Element]:
         # Open the corresponding XML file based on message_id
-        xml_file_path = xml_directory_path + "/" + f"MsgId{message_number}scheme.xml"
+        xml_file_path = os.path.join(xml_directory_path, f"MsgId{message_number}scheme.xml")
+        if xml_file_path in cls._parsed_xml_files_by_path:
+            return cls._parsed_xml_files_by_path[xml_file_path]
+
         try:
-            # Load and parse the XML file
+            # Load and parse the XML file once
             logger_config.print_and_log_info(f"Load and parse file {xml_file_path}")
             tree = ET.parse(xml_file_path)
             root = tree.getroot()
+            cls._parsed_xml_files_by_path[xml_file_path] = root
             return root
         except FileNotFoundError:
             logger_config.print_and_log_error(f"File {xml_file_path} not found.")
