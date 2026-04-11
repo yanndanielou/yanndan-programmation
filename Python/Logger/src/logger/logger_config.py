@@ -16,10 +16,11 @@ import sys
 import time
 from collections.abc import Generator
 from contextlib import contextmanager
+from functools import wraps
 
 # from warnings import deprecated
 from logging.handlers import RotatingFileHandler
-from typing import Optional, Tuple, cast, Dict
+from typing import Any, Callable, Optional, Tuple, cast, Dict, ParamSpec, TypeVar
 
 import humanize
 import psutil
@@ -429,9 +430,39 @@ def stopwatch_with_label(
 
         if enable_log:
             logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
-
     else:
         yield 0.0
+
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def stopwatch_decorator(
+    label: Optional[str] = None,
+    enable_print: bool = True,
+    enable_log: bool = True,
+    enabled: bool = True,
+    inform_beginning: bool = False,
+    monitor_ram_usage: bool = False,
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
+        @wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            effective_label = label if label else func.__qualname__
+            with stopwatch_with_label(
+                label=effective_label,
+                enable_print=enable_print,
+                enable_log=enable_log,
+                enabled=enabled,
+                inform_beginning=inform_beginning,
+                monitor_ram_usage=monitor_ram_usage,
+            ):
+                return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 @contextmanager

@@ -304,6 +304,14 @@ class ArchiveLibrary:
         logger_config.print_and_log_info(f"{self.label}: Signal type blacklist: {[st.value for st in self.signal_type_blacklist]} - rejected {self.signal_type_blacklist_rejected_count} lines")
         logger_config.print_and_log_info("{self.label}: === End Filter Statistics ===")
 
+    @logger_config.stopwatch_decorator(
+        label="ArchiveLibrary.create_reports_all_sqlarch_changes_since_previous",
+        enable_print=True,
+        enable_log=True,
+        enabled=True,
+        inform_beginning=True,
+        monitor_ram_usage=False,
+    )
     def create_reports_all_sqlarch_changes_since_previous(
         self, white_list_signal_types: Optional[List[SqlArchLineSignalType]], output_directory_path: str, also_print_and_log: bool, file_base_name: Optional[str] = None
     ) -> int:
