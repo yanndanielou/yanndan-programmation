@@ -4,6 +4,7 @@ from collections import OrderedDict
 from enum import Enum
 from dateutil import parser
 from typing import Any, Callable, Dict, List, Optional, Self, Set, cast
+import humanize
 
 from common import file_name_utils, file_utils, reports_utils, date_time_formats
 from logger import logger_config
@@ -177,9 +178,10 @@ class ArchiveLibrary:
 
             for archive_input in self.archive_inputs:
                 self._library.handle_input(archive_input)
+                self._library.decode_all_lines(archive_input, archive_decoder=self.archive_decoder)
 
-            if self.archive_decoder:
-                self._library.decode_all_lines(archive_decoder=self.archive_decoder)
+            # if self.archive_decoder:
+            #    self._library.decode_all_lines(archive_decoder=self.archive_decoder)
 
             self._library._print_filter_stats_and_info()
             return self._library
@@ -215,11 +217,11 @@ class ArchiveLibrary:
         return line_number
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def decode_all_lines(self, archive_decoder: ArchiveDecoder) -> int:
+    def decode_all_lines(self, archive_input: "ArchiveSource", archive_decoder: ArchiveDecoder) -> int:
         number_of_lines_decoded = 0
-        with logger_config.stopwatch_with_label(f"{self.label}: Decode all {len(self.all_sqlarch_lines)} lines", monitor_ram_usage=True):
+        with logger_config.stopwatch_with_label(f"{self.label}: Decode all {len(self.all_sqlarch_lines)} lines", monitor_ram_usage=True, inform_beginning=True):
 
-            for sqlarch_line in self.all_sqlarch_lines:
+            for sqlarch_line in archive_input.all_sqlarch_lines:
                 sqlarch_line.decode_message(archive_decoder)
 
         return number_of_lines_decoded
@@ -269,6 +271,7 @@ class ArchiveLibrary:
             archive_line = SqlArchArchiveLine(full_raw_archive_line=line, parent=parent, last_sqlarch_line_by_id=self._last_sqlarch_line_by_id)
             self._last_sqlarch_line_by_id[archive_line.id_field] = archive_line
 
+            parent.all_sqlarch_lines.append(archive_line)
             self.all_sqlarch_lines.append(archive_line)
         elif line.startswith(ARCHIVE_SPMQ_LINE_PREFIX):
             archive_line = ArchiveLine(full_raw_archive_line=line, parent=parent)
@@ -463,7 +466,8 @@ class SqlArchArchiveLine(ArchiveLine):
                             "old_value": previous_new_st,
                             "new_value": new_new_st,
                             "change_value": f"{previous_new_st} -> {new_new_st}",
-                            "time_delta": date_time_formats.format_duration_timedelta_to_string(self.date - self.previous_line_for_this_id.date),
+                            "exact_time_delta": date_time_formats.format_duration_timedelta_to_string(self.date - self.previous_line_for_this_id.date),
+                            "approximative_time_delta": humanize.precisedelta(self.date - self.previous_line_for_this_id.date, minimum_unit="milliseconds"),
                             "old_timestamp": self.previous_line_for_this_id.date_raw,
                         }
                     )
@@ -490,6 +494,7 @@ class SqlArchArchiveLine(ArchiveLine):
                                             "new_value": new_value,
                                             "change_value": f"{previous_value} -> {new_value}",
                                             "time_delta": date_time_formats.format_duration_timedelta_to_string(self.date - self.previous_line_for_this_id.date),
+                                            "approximative_time_delta": humanize.precisedelta(self.date - self.previous_line_for_this_id.date, minimum_unit="milliseconds"),
                                             "old_timestamp": self.previous_line_for_this_id.date_raw,
                                         }
                                     )
@@ -533,6 +538,10 @@ class SqlArchArchiveLine(ArchiveLine):
 
 
 class ArchiveSource(ABC):
+
+    def __init__(self) -> None:
+        self.all_sqlarch_lines: List[SqlArchArchiveLine] = []
+
     @abstractmethod
     def get_all_archive_file_lines(self) -> List[str]:
         pass
@@ -540,6 +549,7 @@ class ArchiveSource(ABC):
 
 class ArchiveLinesSet(ArchiveSource):
     def __init__(self, raw_archives_json_lines: List[str]) -> None:
+        super().__init__()
         logger_config.print_and_log_info(f"Archive lines set has {len(raw_archives_json_lines)} lines")
         self.raw_archives_json_lines = raw_archives_json_lines
 
@@ -549,6 +559,7 @@ class ArchiveLinesSet(ArchiveSource):
 
 class ArchiveFile(ArchiveSource):
     def __init__(self, file_full_path: str) -> None:
+        super().__init__()
         self.file_full_path = file_full_path
 
     def get_all_archive_file_lines(self) -> List[str]:
