@@ -1,9 +1,9 @@
 import json
 import re
 from enum import Enum
-from typing import Callable, Dict, List, Optional, Self, cast, Set
+from typing import Callable, Dict, List, Optional, Self, cast, Set, Any
 
-from common import file_utils
+from common import file_utils, reports_utils, file_name_utils
 from logger import logger_config
 
 ArchiveLineFilter = Callable[[str, "ArchiveSource"], bool]
@@ -121,6 +121,13 @@ class ArchiveLibrary:
             self.signal_type_whitelist: List[SqlArchLineSignalType] = []
             self.signal_type_blacklist: List[SqlArchLineSignalType] = []
 
+            self._label_is_forced = False
+
+        def with_label(self, label: str) -> Self:
+            self._library.label = label
+            self._label_is_forced = True
+            return self
+
         def add_raw_archives_json_lines(self, raw_archives_json_lines: List[str]) -> Self:
             self.archive_inputs.append(ArchiveLinesSet(raw_archives_json_lines=raw_archives_json_lines))
             return self
@@ -128,10 +135,16 @@ class ArchiveLibrary:
         def add_archive_files(self, directory_path: str, filename_pattern: str) -> Self:
             for file_full_path in file_utils.get_files_by_directory_and_file_name_mask(directory_path, filename_pattern, file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER):
                 self.add_archive_file(file_full_path=file_full_path)
+            if not self._label_is_forced:
+                self._library.label = f"Folder{file_name_utils.get_file_folder_from_full_path(directory_path)}"
+
             return self
 
         def add_archive_file(self, file_full_path: str) -> Self:
             self.archive_inputs.append(ArchiveFile(file_full_path=file_full_path))
+            if not self._label_is_forced:
+                self._library.label += f"{file_name_utils.get_file_name_without_extension_from_full_path(file_full_path)} "
+
             return self
 
         def add_sqlarch_archive_lines_whitelist_filter_based_on_id_term(self, filter_text: str, filterOnIdType: ArchiveLineFilterOnIdType) -> Self:
@@ -170,6 +183,8 @@ class ArchiveLibrary:
             return self._library
 
     def __init__(self) -> None:
+        self.label = ""
+
         self.archive_inputs: List["ArchiveSource"] = []
         self.all_archive_lines: List[ArchiveLine] = []
         self.all_archive_lines_by_type: Dict[ArchiveLineTag, List[ArchiveLine]] = dict()
@@ -199,7 +214,7 @@ class ArchiveLibrary:
 
     def decode_all_lines(self, archive_decoder: ArchiveDecoder) -> int:
         number_of_lines_decoded = 0
-        with logger_config.stopwatch_with_label(f"Decode all {len(self.all_sqlarch_lines)} lines", monitor_ram_usage=True):
+        with logger_config.stopwatch_with_label(f"{self.label}: Decode all {len(self.all_sqlarch_lines)} lines", monitor_ram_usage=True):
 
             for sqlarch_line in self.all_sqlarch_lines:
                 sqlarch_line.decode_message(archive_decoder)
@@ -259,7 +274,7 @@ class ArchiveLibrary:
             archive_line = ArchiveLine(full_raw_archive_line=line, parent=parent)
             self.all_alarm_lines.append(archive_line)
         else:
-            logger_config.print_and_log_error(f"Unsupported line {line_number}:" + line)
+            logger_config.print_and_log_error(f"{self.label}: Unsupported line {line_number}:" + line)
 
         self.all_archive_lines.append(archive_line)
         archive_line_type = archive_line.tag
@@ -273,52 +288,40 @@ class ArchiveLibrary:
         return {line.signal_type_raw for line in self.all_sqlarch_lines}
 
     def _print_filter_stats_and_info(self) -> None:
-        logger_config.print_and_log_info("=== ArchiveLibrary Filter Statistics and Info ===")
-        logger_config.print_and_log_info(f"Total SQLARCH lines processed: {self.total_sqlarch_lines_processed}")
-        logger_config.print_and_log_info(f"Lines kept after filtering: {len(self.all_sqlarch_lines)}")
+        logger_config.print_and_log_info("{self.label}: === ArchiveLibrary Filter Statistics and Info ===")
+        logger_config.print_and_log_info(f"{self.label}: Total SQLARCH lines processed: {self.total_sqlarch_lines_processed}")
+        logger_config.print_and_log_info(f"{self.label}: Lines kept after filtering: {len(self.all_sqlarch_lines)}")
 
-        logger_config.print_and_log_info("ID Filters:")
+        logger_config.print_and_log_info("{self.label}: ID Filters:")
         for i, f in enumerate(self.sqlarch_archive_lines_filters):
-            logger_config.print_and_log_info(f"  Filter {i+1}: {'Whitelist' if f.is_whitelist else 'Blacklist'} {f.filter_on_id_type.value} '{f.term}' - rejected {f.rejected_count} lines")
+            logger_config.print_and_log_info(
+                f"{self.label}:   Filter {i+1}: {'Whitelist' if f.is_whitelist else 'Blacklist'} {f.filter_on_id_type.value} '{f.term}' - rejected {f.rejected_count} lines"
+            )
 
-        logger_config.print_and_log_info(f"Signal type whitelist: {[st.value for st in self.signal_type_whitelist]} - rejected {self.signal_type_whitelist_rejected_count} lines")
-        logger_config.print_and_log_info(f"Signal type blacklist: {[st.value for st in self.signal_type_blacklist]} - rejected {self.signal_type_blacklist_rejected_count} lines")
-        logger_config.print_and_log_info("=== End Filter Statistics ===")
+        logger_config.print_and_log_info(f"{self.label}: Signal type whitelist: {[st.value for st in self.signal_type_whitelist]} - rejected {self.signal_type_whitelist_rejected_count} lines")
+        logger_config.print_and_log_info(f"{self.label}: Signal type blacklist: {[st.value for st in self.signal_type_blacklist]} - rejected {self.signal_type_blacklist_rejected_count} lines")
+        logger_config.print_and_log_info("{self.label}: === End Filter Statistics ===")
 
+    def create_reports_all_sqlarch_changes_since_previous(
+        self, white_list_signal_types: Optional[List[SqlArchLineSignalType]], output_directory_path: str, also_print_and_log: bool, file_base_name: Optional[str] = None
+    ) -> int:
+        if file_base_name is None:
+            file_base_name = f"{self.label}_all_changes"
 
-class ArchiveSource(ABC):
-    @abstractmethod
-    def get_all_archive_file_lines(self) -> List[str]:
-        pass
+        rows_as_list_dict: List[Dict[str, Any]] = []
 
+        for line in self.all_sqlarch_lines:
+            all_changes_since_previous = line.get_all_changes_since_previous(white_list_signal_types=white_list_signal_types)
+            if all_changes_since_previous:
+                rows_as_list_dict.append(all_changes_since_previous)
 
-class ArchiveLinesSet(ArchiveSource):
-    def __init__(self, raw_archives_json_lines: List[str]) -> None:
-        logger_config.print_and_log_info(f"Archive lines set has {len(raw_archives_json_lines)} lines")
-        self.raw_archives_json_lines = raw_archives_json_lines
-
-    def get_all_archive_file_lines(self) -> List[str]:
-        return self.raw_archives_json_lines
-
-
-class ArchiveFile(ArchiveSource):
-    def __init__(self, file_full_path: str) -> None:
-        self.file_full_path = file_full_path
-
-    def get_all_archive_file_lines(self) -> List[str]:
-        return self._open_and_get_all_archive_file_lines()
-
-    def _open_and_get_all_archive_file_lines(self) -> List[str]:
-
-        with logger_config.stopwatch_with_label(f"Open and read archive file lines {self.file_full_path}", monitor_ram_usage=True):
-            with open(self.file_full_path, mode="r", encoding="utf-8") as file:
-                all_raw_lines = file.readlines()
-                logger_config.print_and_log_info(f"Archive file {self.file_full_path} has {len(all_raw_lines)} lines")
-                return all_raw_lines
+        reports_utils.save_rows_to_output_files(rows_as_list_dict=rows_as_list_dict, file_base_name=file_base_name, output_directory_path=output_directory_path)
+        logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
+        return len(rows_as_list_dict)
 
 
 class ArchiveLine:
-    def __init__(self, full_raw_archive_line: str, parent: ArchiveSource) -> None:
+    def __init__(self, full_raw_archive_line: str, parent: "ArchiveSource") -> None:
         self.parent = parent
         self.full_raw_archive_line = full_raw_archive_line
         # Parsing JSON string
@@ -337,12 +340,12 @@ class ArchiveLine:
 
 
 class VersionArchiveLine(ArchiveLine):
-    def __init__(self, full_raw_archive_line: str, parent: ArchiveSource) -> None:
+    def __init__(self, full_raw_archive_line: str, parent: "ArchiveSource") -> None:
         super().__init__(full_raw_archive_line=full_raw_archive_line, parent=parent)
 
 
 class SqlArchArchiveLine(ArchiveLine):
-    def __init__(self, full_raw_archive_line: str, parent: ArchiveSource, last_sqlarch_line_by_id: Dict[str, "SqlArchArchiveLine"]) -> None:
+    def __init__(self, full_raw_archive_line: str, parent: "ArchiveSource", last_sqlarch_line_by_id: Dict[str, "SqlArchArchiveLine"]) -> None:
         super().__init__(full_raw_archive_line=full_raw_archive_line, parent=parent)
 
         # Accessing specific fields
@@ -427,6 +430,79 @@ class SqlArchArchiveLine(ArchiveLine):
             to_print_and_log = self._get_print_prefix()
             to_print_and_log += ", new state=" + self.get_new_state_str()
             logger_config.print_and_log_info(to_print_and_log=to_print_and_log)
+
+    def get_all_changes_since_previous(self, white_list_signal_types: Optional[List[SqlArchLineSignalType]]) -> Optional[Dict[str, Any]]:
+        field_names_to_ignore = ["Time"]
+
+        if white_list_signal_types is None or self.signal_type in white_list_signal_types:
+
+            if not self.previous_line_for_this_id:
+                if self.decoded_message is None:
+                    return {"date": self.date_raw, "id": self.id_field, "type": "no_previous", "new_value": self.get_new_state_str()}
+                else:
+                    return {"date": self.date_raw, "id": self.id_field, "type": "no_previous"}
+
+            previous_date = self.previous_line_for_this_id.get_date_raw_str()
+
+            if self.decoded_message is None:
+                # If no decoded message, only show newSt change
+                previous_new_st = self.previous_line_for_this_id.get_new_state_str()
+                new_new_st = self.get_new_state_str()
+                if previous_new_st != new_new_st:
+                    return {"date": previous_date, "id": self.id_field, "field": "newSt", "old_value": previous_new_st, "new_value": new_new_st}
+            else:
+                # If decoded message exists, show only decoded message fields that changed
+                if self.previous_line_for_this_id.decoded_message:
+                    for field_name in self.decoded_message.all_fields_by_name.keys():
+                        if field_name not in field_names_to_ignore:
+                            new_field = self.decoded_message.all_fields_by_name.get(field_name)
+                            previous_field = self.previous_line_for_this_id.decoded_message.all_fields_by_name.get(field_name)
+
+                            if new_field and previous_field:
+                                new_value = self.decoded_message.get_field_value_human_readable(field_name)
+                                previous_value = self.previous_line_for_this_id.decoded_message.get_field_value_human_readable(field_name)
+
+                                if new_value != previous_value:
+                                    return {
+                                        "date": previous_date,
+                                        "id": self.id_field,
+                                        "id_msg": self.decoded_message.message_number,
+                                        "field": field_name,
+                                        "old_value": previous_value,
+                                        "new_value": new_value,
+                                    }
+        return None
+
+
+class ArchiveSource(ABC):
+    @abstractmethod
+    def get_all_archive_file_lines(self) -> List[str]:
+        pass
+
+
+class ArchiveLinesSet(ArchiveSource):
+    def __init__(self, raw_archives_json_lines: List[str]) -> None:
+        logger_config.print_and_log_info(f"Archive lines set has {len(raw_archives_json_lines)} lines")
+        self.raw_archives_json_lines = raw_archives_json_lines
+
+    def get_all_archive_file_lines(self) -> List[str]:
+        return self.raw_archives_json_lines
+
+
+class ArchiveFile(ArchiveSource):
+    def __init__(self, file_full_path: str) -> None:
+        self.file_full_path = file_full_path
+
+    def get_all_archive_file_lines(self) -> List[str]:
+        return self._open_and_get_all_archive_file_lines()
+
+    def _open_and_get_all_archive_file_lines(self) -> List[str]:
+
+        with logger_config.stopwatch_with_label(f"Open and read archive file lines {self.file_full_path}", monitor_ram_usage=True):
+            with open(self.file_full_path, mode="r", encoding="utf-8") as file:
+                all_raw_lines = file.readlines()
+                logger_config.print_and_log_info(f"Archive file {self.file_full_path} has {len(all_raw_lines)} lines")
+                return all_raw_lines
 
     def print_all_changes_since_previous(self, white_list_signal_types: Optional[List[SqlArchLineSignalType]]) -> None:
 
