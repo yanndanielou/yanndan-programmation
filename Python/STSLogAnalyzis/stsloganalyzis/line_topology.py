@@ -134,6 +134,7 @@ class Direction(str, Enum):
 
     UP = "UP"
     DOWN = "DOWN"
+    BOTH = "BOTH"
 
 
 @dataclass
