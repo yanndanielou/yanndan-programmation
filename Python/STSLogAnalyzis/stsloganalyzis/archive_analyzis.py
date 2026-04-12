@@ -21,7 +21,7 @@ class Train:
 @dataclass
 class SqlArchArchiveLineWithContext:
     sql_arch_line: decode_archive.SqlArchArchiveLine
-    previous_line_for_this_id: decode_archive.SqlArchArchiveLine
+    previous_line_for_this_id: Optional[SqlArchArchiveLineWithContext]
 
     def __post_init__(self) -> None:
         pass
@@ -29,7 +29,7 @@ class SqlArchArchiveLineWithContext:
 
 @dataclass
 class ArchiveAnalyzis:
-    topology_line: line_topology.Line
+    railway_line: line_topology.Line
     archive_library: decode_archive.ArchiveLibrary
 
     label: str
@@ -38,7 +38,16 @@ class ArchiveAnalyzis:
         self.trains: List[Train] = []
         self.parsed_sql_arch_lines: List[Train] = []
         self.all_sql_arch_lines_with_context: List[SqlArchArchiveLineWithContext] = []
-        self.previous_line_by_id: Dict[str, SqlArchArchiveLineWithContext] = dict()
+        self.current_latest_line_by_id: Dict[str, SqlArchArchiveLineWithContext] = dict()
+
+    @logger_config.stopwatch_decorator
+    def handle_lines(self) -> None:
+        for sqlarch_line in self.archive_library.all_sqlarch_lines:
+            line_with_context = SqlArchArchiveLineWithContext(
+                sql_arch_line=sqlarch_line,
+                previous_line_for_this_id=self.current_latest_line_by_id.get(sqlarch_line.id_field),
+            )
+            self.current_latest_line_by_id[sqlarch_line.id_field] = line_with_context
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def create_reports_all_sqlarch_changes_since_previous(

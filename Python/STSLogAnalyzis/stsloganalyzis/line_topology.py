@@ -42,6 +42,9 @@ class Segment:
         assert self.identifier
         assert isinstance(self.identifier, str)
 
+    def __str__(self) -> str:
+        return f"Segment {self.identifier} #{self.num_segment} length:{self.length}"
+
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def load_from_csv(cls, csv_file_path: str | Path) -> List["Segment"]:
@@ -202,33 +205,20 @@ class Line:
         self,
         segment: Segment | str | int,
         abscissa: int,
-    ) -> TrackingBlockOnSegment:
-        """
-        Retourne le TrackingBlockOnSegment correspondant à un segment et une abscisse.
-
-        Args:
-            segment: Segment ou identifiant de segment ou num_segment.
-            abscisse: Abscisse recherchée.
-
-        Returns:
-            TrackingBlockOnSegment correspondant.
-
-        Raises:
-            ValueError: Si aucun ou plusieurs blocs correspondent.
-            TypeError: Si le segment n'est pas un Segment, un identifiant ou un num_segment.
-        """
+    ) -> Optional[TrackingBlock]:
 
         segment = self.get_segment_from_segment_id_number_or_segment(segment)
-        matches = [relation for relation in self.tracking_block_on_segments if relation.segment == segment and relation.abs_begin <= abscissa <= relation.abs_end]
+        matches = [relation for relation in self.tracking_block_on_segments if relation.segment == segment and relation.abs_begin <= abscissa < relation.abs_end]
 
         if not matches:
-            raise ValueError(f"Aucun TrackingBlockOnSegment trouvé pour le segment '{segment.identifier}' " f"et l'abscisse {abscissa}.")
+            logger_config.print_and_log_warning(f"Aucun TrackingBlockOnSegment trouvé pour le segment '{segment}' " f"et l'abscisse {abscissa}.")
+            return None
 
         if len(matches) > 1:
             match_ids = ", ".join(relation.tracking_block.identifier for relation in matches)
-            raise ValueError(f"Plusieurs TrackingBlockOnSegment correspondent au segment '{segment.identifier}' " f"et à l'abscisse {abscissa} : {match_ids}.")
+            raise ValueError(f"Plusieurs TrackingBlockOnSegment correspondent au segment '{segment}' " f"et à l'abscisse {abscissa} : {match_ids}.")
 
-        return matches[0]
+        return matches[0].tracking_block
 
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)

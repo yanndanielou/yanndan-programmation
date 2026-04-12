@@ -2,10 +2,7 @@ from typing import Any, Dict, List
 
 from logger import logger_config
 
-from stsloganalyzis import (
-    decode_archive,
-    line_topology,
-)
+from stsloganalyzis import decode_archive, line_topology, archive_analyzis
 
 OUTPUT_DIRECTORY = "output"
 
@@ -78,6 +75,18 @@ def main() -> None:
             .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("ACTIVE_QUESTION_NUMBER_RECEIVED", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
             .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("PASSIVE_QUESTION_NUMBER_RECEIVED", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
             .build()
+        )
+
+        analyzis = archive_analyzis.ArchiveAnalyzis(railway_line=railway_line, archive_library=archive_library, label="CFX")
+        analyzis.create_reports_all_sqlarch_changes_since_previous(
+            white_list_signal_types=[
+                decode_archive.SqlArchLineSignalType.TSA,
+                decode_archive.SqlArchLineSignalType.TS,
+                decode_archive.SqlArchLineSignalType.TG,
+                decode_archive.SqlArchLineSignalType.TCA,
+            ],
+            output_directory_path=OUTPUT_DIRECTORY,
+            also_print_and_log=False,
         )
 
         archive_library = (
