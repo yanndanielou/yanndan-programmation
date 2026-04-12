@@ -38,6 +38,8 @@ class SqlArchLineSignalType(Enum):
     CR = "ACKNOWLEDGE"
     TB = "TRACKING_BLOCK"
     AIGUILLE = "AIGUILLE"
+    CDV = "CDV"
+    NOT_FOUND = "NOT_FOUND"
 
 
 class Filter(ABC):
@@ -87,7 +89,13 @@ class SignalTypeFilter(Filter):
             line_json = json.loads(line)
             sqlarch_section = line_json.get("SQLARCH", {})
             signal_type_raw = str(sqlarch_section.get("sigT", ""))
-            signal_type = SqlArchLineSignalType[signal_type_raw] if signal_type_raw else None
+
+            try:
+                signal_type = SqlArchLineSignalType[signal_type_raw] if signal_type_raw else None
+            except KeyError as err:
+                logger_config.print_and_log_exception(err)
+                signal_type = SqlArchLineSignalType.NOT_FOUND
+
             if signal_type is None:
                 return False
             if self.is_whitelist:
@@ -230,7 +238,11 @@ class ArchiveLibrary:
             sqlarch_section = line_json.get("SQLARCH", {})
             id_value = str(sqlarch_section.get("id", ""))
             signal_type_raw = str(sqlarch_section.get("sigT", ""))
-            signal_type = SqlArchLineSignalType[signal_type_raw] if signal_type_raw else None
+            try:
+                signal_type = SqlArchLineSignalType[signal_type_raw] if signal_type_raw else None
+            except KeyError as err:
+                logger_config.print_and_log_exception(err)
+                signal_type = SqlArchLineSignalType.NOT_FOUND
         except (TypeError, ValueError, json.JSONDecodeError, KeyError):
             return False
 
@@ -345,7 +357,13 @@ class SqlArchArchiveLine(ArchiveLine):
         self.exe_st = self.sqlarch_json_section.get("exeSt")
         self.id_field = str(self.sqlarch_json_section.get("id"))
         self.signal_type_raw = str(self.sqlarch_json_section.get("sigT"))
-        self.signal_type = SqlArchLineSignalType[self.signal_type_raw] if self.signal_type_raw else None
+
+        try:
+            self.signal_type = SqlArchLineSignalType[self.signal_type_raw] if self.signal_type_raw else None
+        except KeyError as err:
+            logger_config.print_and_log_exception(err)
+            self.signal_type = SqlArchLineSignalType.NOT_FOUND
+
         assert self.id_field is not None
         assert isinstance(self.id_field, str)
 

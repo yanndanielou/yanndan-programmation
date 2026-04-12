@@ -5,7 +5,14 @@ from typing import Dict, List, Optional, cast
 
 from logger import logger_config
 
-from stsloganalyzis import decode_action_set_content, decode_xml_message, decode_zc_ats_mal_content, line_topology, decode_specific_message_content
+from stsloganalyzis import (
+    decode_action_set_content,
+    decode_product_topology_dependant_messages_content,
+    decode_xml_message,
+    line_topology,
+    decode_specific_message_content,
+    decode_next_specific_messages_content,
+)
 
 # CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR = "!!! Decoding Error !!!"
 
@@ -106,7 +113,11 @@ class MessageDecoder:
     def __init__(self, xml_directory_path: str, action_set_content_decoder: Optional[decode_action_set_content.ActionSetContentDecoder], railway_line: Optional[line_topology.Line] = None) -> None:
         self.xml_message_decoder = decode_xml_message.XmlMessageDecoder(xml_directory_path=xml_directory_path)
         self.action_set_content_decoder = action_set_content_decoder
-        self.zc_ats_mal_message_decoder = decode_zc_ats_mal_content.ZcAtsMalMessageDecoder(railway_line=railway_line) if railway_line else None
+        self.zc_ats_mal_message_decoder = decode_product_topology_dependant_messages_content.ZcAtsMalMessageDecoder(railway_line=railway_line) if railway_line else None
+        self.cc_ats_tracking_message_decoder = decode_product_topology_dependant_messages_content.CcAtsTrackingMessageDecoder(railway_line=railway_line) if railway_line else None
+        self.AtsCcSpecificRemoteControlMessageDecoder = decode_next_specific_messages_content.AtsCcSpecificRemoteControlMessageDecoder(railway_line=railway_line) if railway_line else None
+        self.CcAtsRsOperationMessageDecoder = decode_next_specific_messages_content.CcAtsRsOperationMessageDecoder(railway_line=railway_line) if railway_line else None
+        self.CcAtsSpecificOperationMessageDecoder = decode_next_specific_messages_content.CcAtsSpecificOperationMessageDecoder(railway_line=railway_line) if railway_line else None
 
     def decode_raw_hexadecimal_message(
         self,
@@ -134,7 +145,16 @@ class MessageDecoder:
         decoded: Optional[decode_specific_message_content.SpecificMessageContentDecoded] = None
         if decoded_message.message_number == decode_action_set_content.ATS_CC_ACTION_SET_MESSAGE_ID and self.action_set_content_decoder:
             decoded = self.action_set_content_decoder.decode(decoded_message=decoded_message)
-        elif decoded_message.message_number == decode_zc_ats_mal_content.ZC_ATS_MAL_MESSAGE_ID and self.zc_ats_mal_message_decoder:
+        elif decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID and self.zc_ats_mal_message_decoder:
             decoded = self.zc_ats_mal_message_decoder.decode(decoded_message=decoded_message)
+        elif decoded_message.message_number == decode_product_topology_dependant_messages_content.CC_ATS_TRACKING_MESSAGE_ID and self.cc_ats_tracking_message_decoder:
+            decoded = self.cc_ats_tracking_message_decoder.decode(decoded_message=decoded_message)
+        elif decoded_message.message_number == decode_next_specific_messages_content.CC_ATS_SPE_OPERATION_MESSAGE_ID___disabled and self.CcAtsSpecificOperationMessageDecoder:
+            decoded = self.CcAtsSpecificOperationMessageDecoder.decode(decoded_message=decoded_message)
+        elif decoded_message.message_number == decode_next_specific_messages_content.CC_ATS_SPE_RS_OPERATION_MESSAGE_ID and self.CcAtsRsOperationMessageDecoder:
+            decoded = self.CcAtsRsOperationMessageDecoder.decode(decoded_message=decoded_message)
+        elif decoded_message.message_number == decode_next_specific_messages_content.ATS_CC_SPE_RC_MESSAGE_ID and self.AtsCcSpecificRemoteControlMessageDecoder:
+            decoded = self.AtsCcSpecificRemoteControlMessageDecoder.decode(decoded_message=decoded_message)
+
         if decoded:
             decoded_message.decoded_fields_flat_directory.update(decoded.fields_with_value)
