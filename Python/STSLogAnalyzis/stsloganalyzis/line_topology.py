@@ -227,3 +227,77 @@ class TrackingCircuit:
                 circuits.append(circuit)
 
         return circuits
+
+
+@dataclass
+class TrackingBlock:
+    """
+    Représente un bloc de détection (regroupement de circuits).
+
+    Attributs:
+        id: Identifiant unique du bloc (ex: TB_CDV_z124Nord_01)
+        label: Libellé du bloc (optionnel)
+        type: Type du bloc (optionnel)
+        track_circuit_id: Identifiant du circuit de détection associé
+        isotropic: Indicateur isotrope (bool)
+        border: Indicateur de limite (bool)
+        steering: Direction de pilotage (UP, DOWN, ou None)
+        extension_id: Identifiant d'extension (optionnel)
+    """
+
+    id: str
+    label: Optional[str]
+    type: Optional[str]
+    track_circuit_id: str
+    isotropic: bool
+    border: bool
+    steering: Optional[Direction]
+    extension_id: Optional[str]
+
+    @classmethod
+    def load_from_csv(cls, csv_file_path: str | Path) -> List["TrackingBlock"]:
+        """
+        Charge une liste de blocs de détection depuis un fichier CSV.
+
+        Args:
+            csv_file_path: Chemin vers le fichier CSV
+
+        Returns:
+            Liste des objets TrackingBlock
+
+        Format du CSV:
+            ID;LABEL;TYPE;TRACK_CIRCUIT_ID;ISOTROPIC;BORDER;STEERING;EXTENSION_ID
+        """
+        blocks = []
+        csv_path = Path(csv_file_path)
+
+        with open(csv_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter=";")
+
+            for row in reader:
+                # Fonction helper pour convertir les valeurs vides en None
+                def to_none(value: str) -> Optional[str]:
+                    return None if value.strip() == "" else value.strip()
+
+                # Fonction helper pour convertir en bool (0=False, 1=True)
+                def to_bool(value: str) -> bool:
+                    return value.strip() == "1"
+
+                # Fonction helper pour convertir en Direction optionnelle
+                def to_direction(value: str) -> Optional[Direction]:
+                    val = to_none(value)
+                    return Direction(val) if val else None
+
+                block = cls(
+                    id=row["ID"],
+                    label=to_none(row["LABEL"]),
+                    type=to_none(row["TYPE"]),
+                    track_circuit_id=row["TRACK_CIRCUIT_ID"],
+                    isotropic=to_bool(row["ISOTROPIC"]),
+                    border=to_bool(row["BORDER"]),
+                    steering=to_direction(row["STEERING"]),
+                    extension_id=to_none(row["EXTENSION_ID"]),
+                )
+                blocks.append(block)
+
+        return blocks
