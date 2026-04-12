@@ -43,6 +43,7 @@ class Segment:
         assert isinstance(self.identifier, str)
 
     @classmethod
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def load_from_csv(cls, csv_file_path: str | Path) -> List["Segment"]:
         """
         Charge une liste de segments depuis un fichier CSV.
@@ -180,6 +181,7 @@ class Line:
         return len(self.segments)
 
     @classmethod
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def load_from_csv(
         cls,
         segments_csv_full_path: str | Path,
@@ -187,7 +189,8 @@ class Line:
         track_circuits_csv_full_path: str | Path,
         tracking_blocks_csv_full_path: str | Path,
         switches_csv_full_path: str | Path,
-        tracking_block_on_segments_csv_full_path: Optional[str | Path] = None,
+        tracking_block_on_segments_csv_full_path: str | Path,
+        tracking_block_on_segments_relations_csv_full_path: str | Path,
         ignore_tracking_blocks_without_circuits: bool = False,
     ) -> "Line":
         """
@@ -298,6 +301,7 @@ class TrackingCircuit:
     tracking_blocks: List["TrackingBlock"] = field(default_factory=list)
 
     @classmethod
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def load_from_csv(cls, csv_file_path: str | Path) -> List["TrackingCircuit"]:
         """
         Charge une liste de circuits de detection depuis un fichier CSV.
@@ -462,6 +466,7 @@ class TrackingBlock:
         return blocks, ignored_tracking_blocks_ids_because_no_track_circuit_defined
 
     @classmethod
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def load_from_csv(cls, csv_file_path: str | Path) -> List["TrackingBlock"]:
         """
         Charge une liste de blocs de détection depuis un fichier CSV.
@@ -556,6 +561,7 @@ class Switch:
         return switches
 
     @classmethod
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def load_from_csv(cls, csv_file_path: str | Path) -> List["Switch"]:
         """
         Charge une liste d'aiguillages depuis un fichier CSV.
@@ -598,6 +604,7 @@ class TrackingBlockOnSegment:
         assert self.abs_end
 
     @classmethod
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def load_from_csv(
         cls,
         csv_file_path: str | Path,

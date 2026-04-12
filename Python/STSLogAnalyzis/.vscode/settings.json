@@ -34,7 +34,8 @@
         "black"
     ],
     "python.sortImports.path": "isort",
-    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+    // Découvrir automatiquement les tests à la sauvegarde: désactivé pour perfs
+    "python.testing.autoTestDiscoverOnSaveEnabled": false,
     // Formater automatiquement le code à la sauvegarde
     "editor.formatOnSave": true,
     // Activer les snippets Python

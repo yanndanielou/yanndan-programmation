@@ -11,6 +11,8 @@ def next_line() -> line_topology.Line:
         tracking_blocks_csv_full_path=r"D:\NEXT\Data\Csv\NEXT_tracking_block.csv",
         switches_csv_full_path=r"D:\NEXT\Data\Csv\NEXT_switch.csv",
         segments_relations_csv_full_path=r"D:\NEXTTS\Data\Csv\NEXT_tsSegmentRelation.csv",
+        tracking_block_on_segments_csv_full_path=r"D:\NEXTTS\Data\Csv\NEXT_tsLocUnitTopo.csv",
+        tracking_block_on_segments_relations_csv_full_path=r"D:\NEXTTS\Data\Csv\NEXT_tsTbOnSegmentRelation.csv",
         ignore_tracking_blocks_without_circuits=True,
     )
     return line
