@@ -174,6 +174,46 @@ class Line:
     def __len__(self) -> int:
         return len(self.segments)
 
+    def get_tracking_block_by_segment_and_abscisse(
+        self,
+        segment: Segment | str | int,
+        abscisse: int,
+    ) -> TrackingBlockOnSegment:
+        """
+        Retourne le TrackingBlockOnSegment correspondant à un segment et une abscisse.
+
+        Args:
+            segment: Segment ou identifiant de segment ou num_segment.
+            abscisse: Abscisse recherchée.
+
+        Returns:
+            TrackingBlockOnSegment correspondant.
+
+        Raises:
+            ValueError: Si aucun ou plusieurs blocs correspondent.
+            TypeError: Si le segment n'est pas un Segment, un identifiant ou un num_segment.
+        """
+        segment_obj: Segment
+        if isinstance(segment, Segment):
+            segment_obj = segment
+        elif isinstance(segment, str):
+            segment_obj = self.segment_by_id[segment]
+        elif isinstance(segment, int):
+            segment_obj = self.segment_by_number[segment]
+        else:
+            raise TypeError("segment doit être un Segment, un identifiant de segment (str) ou un num_segment (int).")
+
+        matches = [relation for relation in self.tracking_block_on_segments if relation.segment == segment_obj and relation.abs_begin <= abscisse <= relation.abs_end]
+
+        if not matches:
+            raise ValueError(f"Aucun TrackingBlockOnSegment trouvé pour le segment '{segment_obj.identifier}' " f"et l'abscisse {abscisse}.")
+
+        if len(matches) > 1:
+            match_ids = ", ".join(relation.tracking_block.identifier for relation in matches)
+            raise ValueError(f"Plusieurs TrackingBlockOnSegment correspondent au segment '{segment_obj.identifier}' " f"et à l'abscisse {abscisse} : {match_ids}.")
+
+        return matches[0]
+
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def load_from_csv(
