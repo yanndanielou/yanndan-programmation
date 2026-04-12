@@ -1,7 +1,8 @@
 import csv
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from dataclasses import dataclass
+from enum import Enum
 
 
 @dataclass
@@ -126,3 +127,102 @@ class Line:
         """
         segments = Segment.load_from_csv(csv_file_path)
         return cls(segments)
+
+
+class Direction(str, Enum):
+    """Énumération des directions possibles."""
+
+    UP = "UP"
+    DOWN = "DOWN"
+
+
+@dataclass
+class TrackingCircuit:
+    """
+    Représente un circuit de detection d'occupation de voie ferrée.
+
+    Attributs:
+        id: Identifiant unique du circuit (ex: CDV_z124Nord)
+        label: Libellé du circuit (ex: 124Nord)
+        occupancy_id: Identifiant du capteur d'occupation
+        direction_id: Identifiant de la direction (optionnel)
+        default_direction: Direction par défaut (UP ou DOWN)
+        zone_failure_id: Identifiant de zone de défaillance
+        failure_id: Identifiant de défaillance
+        turnback: Indicateur de retour à la ligne (bool)
+        steering: Direction de pilotage (UP, DOWN, ou None)
+        extension_id: Identifiant d'extension (optionnel)
+        representation: Représentation (optionnel)
+        authorized_acknowledgement_rights: Droits d'acquittement autorisés (optionnel)
+        denied_acknowledgement_rights: Droits d'acquittement refusés (optionnel)
+        virtual: Indicateur de circuit virtuel (bool)
+    """
+
+    id: str
+    label: str
+    occupancy_id: str
+    direction_id: Optional[str]
+    default_direction: Direction
+    zone_failure_id: str
+    failure_id: str
+    turnback: bool
+    steering: Optional[Direction]
+    extension_id: Optional[str]
+    representation: Optional[str]
+    authorized_acknowledgement_rights: Optional[str]
+    denied_acknowledgement_rights: Optional[str]
+    virtual: bool
+
+    @classmethod
+    def load_from_csv(cls, csv_file_path: str | Path) -> List["TrackingCircuit"]:
+        """
+        Charge une liste de circuits de detection depuis un fichier CSV.
+
+        Args:
+            csv_file_path: Chemin vers le fichier CSV
+
+        Returns:
+            Liste des objets TrackingCircuit
+
+        Format du CSV:
+            ID;LABEL;OCCUPANCY_ID;DIRECTION_ID;DEFAULT_DIRECTION;ZONE_FAILURE_ID;FAILURE_ID;TURNBACK;STEERING;EXTENSION_ID;REPRESENTATION;AUTHORIZED_ACKNOWLEDGEMENT_RIGHTS;DENIED_ACKNOWLEDGEMENT_RIGHTS;VIRTUAL
+        """
+        circuits = []
+        csv_path = Path(csv_file_path)
+
+        with open(csv_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter=";")
+
+            for row in reader:
+                # Fonction helper pour convertir les valeurs vides en None
+                def to_none(value: str) -> Optional[str]:
+                    return None if value.strip() == "" else value.strip()
+
+                # Fonction helper pour convertir en bool (0=False, 1=True)
+                def to_bool(value: str) -> bool:
+                    return value.strip() == "1"
+
+                # Fonction helper pour convertir en Direction optionnelle
+                def to_direction(value: str) -> Optional[Direction]:
+                    val = to_none(value)
+                    return Direction(val) if val else None
+
+                circuit = cls(
+                    id=row["ID"],
+                    label=row["LABEL"],
+                    occupancy_id=row["OCCUPANCY_ID"],
+                    direction_id=to_none(row["DIRECTION_ID"]),
+                    default_direction=Direction(row["DEFAULT_DIRECTION"]),
+                    zone_failure_id=row["ZONE_FAILURE_ID"],
+                    failure_id=row["FAILURE_ID"],
+                    turnback=to_bool(row["TURNBACK"]),
+                    steering=to_direction(row["STEERING"]),
+                    extension_id=to_none(row["EXTENSION_ID"]),
+                    representation=to_none(row["REPRESENTATION"]),
+                    authorized_acknowledgement_rights=to_none(row["AUTHORIZED_ACKNOWLEDGEMENT_RIGHTS"]),
+                    denied_acknowledgement_rights=to_none(row["DENIED_ACKNOWLEDGEMENT_RIGHTS"]),
+                    virtual=to_bool(row["VIRTUAL"]),
+                )
+                circuits.append(circuit)
+
+        return circuits
