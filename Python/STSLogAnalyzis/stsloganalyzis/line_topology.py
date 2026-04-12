@@ -62,6 +62,7 @@ class Segment:
         return segments
 
 
+@dataclass
 class Line:
     """
     Représente une ligne ferroviaire complète avec tous ses composants.
@@ -72,23 +73,10 @@ class Line:
         tracking_blocks: Dict des blocs de détection par ID
     """
 
-    def __init__(
-        self,
-        segments: List[Segment] = None,
-        tracking_circuits: Dict[str, TrackingCircuit] = None,
-        tracking_blocks: Dict[str, TrackingBlock] = None,
-    ):
-        """
-        Initialise une ligne avec ses composants.
-
-        Args:
-            segments: Liste des objets Segment (par défaut liste vide)
-            tracking_circuits: Dict des objets TrackingCircuit par ID
-            tracking_blocks: Dict des objets TrackingBlock par ID
-        """
-        self.segments = segments or []
-        self.tracking_circuits = tracking_circuits or {}
-        self.tracking_blocks = tracking_blocks or {}
+    segments: List[Segment]
+    tracking_circuits: Dict[str, TrackingCircuit]
+    tracking_blocks: Dict[str, TrackingBlock]
+    not_created_tracking_blocks_ids_without_track_circuits: List[str]
 
     def __repr__(self) -> str:
         return f"Line(segments={len(self.segments)}, " f"circuits={len(self.tracking_circuits)}, " f"blocks={len(self.tracking_blocks)})"
@@ -198,9 +186,11 @@ class Line:
         Crée une ligne complète en chargeant les données depuis des fichiers CSV.
 
         Args:
-            segments_csv: Chemin vers le fichier CSV des segments
-            circuits_csv: Chemin vers le fichier CSV des circuits
-            blocks_csv: Chemin vers le fichier CSV des blocs
+            segments_csv_full_path: Chemin vers le fichier CSV des segments
+            track_circuits_csv_full_path: Chemin vers le fichier CSV des circuits
+            tracking_blocks_csv_full_path: Chemin vers le fichier CSV des blocs
+            ignore_tracking_blocks_without_circuits: Si True, ignore les blocs sans circuit.
+                                                      Si False, lève une exception.
 
         Returns:
             Objet Line contenant tous les composants
@@ -212,40 +202,19 @@ class Line:
         circuits_list = TrackingCircuit.load_from_csv(track_circuits_csv_full_path)
         circuits_dict = {c.id: c for c in circuits_list}
 
-        # Charger les données brutes des blocs et établir les relations avec les circuits
-        blocks_data_list = TrackingBlock._load_from_csv_raw(tracking_blocks_csv_full_path, ignore_when_track_circuit_is_not_defined=ignore_when_track_circuit_is_not_defined)
-        blocks_list = []
-        blocks_dict = {}
-
-        for block_data in blocks_data_list:
-            circuit_id = block_data["track_circuit_id"]
-            circuit = circuits_dict.get(circuit_id)
-
-            if not circuit:
-                raise ValueError(f"Circuit '{circuit_id}' non trouvé pour le bloc '{block_data['id']}'. " f"Chaque bloc doit référencer un circuit existant.")
-
-            # Créer le bloc avec le circuit (obligatoire)
-            block = TrackingBlock(
-                id=block_data["id"],
-                label=block_data["label"],
-                type=block_data["type"],
-                track_circuit_id=block_data["track_circuit_id"],
-                isotropic=block_data["isotropic"],
-                border=block_data["border"],
-                steering=block_data["steering"],
-                extension_id=block_data["extension_id"],
-                tracking_circuit=circuit,
-            )
-            blocks_list.append(block)
-            blocks_dict[block.id] = block
-
-            # Ajouter le bloc à la liste du circuit
-            circuit.tracking_blocks.append(block)
+        # Charger les blocs avec associations aux circuits
+        blocks_list, not_created_tracking_blocks_ids_without_track_circuits = TrackingBlock._load_from_csv_raw(
+            tracking_blocks_csv_full_path,
+            circuits_dict,
+            ignore_tracking_blocks_without_circuits,
+        )
+        blocks_dict = {b.id: b for b in blocks_list}
 
         return cls(
             segments=segments,
             tracking_circuits=circuits_dict,
             tracking_blocks=blocks_dict,
+            not_created_tracking_blocks_ids_without_track_circuits=not_created_tracking_blocks_ids_without_track_circuits,
         )
 
 
@@ -379,19 +348,30 @@ class TrackingBlock:
     tracking_circuit: TrackingCircuit
 
     @classmethod
-    def _load_from_csv_raw(cls, csv_file_path: str | Path, ignore_when_track_circuit_is_not_defined: bool) -> List[Tuple]:
+    def _load_from_csv_raw(
+        cls,
+        csv_file_path: str | Path,
+        circuits_dict: Dict[str, TrackingCircuit],
+        ignore_tracking_blocks_without_circuits: bool = False,
+    ) -> Tuple[List["TrackingBlock"], List[str]]:
         """
-        Charge les données brutes des blocs de détection depuis un fichier CSV.
-        Retourne les données sans établir les relations aux circuits.
+        Charge les blocs de détection depuis un fichier CSV et crée les objets TrackingBlock
+        en établissant directement les associations avec les circuits.
 
         Args:
             csv_file_path: Chemin vers le fichier CSV
+            circuits_dict: Dictionnaire des circuits par ID
+            ignore_tracking_blocks_without_circuits: Si True, ignore les blocs dont le circuit n'existe pas.
+                                                      Si False, lève une ValueError.
 
         Returns:
-            Liste de tuples contenant les données des blocs
+            Liste des objets TrackingBlock créés avec leurs associations aux circuits
+
+        Format du CSV:
+            ID;LABEL;TYPE;TRACK_CIRCUIT_ID;ISOTROPIC;BORDER;STEERING;EXTENSION_ID
         """
-        ignored_tracking_blocks_because_no_track_circuit_defined: List[str] = []
-        blocks_data = []
+        blocks = []
+        ignored_tracking_blocks_ids_because_no_track_circuit_defined = []
         csv_path = Path(csv_file_path)
 
         with open(csv_path, "r", encoding="utf-8") as f:
@@ -411,19 +391,43 @@ class TrackingBlock:
                     val = to_none(value)
                     return Direction(val) if val else None
 
-                data = {
-                    "id": row["ID"],
-                    "label": to_none(row["LABEL"]),
-                    "type": to_none(row["TYPE"]),
-                    "track_circuit_id": row["TRACK_CIRCUIT_ID"],
-                    "isotropic": to_bool(row["ISOTROPIC"]),
-                    "border": to_bool(row["BORDER"]),
-                    "steering": to_direction(row["STEERING"]),
-                    "extension_id": to_none(row["EXTENSION_ID"]),
-                }
-                blocks_data.append(data)
+                block_id = row["ID"]
+                circuit_id = row["TRACK_CIRCUIT_ID"]
 
-        return blocks_data
+                circuit = circuits_dict.get(circuit_id)
+
+                # Gérer le cas où le circuit n'existe pas
+                if not circuit:
+                    if ignore_tracking_blocks_without_circuits:
+                        ignored_tracking_blocks_ids_because_no_track_circuit_defined.append(block_id)
+                        continue
+                    else:
+                        raise ValueError(f"Circuit '{circuit_id}' non trouvé pour le bloc '{block_id}'. " f"Chaque bloc doit référencer un circuit existant.")
+
+                # Créer le bloc avec le circuit (obligatoire)
+                block = cls(
+                    id=block_id,
+                    label=to_none(row["LABEL"]),
+                    type=to_none(row["TYPE"]),
+                    track_circuit_id=circuit_id,
+                    isotropic=to_bool(row["ISOTROPIC"]),
+                    border=to_bool(row["BORDER"]),
+                    steering=to_direction(row["STEERING"]),
+                    extension_id=to_none(row["EXTENSION_ID"]),
+                    tracking_circuit=circuit,
+                )
+                blocks.append(block)
+
+                # Ajouter le bloc à la liste du circuit
+                circuit.tracking_blocks.append(block)
+
+        if ignored_tracking_blocks_ids_because_no_track_circuit_defined:
+            print(
+                f"⚠️  {len(ignored_tracking_blocks_ids_because_no_track_circuit_defined)} bloc(s) ignoré(s) car leur circuit n'existe pas: "
+                f"{', '.join(ignored_tracking_blocks_ids_because_no_track_circuit_defined)}"
+            )
+
+        return blocks, ignored_tracking_blocks_ids_because_no_track_circuit_defined
 
     @classmethod
     def load_from_csv(cls, csv_file_path: str | Path) -> List["TrackingBlock"]:
