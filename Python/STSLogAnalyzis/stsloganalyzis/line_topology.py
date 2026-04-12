@@ -4,6 +4,7 @@ from typing import List
 from dataclasses import dataclass
 
 
+@dataclass
 class Segment:
     """
     Représente un segment de ligne ferroviaire.
@@ -17,24 +18,12 @@ class Segment:
         length: Longueur du segment en mètres (ex: 13261)
     """
 
-    def __init__(
-        self,
-        segment_id: str,
-        num_segment: int,
-        direction: str,
-        pk_abs_start: float,
-        pk_abs_end: float,
-        length: float,
-    ):
-        self.segment_id = segment_id
-        self.num_segment = num_segment
-        self.direction = direction
-        self.pk_abs_start = pk_abs_start
-        self.pk_abs_end = pk_abs_end
-        self.length = length
-
-    def __repr__(self) -> str:
-        return f"Segment(id={self.segment_id}, num={self.num_segment}, " f"dir={self.direction}, pk_start={self.pk_abs_start}, " f"pk_end={self.pk_abs_end}, length={self.length})"
+    segment_id: str
+    num_segment: int
+    direction: str
+    pk_abs_start: float
+    pk_abs_end: float
+    length: float
 
     @classmethod
     def load_from_csv(cls, csv_file_path: str | Path) -> List["Segment"]:
