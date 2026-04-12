@@ -15,7 +15,7 @@ class Segment:
     Représente un segment de ligne ferroviaire.
 
     Attributs:
-        segment_id: Identifiant unique du segment (ex: SEG_010201)
+        identifier: Identifiant unique du segment (ex: SEG_010201)
         num_segment: Numéro du segment (ex: 8321)
         direction: Direction du segment (UP ou DOWN)
         pk_abs_start: Point kilométrique absolu de début (ex: 374.213)
@@ -27,7 +27,7 @@ class Segment:
         downstream_reverse: Segment aval reverse (optionnel)
     """
 
-    segment_id: str
+    identifier: str
     num_segment: int
     direction: str
     pk_abs_start: float
@@ -39,8 +39,8 @@ class Segment:
     downstream_reverse: Optional["Segment"] = None
 
     def __post_init__(self) -> None:
-        assert self.segment_id
-        assert isinstance(self.segment_id, str)
+        assert self.identifier
+        assert isinstance(self.identifier, str)
 
     @classmethod
     def load_from_csv(cls, csv_file_path: str | Path) -> List["Segment"]:
@@ -54,7 +54,7 @@ class Segment:
             Liste des objets Segment
 
         Format du CSV:
-            SEGMENT_ID;NUM_SEGMENT;DIRECTION;PK_ABS_START;PK_ABS_END;LENGTH
+            identifier;NUM_SEGMENT;DIRECTION;PK_ABS_START;PK_ABS_END;LENGTH
         """
         segments = []
         csv_path = Path(csv_file_path)
@@ -64,7 +64,7 @@ class Segment:
 
             for row in reader:
                 segment = cls(
-                    segment_id=row["SEGMENT_ID"],
+                    identifier=row["identifier"],
                     num_segment=int(row["NUM_SEGMENT"]),
                     direction=row["DIRECTION"],
                     pk_abs_start=float(row["PK_ABS_START"]),
@@ -89,9 +89,9 @@ class Segment:
             relations_csv_file_path: Chemin vers le fichier CSV des relations
 
         Format du CSV:
-            SEGMENT_ID;SEGMENT_AMONT_NORMAL_ID;SEGMENT_AMONT_REVERSE_ID;SEGMENT_AVAL_NORMAL_ID;SEGMENT_AVAL_REVERSE_ID
+            identifier;SEGMENT_AMONT_NORMAL_ID;SEGMENT_AMONT_REVERSE_ID;SEGMENT_AVAL_NORMAL_ID;SEGMENT_AVAL_REVERSE_ID
 
-        Note: SEGMENT_ID et les autres colonnes sont des num_segment (int)
+        Note: identifier et les autres colonnes sont des num_segment (int)
         """
         # Créer un dictionnaire des segments par num_segment
         segments_by_num = {seg.num_segment: seg for seg in segments}
@@ -107,7 +107,7 @@ class Segment:
                     val = value.strip()
                     return int(val) if val and val != "" else None
 
-                current_num = to_int_or_none(row["SEGMENT_ID"])
+                current_num = to_int_or_none(row["identifier"])
                 if current_num is None:
                     continue
 
@@ -159,7 +159,7 @@ class Line:
 
     def __post_init__(self) -> None:
         self.tracking_block_by_id = {b.identifier: b for b in self.tracking_blocks}
-        self.segment_by_id = {b.segment_id: b for b in self.segments}
+        self.segment_by_id = {b.identifier: b for b in self.segments}
         self.segment_by_number = {b.num_segment: b for b in self.segments}
 
     def __repr__(self) -> str:
