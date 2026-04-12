@@ -379,7 +379,7 @@ class TrackingBlock:
     tracking_circuit: TrackingCircuit
 
     @classmethod
-    def _load_from_csv_raw(cls, csv_file_path: str | Path, ignore_when_track_circuit_is_not_defined: bool) -> Tuple[List[Tuple], List[str]]:
+    def _load_from_csv_raw(cls, csv_file_path: str | Path, ignore_when_track_circuit_is_not_defined: bool) -> List[Tuple]:
         """
         Charge les données brutes des blocs de détection depuis un fichier CSV.
         Retourne les données sans établir les relations aux circuits.
