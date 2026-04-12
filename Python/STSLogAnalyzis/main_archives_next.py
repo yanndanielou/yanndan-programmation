@@ -1,6 +1,11 @@
-from stsloganalyzis import decode_archive, decode_message, decode_action_set_content, line_topology
+from typing import Any, Dict, List
+
 from logger import logger_config
-from typing import Dict, Any, List
+
+from stsloganalyzis import (
+    decode_archive,
+    line_topology,
+)
 
 OUTPUT_DIRECTORY = "output"
 
@@ -42,19 +47,22 @@ def main() -> None:
         messages_list_csv_file_full_path = r"D:\NEXT\Data\Csv\NEXT_message.csv"
         xml_directory_path = r"D:\NEXT\Data\Xml"
 
-        line = line_topology.Line.load_from_csv(
+        railway_line = line_topology.Line.load_from_csv(
             segments_csv_full_path=r"D:\NEXT\Data\Csv\NEXT_segment.csv",
             track_circuits_csv_full_path=r"D:\NEXT\Data\Csv\NEXT_track_circuit.csv",
             tracking_blocks_csv_full_path=r"D:\NEXT\Data\Csv\NEXT_tracking_block.csv",
             switches_csv_full_path=r"D:\NEXT\Data\Csv\NEXT_switch.csv",
             segments_relations_csv_full_path=r"D:\NEXTTS\Data\Csv\NEXT_tsSegmentRelation.csv",
-            tracking_block_on_segments_csv_full_path=r"D:\NEXTTS\Data\Csv\NEXT_tsTbOnSegmentRelation.csv",
+            tracking_block_on_segments_csv_full_path=r"D:\NEXTTS\Data\Csv\NEXT_tsLocUnitTopo.csv",
             ignore_tracking_blocks_without_circuits=True,
         )
-        assert line
+        assert railway_line
 
         archive_decoder = decode_archive.ArchiveDecoder(
-            action_set_content_csv_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv", messages_list_csv_file_full_path=messages_list_csv_file_full_path, xml_directory_path=xml_directory_path
+            action_set_content_csv_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv",
+            messages_list_csv_file_full_path=messages_list_csv_file_full_path,
+            xml_directory_path=xml_directory_path,
+            railway_line=railway_line,
         )
 
         archive_library = (

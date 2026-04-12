@@ -42,7 +42,6 @@ class Segment:
         assert self.identifier
         assert isinstance(self.identifier, str)
 
-
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def load_from_csv(cls, csv_file_path: str | Path) -> List["Segment"]:
@@ -154,12 +153,17 @@ class Line:
     tracking_blocks: List[TrackingBlock]
     switches: Dict[str, Switch]
     not_created_tracking_blocks_ids_without_track_circuits: List[str]
-    tracking_block_on_segments: List[TrackingBlockOnSegment] = field(default_factory=list)
+    tracking_block_on_segments_csv_full_path: str
 
     def __post_init__(self) -> None:
         self.tracking_block_by_id = {b.identifier: b for b in self.tracking_blocks}
         self.segment_by_id = {b.identifier: b for b in self.segments}
         self.segment_by_number = {b.num_segment: b for b in self.segments}
+
+        self.tracking_block_on_segments: List[TrackingBlockOnSegment] = []
+
+        if self.tracking_block_on_segments_csv_full_path is not None:
+            self.tracking_block_on_segments = TrackingBlockOnSegment.load_from_csv(self.tracking_block_on_segments_csv_full_path, self)
 
         logger_config.print_and_log_info(repr(self))
 
@@ -175,7 +179,7 @@ class Line:
     def __len__(self) -> int:
         return len(self.segments)
 
-    def get_segment_from_segment_id_number_or_segment(self,        segment: Segment | str | int)->Segment:   
+    def get_segment_from_segment_id_number_or_segment(self, segment: Segment | str | int) -> Segment:
         segment_obj: Segment
         if isinstance(segment, Segment):
             segment_obj = segment
@@ -187,18 +191,12 @@ class Line:
             raise TypeError("segment doit être un Segment, un identifiant de segment (str) ou un num_segment (int).")
         return segment_obj
 
-    def get_pk_by_segment_and_abscisse(
-        self,
-        segment: Segment | str | int,
-        abscisse: int
-    )->float
+    def get_pk_by_segment_and_abscissa(self, segment: Segment | str | int, abscissa: int) -> float:
         segment = self.get_segment_from_segment_id_number_or_segment(segment)
         assert segment
-        assert abscisse <= segment.length
-        ret= segment.pk_abs_start + abscisse
+        assert abscissa <= segment.length
+        ret = segment.pk_abs_start + abscissa
         return ret
-
-
 
     def get_tracking_block_by_segment_and_abscisse(
         self,
@@ -242,7 +240,6 @@ class Line:
         tracking_blocks_csv_full_path: str | Path,
         switches_csv_full_path: str | Path,
         tracking_block_on_segments_csv_full_path: str | Path,
-        tracking_block_on_segments_relations_csv_full_path: str | Path,
         ignore_tracking_blocks_without_circuits: bool = False,
     ) -> "Line":
         """
@@ -278,17 +275,6 @@ class Line:
             ignore_tracking_blocks_without_circuits,
         )
 
-        # Charger les relations bloc/segment si fournies
-        tracking_block_by_id = {block.identifier: block for block in blocks_list}
-        segments_dict = {segment.identifier: segment for segment in segments}
-        tracking_block_on_segments = []
-        if tracking_block_on_segments_csv_full_path is not None:
-            tracking_block_on_segments = TrackingBlockOnSegment.load_from_csv(
-                tracking_block_on_segments_csv_full_path,
-                tracking_block_by_id,
-                segments_dict,
-            )
-
         # Charger les aiguillages
         switches_list = Switch.load_from_csv(switches_csv_full_path)
         switches_dict = {s.identifier: s for s in switches_list}
@@ -300,7 +286,7 @@ class Line:
             tracking_blocks=blocks_list,
             switches=switches_dict,
             not_created_tracking_blocks_ids_without_track_circuits=not_created_tracking_blocks_ids_without_track_circuits,
-            tracking_block_on_segments=tracking_block_on_segments,
+            tracking_block_on_segments_csv_full_path=tracking_block_on_segments_csv_full_path,
         )
 
 
@@ -652,16 +638,15 @@ class TrackingBlockOnSegment:
     def __post_init__(self) -> None:
         assert self.tracking_block
         assert self.segment
-        assert self.abs_begin
-        assert self.abs_end
+        assert self.abs_begin is not None
+        assert self.abs_end is not None
 
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def load_from_csv(
         cls,
         csv_file_path: str | Path,
-        tracking_blocks_dict: Dict[str, TrackingBlock],
-        segments_dict: Dict[str, Segment],
+        line: "Line",
     ) -> List["TrackingBlockOnSegment"]:
         """
         Charge une liste de relations TrackingBlock-Segment depuis un fichier CSV.
@@ -686,18 +671,18 @@ class TrackingBlockOnSegment:
             for row in reader:
                 relation_id = row["ID"]
                 tb_id = row["TB_ID"]
-                segment_id = row["SEGMENT_ID"]
+                segment_id = int(row["SEGMENT_ID"])
                 abs_begin = int(row["ABS_BEGIN"])
                 abs_end = int(row["ABS_END"])
 
-                tracking_block = tracking_blocks_dict.get(tb_id)
+                tracking_block = line.tracking_block_by_id.get(tb_id)
                 if not tracking_block:
                     logger_config.print_and_log_warning(f"Bloc de détection '{tb_id}' non trouvé pour la relation '{relation_id}'.")
                     continue
 
-                segment = segments_dict.get(segment_id)
+                segment = line.segment_by_number.get(segment_id)
                 if not segment:
-                    logger_config.print_and_log_warning(f"Segment '{segment_id}' non trouvé pour la relation '{relation_id}'.")
+                    logger_config.print_and_log_error(f"Segment '{segment_id}' non trouvé pour la relation '{relation_id}' parmi {len(line.segments)} segments")
                     continue
 
                 relation = cls(

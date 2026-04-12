@@ -1,23 +1,36 @@
-from typing import List, Dict
+from typing import List, Dict, TYPE_CHECKING, cast
 from dataclasses import dataclass
 
+if TYPE_CHECKING:
+    from stsloganalyzis.decode_message import DecodedMessage
+
+
+from stsloganalyzis import decode_specific_message_content
 import csv
 
 from logger import logger_config
 
 
-class DecodedActionSet:
+ATS_CC_ACTION_SET_MESSAGE_ID = 192
+
+
+class DecodedActionSet(decode_specific_message_content.SpecificMessageContentDecoded):
     def __init__(self) -> None:
+        super().__init__()
         self.undecoded_bits_by_error: List[int] = []
         self.action_set_id_with_value_true: List[str] = []
-        self.action_set_id_with_value: Dict[str, bool] = dict()
 
 
 @dataclass
 class ActionSetContentDecoder:
     csv_file_file_path: str
 
-    def decode_actions_bitfield(self, bitfield: str) -> DecodedActionSet:
+    def decode(self, decoded_message: "DecodedMessage") -> DecodedActionSet:
+        actions_field = cast(str, decoded_message.decoded_fields_flat_directory["Actions"])
+        action_set_decoded = self._decode_actions_bitfield(bitfield=actions_field)
+        return action_set_decoded
+
+    def _decode_actions_bitfield(self, bitfield: str) -> DecodedActionSet:
 
         decoded_action_set = DecodedActionSet()
         decoded_bits = set()
@@ -39,7 +52,7 @@ class ActionSetContentDecoder:
                 action_set_id_str = csv_row["ACTION_SET_ID"] if "ACTION_SET_ID" in csv_row else csv_row["ID"]
 
                 # results.append({"ID": row["ID"], "Value": bit_value})
-                decoded_action_set.action_set_id_with_value[action_set_id_str] = bit_value_bool
+                decoded_action_set.fields_with_value[action_set_id_str] = bit_value_bool
 
                 if bit_value_str == "1":
                     # results.append(row["ID"])
@@ -53,9 +66,3 @@ class ActionSetContentDecoder:
                 logger_config.print_and_log_error(f"Warning: Bit at position {index} is '1' but has no corresponding entry in the CSV.")
 
         return decoded_action_set
-
-
-def decode_bitfield_returns_only_true(csv_file_file_path: str, bitfield: str) -> List[str]:
-    action_set_decoder = ActionSetContentDecoder(csv_file_file_path)
-    decoded_action_set = action_set_decoder.decode_actions_bitfield(bitfield)
-    return decoded_action_set.action_set_id_with_value_true
