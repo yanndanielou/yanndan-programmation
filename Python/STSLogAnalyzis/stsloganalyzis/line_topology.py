@@ -71,15 +71,18 @@ class Line:
         segments: Liste des segments de la ligne
         tracking_circuits: Dict des circuits de détection par ID
         tracking_blocks: Dict des blocs de détection par ID
+        switches: Dict des aiguillages par ID
+        not_created_tracking_blocks_ids_without_track_circuits: Liste des blocs ignorés sans circuit
     """
 
     segments: List[Segment]
     tracking_circuits: Dict[str, TrackingCircuit]
     tracking_blocks: Dict[str, TrackingBlock]
+    switches: Dict[str, Switch]
     not_created_tracking_blocks_ids_without_track_circuits: List[str]
 
     def __repr__(self) -> str:
-        return f"Line(segments={len(self.segments)}, " f"circuits={len(self.tracking_circuits)}, " f"blocks={len(self.tracking_blocks)})"
+        return f"Line(segments={len(self.segments)}, " f"circuits={len(self.tracking_circuits)}, " f"blocks={len(self.tracking_blocks)}, " f"switches={len(self.switches)})"
 
     def __len__(self) -> int:
         return len(self.segments)
@@ -174,13 +177,43 @@ class Line:
         """
         return [b for b in self.tracking_blocks.values() if b.track_circuit_id == circuit_id]
 
+    # ============ Switches ============
+    def add_switch(self, switch: Switch) -> None:
+        """Ajoute un aiguillage à la ligne."""
+        self.switches[switch.id] = switch
+
+    def search_switch_by_id(self, switch_id: str) -> Switch | None:
+        """
+        Recherche un aiguillage par son identifiant.
+
+        Args:
+            switch_id: L'identifiant de l'aiguillage
+
+        Returns:
+            L'objet Switch trouvé ou None
+        """
+        return self.switches.get(switch_id)
+
+    def search_switches_by_label(self, label: str) -> List[Switch]:
+        """
+        Recherche tous les aiguillages dont le libellé correspond.
+
+        Args:
+            label: Le libellé de l'aiguillage
+
+        Returns:
+            Liste des aiguillages trouvés
+        """
+        return [s for s in self.switches.values() if s.label == label]
+
     @classmethod
     def load_from_csv(
         cls,
         segments_csv_full_path: str | Path,
         track_circuits_csv_full_path: str | Path,
         tracking_blocks_csv_full_path: str | Path,
-        ignore_tracking_blocks_without_circuits: bool,
+        switches_csv_full_path: str | Path,
+        ignore_tracking_blocks_without_circuits: bool = False,
     ) -> "Line":
         """
         Crée une ligne complète en chargeant les données depuis des fichiers CSV.
@@ -189,6 +222,7 @@ class Line:
             segments_csv_full_path: Chemin vers le fichier CSV des segments
             track_circuits_csv_full_path: Chemin vers le fichier CSV des circuits
             tracking_blocks_csv_full_path: Chemin vers le fichier CSV des blocs
+            switches_csv_full_path: Chemin vers le fichier CSV des aiguillages
             ignore_tracking_blocks_without_circuits: Si True, ignore les blocs sans circuit.
                                                       Si False, lève une exception.
 
@@ -210,10 +244,15 @@ class Line:
         )
         blocks_dict = {b.id: b for b in blocks_list}
 
+        # Charger les aiguillages
+        switches_list = Switch.load_from_csv(switches_csv_full_path)
+        switches_dict = {s.id: s for s in switches_list}
+
         return cls(
             segments=segments,
             tracking_circuits=circuits_dict,
             tracking_blocks=blocks_dict,
+            switches=switches_dict,
             not_created_tracking_blocks_ids_without_track_circuits=not_created_tracking_blocks_ids_without_track_circuits,
         )
 
@@ -224,6 +263,7 @@ class Direction(str, Enum):
     UP = "UP"
     DOWN = "DOWN"
     BOTH = "BOTH"
+    UNKNOWN = "UNKNOWN"
 
 
 @dataclass
@@ -448,3 +488,93 @@ class TrackingBlock:
         """
         # Cette méthode ne peut pas être utilisée seule car tracking_circuit est obligatoire
         raise NotImplementedError("Utilisez Line.load_from_csv() pour charger les blocs avec leurs circuits. " "TrackingBlock.tracking_circuit est obligatoire.")
+
+
+@dataclass
+class Switch:
+    """
+    Représente un aiguillage (switch) d'une ligne ferroviaire.
+
+    Attributs:
+        id: Identifiant unique de l'aiguillage (ex: SW_001)
+        label: Libellé de l'aiguillage (optionnel)
+        normal_id: Identifiant de la position normale (optionnel)
+        reverse_id: Identifiant de la position de déraillement (optionnel)
+        forcing_id: Identifiant de forçage (optionnel)
+        trailable: Indicateur tractable (bool)
+        convergency_direction: Direction de convergence (UP, DOWN, ou None)
+    """
+
+    id: str
+    label: Optional[str]
+    normal_id: Optional[str]
+    reverse_id: Optional[str]
+    forcing_id: Optional[str]
+    trailable: bool
+    convergency_direction: Optional[Direction]
+
+    @classmethod
+    def _load_from_csv_raw(
+        cls,
+        csv_file_path: str | Path,
+    ) -> List["Switch"]:
+        """
+        Charge les aiguillages depuis un fichier CSV et crée les objets Switch.
+
+        Args:
+            csv_file_path: Chemin vers le fichier CSV
+
+        Returns:
+            Liste des objets Switch créés
+
+        Format du CSV:
+            ID;LABEL;NORMAL_ID;REVERSE_ID;FORCING_ID;TRAILABLE;CONVERGENCY_DIRECTION
+        """
+        switches = []
+        csv_path = Path(csv_file_path)
+
+        with open(csv_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter=";")
+
+            for row in reader:
+                # Fonction helper pour convertir les valeurs vides en None
+                def to_none(value: str) -> Optional[str]:
+                    return None if value.strip() == "" else value.strip()
+
+                # Fonction helper pour convertir en bool (0=False, 1=True)
+                def to_bool(value: str) -> bool:
+                    return value.strip() == "1"
+
+                # Fonction helper pour convertir en Direction optionnelle
+                def to_direction(value: str) -> Optional[Direction]:
+                    val = to_none(value)
+                    return Direction(val) if val else None
+
+                switch = cls(
+                    id=row["ID"],
+                    label=to_none(row["LABEL"]),
+                    normal_id=to_none(row["NORMAL_ID"]),
+                    reverse_id=to_none(row["REVERSE_ID"]),
+                    forcing_id=to_none(row["FORCING_ID"]),
+                    trailable=to_bool(row["TRAILABLE"]),
+                    convergency_direction=to_direction(row["CONVERGENCY_DIRECTION"]),
+                )
+                switches.append(switch)
+
+        return switches
+
+    @classmethod
+    def load_from_csv(cls, csv_file_path: str | Path) -> List["Switch"]:
+        """
+        Charge une liste d'aiguillages depuis un fichier CSV.
+
+        Args:
+            csv_file_path: Chemin vers le fichier CSV
+
+        Returns:
+            Liste des objets Switch
+
+        Format du CSV:
+            ID;LABEL;NORMAL_ID;REVERSE_ID;FORCING_ID;TRAILABLE;CONVERGENCY_DIRECTION
+        """
+        return cls._load_from_csv_raw(csv_file_path)
