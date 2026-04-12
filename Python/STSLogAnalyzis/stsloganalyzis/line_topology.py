@@ -21,6 +21,10 @@ class Segment:
         pk_abs_start: Point kilométrique absolu de début (ex: 374.213)
         pk_abs_end: Point kilométrique absolu de fin (ex: 506.825)
         length: Longueur du segment en mètres (ex: 13261)
+        upstream_normal: Segment amont normal (optionnel)
+        upstream_reverse: Segment amont reverse (optionnel)
+        downstream_normal: Segment aval normal (optionnel)
+        downstream_reverse: Segment aval reverse (optionnel)
     """
 
     segment_id: str
@@ -29,6 +33,14 @@ class Segment:
     pk_abs_start: float
     pk_abs_end: float
     length: float
+    upstream_normal: Optional["Segment"] = None
+    upstream_reverse: Optional["Segment"] = None
+    downstream_normal: Optional["Segment"] = None
+    downstream_reverse: Optional["Segment"] = None
+
+    def __post_init__(self) -> None:
+        assert self.segment_id
+        assert isinstance(self.segment_id, str)
 
     @classmethod
     def load_from_csv(cls, csv_file_path: str | Path) -> List["Segment"]:
@@ -63,155 +75,104 @@ class Segment:
 
         return segments
 
+    @classmethod
+    def load_topology_from_csv(
+        cls,
+        segments: List["Segment"],
+        relations_csv_file_path: str | Path,
+    ) -> None:
+        """
+        Établit la topologie entre les segments en chargeant les relations depuis un fichier CSV.
+
+        Args:
+            segments: Liste des segments existants
+            relations_csv_file_path: Chemin vers le fichier CSV des relations
+
+        Format du CSV:
+            SEGMENT_ID;SEGMENT_AMONT_NORMAL_ID;SEGMENT_AMONT_REVERSE_ID;SEGMENT_AVAL_NORMAL_ID;SEGMENT_AVAL_REVERSE_ID
+
+        Note: SEGMENT_ID et les autres colonnes sont des num_segment (int)
+        """
+        # Créer un dictionnaire des segments par num_segment
+        segments_by_num = {seg.num_segment: seg for seg in segments}
+
+        csv_path = Path(relations_csv_file_path)
+
+        with open(csv_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter=";")
+
+            for row in reader:
+                # Fonction helper pour convertir les valeurs vides en None
+                def to_int_or_none(value: str) -> Optional[int]:
+                    val = value.strip()
+                    return int(val) if val and val != "" else None
+
+                current_num = to_int_or_none(row["SEGMENT_ID"])
+                if current_num is None:
+                    continue
+
+                current_segment = segments_by_num.get(current_num)
+                if not current_segment:
+                    logger_config.print_and_log_warning(f"Segment avec num_segment {current_num} non trouvé dans la liste des segments.")
+                    continue
+
+                # Charger les relations
+                upstream_normal_num = to_int_or_none(row["SEGMENT_AMONT_NORMAL_ID"])
+                upstream_reverse_num = to_int_or_none(row["SEGMENT_AMONT_REVERSE_ID"])
+                downstream_normal_num = to_int_or_none(row["SEGMENT_AVAL_NORMAL_ID"])
+                downstream_reverse_num = to_int_or_none(row["SEGMENT_AVAL_REVERSE_ID"])
+
+                # Établir les références
+                if upstream_normal_num is not None:
+                    current_segment.upstream_normal = segments_by_num.get(upstream_normal_num)
+                    if current_segment.upstream_normal is None:
+                        logger_config.print_and_log_warning(f"Segment amont normal {upstream_normal_num} non trouvé pour le segment {current_num}.")
+
+                if upstream_reverse_num is not None:
+                    current_segment.upstream_reverse = segments_by_num.get(upstream_reverse_num)
+                    if current_segment.upstream_reverse is None:
+                        logger_config.print_and_log_warning(f"Segment amont reverse {upstream_reverse_num} non trouvé pour le segment {current_num}.")
+
+                if downstream_normal_num is not None:
+                    current_segment.downstream_normal = segments_by_num.get(downstream_normal_num)
+                    if current_segment.downstream_normal is None:
+                        logger_config.print_and_log_warning(f"Segment aval normal {downstream_normal_num} non trouvé pour le segment {current_num}.")
+
+                if downstream_reverse_num is not None:
+                    current_segment.downstream_reverse = segments_by_num.get(downstream_reverse_num)
+                    if current_segment.downstream_reverse is None:
+                        logger_config.print_and_log_warning(f"Segment aval reverse {downstream_reverse_num} non trouvé pour le segment {current_num}.")
+
 
 @dataclass
 class Line:
     """
     Représente une ligne ferroviaire complète avec tous ses composants.
-
-    Attributs:
-        segments: Liste des segments de la ligne
-        tracking_circuits: Dict des circuits de détection par ID
-        tracking_blocks: Dict des blocs de détection par ID
-        switches: Dict des aiguillages par ID
-        not_created_tracking_blocks_ids_without_track_circuits: Liste des blocs ignorés sans circuit
     """
 
     segments: List[Segment]
-    tracking_circuits: Dict[str, TrackingCircuit]
-    tracking_blocks: Dict[str, TrackingBlock]
+    track_circuits: List[TrackingCircuit]
+    track_circuit_by_id: Dict[str, TrackingCircuit]
+    tracking_blocks: List[TrackingBlock]
     switches: Dict[str, Switch]
     not_created_tracking_blocks_ids_without_track_circuits: List[str]
 
+    def __post_init__(self) -> None:
+        self.tracking_block_by_id = {b.identifier: b for b in self.tracking_blocks}
+        self.segment_by_id = {b.segment_id: b for b in self.segments}
+        self.segment_by_number = {b.num_segment: b for b in self.segments}
+
     def __repr__(self) -> str:
-        return f"Line(segments={len(self.segments)}, " f"circuits={len(self.tracking_circuits)}, " f"blocks={len(self.tracking_blocks)}, " f"switches={len(self.switches)})"
+        return f"Line(segments={len(self.segments)}, " f"circuits={len(self.track_circuit_by_id)}, " f"blocks={len(self.tracking_blocks)}, " f"switches={len(self.switches)})"
 
     def __len__(self) -> int:
         return len(self.segments)
-
-    # ============ Segments ============
-    def add_segment(self, segment: Segment) -> None:
-        """Ajoute un segment à la ligne."""
-        self.segments.append(segment)
-
-    def search_by_segment_id(self, segment_id: str) -> Segment | None:
-        """
-        Recherche un segment par son identifiant.
-
-        Args:
-            segment_id: L'identifiant du segment (ex: SEG_010201)
-
-        Returns:
-            L'objet Segment trouvé ou None
-        """
-        for segment in self.segments:
-            if segment.segment_id == segment_id:
-                return segment
-        return None
-
-    def search_by_num_segment(self, num_segment: int) -> List[Segment]:
-        """
-        Recherche tous les segments par leur numéro.
-
-        Args:
-            num_segment: Le numéro du segment (ex: 8321)
-
-        Returns:
-            Liste des segments trouvés
-        """
-        return [seg for seg in self.segments if seg.num_segment == num_segment]
-
-    # ============ Tracking Circuits ============
-    def add_tracking_circuit(self, circuit: TrackingCircuit) -> None:
-        """Ajoute un circuit de détection à la ligne."""
-        self.tracking_circuits[circuit.id] = circuit
-
-    def search_tracking_circuit_by_id(self, circuit_id: str) -> TrackingCircuit | None:
-        """
-        Recherche un circuit de détection par son identifiant.
-
-        Args:
-            circuit_id: L'identifiant du circuit (ex: CDV_z124Nord)
-
-        Returns:
-            L'objet TrackingCircuit trouvé ou None
-        """
-        return self.tracking_circuits.get(circuit_id)
-
-    def search_tracking_circuits_by_label(self, label: str) -> List[TrackingCircuit]:
-        """
-        Recherche tous les circuits dont le libellé correspond.
-
-        Args:
-            label: Le libellé du circuit
-
-        Returns:
-            Liste des circuits trouvés
-        """
-        return [c for c in self.tracking_circuits.values() if c.label == label]
-
-    # ============ Tracking Blocks ============
-    def add_tracking_block(self, block: TrackingBlock) -> None:
-        """Ajoute un bloc de détection à la ligne."""
-        self.tracking_blocks[block.id] = block
-
-    def search_tracking_block_by_id(self, block_id: str) -> TrackingBlock | None:
-        """
-        Recherche un bloc de détection par son identifiant.
-
-        Args:
-            block_id: L'identifiant du bloc
-
-        Returns:
-            L'objet TrackingBlock trouvé ou None
-        """
-        return self.tracking_blocks.get(block_id)
-
-    def search_tracking_blocks_by_circuit(self, circuit_id: str) -> List[TrackingBlock]:
-        """
-        Recherche tous les blocs associés à un circuit de détection.
-
-        Args:
-            circuit_id: L'identifiant du circuit
-
-        Returns:
-            Liste des blocs trouvés
-        """
-        return [b for b in self.tracking_blocks.values() if b.track_circuit_id == circuit_id]
-
-    # ============ Switches ============
-    def add_switch(self, switch: Switch) -> None:
-        """Ajoute un aiguillage à la ligne."""
-        self.switches[switch.id] = switch
-
-    def search_switch_by_id(self, switch_id: str) -> Switch | None:
-        """
-        Recherche un aiguillage par son identifiant.
-
-        Args:
-            switch_id: L'identifiant de l'aiguillage
-
-        Returns:
-            L'objet Switch trouvé ou None
-        """
-        return self.switches.get(switch_id)
-
-    def search_switches_by_label(self, label: str) -> List[Switch]:
-        """
-        Recherche tous les aiguillages dont le libellé correspond.
-
-        Args:
-            label: Le libellé de l'aiguillage
-
-        Returns:
-            Liste des aiguillages trouvés
-        """
-        return [s for s in self.switches.values() if s.label == label]
 
     @classmethod
     def load_from_csv(
         cls,
         segments_csv_full_path: str | Path,
+        segments_relations_csv_full_path: str | Path,
         track_circuits_csv_full_path: str | Path,
         tracking_blocks_csv_full_path: str | Path,
         switches_csv_full_path: str | Path,
@@ -222,6 +183,7 @@ class Line:
 
         Args:
             segments_csv_full_path: Chemin vers le fichier CSV des segments
+            relations_csv_full_path: Chemin vers le fichier CSV des relations entre segments
             track_circuits_csv_full_path: Chemin vers le fichier CSV des circuits
             tracking_blocks_csv_full_path: Chemin vers le fichier CSV des blocs
             switches_csv_full_path: Chemin vers le fichier CSV des aiguillages
@@ -234,26 +196,29 @@ class Line:
         # Charger les segments
         segments = Segment.load_from_csv(segments_csv_full_path)
 
+        # Charger la topologie des segments
+        Segment.load_topology_from_csv(segments, segments_relations_csv_full_path)
+
         # Charger les circuits
         circuits_list = TrackingCircuit.load_from_csv(track_circuits_csv_full_path)
-        circuits_dict = {c.id: c for c in circuits_list}
+        track_circuit_by_id = {c.identifier: c for c in circuits_list}
 
         # Charger les blocs avec associations aux circuits
         blocks_list, not_created_tracking_blocks_ids_without_track_circuits = TrackingBlock._load_from_csv_raw(
             tracking_blocks_csv_full_path,
-            circuits_dict,
+            track_circuit_by_id,
             ignore_tracking_blocks_without_circuits,
         )
-        blocks_dict = {b.id: b for b in blocks_list}
 
         # Charger les aiguillages
         switches_list = Switch.load_from_csv(switches_csv_full_path)
-        switches_dict = {s.id: s for s in switches_list}
+        switches_dict = {s.identifier: s for s in switches_list}
 
-        return cls(
+        return Line(
             segments=segments,
-            tracking_circuits=circuits_dict,
-            tracking_blocks=blocks_dict,
+            track_circuits=circuits_list,
+            track_circuit_by_id=track_circuit_by_id,
+            tracking_blocks=blocks_list,
             switches=switches_dict,
             not_created_tracking_blocks_ids_without_track_circuits=not_created_tracking_blocks_ids_without_track_circuits,
         )
@@ -274,7 +239,7 @@ class TrackingCircuit:
     Représente un circuit de detection d'occupation de voie ferrée.
 
     Attributs:
-        id: Identifiant unique du circuit (ex: CDV_z124Nord)
+        identifier: Identifiant unique du circuit (ex: CDV_z124Nord)
         label: Libellé du circuit (ex: 124Nord)
         occupancy_id: Identifiant du capteur d'occupation
         direction_id: Identifiant de la direction (optionnel)
@@ -291,7 +256,7 @@ class TrackingCircuit:
         tracking_blocks: Liste des blocs de détection associés à ce circuit
     """
 
-    id: str
+    identifier: str
     label: str
     occupancy_id: str
     direction_id: Optional[str]
@@ -342,7 +307,7 @@ class TrackingCircuit:
                     return Direction(val) if val else None
 
                 circuit = cls(
-                    id=row["ID"],
+                    identifier=row["ID"],
                     label=row["LABEL"],
                     occupancy_id=row["OCCUPANCY_ID"],
                     direction_id=to_none(row["DIRECTION_ID"]),
@@ -368,7 +333,7 @@ class TrackingBlock:
     Représente un bloc de détection (regroupement de circuits).
 
     Attributs:
-        id: Identifiant unique du bloc (ex: TB_CDV_z124Nord_01)
+        identifier: Identifiant unique du bloc (ex: TB_CDV_z124Nord_01)
         label: Libellé du bloc (optionnel)
         type: Type du bloc (optionnel)
         track_circuit_id: Identifiant du circuit de détection associé
@@ -379,7 +344,7 @@ class TrackingBlock:
         tracking_circuit: Référence vers le circuit de détection associé (obligatoire)
     """
 
-    id: str
+    identifier: str
     label: Optional[str]
     type: Optional[str]
     track_circuit_id: str
@@ -448,7 +413,7 @@ class TrackingBlock:
 
                 # Créer le bloc avec le circuit (obligatoire)
                 block = cls(
-                    id=block_id,
+                    identifier=block_id,
                     label=to_none(row["LABEL"]),
                     type=to_none(row["TYPE"]),
                     track_circuit_id=circuit_id,
@@ -498,7 +463,7 @@ class Switch:
     Représente un aiguillage (switch) d'une ligne ferroviaire.
 
     Attributs:
-        id: Identifiant unique de l'aiguillage (ex: SW_001)
+        identifier: Identifiant unique de l'aiguillage (ex: SW_001)
         label: Libellé de l'aiguillage (optionnel)
         normal_id: Identifiant de la position normale (optionnel)
         reverse_id: Identifiant de la position de déraillement (optionnel)
@@ -507,7 +472,7 @@ class Switch:
         convergency_direction: Direction de convergence (UP, DOWN, ou None)
     """
 
-    id: str
+    identifier: str
     label: Optional[str]
     normal_id: Optional[str]
     reverse_id: Optional[str]
@@ -553,7 +518,7 @@ class Switch:
                     return Direction(val) if val else None
 
                 switch = cls(
-                    id=row["ID"],
+                    identifier=row["ID"],
                     label=to_none(row["LABEL"]),
                     normal_id=to_none(row["NORMAL_ID"]),
                     reverse_id=to_none(row["REVERSE_ID"]),
