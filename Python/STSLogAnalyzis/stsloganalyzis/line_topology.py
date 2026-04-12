@@ -89,10 +89,6 @@ class Segment:
             segments: Liste des segments existants
             relations_csv_file_path: Chemin vers le fichier CSV des relations
 
-        Format du CSV:
-            identifier;SEGMENT_AMONT_NORMAL_ID;SEGMENT_AMONT_REVERSE_ID;SEGMENT_AVAL_NORMAL_ID;SEGMENT_AVAL_REVERSE_ID
-
-        Note: identifier et les autres colonnes sont des num_segment (int)
         """
         # Créer un dictionnaire des segments par num_segment
         segments_by_num = {seg.num_segment: seg for seg in segments}
@@ -158,13 +154,11 @@ class Line:
     switches: Dict[str, Switch]
     not_created_tracking_blocks_ids_without_track_circuits: List[str]
     tracking_block_on_segments: List[TrackingBlockOnSegment] = field(default_factory=list)
-    tracking_block_on_segment_by_id: Dict[str, TrackingBlockOnSegment] = field(init=False)
 
     def __post_init__(self) -> None:
         self.tracking_block_by_id = {b.identifier: b for b in self.tracking_blocks}
         self.segment_by_id = {b.identifier: b for b in self.segments}
         self.segment_by_number = {b.num_segment: b for b in self.segments}
-        self.tracking_block_on_segment_by_id = {rel.id: rel for rel in self.tracking_block_on_segments}
 
         logger_config.print_and_log_info(repr(self))
 
