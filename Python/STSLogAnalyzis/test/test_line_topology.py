@@ -35,4 +35,4 @@ class TestNextData:
         assert segment_8329 is not None
         downstream_normal = segment_8329.downstream_normal
         assert downstream_normal
-        assert downstream_normal.segment_id.endswith("010211")
+        assert downstream_normal.identifier.endswith("010211")

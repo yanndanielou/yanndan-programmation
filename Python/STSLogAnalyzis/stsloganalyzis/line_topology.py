@@ -64,7 +64,7 @@ class Segment:
 
             for row in reader:
                 segment = cls(
-                    identifier=row["identifier"],
+                    identifier=row["SEGMENT_ID"],
                     num_segment=int(row["NUM_SEGMENT"]),
                     direction=row["DIRECTION"],
                     pk_abs_start=float(row["PK_ABS_START"]),
@@ -107,7 +107,7 @@ class Segment:
                     val = value.strip()
                     return int(val) if val and val != "" else None
 
-                current_num = to_int_or_none(row["identifier"])
+                current_num = to_int_or_none(row["SEGMENT_ID"])
                 if current_num is None:
                     continue
 
@@ -164,6 +164,8 @@ class Line:
         self.segment_by_id = {b.identifier: b for b in self.segments}
         self.segment_by_number = {b.num_segment: b for b in self.segments}
         self.tracking_block_on_segment_by_id = {rel.id: rel for rel in self.tracking_block_on_segments}
+
+        logger_config.print_and_log_info(repr(self))
 
     def __repr__(self) -> str:
         return (
