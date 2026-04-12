@@ -37,6 +37,7 @@ class SqlArchLineSignalType(Enum):
     TS = "TS"
     CR = "ACKNOWLEDGE"
     TB = "TRACKING_BLOCK"
+    AIGUILLE = "AIGUILLE"
 
 
 class Filter(ABC):

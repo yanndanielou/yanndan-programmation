@@ -198,10 +198,10 @@ class Line:
         ret = segment.pk_abs_start + abscissa
         return ret
 
-    def get_tracking_block_by_segment_and_abscisse(
+    def get_tracking_block_by_segment_and_abscissa(
         self,
         segment: Segment | str | int,
-        abscisse: int,
+        abscissa: int,
     ) -> TrackingBlockOnSegment:
         """
         Retourne le TrackingBlockOnSegment correspondant à un segment et une abscisse.
@@ -219,14 +219,14 @@ class Line:
         """
 
         segment = self.get_segment_from_segment_id_number_or_segment(segment)
-        matches = [relation for relation in self.tracking_block_on_segments if relation.segment == segment and relation.abs_begin <= abscisse <= relation.abs_end]
+        matches = [relation for relation in self.tracking_block_on_segments if relation.segment == segment and relation.abs_begin <= abscissa <= relation.abs_end]
 
         if not matches:
-            raise ValueError(f"Aucun TrackingBlockOnSegment trouvé pour le segment '{segment.identifier}' " f"et l'abscisse {abscisse}.")
+            raise ValueError(f"Aucun TrackingBlockOnSegment trouvé pour le segment '{segment.identifier}' " f"et l'abscisse {abscissa}.")
 
         if len(matches) > 1:
             match_ids = ", ".join(relation.tracking_block.identifier for relation in matches)
-            raise ValueError(f"Plusieurs TrackingBlockOnSegment correspondent au segment '{segment.identifier}' " f"et à l'abscisse {abscisse} : {match_ids}.")
+            raise ValueError(f"Plusieurs TrackingBlockOnSegment correspondent au segment '{segment.identifier}' " f"et à l'abscisse {abscissa} : {match_ids}.")
 
         return matches[0]
 
@@ -621,15 +621,9 @@ class TrackingBlockOnSegment:
     """
     Représente la relation entre un bloc de détection et un segment.
 
-    Attributs:
-        id: Identifiant unique de la relation
-        tracking_block: Référence vers le bloc de détection
-        segment: Référence vers le segment
-        abs_begin: Position absolue de début (int)
-        abs_end: Position absolue de fin (int)
     """
 
-    id: str
+    identifier: str
     tracking_block: TrackingBlock
     segment: Segment
     abs_begin: int
@@ -686,7 +680,7 @@ class TrackingBlockOnSegment:
                     continue
 
                 relation = cls(
-                    id=relation_id,
+                    identifier=relation_id,
                     tracking_block=tracking_block,
                     segment=segment,
                     abs_begin=abs_begin,

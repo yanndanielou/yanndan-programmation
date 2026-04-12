@@ -43,26 +43,25 @@ class DecodedMessage:
     def __init__(self, message_number: int, xml_decoded_message: decode_xml_message.DecodedXmlMessage) -> None:
         self.message_number = message_number
         self.xml_decoded_message = xml_decoded_message
-        self.decoded_fields_flat_directory: Dict[str, int | bool | str | List[int] | List[str] | List[bool]] = {}
+        self.decoded_fields_flat_directory: Dict[str, float | int | bool | str | List[int] | List[str] | List[bool]] = {}
         self.hlf_decoded: Optional[datetime.datetime] = None
 
-    """
-    def get_field_value_human_readable(self, field_name: str) -> str | int:
-        field_by_name = self.decoded_fields_flat_directory[field_name]
-        if isinstance(field_by_name, list):
-            human_value = "<" + ",".join([str(field.value) for field in field_by_name]) + ">"
+    def get_field_value_human_readable(self, field_name: str) -> float | int | bool | str:
+        field_value_by_name = self.decoded_fields_flat_directory[field_name]
+        assert field_value_by_name is not None
+
+        if isinstance(field_value_by_name, list):
+            human_value = "<" + ",".join([str(field_value_by_name) for field in field_value_by_name]) + ">"
             # logger_config.print_and_log_error(f"<Not supported field {field_name} of type {type(field_name)}")
             # return f"Not supported field {field_name} of type {type(field_name)}"
             return human_value
 
-        assert field_by_name.value is not None
-        if isinstance(field_by_name.value, list):
+        """if isinstance(field_value_by_name, list):
             # human_value = "".join([str(value) for value in field_by_name.value])
-            human_value = "<" + ",".join([str(value) for value in field_by_name.value]) + ">"
+            human_value = "<" + ",".join([str(value) for value in field_value_by_name.value]) + ">"
             # logger_config.print_and_log_error(f"Not supported field {field_name} of type {type(field_name)}")
-            return human_value
-        return field_by_name.value
-    """
+            return human_value"""
+        return field_value_by_name
 
 
 class HLFDecoder:

@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple, Any
 from dataclasses import dataclass, field
 from enum import Enum
 
 from stsloganalyzis import line_topology, decode_archive
+
+from common import reports_utils
 
 from logger import logger_config
 
@@ -19,6 +21,7 @@ class Train:
 @dataclass
 class SqlArchArchiveLineWithContext:
     sql_arch_line: decode_archive.SqlArchArchiveLine
+    previous_line_for_this_id: decode_archive.SqlArchArchiveLine
 
     def __post_init__(self) -> None:
         pass
@@ -29,10 +32,13 @@ class ArchiveAnalyzis:
     topology_line: line_topology.Line
     archive_library: decode_archive.ArchiveLibrary
 
+    label: str
+
     def __post_init__(self) -> None:
         self.trains: List[Train] = []
         self.parsed_sql_arch_lines: List[Train] = []
-        self.previous_line_by_id: Dict[str, decode_archive.SqlArchArchiveLine] = dict()
+        self.all_sql_arch_lines_with_context: List[SqlArchArchiveLineWithContext] = []
+        self.previous_line_by_id: Dict[str, SqlArchArchiveLineWithContext] = dict()
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def create_reports_all_sqlarch_changes_since_previous(
@@ -43,9 +49,9 @@ class ArchiveAnalyzis:
 
         rows_as_list_dict: List[Dict[str, Any]] = []
 
-        for line in self.all_sqlarch_lines:
-            all_changes_since_previous = line.get_all_changes_since_previous(
-                white_list_signal_types=white_list_signal_types, also_print_and_log=also_print_and_log, previous_line_for_this_id=previous_line_for_this_id
+        for line_with_context in self.all_sql_arch_lines_with_context:
+            all_changes_since_previous = line_with_context.sql_arch_line.get_all_changes_since_previous(
+                white_list_signal_types=white_list_signal_types, also_print_and_log=also_print_and_log, previous_line_for_this_id=line_with_context.previous_line_for_this_id
             )
             if all_changes_since_previous:
                 rows_as_list_dict.append(all_changes_since_previous)
