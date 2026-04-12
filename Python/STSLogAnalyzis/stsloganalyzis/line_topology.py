@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import csv
 from pathlib import Path
-from typing import List, Optional
-from dataclasses import dataclass
+from typing import List, Optional, Dict
+from dataclasses import dataclass, field
 from enum import Enum
 
 
@@ -62,27 +64,39 @@ class Segment:
 
 class Line:
     """
-    Représente une ligne ferroviaire contenant une collection de segments.
+    Représente une ligne ferroviaire complète avec tous ses composants.
 
     Attributs:
         segments: Liste des segments de la ligne
+        tracking_circuits: Dict des circuits de détection par ID
+        tracking_blocks: Dict des blocs de détection par ID
     """
 
-    def __init__(self, segments: List[Segment] = None):
+    def __init__(
+        self,
+        segments: List[Segment] = None,
+        tracking_circuits: Dict[str, TrackingCircuit] = None,
+        tracking_blocks: Dict[str, TrackingBlock] = None,
+    ):
         """
-        Initialise une ligne avec des segments.
+        Initialise une ligne avec ses composants.
 
         Args:
             segments: Liste des objets Segment (par défaut liste vide)
+            tracking_circuits: Dict des objets TrackingCircuit par ID
+            tracking_blocks: Dict des objets TrackingBlock par ID
         """
         self.segments = segments or []
+        self.tracking_circuits = tracking_circuits or {}
+        self.tracking_blocks = tracking_blocks or {}
 
     def __repr__(self) -> str:
-        return f"Line(segments={len(self.segments)})"
+        return f"Line(segments={len(self.segments)}, " f"circuits={len(self.tracking_circuits)}, " f"blocks={len(self.tracking_blocks)})"
 
     def __len__(self) -> int:
         return len(self.segments)
 
+    # ============ Segments ============
     def add_segment(self, segment: Segment) -> None:
         """Ajoute un segment à la ligne."""
         self.segments.append(segment)
@@ -114,19 +128,105 @@ class Line:
         """
         return [seg for seg in self.segments if seg.num_segment == num_segment]
 
-    @classmethod
-    def load_from_csv(cls, csv_file_path: str | Path) -> "Line":
+    # ============ Tracking Circuits ============
+    def add_tracking_circuit(self, circuit: TrackingCircuit) -> None:
+        """Ajoute un circuit de détection à la ligne."""
+        self.tracking_circuits[circuit.id] = circuit
+
+    def search_tracking_circuit_by_id(self, circuit_id: str) -> TrackingCircuit | None:
         """
-        Crée une ligne avec tous les segments chargés depuis un fichier CSV.
+        Recherche un circuit de détection par son identifiant.
 
         Args:
-            csv_file_path: Chemin vers le fichier CSV
+            circuit_id: L'identifiant du circuit (ex: CDV_z124Nord)
 
         Returns:
-            Objet Line contenant tous les segments
+            L'objet TrackingCircuit trouvé ou None
         """
-        segments = Segment.load_from_csv(csv_file_path)
-        return cls(segments)
+        return self.tracking_circuits.get(circuit_id)
+
+    def search_tracking_circuits_by_label(self, label: str) -> List[TrackingCircuit]:
+        """
+        Recherche tous les circuits dont le libellé correspond.
+
+        Args:
+            label: Le libellé du circuit
+
+        Returns:
+            Liste des circuits trouvés
+        """
+        return [c for c in self.tracking_circuits.values() if c.label == label]
+
+    # ============ Tracking Blocks ============
+    def add_tracking_block(self, block: TrackingBlock) -> None:
+        """Ajoute un bloc de détection à la ligne."""
+        self.tracking_blocks[block.id] = block
+
+    def search_tracking_block_by_id(self, block_id: str) -> TrackingBlock | None:
+        """
+        Recherche un bloc de détection par son identifiant.
+
+        Args:
+            block_id: L'identifiant du bloc
+
+        Returns:
+            L'objet TrackingBlock trouvé ou None
+        """
+        return self.tracking_blocks.get(block_id)
+
+    def search_tracking_blocks_by_circuit(self, circuit_id: str) -> List[TrackingBlock]:
+        """
+        Recherche tous les blocs associés à un circuit de détection.
+
+        Args:
+            circuit_id: L'identifiant du circuit
+
+        Returns:
+            Liste des blocs trouvés
+        """
+        return [b for b in self.tracking_blocks.values() if b.track_circuit_id == circuit_id]
+
+    @classmethod
+    def load_from_csv(
+        cls,
+        segments_csv: str | Path,
+        circuits_csv: str | Path,
+        blocks_csv: str | Path,
+    ) -> "Line":
+        """
+        Crée une ligne complète en chargeant les données depuis des fichiers CSV.
+
+        Args:
+            segments_csv: Chemin vers le fichier CSV des segments
+            circuits_csv: Chemin vers le fichier CSV des circuits
+            blocks_csv: Chemin vers le fichier CSV des blocs
+
+        Returns:
+            Objet Line contenant tous les composants
+        """
+        # Charger les segments
+        segments = Segment.load_from_csv(segments_csv)
+
+        # Charger les circuits
+        circuits_list = TrackingCircuit.load_from_csv(circuits_csv)
+        circuits_dict = {c.id: c for c in circuits_list}
+
+        # Charger les blocs
+        blocks_list = TrackingBlock.load_from_csv(blocks_csv)
+        blocks_dict = {b.id: b for b in blocks_list}
+
+        # Établir les relations entre blocs et circuits
+        for block in blocks_list:
+            circuit = circuits_dict.get(block.track_circuit_id)
+            if circuit:
+                block.tracking_circuit = circuit
+                circuit.tracking_blocks.append(block)
+
+        return cls(
+            segments=segments,
+            tracking_circuits=circuits_dict,
+            tracking_blocks=blocks_dict,
+        )
 
 
 class Direction(str, Enum):
@@ -157,6 +257,7 @@ class TrackingCircuit:
         authorized_acknowledgement_rights: Droits d'acquittement autorisés (optionnel)
         denied_acknowledgement_rights: Droits d'acquittement refusés (optionnel)
         virtual: Indicateur de circuit virtuel (bool)
+        tracking_blocks: Liste des blocs de détection associés à ce circuit
     """
 
     id: str
@@ -173,6 +274,7 @@ class TrackingCircuit:
     authorized_acknowledgement_rights: Optional[str]
     denied_acknowledgement_rights: Optional[str]
     virtual: bool
+    tracking_blocks: List["TrackingBlock"] = field(default_factory=list)
 
     @classmethod
     def load_from_csv(cls, csv_file_path: str | Path) -> List["TrackingCircuit"]:
@@ -243,6 +345,7 @@ class TrackingBlock:
         border: Indicateur de limite (bool)
         steering: Direction de pilotage (UP, DOWN, ou None)
         extension_id: Identifiant d'extension (optionnel)
+        tracking_circuit: Référence vers le circuit de détection associé (optionnel)
     """
 
     id: str
@@ -253,6 +356,7 @@ class TrackingBlock:
     border: bool
     steering: Optional[Direction]
     extension_id: Optional[str]
+    tracking_circuit: Optional["TrackingCircuit"] = field(default=None, repr=False)
 
     @classmethod
     def load_from_csv(cls, csv_file_path: str | Path) -> List["TrackingBlock"]:
