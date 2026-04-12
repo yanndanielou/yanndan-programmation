@@ -156,14 +156,23 @@ class Line:
     tracking_blocks: List[TrackingBlock]
     switches: Dict[str, Switch]
     not_created_tracking_blocks_ids_without_track_circuits: List[str]
+    tracking_block_on_segments: List[TrackingBlockOnSegment] = field(default_factory=list)
+    tracking_block_on_segment_by_id: Dict[str, TrackingBlockOnSegment] = field(init=False)
 
     def __post_init__(self) -> None:
         self.tracking_block_by_id = {b.identifier: b for b in self.tracking_blocks}
         self.segment_by_id = {b.identifier: b for b in self.segments}
         self.segment_by_number = {b.num_segment: b for b in self.segments}
+        self.tracking_block_on_segment_by_id = {rel.id: rel for rel in self.tracking_block_on_segments}
 
     def __repr__(self) -> str:
-        return f"Line(segments={len(self.segments)}, " f"circuits={len(self.track_circuit_by_id)}, " f"blocks={len(self.tracking_blocks)}, " f"switches={len(self.switches)})"
+        return (
+            f"Line(segments={len(self.segments)}, "
+            f"circuits={len(self.track_circuit_by_id)}, "
+            f"blocks={len(self.tracking_blocks)}, "
+            f"block_relations={len(self.tracking_block_on_segments)}, "
+            f"switches={len(self.switches)})"
+        )
 
     def __len__(self) -> int:
         return len(self.segments)
@@ -176,6 +185,7 @@ class Line:
         track_circuits_csv_full_path: str | Path,
         tracking_blocks_csv_full_path: str | Path,
         switches_csv_full_path: str | Path,
+        tracking_block_on_segments_csv_full_path: Optional[str | Path] = None,
         ignore_tracking_blocks_without_circuits: bool = False,
     ) -> "Line":
         """
@@ -187,6 +197,7 @@ class Line:
             track_circuits_csv_full_path: Chemin vers le fichier CSV des circuits
             tracking_blocks_csv_full_path: Chemin vers le fichier CSV des blocs
             switches_csv_full_path: Chemin vers le fichier CSV des aiguillages
+            tracking_block_on_segments_csv_full_path: Chemin vers le fichier CSV des relations blocs/segments
             ignore_tracking_blocks_without_circuits: Si True, ignore les blocs sans circuit.
                                                       Si False, lève une exception.
 
@@ -210,6 +221,17 @@ class Line:
             ignore_tracking_blocks_without_circuits,
         )
 
+        # Charger les relations bloc/segment si fournies
+        tracking_block_by_id = {block.identifier: block for block in blocks_list}
+        segments_dict = {segment.identifier: segment for segment in segments}
+        tracking_block_on_segments = []
+        if tracking_block_on_segments_csv_full_path is not None:
+            tracking_block_on_segments = TrackingBlockOnSegment.load_from_csv(
+                tracking_block_on_segments_csv_full_path,
+                tracking_block_by_id,
+                segments_dict,
+            )
+
         # Charger les aiguillages
         switches_list = Switch.load_from_csv(switches_csv_full_path)
         switches_dict = {s.identifier: s for s in switches_list}
@@ -221,6 +243,7 @@ class Line:
             tracking_blocks=blocks_list,
             switches=switches_dict,
             not_created_tracking_blocks_ids_without_track_circuits=not_created_tracking_blocks_ids_without_track_circuits,
+            tracking_block_on_segments=tracking_block_on_segments,
         )
 
 
@@ -545,3 +568,84 @@ class Switch:
             ID;LABEL;NORMAL_ID;REVERSE_ID;FORCING_ID;TRAILABLE;CONVERGENCY_DIRECTION
         """
         return cls._load_from_csv_raw(csv_file_path)
+
+
+@dataclass
+class TrackingBlockOnSegment:
+    """
+    Représente la relation entre un bloc de détection et un segment.
+
+    Attributs:
+        id: Identifiant unique de la relation
+        tracking_block: Référence vers le bloc de détection
+        segment: Référence vers le segment
+        abs_begin: Position absolue de début (int)
+        abs_end: Position absolue de fin (int)
+    """
+
+    id: str
+    tracking_block: TrackingBlock
+    segment: Segment
+    abs_begin: int
+    abs_end: int
+
+    def __post_init__(self) -> None:
+        assert self.tracking_block
+        assert self.segment
+        assert self.abs_begin
+        assert self.abs_end
+
+    @classmethod
+    def load_from_csv(
+        cls,
+        csv_file_path: str | Path,
+        tracking_blocks_dict: Dict[str, TrackingBlock],
+        segments_dict: Dict[str, Segment],
+    ) -> List["TrackingBlockOnSegment"]:
+        """
+        Charge une liste de relations TrackingBlock-Segment depuis un fichier CSV.
+
+        Args:
+            csv_file_path: Chemin vers le fichier CSV
+            tracking_blocks_dict: Dictionnaire des blocs de détection par ID
+            segments_dict: Dictionnaire des segments par ID
+
+        Returns:
+            Liste des objets TrackingBlockOnSegment
+
+        Format du CSV:
+            ID;TB_ID;SEGMENT_ID;ABS_BEGIN;ABS_END
+        """
+        relations = []
+        csv_path = Path(csv_file_path)
+
+        with open(csv_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter=";")
+
+            for row in reader:
+                relation_id = row["ID"]
+                tb_id = row["TB_ID"]
+                segment_id = row["SEGMENT_ID"]
+                abs_begin = int(row["ABS_BEGIN"])
+                abs_end = int(row["ABS_END"])
+
+                tracking_block = tracking_blocks_dict.get(tb_id)
+                if not tracking_block:
+                    logger_config.print_and_log_warning(f"Bloc de détection '{tb_id}' non trouvé pour la relation '{relation_id}'.")
+                    continue
+
+                segment = segments_dict.get(segment_id)
+                if not segment:
+                    logger_config.print_and_log_warning(f"Segment '{segment_id}' non trouvé pour la relation '{relation_id}'.")
+                    continue
+
+                relation = cls(
+                    id=relation_id,
+                    tracking_block=tracking_block,
+                    segment=segment,
+                    abs_begin=abs_begin,
+                    abs_end=abs_end,
+                )
+                relations.append(relation)
+
+        return relations
