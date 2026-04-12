@@ -6,6 +6,8 @@ from typing import List, Optional, Dict, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 
+from logger import logger_config
+
 
 @dataclass
 class Segment:
@@ -462,7 +464,7 @@ class TrackingBlock:
                 circuit.tracking_blocks.append(block)
 
         if ignored_tracking_blocks_ids_because_no_track_circuit_defined:
-            print(
+            logger_config.print_and_log_warning(
                 f"⚠️  {len(ignored_tracking_blocks_ids_because_no_track_circuit_defined)} bloc(s) ignoré(s) car leur circuit n'existe pas: "
                 f"{', '.join(ignored_tracking_blocks_ids_because_no_track_circuit_defined)}"
             )
