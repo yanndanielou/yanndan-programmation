@@ -2,6 +2,8 @@ import pytest
 
 from stsloganalyzis import archive_analyzis, decode_archive, line_topology
 
+OUTPUT_DIRECTORY = "output"
+
 
 @pytest.fixture(scope="session", name="archive_analyzis_zc_ats_mal_fixture")
 def archive_analyzis_zc_ats_mal() -> archive_analyzis.ArchiveAnalyzis:
@@ -48,7 +50,8 @@ def archive_analyzis_zc_ats_mal() -> archive_analyzis.ArchiveAnalyzis:
 class TestArchiveAnalysis:
 
     def test_create_report(self, archive_analyzis_zc_ats_mal: archive_analyzis.ArchiveAnalyzis) -> None:
-        analyzis.create_reports_all_sqlarch_changes_since_previous(
+        analysis = archive_analyzis_zc_ats_mal
+        analysis.create_reports_all_sqlarch_changes_since_previous(
             output_directory_path=OUTPUT_DIRECTORY,
             also_print_and_log=False,
         )
