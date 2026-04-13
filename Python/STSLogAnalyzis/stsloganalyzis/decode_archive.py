@@ -488,7 +488,7 @@ class SqlArchArchiveLine(ArchiveLine):
             logger_config.print_and_log_info(to_print_and_log=to_print_and_log)
     """
 
-    def get_all_changes_since_previous(self, also_print_and_log: bool, previous_line_for_this_id: Optional["SqlArchArchiveLine"]) -> Optional[OrderedDict[str, Any]]:
+    def get_all_changes_since_previous(self, also_print_and_log: bool, previous_line_for_this_id: Optional["SqlArchArchiveLine"]) -> List[OrderedDict[str, Any]]:
         field_names_to_ignore = ["Time"]
 
         previous_date = previous_line_for_this_id.date if previous_line_for_this_id else None
@@ -502,20 +502,25 @@ class SqlArchArchiveLine(ArchiveLine):
             previous_new_st = previous_line_for_this_id.get_new_state_str() if previous_line_for_this_id else "No previous"
             new_new_st = self.get_new_state_str()
             if previous_new_st != new_new_st:
-                return OrderedDict(
-                    {
-                        "date": self.get_date_raw_str(),
-                        "id": self.id_field,
-                        "field": new_new_st,
-                        "old_value": previous_new_st,
-                        "new_value": new_new_st,
-                        "change_value": f"{previous_new_st} -> {new_new_st}",
-                        "exact_time_delta": exact_time_delta,
-                        "approximative_time_delta": approximative_time_delta,
-                        "old_timestamp": old_timestamp,
-                    }
-                )
+
+                return [
+                    OrderedDict(
+                        {
+                            "date": self.get_date_raw_str(),
+                            "id": self.id_field,
+                            "field": new_new_st,
+                            "old_value": previous_new_st,
+                            "new_value": new_new_st,
+                            "change_value": f"{previous_new_st} -> {new_new_st}",
+                            "exact_time_delta": exact_time_delta,
+                            "approximative_time_delta": approximative_time_delta,
+                            "old_timestamp": old_timestamp,
+                        }
+                    )
+                ]
         else:
+            to_ret: List[OrderedDict[str, Any]] = []
+
             # If decoded message exists, show only decoded message fields that changed
             for field_name in self.decoded_message.decoded_fields_flat_directory.keys():
                 if field_name not in field_names_to_ignore:
@@ -527,22 +532,24 @@ class SqlArchArchiveLine(ArchiveLine):
                     )
 
                     if new_value != previous_value:
-                        return OrderedDict(
-                            {
-                                "date": self.get_date_raw_str(),
-                                "id": self.id_field,
-                                "id_msg": self.decoded_message.message_number,
-                                "field": field_name,
-                                "old_value": previous_value,
-                                "new_value": new_value,
-                                "change_value": f"{previous_value} -> {new_value}",
-                                "exact_time_delta": exact_time_delta,
-                                "approximative_time_delta": approximative_time_delta,
-                                "old_timestamp": old_timestamp,
-                            }
+                        to_ret.append(
+                            OrderedDict(
+                                {
+                                    "date": self.get_date_raw_str(),
+                                    "id": self.id_field,
+                                    "id_msg": self.decoded_message.message_number,
+                                    "field": field_name,
+                                    "old_value": previous_value,
+                                    "new_value": new_value,
+                                    "change_value": f"{previous_value} -> {new_value}",
+                                    "exact_time_delta": exact_time_delta,
+                                    "approximative_time_delta": approximative_time_delta,
+                                    "old_timestamp": old_timestamp,
+                                }
+                            )
                         )
 
-        return None
+        return to_ret
 
     def print_all_changes_since_previous(self, white_list_signal_types: Optional[List[SqlArchLineSignalType]], previous_line_for_this_id: "SqlArchArchiveLine") -> None:
 

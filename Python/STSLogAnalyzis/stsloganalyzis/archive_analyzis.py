@@ -61,7 +61,7 @@ class ArchiveAnalyzis:
                 also_print_and_log=also_print_and_log, previous_line_for_this_id=line_with_context.previous_line_for_this_id.sql_arch_line if line_with_context.previous_line_for_this_id else None
             )
             if all_changes_since_previous:
-                rows_as_list_dict.append(all_changes_since_previous)
+                rows_as_list_dict += all_changes_since_previous
 
         # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
         reports_utils.save_rows_to_output_files(rows_as_list_dict=rows_as_list_dict, file_base_name=file_base_name, output_directory_path=output_directory_path, suffix_file_name_by_date=False)
