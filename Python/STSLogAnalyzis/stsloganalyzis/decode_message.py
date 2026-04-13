@@ -143,18 +143,21 @@ class MessageDecoder:
 
     def decode_additional_fields_in_specific_messages(self, decoded_message: DecodedMessage) -> None:
         decoded: Optional[decode_specific_message_content.SpecificMessageContentDecoded] = None
-        if decoded_message.message_number == decode_action_set_content.ATS_CC_ACTION_SET_MESSAGE_ID and self.action_set_content_decoder:
-            decoded = self.action_set_content_decoder.decode(decoded_message=decoded_message)
-        elif decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID and self.zc_ats_mal_message_decoder:
-            decoded = self.zc_ats_mal_message_decoder.decode(decoded_message=decoded_message)
-        elif decoded_message.message_number == decode_product_topology_dependant_messages_content.CC_ATS_TRACKING_MESSAGE_ID and self.cc_ats_tracking_message_decoder:
-            decoded = self.cc_ats_tracking_message_decoder.decode(decoded_message=decoded_message)
-        elif decoded_message.message_number == decode_next_specific_messages_content.CC_ATS_SPE_OPERATION_MESSAGE_ID___disabled and self.CcAtsSpecificOperationMessageDecoder:
-            decoded = self.CcAtsSpecificOperationMessageDecoder.decode(decoded_message=decoded_message)
-        elif decoded_message.message_number == decode_next_specific_messages_content.CC_ATS_SPE_RS_OPERATION_MESSAGE_ID and self.CcAtsRsOperationMessageDecoder:
-            decoded = self.CcAtsRsOperationMessageDecoder.decode(decoded_message=decoded_message)
-        elif decoded_message.message_number == decode_next_specific_messages_content.ATS_CC_SPE_RC_MESSAGE_ID and self.AtsCcSpecificRemoteControlMessageDecoder:
-            decoded = self.AtsCcSpecificRemoteControlMessageDecoder.decode(decoded_message=decoded_message)
+        try:
+            if decoded_message.message_number == decode_action_set_content.ATS_CC_ACTION_SET_MESSAGE_ID and self.action_set_content_decoder:
+                decoded = self.action_set_content_decoder.decode(decoded_message=decoded_message)
+            elif decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID and self.zc_ats_mal_message_decoder:
+                decoded = self.zc_ats_mal_message_decoder.decode(decoded_message=decoded_message)
+            elif decoded_message.message_number == decode_product_topology_dependant_messages_content.CC_ATS_TRACKING_MESSAGE_ID and self.cc_ats_tracking_message_decoder:
+                decoded = self.cc_ats_tracking_message_decoder.decode(decoded_message=decoded_message)
+            elif decoded_message.message_number == decode_next_specific_messages_content.CC_ATS_SPE_OPERATION_MESSAGE_ID___disabled and self.CcAtsSpecificOperationMessageDecoder:
+                decoded = self.CcAtsSpecificOperationMessageDecoder.decode(decoded_message=decoded_message)
+            elif decoded_message.message_number == decode_next_specific_messages_content.CC_ATS_SPE_RS_OPERATION_MESSAGE_ID and self.CcAtsRsOperationMessageDecoder:
+                decoded = self.CcAtsRsOperationMessageDecoder.decode(decoded_message=decoded_message)
+            elif decoded_message.message_number == decode_next_specific_messages_content.ATS_CC_SPE_RC_MESSAGE_ID and self.AtsCcSpecificRemoteControlMessageDecoder:
+                decoded = self.AtsCcSpecificRemoteControlMessageDecoder.decode(decoded_message=decoded_message)
 
-        if decoded:
-            decoded_message.decoded_fields_flat_directory.update(decoded.fields_with_value)
+            if decoded:
+                decoded_message.decoded_fields_flat_directory.update(decoded.fields_with_value)
+        except AssertionError as err:
+            logger_config.print_and_log_exception(err)
