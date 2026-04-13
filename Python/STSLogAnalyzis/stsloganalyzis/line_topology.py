@@ -25,8 +25,11 @@ class ConsistencyError:
     consistency_error_type: ConsistencyErrorType
     consistency_error_text: str
 
+    def __str__(self) -> str:
+        return f"{self.topology_element.identifier} {self.consistency_error_type} {self.consistency_error_text}"
+
     def __post_init__(self) -> None:
-        logger_config.print_and_log_error(str(self))
+        logger_config.print_and_log_error(f"Consistency error {self}")
 
 
 @dataclass
@@ -66,24 +69,19 @@ class Segment(TopologyElement):
         return f"Segment {self.identifier} #{self.num_segment} length:{self.length}"
 
     def compute_consistency_errors(self) -> List[ConsistencyError]:
-        logger_config.print_and_log_info(f"compute_consistency_errors {self.identifier} : begin")
 
         consistency_errors: List[ConsistencyError] = []
         all_tracking_blocks_in_segment_sizes = sum([tracking_block_in_segment.length for tracking_block_in_segment in self.tracking_blocks_in_segment])
         if all_tracking_blocks_in_segment_sizes < self.length:
             logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : has error")
-            logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : etape 0")
 
             consistency_error_type = ConsistencyErrorType.MISSING_TB_ON_SEGMENT
-            logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : etape 1")
             topology_element = self
-            logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : etape 2")
             consistency_error_text = f"{all_tracking_blocks_in_segment_sizes} < {self.length}"
-            logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : etape 3")
-            error = ConsistencyError(topology_element=topology_element, consistency_error_type=consistency_error_type, consistency_error_text=consistency_error_text)
-            logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : etape 4")
-            consistency_errors.append(error)
-            logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : etape 5")
+            consist_error = ConsistencyError(topology_element=topology_element, consistency_error_type=consistency_error_type, consistency_error_text=consistency_error_text)
+            consistency_errors.append(consist_error)
+            # logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier}")
+            # logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : {consist_error}")
         logger_config.print_and_log_info(f"{self.identifier} has {len(consistency_errors)} consistency errors")
         return consistency_errors
 
