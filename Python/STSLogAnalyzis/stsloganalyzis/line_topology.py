@@ -14,15 +14,16 @@ class TopologyElement:
     identifier: str
 
 
+class ConsistencyErrorType(Enum):
+    MISSING_TB_ON_SEGMENT = "MISSING_TB_ON_SEGMENT"
+
+
 @dataclass
 class ConsistencyError:
 
-    class ErrorType(Enum):
-        MISSING_TB_ON_SEGMENT = "MISSING_TB_ON_SEGMENT"
-
     topology_element: TopologyElement
-    error_type: ErrorType
-    error_text: str
+    consistency_error_type: ConsistencyErrorType
+    consistency_error_text: str
 
     def __post_init__(self) -> None:
         logger_config.print_and_log_error(str(self))
@@ -64,14 +65,26 @@ class Segment(TopologyElement):
     def __str__(self) -> str:
         return f"Segment {self.identifier} #{self.num_segment} length:{self.length}"
 
-    @logger_config.stopwatch_decorator(inform_beginning=True)
     def compute_consistency_errors(self) -> List[ConsistencyError]:
+        logger_config.print_and_log_info(f"compute_consistency_errors {self.identifier} : begin")
+
         consistency_errors: List[ConsistencyError] = []
         all_tracking_blocks_in_segment_sizes = sum([tracking_block_in_segment.length for tracking_block_in_segment in self.tracking_blocks_in_segment])
         if all_tracking_blocks_in_segment_sizes < self.length:
-            consistency_errors.append(
-                ConsistencyError(topology_element=self, error_type=ConsistencyError.ErrorType.MISSING_TB_ON_SEGMENT, error_text=f"{all_tracking_blocks_in_segment_sizes} < {self.length}")
-            )
+            logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : has error")
+            logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : etape 0")
+
+            consistency_error_type = ConsistencyErrorType.MISSING_TB_ON_SEGMENT
+            logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : etape 1")
+            topology_element = self
+            logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : etape 2")
+            consistency_error_text = f"{all_tracking_blocks_in_segment_sizes} < {self.length}"
+            logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : etape 3")
+            error = ConsistencyError(topology_element=topology_element, consistency_error_type=consistency_error_type, consistency_error_text=consistency_error_text)
+            logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : etape 4")
+            consistency_errors.append(error)
+            logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : etape 5")
+        logger_config.print_and_log_info(f"{self.identifier} has {len(consistency_errors)} consistency errors")
         return consistency_errors
 
     @classmethod
@@ -185,7 +198,7 @@ class Line:
     tracking_blocks: List[TrackingBlock]
     switches: Dict[str, Switch]
     not_created_tracking_blocks_ids_without_track_circuits: List[str]
-    tracking_block_on_segments_csv_full_path: str
+    tracking_block_on_segments_csv_full_path: str | Path
 
     def __post_init__(self) -> None:
         self.tracking_block_by_id = {b.identifier: b for b in self.tracking_blocks}
@@ -252,6 +265,7 @@ class Line:
 
         return matches[0].tracking_block
 
+    @logger_config.stopwatch_decorator(inform_beginning=True)
     def compute_consistency_errors(self) -> List[ConsistencyError]:
         consistency_errors: List[ConsistencyError] = []
         for segment in self.segments:
