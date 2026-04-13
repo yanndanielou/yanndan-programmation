@@ -76,6 +76,7 @@ def __get_calling_line_number() -> int:
 def print_and_log_critical_and_kill(to_print_and_log: str) -> None:
     """Print in standard output and log in file as info critical, then kill application"""
     log_timestamp = time.asctime(time.localtime(time.time()))
+    to_print_and_log = "☠️ " + to_print_and_log
 
     # pylint: disable=line-too-long
     print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + to_print_and_log)
@@ -118,6 +119,8 @@ def print_and_log_warning(
     if not do_not_print:
         print(
             log_timestamp
+            + "\t"
+            + "⚠️"
             + "\t"
             + __get_calling_file_name_and_line_number(call_stack_frame=call_stack_frame)
             + "\t"
@@ -167,8 +170,9 @@ def print_and_log_error(
 ) -> None:
     """Print in standard output and log in file as error level"""
     log_timestamp = time.asctime(time.localtime(time.time()))
+    to_print_and_log = "❌ " + to_print_and_log
     if not do_not_print:
-        print(log_timestamp + "\t" + "!!ERROR!!")
+        # print(log_timestamp + "\t" + "!!ERROR!!")
         # pylint: disable=line-too-long
         print(
             log_timestamp
