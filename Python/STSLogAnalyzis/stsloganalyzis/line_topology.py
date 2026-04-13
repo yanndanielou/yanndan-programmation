@@ -10,7 +10,26 @@ from logger import logger_config
 
 
 @dataclass
-class Segment:
+class TopologyElement:
+    identifier: str
+
+
+@dataclass
+class ConsistencyError:
+
+    class ErrorType(Enum):
+        MISSING_TB_ON_SEGMENT = "MISSING_TB_ON_SEGMENT"
+
+    topology_element: TopologyElement
+    error_type: ErrorType
+    error_text: str
+
+    def __post_init__(self) -> None:
+        logger_config.print_and_log_error(str(self))
+
+
+@dataclass
+class Segment(TopologyElement):
     """
     Représente un segment de ligne ferroviaire.
 
@@ -27,7 +46,6 @@ class Segment:
         downstream_reverse: Segment aval reverse (optionnel)
     """
 
-    identifier: str
     num_segment: int
     direction: str
     pk_abs_start: float
@@ -41,9 +59,20 @@ class Segment:
     def __post_init__(self) -> None:
         assert self.identifier
         assert isinstance(self.identifier, str)
+        self.tracking_blocks_in_segment: List[TrackingBlockOnSegment] = []
 
     def __str__(self) -> str:
         return f"Segment {self.identifier} #{self.num_segment} length:{self.length}"
+
+    @logger_config.stopwatch_decorator(inform_beginning=True)
+    def compute_consistency_errors(self) -> List[ConsistencyError]:
+        consistency_errors: List[ConsistencyError] = []
+        all_tracking_blocks_in_segment_sizes = sum([tracking_block_in_segment.length for tracking_block_in_segment in self.tracking_blocks_in_segment])
+        if all_tracking_blocks_in_segment_sizes < self.length:
+            consistency_errors.append(
+                ConsistencyError(topology_element=self, error_type=ConsistencyError.ErrorType.MISSING_TB_ON_SEGMENT, error_text=f"{all_tracking_blocks_in_segment_sizes} < {self.length}")
+            )
+        return consistency_errors
 
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
@@ -170,6 +199,9 @@ class Line:
 
         logger_config.print_and_log_info(repr(self))
 
+        consistency_errors = self.compute_consistency_errors()
+        logger_config.print_and_log_info(f"{len(consistency_errors)} consistency errors detected")
+
     def __repr__(self) -> str:
         return (
             f"Line(segments={len(self.segments)}, "
@@ -219,6 +251,12 @@ class Line:
             raise ValueError(f"Plusieurs TrackingBlockOnSegment correspondent au segment '{segment}' " f"et à l'abscisse {abscissa} : {match_ids}.")
 
         return matches[0].tracking_block
+
+    def compute_consistency_errors(self) -> List[ConsistencyError]:
+        consistency_errors: List[ConsistencyError] = []
+        for segment in self.segments:
+            consistency_errors += segment.compute_consistency_errors()
+        return consistency_errors
 
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
@@ -290,7 +328,7 @@ class Direction(str, Enum):
 
 
 @dataclass
-class TrackingCircuit:
+class TrackingCircuit(TopologyElement):
     """
     Représente un circuit de detection d'occupation de voie ferrée.
 
@@ -312,7 +350,6 @@ class TrackingCircuit:
         tracking_blocks: Liste des blocs de détection associés à ce circuit
     """
 
-    identifier: str
     label: str
     occupancy_id: str
     direction_id: Optional[str]
@@ -385,7 +422,7 @@ class TrackingCircuit:
 
 
 @dataclass
-class TrackingBlock:
+class TrackingBlock(TopologyElement):
     """
     Représente un bloc de détection (regroupement de circuits).
 
@@ -401,7 +438,6 @@ class TrackingBlock:
         tracking_circuit: Référence vers le circuit de détection associé (obligatoire)
     """
 
-    identifier: str
     label: Optional[str]
     type: Optional[str]
     track_circuit_id: str
@@ -410,6 +446,9 @@ class TrackingBlock:
     steering: Optional[Direction]
     extension_id: Optional[str]
     tracking_circuit: TrackingCircuit
+
+    def __post_init__(self) -> None:
+        self.tracking_blocks_in_segment: List[TrackingBlockOnSegment] = []
 
     @classmethod
     def _load_from_csv_raw(
@@ -516,7 +555,7 @@ class TrackingBlock:
 
 
 @dataclass
-class Switch:
+class Switch(TopologyElement):
     """
     Représente un aiguillage (switch) d'une ligne ferroviaire.
 
@@ -530,7 +569,6 @@ class Switch:
         convergency_direction: Direction de convergence (UP, DOWN, ou None)
     """
 
-    identifier: str
     label: Optional[str]
     normal_id: Optional[str]
     reverse_id: Optional[str]
@@ -607,21 +645,24 @@ class Switch:
 
 
 @dataclass
-class TrackingBlockOnSegment:
+class TrackingBlockOnSegment(TopologyElement):
     """
     Représente la relation entre un bloc de détection et un segment.
 
     """
 
-    identifier: str
     tracking_block: TrackingBlock
     segment: Segment
     abs_begin: int
     abs_end: int
 
     def __post_init__(self) -> None:
+        self.length = self.abs_end - self.abs_begin
+        assert self.length > 0
         assert self.tracking_block
+        self.tracking_block.tracking_blocks_in_segment.append(self)
         assert self.segment
+        self.segment.tracking_blocks_in_segment.append(self)
         assert self.abs_begin is not None
         assert self.abs_end is not None
 
