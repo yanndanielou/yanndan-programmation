@@ -84,6 +84,7 @@ sql_arch_line_signal_type_library = SqlArchLineSignalType.Library()
 class Filter(ABC):
     def __init__(self) -> None:
         self.rejected_count: int = 0
+        self.rejected_count_by_item: Dict[str, int] = dict()
 
     @abstractmethod
     def passes(self, line: str, parent: "ArchiveSource") -> bool:
@@ -102,6 +103,7 @@ class IdFilter(Filter):
             line_json = json.loads(line)
             sqlarch_section = line_json.get("SQLARCH", {})
             id_value = str(sqlarch_section.get("id", ""))
+            ret: bool
             match = False
             if self.filter_on_id_type == ArchiveLineFilterOnIdType.CONTAINS:
                 match = self.term in id_value
@@ -110,9 +112,20 @@ class IdFilter(Filter):
             elif self.filter_on_id_type == ArchiveLineFilterOnIdType.MATCHES_REGEX:
                 match = bool(re.search(self.term, id_value))
             if self.is_whitelist:
-                return match
+
+                ret = match
             else:
-                return not match
+                ret = not match
+
+            if not ret:
+                self.rejected_count += 1
+
+                if id_value not in self.rejected_count_by_item:
+                    self.rejected_count_by_item[id_value] = 0
+
+                self.rejected_count_by_item[id_value] += 1
+
+            return ret
         except (TypeError, ValueError, json.JSONDecodeError, KeyError):
             return False
 
@@ -132,12 +145,23 @@ class SignalTypeFilter(Filter):
             signal_type = sql_arch_line_signal_type_library.get_by_identifier(signal_type_raw) if signal_type_raw else None
             # signal_type = SqlArchLineSignalType[signal_type_raw] if signal_type_raw else None
 
+            ret: bool
             if signal_type is None:
-                return False
+                ret = False
             if self.is_whitelist:
-                return signal_type in self.signal_types
+                ret = signal_type in self.signal_types
             else:
-                return signal_type not in self.signal_types
+                ret = signal_type not in self.signal_types
+
+            if not ret:
+                self.rejected_count += 1
+
+                if signal_type.identifier not in self.rejected_count_by_item:
+                    self.rejected_count_by_item[signal_type.identifier] = 0
+
+                self.rejected_count_by_item[signal_type.identifier] += 1
+
+            return ret
         except (TypeError, ValueError, json.JSONDecodeError, KeyError):
             return False
 
@@ -281,7 +305,6 @@ class ArchiveLibrary:
         # Check ID filters
         for f in self.sqlarch_archive_lines_filters:
             if not f.passes(line, parent):
-                f.rejected_count += 1
                 return False
 
         # Check signal_type whitelist
@@ -334,19 +357,19 @@ class ArchiveLibrary:
         return {line.signal_type_raw for line in self.all_sqlarch_lines}
 
     def _print_filter_stats_and_info(self) -> None:
-        logger_config.print_and_log_info("{self.label}: === ArchiveLibrary Filter Statistics and Info ===")
+        logger_config.print_and_log_info(f"{self.label}: === ArchiveLibrary Filter Statistics and Info ===")
         logger_config.print_and_log_info(f"{self.label}: Total SQLARCH lines processed: {self.total_sqlarch_lines_processed}")
         logger_config.print_and_log_info(f"{self.label}: Lines kept after filtering: {len(self.all_sqlarch_lines)}")
 
-        logger_config.print_and_log_info("{self.label}: ID Filters:")
+        logger_config.print_and_log_info(f"{self.label}: ID Filters:")
         for i, f in enumerate(self.sqlarch_archive_lines_filters):
             logger_config.print_and_log_info(
-                f"{self.label}:   Filter {i+1}: {'Whitelist' if f.is_whitelist else 'Blacklist'} {f.filter_on_id_type.value} '{f.term}' - rejected {f.rejected_count} lines"
+                f"{self.label}:   Filter {i+1}: {'Whitelist' if f.is_whitelist else 'Blacklist'} {f.filter_on_id_type.value} '{f.term}' - rejected {f.rejected_count} lines. Details {f.rejected_count_by_item}"
             )
 
         logger_config.print_and_log_info(f"{self.label}: Signal type whitelist: {[st.identifier for st in self.signal_type_whitelist]} - rejected {self.signal_type_whitelist_rejected_count} lines")
         logger_config.print_and_log_info(f"{self.label}: Signal type blacklist: {[st.value for st in self.signal_type_blacklist]} - rejected {self.signal_type_blacklist_rejected_count} lines")
-        logger_config.print_and_log_info("{self.label}: === End Filter Statistics ===")
+        logger_config.print_and_log_info(f"{self.label}: === End Filter Statistics ===")
 
 
 class ArchiveLine:
@@ -468,59 +491,56 @@ class SqlArchArchiveLine(ArchiveLine):
     def get_all_changes_since_previous(self, also_print_and_log: bool, previous_line_for_this_id: Optional["SqlArchArchiveLine"]) -> Optional[OrderedDict[str, Any]]:
         field_names_to_ignore = ["Time"]
 
-        if not previous_line_for_this_id:
-            if self.decoded_message is None:
-                return OrderedDict({"date": self.date_raw, "id": self.id_field, "type": "no_previous", "new_value": self.get_new_state_str()})
-            else:
-                return OrderedDict({"date": self.date_raw, "id": self.id_field, "type": "no_previous"})
-
-        previous_date = previous_line_for_this_id.get_date_raw_str()
+        previous_date = previous_line_for_this_id.date if previous_line_for_this_id else None
+        previous_date_str = previous_line_for_this_id.get_date_raw_str() if previous_line_for_this_id else "NA"
+        exact_time_delta = date_time_formats.format_duration_timedelta_to_string(self.date - previous_line_for_this_id.date) if previous_line_for_this_id else "NA"
+        approximative_time_delta = humanize.precisedelta(self.date - previous_date, minimum_unit="milliseconds") if previous_date else "NA"
+        old_timestamp = previous_line_for_this_id.date_raw if previous_line_for_this_id else None
 
         if self.decoded_message is None:
             # If no decoded message, only show newSt change
-            previous_new_st = previous_line_for_this_id.get_new_state_str()
+            previous_new_st = previous_line_for_this_id.get_new_state_str() if previous_line_for_this_id else "No previous"
             new_new_st = self.get_new_state_str()
             if previous_new_st != new_new_st:
                 return OrderedDict(
                     {
-                        "date": previous_date,
+                        "date": self.get_date_raw_str(),
                         "id": self.id_field,
-                        "field": "newSt",
+                        "field": new_new_st,
                         "old_value": previous_new_st,
                         "new_value": new_new_st,
                         "change_value": f"{previous_new_st} -> {new_new_st}",
-                        "exact_time_delta": date_time_formats.format_duration_timedelta_to_string(self.date - previous_line_for_this_id.date),
-                        "approximative_time_delta": humanize.precisedelta(self.date - previous_line_for_this_id.date, minimum_unit="milliseconds"),
-                        "old_timestamp": previous_line_for_this_id.date_raw,
+                        "exact_time_delta": exact_time_delta,
+                        "approximative_time_delta": approximative_time_delta,
+                        "old_timestamp": old_timestamp,
                     }
                 )
         else:
             # If decoded message exists, show only decoded message fields that changed
-            if previous_line_for_this_id.decoded_message:
-                for field_name in self.decoded_message.decoded_fields_flat_directory.keys():
-                    if field_name not in field_names_to_ignore:
-                        new_field = self.decoded_message.decoded_fields_flat_directory.get(field_name)
-                        previous_field = previous_line_for_this_id.decoded_message.decoded_fields_flat_directory.get(field_name)
+            for field_name in self.decoded_message.decoded_fields_flat_directory.keys():
+                if field_name not in field_names_to_ignore:
+                    new_value = self.decoded_message.get_field_value_human_readable(field_name)
+                    previous_value = (
+                        previous_line_for_this_id.decoded_message.get_field_value_human_readable(field_name)
+                        if previous_line_for_this_id and previous_line_for_this_id.decoded_message
+                        else "No previous"
+                    )
 
-                        if new_field and previous_field:
-                            new_value = self.decoded_message.get_field_value_human_readable(field_name)
-                            previous_value = previous_line_for_this_id.decoded_message.get_field_value_human_readable(field_name)
-
-                            if new_value != previous_value:
-                                return OrderedDict(
-                                    {
-                                        "date": previous_date,
-                                        "id": self.id_field,
-                                        "id_msg": self.decoded_message.message_number,
-                                        "field": field_name,
-                                        "old_value": previous_value,
-                                        "new_value": new_value,
-                                        "change_value": f"{previous_value} -> {new_value}",
-                                        "time_delta": date_time_formats.format_duration_timedelta_to_string(self.date - previous_line_for_this_id.date),
-                                        "approximative_time_delta": humanize.precisedelta(self.date - previous_line_for_this_id.date, minimum_unit="milliseconds"),
-                                        "old_timestamp": previous_line_for_this_id.date_raw,
-                                    }
-                                )
+                    if new_value != previous_value:
+                        return OrderedDict(
+                            {
+                                "date": self.get_date_raw_str(),
+                                "id": self.id_field,
+                                "id_msg": self.decoded_message.message_number,
+                                "field": field_name,
+                                "old_value": previous_value,
+                                "new_value": new_value,
+                                "change_value": f"{previous_value} -> {new_value}",
+                                "exact_time_delta": exact_time_delta,
+                                "approximative_time_delta": approximative_time_delta,
+                                "old_timestamp": old_timestamp,
+                            }
+                        )
 
         return None
 
