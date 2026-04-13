@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple, Set
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -12,6 +12,9 @@ from logger import logger_config
 @dataclass
 class TopologyElement:
     identifier: str
+
+    def __hash__(self) -> int:
+        return hash(self.identifier)
 
 
 class ConsistencyErrorType(Enum):
@@ -82,7 +85,8 @@ class Segment(TopologyElement):
             consistency_errors.append(consist_error)
             # logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier}")
             # logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : {consist_error}")
-        logger_config.print_and_log_info(f"{self.identifier} has {len(consistency_errors)} consistency errors")
+        if consistency_errors:
+            logger_config.print_and_log_warning(f"{self.identifier} has {len(consistency_errors)} consistency errors")
         return consistency_errors
 
     @classmethod
@@ -208,6 +212,7 @@ class Line:
         if self.tracking_block_on_segments_csv_full_path is not None:
             self.tracking_block_on_segments = TrackingBlockOnSegment.load_from_csv(self.tracking_block_on_segments_csv_full_path, self)
 
+        self.occurences_of_not_found_tracking_block_in_segment: Dict[Tuple[Segment, int], int] = dict()
         logger_config.print_and_log_info(repr(self))
 
         consistency_errors = self.compute_consistency_errors()
@@ -254,8 +259,13 @@ class Line:
         matches = [relation for relation in self.tracking_block_on_segments if relation.segment == segment and relation.abs_begin <= abscissa < relation.abs_end]
 
         if not matches:
-            logger_config.print_and_log_warning(f"Aucun TrackingBlockOnSegment trouvé pour le segment '{segment}' " f"et l'abscisse {abscissa}.")
-            return None
+            if (segment, abscissa) not in self.occurences_of_not_found_tracking_block_in_segment:
+                self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)] = 0
+            self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)] += 1
+            logger_config.print_and_log_warning(
+                f"Aucun TrackingBlockOnSegment trouvé pour le segment '{segment}' "
+                f"et l'abscisse {abscissa}. {self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)]} nth occurence"
+            )
 
         if len(matches) > 1:
             match_ids = ", ".join(relation.tracking_block.identifier for relation in matches)
