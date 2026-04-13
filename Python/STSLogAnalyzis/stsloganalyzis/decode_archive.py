@@ -52,6 +52,7 @@ class SqlArchLineSignalType(Enum):
     CICR = "CICR"
     LOGIN = "LOGIN"
     TR = "TR"
+    TRCR = "TRCR"
     TCS = "TCS"
     CI = "CI"
     NOT_FOUND = "NOT_FOUND"
