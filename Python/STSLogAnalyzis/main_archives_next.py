@@ -79,90 +79,9 @@ def main() -> None:
 
         analyzis = archive_analyzis.ArchiveAnalyzis(railway_line=railway_line, archive_library=archive_library, label="CFX")
         analyzis.create_reports_all_sqlarch_changes_since_previous(
-            white_list_signal_types=[
-                decode_archive.SqlArchLineSignalType.TSA,
-                decode_archive.SqlArchLineSignalType.TS,
-                decode_archive.SqlArchLineSignalType.TG,
-                decode_archive.SqlArchLineSignalType.TCA,
-            ],
             output_directory_path=OUTPUT_DIRECTORY,
             also_print_and_log=False,
         )
-
-        archive_library = (
-            decode_archive.ArchiveLibrary.Builder()
-            .add_archive_files(directory_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29", filename_pattern="NEXTFileArchiveServer_*.json")
-            # .add_archive_file(file_full_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29\CFX00921734_FU.json")
-            .add_archive_decoder(archive_decoder=archive_decoder)
-            .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("NB_ACTIVE_SCRUTATION", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
-            .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("NB_PASSIVE_SCRUTATION", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
-            .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("QUESTION_NUMBER_ISSUED", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
-            .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("NB_RESPONSE_ACTIVE_SCRUTATION", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
-            .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("NB_RESPONSE_PASSIVE_SCRUTATION", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
-            .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("ACTIVE_QUESTION_NUMBER_RECEIVED", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
-            .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("PASSIVE_QUESTION_NUMBER_RECEIVED", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
-            .build()
-        )
-        archive_library.get_all_signal_types()
-        archive_library.create_reports_all_sqlarch_changes_since_previous(
-            white_list_signal_types=[
-                decode_archive.SqlArchLineSignalType.TSA,
-                decode_archive.SqlArchLineSignalType.TS,
-                decode_archive.SqlArchLineSignalType.TG,
-                decode_archive.SqlArchLineSignalType.TCA,
-            ],
-            output_directory_path=OUTPUT_DIRECTORY,
-            also_print_and_log=False,
-        )
-
-        for sqlarch_archive_line in archive_library.all_sqlarch_lines:
-
-            """if "_ZC_ATS_MAL" in sqlarch_archive_line.id_field:
-                sqlarch_archive_line.print_and_log_with_following_fields(
-                    [
-                        "CCId1",
-                        "MALType",
-                        "MALSegIdV",
-                        "MALOffsetV",
-                        "MALSegIdNv",
-                        "MALOffsetNv",
-                        "ExtRearSegId",
-                        "ExtRearOffset",
-                    ]
-                )
-            elif sqlarch_archive_line.id_field == "M_TRAIN_CC_48_CC_EQPT_TRACKING":
-
-                sqlarch_archive_line.print_and_log_with_following_fields(
-                    [
-                        "NvFrontSegId",
-                        "NvFrontOffset",
-                        "NvRearSegId",
-                        "NvRearOffset",
-                        "LocSecured",
-                        "ExtFrontSegId",
-                        "ExtFrontOffset",
-                        "IntFrontSegId",
-                        "IntFrontOffset",
-                        "ExtRearOffset",
-                        "IntRearSegId",
-                        "IntRearOffset",
-                        "SpeedTracking",
-                    ]
-                )
-                pass
-
-            else:
-                sqlarch_archive_line.print_and_log_with_all_fields()"""
-
-        archive_library = decode_archive.ArchiveLibrary.Builder().add_raw_archives_json_lines(raw_archives_json_lines=messages_205).add_archive_decoder(archive_decoder=archive_decoder).build()
-
-        for sqlarch_archive_line in archive_library.all_sqlarch_lines:
-
-            if sqlarch_archive_line.decoded_message:
-                decoded_message = sqlarch_archive_line.decoded_message
-                decoded_fields_flat_directory = sqlarch_archive_line.decoded_message.decoded_fields_flat_directory
-                # print(archive_line.decoded_message.all_fields_by_name["SoftVersionPart1"].value)
-                pass
 
 
 if __name__ == "__main__":

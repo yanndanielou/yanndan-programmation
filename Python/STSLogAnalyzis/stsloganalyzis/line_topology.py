@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import List, Optional, Dict, Tuple, Set
+from typing import List, Optional, Dict, Tuple, Set, cast
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -15,6 +15,9 @@ class TopologyElement:
 
     def __hash__(self) -> int:
         return hash(self.identifier)
+
+    def __eq__(self, other: object) -> bool:
+        return self.identifier == cast("TopologyElement", other).identifier
 
 
 class ConsistencyErrorType(Enum):
@@ -67,6 +70,12 @@ class Segment(TopologyElement):
         assert self.identifier
         assert isinstance(self.identifier, str)
         self.tracking_blocks_in_segment: List[TrackingBlockOnSegment] = []
+
+    def __hash__(self) -> int:
+        return hash(self.identifier)
+
+    def __eq__(self, other: object) -> bool:
+        return self.identifier == cast("TopologyElement", other).identifier
 
     def __str__(self) -> str:
         return f"Segment {self.identifier} #{self.num_segment} length:{self.length}"
@@ -261,11 +270,17 @@ class Line:
         if not matches:
             if (segment, abscissa) not in self.occurences_of_not_found_tracking_block_in_segment:
                 self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)] = 0
+                logger_config.print_and_log_error(
+                    f"Aucun TrackingBlockOnSegment trouvé pour le segment '{segment}' "
+                    f"et l'abscisse {abscissa}. {self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)]} first occurence"
+                )
             self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)] += 1
+
             logger_config.print_and_log_warning(
                 f"Aucun TrackingBlockOnSegment trouvé pour le segment '{segment}' "
                 f"et l'abscisse {abscissa}. {self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)]} nth occurence"
             )
+            return None
 
         if len(matches) > 1:
             match_ids = ", ".join(relation.tracking_block.identifier for relation in matches)

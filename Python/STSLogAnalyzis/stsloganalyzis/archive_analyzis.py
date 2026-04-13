@@ -36,9 +36,14 @@ class ArchiveAnalyzis:
 
     def __post_init__(self) -> None:
         self.trains: List[Train] = []
-        self.parsed_sql_arch_lines: List[Train] = []
+
         self.all_sql_arch_lines_with_context: List[SqlArchArchiveLineWithContext] = []
         self.current_latest_line_by_id: Dict[str, SqlArchArchiveLineWithContext] = dict()
+
+        for sql_arch_line in self.archive_library.all_sqlarch_lines:
+            previous_line_for_this_id = self.current_latest_line_by_id.get(sql_arch_line.id_field)
+            line_with_context = SqlArchArchiveLineWithContext(sql_arch_line=sql_arch_line, previous_line_for_this_id=previous_line_for_this_id)
+            self.all_sql_arch_lines_with_context.append(line_with_context)
 
     @logger_config.stopwatch_decorator
     def handle_lines(self) -> None:
@@ -50,9 +55,7 @@ class ArchiveAnalyzis:
             self.current_latest_line_by_id[sqlarch_line.id_field] = line_with_context
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def create_reports_all_sqlarch_changes_since_previous(
-        self, white_list_signal_types: Optional[List[decode_archive.SqlArchLineSignalType]], output_directory_path: str, also_print_and_log: bool, file_base_name: Optional[str] = None
-    ) -> int:
+    def create_reports_all_sqlarch_changes_since_previous(self, output_directory_path: str, also_print_and_log: bool, file_base_name: Optional[str] = None) -> int:
         if file_base_name is None:
             file_base_name = f"{self.label}_all_changes"
 
@@ -60,7 +63,7 @@ class ArchiveAnalyzis:
 
         for line_with_context in self.all_sql_arch_lines_with_context:
             all_changes_since_previous = line_with_context.sql_arch_line.get_all_changes_since_previous(
-                white_list_signal_types=white_list_signal_types, also_print_and_log=also_print_and_log, previous_line_for_this_id=line_with_context.previous_line_for_this_id
+                also_print_and_log=also_print_and_log, previous_line_for_this_id=line_with_context.previous_line_for_this_id
             )
             if all_changes_since_previous:
                 rows_as_list_dict.append(all_changes_since_previous)
