@@ -1,6 +1,6 @@
 from logger import logger_config
 
-from stsloganalyzis import archive_analyzis, decode_action_set_content, decode_archive, decode_message, decode_xml_message, line_topology, next_data,
+from stsloganalyzis import archive_analyzis, decode_action_set_content, decode_archive, decode_message, decode_xml_message, line_topology, next_data
 
 OUTPUT_DIRECTORY = "output"
 
@@ -39,14 +39,15 @@ messages_205_archives = [
 def main() -> None:
     with logger_config.application_logger():
 
-        
-        railway_line, archive_decoder= next_data.get_encoders()
+        railway_line, archive_decoder = next_data.get_encoders()
 
         archive_library = (
             decode_archive.ArchiveLibrary.Builder()
             # .add_archive_files(directory_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29", filename_pattern="NEXTFileArchiveServer_*.json")
-            .add_archive_file(file_full_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29\CFX00921734_FU.json")
+            # .add_archive_file(file_full_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29\CFX00921734_FU.json")
+            .add_archive_file(file_full_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29\NEXTFileArchiveServer_238.json")
             .add_archive_decoder(archive_decoder=archive_decoder)
+            .add_sqlarch_archive_lines_signal_type_blacklist(signal_types_names=["TRAIN", "ARS_AD", "TB"])
             .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("NB_ACTIVE_SCRUTATION", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
             .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("NB_PASSIVE_SCRUTATION", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
             .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("QUESTION_NUMBER_ISSUED", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)

@@ -22,6 +22,9 @@ class InvariantMessage:
     message_id: str
     message_number: int
 
+    def __post_init__(self) -> None:
+        assert isinstance(self.message_number, int)
+
 
 class InvariantMessagesManager:
     def __init__(self, messages_list_csv_file_full_path: str) -> None:

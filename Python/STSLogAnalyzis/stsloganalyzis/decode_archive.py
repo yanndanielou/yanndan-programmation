@@ -15,6 +15,11 @@ from stsloganalyzis import decode_action_set_content, decode_message, line_topol
 ArchiveLineFilter = Callable[[str, "ArchiveSource"], bool]
 
 
+class WhiteOrBlackListFilterType(Enum):
+    WHITELIST = "WHITELIST"
+    BLACKLIST = "BLACKLIST"
+
+
 class ArchiveLineFilterOnIdType(Enum):
     BEGIN_WITH_STRING = "BEGIN_WITH_STRING"
     MATCHES_REGEX = "MATCHES_REGEX"
@@ -81,22 +86,29 @@ class SqlArchLineSignalType:
 sql_arch_line_signal_type_library = SqlArchLineSignalType.Library()
 
 
-class Filter(ABC):
-    def __init__(self) -> None:
+class SqlArchLineFilter(ABC):
+    def __init__(self, white_or_black_list: WhiteOrBlackListFilterType) -> None:
         self.rejected_count: int = 0
         self.rejected_count_by_item: Dict[str, int] = dict()
+        self.white_or_black_list = white_or_black_list
+        self.is_whitelist = white_or_black_list == WhiteOrBlackListFilterType.WHITELIST
 
     @abstractmethod
     def passes(self, line: str, parent: "ArchiveSource") -> bool:
         pass
 
+    def print_stats(self) -> None:
+        logger_config.print_and_log_info(f"  Filter {self}: ' - rejected {self.rejected_count} lines. Details {self.rejected_count_by_item}")
 
-class IdFilter(Filter):
-    def __init__(self, term: str, filter_on_id_type: ArchiveLineFilterOnIdType, is_whitelist: bool) -> None:
-        super().__init__()
+
+class IdFilter(SqlArchLineFilter):
+    def __init__(self, term: str, filter_on_id_type: ArchiveLineFilterOnIdType, white_or_black_list: WhiteOrBlackListFilterType) -> None:
+        super().__init__(white_or_black_list)
         self.term = term
         self.filter_on_id_type = filter_on_id_type
-        self.is_whitelist = is_whitelist
+
+    def __str__(self) -> str:
+        return f"{self.filter_on_id_type.value} {self.term} {'Whitelist' if self.is_whitelist else 'Blacklist'} "
 
     def passes(self, line: str, parent: "ArchiveSource") -> bool:
         try:
@@ -130,11 +142,13 @@ class IdFilter(Filter):
             return False
 
 
-class SignalTypeFilter(Filter):
-    def __init__(self, is_whitelist: bool, signal_types: List[SqlArchLineSignalType]) -> None:
-        super().__init__()
-        self.is_whitelist = is_whitelist
-        self.signal_types = signal_types
+class SignalTypeFilter(SqlArchLineFilter):
+    def __init__(self, white_or_black_list: WhiteOrBlackListFilterType, signal_types_names: List[str]) -> None:
+        super().__init__(white_or_black_list=white_or_black_list)
+        self.signal_types_names = signal_types_names
+
+    def __str__(self) -> str:
+        return f"{','.join(self.signal_types_names)} {'Whitelist' if self.is_whitelist else 'Blacklist'} "
 
     def passes(self, line: str, parent: "ArchiveSource") -> bool:
         try:
@@ -142,24 +156,19 @@ class SignalTypeFilter(Filter):
             sqlarch_section = line_json.get("SQLARCH", {})
             signal_type_raw = str(sqlarch_section.get("sigT", ""))
 
-            signal_type = sql_arch_line_signal_type_library.get_by_identifier(signal_type_raw) if signal_type_raw else None
-            # signal_type = SqlArchLineSignalType[signal_type_raw] if signal_type_raw else None
-
             ret: bool
-            if signal_type is None:
-                ret = False
+
             if self.is_whitelist:
-                ret = signal_type in self.signal_types
+                ret = signal_type_raw in self.signal_types_names
             else:
-                ret = signal_type not in self.signal_types
+                ret = signal_type_raw not in self.signal_types_names
 
             if not ret:
                 self.rejected_count += 1
-                assert signal_type
-                if signal_type.identifier not in self.rejected_count_by_item:
-                    self.rejected_count_by_item[signal_type.identifier] = 0
+                if signal_type_raw not in self.rejected_count_by_item:
+                    self.rejected_count_by_item[signal_type_raw] = 0
 
-                self.rejected_count_by_item[signal_type.identifier] += 1
+                self.rejected_count_by_item[signal_type_raw] += 1
 
             return ret
         except (TypeError, ValueError, json.JSONDecodeError, KeyError):
@@ -193,9 +202,7 @@ class ArchiveLibrary:
 
             self.archive_inputs: List[ArchiveSource] = []
             self.archive_decoder: Optional[ArchiveDecoder] = None
-            self.sqlarch_archive_lines_filters: List[IdFilter] = []
-            self.signal_type_whitelist: List[SqlArchLineSignalType] = []
-            self.signal_type_blacklist: List[SqlArchLineSignalType] = []
+            self.sqlarch_archive_lines_filters: List[SqlArchLineFilter] = []
 
             self._label_is_forced = False
 
@@ -224,19 +231,19 @@ class ArchiveLibrary:
             return self
 
         def add_sqlarch_archive_lines_whitelist_filter_based_on_id_term(self, filter_text: str, filterOnIdType: ArchiveLineFilterOnIdType) -> Self:
-            self.sqlarch_archive_lines_filters.append(IdFilter(filter_text, filterOnIdType, is_whitelist=True))
+            self.sqlarch_archive_lines_filters.append(IdFilter(filter_text, filterOnIdType, white_or_black_list=WhiteOrBlackListFilterType.WHITELIST))
             return self
 
         def add_sqlarch_archive_lines_blacklist_filter_based_on_id_term(self, filter_text: str, filterOnIdType: ArchiveLineFilterOnIdType) -> Self:
-            self.sqlarch_archive_lines_filters.append(IdFilter(filter_text, filterOnIdType, is_whitelist=False))
+            self.sqlarch_archive_lines_filters.append(IdFilter(filter_text, filterOnIdType, white_or_black_list=WhiteOrBlackListFilterType.BLACKLIST))
             return self
 
-        def add_sqlarch_archive_lines_signal_type_whitelist(self, signal_types: List[SqlArchLineSignalType]) -> Self:
-            self.signal_type_whitelist.extend(signal_types)
+        def add_sqlarch_archive_lines_signal_type_whitelist(self, signal_types_names: List[str]) -> Self:
+            self.sqlarch_archive_lines_filters.append(SignalTypeFilter(signal_types_names=signal_types_names, white_or_black_list=WhiteOrBlackListFilterType.WHITELIST))
             return self
 
-        def add_sqlarch_archive_lines_signal_type_blacklist(self, signal_types: List[SqlArchLineSignalType]) -> Self:
-            self.signal_type_blacklist.extend(signal_types)
+        def add_sqlarch_archive_lines_signal_type_blacklist(self, signal_types_names: List[str]) -> Self:
+            self.sqlarch_archive_lines_filters.append(SignalTypeFilter(signal_types_names=signal_types_names, white_or_black_list=WhiteOrBlackListFilterType.BLACKLIST))
             return self
 
         def add_archive_decoder(self, archive_decoder: ArchiveDecoder) -> Self:
@@ -246,8 +253,6 @@ class ArchiveLibrary:
 
         def build(self) -> "ArchiveLibrary":
             self._library.sqlarch_archive_lines_filters = self.sqlarch_archive_lines_filters
-            self._library.signal_type_whitelist = self.signal_type_whitelist
-            self._library.signal_type_blacklist = self.signal_type_blacklist
 
             for archive_input in self.archive_inputs:
                 self._library.handle_input(archive_input)
@@ -270,7 +275,7 @@ class ArchiveLibrary:
         self.all_version_lines: List[VersionArchiveLine] = []
         self.all_spmq_lines: List[ArchiveLine] = []
         self.all_alarm_lines: List[ArchiveLine] = []
-        self.sqlarch_archive_lines_filters: List[IdFilter] = []
+        self.sqlarch_archive_lines_filters: List[SqlArchLineFilter] = []
         self.signal_type_whitelist: List[SqlArchLineSignalType] = []
         self.signal_type_blacklist: List[SqlArchLineSignalType] = []
 
@@ -370,9 +375,7 @@ class ArchiveLibrary:
 
         logger_config.print_and_log_info(f"{self.label}: ID Filters:")
         for i, f in enumerate(self.sqlarch_archive_lines_filters):
-            logger_config.print_and_log_info(
-                f"{self.label}:   Filter {i+1}: {'Whitelist' if f.is_whitelist else 'Blacklist'} {f.filter_on_id_type.value} '{f.term}' - rejected {f.rejected_count} lines. Details {f.rejected_count_by_item}"
-            )
+            f.print_stats()
 
         logger_config.print_and_log_info(f"{self.label}: Signal type whitelist: {[st.identifier for st in self.signal_type_whitelist]} - rejected {self.signal_type_whitelist_rejected_count} lines")
         logger_config.print_and_log_info(f"{self.label}: Signal type blacklist: {[st.identifier for st in self.signal_type_blacklist]} - rejected {self.signal_type_blacklist_rejected_count} lines")

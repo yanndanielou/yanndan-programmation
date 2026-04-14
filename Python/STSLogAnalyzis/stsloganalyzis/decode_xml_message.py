@@ -266,12 +266,12 @@ class XmlMessageDecoder:
 
             current_char = self.convert_bits_ascii_char(xml_decoded_field_macro.bits_extracted, self.decoded_xml_message.current_bit_index, xml_decoded_field_macro.size_bits)
             all_chars.append(current_char)
-            self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix + "_" + str(i)] = current_char
+            # self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix + "_" + str(i)] = current_char
 
         string_value = "".join(cast(str, all_chars)).rstrip()
         # logger_config.print_and_log_info(f"Field {field_name} is {decoded_fields[field_name]}")
         self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = string_value
-        self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix + "_list"] = all_chars
+        # self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix + "_list"] = all_chars
 
         DecodedXmlMessage.XmlMessageFieldString(field_macro=xml_decoded_field_macro, value=string_value)
 
