@@ -197,6 +197,15 @@ class Segment(TopologyElement):
 
 
 @dataclass
+class ExactLocation:
+    segment: Segment
+    abscissa: int
+
+    def __post_init__(self) -> None:
+        assert self.abscissa < self.segment.length
+
+
+@dataclass
 class Line:
     """
     Représente une ligne ferroviaire complète avec tous ses composants.
