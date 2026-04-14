@@ -1,5 +1,6 @@
 from logger import logger_config
 from typing import Dict, Optional, Set
+from types import SimpleNamespace
 
 from stsloganalyzis import (
     archive_analyzis,
@@ -9,20 +10,6 @@ from stsloganalyzis import (
     decode_xml_message,
     line_topology,
 )
-
-
-class MainSignedOrUnsignedTypeForIntegerFieldsManager(decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase):
-    def __init__(self, signed_integer_fields_by_message_id_and_field_name: Optional[Dict[int, Set[str]]] = None) -> None:
-        self.signed_integer_fields_by_message_id_and_field_name = signed_integer_fields_by_message_id_and_field_name or {}
-
-    def get_decoding_type_for_field(
-        self,
-        message_number: int,
-        field_name: str,
-    ) -> decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding:
-        if message_number in self.signed_integer_fields_by_message_id_and_field_name and field_name in self.signed_integer_fields_by_message_id_and_field_name[message_number]:
-            return decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.SIGNED_AND_UNSIGNED
-        return decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.UNSIGNED_ONLY
 
 
 OUTPUT_DIRECTORY = "output"
@@ -77,15 +64,23 @@ def main() -> None:
         assert railway_line
 
         """
-          (101, "RestrEnd1Stationning"),
-                (101, "RestrEnd2Stationning"),
-                (94, "Stopping_Accuracy"),
+          ,
                 """
         message_manager = decode_message.InvariantMessagesManager(messages_list_csv_file_full_path=messages_list_csv_file_full_path)
         action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(csv_file_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv")
+
+        signed_integer_fields_by_message_id_and_field_name: Dict[int, Set[str]] = {}
+        signed_or_unsigned_type_for_integer_fields_manager = SimpleNamespace(
+            get_decoding_type_for_field=lambda message_number, field_name: (
+                decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.SIGNED_AND_UNSIGNED
+                if message_number in signed_integer_fields_by_message_id_and_field_name and field_name in signed_integer_fields_by_message_id_and_field_name[message_number]
+                else decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.UNSIGNED_ONLY
+            )
+        )
+
         xml_message_decoder = decode_xml_message.XmlMessageDecoder(
             xml_directory_path=xml_directory_path,
-            signed_or_unsigned_type_for_integer_fields_manager=MainSignedOrUnsignedTypeForIntegerFieldsManager(),
+            signed_or_unsigned_type_for_integer_fields_manager=signed_or_unsigned_type_for_integer_fields_manager,
         )
 
         archive_decoder = decode_archive.ArchiveDecoder(
