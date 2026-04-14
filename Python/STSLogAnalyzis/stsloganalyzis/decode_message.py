@@ -110,8 +110,13 @@ class HLFDecoder:
 
 
 class MessageDecoder:
-    def __init__(self, xml_directory_path: str, action_set_content_decoder: Optional[decode_action_set_content.ActionSetContentDecoder], railway_line: Optional[line_topology.Line] = None) -> None:
-        self.xml_message_decoder = decode_xml_message.XmlMessageDecoder(xml_directory_path=xml_directory_path)
+    def __init__(
+        self,
+        xml_message_decoder: decode_xml_message.XmlMessageDecoder,
+        action_set_content_decoder: Optional[decode_action_set_content.ActionSetContentDecoder],
+        railway_line: Optional[line_topology.Line] = None,
+    ) -> None:
+        self.xml_message_decoder = xml_message_decoder
         self.action_set_content_decoder = action_set_content_decoder
         self.zc_ats_mal_message_decoder = decode_product_topology_dependant_messages_content.ZcAtsMalMessageDecoder(railway_line=railway_line) if railway_line else None
         self.cc_ats_tracking_message_decoder = decode_product_topology_dependant_messages_content.CcAtsTrackingMessageDecoder(railway_line=railway_line) if railway_line else None

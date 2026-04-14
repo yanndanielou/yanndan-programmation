@@ -1,8 +1,13 @@
-from typing import Any, Dict, List
-
 from logger import logger_config
 
-from stsloganalyzis import decode_archive, line_topology, archive_analyzis
+from stsloganalyzis import (
+    archive_analyzis,
+    decode_action_set_content,
+    decode_archive,
+    decode_message,
+    decode_xml_message,
+    line_topology,
+)
 
 OUTPUT_DIRECTORY = "output"
 
@@ -55,17 +60,29 @@ def main() -> None:
         )
         assert railway_line
 
-        archive_decoder = decode_archive.ArchiveDecoder(
-            action_set_content_csv_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv",
-            messages_list_csv_file_full_path=messages_list_csv_file_full_path,
+        """
+          (101, "RestrEnd1Stationning"),
+                (101, "RestrEnd2Stationning"),
+                (94, "Stopping_Accuracy"),
+                """
+        message_manager = decode_message.InvariantMessagesManager(messages_list_csv_file_full_path=messages_list_csv_file_full_path)
+        action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(csv_file_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv")
+        xml_message_decoder = decode_xml_message.XmlMessageDecoder(
             xml_directory_path=xml_directory_path,
+            signed_or_unsigned_type_for_integer_fields_manager=[,
+        )
+
+        archive_decoder = decode_archive.ArchiveDecoder(
+            action_set_content_decoder=action_set_content_decoder,
+            message_manager=message_manager,
+            xml_message_decoder=xml_message_decoder,
             railway_line=railway_line,
         )
 
         archive_library = (
             decode_archive.ArchiveLibrary.Builder()
-            .add_archive_files(directory_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29", filename_pattern="NEXTFileArchiveServer_*.json")
-            # .add_archive_file(file_full_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29\CFX00921734_FU.json")
+            # .add_archive_files(directory_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29", filename_pattern="NEXTFileArchiveServer_*.json")
+            .add_archive_file(file_full_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29\CFX00921734_FU.json")
             .add_archive_decoder(archive_decoder=archive_decoder)
             .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("NB_ACTIVE_SCRUTATION", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)
             .add_sqlarch_archive_lines_blacklist_filter_based_on_id_term("NB_PASSIVE_SCRUTATION", decode_archive.ArchiveLineFilterOnIdType.CONTAINS)

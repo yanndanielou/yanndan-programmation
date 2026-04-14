@@ -20,7 +20,7 @@ message_decoder = decode_message.XmlMessageDecoder(xml_directory_path=r"D:\NEXT\
 class TestDecodeOneArchiveFile:
     def test_process_one_file(self) -> None:
         archive_decoder = decode_archive.ArchiveDecoder(
-            messages_list_csv_file_full_path=r"D:\NEXT\Data\Csv\NEXT_message.csv", xml_directory_path=r"D:\NEXT\Data\Xml", action_set_content_csv_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv"
+            message_manager=r"D:\NEXT\Data\Csv\NEXT_message.csv", xml_directory_path=r"D:\NEXT\Data\Xml", action_set_content_decoder=r"D:\NEXT\Data\Csv\ACTION_SET.csv"
         )
 
         archive_file = decode_archive.ArchiveFile(r"Input\archive_2025_07_22\NEXTFileArchiveServer_365.json")

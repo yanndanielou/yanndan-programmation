@@ -20,10 +20,6 @@ class TopologyElement:
         return self.identifier == cast("TopologyElement", other).identifier
 
 
-class ConsistencyErrorType(Enum):
-    MISSING_TB_ON_SEGMENT = "MISSING_TB_ON_SEGMENT"
-
-
 @dataclass
 class ConsistencyError:
 
@@ -36,6 +32,9 @@ class ConsistencyError:
 
     def __post_init__(self) -> None:
         logger_config.print_and_log_error(f"Consistency error {self}")
+
+    class ConsistencyErrorType(Enum):
+        MISSING_TB_ON_SEGMENT = "MISSING_TB_ON_SEGMENT"
 
 
 @dataclass
@@ -87,7 +86,7 @@ class Segment(TopologyElement):
         if all_tracking_blocks_in_segment_sizes < self.length:
             logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : has error")
 
-            consistency_error_type = ConsistencyErrorType.MISSING_TB_ON_SEGMENT
+            consistency_error_type = ConsistencyError.ConsistencyErrorType.MISSING_TB_ON_SEGMENT
             topology_element = self
             consistency_error_text = f"{all_tracking_blocks_in_segment_sizes} < {self.length}"
             consist_error = ConsistencyError(topology_element=topology_element, consistency_error_type=consistency_error_type, consistency_error_text=consistency_error_text)

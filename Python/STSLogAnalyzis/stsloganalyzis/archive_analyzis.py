@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-import csv
-from pathlib import Path
-from typing import List, Optional, Dict, Tuple, Any
 from dataclasses import dataclass, field
-from enum import Enum
-
-from stsloganalyzis import line_topology, decode_archive
+from typing import Any, Dict, List, Optional
 
 from common import reports_utils
-
 from logger import logger_config
+
+from stsloganalyzis import decode_archive, line_topology
 
 
 @dataclass

@@ -23,8 +23,8 @@ def archive_analyzis_zc_ats_mal() -> archive_analyzis.ArchiveAnalyzis:
     assert railway_line
 
     archive_decoder = decode_archive.ArchiveDecoder(
-        action_set_content_csv_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv",
-        messages_list_csv_file_full_path=messages_list_csv_file_full_path,
+        action_set_content_decoder=r"D:\NEXT\Data\Csv\ACTION_SET.csv",
+        message_manager=messages_list_csv_file_full_path,
         xml_directory_path=xml_directory_path,
         railway_line=railway_line,
     )

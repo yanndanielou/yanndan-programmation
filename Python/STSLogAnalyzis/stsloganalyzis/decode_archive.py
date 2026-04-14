@@ -10,7 +10,7 @@ from common import date_time_formats, file_name_utils, file_utils
 from dateutil import parser
 from logger import logger_config
 
-from stsloganalyzis import decode_action_set_content, decode_message, line_topology
+from stsloganalyzis import decode_action_set_content, decode_message, line_topology, decode_xml_message
 
 ArchiveLineFilter = Callable[[str, "ArchiveSource"], bool]
 
@@ -155,7 +155,7 @@ class SignalTypeFilter(Filter):
 
             if not ret:
                 self.rejected_count += 1
-
+                assert signal_type
                 if signal_type.identifier not in self.rejected_count_by_item:
                     self.rejected_count_by_item[signal_type.identifier] = 0
 
@@ -173,10 +173,17 @@ ARCHIVE_ALARM_LINE_PREFIX = '{"' + ArchiveLineTag.ALARM.value + '":{'
 
 
 class ArchiveDecoder:
-    def __init__(self, messages_list_csv_file_full_path: str, xml_directory_path: str, action_set_content_csv_file_path: str, railway_line: line_topology.Line) -> None:
-        self.message_manager = decode_message.InvariantMessagesManager(messages_list_csv_file_full_path=messages_list_csv_file_full_path)
-        self.action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(csv_file_file_path=action_set_content_csv_file_path)
-        self.message_decoder = decode_message.MessageDecoder(xml_directory_path=xml_directory_path, action_set_content_decoder=self.action_set_content_decoder, railway_line=railway_line)
+    def __init__(
+        self,
+        message_manager: decode_message.InvariantMessagesManager,
+        xml_message_decoder: decode_xml_message.XmlMessageDecoder,
+        action_set_content_decoder: decode_action_set_content.ActionSetContentDecoder,
+        railway_line: line_topology.Line,
+    ) -> None:
+        self.message_manager = message_manager
+        self.action_set_content_decoder = action_set_content_decoder
+        self.xml_message_decoder = (xml_message_decoder,)
+        self.message_decoder = decode_message.MessageDecoder(xml_message_decoder=xml_message_decoder, action_set_content_decoder=self.action_set_content_decoder, railway_line=railway_line)
 
 
 class ArchiveLibrary:
@@ -249,7 +256,7 @@ class ArchiveLibrary:
             # if self.archive_decoder:
             #    self._library.decode_all_lines(archive_decoder=self.archive_decoder)
 
-            self._library._print_filter_stats_and_info()
+            self._library.print_filter_stats_and_info()
             return self._library
 
     def __init__(self) -> None:
@@ -356,7 +363,7 @@ class ArchiveLibrary:
     def get_all_signal_types(self) -> Set[str]:
         return {line.signal_type_raw for line in self.all_sqlarch_lines}
 
-    def _print_filter_stats_and_info(self) -> None:
+    def print_filter_stats_and_info(self) -> None:
         logger_config.print_and_log_info(f"{self.label}: === ArchiveLibrary Filter Statistics and Info ===")
         logger_config.print_and_log_info(f"{self.label}: Total SQLARCH lines processed: {self.total_sqlarch_lines_processed}")
         logger_config.print_and_log_info(f"{self.label}: Lines kept after filtering: {len(self.all_sqlarch_lines)}")
@@ -368,7 +375,7 @@ class ArchiveLibrary:
             )
 
         logger_config.print_and_log_info(f"{self.label}: Signal type whitelist: {[st.identifier for st in self.signal_type_whitelist]} - rejected {self.signal_type_whitelist_rejected_count} lines")
-        logger_config.print_and_log_info(f"{self.label}: Signal type blacklist: {[st.value for st in self.signal_type_blacklist]} - rejected {self.signal_type_blacklist_rejected_count} lines")
+        logger_config.print_and_log_info(f"{self.label}: Signal type blacklist: {[st.identifier for st in self.signal_type_blacklist]} - rejected {self.signal_type_blacklist_rejected_count} lines")
         logger_config.print_and_log_info(f"{self.label}: === End Filter Statistics ===")
 
 
@@ -490,6 +497,7 @@ class SqlArchArchiveLine(ArchiveLine):
 
     def get_all_changes_since_previous(self, also_print_and_log: bool, previous_line_for_this_id: Optional["SqlArchArchiveLine"]) -> List[OrderedDict[str, Any]]:
         field_names_to_ignore = ["Time"]
+        to_ret: List[OrderedDict[str, Any]] = []
 
         previous_date = previous_line_for_this_id.date if previous_line_for_this_id else None
         previous_date_str = previous_line_for_this_id.get_date_raw_str() if previous_line_for_this_id else "NA"
@@ -503,7 +511,7 @@ class SqlArchArchiveLine(ArchiveLine):
             new_new_st = self.get_new_state_str()
             if previous_new_st != new_new_st:
 
-                return [
+                to_ret.append(
                     OrderedDict(
                         {
                             "date": self.get_date_raw_str(),
@@ -517,9 +525,9 @@ class SqlArchArchiveLine(ArchiveLine):
                             "old_timestamp": old_timestamp,
                         }
                     )
-                ]
+                )
+
         else:
-            to_ret: List[OrderedDict[str, Any]] = []
 
             # If decoded message exists, show only decoded message fields that changed
             for field_name in self.decoded_message.decoded_fields_flat_directory.keys():

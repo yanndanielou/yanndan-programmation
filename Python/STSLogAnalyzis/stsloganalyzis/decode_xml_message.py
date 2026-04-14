@@ -1,9 +1,10 @@
 import datetime
+from enum import Enum
 import os
 import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import ClassVar, Dict, List, Optional, cast
+from typing import ClassVar, Dict, List, Optional, cast, Tuple
 
 from logger import logger_config
 
@@ -144,6 +145,23 @@ class DecodedXmlMessage:
         return self.current_bit_index == size_bits
 
 
+class SignedOrUnsignedTypeForIntegerFieldsManagerBase(ABC):
+    class TypeDecoding(Enum):
+        SIGNED_ONLY = "SIGNED_ONLY"
+        UNSIGNED_ONLY = "UNSIGNED_ONLY"
+        SIGNED_AND_UNSIGNED = "SIGNED_AND_UNSIGNED"
+
+    @abstractmethod
+    def get_decoding_type_for_field(self, message_number: int, field_name: str) -> TypeDecoding:
+        pass
+
+
+class AlwaysUnsignedTypeForIntegerFieldsManager(SignedOrUnsignedTypeForIntegerFieldsManagerBase):
+
+    def get_decoding_type_for_field(self, message_number: int, field_name: str) -> SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding:
+        return SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.UNSIGNED_ONLY
+
+
 class XmlMessageDecoder:
 
     BIG_ENDIAN_INTEGER = "BigEndianInteger"
@@ -152,10 +170,15 @@ class XmlMessageDecoder:
 
     _parsed_xml_files_by_path: ClassVar[Dict[str, ET.Element]] = {}
 
-    def __init__(self, xml_directory_path: str) -> None:
+    def __init__(self, xml_directory_path: str, signed_or_unsigned_type_for_integer_fields_manager: Optional[SignedOrUnsignedTypeForIntegerFieldsManagerBase]) -> None:
+        if not signed_or_unsigned_type_for_integer_fields_manager:
+            signed_or_unsigned_type_for_integer_fields_manager = AlwaysUnsignedTypeForIntegerFieldsManager()
+        self.signed_or_unsigned_type_for_integer_fields_manager = signed_or_unsigned_type_for_integer_fields_manager
+
         self.xml_directory_path = xml_directory_path
         self.cached_messages_by_id: Dict[int, ET.Element] = dict()
         self.decoded_xml_message: Optional[DecodedXmlMessage] = None
+        self.signed_integer_fields_by_message_id_and_field_name = signed_integer_fields_by_message_id_and_field_name
 
     @staticmethod
     def hex_to_int(hex_string: str) -> int:

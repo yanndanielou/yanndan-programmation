@@ -1,8 +1,13 @@
-from typing import Any, Dict, List
-
 from logger import logger_config
 
-from stsloganalyzis import decode_archive, line_topology, archive_analyzis
+from stsloganalyzis import (
+    archive_analyzis,
+    decode_action_set_content,
+    decode_archive,
+    decode_message,
+    decode_xml_message,
+    line_topology,
+)
 
 OUTPUT_DIRECTORY = "output"
 
@@ -24,10 +29,14 @@ def main() -> None:
         )
         assert railway_line
 
+        message_manager = decode_message.InvariantMessagesManager(messages_list_csv_file_full_path=messages_list_csv_file_full_path)
+        action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(csv_file_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv")
+        xml_message_decoder = decode_xml_message.XmlMessageDecoder(xml_directory_path=xml_directory_path)
+
         archive_decoder = decode_archive.ArchiveDecoder(
-            action_set_content_csv_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv",
-            messages_list_csv_file_full_path=messages_list_csv_file_full_path,
-            xml_directory_path=xml_directory_path,
+            action_set_content_decoder=action_set_content_decoder,
+            message_manager=message_manager,
+            xml_message_decoder=xml_message_decoder,
             railway_line=railway_line,
         )
 
