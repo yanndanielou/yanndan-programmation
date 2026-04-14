@@ -178,7 +178,6 @@ class XmlMessageDecoder:
         self.xml_directory_path = xml_directory_path
         self.cached_messages_by_id: Dict[int, ET.Element] = dict()
         self.decoded_xml_message: Optional[DecodedXmlMessage] = None
-        self.signed_integer_fields_by_message_id_and_field_name = signed_integer_fields_by_message_id_and_field_name
 
     @staticmethod
     def hex_to_int(hex_string: str) -> int:
@@ -310,11 +309,21 @@ class XmlMessageDecoder:
         assert self.decoded_xml_message is not None
 
         xml_decoded_field_macro.bits_extracted = self.extract_bits(self.decoded_xml_message.current_bit_index, xml_decoded_field_macro.size_bits)
+
         field_unsigned_value = self.convert_bits_unsigned_int(xml_decoded_field_macro.bits_extracted, self.decoded_xml_message.current_bit_index, xml_decoded_field_macro.size_bits)
-        self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_unsigned_value
-        self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix + "_as_unsigned"] = field_unsigned_value
         field_signed_value = self.convert_bits_signed_int(xml_decoded_field_macro.bits_extracted, self.decoded_xml_message.current_bit_index, xml_decoded_field_macro.size_bits)
-        self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix + "_as_signed"] = field_signed_value
+
+        decoding_type = self.signed_or_unsigned_type_for_integer_fields_manager.get_decoding_type_for_field(
+            message_number=self.decoded_xml_message.message_number, field_name=xml_decoded_field_macro.identifier
+        )
+
+        if decoding_type == SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.SIGNED_ONLY:
+            self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_signed_value
+        elif decoding_type == SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.UNSIGNED_ONLY:
+            self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_unsigned_value
+        else:
+            self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix + "_as_unsigned"] = field_unsigned_value
+            self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix + "_as_signed"] = field_signed_value
 
         DecodedXmlMessage.XmlMessageFieldInt(field_macro=xml_decoded_field_macro, unsigned_value=field_unsigned_value, signed_value=field_signed_value)
 

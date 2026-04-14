@@ -10,7 +10,7 @@ from common import date_time_formats, file_name_utils, file_utils
 from dateutil import parser
 from logger import logger_config
 
-from stsloganalyzis import decode_action_set_content, decode_message, line_topology, decode_xml_message
+from stsloganalyzis import decode_action_set_content, decode_message, line_topology, decode_xml_message, constants
 
 ArchiveLineFilter = Callable[[str, "ArchiveSource"], bool]
 
@@ -531,7 +531,8 @@ class SqlArchArchiveLine(ArchiveLine):
 
             # If decoded message exists, show only decoded message fields that changed
             for field_name in self.decoded_message.decoded_fields_flat_directory.keys():
-                if field_name not in field_names_to_ignore:
+                if field_name not in constants.FIELD_FULL_NAMES_TO_EXCLUDE_IN_REPORTS and not any(field_name.startswith(prefix) for prefix in constants.FIELD_NAMES_PREFIXES_TO_EXCLUDE_IN_REPORTS):
+
                     new_value = self.decoded_message.get_field_value_human_readable(field_name)
                     previous_value = (
                         previous_line_for_this_id.decoded_message.get_field_value_human_readable(field_name)

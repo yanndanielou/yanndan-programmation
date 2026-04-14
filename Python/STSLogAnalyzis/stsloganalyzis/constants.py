@@ -1,0 +1,2 @@
+FIELD_FULL_NAMES_TO_EXCLUDE_IN_REPORTS = ["Time", "TimeOffset", "Decade", "DayOnDecade"]
+FIELD_NAMES_PREFIXES_TO_EXCLUDE_IN_REPORTS = ["Padding_"]

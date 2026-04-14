@@ -1,16 +1,6 @@
 from logger import logger_config
-from typing import Dict, Optional, Set
-from types import SimpleNamespace
 
-from stsloganalyzis import (
-    archive_analyzis,
-    decode_action_set_content,
-    decode_archive,
-    decode_message,
-    decode_xml_message,
-    line_topology,
-)
-
+from stsloganalyzis import archive_analyzis, decode_action_set_content, decode_archive, decode_message, decode_xml_message, line_topology, next_data,
 
 OUTPUT_DIRECTORY = "output"
 
@@ -49,46 +39,8 @@ messages_205_archives = [
 def main() -> None:
     with logger_config.application_logger():
 
-        messages_list_csv_file_full_path = r"D:\NEXT\Data\Csv\NEXT_message.csv"
-        xml_directory_path = r"D:\NEXT\Data\Xml"
-
-        railway_line = line_topology.Line.load_from_csv(
-            segments_csv_full_path=r"D:\NEXT\Data\Csv\NEXT_segment.csv",
-            track_circuits_csv_full_path=r"D:\NEXT\Data\Csv\NEXT_track_circuit.csv",
-            tracking_blocks_csv_full_path=r"D:\NEXT\Data\Csv\NEXT_tracking_block.csv",
-            switches_csv_full_path=r"D:\NEXT\Data\Csv\NEXT_switch.csv",
-            segments_relations_csv_full_path=r"D:\NEXTTS\Data\Csv\NEXT_tsSegmentRelation.csv",
-            tracking_block_on_segments_csv_full_path=r"D:\NEXTTS\Data\Csv\NEXT_tsLocUnitTopo.csv",
-            ignore_tracking_blocks_without_circuits=True,
-        )
-        assert railway_line
-
-        """
-          ,
-                """
-        message_manager = decode_message.InvariantMessagesManager(messages_list_csv_file_full_path=messages_list_csv_file_full_path)
-        action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(csv_file_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv")
-
-        signed_integer_fields_by_message_id_and_field_name: Dict[int, Set[str]] = {}
-        signed_or_unsigned_type_for_integer_fields_manager = SimpleNamespace(
-            get_decoding_type_for_field=lambda message_number, field_name: (
-                decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.SIGNED_AND_UNSIGNED
-                if message_number in signed_integer_fields_by_message_id_and_field_name and field_name in signed_integer_fields_by_message_id_and_field_name[message_number]
-                else decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.UNSIGNED_ONLY
-            )
-        )
-
-        xml_message_decoder = decode_xml_message.XmlMessageDecoder(
-            xml_directory_path=xml_directory_path,
-            signed_or_unsigned_type_for_integer_fields_manager=signed_or_unsigned_type_for_integer_fields_manager,
-        )
-
-        archive_decoder = decode_archive.ArchiveDecoder(
-            action_set_content_decoder=action_set_content_decoder,
-            message_manager=message_manager,
-            xml_message_decoder=xml_message_decoder,
-            railway_line=railway_line,
-        )
+        
+        railway_line, archive_decoder= next_data.get_encoders()
 
         archive_library = (
             decode_archive.ArchiveLibrary.Builder()
