@@ -1,4 +1,5 @@
 from logger import logger_config
+from typing import Dict, Optional, Set
 
 from stsloganalyzis import (
     archive_analyzis,
@@ -8,6 +9,21 @@ from stsloganalyzis import (
     decode_xml_message,
     line_topology,
 )
+
+
+class MainSignedOrUnsignedTypeForIntegerFieldsManager(decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase):
+    def __init__(self, signed_integer_fields_by_message_id_and_field_name: Optional[Dict[int, Set[str]]] = None) -> None:
+        self.signed_integer_fields_by_message_id_and_field_name = signed_integer_fields_by_message_id_and_field_name or {}
+
+    def get_decoding_type_for_field(
+        self,
+        message_number: int,
+        field_name: str,
+    ) -> decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding:
+        if message_number in self.signed_integer_fields_by_message_id_and_field_name and field_name in self.signed_integer_fields_by_message_id_and_field_name[message_number]:
+            return decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.SIGNED_AND_UNSIGNED
+        return decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.UNSIGNED_ONLY
+
 
 OUTPUT_DIRECTORY = "output"
 
@@ -69,7 +85,7 @@ def main() -> None:
         action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(csv_file_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv")
         xml_message_decoder = decode_xml_message.XmlMessageDecoder(
             xml_directory_path=xml_directory_path,
-            signed_or_unsigned_type_for_integer_fields_manager=[,
+            signed_or_unsigned_type_for_integer_fields_manager=MainSignedOrUnsignedTypeForIntegerFieldsManager(),
         )
 
         archive_decoder = decode_archive.ArchiveDecoder(
