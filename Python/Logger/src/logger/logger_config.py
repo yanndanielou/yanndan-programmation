@@ -107,6 +107,15 @@ def print_and_log_info(to_print_and_log: str, do_not_print: bool = False) -> Non
     logging.info(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
 
+def print_and_log_warning_if(condition: bool, to_print_and_log: str, do_not_print: bool = False) -> None:
+    if condition:
+        print_and_log_warning(
+            to_print_and_log=to_print_and_log,
+            do_not_print=do_not_print,
+            call_stack_frame=3,
+        )
+
+
 def print_and_log_warning(
     to_print_and_log: str,
     do_not_print: bool = False,
