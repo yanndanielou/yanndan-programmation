@@ -23,6 +23,7 @@ def get_line_topology() -> line_topology.Line:
         ignore_tracking_blocks_without_circuits=True,
     )
     assert railway_line
+    assert isinstance(railway_line, line_topology.Line)
     return railway_line
 
 
