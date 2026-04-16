@@ -29,15 +29,17 @@ class AtsCcSpecificRemoteControlMessageDecoder(decode_specific_message_content.T
 
     def do_decode(self, decoded_message: "DecodedMessage") -> None:
 
-        self.decode_location_to_human_readable_by_fields_common_prefix_and_suffix(
-            decoded_message=decoded_message,
-            location_fields_prefix="RestrEnd1",
-        )
+        if decoded_message.decoded_fields_flat_directory["CcRcType"] == 4:
 
-        self.decode_location_to_human_readable_by_fields_common_prefix_and_suffix(
-            decoded_message=decoded_message,
-            location_fields_prefix="RestrEnd2",
-        )
+            self.decode_location_to_human_readable_by_fields_common_prefix_and_suffix(
+                decoded_message=decoded_message,
+                location_fields_prefix="RestrEnd1",
+            )
+
+            self.decode_location_to_human_readable_by_fields_common_prefix_and_suffix(
+                decoded_message=decoded_message,
+                location_fields_prefix="RestrEnd2",
+            )
 
 
 class CcAtsSpecificOperationMessageDecoder(decode_specific_message_content.TopologyDependentMessageDecoder):
