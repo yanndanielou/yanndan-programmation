@@ -33,7 +33,7 @@ def _get_fieldnames(rows_as_list_dict: List[Dict[str, Any]]) -> List[str]:
     return fieldnames
 
 
-def _write_delimited_file(rows_as_list_dict: List[Dict[str, Any]], output_file_full_path: str, delimiter: str) -> None:
+def _write_delimited_file_improved(rows_as_list_dict: List[Dict[str, Any]], output_file_full_path: str, delimiter: str) -> None:
     with open(output_file_full_path, "w", newline="", encoding="utf-8") as output_file:
         if not rows_as_list_dict:
             return
@@ -46,7 +46,7 @@ def _write_delimited_file(rows_as_list_dict: List[Dict[str, Any]], output_file_f
             writer.writerow({field: _normalize_table_value(row.get(field)) for field in fieldnames})
 
 
-def _write_xlsx_file(rows_as_list_dict: List[Dict[str, Any]], xlsx_file_full_path: str) -> None:
+def _write_xlsx_file_improved(rows_as_list_dict: List[Dict[str, Any]], xlsx_file_full_path: str) -> None:
     workbook = Workbook(write_only=True)
     worksheet = workbook.active
 
@@ -68,7 +68,10 @@ def save_rows_to_output_files(rows_as_list_dict: List[Dict[str, Any]], file_base
     with logger_config.stopwatch_with_label(f"{inspect.stack(0)[0].function} for {len(rows_as_list_dict)} lines to {file_base_name}", inform_beginning=True):
         file_utils.create_folder_if_not_exist(output_directory_path)
         file_path_without_suffix = f"{output_directory_path}/{file_base_name}"
-        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(rows_as_list_dict, f"{file_path_without_suffix}.json")
+        try:
+            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(rows_as_list_dict, f"{file_path_without_suffix}.json")
+        except MemoryError as err:
+            logger_config.print_and_log_exception(err)
         success = False
         while not success:
             try:
