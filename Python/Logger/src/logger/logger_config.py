@@ -511,7 +511,7 @@ def stopwatch_alert_if_exceeds_duration(
             if enable_print:
 
                 severity_prefix = (
-                    "!!! Critical !!\t"
+                    "☠️\t"
                     if (
                         duration_threshold_to_alert_critical_in_s is not None
                         and elapsed_time_seconds > duration_threshold_to_alert_critical_in_s
