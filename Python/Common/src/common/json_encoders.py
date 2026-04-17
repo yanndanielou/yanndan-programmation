@@ -27,13 +27,9 @@ class JsonEncodersUtils(metaclass=singleton.Singleton):
     def serialize_list_objects_in_json(list_objects: list[Any], json_file_full_path: str) -> None:
 
         with logger_config.stopwatch_with_label(f"Serialize {len(list_objects)} in {json_file_full_path}"):
-            json_file = open(json_file_full_path, "w", encoding="utf-8")
-
-            result_json_dump = json.dumps(list_objects, indent=4, cls=ListOfObjectsEncoder)
-
-            json_file.write(result_json_dump)
-
-            json_file.close()
+            with open(json_file_full_path, "w", encoding="utf-8") as json_file:
+                result_json_dump = json.dumps(list_objects, indent=4, cls=ListOfObjectsEncoder)
+                json_file.write(result_json_dump)
 
     @staticmethod
     def serialize_list_objects_in_json_improved(list_objects: list[Any], json_file_full_path: str) -> None:
