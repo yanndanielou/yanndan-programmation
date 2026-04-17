@@ -65,6 +65,11 @@ class Segment(TopologyElement):
     downstream_normal: Optional["Segment"] = None
     downstream_reverse: Optional["Segment"] = None
 
+    upstream_normal_same_direction: Optional[bool] = None
+    upstream_reverse_same_direction: Optional[bool] = None
+    downstream_normal_same_direction: Optional[bool] = None
+    downstream_reverse_same_direction: Optional[bool] = None
+
     def __post_init__(self) -> None:
         assert self.identifier
         assert isinstance(self.identifier, str)
@@ -159,6 +164,16 @@ class Segment(TopologyElement):
                     val = value.strip()
                     return int(val) if val and val != "" else None
 
+                def to_bool_or_none(value: str) -> Optional[bool]:
+                    val = value.strip()
+                    if val == "TRUE":
+                        return True
+                    elif val == "FALSE":
+                        return False
+
+                    assert len(val) == 0
+                    return None
+
                 current_num = to_int_or_none(row["SEGMENT_ID"])
                 if current_num is None:
                     continue
@@ -173,6 +188,11 @@ class Segment(TopologyElement):
                 upstream_reverse_num = to_int_or_none(row["SEGMENT_AMONT_REVERSE_ID"])
                 downstream_normal_num = to_int_or_none(row["SEGMENT_AVAL_NORMAL_ID"])
                 downstream_reverse_num = to_int_or_none(row["SEGMENT_AVAL_REVERSE_ID"])
+
+                current_segment.upstream_normal_same_direction = to_bool_or_none(row["MEME_SENS_AMONT_NORMAL"])
+                current_segment.upstream_reverse_same_direction = to_bool_or_none(row["MEME_SENS_AMONT_REVERSE"])
+                current_segment.downstream_normal_same_direction = to_bool_or_none(row["MEME_SENS_AVAL_NORMAL"])
+                current_segment.downstream_reverse_same_direction = to_bool_or_none(row["MEME_SENS_AVAL_REVERSE"])
 
                 # Établir les références
                 if upstream_normal_num is not None:
