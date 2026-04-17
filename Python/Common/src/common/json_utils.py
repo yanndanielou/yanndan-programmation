@@ -48,12 +48,13 @@ def split_json_files_containing_list_to_files(
         output_file_name = string_utils.format_filename(f"{output_file_prefix}{identifier}_{output_file_options_suffix}.json")
         output_file_path = os.path.join(output_directory, output_file_name)
 
-        # Options pour le formatage du JSON
-        json_options = {"ensure_ascii": False, "indent": 4 if pretty_print else None, "separators": (",", ":") if not pretty_print else None}
-
         try:
             with open(output_file_path, "w", encoding="utf-8") as file:
-                json.dump(obj, file, **json_options)
+                # Options pour le formatage du JSON
+                if pretty_print:
+                    json.dump(obj, file, ensure_ascii=False, indent=4, separators=(",", ":"))
+                else:
+                    json.dump(obj, file, ensure_ascii=False, indent=None, separators=None)
 
             if index > 1 and index % (round(len(input_list) / 10)) == 0:
                 logger_config.print_and_log_info(f"{index+1}th / {len(input_list)} ({round((index+1)/len(input_list)*100,2)}%) file {output_file_prefix} created")
