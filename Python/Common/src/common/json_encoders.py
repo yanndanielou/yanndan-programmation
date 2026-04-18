@@ -26,11 +26,26 @@ class JsonEncodersUtils(metaclass=singleton.Singleton):
 
     @staticmethod
     def serialize_list_objects_in_json(list_objects: list[Any], json_file_full_path: str) -> None:
+        chunk_size = 10000
 
         with logger_config.stopwatch_with_label(f"Serialize {len(list_objects)} in {json_file_full_path}"):
             with open(json_file_full_path, "w", encoding="utf-8") as json_file:
-                result_json_dump = json.dumps(list_objects, indent=4, cls=ListOfObjectsEncoder)
-                json_file.write(result_json_dump)
+                json_file.write("[\n")
+                first_item = True
+
+                for chunk_index in range(0, len(list_objects), chunk_size):
+                    with logger_config.stopwatch_with_label(f"Serialize {len(list_objects)} in {json_file_full_path}"):
+                        chunk = list_objects[chunk_index : chunk_index + chunk_size]
+
+                        for item in chunk:
+                            if not first_item:
+                                json_file.write(",\n")
+
+                            item_json = json.dumps(item, indent=4, cls=ListOfObjectsEncoder, ensure_ascii=False)
+                            json_file.write(textwrap.indent(item_json, "    "))
+                            first_item = False
+
+                json_file.write("\n]" if not first_item else "]")
 
     @staticmethod
     def serialize_list_objects_in_json_improved(list_objects: list[Any], json_file_full_path: str) -> None:
