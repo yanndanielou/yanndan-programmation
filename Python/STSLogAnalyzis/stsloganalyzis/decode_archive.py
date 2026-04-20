@@ -5,6 +5,7 @@ from collections import OrderedDict
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Self, Set, cast
 
+from datetime import datetime
 import humanize
 from common import date_time_formats, file_name_utils, file_utils
 from dateutil import parser
@@ -85,12 +86,20 @@ class SqlArchFilter(ABC):
         self.rejected_count: int = 0
         self.rejected_count_by_item: Dict[str, int] = dict()
 
-    @abstractmethod
-    def passes(self, line: str, parent: "ArchiveSource") -> bool:
-        pass
+    def get_sqlarch_section(self, raw_sql_arch_line: str) -> Any:
+        line_json = json.loads(raw_sql_arch_line)
+        sqlarch_section = line_json.get("SQLARCH", {})
+        return sqlarch_section
 
     @abstractmethod
+    def passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
+        pass
+
     def print_stats(self) -> None:
+        logger_config.print_and_log_info(f"  Filter {self}: ' - rejected {self.rejected_count} lines")
+
+    @abstractmethod
+    def __str__(self) -> str:
         pass
 
 
@@ -109,10 +118,9 @@ class SqlArchLineStringFieldValueBasedFilter(SqlArchFilter):
         self.filter_type = filter_type
         self.filter_field_values = field_values
 
-    def passes(self, line: str, parent: "ArchiveSource") -> bool:
+    def passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
         try:
-            line_json = json.loads(line)
-            sqlarch_section = line_json.get("SQLARCH", {})
+            sqlarch_section = self.get_sqlarch_section(raw_sql_arch_line)
             field_raw_value = str(sqlarch_section.get(self.field_name, ""))
 
             ret: bool
@@ -156,6 +164,29 @@ class IdFilter(SqlArchLineStringFieldValueBasedFilter):
 class SignalTypeFilter(SqlArchLineStringFieldValueBasedFilter):
     def __init__(self, white_or_black_list: WhiteOrBlackListFilterType, field_values: List[str], filter_type: SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType) -> None:
         super().__init__(white_or_black_list=white_or_black_list, field_values=field_values, field_name="sigT", filter_type=filter_type)
+
+
+class DatesFilter(SqlArchFilter):
+    class DateFilter(SqlArchFilter):
+
+        def get_line_date(self, raw_sql_arch_line: str) -> datetime:
+            sqlarch_section = self.get_sqlarch_section(raw_sql_arch_line)
+            raw_date = sqlarch_section.get("date")
+            return raw_date
+
+    class DateBetweenFilter(DateFilter):
+
+        def __init__(self, date_min: datetime, date_max: datetime) -> None:
+            super().__init__()
+            self.date_min = date_min
+            self.date_max = date_max
+
+        def passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
+            line_date = self.get_line_date(raw_sql_arch_line)
+            return line_date > self.date_min and line_date < self.date_max
+
+        def __str__(self) -> str:
+            return f"{self.__class__.__name__} {self.date_min} {self.date_max} "
 
 
 ARCHIVE_VERSION_LINE_PREFIX = '{"' + ArchiveLineTag.VERSIONS.value + '":{'
@@ -268,12 +299,12 @@ class ArchiveLibrary:
 
         return number_of_lines_decoded
 
-    def _passes_sqlarch_archive_line_filters(self, line: str, parent: "ArchiveSource") -> bool:
+    def _passes_sqlarch_archive_line_filters(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
         self.total_sqlarch_lines_processed += 1
 
         # Check ID filters
         for f in self.sqlarch_archive_lines_filters:
-            if not f.passes(line, parent):
+            if not f.passes(raw_sql_arch_line, parent):
                 return False
 
         return True
@@ -287,7 +318,7 @@ class ArchiveLibrary:
             self.all_version_lines.append(archive_line)
         elif line.startswith(ARCHIVE_SQLARCH_LINE_PREFIX):
 
-            if not self._passes_sqlarch_archive_line_filters(line=line, parent=parent):
+            if not self._passes_sqlarch_archive_line_filters(raw_sql_arch_line=line, parent=parent):
                 return
 
             archive_line = SqlArchArchiveLine(full_raw_archive_line=line, parent=parent)
