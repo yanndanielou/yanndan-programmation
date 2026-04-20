@@ -66,11 +66,6 @@ class DecodedMessage:
             # return f"Not supported field {field_name} of type {type(field_name)}"
             return human_value
 
-        """if isinstance(field_value_by_name, list):
-            # human_value = "".join([str(value) for value in field_by_name.value])
-            human_value = "<" + ",".join([str(value) for value in field_value_by_name.value]) + ">"
-            # logger_config.print_and_log_error(f"Not supported field {field_name} of type {type(field_name)}")
-            return human_value"""
         return field_value_by_name
 
 

@@ -15,6 +15,7 @@ import uuid
 import os
 
 CUSTOMER_INPUT_EXCEL_FILES: List[Tuple[str, List[int]]] = [
+    ("Input/2026-03-25 I3G-NEXT-2026-LP-DPR-0358 & I3G-NEXT-2026-LP-DPR-0357_raw.xlsm", [0]),
     ("Input/2025-12-09 - I3G-NEXT-2025-LP-DPR-1517_V14_V41-00.xlsm", [0]),
     ("Input/2026-01-30 - I3G-NEXT-2026-LE-DPR-0075_V14_V41-00_filtered.xlsx", []),
 ]

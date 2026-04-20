@@ -20,12 +20,6 @@ class WhiteOrBlackListFilterType(Enum):
     BLACKLIST = "BLACKLIST"
 
 
-class ArchiveLineFilterOnIdType(Enum):
-    BEGIN_WITH_STRING = "BEGIN_WITH_STRING"
-    MATCHES_REGEX = "MATCHES_REGEX"
-    CONTAINS = "CONTAINS"
-
-
 class ArchiveLineTag(Enum):
     VERSIONS = "VERSIONS"
     SQLARCH = "SQLARCH"
@@ -86,93 +80,82 @@ class SqlArchLineSignalType:
 sql_arch_line_signal_type_library = SqlArchLineSignalType.Library()
 
 
-class SqlArchLineFilter(ABC):
-    def __init__(self, white_or_black_list: WhiteOrBlackListFilterType) -> None:
+class SqlArchFilter(ABC):
+    def __init__(self) -> None:
         self.rejected_count: int = 0
         self.rejected_count_by_item: Dict[str, int] = dict()
-        self.white_or_black_list = white_or_black_list
-        self.is_whitelist = white_or_black_list == WhiteOrBlackListFilterType.WHITELIST
 
     @abstractmethod
     def passes(self, line: str, parent: "ArchiveSource") -> bool:
         pass
 
+    @abstractmethod
+    def print_stats(self) -> None:
+        pass
+
+
+class SqlArchLineStringFieldValueBasedFilter(SqlArchFilter):
+    class ArchiveLineStringFilterType(Enum):
+        EQUALS_TO = "EQUALS_TO"
+        BEGIN_WITH_STRING = "BEGIN_WITH_STRING"
+        MATCHES_REGEX = "MATCHES_REGEX"
+        CONTAINS = "CONTAINS"
+
+    def __init__(self, white_or_black_list: WhiteOrBlackListFilterType, field_name: str, field_values: List[str], filter_type: ArchiveLineStringFilterType) -> None:
+        super().__init__()
+        self.white_or_black_list = white_or_black_list
+        self.is_whitelist = white_or_black_list == WhiteOrBlackListFilterType.WHITELIST
+        self.field_name = field_name
+        self.filter_type = filter_type
+        self.filter_field_values = field_values
+
+    def passes(self, line: str, parent: "ArchiveSource") -> bool:
+        try:
+            line_json = json.loads(line)
+            sqlarch_section = line_json.get("SQLARCH", {})
+            field_raw_value = str(sqlarch_section.get(self.field_name, ""))
+
+            ret: bool
+            match = False
+            if self.filter_type == SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.EQUALS_TO:
+                match = field_raw_value in self.filter_field_values
+            elif self.filter_type == SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.CONTAINS:
+                match = any(filter_field_value in field_raw_value for filter_field_value in self.filter_field_values)
+            elif self.filter_type == SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.BEGIN_WITH_STRING:
+                match = any(field_raw_value.startswith(filter_field_value) for filter_field_value in self.filter_field_values)
+            elif self.filter_type == SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.MATCHES_REGEX:
+                match = any(bool(re.search(filter_field_value, field_raw_value)) for filter_field_value in self.filter_field_values)
+            if self.is_whitelist:
+                ret = match
+            else:
+                assert False, f"Not handled {self.filter_type}"
+
+            if not ret:
+                self.rejected_count += 1
+                if field_raw_value not in self.rejected_count_by_item:
+                    self.rejected_count_by_item[field_raw_value] = 0
+
+                self.rejected_count_by_item[field_raw_value] += 1
+
+            return ret
+        except (TypeError, ValueError, json.JSONDecodeError, KeyError):
+            return False
+
     def print_stats(self) -> None:
         logger_config.print_and_log_info(f"  Filter {self}: ' - rejected {self.rejected_count} lines. Details {self.rejected_count_by_item}")
 
-
-class IdFilter(SqlArchLineFilter):
-    def __init__(self, term: str, filter_on_id_type: ArchiveLineFilterOnIdType, white_or_black_list: WhiteOrBlackListFilterType) -> None:
-        super().__init__(white_or_black_list)
-        self.term = term
-        self.filter_on_id_type = filter_on_id_type
-
     def __str__(self) -> str:
-        return f"{self.filter_on_id_type.value} {self.term} {'Whitelist' if self.is_whitelist else 'Blacklist'} "
-
-    def passes(self, line: str, parent: "ArchiveSource") -> bool:
-        try:
-            line_json = json.loads(line)
-            sqlarch_section = line_json.get("SQLARCH", {})
-            id_value = str(sqlarch_section.get("id", ""))
-            ret: bool
-            match = False
-            if self.filter_on_id_type == ArchiveLineFilterOnIdType.CONTAINS:
-                match = self.term in id_value
-            elif self.filter_on_id_type == ArchiveLineFilterOnIdType.BEGIN_WITH_STRING:
-                match = id_value.startswith(self.term)
-            elif self.filter_on_id_type == ArchiveLineFilterOnIdType.MATCHES_REGEX:
-                match = bool(re.search(self.term, id_value))
-            if self.is_whitelist:
-
-                ret = match
-            else:
-                ret = not match
-
-            if not ret:
-                self.rejected_count += 1
-
-                if id_value not in self.rejected_count_by_item:
-                    self.rejected_count_by_item[id_value] = 0
-
-                self.rejected_count_by_item[id_value] += 1
-
-            return ret
-        except (TypeError, ValueError, json.JSONDecodeError, KeyError):
-            return False
+        return f"{self.filter_type.value} {self.field_name} {','.join(self.filter_field_values)} {'Whitelist' if self.is_whitelist else 'Blacklist'} "
 
 
-class SignalTypeFilter(SqlArchLineFilter):
-    def __init__(self, white_or_black_list: WhiteOrBlackListFilterType, signal_types_names: List[str]) -> None:
-        super().__init__(white_or_black_list=white_or_black_list)
-        self.signal_types_names = signal_types_names
+class IdFilter(SqlArchLineStringFieldValueBasedFilter):
+    def __init__(self, field_values: List[str], filter_type: SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType, white_or_black_list: WhiteOrBlackListFilterType) -> None:
+        super().__init__(white_or_black_list=white_or_black_list, field_name="id", field_values=field_values, filter_type=filter_type)
 
-    def __str__(self) -> str:
-        return f"{','.join(self.signal_types_names)} {'Whitelist' if self.is_whitelist else 'Blacklist'} "
 
-    def passes(self, line: str, parent: "ArchiveSource") -> bool:
-        try:
-            line_json = json.loads(line)
-            sqlarch_section = line_json.get("SQLARCH", {})
-            signal_type_raw = str(sqlarch_section.get("sigT", ""))
-
-            ret: bool
-
-            if self.is_whitelist:
-                ret = signal_type_raw in self.signal_types_names
-            else:
-                ret = signal_type_raw not in self.signal_types_names
-
-            if not ret:
-                self.rejected_count += 1
-                if signal_type_raw not in self.rejected_count_by_item:
-                    self.rejected_count_by_item[signal_type_raw] = 0
-
-                self.rejected_count_by_item[signal_type_raw] += 1
-
-            return ret
-        except (TypeError, ValueError, json.JSONDecodeError, KeyError):
-            return False
+class SignalTypeFilter(SqlArchLineStringFieldValueBasedFilter):
+    def __init__(self, white_or_black_list: WhiteOrBlackListFilterType, field_values: List[str], filter_type: SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType) -> None:
+        super().__init__(white_or_black_list=white_or_black_list, field_values=field_values, field_name="sigT", filter_type=filter_type)
 
 
 ARCHIVE_VERSION_LINE_PREFIX = '{"' + ArchiveLineTag.VERSIONS.value + '":{'
@@ -202,7 +185,7 @@ class ArchiveLibrary:
 
             self.archive_inputs: List[ArchiveSource] = []
             self.archive_decoder: Optional[ArchiveDecoder] = None
-            self.sqlarch_archive_lines_filters: List[SqlArchLineFilter] = []
+            self.sqlarch_archive_lines_filters: List[SqlArchFilter] = []
 
             self._label_is_forced = False
 
@@ -230,20 +213,8 @@ class ArchiveLibrary:
 
             return self
 
-        def add_sqlarch_archive_lines_whitelist_filter_based_on_id_term(self, filter_text: str, filterOnIdType: ArchiveLineFilterOnIdType) -> Self:
-            self.sqlarch_archive_lines_filters.append(IdFilter(filter_text, filterOnIdType, white_or_black_list=WhiteOrBlackListFilterType.WHITELIST))
-            return self
-
-        def add_sqlarch_archive_lines_blacklist_filter_based_on_id_term(self, filter_text: str, filterOnIdType: ArchiveLineFilterOnIdType) -> Self:
-            self.sqlarch_archive_lines_filters.append(IdFilter(filter_text, filterOnIdType, white_or_black_list=WhiteOrBlackListFilterType.BLACKLIST))
-            return self
-
-        def add_sqlarch_archive_lines_signal_type_whitelist(self, signal_types_names: List[str]) -> Self:
-            self.sqlarch_archive_lines_filters.append(SignalTypeFilter(signal_types_names=signal_types_names, white_or_black_list=WhiteOrBlackListFilterType.WHITELIST))
-            return self
-
-        def add_sqlarch_archive_lines_signal_type_blacklist(self, signal_types_names: List[str]) -> Self:
-            self.sqlarch_archive_lines_filters.append(SignalTypeFilter(signal_types_names=signal_types_names, white_or_black_list=WhiteOrBlackListFilterType.BLACKLIST))
+        def add_sqlarch_archive_lines_filter(self, sql_arch_filter: SqlArchFilter) -> Self:
+            self.sqlarch_archive_lines_filters.append(sql_arch_filter)
             return self
 
         def add_archive_decoder(self, archive_decoder: ArchiveDecoder) -> Self:
@@ -275,13 +246,8 @@ class ArchiveLibrary:
         self.all_version_lines: List[VersionArchiveLine] = []
         self.all_spmq_lines: List[ArchiveLine] = []
         self.all_alarm_lines: List[ArchiveLine] = []
-        self.sqlarch_archive_lines_filters: List[SqlArchLineFilter] = []
-        self.signal_type_whitelist: List[SqlArchLineSignalType] = []
-        self.signal_type_blacklist: List[SqlArchLineSignalType] = []
-
+        self.sqlarch_archive_lines_filters: List[SqlArchFilter] = []
         self.total_sqlarch_lines_processed: int = 0
-        self.signal_type_whitelist_rejected_count: int = 0
-        self.signal_type_blacklist_rejected_count: int = 0
 
     def handle_input(self, archive_input: "ArchiveSource") -> int:
         self.archive_inputs.append(archive_input)
@@ -304,30 +270,11 @@ class ArchiveLibrary:
 
     def _passes_sqlarch_archive_line_filters(self, line: str, parent: "ArchiveSource") -> bool:
         self.total_sqlarch_lines_processed += 1
-        # Parse the line to get id and signal_type
-        try:
-            line_json = json.loads(line)
-            sqlarch_section = line_json.get("SQLARCH", {})
-            id_value = str(sqlarch_section.get("id", ""))
-            signal_type_raw = str(sqlarch_section.get("sigT", ""))
-            signal_type = sql_arch_line_signal_type_library.get_by_identifier(signal_type_raw) if signal_type_raw else None
-        except (TypeError, ValueError, json.JSONDecodeError, KeyError):
-            return False
 
         # Check ID filters
         for f in self.sqlarch_archive_lines_filters:
             if not f.passes(line, parent):
                 return False
-
-        # Check signal_type whitelist
-        if self.signal_type_whitelist and signal_type not in self.signal_type_whitelist:
-            self.signal_type_whitelist_rejected_count += 1
-            return False
-
-        # Check signal_type blacklist
-        if self.signal_type_blacklist and signal_type in self.signal_type_blacklist:
-            self.signal_type_blacklist_rejected_count += 1
-            return False
 
         return True
 
@@ -343,7 +290,7 @@ class ArchiveLibrary:
             if not self._passes_sqlarch_archive_line_filters(line=line, parent=parent):
                 return
 
-            archive_line = SqlArchArchiveLine(full_raw_archive_line=line, parent=parent, last_sqlarch_line_by_id=self._last_sqlarch_line_by_id)
+            archive_line = SqlArchArchiveLine(full_raw_archive_line=line, parent=parent)
             self._last_sqlarch_line_by_id[archive_line.id_field] = archive_line
 
             parent.all_sqlarch_lines.append(archive_line)
@@ -374,11 +321,9 @@ class ArchiveLibrary:
         logger_config.print_and_log_info(f"{self.label}: Lines kept after filtering: {len(self.all_sqlarch_lines)}")
 
         logger_config.print_and_log_info(f"{self.label}: ID Filters:")
-        for i, f in enumerate(self.sqlarch_archive_lines_filters):
+        for f in self.sqlarch_archive_lines_filters:
             f.print_stats()
 
-        logger_config.print_and_log_info(f"{self.label}: Signal type whitelist: {[st.identifier for st in self.signal_type_whitelist]} - rejected {self.signal_type_whitelist_rejected_count} lines")
-        logger_config.print_and_log_info(f"{self.label}: Signal type blacklist: {[st.identifier for st in self.signal_type_blacklist]} - rejected {self.signal_type_blacklist_rejected_count} lines")
         logger_config.print_and_log_info(f"{self.label}: === End Filter Statistics ===")
 
 
@@ -408,7 +353,7 @@ class VersionArchiveLine(ArchiveLine):
 
 
 class SqlArchArchiveLine(ArchiveLine):
-    def __init__(self, full_raw_archive_line: str, parent: "ArchiveSource", last_sqlarch_line_by_id: Dict[str, "SqlArchArchiveLine"]) -> None:
+    def __init__(self, full_raw_archive_line: str, parent: "ArchiveSource") -> None:
         super().__init__(full_raw_archive_line=full_raw_archive_line, parent=parent)
 
         # Accessing specific fields
@@ -427,8 +372,6 @@ class SqlArchArchiveLine(ArchiveLine):
 
         assert self.id_field is not None
         assert isinstance(self.id_field, str)
-
-        previous_line_for_this_id = last_sqlarch_line_by_id[self.id_field] if self.id_field in last_sqlarch_line_by_id else None
 
         self.jdb = self.sqlarch_json_section.get("jdb")
         self.label = self.sqlarch_json_section.get("label")
@@ -473,37 +416,10 @@ class SqlArchArchiveLine(ArchiveLine):
     def _get_print_prefix(self) -> str:
         return f"{self.date_raw}\t{self.id_field}\t"
 
-    """
-    def print_and_log_with_following_fields(self, fields_names_to_print: List[str]) -> None:
-        to_print_and_log = self._get_print_prefix()
-        assert self.decoded_message
-        assert self.decoded_message.all_fields_by_name
-        for field_name_to_print in fields_names_to_print:
-            assert self.decoded_message.all_fields_by_name[field_name_to_print]
-            # to_print_and_log += f"{field_name_to_print}:{self.decoded_message.all_fields_by_name[field_name_to_print].value}"
-            to_print_and_log += f", {field_name_to_print}:{self.decoded_message.get_field_value_human_readable(field_name_to_print)}"
-
-        logger_config.print_and_log_info(to_print_and_log=to_print_and_log)
-    """
-
-    """
-    def print_and_log_with_all_fields(self) -> None:
-        fields_names_to_print: List[str] = []
-        if self.decoded_message:
-            fields_names_to_print += self.decoded_message.all_fields_by_name.keys()
-            self.print_and_log_with_following_fields(fields_names_to_print)
-        else:
-            to_print_and_log = self._get_print_prefix()
-            to_print_and_log += ", new state=" + self.get_new_state_str()
-            logger_config.print_and_log_info(to_print_and_log=to_print_and_log)
-    """
-
-    def get_all_changes_since_previous(self, also_print_and_log: bool, previous_line_for_this_id: Optional["SqlArchArchiveLine"]) -> List[OrderedDict[str, Any]]:
-        field_names_to_ignore = ["Time"]
+    def get_all_changes_since_previous(self, previous_line_for_this_id: Optional["SqlArchArchiveLine"]) -> List[OrderedDict[str, Any]]:
         to_ret: List[OrderedDict[str, Any]] = []
 
         previous_date = previous_line_for_this_id.date if previous_line_for_this_id else None
-        previous_date_str = previous_line_for_this_id.get_date_raw_str() if previous_line_for_this_id else "NA"
         exact_time_delta = date_time_formats.format_duration_timedelta_to_string(self.date - previous_line_for_this_id.date) if previous_line_for_this_id else "NA"
         approximative_time_delta = humanize.precisedelta(self.date - previous_date, minimum_unit="milliseconds") if previous_date else "NA"
         old_timestamp = previous_line_for_this_id.date_raw if previous_line_for_this_id else None

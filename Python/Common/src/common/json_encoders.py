@@ -34,7 +34,7 @@ class JsonEncodersUtils(metaclass=singleton.Singleton):
                 first_item = True
 
                 for chunk_index in range(0, len(list_objects), chunk_size):
-                    with logger_config.stopwatch_with_label(f"Serialize {len(list_objects)} in {json_file_full_path}"):
+                    with logger_config.stopwatch_with_label(f"Serialize {chunk_index} th chunk of {chunk_size} lines in {json_file_full_path}"):
                         chunk = list_objects[chunk_index : chunk_index + chunk_size]
 
                         for item in chunk:
@@ -46,6 +46,26 @@ class JsonEncodersUtils(metaclass=singleton.Singleton):
                             first_item = False
 
                 json_file.write("\n]" if not first_item else "]")
+
+        if len(list_objects) > chunk_size:
+            with logger_config.stopwatch_with_label(f"Serialize {len(list_objects)} in {json_file_full_path}* chunks files"):
+                # Split into chunks and create multiple files
+                base_path = Path(json_file_full_path)
+                stem = base_path.stem
+                suffix = base_path.suffix
+                parent = base_path.parent
+
+                for chunk_index in range(0, len(list_objects), chunk_size):
+                    chunk = list_objects[chunk_index : chunk_index + chunk_size]
+                    chunk_number = chunk_index // chunk_size
+
+                    # Create filename with chunk number
+                    chunk_file_path = parent / f"{stem}_{chunk_number}{suffix}"
+
+                    with logger_config.stopwatch_with_label(f"Serialize {len(chunk)} in {chunk_file_path}"):
+                        with open(chunk_file_path, "w", encoding="utf-8") as json_file:
+                            result_json_dump = json.dumps(chunk, indent=4, cls=ListOfObjectsEncoder)
+                            json_file.write(result_json_dump)
 
     @staticmethod
     def serialize_list_objects_in_json_improved(list_objects: list[Any], json_file_full_path: str) -> None:

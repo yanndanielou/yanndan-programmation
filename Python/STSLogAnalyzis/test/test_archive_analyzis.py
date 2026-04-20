@@ -53,5 +53,4 @@ class TestArchiveAnalysis:
         analysis = archive_analyzis_zc_ats_mal
         analysis.create_reports_all_sqlarch_changes_since_previous(
             output_directory_path=OUTPUT_DIRECTORY,
-            also_print_and_log=False,
         )
