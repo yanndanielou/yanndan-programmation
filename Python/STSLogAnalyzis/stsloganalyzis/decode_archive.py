@@ -92,8 +92,14 @@ class SqlArchFilter(ABC):
         return sqlarch_section
 
     @abstractmethod
-    def passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
+    def _do_passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
         pass
+
+    def passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
+        ret = self._do_passes(raw_sql_arch_line=raw_sql_arch_line, parent=parent)
+        if not ret:
+            self.rejected_count += 1
+        return ret
 
     def print_stats(self) -> None:
         logger_config.print_and_log_info(f"  Filter {self}: ' - rejected {self.rejected_count} lines")
@@ -118,7 +124,7 @@ class SqlArchLineStringFieldValueBasedFilter(SqlArchFilter):
         self.filter_type = filter_type
         self.filter_field_values = field_values
 
-    def passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
+    def _do_passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
         try:
             sqlarch_section = self.get_sqlarch_section(raw_sql_arch_line)
             field_raw_value = str(sqlarch_section.get(self.field_name, ""))
@@ -133,13 +139,11 @@ class SqlArchLineStringFieldValueBasedFilter(SqlArchFilter):
                 match = any(field_raw_value.startswith(filter_field_value) for filter_field_value in self.filter_field_values)
             elif self.filter_type == SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.MATCHES_REGEX:
                 match = any(bool(re.search(filter_field_value, field_raw_value)) for filter_field_value in self.filter_field_values)
-            if self.is_whitelist:
-                ret = match
             else:
                 assert False, f"Not handled {self.filter_type}"
 
+            ret = match if self.is_whitelist else not match
             if not ret:
-                self.rejected_count += 1
                 if field_raw_value not in self.rejected_count_by_item:
                     self.rejected_count_by_item[field_raw_value] = 0
 
@@ -170,9 +174,11 @@ class DatesFilter(SqlArchFilter):
     class DateFilter(SqlArchFilter):
 
         def get_line_date(self, raw_sql_arch_line: str) -> datetime:
-            sqlarch_section = self.get_sqlarch_section(raw_sql_arch_line)
-            raw_date = sqlarch_section.get("date")
-            return raw_date
+            line_json = json.loads(raw_sql_arch_line)
+            raw_date = line_json.get("date")
+            parsed_date = parser.parse(raw_date)
+            offset_naive_date = parsed_date.replace(tzinfo=None)
+            return offset_naive_date
 
     class DateBetweenFilter(DateFilter):
 
@@ -181,7 +187,7 @@ class DatesFilter(SqlArchFilter):
             self.date_min = date_min
             self.date_max = date_max
 
-        def passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
+        def _do_passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
             line_date = self.get_line_date(raw_sql_arch_line)
             return line_date > self.date_min and line_date < self.date_max
 
@@ -292,7 +298,7 @@ class ArchiveLibrary:
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def decode_all_lines(self, archive_input: "ArchiveSource", archive_decoder: ArchiveDecoder) -> int:
         number_of_lines_decoded = 0
-        with logger_config.stopwatch_with_label(f"{self.label}: Decode all {len(self.all_sqlarch_lines)} lines", monitor_ram_usage=True, inform_beginning=True):
+        with logger_config.stopwatch_with_label(f"{self.label}: Decode all {len(archive_input.all_sqlarch_lines)} lines", monitor_ram_usage=True, inform_beginning=True):
 
             for sqlarch_line in archive_input.all_sqlarch_lines:
                 sqlarch_line.decode_message(archive_decoder)
@@ -304,7 +310,7 @@ class ArchiveLibrary:
 
         # Check ID filters
         for f in self.sqlarch_archive_lines_filters:
-            if not f.passes(raw_sql_arch_line, parent):
+            if not f._do_passes(raw_sql_arch_line, parent):
                 return False
 
         return True
