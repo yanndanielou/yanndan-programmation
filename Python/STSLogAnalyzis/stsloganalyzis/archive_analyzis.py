@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from common import reports_utils
@@ -11,6 +11,20 @@ from stsloganalyzis import decode_archive, line_topology
 
 @dataclass
 class Train:
+    cc_id_with_offset: int
+
+
+class MovementAutorityLimitForOneZoneController:
+    train: Train
+    mal_location: line_topology.ExactLocation
+
+    def get_distance_to_train_in_cm(self) -> int:
+        pass
+        return 0
+
+
+@dataclass
+class ZoneController:
     cc_id_with_offset: int
 
 
@@ -32,6 +46,7 @@ class ArchiveAnalyzis:
 
     def __post_init__(self) -> None:
         self.trains: List[Train] = []
+        self.zone_controllers: List[ZoneController] = []
 
         self.all_sql_arch_lines_with_context: List[SqlArchArchiveLineWithContext] = []
         self.current_latest_line_by_id: Dict[str, SqlArchArchiveLineWithContext] = dict()
