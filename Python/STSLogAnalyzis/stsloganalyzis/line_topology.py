@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import csv
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, unique, StrEnum
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Optional, Tuple, cast, Self
 
 from logger import logger_config
 
 
-class LineDirection(str, Enum):
+@unique
+class LineDirection(StrEnum):
     """Énumération des directions possibles."""
 
     UP = "UP"
@@ -18,10 +19,18 @@ class LineDirection(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
-class SegmentDirection(str, Enum):
+@unique
+class SegmentDirection(StrEnum):
     INCREASING_OFFSET = "INCREASING"
     DECREASING_OFFSET = "DECREASING"
     BOTH = "BOTH"
+
+    def get_opposite_direction(self) -> SegmentDirection:
+        if self == SegmentDirection.DECREASING_OFFSET:
+            return SegmentDirection.INCREASING_OFFSET
+        elif self == SegmentDirection.INCREASING_OFFSET:
+            return SegmentDirection.DECREASING_OFFSET
+        return SegmentDirection.BOTH
 
 
 @dataclass
@@ -48,6 +57,7 @@ class ConsistencyError:
     def __post_init__(self) -> None:
         logger_config.print_and_log_error(f"Consistency error {self}")
 
+    @unique
     class ConsistencyErrorType(Enum):
         MISSING_TB_ON_SEGMENT = "MISSING_TB_ON_SEGMENT"
 
@@ -330,7 +340,7 @@ class Line:
                             distance_to_downstream_normal = self.get_distance_in_cm_between_to_locations(
                                 origin=downstream_normal.max_abscissa_exact_location,
                                 destination=destination,
-                                origin_segment_direction=SegmentDirection.DECREASING_OFFSET,
+                                origin_segment_direction=origin_segment_direction.get_opposite_direction(),
                                 maximum_distance_in_cm=maximum_distance_in_cm,
                             )
 
@@ -346,20 +356,60 @@ class Line:
                             distance_to_downstream_reverse = self.get_distance_in_cm_between_to_locations(
                                 origin=downstream_reverse.max_abscissa_exact_location,
                                 destination=destination,
-                                origin_segment_direction=SegmentDirection.DECREASING_OFFSET,
+                                origin_segment_direction=origin_segment_direction.get_opposite_direction(),
                                 maximum_distance_in_cm=maximum_distance_in_cm,
                             )
 
                     if distance_to_downstream_normal is None and distance_to_downstream_reverse is None:
+                        logger_config.print_and_log_info(f"End of path reached at {origin} {origin_segment_direction}. Remaining distance {maximum_distance_in_cm}")
                         return None
                     return min(i for i in [distance_to_downstream_normal, distance_to_downstream_reverse] if i is not None) + distance_to_end_of_origin_segment
 
                 else:
                     assert origin_segment_direction == SegmentDirection.DECREASING_OFFSET
                     upstream_normal = origin.segment.upstream_normal
+                    distance_to_upstream_normal = None
                     upstream_reverse = origin.segment.upstream_reverse
+                    distance_to_upstream_reverse = None
 
-        return 0
+                    if upstream_normal is not None:
+                        if origin.segment.upstream_normal_same_direction:
+                            distance_to_upstream_normal = self.get_distance_in_cm_between_to_locations(
+                                origin=upstream_normal.min_abscissa_exact_location,
+                                destination=destination,
+                                origin_segment_direction=origin_segment_direction,
+                                maximum_distance_in_cm=maximum_distance_in_cm,
+                            )
+                        else:
+                            distance_to_upstream_normal = self.get_distance_in_cm_between_to_locations(
+                                origin=upstream_normal.max_abscissa_exact_location,
+                                destination=destination,
+                                origin_segment_direction=origin_segment_direction.get_opposite_direction(),
+                                maximum_distance_in_cm=maximum_distance_in_cm,
+                            )
+
+                    if upstream_reverse is not None:
+                        if origin.segment.upstream_reverse_same_direction:
+                            distance_to_upstream_reverse = self.get_distance_in_cm_between_to_locations(
+                                origin=upstream_reverse.min_abscissa_exact_location,
+                                destination=destination,
+                                origin_segment_direction=origin_segment_direction,
+                                maximum_distance_in_cm=maximum_distance_in_cm,
+                            )
+                        else:
+                            distance_to_upstream_reverse = self.get_distance_in_cm_between_to_locations(
+                                origin=upstream_reverse.max_abscissa_exact_location,
+                                destination=destination,
+                                origin_segment_direction=origin_segment_direction.get_opposite_direction(),
+                                maximum_distance_in_cm=maximum_distance_in_cm,
+                            )
+
+                    if distance_to_upstream_normal is None and distance_to_upstream_reverse is None:
+                        logger_config.print_and_log_info(f"End of path reached at {origin} {origin_segment_direction}. Remaining distance {maximum_distance_in_cm}")
+                        return None
+                    return min(i for i in [distance_to_upstream_normal, distance_to_upstream_reverse] if i is not None) + distance_to_end_of_origin_segment
+
+        return None
 
     def get_segment_from_segment_id_number_or_segment(self, segment: Segment | str | int) -> Segment:
         segment_obj: Segment
