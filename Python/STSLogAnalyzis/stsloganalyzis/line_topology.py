@@ -1,12 +1,27 @@
 from __future__ import annotations
 
 import csv
-from pathlib import Path
-from typing import List, Optional, Dict, Tuple, Set, cast
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, cast
 
 from logger import logger_config
+
+
+class LineDirection(str, Enum):
+    """Énumération des directions possibles."""
+
+    UP = "UP"
+    DOWN = "DOWN"
+    BOTH = "BOTH"
+    UNKNOWN = "UNKNOWN"
+
+
+class SegmentDirection(str, Enum):
+    INCREASING_OFFSET = "INCREASING"
+    DECREASING_OFFSET = "DECREASING"
+    BOTH = "BOTH"
 
 
 @dataclass
@@ -59,7 +74,7 @@ class Segment(TopologyElement):
     direction: str
     pk_abs_start: float
     pk_abs_end: float
-    length: float
+    length: int
     upstream_normal: Optional["Segment"] = None
     upstream_reverse: Optional["Segment"] = None
     downstream_normal: Optional["Segment"] = None
@@ -74,6 +89,8 @@ class Segment(TopologyElement):
         assert self.identifier
         assert isinstance(self.identifier, str)
         self.tracking_blocks_in_segment: List[TrackingBlockOnSegment] = []
+        self.min_abscissa_exact_location = ExactLocation(self, 0)
+        self.max_abscissa_exact_location = ExactLocation(self, self.length)
 
     def __hash__(self) -> int:
         return hash(self.identifier)
@@ -130,7 +147,7 @@ class Segment(TopologyElement):
                     direction=row["DIRECTION"],
                     pk_abs_start=float(row["PK_ABS_START"]),
                     pk_abs_end=float(row["PK_ABS_END"]),
-                    length=float(row["LENGTH"]),
+                    length=int(row["LENGTH"]),
                 )
                 segments.append(segment)
 
@@ -224,6 +241,13 @@ class ExactLocation:
     def __post_init__(self) -> None:
         assert self.abscissa < self.segment.length
 
+    def get_distance_to_end_of_segment_in_cm(self, direction: SegmentDirection) -> int:
+        assert direction != SegmentDirection.BOTH
+        if direction == SegmentDirection.INCREASING_OFFSET:
+            return self.segment.length - self.abscissa
+        else:
+            return self.abscissa
+
 
 @dataclass
 class Line:
@@ -264,8 +288,78 @@ class Line:
             f"switches={len(self.switches)})"
         )
 
-    def __len__(self) -> int:
-        return len(self.segments)
+    def get_distance_in_cm_between_to_locations(
+        self, origin: ExactLocation, destination: ExactLocation, origin_segment_direction: SegmentDirection, maximum_distance_in_cm: int = 1000000
+    ) -> Optional[int]:
+        if maximum_distance_in_cm <= 0:
+            logger_config.print_and_log_info(f"Maximum distance {maximum_distance_in_cm} reached. Path not found")
+            return None
+
+        if origin_segment_direction == SegmentDirection.BOTH:
+            distance_direction_in_up = self.get_distance_in_cm_between_to_locations(origin=origin, destination=destination, origin_segment_direction=SegmentDirection.INCREASING_OFFSET)
+            distance_direction_in_down = self.get_distance_in_cm_between_to_locations(origin=origin, destination=destination, origin_segment_direction=SegmentDirection.DECREASING_OFFSET)
+            return min(i for i in [distance_direction_in_up, distance_direction_in_down] if i is not None)
+
+        if origin.segment == destination.segment:
+            if origin_segment_direction == SegmentDirection.INCREASING_OFFSET:
+                if destination.abscissa > origin.abscissa:
+                    return destination.abscissa - origin.abscissa
+                else:
+                    logger_config.print_and_log_error(f"Tried to reach {destination} from {origin} in wrong direction {origin_segment_direction}")
+                    return None
+
+            else:
+                distance_to_end_of_origin_segment = origin.get_distance_to_end_of_segment_in_cm(origin_segment_direction)
+                maximum_distance_in_cm -= distance_to_end_of_origin_segment
+                if origin_segment_direction == SegmentDirection.INCREASING_OFFSET:
+
+                    downstream_normal = origin.segment.downstream_normal
+                    distance_to_downstream_normal = None
+                    downstream_reverse = origin.segment.downstream_reverse
+                    distance_to_downstream_reverse = None
+
+                    if downstream_normal is not None:
+                        if origin.segment.downstream_normal_same_direction:
+                            distance_to_downstream_normal = self.get_distance_in_cm_between_to_locations(
+                                origin=downstream_normal.min_abscissa_exact_location,
+                                destination=destination,
+                                origin_segment_direction=origin_segment_direction,
+                                maximum_distance_in_cm=maximum_distance_in_cm,
+                            )
+                        else:
+                            distance_to_downstream_normal = self.get_distance_in_cm_between_to_locations(
+                                origin=downstream_normal.max_abscissa_exact_location,
+                                destination=destination,
+                                origin_segment_direction=SegmentDirection.DECREASING_OFFSET,
+                                maximum_distance_in_cm=maximum_distance_in_cm,
+                            )
+
+                    if downstream_reverse is not None:
+                        if origin.segment.downstream_reverse_same_direction:
+                            distance_to_downstream_reverse = self.get_distance_in_cm_between_to_locations(
+                                origin=downstream_reverse.min_abscissa_exact_location,
+                                destination=destination,
+                                origin_segment_direction=origin_segment_direction,
+                                maximum_distance_in_cm=maximum_distance_in_cm,
+                            )
+                        else:
+                            distance_to_downstream_reverse = self.get_distance_in_cm_between_to_locations(
+                                origin=downstream_reverse.max_abscissa_exact_location,
+                                destination=destination,
+                                origin_segment_direction=SegmentDirection.DECREASING_OFFSET,
+                                maximum_distance_in_cm=maximum_distance_in_cm,
+                            )
+
+                    if distance_to_downstream_normal is None and distance_to_downstream_reverse is None:
+                        return None
+                    return min(i for i in [distance_to_downstream_normal, distance_to_downstream_reverse] if i is not None) + distance_to_end_of_origin_segment
+
+                else:
+                    assert origin_segment_direction == SegmentDirection.DECREASING_OFFSET
+                    upstream_normal = origin.segment.upstream_normal
+                    upstream_reverse = origin.segment.upstream_reverse
+
+        return 0
 
     def get_segment_from_segment_id_number_or_segment(self, segment: Segment | str | int) -> Segment:
         segment_obj: Segment
@@ -383,15 +477,6 @@ class Line:
         )
 
 
-class Direction(str, Enum):
-    """Énumération des directions possibles."""
-
-    UP = "UP"
-    DOWN = "DOWN"
-    BOTH = "BOTH"
-    UNKNOWN = "UNKNOWN"
-
-
 @dataclass
 class TrackingCircuit(TopologyElement):
     """
@@ -418,11 +503,11 @@ class TrackingCircuit(TopologyElement):
     label: str
     occupancy_id: str
     direction_id: Optional[str]
-    default_direction: Direction
+    default_direction: LineDirection
     zone_failure_id: str
     failure_id: str
     turnback: bool
-    steering: Optional[Direction]
+    steering: Optional[LineDirection]
     extension_id: Optional[str]
     representation: Optional[str]
     authorized_acknowledgement_rights: Optional[str]
@@ -461,16 +546,16 @@ class TrackingCircuit(TopologyElement):
                     return value.strip() == "1"
 
                 # Fonction helper pour convertir en Direction optionnelle
-                def to_direction(value: str) -> Optional[Direction]:
+                def to_direction(value: str) -> Optional[LineDirection]:
                     val = to_none(value)
-                    return Direction(val) if val else None
+                    return LineDirection(val) if val else None
 
                 circuit = cls(
                     identifier=row["ID"],
                     label=row["LABEL"],
                     occupancy_id=row["OCCUPANCY_ID"],
                     direction_id=to_none(row["DIRECTION_ID"]),
-                    default_direction=Direction(row["DEFAULT_DIRECTION"]),
+                    default_direction=LineDirection(row["DEFAULT_DIRECTION"]),
                     zone_failure_id=row["ZONE_FAILURE_ID"],
                     failure_id=row["FAILURE_ID"],
                     turnback=to_bool(row["TURNBACK"]),
@@ -508,7 +593,7 @@ class TrackingBlock(TopologyElement):
     track_circuit_id: str
     isotropic: bool
     border: bool
-    steering: Optional[Direction]
+    steering: Optional[LineDirection]
     extension_id: Optional[str]
     tracking_circuit: TrackingCircuit
 
@@ -555,9 +640,9 @@ class TrackingBlock(TopologyElement):
                     return value.strip() == "1"
 
                 # Fonction helper pour convertir en Direction optionnelle
-                def to_direction(value: str) -> Optional[Direction]:
+                def to_direction(value: str) -> Optional[LineDirection]:
                     val = to_none(value)
-                    return Direction(val) if val else None
+                    return LineDirection(val) if val else None
 
                 block_id = row["ID"]
                 circuit_id = row["TRACK_CIRCUIT_ID"]
@@ -639,7 +724,7 @@ class Switch(TopologyElement):
     reverse_id: Optional[str]
     forcing_id: Optional[str]
     trailable: bool
-    convergency_direction: Optional[Direction]
+    convergency_direction: Optional[LineDirection]
 
     @classmethod
     def _load_from_csv_raw(
@@ -674,9 +759,9 @@ class Switch(TopologyElement):
                     return value.strip() == "1"
 
                 # Fonction helper pour convertir en Direction optionnelle
-                def to_direction(value: str) -> Optional[Direction]:
+                def to_direction(value: str) -> Optional[LineDirection]:
                     val = to_none(value)
-                    return Direction(val) if val else None
+                    return LineDirection(val) if val else None
 
                 switch = cls(
                     identifier=row["ID"],
