@@ -4,7 +4,7 @@ import csv
 from dataclasses import dataclass, field
 from enum import Enum, unique, StrEnum
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, cast, Self
+from typing import Dict, List, Optional, Tuple, cast
 
 from logger import logger_config
 
@@ -249,7 +249,7 @@ class ExactLocation:
     abscissa: int
 
     def __post_init__(self) -> None:
-        assert self.abscissa < self.segment.length
+        assert self.abscissa <= self.segment.length
 
     def get_distance_to_end_of_segment_in_cm(self, direction: SegmentDirection) -> int:
         assert direction != SegmentDirection.BOTH
@@ -506,7 +506,7 @@ class Line:
         track_circuit_by_id = {c.identifier: c for c in circuits_list}
 
         # Charger les blocs avec associations aux circuits
-        blocks_list, not_created_tracking_blocks_ids_without_track_circuits = TrackingBlock._load_from_csv_raw(
+        blocks_list, not_created_tracking_blocks_ids_without_track_circuits = TrackingBlock.load_from_csv_raw(
             tracking_blocks_csv_full_path,
             track_circuit_by_id,
             ignore_tracking_blocks_without_circuits,
@@ -651,7 +651,7 @@ class TrackingBlock(TopologyElement):
         self.tracking_blocks_in_segment: List[TrackingBlockOnSegment] = []
 
     @classmethod
-    def _load_from_csv_raw(
+    def load_from_csv_raw(
         cls,
         csv_file_path: str | Path,
         circuits_dict: Dict[str, TrackingCircuit],
