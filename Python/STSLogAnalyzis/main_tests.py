@@ -1,6 +1,14 @@
 from logger import logger_config
 
-from stsloganalyzis import archive_analyzis, decode_action_set_content, decode_archive, decode_message, decode_xml_message, line_topology, next_data
+from stsloganalyzis import (
+    archive_analyzis,
+    decode_action_set_content,
+    decode_archive,
+    decode_message,
+    decode_xml_message,
+    line_topology,
+    next_data,
+)
 
 OUTPUT_DIRECTORY = "output"
 
