@@ -113,6 +113,20 @@ class TestNextData:
                 )
 
         class TestComplexPaths:
+            def test_full_line_increasing(self, next_line_fixture: line_topology.Line) -> None:
+                line = next_line_fixture
+                origin_seg = line.get_segment_from_segment_id_number_or_segment("SEG_011021")
+                dest_seg = line.get_segment_from_segment_id_number_or_segment("SEG_011904")
+                assert (
+                    line.get_distance_in_cm_between_to_locations(
+                        line_topology.ExactLocation(segment=origin_seg, abscissa=0),
+                        line_topology.ExactLocation(segment=dest_seg, abscissa=0),
+                        line_topology.SegmentDirection.INCREASING_OFFSET,
+                        maximum_distance_in_cm=10000000,
+                    )
+                    is not None
+                )
+
             def test_increasing(self, next_line_fixture: line_topology.Line) -> None:
                 line = next_line_fixture
                 origin_seg = line.get_segment_from_segment_id_number_or_segment("SEG_011003")
@@ -122,6 +136,19 @@ class TestNextData:
                         line_topology.ExactLocation(segment=origin_seg, abscissa=0),
                         line_topology.ExactLocation(segment=dest_seg, abscissa=0),
                         line_topology.SegmentDirection.INCREASING_OFFSET,
+                    )
+                    is not None
+                )
+
+            def test_decreasing(self, next_line_fixture: line_topology.Line) -> None:
+                line = next_line_fixture
+                dest_seg = line.get_segment_from_segment_id_number_or_segment("SEG_011003")
+                origin_seg = line.get_segment_from_segment_id_number_or_segment("SEG_010713")
+                assert (
+                    line.get_distance_in_cm_between_to_locations(
+                        line_topology.ExactLocation(segment=origin_seg, abscissa=0),
+                        line_topology.ExactLocation(segment=dest_seg, abscissa=0),
+                        line_topology.SegmentDirection.DECREASING_OFFSET,
                     )
                     is not None
                 )
