@@ -1,5 +1,7 @@
 import pytest
 
+from logger import logger_config
+
 from stsloganalyzis import line_topology
 from typing import cast
 
@@ -15,6 +17,7 @@ def next_line() -> line_topology.Line:
         tracking_block_on_segments_csv_full_path=r"D:\NEXTTS\Data\Csv\NEXT_tsLocUnitTopo.csv",
         ignore_tracking_blocks_without_circuits=True,
     )
+    logger_config.print_and_log_info("next_line_fixture is ready!")
     return cast("line_topology.Line", line)
 
 
@@ -47,6 +50,7 @@ class TestNextData:
                 def test_increasing(self, next_line_fixture: line_topology.Line) -> None:
                     line = next_line_fixture
                     seg1 = line.get_segment_from_segment_id_number_or_segment("SEG_010812")
+                    assert seg1
                     distance_0_to_length = line.get_distance_in_cm_between_to_locations(
                         line_topology.ExactLocation(segment=seg1, abscissa=0),
                         line_topology.ExactLocation(segment=seg1, abscissa=seg1.length),

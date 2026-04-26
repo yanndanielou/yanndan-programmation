@@ -55,7 +55,7 @@ class ConsistencyError:
         return f"{self.topology_element.identifier} {self.consistency_error_type} {self.consistency_error_text}"
 
     def __post_init__(self) -> None:
-        logger_config.print_and_log_error(f"Consistency error {self}")
+        logger_config.print_and_log_error(f"Consistency error {self}", do_not_print=True)
 
     @unique
     class ConsistencyErrorType(Enum):
@@ -116,7 +116,7 @@ class Segment(TopologyElement):
         consistency_errors: List[ConsistencyError] = []
         all_tracking_blocks_in_segment_sizes = sum([tracking_block_in_segment.length for tracking_block_in_segment in self.tracking_blocks_in_segment])
         if all_tracking_blocks_in_segment_sizes < self.length:
-            logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : has error")
+            # logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : has error", do_not_print=True)
 
             consistency_error_type = ConsistencyError.ConsistencyErrorType.MISSING_TB_ON_SEGMENT
             topology_element = self
@@ -126,7 +126,7 @@ class Segment(TopologyElement):
             # logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier}")
             # logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : {consist_error}")
         if consistency_errors:
-            logger_config.print_and_log_warning(f"{self.identifier} has {len(consistency_errors)} consistency errors")
+            logger_config.print_and_log_warning(f"{self.identifier} has {len(consistency_errors)} consistency errors", do_not_print=True)
         return consistency_errors
 
     @classmethod
@@ -258,6 +258,34 @@ class ExactLocation:
         else:
             return self.abscissa
 
+    def __str__(self) -> str:
+        return f"ExactLocation {str(self.segment)} {self.abscissa}"
+
+
+@dataclass
+class ExactLocationsPathSegmentPortion:
+    segment: Segment
+    segment_portion_start: ExactLocation
+    segment_portion_end: ExactLocation
+
+    def __post_init__(self) -> None:
+        assert self.segment_portion_start.segment == self.segment
+        assert self.segment_portion_end.segment == self.segment
+        self.length_in_cm = abs(self.segment_portion_start.abscissa - self.segment_portion_end.abscissa)
+
+
+@dataclass
+class ExactLocationsPath:
+    origin: ExactLocation
+    destination: ExactLocation
+
+    def __post_init__(self) -> None:
+        self.all_portions: List[ExactLocationsPathSegmentPortion] = []
+
+    @property
+    def total_length_in_cm(self) -> int:
+        return sum(portion.length_in_cm for portion in self.all_portions)
+
 
 @dataclass
 class Line:
@@ -301,6 +329,7 @@ class Line:
     def get_distance_in_cm_between_to_locations(
         self, origin: ExactLocation, destination: ExactLocation, origin_segment_direction: SegmentDirection, maximum_distance_in_cm: int = 1000000
     ) -> Optional[int]:
+        logger_config.print_and_log_info(f"Get distance between {origin} and {destination} direction {origin_segment_direction}, max distance:{maximum_distance_in_cm}")
         if maximum_distance_in_cm <= 0:
             logger_config.print_and_log_info(f"Maximum distance {maximum_distance_in_cm} reached. Path not found")
             return None
