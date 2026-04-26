@@ -109,7 +109,7 @@ class Segment(TopologyElement):
         return self.identifier == cast("TopologyElement", other).identifier
 
     def __str__(self) -> str:
-        return f"Segment {self.identifier} #{self.num_segment} length:{self.length}"
+        return f"Segment [{self.identifier} #{self.num_segment} length:{self.length}]"
 
     def compute_consistency_errors(self) -> List[ConsistencyError]:
 
@@ -259,7 +259,7 @@ class ExactLocation:
             return self.abscissa
 
     def __str__(self) -> str:
-        return f"ExactLocation {str(self.segment)} {self.abscissa}"
+        return f"ExactLocation [{str(self.segment)} {self.abscissa}]"
 
 
 @dataclass
@@ -346,97 +346,103 @@ class Line:
                 else:
                     logger_config.print_and_log_error(f"Tried to reach {destination} from {origin} in wrong direction {origin_segment_direction}")
                     return None
+            else:
+                if destination.abscissa < origin.abscissa:
+                    return origin.abscissa - destination.abscissa
+                else:
+                    logger_config.print_and_log_error(f"Tried to reach {destination} from {origin} in wrong direction {origin_segment_direction}")
+                    return None
+
+        else:
+            distance_to_end_of_origin_segment = origin.get_distance_to_end_of_segment_in_cm(origin_segment_direction)
+            maximum_distance_in_cm -= distance_to_end_of_origin_segment
+            if origin_segment_direction == SegmentDirection.INCREASING_OFFSET:
+
+                downstream_normal = origin.segment.downstream_normal
+                distance_to_downstream_normal = None
+                downstream_reverse = origin.segment.downstream_reverse
+                distance_to_downstream_reverse = None
+
+                if downstream_normal is not None:
+                    if origin.segment.downstream_normal_same_direction:
+                        distance_to_downstream_normal = self.get_distance_in_cm_between_to_locations(
+                            origin=downstream_normal.min_abscissa_exact_location,
+                            destination=destination,
+                            origin_segment_direction=origin_segment_direction,
+                            maximum_distance_in_cm=maximum_distance_in_cm,
+                        )
+                    else:
+                        distance_to_downstream_normal = self.get_distance_in_cm_between_to_locations(
+                            origin=downstream_normal.max_abscissa_exact_location,
+                            destination=destination,
+                            origin_segment_direction=origin_segment_direction.get_opposite_direction(),
+                            maximum_distance_in_cm=maximum_distance_in_cm,
+                        )
+
+                if downstream_reverse is not None:
+                    if origin.segment.downstream_reverse_same_direction:
+                        distance_to_downstream_reverse = self.get_distance_in_cm_between_to_locations(
+                            origin=downstream_reverse.min_abscissa_exact_location,
+                            destination=destination,
+                            origin_segment_direction=origin_segment_direction,
+                            maximum_distance_in_cm=maximum_distance_in_cm,
+                        )
+                    else:
+                        distance_to_downstream_reverse = self.get_distance_in_cm_between_to_locations(
+                            origin=downstream_reverse.max_abscissa_exact_location,
+                            destination=destination,
+                            origin_segment_direction=origin_segment_direction.get_opposite_direction(),
+                            maximum_distance_in_cm=maximum_distance_in_cm,
+                        )
+
+                if distance_to_downstream_normal is None and distance_to_downstream_reverse is None:
+                    logger_config.print_and_log_info(f"End of path reached at {origin} {origin_segment_direction}. Remaining distance {maximum_distance_in_cm}")
+                    return None
+                return min(i for i in [distance_to_downstream_normal, distance_to_downstream_reverse] if i is not None) + distance_to_end_of_origin_segment
 
             else:
-                distance_to_end_of_origin_segment = origin.get_distance_to_end_of_segment_in_cm(origin_segment_direction)
-                maximum_distance_in_cm -= distance_to_end_of_origin_segment
-                if origin_segment_direction == SegmentDirection.INCREASING_OFFSET:
+                assert origin_segment_direction == SegmentDirection.DECREASING_OFFSET
+                upstream_normal = origin.segment.upstream_normal
+                distance_to_upstream_normal = None
+                upstream_reverse = origin.segment.upstream_reverse
+                distance_to_upstream_reverse = None
 
-                    downstream_normal = origin.segment.downstream_normal
-                    distance_to_downstream_normal = None
-                    downstream_reverse = origin.segment.downstream_reverse
-                    distance_to_downstream_reverse = None
+                if upstream_normal is not None:
+                    if origin.segment.upstream_normal_same_direction:
+                        distance_to_upstream_normal = self.get_distance_in_cm_between_to_locations(
+                            origin=upstream_normal.min_abscissa_exact_location,
+                            destination=destination,
+                            origin_segment_direction=origin_segment_direction,
+                            maximum_distance_in_cm=maximum_distance_in_cm,
+                        )
+                    else:
+                        distance_to_upstream_normal = self.get_distance_in_cm_between_to_locations(
+                            origin=upstream_normal.max_abscissa_exact_location,
+                            destination=destination,
+                            origin_segment_direction=origin_segment_direction.get_opposite_direction(),
+                            maximum_distance_in_cm=maximum_distance_in_cm,
+                        )
 
-                    if downstream_normal is not None:
-                        if origin.segment.downstream_normal_same_direction:
-                            distance_to_downstream_normal = self.get_distance_in_cm_between_to_locations(
-                                origin=downstream_normal.min_abscissa_exact_location,
-                                destination=destination,
-                                origin_segment_direction=origin_segment_direction,
-                                maximum_distance_in_cm=maximum_distance_in_cm,
-                            )
-                        else:
-                            distance_to_downstream_normal = self.get_distance_in_cm_between_to_locations(
-                                origin=downstream_normal.max_abscissa_exact_location,
-                                destination=destination,
-                                origin_segment_direction=origin_segment_direction.get_opposite_direction(),
-                                maximum_distance_in_cm=maximum_distance_in_cm,
-                            )
+                if upstream_reverse is not None:
+                    if origin.segment.upstream_reverse_same_direction:
+                        distance_to_upstream_reverse = self.get_distance_in_cm_between_to_locations(
+                            origin=upstream_reverse.min_abscissa_exact_location,
+                            destination=destination,
+                            origin_segment_direction=origin_segment_direction,
+                            maximum_distance_in_cm=maximum_distance_in_cm,
+                        )
+                    else:
+                        distance_to_upstream_reverse = self.get_distance_in_cm_between_to_locations(
+                            origin=upstream_reverse.max_abscissa_exact_location,
+                            destination=destination,
+                            origin_segment_direction=origin_segment_direction.get_opposite_direction(),
+                            maximum_distance_in_cm=maximum_distance_in_cm,
+                        )
 
-                    if downstream_reverse is not None:
-                        if origin.segment.downstream_reverse_same_direction:
-                            distance_to_downstream_reverse = self.get_distance_in_cm_between_to_locations(
-                                origin=downstream_reverse.min_abscissa_exact_location,
-                                destination=destination,
-                                origin_segment_direction=origin_segment_direction,
-                                maximum_distance_in_cm=maximum_distance_in_cm,
-                            )
-                        else:
-                            distance_to_downstream_reverse = self.get_distance_in_cm_between_to_locations(
-                                origin=downstream_reverse.max_abscissa_exact_location,
-                                destination=destination,
-                                origin_segment_direction=origin_segment_direction.get_opposite_direction(),
-                                maximum_distance_in_cm=maximum_distance_in_cm,
-                            )
-
-                    if distance_to_downstream_normal is None and distance_to_downstream_reverse is None:
-                        logger_config.print_and_log_info(f"End of path reached at {origin} {origin_segment_direction}. Remaining distance {maximum_distance_in_cm}")
-                        return None
-                    return min(i for i in [distance_to_downstream_normal, distance_to_downstream_reverse] if i is not None) + distance_to_end_of_origin_segment
-
-                else:
-                    assert origin_segment_direction == SegmentDirection.DECREASING_OFFSET
-                    upstream_normal = origin.segment.upstream_normal
-                    distance_to_upstream_normal = None
-                    upstream_reverse = origin.segment.upstream_reverse
-                    distance_to_upstream_reverse = None
-
-                    if upstream_normal is not None:
-                        if origin.segment.upstream_normal_same_direction:
-                            distance_to_upstream_normal = self.get_distance_in_cm_between_to_locations(
-                                origin=upstream_normal.min_abscissa_exact_location,
-                                destination=destination,
-                                origin_segment_direction=origin_segment_direction,
-                                maximum_distance_in_cm=maximum_distance_in_cm,
-                            )
-                        else:
-                            distance_to_upstream_normal = self.get_distance_in_cm_between_to_locations(
-                                origin=upstream_normal.max_abscissa_exact_location,
-                                destination=destination,
-                                origin_segment_direction=origin_segment_direction.get_opposite_direction(),
-                                maximum_distance_in_cm=maximum_distance_in_cm,
-                            )
-
-                    if upstream_reverse is not None:
-                        if origin.segment.upstream_reverse_same_direction:
-                            distance_to_upstream_reverse = self.get_distance_in_cm_between_to_locations(
-                                origin=upstream_reverse.min_abscissa_exact_location,
-                                destination=destination,
-                                origin_segment_direction=origin_segment_direction,
-                                maximum_distance_in_cm=maximum_distance_in_cm,
-                            )
-                        else:
-                            distance_to_upstream_reverse = self.get_distance_in_cm_between_to_locations(
-                                origin=upstream_reverse.max_abscissa_exact_location,
-                                destination=destination,
-                                origin_segment_direction=origin_segment_direction.get_opposite_direction(),
-                                maximum_distance_in_cm=maximum_distance_in_cm,
-                            )
-
-                    if distance_to_upstream_normal is None and distance_to_upstream_reverse is None:
-                        logger_config.print_and_log_info(f"End of path reached at {origin} {origin_segment_direction}. Remaining distance {maximum_distance_in_cm}")
-                        return None
-                    return min(i for i in [distance_to_upstream_normal, distance_to_upstream_reverse] if i is not None) + distance_to_end_of_origin_segment
+                if distance_to_upstream_normal is None and distance_to_upstream_reverse is None:
+                    logger_config.print_and_log_info(f"End of path reached at {origin} {origin_segment_direction}. Remaining distance {maximum_distance_in_cm}")
+                    return None
+                return min(i for i in [distance_to_upstream_normal, distance_to_upstream_reverse] if i is not None) + distance_to_end_of_origin_segment
 
         return None
 
