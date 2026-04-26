@@ -54,6 +54,9 @@ class ConsistencyError:
     def __str__(self) -> str:
         return f"{self.topology_element.identifier} {self.consistency_error_type} {self.consistency_error_text}"
 
+    def __repr__(self) -> str:
+        return str(self)
+
     def __post_init__(self) -> None:
         logger_config.print_and_log_error(f"Consistency error {self}", do_not_print=True)
 
@@ -110,6 +113,9 @@ class Segment(TopologyElement):
 
     def __str__(self) -> str:
         return f"Segment [{self.identifier} #{self.num_segment} length:{self.length}]"
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def compute_consistency_errors(self) -> List[ConsistencyError]:
 
@@ -261,6 +267,9 @@ class ExactLocation:
     def __str__(self) -> str:
         return f"ExactLocation [{str(self.segment)} {self.abscissa}]"
 
+    def __repr__(self) -> str:
+        return str(self)
+
 
 @dataclass
 class ExactLocationsPathSegmentPortion:
@@ -327,9 +336,9 @@ class Line:
         )
 
     def get_distance_in_cm_between_to_locations(
-        self, origin: ExactLocation, destination: ExactLocation, origin_segment_direction: SegmentDirection, maximum_distance_in_cm: int = 1000000
+        self, origin: ExactLocation, destination: ExactLocation, origin_segment_direction: SegmentDirection, maximum_distance_in_cm: int = 100000
     ) -> Optional[int]:
-        logger_config.print_and_log_info(f"Get distance between {origin} and {destination} direction {origin_segment_direction}, max distance:{maximum_distance_in_cm}")
+        # logger_config.print_and_log_info(f"Get distance between {origin} and {destination} direction {origin_segment_direction}, max distance:{maximum_distance_in_cm}")
         if maximum_distance_in_cm <= 0:
             logger_config.print_and_log_info(f"Maximum distance {maximum_distance_in_cm} reached. Path not found")
             return None
@@ -341,13 +350,13 @@ class Line:
 
         if origin.segment == destination.segment:
             if origin_segment_direction == SegmentDirection.INCREASING_OFFSET:
-                if destination.abscissa > origin.abscissa:
+                if destination.abscissa >= origin.abscissa:
                     return destination.abscissa - origin.abscissa
                 else:
                     logger_config.print_and_log_error(f"Tried to reach {destination} from {origin} in wrong direction {origin_segment_direction}")
                     return None
             else:
-                if destination.abscissa < origin.abscissa:
+                if destination.abscissa <= origin.abscissa:
                     return origin.abscissa - destination.abscissa
                 else:
                     logger_config.print_and_log_error(f"Tried to reach {destination} from {origin} in wrong direction {origin_segment_direction}")
@@ -396,7 +405,7 @@ class Line:
                         )
 
                 if distance_to_downstream_normal is None and distance_to_downstream_reverse is None:
-                    logger_config.print_and_log_info(f"End of path reached at {origin} {origin_segment_direction}. Remaining distance {maximum_distance_in_cm}")
+                    logger_config.print_and_log_info(f"End of path reached at {origin} {origin_segment_direction}. Remaining distance {maximum_distance_in_cm}", do_not_print=True)
                     return None
                 return min(i for i in [distance_to_downstream_normal, distance_to_downstream_reverse] if i is not None) + distance_to_end_of_origin_segment
 
@@ -440,7 +449,7 @@ class Line:
                         )
 
                 if distance_to_upstream_normal is None and distance_to_upstream_reverse is None:
-                    logger_config.print_and_log_info(f"End of path reached at {origin} {origin_segment_direction}. Remaining distance {maximum_distance_in_cm}")
+                    logger_config.print_and_log_info(f"End of path reached at {origin} {origin_segment_direction}. Remaining distance {maximum_distance_in_cm}", do_not_print=True)
                     return None
                 return min(i for i in [distance_to_upstream_normal, distance_to_upstream_reverse] if i is not None) + distance_to_end_of_origin_segment
 
@@ -600,6 +609,12 @@ class TrackingCircuit(TopologyElement):
     virtual: bool
     tracking_blocks: List["TrackingBlock"] = field(default_factory=list)
 
+    def __str__(self) -> str:
+        return self.label
+
+    def __repr__(self) -> str:
+        return str(self)
+
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def load_from_csv(cls, csv_file_path: str | Path) -> List["TrackingCircuit"]:
@@ -684,6 +699,12 @@ class TrackingBlock(TopologyElement):
 
     def __post_init__(self) -> None:
         self.tracking_blocks_in_segment: List[TrackingBlockOnSegment] = []
+
+    def __str__(self) -> str:
+        return self.label
+
+    def __repr__(self) -> str:
+        return str(self)
 
     @classmethod
     def load_from_csv_raw(
