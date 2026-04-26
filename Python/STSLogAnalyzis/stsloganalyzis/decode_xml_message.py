@@ -170,7 +170,7 @@ class XmlMessageDecoder:
 
     _parsed_xml_files_by_path: ClassVar[Dict[str, ET.Element]] = {}
 
-    def __init__(self, xml_directory_path: str, signed_or_unsigned_type_for_integer_fields_manager: Optional[SignedOrUnsignedTypeForIntegerFieldsManagerBase]) -> None:
+    def __init__(self, xml_directory_path: str, signed_or_unsigned_type_for_integer_fields_manager: Optional[SignedOrUnsignedTypeForIntegerFieldsManagerBase] = None) -> None:
         if not signed_or_unsigned_type_for_integer_fields_manager:
             signed_or_unsigned_type_for_integer_fields_manager = AlwaysUnsignedTypeForIntegerFieldsManager()
         self.signed_or_unsigned_type_for_integer_fields_manager = signed_or_unsigned_type_for_integer_fields_manager

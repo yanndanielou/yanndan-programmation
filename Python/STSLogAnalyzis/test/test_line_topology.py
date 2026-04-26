@@ -98,6 +98,34 @@ class TestNextData:
                         is not None
                     )
 
+        class TestNeighbors:
+            def test_increasing(self, next_line_fixture: line_topology.Line) -> None:
+                line = next_line_fixture
+                origin_seg = line.get_segment_from_segment_id_number_or_segment("SEG_010613")
+                dest_seg = line.get_segment_from_segment_id_number_or_segment("SEG_010601")
+                assert (
+                    line.get_distance_in_cm_between_to_locations(
+                        line_topology.ExactLocation(segment=origin_seg, abscissa=0),
+                        line_topology.ExactLocation(segment=dest_seg, abscissa=0),
+                        line_topology.SegmentDirection.INCREASING_OFFSET,
+                    )
+                    is not None
+                )
+
+        class TestComplexPaths:
+            def test_increasing(self, next_line_fixture: line_topology.Line) -> None:
+                line = next_line_fixture
+                origin_seg = line.get_segment_from_segment_id_number_or_segment("SEG_011003")
+                dest_seg = line.get_segment_from_segment_id_number_or_segment("SEG_010713")
+                assert (
+                    line.get_distance_in_cm_between_to_locations(
+                        line_topology.ExactLocation(segment=origin_seg, abscissa=0),
+                        line_topology.ExactLocation(segment=dest_seg, abscissa=0),
+                        line_topology.SegmentDirection.INCREASING_OFFSET,
+                    )
+                    is not None
+                )
+
         def test_segments_distances(self, next_line_fixture: line_topology.Line) -> None:
             line = next_line_fixture
             seg1 = line.get_segment_from_segment_id_number_or_segment("SEG_010812")
