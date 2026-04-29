@@ -37,11 +37,17 @@ class SegmentDirection(StrEnum):
 class TopologyElement:
     identifier: str
 
+    def __post_init__(self) -> None:
+        self.line: Line = cast(Line, None)
+
     def __hash__(self) -> int:
         return hash(self.identifier)
 
     def __eq__(self, other: object) -> bool:
         return self.identifier == cast("TopologyElement", other).identifier
+
+    def set_line(self, line: Line) -> None:
+        self.line = line
 
 
 @dataclass
@@ -270,6 +276,30 @@ class ExactLocation:
     def __repr__(self) -> str:
         return str(self)
 
+    def get_tracking_block_id_none_if_no(self) -> Optional[str]:
+        tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa=self.abscissa)
+        if tracking_block:
+            return tracking_block.identifier
+        return None
+
+    def get_tracking_block_id_string_if_no(self) -> str:
+        tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa=self.abscissa)
+        if tracking_block:
+            return tracking_block.identifier
+        return f"No TB defined at {self.segment.identifier}/{self.abscissa}"
+
+    def get_track_circuit_id_none_if_no(self) -> Optional[str]:
+        tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa=self.abscissa)
+        if tracking_block:
+            return tracking_block.track_circuit_id
+        return None
+
+    def get_track_circuit_id_string_if_no(self) -> str:
+        tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa=self.abscissa)
+        if tracking_block:
+            return tracking_block.identifier
+        return f"No TB thus TC defined at {self.segment.identifier}/{self.abscissa}"
+
 
 @dataclass
 class ExactLocationsPathSegmentPortion:
@@ -315,6 +345,9 @@ class Line:
         self.segment_by_id = {b.identifier: b for b in self.segments}
         self.segment_by_number = {b.num_segment: b for b in self.segments}
 
+        for topology_element in self.segments + self.track_circuits + self.tracking_blocks:
+            topology_element.set_line(self)
+
         self.tracking_block_on_segments: List[TrackingBlockOnSegment] = []
 
         if self.tracking_block_on_segments_csv_full_path is not None:
@@ -336,7 +369,7 @@ class Line:
         )
 
     def get_distance_in_cm_between_to_locations(
-        self, origin: ExactLocation, destination: ExactLocation, origin_segment_direction: SegmentDirection, maximum_distance_in_cm: int = 100000
+        self, origin: ExactLocation, destination: ExactLocation, origin_segment_direction: SegmentDirection, maximum_distance_in_cm: int = 10000
     ) -> Optional[int]:
         # logger_config.print_and_log_info(f"Get distance between {origin} and {destination} direction {origin_segment_direction}, max distance:{maximum_distance_in_cm}")
         if maximum_distance_in_cm <= 0:

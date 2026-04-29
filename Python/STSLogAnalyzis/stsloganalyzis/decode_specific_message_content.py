@@ -5,7 +5,10 @@ from typing import TYPE_CHECKING, Dict, List, Tuple, cast, Optional
 
 from logger import logger_config
 
-from stsloganalyzis import line_topology
+from stsloganalyzis import (
+    line_topology,
+    constants,
+)
 
 if TYPE_CHECKING:
     from stsloganalyzis import decode_message
@@ -16,7 +19,7 @@ class SpecificMessageContentDecoded:
 
     def __init__(self) -> None:
         # self.fields_with_value: Dict[str, bool | int | str | float] = dict()
-        self.fields_with_value: Dict[str, float | int | bool | str | List[int] | List[str] | List[bool]] = dict()
+        self.fields_with_value: Dict[str, constants.FIELD_TYPE] = dict()
 
     def _get_track_circuit_and_tracking_block_info(self, mal_seg_id: int, mal_offset: int, railway_line: line_topology.Line, decoded_message: "decode_message.DecodedMessage") -> Tuple[str, str]:
         mal_is_defined = mal_seg_id > 0

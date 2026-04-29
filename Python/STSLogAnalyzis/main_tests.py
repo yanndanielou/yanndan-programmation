@@ -2,13 +2,10 @@ from logger import logger_config
 
 from stsloganalyzis import (
     archive_analyzis,
-    decode_action_set_content,
     decode_archive,
-    decode_message,
-    decode_xml_message,
-    line_topology,
     next_data,
 )
+from dateutil import parser
 
 OUTPUT_DIRECTORY = "output"
 
@@ -20,8 +17,7 @@ def main() -> None:
 
         archive_library = (
             decode_archive.ArchiveLibrary.Builder()
-            .add_archive_file(file_full_path=r"Input_for_tests\archives\M_PAS_01_ZC_ATS_MAL_several.json")
-            # .add_archive_file(file_full_path=r"Input_for_tests\archives\M_PAS_01_ZC_ATS_MAL_one.json")
+            .add_archive_file(file_full_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29\CFX00921734_FU.json")
             .add_archive_decoder(archive_decoder=archive_decoder)
             .add_sqlarch_archive_lines_filter(
                 decode_archive.SignalTypeFilter(
@@ -77,6 +73,12 @@ def main() -> None:
                     white_or_black_list=decode_archive.WhiteOrBlackListFilterType.BLACKLIST,
                     field_values=["PASSIVE_QUESTION_NUMBER_RECEIVED"],
                     filter_type=decode_archive.SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.CONTAINS,
+                )
+            )
+            .add_sqlarch_archive_lines_filter(
+                decode_archive.DatesFilter.DateBetweenFilter(
+                    date_min=parser.parse("2026-03-28T16:50:00.000"),
+                    date_max=parser.parse("2026-03-28T16:56:00.000"),
                 )
             )
             .build()

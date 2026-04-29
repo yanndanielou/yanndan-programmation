@@ -15,8 +15,8 @@ archive_line_str_message_pae_ats_spe_oper = '{"SQLARCH":{"caller":"","catAla":0,
 
 railway_line, archive_decoder = next_data.get_encoders()
 
-"""
-class TestDecodeOneArchiveFile:
+
+class IgnoredTestDecodeOneArchiveFile:
     def test_process_one_file(self) -> None:
 
         archive_file = decode_archive.ArchiveFile(r"Input\archive_2025_07_22\NEXTFileArchiveServer_365.json")
@@ -27,7 +27,7 @@ class TestDecodeOneArchiveFile:
         pass
 
 
-class TestDecodeOneLineWithoutXml:
+class IgnoredTestDecodeOneLineWithoutXml:
     def test_decode_basic_fields_zc_ats_tracking_status(self) -> None:
         archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_zc_ats_tracking_status)
         assert archive_line.get_date_raw_str() == "2025-07-21T10:54:18.440+02:00"
@@ -42,7 +42,7 @@ class TestDecodeOneLineWithoutXml:
         assert archive_line.get_id() == "M_TRAIN_CC_9_ATS_CC_ACTION_SET"
 
 
-class TestDecodeOneLineWithXml:
+class IgnoredTestDecodeOneLineWithXml:
     def test_decode_basic_fields_lc_ats_sso_versions(self) -> None:
         archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_lc_ats_sso_versions)
         assert archive_line.get_id() == "M_PAL_01_LC_ATS_SSO_VERSIONS"
@@ -119,4 +119,4 @@ class TestDecodeOneLineWithXml:
         assert cast(str, decoded_message.decoded_fields_flat_directory["RestrEnd1Offset"]) == 60103
         assert cast(str, decoded_message.decoded_fields_flat_directory["RestrEnd1Stationning"]) == 454
         assert cast(str, decoded_message.decoded_fields_flat_directory["DownRestrReason"]) == 0
-"""
+ 

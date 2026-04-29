@@ -11,7 +11,14 @@ from common import date_time_formats, file_name_utils, file_utils
 from dateutil import parser
 from logger import logger_config
 
-from stsloganalyzis import decode_action_set_content, decode_message, line_topology, decode_xml_message, constants
+from stsloganalyzis import (
+    decode_action_set_content,
+    decode_message,
+    line_topology,
+    decode_xml_message,
+    constants,
+    helpers,
+)
 
 ArchiveLineFilter = Callable[[str, "ArchiveSource"], bool]
 
@@ -399,7 +406,8 @@ class SqlArchArchiveLine(ArchiveLine):
         # Accessing specific fields
         self.caller = self.sqlarch_json_section.get("caller")
         self.cat_ala = self.sqlarch_json_section.get("catAla")
-        self.eqp = self.sqlarch_json_section.get("eqp")
+        self.eqp = str(self.sqlarch_json_section.get("eqp"))
+        assert isinstance(self.eqp, str)
         self.eqp_id = self.sqlarch_json_section.get("eqpId")
         self.exe_st = self.sqlarch_json_section.get("exeSt")
         self.id_field = str(self.sqlarch_json_section.get("id"))
@@ -472,7 +480,7 @@ class SqlArchArchiveLine(ArchiveLine):
                         {
                             "date": self.get_date_raw_str(),
                             "id": self.id_field,
-                            "field": new_new_st,
+                            "field": constants.STATE_FIELD_NAME,
                             "old_value": previous_new_st,
                             "new_value": new_new_st,
                             "change_value": f"{previous_new_st} -> {new_new_st}",
@@ -487,7 +495,9 @@ class SqlArchArchiveLine(ArchiveLine):
 
             # If decoded message exists, show only decoded message fields that changed
             for field_name in self.decoded_message.decoded_fields_flat_directory.keys():
-                if field_name not in constants.FIELD_FULL_NAMES_TO_EXCLUDE_IN_REPORTS and not any(field_name.startswith(prefix) for prefix in constants.FIELD_NAMES_PREFIXES_TO_EXCLUDE_IN_REPORTS):
+
+                # if field_name not in constants.FIELD_FULL_NAMES_TO_EXCLUDE_IN_REPORTS and not any(field_name.startswith(prefix) for prefix in constants.FIELD_NAMES_PREFIXES_TO_EXCLUDE_IN_REPORTS):
+                if not helpers.is_field_name_to_be_ignored(field_name=field_name):
 
                     new_value = self.decoded_message.get_field_value_human_readable(field_name)
                     previous_value = (

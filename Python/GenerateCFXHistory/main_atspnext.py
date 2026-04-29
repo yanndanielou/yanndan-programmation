@@ -53,7 +53,7 @@ def main() -> None:
                     create_html_file=True,
                     display_output_plots=DISPLAY_OUTPUT,
                     dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
-                    states_whitelist=[State.SUBMITTED],
+                    # states_whitelist=[State.SUBMITTED],
                 ),
             )
 

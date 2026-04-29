@@ -12,6 +12,7 @@ from stsloganalyzis import (
     line_topology,
     decode_specific_message_content,
     decode_next_specific_messages_content,
+    constants,
 )
 
 # CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR = "!!! Decoding Error !!!"
@@ -53,7 +54,7 @@ class DecodedMessage:
     def __init__(self, message_number: int, xml_decoded_message: decode_xml_message.DecodedXmlMessage) -> None:
         self.message_number = message_number
         self.xml_decoded_message = xml_decoded_message
-        self.decoded_fields_flat_directory: Dict[str, float | int | bool | str | List[int] | List[str] | List[bool]] = {}
+        self.decoded_fields_flat_directory: Dict[str, constants.FIELD_TYPE] = {}
         self.hlf_decoded: Optional[datetime.datetime] = None
 
     def get_field_value_human_readable(self, field_name: str) -> float | int | bool | str:
