@@ -50,9 +50,10 @@ class MovementAuthorityLimitForOneZoneController:
     @property
     def field_names_and_values_in_report(self) -> List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]:
         field_names_and_values: List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]] = []
-        field_names_and_values.append((f"MAL for {str(self.train)} type {self.mal_type.name} TB", f"{self.mal_location.get_tracking_block_id_string_if_no()}"))
-        field_names_and_values.append((f"MAL for {str(self.train)} type {self.mal_type.name} TC", f"{self.mal_location.get_track_circuit_id_string_if_no()}"))
-        field_names_and_values.append((f"MAL for {str(self.train)} type {self.mal_type.name} location", f"{self.mal_location}"))
+        field_names_and_values.append((f"MAL for {str(self.train)} TB", f"type {self.mal_type.name} {self.mal_location.get_tracking_block_id_string_if_no()}"))
+        field_names_and_values.append((f"MAL for {str(self.train)} TC", f"type {self.mal_type.name} {self.mal_location.get_track_circuit_id_string_if_no()}"))
+        field_names_and_values.append((f"MAL for {str(self.train)} location", f"type {self.mal_type.name} {self.mal_location}"))
+        field_names_and_values.append((f"MAL for {str(self.train)} Type", f"type {self.mal_type.name}"))
         return field_names_and_values
 
     def __str__(self) -> str:
@@ -76,7 +77,7 @@ class ZoneController:
 
 @dataclass
 class FieldLastValue:
-    line_id: str
+    object_id: str
     timestamp: datetime
     field_name: str
     field_value: constants.FIELD_TYPE
@@ -88,12 +89,12 @@ class FieldLastValue:
         self.previous_different_value: Optional[constants.FIELD_TYPE] = None
         self.previous_different_value_timestamp: Optional[datetime] = None
 
-        if self.line_id == "S_TRAIN_CC_48_SPEED_TRACKING" and self.field_name == "State":
+        if self.object_id == "S_TRAIN_CC_48_SPEED_TRACKING" and self.field_name == "State":
             pause = 1
 
     def update_value(self, new_value: constants.FIELD_TYPE, new_timestamp: datetime) -> bool:
 
-        if self.line_id == "S_TRAIN_CC_48_SPEED_TRACKING" and self.field_name == "State":
+        if self.object_id == "S_TRAIN_CC_48_SPEED_TRACKING" and self.field_name == "State":
             pause = 1
 
         has_changed = self.field_value != new_value
@@ -113,9 +114,9 @@ class FieldLastValue:
         return has_changed
 
 
-class FieldsLibraryForOneLineId:
+class FieldsLibraryForOneObject:
     def __init__(self, line_id: str) -> None:
-        self.line_id = line_id
+        self.object_id = line_id
         self.last_values: List[FieldLastValue] = []
 
     def get_field(self, field_name: str) -> Optional[FieldLastValue]:
@@ -139,7 +140,7 @@ class FieldsLibraryForOneLineId:
             else:
                 return None
         else:
-            new_field = FieldLastValue(line_id=self.line_id, timestamp=timestamp, field_value=field_value, field_name=field_name)
+            new_field = FieldLastValue(object_id=self.object_id, timestamp=timestamp, field_value=field_value, field_name=field_name)
             self.last_values.append(new_field)
             return new_field
 
@@ -208,7 +209,7 @@ class ArchiveAnalyzis:
 
         self.all_sql_arch_lines_with_context: List[SqlArchArchiveLineWithContext] = []
         self.current_latest_line_by_id: Dict[str, SqlArchArchiveLineWithContext] = dict()
-        self.latest_fields_values_by_line_id: Dict[str, FieldsLibraryForOneLineId] = dict()
+        self.latest_fields_values_by_object_id: Dict[str, FieldsLibraryForOneObject] = dict()
 
         self.handle_lines()
 
@@ -236,14 +237,14 @@ class ArchiveAnalyzis:
         return self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=[(field_name, field_value)])
 
     def update_fields_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine, fields_names_and_values: List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]) -> List[FieldLastValue]:
-        line_id = sql_arch_line.id_field
+        object_id = sql_arch_line.id_field
         timestamp = sql_arch_line.date
 
         all_fields_changed: List[FieldLastValue] = []
 
-        if line_id not in self.latest_fields_values_by_line_id:
-            self.latest_fields_values_by_line_id[line_id] = FieldsLibraryForOneLineId(line_id)
-        latest_fields_values = self.latest_fields_values_by_line_id[line_id]
+        if object_id not in self.latest_fields_values_by_object_id:
+            self.latest_fields_values_by_object_id[object_id] = FieldsLibraryForOneObject(object_id)
+        latest_fields_values = self.latest_fields_values_by_object_id[object_id]
 
         for field_name, field_value in fields_names_and_values:
             field_has_changed = latest_fields_values.update_latest_value_for_field(field_name=field_name, field_value=field_value, timestamp=timestamp)
