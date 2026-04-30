@@ -36,6 +36,7 @@ class Train:
 
 @dataclass
 class MovementAuthorityLimitForOneZoneController:
+    label: str
     train: Train
     zone_controller: ZoneController
     mal_location: line_topology.ExactLocation
@@ -50,8 +51,11 @@ class MovementAuthorityLimitForOneZoneController:
     @property
     def field_names_and_values_in_report(self) -> List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]:
         field_names_and_values: List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]] = []
-        field_names_and_values.append((f"MAL for {str(self.train)} TB", f"type {self.mal_type.name} {self.mal_location.get_tracking_block_id_string_if_no()}"))
-        field_names_and_values.append((f"MAL for {str(self.train)} TC", f"type {self.mal_type.name} {self.mal_location.get_track_circuit_id_string_if_no()}"))
+        mal_tc_label = self.mal_location.get_track_circuit_id_string_if_no() if self.mal_location else "None"
+        mal_tb_label = self.mal_location.get_tracking_block_id_string_if_no() if self.mal_location else "None"
+
+        field_names_and_values.append((f"MAL for {str(self.train)} TB", f"type {self.mal_type.name} {mal_tb_label}"))
+        field_names_and_values.append((f"MAL for {str(self.train)} TC", f"type {self.mal_type.name} {mal_tc_label}"))
         field_names_and_values.append((f"MAL for {str(self.train)} location", f"type {self.mal_type.name} {self.mal_location}"))
         field_names_and_values.append((f"MAL for {str(self.train)} Type", f"type {self.mal_type.name}"))
         return field_names_and_values
@@ -223,12 +227,17 @@ class ArchiveAnalyzis:
         assert len(zone_controllers_found) == 1
         return zone_controllers_found[0]
 
-    def get_or_create_train(self, cc_id_with_offset: int) -> Train:
+    def get_or_create_train_by_cc_id_field_name(self, decoded_fields_flat_directory: Dict[str, constants.FIELD_TYPE], cc_id_field_name: str) -> Train:
+        train_cc_id = decoded_fields_flat_directory.get("CCId1")
+        assert isinstance(train_cc_id, int)
+        return self.get_or_create_train_by_cc_id(cc_id_with_offset=train_cc_id)
+
+    def get_or_create_train_by_cc_id(self, cc_id_with_offset: int) -> Train:
         trains_found = [train for train in self.trains if train.cc_id_with_offset == cc_id_with_offset]
 
         if not trains_found:
             self.trains.append(Train(cc_id_with_offset=cc_id_with_offset))
-            return self.get_or_create_train(cc_id_with_offset)
+            return self.get_or_create_train_by_cc_id(cc_id_with_offset)
 
         assert len(trains_found) == 1
         return trains_found[0]
@@ -268,11 +277,10 @@ class ArchiveAnalyzis:
         assert decoded_message is not None
 
         zone_controller = self.get_or_create_zone_controller(sql_arch_line.eqp)
-        train_cc_id = decoded_message.decoded_fields_flat_directory.get("CCId1")
-        assert isinstance(train_cc_id, int)
-        train = self.get_or_create_train(cc_id_with_offset=train_cc_id)
+        train = self.get_or_create_train_by_cc_id_field_name(decoded_fields_flat_directory=decoded_message.decoded_fields_flat_directory, cc_id_field_name="CCId1")
 
         vital_mal = MovementAuthorityLimitForOneZoneController(
+            label="Vital MAL",
             train=train,
             zone_controller=zone_controller,
             mal_location=helpers.decode_one_exact_location(
@@ -280,9 +288,17 @@ class ArchiveAnalyzis:
             ),
             raw_mal_type=cast(int, decoded_message.decoded_fields_flat_directory.get("MALType")),
         )
-        mals = [vital_mal]
+        non_vital_mal = MovementAuthorityLimitForOneZoneController(
+            label="Non vital MAL",
+            train=train,
+            zone_controller=zone_controller,
+            mal_location=helpers.decode_one_exact_location(
+                decoded_fields_flat_directory=decoded_message.decoded_fields_flat_directory, segment_id_field_name="MALSegIdNv", abscissa_field_name="MALOffsetNv", railway_line=self.railway_line
+            ),
+            raw_mal_type=cast(int, decoded_message.decoded_fields_flat_directory.get("MALType")),
+        )
 
-        for mal in mals:
+        for mal in [vital_mal, non_vital_mal]:
             all_fields_changed += self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=mal.field_names_and_values_in_report)
 
         return all_fields_changed
