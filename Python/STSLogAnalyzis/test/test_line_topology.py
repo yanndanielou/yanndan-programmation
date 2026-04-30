@@ -49,7 +49,7 @@ class TestNextData:
             class TestSegmentExtremities0ToLength:
                 def test_increasing(self, next_line_fixture: line_topology.Line) -> None:
                     line = next_line_fixture
-                    seg1 = line.get_segment_from_segment_id_number_or_segment("SEG_010812")
+                    seg1 = line.get_segment("SEG_010812")
                     assert seg1
                     distance_0_to_length = line.get_distance_in_cm_between_to_locations(
                         line_topology.ExactLocation(segment=seg1, abscissa=0),
@@ -62,7 +62,7 @@ class TestNextData:
 
                 def test_decreasing(self, next_line_fixture: line_topology.Line) -> None:
                     line = next_line_fixture
-                    seg1 = line.get_segment_from_segment_id_number_or_segment("SEG_010812")
+                    seg1 = line.get_segment("SEG_010812")
                     assert (
                         line.get_distance_in_cm_between_to_locations(
                             line_topology.ExactLocation(segment=seg1, abscissa=0),
@@ -76,7 +76,7 @@ class TestNextData:
 
                 def test_increasing(self, next_line_fixture: line_topology.Line) -> None:
                     line = next_line_fixture
-                    seg = line.get_segment_from_segment_id_number_or_segment("SEG_010812")
+                    seg = line.get_segment("SEG_010812")
                     assert (
                         line.get_distance_in_cm_between_to_locations(
                             line_topology.ExactLocation(segment=seg, abscissa=seg.length),
@@ -88,7 +88,7 @@ class TestNextData:
 
                 def test_decreasing(self, next_line_fixture: line_topology.Line) -> None:
                     line = next_line_fixture
-                    seg = line.get_segment_from_segment_id_number_or_segment("SEG_010812")
+                    seg = line.get_segment("SEG_010812")
                     assert (
                         line.get_distance_in_cm_between_to_locations(
                             line_topology.ExactLocation(segment=seg, abscissa=seg.length),
@@ -101,8 +101,8 @@ class TestNextData:
         class TestNeighbors:
             def test_increasing(self, next_line_fixture: line_topology.Line) -> None:
                 line = next_line_fixture
-                origin_seg = line.get_segment_from_segment_id_number_or_segment("SEG_010613")
-                dest_seg = line.get_segment_from_segment_id_number_or_segment("SEG_010601")
+                origin_seg = line.get_segment("SEG_010613")
+                dest_seg = line.get_segment("SEG_010601")
                 assert (
                     line.get_distance_in_cm_between_to_locations(
                         line_topology.ExactLocation(segment=origin_seg, abscissa=0),
@@ -116,8 +116,8 @@ class TestNextData:
         class TestComplexPaths:
             def igonre_test_full_line_increasing(self, next_line_fixture: line_topology.Line) -> None:
                 line = next_line_fixture
-                origin_seg = line.get_segment_from_segment_id_number_or_segment("SEG_011021")
-                dest_seg = line.get_segment_from_segment_id_number_or_segment("SEG_011904")
+                origin_seg = line.get_segment("SEG_011021")
+                dest_seg = line.get_segment("SEG_011904")
                 assert (
                     line.get_distance_in_cm_between_to_locations(
                         line_topology.ExactLocation(segment=origin_seg, abscissa=0),
@@ -130,8 +130,8 @@ class TestNextData:
 
             def test_increasing(self, next_line_fixture: line_topology.Line) -> None:
                 line = next_line_fixture
-                origin_seg = line.get_segment_from_segment_id_number_or_segment("SEG_011003")
-                dest_seg = line.get_segment_from_segment_id_number_or_segment("SEG_010713")
+                origin_seg = line.get_segment("SEG_011003")
+                dest_seg = line.get_segment("SEG_010713")
                 assert (
                     line.get_distance_in_cm_between_to_locations(
                         line_topology.ExactLocation(segment=origin_seg, abscissa=0),
@@ -144,8 +144,8 @@ class TestNextData:
 
             def test_decreasing(self, next_line_fixture: line_topology.Line) -> None:
                 line = next_line_fixture
-                dest_seg = line.get_segment_from_segment_id_number_or_segment("SEG_011003")
-                origin_seg = line.get_segment_from_segment_id_number_or_segment("SEG_010713")
+                dest_seg = line.get_segment("SEG_011003")
+                origin_seg = line.get_segment("SEG_010713")
                 assert (
                     line.get_distance_in_cm_between_to_locations(
                         line_topology.ExactLocation(segment=origin_seg, abscissa=0),
@@ -157,7 +157,7 @@ class TestNextData:
 
         def test_segments_distances(self, next_line_fixture: line_topology.Line) -> None:
             line = next_line_fixture
-            seg1 = line.get_segment_from_segment_id_number_or_segment("SEG_010812")
-            seg1 = line.get_segment_from_segment_id_number_or_segment("SEG_010812")
-            seg2 = line.get_segment_from_segment_id_number_or_segment("SEG_010702")
-            seg3 = line.get_segment_from_segment_id_number_or_segment("SEG_010704")
+            seg1 = line.get_segment("SEG_010812")
+            seg1 = line.get_segment("SEG_010812")
+            seg2 = line.get_segment("SEG_010702")
+            seg3 = line.get_segment("SEG_010704")

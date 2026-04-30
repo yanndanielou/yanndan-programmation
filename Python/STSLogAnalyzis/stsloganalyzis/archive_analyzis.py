@@ -1,23 +1,28 @@
 from __future__ import annotations
+
 from collections import OrderedDict
-
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
-import humanize
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple, cast
 
+from enum import IntEnum
+
+import copy
+
+import humanize
 from common import (
-    reports_utils,
     date_time_formats,
+    reports_utils,
 )
 from logger import logger_config
-from datetime import datetime
 
 from stsloganalyzis import (
-    decode_archive,
-    line_topology,
-    decode_product_topology_dependant_messages_content,
     constants,
+    decode_archive,
+    decode_product_topology_dependant_messages_content,
     helpers,
+    line_topology,
+    decode_message,
 )
 
 
@@ -29,13 +34,39 @@ class Train:
         self.last_front_nv_location: Optional[line_topology.ExactLocation] = None
 
 
-class MovementAutorityLimitForOneZoneController:
+@dataclass
+class MovementAuthorityLimitForOneZoneController:
     train: Train
+    zone_controller: ZoneController
     mal_location: line_topology.ExactLocation
+    raw_mal_type: int
+
+    def __post_init__(self) -> None:
+        self.mal_type: "MovementAuthorityLimitForOneZoneController.MALType" = MovementAuthorityLimitForOneZoneController.MALType(self.raw_mal_type)
 
     def get_distance_to_train_in_cm(self) -> int:
-        pass
         return 0
+
+    @property
+    def field_names_and_values_in_report(self) -> List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]:
+        field_names_and_values: List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]] = []
+        field_names_and_values.append((f"MAL for {str(self.train)} type {self.mal_type.name} TB", f"{self.mal_location.get_tracking_block_id_string_if_no()}"))
+        field_names_and_values.append((f"MAL for {str(self.train)} type {self.mal_type.name} TC", f"{self.mal_location.get_track_circuit_id_string_if_no()}"))
+        field_names_and_values.append((f"MAL for {str(self.train)} type {self.mal_type.name} location", f"{self.mal_location}"))
+        return field_names_and_values
+
+    def __str__(self) -> str:
+        return f"MAL for {str(self.train)} type {self.mal_type} at {self.mal_location.get_tracking_block_id_string_if_no}"
+
+    class MALType(IntEnum):
+        AUTOMATIC_TRAIN = 0  # 0 = AT (train contrôlé)
+        MT_MANUAL = 1  # 1 = MT (train en manuel)
+        UNEQUIPPED_TRAIN = 2  # 2 = UT (train non équipé ou muet)
+        HOME_SIGNAL = 3  # 3 = HS (Origine de manoeuvre)
+        TRACK_LIMIT = 4  # 4 = Track_Limit (Limite de voie)
+        DEFAULT = 5  # 5 = Default (Défaut)
+        NOT_USED_6 = 6
+        NOT_USED_7 = 7
 
 
 @dataclass
@@ -45,6 +76,7 @@ class ZoneController:
 
 @dataclass
 class FieldLastValue:
+    line_id: str
     timestamp: datetime
     field_name: str
     field_value: constants.FIELD_TYPE
@@ -56,18 +88,27 @@ class FieldLastValue:
         self.previous_different_value: Optional[constants.FIELD_TYPE] = None
         self.previous_different_value_timestamp: Optional[datetime] = None
 
-    def update_value(self, new_value: constants.FIELD_TYPE, timestamp: datetime) -> bool:
+        if self.line_id == "S_TRAIN_CC_48_SPEED_TRACKING" and self.field_name == "State":
+            pause = 1
 
-        has_changed = self.previous_value != new_value
-        self.previous_value = self.field_value
-        self.previous_timestamp = self.timestamp
+    def update_value(self, new_value: constants.FIELD_TYPE, new_timestamp: datetime) -> bool:
+
+        if self.line_id == "S_TRAIN_CC_48_SPEED_TRACKING" and self.field_name == "State":
+            pause = 1
+
+        has_changed = self.field_value != new_value
 
         if has_changed:
             self.previous_different_value = self.field_value
             self.previous_different_value_timestamp = self.timestamp
 
+        self.previous_value = self.field_value
+        self.previous_timestamp = self.timestamp
+
         self.field_value = new_value
-        self.timestamp = timestamp
+        self.timestamp = new_timestamp
+
+        assert self.previous_different_value != self.field_value
 
         return has_changed
 
@@ -98,7 +139,7 @@ class FieldsLibraryForOneLineId:
             else:
                 return None
         else:
-            new_field = FieldLastValue(timestamp=timestamp, field_value=field_value, field_name=field_name)
+            new_field = FieldLastValue(line_id=self.line_id, timestamp=timestamp, field_value=field_value, field_name=field_name)
             self.last_values.append(new_field)
             return new_field
 
@@ -111,22 +152,17 @@ class SqlArchArchiveLineWithContext:
     all_fields_changed: List[FieldLastValue]
 
     def __post_init__(self) -> None:
-        # self.previous_fields_values: FieldsLibraryForOneLineId = FieldsLibraryForOneLineId()
-        pass
+        self.all_fields_changed = copy.deepcopy(self.all_fields_changed)
 
-    def decode_zc_mal_message(
-        self,
-    ) -> None:
-
-        decoded_message = self.sql_arch_line.decoded_message
+    @property
+    def decoded_message(self) -> decode_message.DecodedMessage:
+        decoded_message = cast(decode_message.DecodedMessage, self.sql_arch_line.decoded_message)
         assert decoded_message is not None
+        return decoded_message
 
-        zone_controller = self.archive_analyzis.get_or_create_zone_controller(self.sql_arch_line.eqp)
-        train_cc_id = decoded_message.decoded_fields_flat_directory.get("CCId1")
-        assert isinstance(train_cc_id, int)
-        train = self.archive_analyzis.get_or_create_train(cc_id_with_offset=train_cc_id)
-
-        pass
+    @property
+    def decoded_fields_flat_directory(self) -> Dict[str, constants.FIELD_TYPE]:
+        return self.decoded_message.decoded_fields_flat_directory
 
     def get_all_changes_since_previous(self) -> List[OrderedDict[str, Any]]:
         to_ret: List[OrderedDict[str, Any]] = []
@@ -196,8 +232,10 @@ class ArchiveAnalyzis:
         assert len(trains_found) == 1
         return trains_found[0]
 
-    def update_latest_fields_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine) -> List[FieldLastValue]:
-        """returns all fields changed"""
+    def update_field_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine, field_name: str, field_value: constants.HUMAN_READABLE_FIELD_TYPE) -> List[FieldLastValue]:
+        return self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=[(field_name, field_value)])
+
+    def update_fields_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine, fields_names_and_values: List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]) -> List[FieldLastValue]:
         line_id = sql_arch_line.id_field
         timestamp = sql_arch_line.date
 
@@ -207,33 +245,60 @@ class ArchiveAnalyzis:
             self.latest_fields_values_by_line_id[line_id] = FieldsLibraryForOneLineId(line_id)
         latest_fields_values = self.latest_fields_values_by_line_id[line_id]
 
-        if sql_arch_line.decoded_message:
-            for field_name, field_value in sql_arch_line.sqlarch_fields_dict_raw.items():
-                field_has_changed = latest_fields_values.update_latest_value_for_field(field_name=field_name, field_value=field_value, timestamp=timestamp)
-                if field_has_changed is not None:
-                    all_fields_changed.append(field_has_changed)
-        else:
-            field_has_changed = latest_fields_values.update_latest_value_for_field(field_name=constants.STATE_FIELD_NAME, field_value=sql_arch_line.get_new_state_str(), timestamp=timestamp)
+        for field_name, field_value in fields_names_and_values:
+            field_has_changed = latest_fields_values.update_latest_value_for_field(field_name=field_name, field_value=field_value, timestamp=timestamp)
             if field_has_changed is not None:
                 all_fields_changed.append(field_has_changed)
+
+        return all_fields_changed
+
+    def update_latest_raw_fields_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine) -> List[FieldLastValue]:
+        """returns all fields changed"""
+        if sql_arch_line.decoded_message:
+            fields_names_and_values = [pair for pair in sql_arch_line.sqlarch_fields_dict_raw.items()]
+            return self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=fields_names_and_values)
+        else:
+            return self.update_field_for_line(sql_arch_line=sql_arch_line, field_name=constants.STATE_FIELD_NAME, field_value=sql_arch_line.get_new_state_str())
+
+    def decode_zc_mal_message(self, sql_arch_line: decode_archive.SqlArchArchiveLine) -> List[FieldLastValue]:
+        all_fields_changed: List[FieldLastValue] = []
+
+        decoded_message = sql_arch_line.decoded_message
+        assert decoded_message is not None
+
+        zone_controller = self.get_or_create_zone_controller(sql_arch_line.eqp)
+        train_cc_id = decoded_message.decoded_fields_flat_directory.get("CCId1")
+        assert isinstance(train_cc_id, int)
+        train = self.get_or_create_train(cc_id_with_offset=train_cc_id)
+
+        vital_mal = MovementAuthorityLimitForOneZoneController(
+            train=train,
+            zone_controller=zone_controller,
+            mal_location=helpers.decode_one_exact_location(
+                decoded_fields_flat_directory=decoded_message.decoded_fields_flat_directory, segment_id_field_name="MALSegIdV", abscissa_field_name="MALOffsetV", railway_line=self.railway_line
+            ),
+            raw_mal_type=cast(int, decoded_message.decoded_fields_flat_directory.get("MALType")),
+        )
+        mals = [vital_mal]
+
+        for mal in mals:
+            all_fields_changed += self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=mal.field_names_and_values_in_report)
 
         return all_fields_changed
 
     def handle_lines(self) -> None:
         for sql_arch_line in self.archive_library.all_sqlarch_lines:
             previous_line_for_this_id = self.current_latest_line_by_id.get(sql_arch_line.id_field)
-            all_fields_changed = self.update_latest_fields_for_line(sql_arch_line=sql_arch_line)
+            all_fields_changed = self.update_latest_raw_fields_for_line(sql_arch_line=sql_arch_line)
+
+            if sql_arch_line.decoded_message and sql_arch_line.decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID:
+                all_fields_changed += self.decode_zc_mal_message(sql_arch_line=sql_arch_line)
+
             line_with_context = SqlArchArchiveLineWithContext(
                 sql_arch_line=sql_arch_line, previous_line_for_this_id=previous_line_for_this_id, archive_analyzis=self, all_fields_changed=all_fields_changed
             )
             self.all_sql_arch_lines_with_context.append(line_with_context)
             self.current_latest_line_by_id[sql_arch_line.id_field] = line_with_context
-
-            if (
-                line_with_context.sql_arch_line.decoded_message
-                and line_with_context.sql_arch_line.decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID
-            ):
-                line_with_context.decode_zc_mal_message()
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def create_reports_all_sqlarch_changes_since_previous(self, output_directory_path: str, file_base_name: Optional[str] = None) -> int:

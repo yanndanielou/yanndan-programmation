@@ -99,11 +99,11 @@ class SqlArchFilter(ABC):
         return sqlarch_section
 
     @abstractmethod
-    def _do_passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
+    def do_passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
         pass
 
     def passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
-        ret = self._do_passes(raw_sql_arch_line=raw_sql_arch_line, parent=parent)
+        ret = self.do_passes(raw_sql_arch_line=raw_sql_arch_line, parent=parent)
         if not ret:
             self.rejected_count += 1
         return ret
@@ -131,7 +131,7 @@ class SqlArchLineStringFieldValueBasedFilter(SqlArchFilter):
         self.filter_type = filter_type
         self.filter_field_values = field_values
 
-    def _do_passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
+    def do_passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
         try:
             sqlarch_section = self.get_sqlarch_section(raw_sql_arch_line)
             field_raw_value = str(sqlarch_section.get(self.field_name, ""))
@@ -194,7 +194,7 @@ class DatesFilter(SqlArchFilter):
             self.date_min = date_min
             self.date_max = date_max
 
-        def _do_passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
+        def do_passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
             line_date = self.get_line_date(raw_sql_arch_line)
             return line_date > self.date_min and line_date < self.date_max
 
@@ -317,7 +317,7 @@ class ArchiveLibrary:
 
         # Check ID filters
         for f in self.sqlarch_archive_lines_filters:
-            if not f._do_passes(raw_sql_arch_line, parent):
+            if not f.do_passes(raw_sql_arch_line, parent):
                 return False
 
         return True
@@ -384,7 +384,7 @@ class ArchiveLine:
         self.tags: List[str] = self.full_archive_line_as_json["tags"]
         self.tag: str = self.tags[0]
 
-        self.all_fields_dict: Dict[str, str | int | bool] = self.full_archive_line_as_json.get(self.tag, {})
+        self.all_fields_dict: Dict[str, constants.HUMAN_READABLE_FIELD_TYPE] = self.full_archive_line_as_json.get(self.tag, {})
         self.all_fields_dict["date_raw"] = self.date_raw
 
     def get_date_raw_str(self) -> str:
@@ -422,7 +422,7 @@ class SqlArchArchiveLine(ArchiveLine):
         self.label = self.sqlarch_json_section.get("label")
         self.loc = self.sqlarch_json_section.get("loc")
 
-        self.sqlarch_fields_dict_raw: dict[str, str | int | bool] = dict()
+        self.sqlarch_fields_dict_raw: dict[str, constants.HUMAN_READABLE_FIELD_TYPE] = dict()
         self.invariant_message: Optional[decode_message.InvariantMessage] = None
         self.decoded_message: Optional[decode_message.DecodedMessage] = None
 

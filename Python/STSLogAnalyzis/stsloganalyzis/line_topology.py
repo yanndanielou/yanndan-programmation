@@ -488,7 +488,7 @@ class Line:
 
         return None
 
-    def get_segment_from_segment_id_number_or_segment(self, segment: Segment | str | int) -> Segment:
+    def get_segment(self, segment: Segment | str | int) -> Segment:
         segment_obj: Segment
         if isinstance(segment, Segment):
             segment_obj = segment
@@ -501,7 +501,7 @@ class Line:
         return segment_obj
 
     def get_pk_by_segment_and_abscissa(self, segment: Segment | str | int, abscissa: int) -> float:
-        segment = self.get_segment_from_segment_id_number_or_segment(segment)
+        segment = self.get_segment(segment)
         assert segment
         assert abscissa <= segment.length
         ret = segment.pk_abs_start + abscissa
@@ -513,7 +513,7 @@ class Line:
         abscissa: int,
     ) -> Optional[TrackingBlock]:
 
-        segment = self.get_segment_from_segment_id_number_or_segment(segment)
+        segment = self.get_segment(segment)
         matches = [relation for relation in self.tracking_block_on_segments if relation.segment == segment and relation.abs_begin <= abscissa < relation.abs_end]
 
         if not matches:
@@ -734,7 +734,7 @@ class TrackingBlock(TopologyElement):
         self.tracking_blocks_in_segment: List[TrackingBlockOnSegment] = []
 
     def __str__(self) -> str:
-        return self.label
+        return self.label if self.label else ""
 
     def __repr__(self) -> str:
         return str(self)
