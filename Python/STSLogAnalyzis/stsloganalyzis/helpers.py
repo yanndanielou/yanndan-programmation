@@ -19,12 +19,14 @@ def decode_one_exact_location(
 ) -> Optional[line_topology.ExactLocation]:
 
     raw_segment_number = decoded_fields_flat_directory.get(segment_id_field_name)
+    assert raw_segment_number is not None, f"Could not find segment {abscissa_field_name}"
     segment_number = cast(int, raw_segment_number)
     if segment_number == 0:
         return None
     segment = railway_line.get_segment(segment_number)
     raw_abscissa = decoded_fields_flat_directory.get(abscissa_field_name)
     abscissa = cast(int, raw_abscissa)
+    assert abscissa is not None, f"Could not find abscissa {abscissa_field_name}"
     location = line_topology.ExactLocation(segment=segment, abscissa=abscissa)
 
     return location

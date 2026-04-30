@@ -26,12 +26,83 @@ from stsloganalyzis import (
 )
 
 
+class TrainLocation:
+
+    def __init__(
+        self,
+        train: Train,
+        label: Optional[str] = None,
+        segment_number_and_offset_field_prefix: Optional[str] = None,
+        segment_number_field_name: Optional[str] = None,
+        abscissa_field_name: Optional[str] = None,
+    ) -> None:
+        self.train = train
+
+        if label is not None:
+            self.label = label
+
+        self.exact_location: Optional[line_topology.ExactLocation] = None
+        if segment_number_and_offset_field_prefix is not None:
+            self.segment_number_field_name = segment_number_and_offset_field_prefix + "SegId"
+            self.abscissa_field_name = segment_number_and_offset_field_prefix + "Offset"
+
+            if label is None:
+                self.label = segment_number_and_offset_field_prefix
+        else:
+            assert segment_number_field_name is not None
+            assert abscissa_field_name is not None
+            self.segment_number_field_name = segment_number_field_name
+            self.abscissa_field_name = abscissa_field_name
+
+            if label is None:
+                self.label = segment_number_field_name
+
+
 @dataclass
 class Train:
     cc_id_with_offset: int
 
     def __post_init__(self) -> None:
-        self.last_front_nv_location: Optional[line_topology.ExactLocation] = None
+        self.all_locations: List[TrainLocation] = []
+
+        self.all_locations = [
+            TrainLocation(train=self, segment_number_and_offset_field_prefix=location_label) for location_label in ["ExtFront", "IntFront", "ExtRear", "IntRear", "NvFront", "NvRear"]
+        ] + [
+            TrainLocation(train=self, segment_number_field_name=segment_number_and_offset_field_names[0], abscissa_field_name=segment_number_and_offset_field_names[1])
+            for segment_number_and_offset_field_names in [("CCId1RefPtSegId", "CCId1NvRefPtOffset"), ("CCId3RefPtSegId", "CCId3NvRefPtOffset")]
+        ]
+
+    def update_location_from_segment_number_field_name_and_abscissa_field_name(self, segment_number_field_name: str, abscissa_field_name: str, location: Optional[line_topology.ExactLocation]) -> None:
+        pass
+
+    def update_location_from_segment_and_abscissa_field_names_prefix(self, segment_and_abscissa_field_names_prefix: str, location: Optional[line_topology.ExactLocation]) -> None:
+        pass
+        pass
+
+    def update_location_from_decoded_fields_flat_directory(self, decoded_fields_flat_directory: Dict[str, constants.FIELD_TYPE], railway_line: line_topology.Line) -> None:
+
+        for location in self.all_locations:
+            exact_location = helpers.decode_one_exact_location(
+                decoded_fields_flat_directory=decoded_fields_flat_directory,
+                segment_id_field_name=location.segment_number_field_name,
+                abscissa_field_name=location.abscissa_field_name,
+                railway_line=railway_line,
+            )
+            location.exact_location = exact_location
+
+    @property
+    def field_names_and_values_in_report(self) -> List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]:
+        field_names_and_values: List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]] = []
+
+        for location in self.all_locations:
+
+            mal_tc_label = location.exact_location.get_track_circuit_id_string_if_no() if location.exact_location else "None"
+            mal_tb_label = location.exact_location.get_tracking_block_id_string_if_no() if location.exact_location else "None"
+            field_names_and_values.append((f"Location {location.label} for {str(self)} TB", f"{mal_tb_label}"))
+            field_names_and_values.append((f"Location {location.label} for {str(self)} TC", f"{mal_tc_label}"))
+            field_names_and_values.append((f"Location {location.label} for {str(self)}", f"{location.exact_location}"))
+
+        return field_names_and_values
 
 
 @dataclass
@@ -39,7 +110,7 @@ class MovementAuthorityLimitForOneZoneController:
     label: str
     train: Train
     zone_controller: ZoneController
-    mal_location: line_topology.ExactLocation
+    mal_location: Optional[line_topology.ExactLocation]
     raw_mal_type: int
 
     def __post_init__(self) -> None:
@@ -59,9 +130,6 @@ class MovementAuthorityLimitForOneZoneController:
         field_names_and_values.append((f"MAL for {str(self.train)} location", f"type {self.mal_type.name} {self.mal_location}"))
         field_names_and_values.append((f"MAL for {str(self.train)} Type", f"type {self.mal_type.name}"))
         return field_names_and_values
-
-    def __str__(self) -> str:
-        return f"MAL for {str(self.train)} type {self.mal_type} at {self.mal_location.get_tracking_block_id_string_if_no}"
 
     class MALType(IntEnum):
         AUTOMATIC_TRAIN = 0  # 0 = AT (train contrôlé)
@@ -270,7 +338,10 @@ class ArchiveAnalyzis:
         else:
             return self.update_field_for_line(sql_arch_line=sql_arch_line, field_name=constants.STATE_FIELD_NAME, field_value=sql_arch_line.get_new_state_str())
 
-    def decode_zc_mal_message(self, sql_arch_line: decode_archive.SqlArchArchiveLine) -> List[FieldLastValue]:
+    def decode_zc_mal_message(
+        self,
+        sql_arch_line: decode_archive.SqlArchArchiveLine,
+    ) -> List[FieldLastValue]:
         all_fields_changed: List[FieldLastValue] = []
 
         decoded_message = sql_arch_line.decoded_message
@@ -303,6 +374,17 @@ class ArchiveAnalyzis:
 
         return all_fields_changed
 
+    def decode_cc_ats_tracking_message(
+        self,
+        sql_arch_line: decode_archive.SqlArchArchiveLine,
+    ) -> List[FieldLastValue]:
+        assert sql_arch_line.decoded_message is not None
+        train = self.get_or_create_train_by_cc_id_field_name(decoded_fields_flat_directory=sql_arch_line.decoded_message.decoded_fields_flat_directory, cc_id_field_name="CCId1")
+        train.update_location_from_decoded_fields_flat_directory(decoded_fields_flat_directory=sql_arch_line.decoded_message.decoded_fields_flat_directory, railway_line=self.railway_line)
+
+        all_fields_changed = self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=train.field_names_and_values_in_report)
+        return all_fields_changed
+
     def handle_lines(self) -> None:
         for sql_arch_line in self.archive_library.all_sqlarch_lines:
             previous_line_for_this_id = self.current_latest_line_by_id.get(sql_arch_line.id_field)
@@ -310,6 +392,8 @@ class ArchiveAnalyzis:
 
             if sql_arch_line.decoded_message and sql_arch_line.decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID:
                 all_fields_changed += self.decode_zc_mal_message(sql_arch_line=sql_arch_line)
+            if sql_arch_line.decoded_message and sql_arch_line.decoded_message.message_number == decode_product_topology_dependant_messages_content.CC_ATS_TRACKING_MESSAGE_ID:
+                all_fields_changed += self.decode_cc_ats_tracking_message(sql_arch_line=sql_arch_line)
 
             line_with_context = SqlArchArchiveLineWithContext(
                 sql_arch_line=sql_arch_line, previous_line_for_this_id=previous_line_for_this_id, archive_analyzis=self, all_fields_changed=all_fields_changed

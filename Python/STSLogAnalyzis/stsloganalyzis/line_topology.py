@@ -261,6 +261,8 @@ class ExactLocation:
     abscissa: int
 
     def __post_init__(self) -> None:
+        assert self.segment is not None
+        assert self.abscissa is not None
         assert self.abscissa <= self.segment.length
 
     def get_distance_to_end_of_segment_in_cm(self, direction: SegmentDirection) -> int:
