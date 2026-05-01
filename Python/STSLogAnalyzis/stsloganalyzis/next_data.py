@@ -42,14 +42,14 @@ def get_encoders() -> Tuple[line_topology.Line, decode_archive.ArchiveDecoder]:
             field_name: str,
         ) -> decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding:
             if message_number == 101 and field_name in ["RestrEnd1Stationning", "RestrEnd2Stationning"]:
-                return decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.SIGNED
+                return decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.SIGNED_ONLY
             if message_number == 94 and field_name in ["Stopping_Accuracy"]:
                 return decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.SIGNED_AND_UNSIGNED
 
             return decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase.TypeDecoding.UNSIGNED_ONLY
 
     message_manager = decode_message.InvariantMessagesManager(messages_list_csv_file_full_path=messages_list_csv_file_full_path)
-    action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(csv_file_file_path=r"D:\NEXT\Data\Csv\ACTION_SET.csv")
+    action_set_content_decoder = decode_action_set_content.ActionSetContentDecoder(csv_file_file_path=r"D:\NEXTTS\Data\Csv\NEXT_tsActionSet.csv")
     xml_message_decoder = decode_xml_message.XmlMessageDecoder(
         xml_directory_path=xml_directory_path, signed_or_unsigned_type_for_integer_fields_manager=NextSignedOrUnsignedTypeForIntegerFieldsManager()
     )
