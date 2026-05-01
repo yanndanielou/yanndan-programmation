@@ -128,7 +128,7 @@ class MovementAuthorityLimitForOneZoneController:
         field_names_and_values.append((f"MAL for {str(self.train)} TB", f"type {self.mal_type.name} {mal_tb_label}"))
         field_names_and_values.append((f"MAL for {str(self.train)} TC", f"type {self.mal_type.name} {mal_tc_label}"))
         field_names_and_values.append((f"MAL for {str(self.train)} location", f"type {self.mal_type.name} {self.mal_location}"))
-        field_names_and_values.append((f"MAL for {str(self.train)} Type", f"type {self.mal_type.name}"))
+        field_names_and_values.append((f"MAL for {str(self.train)} Type", f"{self.mal_type.name}"))
         return field_names_and_values
 
     class MALType(IntEnum):
