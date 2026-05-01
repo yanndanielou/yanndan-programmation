@@ -16,65 +16,8 @@ def main() -> None:
         railway_line, archive_decoder = next_data.get_encoders()
 
         archive_library = (
-            decode_archive.ArchiveLibrary.Builder()
+            next_data.get_classic_archive_library_base_builder(archive_decoder=archive_decoder)
             .add_archive_file(file_full_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29\CFX00921734_FU.json")
-            .add_archive_decoder(archive_decoder=archive_decoder)
-            .add_sqlarch_archive_lines_filter(
-                decode_archive.SignalTypeFilter(
-                    white_or_black_list=decode_archive.WhiteOrBlackListFilterType.BLACKLIST,
-                    field_values=["TRAIN", "ARS_AD", "TB"],
-                    filter_type=decode_archive.SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.EQUALS_TO,
-                )
-            )
-            .add_sqlarch_archive_lines_filter(
-                decode_archive.IdFilter(
-                    white_or_black_list=decode_archive.WhiteOrBlackListFilterType.BLACKLIST,
-                    field_values=["NB_ACTIVE_SCRUTATION"],
-                    filter_type=decode_archive.SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.CONTAINS,
-                )
-            )
-            .add_sqlarch_archive_lines_filter(
-                decode_archive.IdFilter(
-                    white_or_black_list=decode_archive.WhiteOrBlackListFilterType.BLACKLIST,
-                    field_values=["NB_RESPONSE_PASSIVE_SCRUTATION"],
-                    filter_type=decode_archive.SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.CONTAINS,
-                )
-            )
-            .add_sqlarch_archive_lines_filter(
-                decode_archive.IdFilter(
-                    white_or_black_list=decode_archive.WhiteOrBlackListFilterType.BLACKLIST,
-                    field_values=["NB_RESPONSE_ACTIVE_SCRUTATION"],
-                    filter_type=decode_archive.SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.CONTAINS,
-                )
-            )
-            .add_sqlarch_archive_lines_filter(
-                decode_archive.IdFilter(
-                    white_or_black_list=decode_archive.WhiteOrBlackListFilterType.BLACKLIST,
-                    field_values=["QUESTION_NUMBER_ISSUED"],
-                    filter_type=decode_archive.SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.CONTAINS,
-                )
-            )
-            .add_sqlarch_archive_lines_filter(
-                decode_archive.IdFilter(
-                    white_or_black_list=decode_archive.WhiteOrBlackListFilterType.BLACKLIST,
-                    field_values=["NB_PASSIVE_SCRUTATION"],
-                    filter_type=decode_archive.SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.CONTAINS,
-                )
-            )
-            .add_sqlarch_archive_lines_filter(
-                decode_archive.IdFilter(
-                    white_or_black_list=decode_archive.WhiteOrBlackListFilterType.BLACKLIST,
-                    field_values=["ACTIVE_QUESTION_NUMBER_RECEIVED"],
-                    filter_type=decode_archive.SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.CONTAINS,
-                )
-            )
-            .add_sqlarch_archive_lines_filter(
-                decode_archive.IdFilter(
-                    white_or_black_list=decode_archive.WhiteOrBlackListFilterType.BLACKLIST,
-                    field_values=["PASSIVE_QUESTION_NUMBER_RECEIVED"],
-                    filter_type=decode_archive.SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.CONTAINS,
-                )
-            )
             .add_sqlarch_archive_lines_filter(
                 decode_archive.DatesFilter.DateBetweenFilter(
                     date_min=parser.parse("2026-03-28T16:50:00.000"),

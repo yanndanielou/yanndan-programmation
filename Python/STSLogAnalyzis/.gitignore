@@ -9,4 +9,5 @@ Dependencies/
 output/
 all_possibilities.json
 test*.json
-Input_for_tests/pcap/*.pcapng
+Input_for_tests/pcap/*.pcapng 
+main_archives_next copy*
