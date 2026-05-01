@@ -333,8 +333,14 @@ class ArchiveAnalyzis:
     def update_latest_raw_fields_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine) -> List[FieldLastValue]:
         """returns all fields changed"""
         if sql_arch_line.decoded_message:
-            fields_names_and_values = [pair for pair in sql_arch_line.sqlarch_fields_dict_raw.items()]
-            return self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=fields_names_and_values)
+            fields_changed: List[FieldLastValue] = []
+            for field_name in sql_arch_line.decoded_message.decoded_fields_flat_directory.keys():
+                field_value = sql_arch_line.decoded_message.get_field_value_human_readable(field_name)
+                fields_changed += self.update_field_for_line(sql_arch_line=sql_arch_line, field_name=field_name, field_value=field_value)
+            return fields_changed
+            # for field_name, field_value in sql_arch_line.decoded_message.decoded_fields_flat_directory.items():
+            # fields_names_and_values = [pair for pair in ]
+            # return self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=fields_names_and_values)
         else:
             return self.update_field_for_line(sql_arch_line=sql_arch_line, field_name=constants.STATE_FIELD_NAME, field_value=sql_arch_line.get_new_state_str())
 
@@ -350,26 +356,27 @@ class ArchiveAnalyzis:
         zone_controller = self.get_or_create_zone_controller(sql_arch_line.eqp)
         train = self.get_or_create_train_by_cc_id_field_name(decoded_fields_flat_directory=decoded_message.decoded_fields_flat_directory, cc_id_field_name="CCId1")
 
-        vital_mal = MovementAuthorityLimitForOneZoneController(
-            label="Vital MAL",
-            train=train,
-            zone_controller=zone_controller,
-            mal_location=helpers.decode_one_exact_location(
-                decoded_fields_flat_directory=decoded_message.decoded_fields_flat_directory, segment_id_field_name="MALSegIdV", abscissa_field_name="MALOffsetV", railway_line=self.railway_line
-            ),
-            raw_mal_type=cast(int, decoded_message.decoded_fields_flat_directory.get("MALType")),
-        )
-        non_vital_mal = MovementAuthorityLimitForOneZoneController(
-            label="Non vital MAL",
-            train=train,
-            zone_controller=zone_controller,
-            mal_location=helpers.decode_one_exact_location(
-                decoded_fields_flat_directory=decoded_message.decoded_fields_flat_directory, segment_id_field_name="MALSegIdNv", abscissa_field_name="MALOffsetNv", railway_line=self.railway_line
-            ),
-            raw_mal_type=cast(int, decoded_message.decoded_fields_flat_directory.get("MALType")),
-        )
+        all_mals = [
+            MovementAuthorityLimitForOneZoneController(
+                label=mal_label,
+                train=train,
+                zone_controller=zone_controller,
+                mal_location=helpers.decode_one_exact_location(
+                    decoded_fields_flat_directory=decoded_message.decoded_fields_flat_directory,
+                    segment_id_field_name=segment_id_field_name,
+                    abscissa_field_name=abscissa_field_name,
+                    railway_line=self.railway_line,
+                ),
+                raw_mal_type=cast(int, decoded_message.decoded_fields_flat_directory.get("MALType")),
+            )
+            for mal_label, segment_id_field_name, abscissa_field_name in [
+                ("Vital MAL", "MALSegIdV", "MALOffsetV"),
+                ("Non Vital MAL", "MALSegIdNv", "MALOffsetNv"),
+                ("MAL ExtRear", "ExtRearSegId", "ExtRearOffset"),
+            ]
+        ]
 
-        for mal in [vital_mal, non_vital_mal]:
+        for mal in all_mals:
             all_fields_changed += self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=mal.field_names_and_values_in_report)
 
         return all_fields_changed
