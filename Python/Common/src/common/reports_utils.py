@@ -11,7 +11,7 @@ from openpyxl import Workbook
 
 from common import file_name_utils, file_utils, json_encoders
 
-EXCEL_LIMIT_NUMBER_OF_LINES = 1000000
+EXCEL_LIMIT_NUMBER_OF_LINES = 1048576
 
 
 def _normalize_table_value(value: Any) -> Any:
@@ -75,7 +75,7 @@ def save_rows_to_output_files(rows_as_list_dict: List[Dict[str, Any]], file_base
         success = False
         while not success:
             try:
-                if len(rows_as_list_dict) < EXCEL_LIMIT_NUMBER_OF_LINES:
+                if len(rows_as_list_dict) < EXCEL_LIMIT_NUMBER_OF_LINES - 1:
                     with logger_config.stopwatch_with_label(f"Create {file_path_without_suffix}.xlsx", inform_beginning=True, monitor_ram_usage=True):
                         pandas.DataFrame(rows_as_list_dict).to_excel(f"{file_path_without_suffix}.xlsx", index=False)
                 with logger_config.stopwatch_with_label(f"Create {file_path_without_suffix}.csv", inform_beginning=True, monitor_ram_usage=True):
