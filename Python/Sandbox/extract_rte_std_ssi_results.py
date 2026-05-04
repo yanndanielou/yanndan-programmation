@@ -82,6 +82,10 @@ def main() -> None:
                         commentaire = clean(r.cells[-1].text)
                         cl = commentaire.lower()
 
+                        ok_present = bool(clean(raw_OK_column.text))
+                        okr_present = bool(clean(raw_OKR_column.text))
+                        ko_present = bool(clean(raw_KO_column.text))
+
                         if "non testé" in cl:
                             statut = "Non testé"
                         elif cl.startswith("ko"):
@@ -102,6 +106,9 @@ def main() -> None:
                                 "Résultat observé": observes.get(step, ""),
                                 "Commentaire": commentaire,
                                 "Statut": statut,
+                                "OK": ok_present,
+                                "OKR": okr_present,
+                                "KO": ko_present,
                                 "CFX à créer": "Oui" if "cfx" in cl else "Non",
                                 "Non testé": "Oui" if "non testé" in cl else "Non",
                                 "Exigences SSI": current_exigences,
