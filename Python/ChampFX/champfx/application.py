@@ -12,7 +12,6 @@ from enum import Enum, auto
 from typing import List, Optional, Set
 
 # Current program
-import connexion_param
 from common import download_utils, file_utils, web_driver_utils
 
 # Other libraries
@@ -94,6 +93,8 @@ def surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, scr
 
 @dataclass
 class ChampFxApplicationBase:
+    champfx_login: str
+    champfx_password: str
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
     errors_output_sub_directory_name = "errors"
     screenshots_output_sub_directory_name = "screenshots"
@@ -136,7 +137,7 @@ class ChampFxApplicationBase:
         )
 
     def create_webdriver_firefox(self) -> None:
-        self.driver = web_driver_utils.create_webdriver_firefox(browser_visibility_type=web_driver_utils.BrowserVisibilityType.NOT_VISIBLE_AKA_HEADLESS)
+        self.driver = web_driver_utils.create_webdriver_firefox(browser_visibility_type=web_driver_utils.BrowserVisibilityType.REGULAR)
 
     def create_webdriver_and_login(self) -> None:
         # Use Chrome by default, switch to Firefox if you want
@@ -151,7 +152,7 @@ class ChampFxApplicationBase:
     def login_champfx(self) -> None:
         logger_config.print_and_log_info("login_champfx")
 
-        login_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX?format=HTML&loginId={connexion_param.champfx_login}&password={connexion_param.champfx_password}"
+        login_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX?format=HTML&loginId={self.champfx_login}&password={self.champfx_password}"
 
         with stopwatch_with_label_and_surround_with_screenshots(
             label=f"Driver get login url {login_url}", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path
@@ -178,7 +179,7 @@ class ChampFxApplicationBase:
             time.sleep(0.5)
 
     def open_request_url(self, request_full_path: int) -> None:
-        request_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/QUERY/{request_full_path}?format=HTML&loginId={connexion_param.champfx_login}&password={connexion_param.champfx_password}&noframes=true"
+        request_url = f"https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/QUERY/{request_full_path}?format=HTML&loginId={self.champfx_login}&password={self.champfx_password}&noframes=true"
 
         with stopwatch_with_label_and_surround_with_screenshots(label=f"Driver get url {request_url}", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             self.driver.get(request_url)
