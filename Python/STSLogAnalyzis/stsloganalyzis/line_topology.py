@@ -299,7 +299,7 @@ class ExactLocation:
     def get_track_circuit_id_string_if_no(self) -> str:
         tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa=self.abscissa)
         if tracking_block:
-            return tracking_block.identifier
+            return tracking_block.track_circuit_id
         return f"No TB thus TC defined at {self.segment.identifier}/{self.abscissa}"
 
 
