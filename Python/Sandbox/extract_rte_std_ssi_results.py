@@ -1,5 +1,6 @@
 from logger import logger_config
 from docx import Document
+from typing import Dict
 import pandas as pd
 import re
 
@@ -11,7 +12,7 @@ def main() -> None:
         # - Résultat attendu: cell immediately to the RIGHT of the row containing "Résultat attendu"
         # - Résultat observé: cell immediately to the RIGHT of the row containing "Résultat observé"
 
-        path = r"C:\Users\fr232487\Downloads\RTE STD SSI pour IA light.docx"
+        path = r"C:\Users\fr232487\Downloads\RTE STD SSI pour IA.docx"
         doc = Document(path)
 
         rows = []
@@ -20,7 +21,7 @@ def main() -> None:
         current_conclusion = ""
 
         def clean(t: str) -> str:
-            return t.replace("\n", " ").strip() if t else ""
+            return t.strip() if t else ""
 
         for table in doc.tables:
             full_text = " ".join(clean(cell.text) for row in table.rows for cell in row.cells)
@@ -46,11 +47,11 @@ def main() -> None:
                         current_conclusion = txt
 
             # --- PER-STEP maps ---
-            actions = {}
-            attendus = {}
-            observes = {}
+            actions: Dict[str, str] = {}
+            attendus: Dict[str, str] = {}
+            observes: Dict[str, str] = {}
 
-            def extract_per_step(section_label, target_dict):
+            def extract_per_step(section_label: str, target_dict: Dict[str, str]) -> None:
                 for i, row in enumerate(table.rows):
                     if section_label in row.cells[0].text:
                         # subsequent rows with step numbers
@@ -72,6 +73,10 @@ def main() -> None:
                 if "Conformité résultat" in row.cells[0].text:
                     for r in table.rows[i + 2 :]:
                         step = clean(r.cells[0].text)
+
+                        raw_OK_column = r.cells[1]
+                        raw_OKR_column = r.cells[2]
+                        raw_KO_column = r.cells[3]
                         if not step or not step[0].isdigit():
                             continue
                         commentaire = clean(r.cells[-1].text)
