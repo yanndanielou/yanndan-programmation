@@ -93,7 +93,7 @@ def surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, scr
 
 
 @dataclass
-class ChampFxApplication:
+class ChampFxApplicationBase:
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
     errors_output_sub_directory_name = "errors"
     screenshots_output_sub_directory_name = "screenshots"
