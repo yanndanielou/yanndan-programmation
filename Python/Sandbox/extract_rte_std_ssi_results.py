@@ -23,8 +23,9 @@ def main() -> None:
             return t.replace("\n", " ").strip() if t else ""
 
         for table in doc.tables:
+            full_text = " ".join(clean(cell.text) for row in table.rows for cell in row.cells)
+
             # Detect TEST_SECU_ARCH
-            full_text = " ".join(cell.text for row in table.rows for cell in row.cells)
             m = re.search(r"TEST_SECU_ARCH_\s*(\d+)", full_text)
             if m:
                 current_test = f"TEST_SECU_ARCH_{m.group(1)}"
@@ -37,34 +38,42 @@ def main() -> None:
                         exigs += re.findall(r"SSI-\d+", cell.text)
                 current_exigences = ", ".join(sorted(set(exigs)))
 
-            # Conclusion globale
+            # Conclusion globale (verbatim short cells)
             for row in table.rows:
                 for cell in row.cells:
                     txt = clean(cell.text)
                     if txt in ["OK", "OKR", "OKP", "KO", "KO (design)"]:
                         current_conclusion = txt
 
-            # === Extract block-level fields (NOT per step) ===
-            action_bloc = ""
-            resultat_attendu_bloc = ""
-            resultat_observe_bloc = ""
+            # --- PER-STEP maps ---
+            actions = {}
+            attendus = {}
+            observes = {}
 
-            for row in table.rows:
-                if "Action(s)" in row.cells[0].text and len(row.cells) > 1:
-                    action_bloc = clean(row.cells[1].text)
-                if "Résultat attendu" in row.cells[0].text and len(row.cells) > 1:
-                    resultat_attendu_bloc = clean(row.cells[1].text)
-                if "Résultat observé" in row.cells[0].text and len(row.cells) > 1:
-                    resultat_observe_bloc = clean(row.cells[1].text)
+            def extract_per_step(section_label, target_dict):
+                for i, row in enumerate(table.rows):
+                    if section_label in row.cells[0].text:
+                        # subsequent rows with step numbers
+                        for r in table.rows[i + 1 :]:
+                            step = clean(r.cells[0].text)
+                            if not step or not step[0].isdigit():
+                                break
+                            # content is cell to the RIGHT of step number (or last cell if merged)
+                            content = clean(r.cells[-1].text)
+                            target_dict[step] = content
+                        break
 
-            # === Conformité résultat (per step) ===
+            extract_per_step("Action", actions)
+            extract_per_step("Résultat attendu", attendus)
+            extract_per_step("Résultat observé", observes)
+
+            # --- Conformité résultat per step ---
             for i, row in enumerate(table.rows):
                 if "Conformité résultat" in row.cells[0].text:
                     for r in table.rows[i + 2 :]:
                         step = clean(r.cells[0].text)
                         if not step or not step[0].isdigit():
                             continue
-
                         commentaire = clean(r.cells[-1].text)
                         cl = commentaire.lower()
 
@@ -83,9 +92,9 @@ def main() -> None:
                             {
                                 "Test": current_test,
                                 "Étape": step,
-                                "Action": action_bloc,
-                                "Résultat attendu": resultat_attendu_bloc,
-                                "Résultat observé": resultat_observe_bloc,
+                                "Action": actions.get(step, ""),
+                                "Résultat attendu": attendus.get(step, ""),
+                                "Résultat observé": observes.get(step, ""),
                                 "Commentaire": commentaire,
                                 "Statut": statut,
                                 "CFX à créer": "Oui" if "cfx" in cl else "Non",
