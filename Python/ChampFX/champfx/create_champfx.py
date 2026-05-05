@@ -1,7 +1,17 @@
-from champfx import application
+from champfx import application, constants
+
+from logger import logger_config
+
+from selenium.webdriver.support.ui import WebDriverWait, Select
+
+
+import pandas as pd
+
 
 from dataclasses import dataclass
 
+
+from typing import Optional
 from enum import Enum
 
 
@@ -13,43 +23,40 @@ from selenium.webdriver.support import expected_conditions as EC
 CREATE_CFX_URL = "https://champweb.siemens.net/cqweb/restapi/01_CHAMP/CFX/RECORD?format=HTML&recordType=CFXRequest&fieldsXml=&autoSave=false&noframes=true"
 
 
-class RequestType(Enum):
-    CHANGE_REQUEST_EXTERNAL = "Change Request, external"
-    DEFECT = "Defect"
-    CHANGE_REQUEST_INTERNAL = "Change Request, internal"
-    DEVELOPMENT_REQUEST = "Development Request"
-    HAZARD = "Hazard"
-    ACTION_ITEM = "Action Item"
-    OPEN_POINT = "Open Point"
-
-
-class Category(Enum):
-    SYSTEM = "System"
-    SOFTWARE = "Software"
-    HARDWARE = "Hardware"
-    DOCUMENTATION = "Documentation"
-    CONFIGURATION_DATA = "Configuration Data"
-
-
 @dataclass
 class CreateChampFxData:
     headline: str
     project_name: str
-    request_type: RequestType
-    category: Category
+    request_type: constants.RequestType
+    category: constants.Category
+    severity: constants.Severity
     system_structure_part_1: str
     system_structure_part_2: str
     system_structure_part_3: str
     description: str
     current_owner: str
+    environment_type: constants.EnvironmentType
+    detected_in_phase: constants.DetectedInPhase
+    safety_relevant: Optional[constants.SafetyRelevant] = None
+    security_relevant: Optional[constants.SecurityRelevant] = None
+    doc_id: Optional[str] = None
+    doc_ver: Optional[str] = None
+    documentation_reference: Optional[str] = None
 
 
 class CreateChampFXApplication(application.ChampFxApplicationBase):
 
-    def fill_input(self, element_id: str, value: str) -> None:
-        el = self.driver.find_element(By.ID, element_id)
-        el.clear()
-        el.send_keys(value)
+    def fill_input_with_enum_value(self, element_id: str, value: Optional[Enum]) -> None:
+        if value is not None:
+            el = self.driver.find_element(By.ID, element_id)
+            el.clear()
+            el.send_keys(value.value)
+
+    def fill_input(self, element_id: str, value: Optional[str]) -> None:
+        if value is not None:
+            el = self.driver.find_element(By.ID, element_id)
+            el.clear()
+            el.send_keys(value)
 
     def click_element(self, element_id: str) -> None:
         el = WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.ID, element_id)))
@@ -59,9 +66,47 @@ class CreateChampFXApplication(application.ChampFxApplicationBase):
         self.create_webdriver_and_login()
         self.driver.maximize_window()
 
+    def export_all_current_fields(self) -> None:
+        fields = self.driver.find_elements(By.XPATH, "//input | //textarea | //select")
+
+        logger_config.print_and_log_info(f"Champs trouvés : {len(fields)}")
+
+        for i, field in enumerate(fields, start=1):
+
+            def get_label(field_id: str) -> str:
+                # ---------- LABEL ----------
+                label_text = ""
+                if field_id:
+                    labels = self.driver.find_elements(By.XPATH, f"//label[@for='{field_id}']")
+                    if labels:
+                        label_text = labels[0].text.strip()
+                return label_text
+
+            field_description = {
+                "tag": field.tag_name.lower(),
+                "type": field.get_attribute("type"),
+                "text": field.get_attribute("text"),
+                "id": field.get_attribute("id"),
+                "name": field.get_attribute("name"),
+                "label": get_label(field_id=field.get_attribute("id")),
+                "enabled": field.is_enabled(),
+            }
+
+            # ---------- COMBOBOX ----------
+            if field.tag_name.lower() == "select":
+                select = Select(field)
+                logger_config.print_and_log_info("Valeurs possibles :")
+                for opt in select.options:
+                    logger_config.print_and_log_info(f"  - {opt.text.strip()}")
+                field_description["Possible values"] = ",".join([opt.text.strip() for opt in select.options])
+
+            logger_config.print_and_log_info(f"field {i} : {field_description}")
+
     def create_champfx(self, cfx_data: CreateChampFxData) -> None:
         self.driver.get(CREATE_CFX_URL)
         wait = WebDriverWait(self.driver, 30)
+
+        self.export_all_current_fields()
 
         # Main record form
         self.fill_input("cq_widget_CqTextBox_0", cfx_data.headline)
@@ -78,23 +123,25 @@ class CreateChampFXApplication(application.ChampFxApplicationBase):
         # self.fill_input("cq_widget_CqTextArea_1", "Informations sur l'environnement.")
 
         self.fill_input("cq_widget_CqEditableCombo_3", cfx_data.current_owner)
-        self.fill_input("cq_widget_CqFilteringSelect_3", "Oui")
-        self.fill_input("cq_widget_CqFilteringSelect_4", "Majeur")
-        self.fill_input("cq_widget_CqFilteringSelect_5", "Phase de détection Exemple")
-        self.fill_input("cq_widget_CqFilteringSelect_6", "Type d'environnement Exemple")
 
-        self.fill_input("cq_widget_CqTextBox_1", "ID secondaire")
-        self.fill_input("cq_widget_CqTextBox_2", "ID client")
-        self.fill_input("cq_widget_CqTextBox_3", "DOC-12345")
-        self.fill_input("cq_widget_CqTextBox_4", "1.0")
-        self.fill_input("cq_widget_CqTextBox_5", "Référence documentaire")
+        self.fill_input_with_enum_value("cq_widget_CqFilteringSelect_3", cfx_data.safety_relevant)
 
-        self.fill_input("cq_widget_CqEditableCombo_4", "CCB Exemple")
+        self.fill_input("cq_widget_CqFilteringSelect_4", cfx_data.severity.value)
+        self.fill_input("cq_widget_CqFilteringSelect_5", cfx_data.detected_in_phase.value)
+        self.fill_input("cq_widget_CqFilteringSelect_6", cfx_data.environment_type.value)
 
-        # Checkbox
-        checkbox = wait.until(EC.element_to_be_clickable((By.ID, "cq_widget_CqCheckBox_0")))
-        if not checkbox.is_selected():
-            checkbox.click()
+        # self.fill_input("cq_widget_CqTextBox_1", "ID secondaire")
+        # self.fill_input("cq_widget_CqTextBox_2", "ID client")
+        self.fill_input("cq_widget_CqTextBox_3", cfx_data.doc_id)
+        self.fill_input("cq_widget_CqTextBox_4", cfx_data.doc_ver)
+        self.fill_input("cq_widget_CqTextBox_5", cfx_data.documentation_reference)
+
+        # self.fill_input("cq_widget_CqEditableCombo_4", "boolean")
+
+        # NCC/NCR Checkbox
+        # checkbox = wait.until(EC.element_to_be_clickable((By.ID, "cq_widget_CqCheckBox_0")))
+        # if not checkbox.is_selected():
+        #    checkbox.click()
 
         # Si vous voulez sauvegarder
         self.click_element("dijit_form_Button_26")
