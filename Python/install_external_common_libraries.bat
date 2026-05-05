@@ -2,6 +2,7 @@
 
 @call :UPDATE_PYTHON_LIB pip
 
+@call %PYTHON_HOME%\python.exe -m pip install selenium pynput
 @call :INSTALL_AND_UPDATE_PYTHON_LIB python-docx
 @call :INSTALL_AND_UPDATE_PYTHON_LIB natsort
 @call :INSTALL_AND_UPDATE_PYTHON_LIB plotly
