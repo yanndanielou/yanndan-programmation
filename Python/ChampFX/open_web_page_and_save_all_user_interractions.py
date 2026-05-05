@@ -1,6 +1,9 @@
 from selenium import webdriver
-from datetime import datetime
+from selenium.webdriver.remote.webelement import WebElement
 from pynput import mouse, keyboard
+from pynput.keyboard import Key, KeyCode
+from pynput.mouse import Button
+from typing import Dict, List, Any
 import json
 import win32gui
 
@@ -13,8 +16,9 @@ def is_browser_focused() -> bool:
 
 
 # Chemin vers le fichier de log des actions.
-LOG_FILE = "actions_log.json"
-actions = []
+LOG_FILE: str = "actions_log.json"
+actions: List[Dict[str, Any]] = []
+typing_buffer: str = ""
 
 # Ouvrir le navigateur (Chrome Driver recommandé ici).
 driver = webdriver.Chrome()
@@ -23,7 +27,7 @@ driver.get(
 )  # Remplace par l'URL souhaitée.
 
 
-def save_to_log(action_type, details):
+def save_to_log(action_type: str, details: Dict[str, Any]) -> None:
     """Enregistrer une action (clic ou saisie clavier) avec les sélecteurs des éléments."""
     actions.append(
         {
@@ -36,7 +40,7 @@ def save_to_log(action_type, details):
         json.dump(actions, log_file, indent=4)
 
 
-def get_element_selector(element):
+def get_element_selector(element: WebElement) -> Dict[str, str]:
     """Extraire un sélecteur descriptif d'un élément HTML."""
     selector = {}
     if element.get_attribute("id"):
@@ -49,37 +53,44 @@ def get_element_selector(element):
     return selector
 
 
-def record_click(element):
+def record_click(element: WebElement) -> None:
     """Enregistrer un clic sur un élément."""
     selector = get_element_selector(element)
     save_to_log("click", {"selector": selector})
 
 
-def record_keyboard(element, key):
+def record_keyboard(element: WebElement, key: str) -> None:
     """Enregistrer une action clavier dans un champ."""
     selector = get_element_selector(element)
     save_to_log("keyboard_input", {"selector": selector, "key": key})
 
 
-def on_click(x, y, button, pressed):
+def on_click(x: int, y: int, button: Button, pressed: bool) -> None:
     """Gestionnaire pour les clics de souris."""
+    global typing_buffer
     if pressed and is_browser_focused():
         try:
             active_element = driver.switch_to.active_element
             record_click(active_element)
+            typing_buffer = ""  # Clear buffer on click
         except Exception as e:
             print(f"Erreur lors de l'enregistrement du clic: {e}")
 
 
-def on_press(key):
+def on_press(key: Any) -> None:
     """Gestionnaire pour les pressions de clavier."""
+    global typing_buffer
     if is_browser_focused():
-        try:
-            active_element = driver.switch_to.active_element
-            if hasattr(key, "char") and key.char:
-                record_keyboard(active_element, key.char)
-        except Exception as e:
-            print(f"Erreur lors de l'enregistrement de la saisie clavier: {e}")
+        if hasattr(key, "char") and key.char:
+            typing_buffer += key.char
+        elif key in (Key.enter, Key.tab, Key.esc):
+            if typing_buffer:
+                try:
+                    active_element = driver.switch_to.active_element
+                    record_keyboard(active_element, typing_buffer)
+                    typing_buffer = ""
+                except Exception as e:
+                    print(f"Erreur lors de l'enregistrement de la saisie clavier: {e}")
 
 
 # Démarrage des enregistrements
