@@ -6,6 +6,7 @@ from pynput.mouse import Button
 from typing import Dict, List, Any
 import json
 import win32gui
+from datetime import datetime
 
 
 def is_browser_focused() -> bool:
