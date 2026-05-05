@@ -46,7 +46,7 @@ class CreateChampFxData:
 
 class CreateChampFXApplication(application.ChampFxApplicationBase):
 
-    def fill_input_with_enum_value(self, element_id: str, value: Optional[Enum]) -> None:
+    def fill_input_with_optional_enum_value(self, element_id: str, value: Optional[Enum]) -> None:
         if value is not None:
             el = self.driver.find_element(By.ID, element_id)
             el.clear()
@@ -124,7 +124,8 @@ class CreateChampFXApplication(application.ChampFxApplicationBase):
 
         self.fill_input("cq_widget_CqEditableCombo_3", cfx_data.current_owner)
 
-        self.fill_input_with_enum_value("cq_widget_CqFilteringSelect_3", cfx_data.safety_relevant)
+        self.fill_input_with_optional_enum_value("cq_widget_CqFilteringSelect_3", cfx_data.safety_relevant)
+        self.fill_input_with_optional_enum_value("cq_widget_CqFilteringSelect_25", cfx_data.security_relevant)
 
         self.fill_input("cq_widget_CqFilteringSelect_4", cfx_data.severity.value)
         self.fill_input("cq_widget_CqFilteringSelect_5", cfx_data.detected_in_phase.value)

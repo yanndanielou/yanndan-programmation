@@ -24,3 +24,4 @@ Output*/
 Output*.7z
 generatecfxhistory/output/
 main_reproduce_bugs*.py
+*.json
