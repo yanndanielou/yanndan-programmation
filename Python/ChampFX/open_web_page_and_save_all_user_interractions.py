@@ -44,12 +44,13 @@ def save_to_log(action_type: str, details: Dict[str, Any]) -> None:
 def get_element_selector(element: WebElement) -> Dict[str, str]:
     """Extraire un sélecteur descriptif d'un élément HTML."""
     selector = {}
-    if element.get_attribute("id"):
-        selector["id"] = element.get_attribute("id")
-    if element.get_attribute("name"):
-        selector["name"] = element.get_attribute("name")
-    if element.get_attribute("class"):
-        selector["class"] = element.get_attribute("class")
+    selector["id"] = element.get_attribute("id")
+    selector["label"] = element.get_attribute("label")
+    selector["type"] = element.get_attribute("type")
+    selector["name"] = element.get_attribute("name")
+    selector["tag_name"] = element.tag_name
+    selector["class"] = element.get_attribute("class")
+    selector["text"] = element.get_attribute("text")
     selector["tag_name"] = element.tag_name
     return selector
 
@@ -84,6 +85,7 @@ def on_press(key: Any) -> None:
     if is_browser_focused():
         if hasattr(key, "char") and key.char:
             typing_buffer += key.char
+            print("typing_buffer is now " + typing_buffer)
         elif key in (Key.enter, Key.tab, Key.esc):
             if typing_buffer:
                 try:
