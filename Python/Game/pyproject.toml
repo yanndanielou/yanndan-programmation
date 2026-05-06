@@ -4,6 +4,11 @@ name = "game"
 version = "0.0.0" # REQUIRED, although can be dynamic
 description = "Games helper"
 
+[tool.setuptools.packages.find]
+include = ["game*"]
+exclude = ["logs*", "test*"]
+
+
 
 [tool.pylint.'MESSAGES CONTROL']
 [tool.pylint]
