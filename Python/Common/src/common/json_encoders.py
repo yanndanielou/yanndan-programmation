@@ -1,5 +1,6 @@
 # -*-coding:Utf-8 -*
 """json encoders"""
+
 import json
 import textwrap
 from datetime import datetime
@@ -33,9 +34,9 @@ class JsonEncodersUtils(metaclass=singleton.Singleton):
                 json_file.write("[\n")
                 first_item = True
 
-                for chunk_index in range(0, len(list_objects), chunk_size):
+                for chunk_index, chunk_start_index in enumerate(range(0, len(list_objects), chunk_size)):
                     with logger_config.stopwatch_with_label(f"Serialize {chunk_index} th chunk of {chunk_size} lines in {json_file_full_path}"):
-                        chunk = list_objects[chunk_index : chunk_index + chunk_size]
+                        chunk = list_objects[chunk_start_index : chunk_start_index + chunk_size]
 
                         for item in chunk:
                             if not first_item:
@@ -55,9 +56,9 @@ class JsonEncodersUtils(metaclass=singleton.Singleton):
                 suffix = base_path.suffix
                 parent = base_path.parent
 
-                for chunk_index in range(0, len(list_objects), chunk_size):
-                    chunk = list_objects[chunk_index : chunk_index + chunk_size]
-                    chunk_number = chunk_index // chunk_size
+                for chunk_start_index in range(0, len(list_objects), chunk_size):
+                    chunk = list_objects[chunk_start_index : chunk_start_index + chunk_size]
+                    chunk_number = chunk_start_index // chunk_size
 
                     # Create filename with chunk number
                     chunk_file_path = parent / f"{stem}_{chunk_number}{suffix}"
