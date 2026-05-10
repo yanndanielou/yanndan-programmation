@@ -177,6 +177,7 @@ class CreateChampFXApplication(application.ChampFxApplicationBase):
         #    checkbox.click()
 
         # Si vous voulez sauvegarder
+        self.click_element("dijit_form_Button_25")
         self.click_element("dijit_form_Button_26")
 
         # Fin
