@@ -4,13 +4,13 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "champfx"
+name = "createchampfx"
 version = "0.0.0" # REQUIRED, although can be dynamic
-description = "Champ FX"
+description = "Create Champ FX"
 
-#[tool.setuptools.packages.find]
-#include = ["src*"]
-#exclude = ["logs*", "test*"]
+[tool.setuptools.packages.find]
+include = ["champfx*"]
+exclude = ["logs*", "test*"]
 
 
 [tool.pylint.'MESSAGES CONTROL']

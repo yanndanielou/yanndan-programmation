@@ -1,0 +1,1040 @@
+[
+    {
+        "timestamp": "2026-05-05 21:09:45.240847",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqTextBox_0",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:09:47.464867",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqTextBox_0",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:09:49.213617",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqFilteringSelect_0",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:09:51.304024",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqFilteringSelect_0",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:10:24.358723",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqFilteringSelect_0",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:10:26.149808",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqFilteringSelect_1",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:10:40.582594",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqFilteringSelect_1",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:00.251853",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqFilteringSelect_1",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:03.035396",
+        "action_type": "keyboard_input",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqTextBox_0",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            },
+            "key": "eafaefeafeafe"
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:04.450032",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqTextBox_0",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:10.706968",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqTextBox_0",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:11.702936",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_layout_ContentPane_3",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "div",
+                "class": "dijitContentPane cqFormPage dijitTabPane dijitTabContainerTop-child dijitTabContainerTop-dijitContentPane dijitVisible",
+                "text": "Headline\nProject\n*\nRequest Type\n*\nCategory\n+\n*\nDescription\nEnvironment Information\nCurrent Owner (next owner on state change)\nSafety Relevant\nSeverity\n*\nDetected In Phase\n*\nEnvironment Type\nSecondary ID\nCustomer ID\nSII Only (Does not get distributed to PATH)\nKeywords\n*\nDoc-ID\n*\nDoc-Ver\nDocumentation Reference\nType Name Release Public\n-\nType Name Release\n*\nSystem Structure\n-\nCCB\nCFX-ID\nState\nSubmitter\nSubmit Date\nSecurity Relevant\nReproducibility\nNCC/NCR",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:14.676987",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqFilteringSelect_2",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:38.046268",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqFilteringSelect_2",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:39.597334",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_layout_ContentPane_3",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "div",
+                "class": "dijitContentPane cqFormPage dijitTabPane dijitTabContainerTop-child dijitTabContainerTop-dijitContentPane dijitVisible",
+                "text": "Headline\nProject\n*\nRequest Type\nCategory\n+\n*\nDescription\nEnvironment Information\nCurrent Owner (next owner on state change)\nSafety Relevant\nSeverity\n*\nDetected In Phase\n*\nEnvironment Type\nSecondary ID\nCustomer ID\nSII Only (Does not get distributed to PATH)\nKeywords\n*\nDoc-ID\n*\nDoc-Ver\nDocumentation Reference\nType Name Release Public\n-\nType Name Release\n*\nSystem Structure\n-\nCCB\nCFX-ID\nState\nSubmitter\nSubmit Date\nSecurity Relevant\nReproducibility\nNCC/NCR",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:40.905842",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqTextBox_3",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:48.914352",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqTextBox_3",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:49.471985",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqTextBox_4",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:50.275570",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_layout_ContentPane_3",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "div",
+                "class": "dijitContentPane cqFormPage dijitTabPane dijitTabContainerTop-child dijitTabContainerTop-dijitContentPane dijitVisible",
+                "text": "Headline\nProject\n*\nRequest Type\nCategory\n+\n*\nDescription\nEnvironment Information\nCurrent Owner (next owner on state change)\nSafety Relevant\nSeverity\n*\nDetected In Phase\n*\nEnvironment Type\nSecondary ID\nCustomer ID\nSII Only (Does not get distributed to PATH)\nKeywords\n*\nDoc-ID\n*\nDoc-Ver\nDocumentation Reference\nType Name Release Public\n-\nType Name Release\n*\nSystem Structure\n-\nCCB\nCFX-ID\nState\nSubmitter\nSubmit Date\nSecurity Relevant\nReproducibility\nNCC/NCR",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:50.711740",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqTextBox_5",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:51.360213",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqTextBox_4",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:11:52.626578",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqTextBox_3",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:15:07.253177",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqTextBox_3",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:15:11.346927",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_layout_ContentPane_3",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "div",
+                "class": "dijitContentPane cqFormPage dijitTabPane dijitTabContainerTop-child dijitTabContainerTop-dijitContentPane dijitVisible",
+                "text": "Headline\nProject\n*\nRequest Type\nCategory\n+\n*\nDescription\nEnvironment Information\nCurrent Owner (next owner on state change)\nSafety Relevant\nSeverity\n*\nDetected In Phase\n*\nEnvironment Type\nSecondary ID\nCustomer ID\nSII Only (Does not get distributed to PATH)\nKeywords\n*\nDoc-ID\n*\nDoc-Ver\nDocumentation Reference\nType Name Release Public\n-\nType Name Release\n*\nSystem Structure\n-\nCCB\nCFX-ID\nState\nSubmitter\nSubmit Date\nSecurity Relevant\nReproducibility\nNCC/NCR",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:15:11.761046",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_layout_ContentPane_3",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "div",
+                "class": "dijitContentPane cqFormPage dijitTabPane dijitTabContainerTop-child dijitTabContainerTop-dijitContentPane dijitVisible",
+                "text": "Headline\nProject\n*\nRequest Type\nCategory\n+\n*\nDescription\nEnvironment Information\nCurrent Owner (next owner on state change)\nSafety Relevant\nSeverity\n*\nDetected In Phase\n*\nEnvironment Type\nSecondary ID\nCustomer ID\nSII Only (Does not get distributed to PATH)\nKeywords\n*\nDoc-ID\n*\nDoc-Ver\nDocumentation Reference\nType Name Release Public\n-\nType Name Release\n*\nSystem Structure\n-\nCCB\nCFX-ID\nState\nSubmitter\nSubmit Date\nSecurity Relevant\nReproducibility\nNCC/NCR",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:15:12.274463",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqEditableCombo_4",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:15:13.820521",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqEditableCombo_4",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:15:14.566981",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqEditableCombo_4",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:15:15.604774",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqEditableCombo_4",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:15:17.685742",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqEditableCombo_4",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:15:18.860081",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqEditableCombo_4",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:15:36.066014",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqEditableCombo_4",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:16:10.408654",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqEditableCombo_4",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:16:20.592089",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_layout_ContentPane_3",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "div",
+                "class": "dijitContentPane cqFormPage dijitTabPane dijitTabContainerTop-child dijitTabContainerTop-dijitContentPane dijitVisible",
+                "text": "Headline\nProject\n*\nRequest Type\nCategory\n+\n*\nDescription\nEnvironment Information\nCurrent Owner (next owner on state change)\nSafety Relevant\nSeverity\n*\nDetected In Phase\n*\nEnvironment Type\nSecondary ID\nCustomer ID\nSII Only (Does not get distributed to PATH)\nKeywords\n*\nDoc-ID\n*\nDoc-Ver\nDocumentation Reference\nType Name Release Public\n-\nType Name Release\n*\nSystem Structure\n-\nCCB\nCFX-ID\nState\nSubmitter\nSubmit Date\nSecurity Relevant\nReproducibility\nNCC/NCR",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:16:21.145840",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqCheckBox_0",
+                "label": null,
+                "type": "checkbox",
+                "name": "",
+                "tag_name": "input",
+                "class": "",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:16:21.535851",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqCheckBox_0",
+                "label": null,
+                "type": "checkbox",
+                "name": "",
+                "tag_name": "input",
+                "class": "",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:16:21.973778",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqCheckBox_0",
+                "label": null,
+                "type": "checkbox",
+                "name": "",
+                "tag_name": "input",
+                "class": "",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:16:22.896208",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqCheckBox_0",
+                "label": null,
+                "type": "checkbox",
+                "name": "",
+                "tag_name": "input",
+                "class": "",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:16:58.396730",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqCheckBox_0",
+                "label": null,
+                "type": "checkbox",
+                "name": "",
+                "tag_name": "input",
+                "class": "",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:16:59.349906",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_layout_ContentPane_3",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "div",
+                "class": "dijitContentPane cqFormPage dijitTabPane dijitTabContainerTop-child dijitTabContainerTop-dijitContentPane dijitVisible",
+                "text": "Headline\nProject\n*\nRequest Type\nCategory\n+\n*\nDescription\nEnvironment Information\nCurrent Owner (next owner on state change)\nSafety Relevant\nSeverity\n*\nDetected In Phase\n*\nEnvironment Type\nSecondary ID\nCustomer ID\nSII Only (Does not get distributed to PATH)\nKeywords\n*\nDoc-ID\n*\nDoc-Ver\nDocumentation Reference\nType Name Release Public\n-\nType Name Release\n*\nSystem Structure\n-\nCCB\nCFX-ID\nState\nSubmitter\nSubmit Date\nSecurity Relevant\nReproducibility\nNCC/NCR",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:17:01.632178",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "span",
+                "class": "cqSectionTitle",
+                "text": "D\u00e9tails",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:17:32.068731",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "span",
+                "class": "cqSectionTitle",
+                "text": "D\u00e9tails",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:17:33.342991",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_form_Button_26",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "span",
+                "class": "dijitReset dijitStretch dijitButtonContents",
+                "text": "Sauvegarder",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:17:34.875145",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "span",
+                "class": "cqSectionTitle",
+                "text": "D\u00e9tails",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:17:38.072400",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_form_Button_25",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "span",
+                "class": "dijitReset dijitStretch dijitButtonContents",
+                "text": "Sauvegarder et fermer",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:17:40.297764",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_MenuItem_29",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "tr",
+                "class": "dijitReset dijitMenuItem dijitMenuItemHover dijitHover dijitMenuItemFocused dijitMenuItemHoverFocused dijitHoverFocused dijitFocused dijitMenuItemSelected",
+                "text": "Vue de liste",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:17:42.202681",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_form_ComboButton_1_arrow",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "td",
+                "class": "dijitReset dijitRight dijitButtonNode dijitArrowButton dijitDownArrowButton dijitDownArrowButtonFocused",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:17:42.315164",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_form_ComboButton_1_arrow",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "td",
+                "class": "dijitReset dijitRight dijitButtonNode dijitArrowButton dijitDownArrowButton dijitDownArrowButtonFocused",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:17:44.473663",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_form_ComboButton_1_arrow",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "td",
+                "class": "dijitReset dijitRight dijitButtonNode dijitArrowButton dijitDownArrowButton dijitDownArrowButtonFocused",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:17:48.617371",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_form_ComboButton_1_arrow",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "td",
+                "class": "dijitReset dijitRight dijitButtonNode dijitArrowButton dijitDownArrowButton dijitDownArrowButtonFocused dijitDownArrowButtonHover",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:17:49.958593",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_MenuItem_30",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "tr",
+                "class": "dijitReset dijitMenuItem dijitMenuItemHover dijitHover dijitMenuItemFocused dijitMenuItemHoverFocused dijitHoverFocused dijitFocused dijitMenuItemSelected",
+                "text": "Vue \u00e0 onglets",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:17:51.742701",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_form_ComboButton_1_arrow",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "td",
+                "class": "dijitReset dijitRight dijitButtonNode dijitArrowButton dijitDownArrowButton dijitDownArrowButtonFocused",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:17:54.297608",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_form_Button_26",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "span",
+                "class": "dijitReset dijitStretch dijitButtonContents",
+                "text": "Sauvegarder",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:20:44.627538",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "span",
+                "class": "cqSectionTitle",
+                "text": "D\u00e9tails",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:20:45.904179",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "dijit_form_Button_26",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "span",
+                "class": "dijitReset dijitStretch dijitButtonContents",
+                "text": "Sauvegarder",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:20:47.022219",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqFilteringSelect_25",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:20:47.692341",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqFilteringSelect_25",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:20:48.502538",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqFilteringSelect_25",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:21:45.269731",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqFilteringSelect_25",
+                "label": null,
+                "type": "text",
+                "name": "",
+                "tag_name": "input",
+                "class": "dijitReset dijitInputInner",
+                "text": "",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:21:45.921055",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "cq_widget_CqButton_6",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "span",
+                "class": "dijitReset dijitStretch dijitButtonContents",
+                "text": "+",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    },
+    {
+        "timestamp": "2026-05-05 21:21:47.521670",
+        "action_type": "click",
+        "details": {
+            "selector": {
+                "id": "",
+                "label": null,
+                "type": null,
+                "name": null,
+                "tag_name": "body",
+                "class": "tundra cq",
+                "text": "*CFX00926339\nCFXRequest:CFX00926339\nSauvegarder\nSauvegarder et fermer\nAnnuler\n*Main Attachments Links\nHeadline\nProject\n*\nRequest Type\n*\nCategory\n+\n*\nDescription\nEnvironment Information\nCurrent Owner (next owner on state change)\nSafety Relevant\nSeverity\n*\nDetected In Phase\n*\nEnvironment Type\nSecondary ID\nCustomer ID\nSII Only (Does not get distributed to PATH)\nKeywords\n*\nDoc-ID\n*\nDoc-Ver\nDocumentation Reference\nType Name Release Public\n-\nType Name Release\n*\nSystem Structure\n-\nCCB\nCFX-ID\nState\nSubmitter\nSubmit Date\nSecurity Relevant\nReproducibility\nNCC/NCR\nMod\u00e8le :\nCharger\nLicensed Material - Property of IBM Corporation (C) and/or HCL Technologies Ltd. (C) Copyright International Business Machines Corp. 2002, 2021.",
+                "accessible_name": null,
+                "aria_role": null
+            }
+        }
+    }
+]

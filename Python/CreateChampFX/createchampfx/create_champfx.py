@@ -3,8 +3,9 @@ from champfx import application, constants
 from logger import logger_config
 
 from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.common import keys
 
-
+import time
 import pandas as pd
 
 
@@ -46,21 +47,44 @@ class CreateChampFxData:
 
 class CreateChampFXApplication(application.ChampFxApplicationBase):
 
-    def fill_input_with_optional_enum_value(self, element_id: str, value: Optional[Enum]) -> None:
-        if value is not None:
-            el = self.driver.find_element(By.ID, element_id)
-            el.clear()
-            el.send_keys(value.value)
+    def fill_input_with_optional_enum_value(self, element_id: str, value: Optional[Enum], send_enter: bool) -> None:
+        try:
+            if value is not None:
+                el = self.driver.find_element(By.ID, element_id)
+                el.clear()
+                time.sleep(1)
+                el.send_keys(value.value)
+                time.sleep(3)
 
-    def fill_input(self, element_id: str, value: Optional[str]) -> None:
-        if value is not None:
-            el = self.driver.find_element(By.ID, element_id)
-            el.clear()
-            el.send_keys(value)
+                if send_enter:
+                    time.sleep(2)
+                    el.send_keys(keys.Keys.ENTER)
+        except Exception as err:
+            logger_config.print_and_log_exception(err, additional_text=element_id)
+
+    def fill_input(self, element_id: str, value: Optional[str], send_enter: bool) -> None:
+        try:
+            if value is not None:
+                el = self.driver.find_element(By.ID, element_id)
+
+                el.clear()
+                time.sleep(1)
+                el.send_keys(value)
+                time.sleep(3)
+
+                if send_enter:
+                    time.sleep(2)
+                    el.send_keys(keys.Keys.ENTER)
+        except Exception as err:
+            logger_config.print_and_log_exception(err, additional_text=element_id)
 
     def click_element(self, element_id: str) -> None:
-        el = WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.ID, element_id)))
-        el.click()
+        try:
+            el = WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((By.ID, element_id)))
+            el.click()
+            time.sleep(1)
+        except Exception as err:
+            logger_config.print_and_log_exception(exception_to_print=err, additional_text=element_id)
 
     def init(self) -> None:
         self.create_webdriver_and_login()
@@ -109,33 +133,41 @@ class CreateChampFXApplication(application.ChampFxApplicationBase):
         self.export_all_current_fields()
 
         # Main record form
-        self.fill_input("cq_widget_CqTextBox_0", cfx_data.headline)
+        self.fill_input("cq_widget_CqTextBox_0", cfx_data.headline, send_enter=False)
 
-        self.fill_input("cq_widget_CqFilteringSelect_0", cfx_data.project_name)
-        self.fill_input("cq_widget_CqFilteringSelect_1", cfx_data.request_type.value)
-        self.fill_input("cq_widget_CqFilteringSelect_2", cfx_data.category.value)
+        self.fill_input("cq_widget_CqFilteringSelect_0", cfx_data.project_name, send_enter=True)
+        self.fill_input("cq_widget_CqFilteringSelect_1", cfx_data.request_type.value, send_enter=True)
+        self.fill_input("cq_widget_CqFilteringSelect_2", cfx_data.category.value, send_enter=True)
 
-        self.fill_input("cq_widget_CqEditableCombo_0", cfx_data.system_structure_part_1)
-        self.fill_input("cq_widget_CqEditableCombo_1", cfx_data.system_structure_part_2)
-        self.fill_input("cq_widget_CqEditableCombo_2", cfx_data.system_structure_part_3)
+        self.fill_input("cq_widget_CqEditableCombo_0", cfx_data.system_structure_part_1, send_enter=True)
+        time.sleep(5)
+        self.fill_input("cq_widget_CqEditableCombo_1", cfx_data.system_structure_part_2, send_enter=True)
+        time.sleep(5)
+        self.fill_input("cq_widget_CqEditableCombo_2", cfx_data.system_structure_part_3, send_enter=True)
+        time.sleep(5)
 
-        self.fill_input("cq_widget_CqTextArea_0", cfx_data.description)
+        self.fill_input("cq_widget_CqTextArea_0", cfx_data.description, send_enter=False)
         # self.fill_input("cq_widget_CqTextArea_1", "Informations sur l'environnement.")
 
-        self.fill_input("cq_widget_CqEditableCombo_3", cfx_data.current_owner)
+        self.fill_input("cq_widget_CqEditableCombo_3", cfx_data.current_owner, send_enter=True)
 
-        self.fill_input_with_optional_enum_value("cq_widget_CqFilteringSelect_3", cfx_data.safety_relevant)
-        self.fill_input_with_optional_enum_value("cq_widget_CqFilteringSelect_25", cfx_data.security_relevant)
+        self.fill_input_with_optional_enum_value("cq_widget_CqFilteringSelect_3", cfx_data.safety_relevant, send_enter=True)
+        self.fill_input_with_optional_enum_value("cq_widget_CqFilteringSelect_25", cfx_data.security_relevant, send_enter=True)
 
-        self.fill_input("cq_widget_CqFilteringSelect_4", cfx_data.severity.value)
-        self.fill_input("cq_widget_CqFilteringSelect_5", cfx_data.detected_in_phase.value)
-        self.fill_input("cq_widget_CqFilteringSelect_6", cfx_data.environment_type.value)
+        self.fill_input("cq_widget_CqFilteringSelect_4", cfx_data.severity.value, send_enter=True)
+        self.fill_input("cq_widget_CqFilteringSelect_5", cfx_data.detected_in_phase.value, send_enter=True)
+        self.fill_input("cq_widget_CqFilteringSelect_6", cfx_data.environment_type.value, send_enter=True)
 
         # self.fill_input("cq_widget_CqTextBox_1", "ID secondaire")
         # self.fill_input("cq_widget_CqTextBox_2", "ID client")
-        self.fill_input("cq_widget_CqTextBox_3", cfx_data.doc_id)
-        self.fill_input("cq_widget_CqTextBox_4", cfx_data.doc_ver)
-        self.fill_input("cq_widget_CqTextBox_5", cfx_data.documentation_reference)
+        self.fill_input("cq_widget_CqTextBox_3", cfx_data.doc_id, send_enter=False)
+        self.fill_input("cq_widget_CqTextBox_4", cfx_data.doc_ver, send_enter=False)
+        self.fill_input("cq_widget_CqTextBox_5", cfx_data.documentation_reference, send_enter=False)
+
+        time.sleep(5)
+        logger_config.print_and_log_info("Click add system structure")
+        # self.click_element("cq_widget_CqButton_6")
+        self.click_element("cq_widget_CqButton_0")
 
         # self.fill_input("cq_widget_CqEditableCombo_4", "boolean")
 
