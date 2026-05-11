@@ -140,11 +140,11 @@ class CreateChampFXApplication(application.ChampFxApplicationBase):
         self.fill_input("cq_widget_CqFilteringSelect_2", cfx_data.category.value, send_enter=True)
 
         self.fill_input("cq_widget_CqEditableCombo_0", cfx_data.system_structure_part_1, send_enter=True)
-        time.sleep(5)
+        time.sleep(2)
         self.fill_input("cq_widget_CqEditableCombo_1", cfx_data.system_structure_part_2, send_enter=True)
-        time.sleep(5)
+        time.sleep(2)
         self.fill_input("cq_widget_CqEditableCombo_2", cfx_data.system_structure_part_3, send_enter=True)
-        time.sleep(5)
+        time.sleep(2)
 
         self.fill_input("cq_widget_CqTextArea_0", cfx_data.description, send_enter=False)
         # self.fill_input("cq_widget_CqTextArea_1", "Informations sur l'environnement.")
@@ -177,8 +177,8 @@ class CreateChampFXApplication(application.ChampFxApplicationBase):
         #    checkbox.click()
 
         # Si vous voulez sauvegarder
-        self.click_element("dijit_form_Button_25")
-        self.click_element("dijit_form_Button_26")
+        self.click_element("dijit_form_Button_25")  # Sauvegarder et fermer
+        # self.click_element("dijit_form_Button_26") # Sauvegarder
 
         # Fin
         # driver.quit()
