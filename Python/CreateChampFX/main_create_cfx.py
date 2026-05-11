@@ -24,17 +24,18 @@ def main() -> None:
             step_name = int(row["Étape"])
             action = row["Action"]
             comment = row["Commentaire"]
+            comment_final = str(comment).replace("CFX à créer", "")
             expected_result = row["Résultat attendu"]
             observed_result = row["Résultat observé"]
             requirements = row["Exigences SSI"]
 
             application.create_champfx(
                 cfx_data=create_champfx.CreateChampFxData(
-                    headline=f"STD SSI {test_name}/{step_name}:{comment}",
+                    headline=f"STD SSI {test_name}/{step_name}:{comment_final}".replace("\n", "."),
                     project_name="ATSP",
                     category=constants.Category.CONFIGURATION_DATA,
                     current_owner="Wasilewski Olivia (z003p11n)",
-                    description=f"Test:\n{test_name}\n\nStep:\n{step_name}\n\nSTE STD SSI requirements:\n{requirements}\n\nAction:\n{action}\n\nRésultat attendu:\n{expected_result}\n\nRésultat observé:\n{observed_result}\n\nCommentaires (anomalie):\n{comment}",
+                    description=f"Test:\n{test_name}\n\nStep:\n{step_name}\n\nSTE STD SSI requirements:\n{requirements}\n\nAction:\n{action}\n\nRésultat attendu:\n{expected_result}\n\nRésultat observé:\n{observed_result}\n\nCommentaires (anomalie):\n{comment_final}",
                     request_type=constants.RequestType.DEFECT,
                     severity=constants.Severity.MINOR_IMPACT_ON_AVAILABILITY,
                     system_structure_part_1="S002_Subsystem",
@@ -44,6 +45,8 @@ def main() -> None:
                     security_relevant=constants.SecurityRelevant.YES,
                     detected_in_phase=constants.DetectedInPhase.VALIDATION,
                     environment_type=constants.EnvironmentType.TEST_SYSTEM,
+                    doc_id="NExTEO_Cahier_Tests_Fonctionnement_Sécurité_STD-Sol_Usine",
+                    doc_ver="V04_00",
                 )
             )
 

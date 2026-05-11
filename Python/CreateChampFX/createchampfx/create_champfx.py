@@ -48,33 +48,37 @@ class CreateChampFxData:
 class CreateChampFXApplication(application.ChampFxApplicationBase):
 
     def fill_input_with_optional_enum_value(self, element_id: str, value: Optional[Enum], send_enter: bool) -> None:
-        try:
-            if value is not None:
-                el = self.driver.find_element(By.ID, element_id)
-                el.clear()
-                time.sleep(1)
-                el.send_keys(value.value)
-                time.sleep(3)
-
-                if send_enter:
-                    time.sleep(2)
-                    el.send_keys(keys.Keys.ENTER)
-        except Exception as err:
-            logger_config.print_and_log_exception(err, additional_text=element_id)
+        if value is not None:
+            self.fill_input(element_id=element_id, value=value.value, send_enter=send_enter)
 
     def fill_input(self, element_id: str, value: Optional[str], send_enter: bool) -> None:
         try:
             if value is not None:
                 el = self.driver.find_element(By.ID, element_id)
 
-                el.clear()
-                time.sleep(1)
-                el.send_keys(value)
-                time.sleep(3)
+                while el.get_attribute("value") == "":
+                    logger_config.print_and_log_info(f"Enter field {element_id} value {value[:10]}..")
+                    el.clear()
+                    time.sleep(0.1)
+                    for letter in value:
+                        el.send_keys(letter)
+                        time.sleep(0.01)
 
-                if send_enter:
-                    time.sleep(2)
-                    el.send_keys(keys.Keys.ENTER)
+                    while el.get_attribute("value") == "":
+                        time.sleep(0.2)
+
+                    if send_enter:
+                        time.sleep(0.1)
+                        el.send_keys(keys.Keys.ENTER)
+
+                    wait_it_seconds = 0
+                    while el.get_attribute("value") == "" and wait_it_seconds < 5:
+                        logger_config.print_and_log_info(f"Wait {element_id} to be {value[:10]}..")
+                        time.sleep(1)
+
+                    # Vérification que le texte affiché est bien celui entré
+                    time.sleep(1)
+
         except Exception as err:
             logger_config.print_and_log_exception(err, additional_text=element_id)
 
@@ -146,6 +150,10 @@ class CreateChampFXApplication(application.ChampFxApplicationBase):
         self.fill_input("cq_widget_CqEditableCombo_2", cfx_data.system_structure_part_3, send_enter=True)
         time.sleep(2)
 
+        logger_config.print_and_log_info("Click add system structure")
+        # self.click_element("cq_widget_CqButton_6")
+        self.click_element("cq_widget_CqButton_0")
+
         self.fill_input("cq_widget_CqTextArea_0", cfx_data.description, send_enter=False)
         # self.fill_input("cq_widget_CqTextArea_1", "Informations sur l'environnement.")
 
@@ -164,11 +172,6 @@ class CreateChampFXApplication(application.ChampFxApplicationBase):
         self.fill_input("cq_widget_CqTextBox_4", cfx_data.doc_ver, send_enter=False)
         self.fill_input("cq_widget_CqTextBox_5", cfx_data.documentation_reference, send_enter=False)
 
-        time.sleep(5)
-        logger_config.print_and_log_info("Click add system structure")
-        # self.click_element("cq_widget_CqButton_6")
-        self.click_element("cq_widget_CqButton_0")
-
         # self.fill_input("cq_widget_CqEditableCombo_4", "boolean")
 
         # NCC/NCR Checkbox
@@ -180,5 +183,8 @@ class CreateChampFXApplication(application.ChampFxApplicationBase):
         self.click_element("dijit_form_Button_25")  # Sauvegarder et fermer
         # self.click_element("dijit_form_Button_26") # Sauvegarder
 
+        pass
+        time.sleep(15)
+        pass
         # Fin
         # driver.quit()
