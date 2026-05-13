@@ -134,7 +134,7 @@ class CreateChampFXApplication(application.ChampFxApplicationBase):
         self.driver.get(CREATE_CFX_URL)
         wait = WebDriverWait(self.driver, 30)
 
-        self.export_all_current_fields()
+        # self.export_all_current_fields()
 
         # Main record form
         self.fill_input("cq_widget_CqTextBox_0", cfx_data.headline, send_enter=False)
@@ -144,11 +144,11 @@ class CreateChampFXApplication(application.ChampFxApplicationBase):
         self.fill_input("cq_widget_CqFilteringSelect_2", cfx_data.category.value, send_enter=True)
 
         self.fill_input("cq_widget_CqEditableCombo_0", cfx_data.system_structure_part_1, send_enter=True)
-        time.sleep(2)
+        time.sleep(1)
         self.fill_input("cq_widget_CqEditableCombo_1", cfx_data.system_structure_part_2, send_enter=True)
-        time.sleep(2)
+        time.sleep(1)
         self.fill_input("cq_widget_CqEditableCombo_2", cfx_data.system_structure_part_3, send_enter=True)
-        time.sleep(2)
+        time.sleep(1)
 
         logger_config.print_and_log_info("Click add system structure")
         # self.click_element("cq_widget_CqButton_6")
@@ -184,7 +184,7 @@ class CreateChampFXApplication(application.ChampFxApplicationBase):
         # self.click_element("dijit_form_Button_26") # Sauvegarder
 
         pass
-        time.sleep(15)
+        time.sleep(8)
         pass
         # Fin
         # driver.quit()
