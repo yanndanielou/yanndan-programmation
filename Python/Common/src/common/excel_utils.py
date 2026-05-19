@@ -21,7 +21,7 @@ from win32com.client import Dispatch, gencache
 from xlsxwriter.utility import xl_cell_to_rowcol, xl_col_to_name
 from xlwings.constants import DeleteShiftDirection
 
-from common import file_name_utils, file_utils
+from common import file_name_utils, file_utils, date_time_formats
 
 EXCEL_INTERNAL_RESERVED_SHEETS_NAMES = ["Register"]
 
@@ -411,6 +411,7 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
                     for column_to_remove_name in columns_to_remove_names:
                         assert column_to_remove_name in headers_found_in_excel, f"Column {column_to_remove_name} not found in excel among {headers_found_in_excel}"
 
+                remove_columns_beginning_timestamp = time.time()
                 for colum_it, column_name_to_remove in enumerate(columns_to_remove_names):
                     # Obtenir toutes les valeurs de la première ligne
                     headers_found_in_excel = sht.range("A1").expand("right").value
@@ -420,7 +421,7 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
 
                         # Trouver l'index de la colonne à supprimer
                         logger_config.print_and_log_info(
-                            f"{inspect.stack(0)[0].function}: removing {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}%"
+                            f"{inspect.stack(0)[0].function}: removing {colum_it+1}/{number_of_columns_to_remove}th column '{column_name_to_remove}' {round((colum_it+1)/number_of_columns_to_remove*100,2)}% in {date_time_formats.format_duration_to_string(time.time() - remove_columns_beginning_timestamp)} "
                         )
                         col_index_starting_0 = headers_found_in_excel.index(column_name_to_remove)
                         col_letter = xl_col_to_name(col_index_starting_0)
@@ -775,7 +776,7 @@ def copy_and_paste_excel_content_with_format_with_win32(
                     # sheet_copied.UsedRange.Value = sheet_copied.UsedRange.Value
                     sheet_copied.UsedRange.Value = sheet_input.UsedRange.Value
 
-            with logger_config.stopwatch_with_label(f"Save output workbook {output_excel_file_path}"):
+            with logger_config.stopwatch_with_label(f"Save output workbook {output_excel_file_path}", inform_beginning=True):
                 wb_output.SaveAs(
                     Filename=output_excel_file_path,
                     FileFormat=EXCEL_WORKBOOK_DEFAULT_XLSX_FORMAT_XL_FILE_FORMAT_VALUE,
