@@ -9,7 +9,7 @@ from stsloganalyzis import decode_specific_message_content, line_topology
 if TYPE_CHECKING:
     from stsloganalyzis.decode_message import DecodedMessage
 
-ZC_ATS_MAL_MESSAGE_ID = 148
+ZC_ATS_MAL_MESSAGE_ID____DISABLED = 148000
 CC_ATS_TRACKING_MESSAGE_ID = 20
 
 
