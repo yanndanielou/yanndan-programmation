@@ -3,7 +3,6 @@
 import datetime
 from warnings import deprecated
 
-
 # To get line number for logs
 # from inspect import currentframe, getframeinfo
 import inspect
@@ -193,11 +192,9 @@ def print_and_log_error(
             + str()
             + to_print_and_log
         )
-    logging.error(
-        f"{__get_calling_file_name_and_line_number(
+    logging.error(f"{__get_calling_file_name_and_line_number(
                 call_stack_context=call_stack_context, call_stack_frame=call_stack_frame
-            )} \t {to_print_and_log}"
-    )
+            )} \t {to_print_and_log}")
 
 
 @contextmanager
@@ -398,13 +395,15 @@ def stopwatch_with_label(
     enabled: bool = True,
     inform_beginning: bool = False,
     monitor_ram_usage: bool = False,
+    call_stack_context: int = DEFAULT_CALL_STACK_CONTEXT_VALUE,
+    call_stack_frame: int = DEFAULT_CALL_STACK_FRAME_VALUE,
 ) -> Generator[float, None, None]:
     """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
     https://www.docstring.fr/glossaire/with/"""
     if enabled:
         initial_ram_rss = cast(int, psutil.Process(os.getpid()).memory_info().rss)
 
-        previous_stack = inspect.stack(0)[2]
+        previous_stack = inspect.stack(call_stack_context)[call_stack_frame]
         file_name = previous_stack.filename
         line_number = previous_stack.lineno
         calling_file_name_and_line_number = file_name + ":" + str(line_number)
