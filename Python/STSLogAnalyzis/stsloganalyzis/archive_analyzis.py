@@ -272,8 +272,9 @@ class SqlArchArchiveLineWithContext:
 class ArchiveAnalyzis:
     railway_line: line_topology.Line
     archive_library: decode_archive.ArchiveLibrary
-
     label: str
+
+    output_directory_path = "output"
 
     def __post_init__(self) -> None:
         self.trains: List[Train] = []
@@ -392,12 +393,13 @@ class ArchiveAnalyzis:
         all_fields_changed = self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=train.field_names_and_values_in_report)
         return all_fields_changed
 
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def handle_lines(self) -> None:
         for sql_arch_line in self.archive_library.all_sqlarch_lines:
             previous_line_for_this_id = self.current_latest_line_by_id.get(sql_arch_line.id_field)
             all_fields_changed = self.update_latest_raw_fields_for_line(sql_arch_line=sql_arch_line)
 
-            if sql_arch_line.decoded_message and sql_arch_line.decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID:
+            if sql_arch_line.decoded_message and sql_arch_line.decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID____DISABLED:
                 all_fields_changed += self.decode_zc_mal_message(sql_arch_line=sql_arch_line)
             if sql_arch_line.decoded_message and sql_arch_line.decoded_message.message_number == decode_product_topology_dependant_messages_content.CC_ATS_TRACKING_MESSAGE_ID:
                 all_fields_changed += self.decode_cc_ats_tracking_message(sql_arch_line=sql_arch_line)
@@ -407,6 +409,21 @@ class ArchiveAnalyzis:
             )
             self.all_sql_arch_lines_with_context.append(line_with_context)
             self.current_latest_line_by_id[sql_arch_line.id_field] = line_with_context
+
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+    def create_output_with_all_fields_decoded(self, file_base_name: Optional[str] = None) -> int:
+        if file_base_name is None:
+            file_base_name = f"{self.label}_all_fields"
+
+        rows_as_list_dict: List[Dict[str, Any]] = []
+
+        for line_with_context in self.all_sql_arch_lines_with_context:
+            rows_as_list_dict.append(line_with_context.decoded_fields_flat_directory)
+
+        # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
+        reports_utils.save_rows_to_output_files(rows_as_list_dict=rows_as_list_dict, file_base_name=file_base_name, output_directory_path=self.output_directory_path, suffix_file_name_by_date=False)
+        reports_utils.save_rows_to_output_files(rows_as_list_dict=rows_as_list_dict, file_base_name=file_base_name, output_directory_path=self.output_directory_path, suffix_file_name_by_date=True)
+        return len(rows_as_list_dict)
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def create_reports_all_sqlarch_changes_since_previous(self, output_directory_path: str, file_base_name: Optional[str] = None) -> int:
