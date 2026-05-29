@@ -1,3 +1,5 @@
+from warnings import deprecated
+
 import csv
 import datetime
 from dataclasses import dataclass
@@ -13,6 +15,7 @@ from stsloganalyzis import (
     decode_specific_message_content,
     decode_next_specific_messages_content,
     constants,
+    hlf,
 )
 
 # CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR = "!!! Decoding Error !!!"
@@ -70,7 +73,7 @@ class DecodedMessage:
         return field_value_by_name
 
 
-class HLFDecoder:
+class HLFDecoderFromMessage:
 
     @staticmethod
     def decode_hlf(decoded_message: DecodedMessage) -> None:
@@ -80,32 +83,15 @@ class HLFDecoder:
         decade_field_value = cast(int, decoded_message.decoded_fields_flat_directory["Decade"])
         day_on_decade_field_value = cast(int, decoded_message.decoded_fields_flat_directory["DayOnDecade"])
 
-        hlf_decoded = HLFDecoder.decode_hlf_fields_to_datetime(time_field_value, time_offset_value, decade_field_value, day_on_decade_field_value)
+        hlf_decoded = HLFDecoderFromMessage.decode_hlf_fields_to_datetime(time_field_value, time_offset_value, decade_field_value, day_on_decade_field_value)
         decoded_message.hlf_decoded = hlf_decoded
 
+    @deprecated("use HLF module instead")
     @staticmethod
     def decode_hlf_fields_to_datetime(time_field_value: int, time_offset_value: int, decade_field_value: int, day_on_decade_field_value: int) -> datetime.datetime:
-
-        # Calculate the start year of the decade
-        start_year = 2000 + (decade_field_value * 10)
-
-        # Calculate the date by adding the day on decade to start of the decade
-        decade_date = datetime.datetime(start_year, 1, 1) + datetime.timedelta(days=day_on_decade_field_value)
-
-        # Calculate time in hours, minutes, and seconds from time_field_value
-        total_seconds = time_field_value / 10  # tenths of a second to seconds
-        hours = int(total_seconds // 3600)
-        minutes = int((total_seconds % 3600) // 60)
-        seconds = total_seconds % 60
-
-        # Calculate the time offset:
-        offset_hours = time_offset_value // 36000
-        offset_minutes = (time_offset_value % 36000) // 600
-
-        # Apply the offset for local time
-        local_time = decade_date + datetime.timedelta(hours=hours - offset_hours, minutes=minutes - offset_minutes, seconds=seconds)
-
-        return local_time
+        return hlf.decode_hlf_to_datetime(
+            time_field_value=time_field_value, time_offset_value=time_offset_value, decade_field_value=decade_field_value, day_on_decade_field_value=day_on_decade_field_value
+        )
 
 
 class MessageDecoder:
@@ -141,7 +127,7 @@ class MessageDecoder:
             also_decode_hlf: bool = "Time" in decoded_message.decoded_fields_flat_directory
 
             if also_decode_hlf:
-                HLFDecoder.decode_hlf(decoded_message=decoded_message)
+                HLFDecoderFromMessage.decode_hlf(decoded_message=decoded_message)
 
         return decoded_message
 
@@ -150,7 +136,7 @@ class MessageDecoder:
         try:
             if decoded_message.message_number == decode_action_set_content.ATS_CC_ACTION_SET_MESSAGE_ID and self.action_set_content_decoder:
                 decoded = self.action_set_content_decoder.decode(decoded_message=decoded_message)
-            elif decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID and self.zc_ats_mal_message_decoder:
+            elif decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID____DISABLED and self.zc_ats_mal_message_decoder:
                 decoded = self.zc_ats_mal_message_decoder.decode(decoded_message=decoded_message)
             elif decoded_message.message_number == decode_product_topology_dependant_messages_content.CC_ATS_TRACKING_MESSAGE_ID and self.cc_ats_tracking_message_decoder:
                 decoded = self.cc_ats_tracking_message_decoder.decode(decoded_message=decoded_message)
