@@ -93,6 +93,12 @@ class SqlArchFilter(ABC):
         self.rejected_count: int = 0
         self.rejected_count_by_item: Dict[str, int] = dict()
 
+    def get_top_x_items_by_value(data: Dict[str, int], x: int) -> Dict[str, int]:
+        # Trier par valeur en ordre croissant tout en conservant les x premiers éléments
+        sorted_items = sorted(data.items(), key=lambda item: item[1])[:x]
+        # Convertir en dictionnaire
+        return dict(sorted_items)
+
     def get_sqlarch_section(self, raw_sql_arch_line: str) -> Any:
         line_json = json.loads(raw_sql_arch_line)
         sqlarch_section = line_json.get("SQLARCH", {})
@@ -161,7 +167,7 @@ class SqlArchLineStringFieldValueBasedFilter(SqlArchFilter):
             return False
 
     def print_stats(self) -> None:
-        logger_config.print_and_log_info(f"  Filter {self}: ' - rejected {self.rejected_count} lines. Details {self.rejected_count_by_item}")
+        logger_config.print_and_log_info(f"  Filter {self}: ' - rejected {self.rejected_count} lines. Details {self.get_top_x_items_by_value(10)}")
 
     def __str__(self) -> str:
         return f"{self.filter_type.value} {self.field_name} {','.join(self.filter_field_values)} {'Whitelist' if self.is_whitelist else 'Blacklist'} "
