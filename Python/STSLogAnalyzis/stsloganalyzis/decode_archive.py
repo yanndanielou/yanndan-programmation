@@ -1,9 +1,8 @@
 import json
-import re
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Self, Set, cast
+from typing import Any, Dict, List, Optional, Self, Set, cast
 
 from datetime import datetime
 import humanize
@@ -12,6 +11,7 @@ from dateutil import parser
 from logger import logger_config
 
 from stsloganalyzis import (
+    common_filters,
     decode_action_set_content,
     decode_message,
     line_topology,
@@ -19,13 +19,6 @@ from stsloganalyzis import (
     constants,
     helpers,
 )
-
-ArchiveLineFilter = Callable[[str, "ArchiveSource"], bool]
-
-
-class WhiteOrBlackListFilterType(Enum):
-    WHITELIST = "WHITELIST"
-    BLACKLIST = "BLACKLIST"
 
 
 class ArchiveLineTag(Enum):
@@ -93,9 +86,9 @@ class SqlArchFilter(ABC):
         self.rejected_count: int = 0
         self.rejected_count_by_item: Dict[str, int] = dict()
 
-    def get_top_x_items_by_value(data: Dict[str, int], x: int) -> Dict[str, int]:
+    def get_top_x_items_by_value(self, x: int) -> Dict[str, int]:
         # Trier par valeur en ordre croissant tout en conservant les x premiers éléments
-        sorted_items = sorted(data.items(), key=lambda item: item[1])[:x]
+        sorted_items = sorted(self.rejected_count_by_item.items(), key=lambda item: item[1])[:x]
         # Convertir en dictionnaire
         return dict(sorted_items)
 
@@ -123,44 +116,19 @@ class SqlArchFilter(ABC):
 
 
 class SqlArchLineStringFieldValueBasedFilter(SqlArchFilter):
-    class ArchiveLineStringFilterType(Enum):
-        EQUALS_TO = "EQUALS_TO"
-        BEGIN_WITH_STRING = "BEGIN_WITH_STRING"
-        MATCHES_REGEX = "MATCHES_REGEX"
-        CONTAINS = "CONTAINS"
 
-    def __init__(self, white_or_black_list: WhiteOrBlackListFilterType, field_name: str, field_values: List[str], filter_type: ArchiveLineStringFilterType) -> None:
+    def __init__(self, white_or_black_list: common_filters.WhiteOrBlackListFilterType, field_name: str, field_values: List[str], filter_type: common_filters.StringFilterType) -> None:
         super().__init__()
-        self.white_or_black_list = white_or_black_list
-        self.is_whitelist = white_or_black_list == WhiteOrBlackListFilterType.WHITELIST
         self.field_name = field_name
-        self.filter_type = filter_type
-        self.filter_field_values = field_values
+        self.string_filter = common_filters.StringFieldValueBasedFilter(white_or_black_list=white_or_black_list, filter_type=filter_type, field_values=field_values)
 
     def do_passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
+
         try:
             sqlarch_section = self.get_sqlarch_section(raw_sql_arch_line)
             field_raw_value = str(sqlarch_section.get(self.field_name, ""))
 
-            ret: bool
-            match = False
-            if self.filter_type == SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.EQUALS_TO:
-                match = field_raw_value in self.filter_field_values
-            elif self.filter_type == SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.CONTAINS:
-                match = any(filter_field_value in field_raw_value for filter_field_value in self.filter_field_values)
-            elif self.filter_type == SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.BEGIN_WITH_STRING:
-                match = any(field_raw_value.startswith(filter_field_value) for filter_field_value in self.filter_field_values)
-            elif self.filter_type == SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType.MATCHES_REGEX:
-                match = any(bool(re.search(filter_field_value, field_raw_value)) for filter_field_value in self.filter_field_values)
-            else:
-                assert False, f"Not handled {self.filter_type}"
-
-            ret = match if self.is_whitelist else not match
-            if not ret:
-                if field_raw_value not in self.rejected_count_by_item:
-                    self.rejected_count_by_item[field_raw_value] = 0
-
-                self.rejected_count_by_item[field_raw_value] += 1
+            ret = self.string_filter.do_passes(field_raw_value)
 
             return ret
         except (TypeError, ValueError, json.JSONDecodeError, KeyError):
@@ -170,16 +138,16 @@ class SqlArchLineStringFieldValueBasedFilter(SqlArchFilter):
         logger_config.print_and_log_info(f"  Filter {self}: ' - rejected {self.rejected_count} lines. Details {self.get_top_x_items_by_value(10)}")
 
     def __str__(self) -> str:
-        return f"{self.filter_type.value} {self.field_name} {','.join(self.filter_field_values)} {'Whitelist' if self.is_whitelist else 'Blacklist'} "
+        return f"{self.string_filter.filter_type.value} {self.field_name} {','.join(self.string_filter.filter_field_values)} {'Whitelist' if self.string_filter.is_whitelist else 'Blacklist'} "
 
 
 class IdFilter(SqlArchLineStringFieldValueBasedFilter):
-    def __init__(self, field_values: List[str], filter_type: SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType, white_or_black_list: WhiteOrBlackListFilterType) -> None:
+    def __init__(self, field_values: List[str], filter_type: common_filters.StringFilterType, white_or_black_list: common_filters.WhiteOrBlackListFilterType) -> None:
         super().__init__(white_or_black_list=white_or_black_list, field_name="id", field_values=field_values, filter_type=filter_type)
 
 
 class SignalTypeFilter(SqlArchLineStringFieldValueBasedFilter):
-    def __init__(self, white_or_black_list: WhiteOrBlackListFilterType, field_values: List[str], filter_type: SqlArchLineStringFieldValueBasedFilter.ArchiveLineStringFilterType) -> None:
+    def __init__(self, white_or_black_list: common_filters.WhiteOrBlackListFilterType, field_values: List[str], filter_type: common_filters.StringFilterType) -> None:
         super().__init__(white_or_black_list=white_or_black_list, field_values=field_values, field_name="sigT", filter_type=filter_type)
 
 
