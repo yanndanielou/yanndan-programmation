@@ -335,7 +335,7 @@ class ATCTestResult(ABC):
             ret = file_utils.get_files_by_directory_and_file_name_mask(directory_path, filename_pattern, file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER)
             return cast(List[str], ret)
 
-        def add_variables_names_filter(self, variables_filter: VariableNameFilter) -> Self:
+        def add_variables_names_creation_filter(self, variables_filter: VariableNameFilter) -> Self:
             self.variables_names_creation_filters.append(variables_filter)
             return self
 
