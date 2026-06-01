@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from common import file_utils
 from logger import logger_config
 
-from stsloganalyzis import decode_pai_logs
+from stsloganalyzis.pai import decode_pai_logs
 
 OUTPUT_FOLDER_NAME = "output"
 

@@ -2,14 +2,11 @@ from logger import logger_config
 
 from typing import Tuple, Optional, Dict, Set
 
-from stsloganalyzis import (
-    decode_action_set_content,
-    decode_archive,
-    decode_message,
-    decode_xml_message,
+from stsloganalyzis.topology import (
     line_topology,
-    common_filters,
 )
+from stsloganalyzis.archive import decode_action_set_content, decode_archive, decode_message, decode_xml_message
+from stsloganalyzis.common import common_filters
 
 
 def get_line_topology() -> line_topology.Line:

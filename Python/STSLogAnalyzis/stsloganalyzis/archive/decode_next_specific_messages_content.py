@@ -4,10 +4,11 @@ from typing import TYPE_CHECKING, Dict, List, cast, Tuple
 
 from logger import logger_config
 
-from stsloganalyzis import decode_specific_message_content, line_topology
+from stsloganalyzis.topology import line_topology
+from stsloganalyzis.archive import decode_specific_message_content
 
 if TYPE_CHECKING:
-    from stsloganalyzis.decode_message import DecodedMessage
+    from stsloganalyzis.archive.decode_message import DecodedMessage
 
 CC_ATS_SPE_OPERATION_MESSAGE_ID___disabled = 36000
 CC_ATS_SPE_RS_OPERATION_MESSAGE_ID = 100

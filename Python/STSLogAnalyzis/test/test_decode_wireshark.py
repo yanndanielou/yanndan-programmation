@@ -4,7 +4,7 @@ import pytest
 
 from typing import cast
 
-from stsloganalyzis import decode_wireshark
+from stsloganalyzis.wireshark import decode_wireshark
 
 
 class TestDecodeWiresharkWithOnlyCbtc:

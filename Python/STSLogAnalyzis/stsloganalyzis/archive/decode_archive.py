@@ -10,15 +10,12 @@ from common import date_time_formats, file_name_utils, file_utils
 from dateutil import parser
 from logger import logger_config
 
-from stsloganalyzis import (
-    common_filters,
-    decode_action_set_content,
-    decode_message,
-    line_topology,
-    decode_xml_message,
-    constants,
+from stsloganalyzis.archive import (
     helpers,
 )
+from stsloganalyzis.archive import constants, decode_action_set_content, decode_message, decode_xml_message
+from stsloganalyzis.common import common_filters
+from stsloganalyzis.topology import line_topology
 
 
 class ArchiveLineTag(Enum):

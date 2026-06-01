@@ -4,7 +4,8 @@ import pytest
 
 from typing import List
 
-from stsloganalyzis import decode_message, decode_xml_message
+from stsloganalyzis.archive import decode_xml_message
+from stsloganalyzis.archive import decode_message
 
 # fmt: off
 

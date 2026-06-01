@@ -7,16 +7,18 @@ from typing import Dict, List, Optional, cast
 
 from logger import logger_config
 
-from stsloganalyzis import (
-    decode_action_set_content,
-    decode_product_topology_dependant_messages_content,
-    decode_xml_message,
+from stsloganalyzis.topology import (
     line_topology,
-    decode_specific_message_content,
-    decode_next_specific_messages_content,
-    constants,
-    hlf,
 )
+from stsloganalyzis.archive import (
+    constants,
+    decode_action_set_content,
+    decode_next_specific_messages_content,
+    decode_product_topology_dependant_messages_content,
+    decode_specific_message_content,
+    decode_xml_message,
+)
+from stsloganalyzis.common import hlf
 
 # CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR = "!!! Decoding Error !!!"
 

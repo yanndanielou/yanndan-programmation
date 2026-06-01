@@ -1,9 +1,9 @@
 from typing import cast, Dict, Optional
 
-from stsloganalyzis import (
-    constants,
+from stsloganalyzis.topology import (
     line_topology,
 )
+from stsloganalyzis.archive import constants
 
 
 def is_field_name_to_be_ignored(field_name: str) -> bool:

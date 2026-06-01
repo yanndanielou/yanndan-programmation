@@ -2,14 +2,13 @@ from typing import List, Dict, TYPE_CHECKING, cast
 from dataclasses import dataclass
 
 if TYPE_CHECKING:
-    from stsloganalyzis.decode_message import DecodedMessage
+    from stsloganalyzis.archive.decode_message import DecodedMessage
 
 
-from stsloganalyzis import decode_specific_message_content
+from stsloganalyzis.archive import decode_specific_message_content
 import csv
 
 from logger import logger_config
-
 
 ATS_CC_ACTION_SET_MESSAGE_ID = 192
 

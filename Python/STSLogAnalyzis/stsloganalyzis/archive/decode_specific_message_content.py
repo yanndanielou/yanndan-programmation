@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING, Dict, List, Tuple, cast, Optional
 
 from logger import logger_config
 
-from stsloganalyzis import (
+from stsloganalyzis.topology import (
     line_topology,
-    constants,
 )
+from stsloganalyzis.archive import constants
 
 if TYPE_CHECKING:
-    from stsloganalyzis import decode_message
+    from stsloganalyzis.archive import decode_message
 
 
 @dataclass

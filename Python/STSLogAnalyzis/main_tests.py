@@ -1,11 +1,11 @@
 from logger import logger_config
 
 from stsloganalyzis import (
-    archive_analyzis,
-    decode_archive,
     next_data,
 )
 from dateutil import parser
+
+from stsloganalyzis.archive import archive_analyzis, decode_archive
 
 OUTPUT_DIRECTORY = "output"
 

@@ -2,7 +2,7 @@ import pytest
 
 from logger import logger_config
 
-from stsloganalyzis import line_topology
+from stsloganalyzis.topology import line_topology
 from typing import cast
 
 

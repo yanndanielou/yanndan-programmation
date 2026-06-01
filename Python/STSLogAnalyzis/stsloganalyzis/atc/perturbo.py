@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Self, cast
 
-from stsloganalyzis import atc_logs
+from stsloganalyzis.atc import atc_logs
 from logger import logger_config
 
 from common import file_name_utils

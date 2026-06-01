@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 
-from stsloganalyzis import atc_logs
+from stsloganalyzis.atc import atc_logs
 
 
 class TestDecodeTimestamp:

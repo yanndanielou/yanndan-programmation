@@ -1,4 +1,4 @@
-from stsloganalyzis import decode_action_set_content
+from stsloganalyzis.archive import decode_action_set_content
 
 
 class TestRiyl:

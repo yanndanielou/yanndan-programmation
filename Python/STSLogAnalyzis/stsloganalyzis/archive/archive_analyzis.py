@@ -16,14 +16,11 @@ from common import (
 )
 from logger import logger_config
 
-from stsloganalyzis import (
-    constants,
-    decode_archive,
-    decode_product_topology_dependant_messages_content,
+from stsloganalyzis.archive import (
     helpers,
-    line_topology,
-    decode_message,
 )
+from stsloganalyzis.archive import constants, decode_archive, decode_message, decode_product_topology_dependant_messages_content
+from stsloganalyzis.topology import line_topology
 
 
 class TrainLocation:

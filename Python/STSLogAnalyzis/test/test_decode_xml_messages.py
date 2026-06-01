@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 
-from stsloganalyzis import decode_xml_message
+from stsloganalyzis.archive import decode_xml_message
 
 # fmt: off
 

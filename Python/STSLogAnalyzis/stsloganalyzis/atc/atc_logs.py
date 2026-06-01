@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Self, Tuple, cast
 from common import file_name_utils, file_utils, reports_utils, time_utils
 from logger import logger_config
 
-from stsloganalyzis import common_filters
+from stsloganalyzis.common import common_filters
 
 ATC_LOG_FILES_FIELDS_SEPARATOR = ";"
 

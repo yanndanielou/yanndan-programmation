@@ -1,6 +1,7 @@
 import pytest
 
-from stsloganalyzis import archive_analyzis, decode_archive, line_topology
+from stsloganalyzis.topology import line_topology
+from stsloganalyzis.archive import archive_analyzis, decode_archive
 
 OUTPUT_DIRECTORY = "output"
 
