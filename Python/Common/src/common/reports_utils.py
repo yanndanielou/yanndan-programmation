@@ -1,4 +1,5 @@
 import csv
+from enum import Enum
 import inspect
 import textwrap
 import time
@@ -61,8 +62,22 @@ def _write_xlsx_file_improved(rows_as_list_dict: List[Dict[str, Any]], xlsx_file
     workbook.close()
 
 
-def save_rows_to_output_files(rows_as_list_dict: List[Dict[str, Any]], file_base_name: str, output_directory_path: str, suffix_file_name_by_date: bool = False) -> bool:
-    if suffix_file_name_by_date:
+class SuffixFileNameByDate(Enum):
+    YES = "YES"
+    NO = "NO"
+    DO_BOTH = "DO_BOTH"
+
+
+def save_rows_to_output_files(
+    rows_as_list_dict: List[Dict[str, Any]], file_base_name: str, output_directory_path: str, suffix_file_name_by_date: SuffixFileNameByDate = SuffixFileNameByDate.NO
+) -> bool:
+
+    if suffix_file_name_by_date == SuffixFileNameByDate.DO_BOTH:
+        return save_rows_to_output_files(rows_as_list_dict, file_base_name, output_directory_path, SuffixFileNameByDate.NO) and save_rows_to_output_files(
+            rows_as_list_dict, file_base_name, output_directory_path, SuffixFileNameByDate.YES
+        )
+
+    if suffix_file_name_by_date == SuffixFileNameByDate.YES:
         file_base_name += file_name_utils.get_file_suffix_with_current_datetime(include_underscore=True)
 
     with logger_config.stopwatch_with_label(f"{inspect.stack(0)[0].function} for {len(rows_as_list_dict)} lines to {file_base_name}", inform_beginning=True):

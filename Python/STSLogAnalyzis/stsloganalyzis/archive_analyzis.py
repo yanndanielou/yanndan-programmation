@@ -421,8 +421,10 @@ class ArchiveAnalyzis:
             rows_as_list_dict.append(line_with_context.decoded_fields_flat_directory)
 
         # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
-        reports_utils.save_rows_to_output_files(rows_as_list_dict=rows_as_list_dict, file_base_name=file_base_name, output_directory_path=self.output_directory_path, suffix_file_name_by_date=False)
-        reports_utils.save_rows_to_output_files(rows_as_list_dict=rows_as_list_dict, file_base_name=file_base_name, output_directory_path=self.output_directory_path, suffix_file_name_by_date=True)
+        reports_utils.save_rows_to_output_files(
+            rows_as_list_dict=rows_as_list_dict, file_base_name=file_base_name, output_directory_path=self.output_directory_path, suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.DO_BOTH
+        )
+
         return len(rows_as_list_dict)
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
@@ -441,6 +443,7 @@ class ArchiveAnalyzis:
                 rows_as_list_dict += all_changes_since_previous
 
         # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
-        reports_utils.save_rows_to_output_files(rows_as_list_dict=rows_as_list_dict, file_base_name=file_base_name, output_directory_path=output_directory_path, suffix_file_name_by_date=False)
-        reports_utils.save_rows_to_output_files(rows_as_list_dict=rows_as_list_dict, file_base_name=file_base_name, output_directory_path=output_directory_path, suffix_file_name_by_date=True)
+        reports_utils.save_rows_to_output_files(
+            rows_as_list_dict=rows_as_list_dict, file_base_name=file_base_name, output_directory_path=output_directory_path, suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.DO_BOTH
+        )
         return len(rows_as_list_dict)

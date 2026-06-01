@@ -1,8 +1,10 @@
 from dataclasses import dataclass
-from typing import List, Self
+from typing import List, Self, cast
 
 from stsloganalyzis import atc_logs
 from logger import logger_config
+
+from common import file_name_utils
 
 
 @dataclass
@@ -11,20 +13,16 @@ class PerturboFile(atc_logs.ATCTestFile):
     equipment_name: str
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         self.variables_line_dictionary: atc_logs.ATCVariablesLineDictionary
         self.all_values_raw_lines: List[str] = []
-        self.open_and_read_lines()
+        self.create_dictionnary_and_raw_line_values()
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def open_and_read_lines(self) -> None:
-
-        with open(self.file_full_path, mode="r", encoding="utf-8") as file:
-            all_raw_lines = file.readlines()
-            logger_config.print_and_log_info(f"Perturbo file {self.file_full_path} has {len(all_raw_lines)} lines")
-            assert all_raw_lines
-            self.variables_line_dictionary = atc_logs.ATCVariablesLineDictionary(all_raw_lines[0])
-
-            self.all_values_raw_lines = all_raw_lines[1:]
+    def create_dictionnary_and_raw_line_values(self) -> None:
+        all_raw_lines = self.open_and_get_all_raw_lines()
+        self.variables_line_dictionary = atc_logs.ATCVariablesLineDictionary(all_raw_lines[0])
+        self.all_values_raw_lines = all_raw_lines[1:]
 
     def get_equipment_name(self) -> str:
         return self.equipment_name
@@ -42,11 +40,8 @@ class PerturboFile(atc_logs.ATCTestFile):
 
             timestamp = self.variables_line_dictionary.get_line_timestamp(all_fields_names_and_values, value_raw_line)
 
-            for variable_name, variable_value in all_fields_names_and_values.items():
-                if atc_logs.variable_name_matches_all_filters(variable_name=variable_name, all_filters=self.atc_test_result.variables_name_filters):
-                    variable = equipment.variables_library.get_or_create_variable_by_name(variable_name=variable_name)
-                    variable_state = atc_logs.VariableState(variable=variable, timestamp=timestamp, value=variable_value)
-                    all_variables_states.append(variable_state)
+            for variable_name, variable_raw_value in all_fields_names_and_values.items():
+                self.atc_test_result.handle_variable_state(timestamp=timestamp, equipment=equipment, variable_name=variable_name, variable_raw_value=variable_raw_value)
 
         logger_config.print_and_log_info(f"{len(all_variables_states)} variable states found for equipment {self.equipment_name} in {self.file_full_path}")
         return all_variables_states
@@ -56,7 +51,10 @@ class PerturboTestResult(atc_logs.ATCTestResult):
 
     def __init__(self) -> None:
         super().__init__()
-        self.all_perturbo_files: List[PerturboFile] = []
+
+    @property
+    def all_perturbo_files(self) -> List[PerturboFile]:
+        return cast(List[PerturboFile], self.all_atc_test_files)
 
     class Builder(atc_logs.ATCTestResult.Builder):
 
@@ -64,8 +62,12 @@ class PerturboTestResult(atc_logs.ATCTestResult):
             super().__init__()
             self._perturbo_test_created = PerturboTestResult()
 
+        def with_label(self, label: str) -> Self:
+            self._perturbo_test_created.label = label
+            return self
+
         def add_file(self, file_full_path: str, equipment_name: str) -> Self:
-            self._perturbo_test_created.all_perturbo_files.append(
+            self._perturbo_test_created.all_atc_test_files.append(
                 PerturboFile(
                     atc_test_result=self._perturbo_test_created,
                     file_full_path=file_full_path,
@@ -80,5 +82,8 @@ class PerturboTestResult(atc_logs.ATCTestResult):
             return self
 
         def build(self) -> "PerturboTestResult":
-            self._perturbo_test_created.variables_name_filters = self.variables_names_filters
+            self._perturbo_test_created.variables_names_creation_filters = self.variables_names_creation_filters
+            if self._perturbo_test_created.label == "" and len(self._perturbo_test_created.all_atc_test_files) == 1:
+                pass
+
             return self._perturbo_test_created
