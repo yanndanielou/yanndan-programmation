@@ -144,7 +144,7 @@ class ATCVariablesLineDictionary:
     def get_all_fields_names_and_values_in_data_line(self, value_raw_line: str) -> Dict[str, VARIABLE_STATE_TYPE]:
 
         all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE] = dict()
-        all_raw_values = value_raw_line.split(ATC_LOG_FILES_FIELDS_SEPARATOR)
+        all_raw_values = value_raw_line.rstrip().split(ATC_LOG_FILES_FIELDS_SEPARATOR)
         for variable_index, variable_name in enumerate(self.all_fields):
             variable_value = all_raw_values[variable_index]
             assert variable_name not in all_fields_names_and_values
@@ -202,7 +202,9 @@ class ATCTestResultLine(ABC):
             self.handle_variable_state(variable_name=variable_name, variable_value=variable_value)
 
     def handle_variable_state(self, variable_name: str, variable_value: VARIABLE_STATE_TYPE) -> None:
+        logger_config.print_and_log_info(f"handle_variable_state: {variable_name} {variable_value}")
         if variable_name_must_be_kept_after_filters(variable_name=variable_name, all_filters=self.test_result.variables_names_creation_filters):
+            logger_config.print_and_log_info(f"handle_variable_state, must be kept: {variable_name} {variable_value}")
             variable = self.equipment.variables_library.get_or_create_variable_by_name(variable_name=variable_name)
             variable_state = VariableState(variable=variable, timestamp=self.timestamp, value=variable_value)
             variable.add_state(variable_state)
