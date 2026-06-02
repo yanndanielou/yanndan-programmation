@@ -30,14 +30,14 @@ class Variable:
 
     def __post_init__(self) -> None:
         self.initial_state: Optional["VariableState"] = None
-        self.states: List[VariableState] = []
-        self.states_changes: List[VariableStateChange] = []
+        self.states_chronologically_sorted: List[VariableState] = []
+        self.states_changes_chronologically_sorted: List[VariableStateChange] = []
 
     def add_state(self, variable_state: "VariableState") -> None:
         if self.initial_state is None:
             self.initial_state = variable_state
         else:
-            self.states.append(variable_state)
+            self.states_chronologically_sorted.append(variable_state)
 
 
 @dataclass
@@ -47,7 +47,7 @@ class VariableState:
     timestamp: Optional[datetime.datetime]
 
     def __post_init__(self) -> None:
-        self.variable.states.append(self)
+        self.variable.states_chronologically_sorted.append(self)
 
 
 @dataclass
@@ -56,7 +56,7 @@ class VariableStateChange:
     new_state: VariableState
 
     def __post_init__(self) -> None:
-        self.variable.states_changes.append(self)
+        self.variable.states_changes_chronologically_sorted.append(self)
 
         self.previous_state_duration = (
             (self.new_state.timestamp - self.previous_state.timestamp)
@@ -71,12 +71,12 @@ class VariableStateChange:
 
 class EquipmentsLibrary:
     def __init__(self) -> None:
-        self._all_equipments: List[Equipment] = []
+        self.all_equipments: List[Equipment] = []
 
     def get_or_create_equipment_by_name(self, equipment_name: str) -> Equipment:
-        all_equipment_found = [eqpt for eqpt in self._all_equipments if eqpt.raw_name == equipment_name or eqpt.name == equipment_name]
+        all_equipment_found = [eqpt for eqpt in self.all_equipments if eqpt.raw_name == equipment_name or eqpt.name == equipment_name]
         if not all_equipment_found:
-            self._all_equipments.append(Equipment(raw_name=equipment_name))
+            self.all_equipments.append(Equipment(raw_name=equipment_name))
             return self.get_or_create_equipment_by_name(equipment_name=equipment_name)
 
         assert len(all_equipment_found) == 1
@@ -88,21 +88,39 @@ class EquipmentVariablesLibrary:
     equipment: Equipment
 
     def __post_init__(self) -> None:
-        self._all_variables: List[Variable] = []
+        self.all_variables: List[Variable] = []
 
     def get_or_create_variable_by_name(self, variable_name: str) -> Variable:
-        all_variable_found = [var for var in self._all_variables if var.name == variable_name]
+        all_variable_found = [var for var in self.all_variables if var.name == variable_name]
         if not all_variable_found:
-            self._all_variables.append(Variable(equipment=self.equipment, name=variable_name))
+            self.all_variables.append(Variable(equipment=self.equipment, name=variable_name))
             return self.get_or_create_variable_by_name(variable_name=variable_name)
 
-        assert len(all_variable_found) == 0
+        assert len(all_variable_found) == 1
         return all_variable_found[0]
 
 
 class ATCVariablesLineDictionary:
     def __init__(self, raw_line: str) -> None:
         self.all_fields = raw_line.split(ATC_LOG_FILES_FIELDS_SEPARATOR)
+
+    @staticmethod
+    def _convert_to_proper_type(value: str) -> VARIABLE_STATE_TYPE:
+        """Convert string value to proper type (bool, int, or str)."""
+        # Try to convert to bool
+        if value.lower() in ("VRAI", "true", "1", "yes", "on"):
+            return True
+        if value.lower() in ("FAUX", "false", "0", "no", "off"):
+            return False
+
+        # Try to convert to int
+        try:
+            return int(value)
+        except ValueError:
+            pass
+
+        # Keep as string
+        return value
 
     @staticmethod
     def get_line_timestamp(all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE], value_raw_line: str) -> datetime.datetime:
@@ -130,7 +148,7 @@ class ATCVariablesLineDictionary:
         for variable_index, variable_name in enumerate(self.all_fields):
             variable_value = all_raw_values[variable_index]
             assert variable_name not in all_fields_names_and_values
-            all_fields_names_and_values[variable_name] = variable_value
+            all_fields_names_and_values[variable_name] = self._convert_to_proper_type(variable_value)
 
         return all_fields_names_and_values
 
@@ -180,13 +198,13 @@ class ATCTestResultLine(ABC):
         self.all_variables_states: List[VariableState] = []
         self.test_result.result_lines.append(self)
 
-        for variable_name, variable_raw_value in self.all_fields_names_and_values.items():
-            self.handle_variable_state(variable_name=variable_name, variable_raw_value=variable_raw_value)
+        for variable_name, variable_value in self.all_fields_names_and_values.items():
+            self.handle_variable_state(variable_name=variable_name, variable_value=variable_value)
 
-    def handle_variable_state(self, variable_name: str, variable_raw_value: str) -> None:
+    def handle_variable_state(self, variable_name: str, variable_value: VARIABLE_STATE_TYPE) -> None:
         if variable_name_must_be_kept_after_filters(variable_name=variable_name, all_filters=self.test_result.variables_names_creation_filters):
             variable = self.equipment.variables_library.get_or_create_variable_by_name(variable_name=variable_name)
-            variable_state = VariableState(variable=variable, timestamp=self.timestamp, value=variable_raw_value)
+            variable_state = VariableState(variable=variable, timestamp=self.timestamp, value=variable_value)
             variable.add_state(variable_state)
 
 
@@ -219,16 +237,18 @@ class ATCTestFile(ABC):
             return all_raw_lines
 
 
+@dataclass
 class ATCTestResult(ABC):
-    def __init__(self) -> None:
+    label: str
+
+    def __post_init__(self) -> None:
         self.equipments_library = EquipmentsLibrary()
-        self._all_variables: List[Variable] = []
+        self.all_variables_unsorted: List[Variable] = []
         self.all_variables_states_sorted_by_timestamp: List[VariableState] = []
         self._all_variables_states_changes_unsorted: List[VariableStateChange] = []
         self.all_variables_states_changes_sorted_by_timestamp: List[VariableStateChange] = []
         self.variables_names_creation_filters: List[VariableNameFilter] = []
         self.output_directory_path = "output"
-        self.label = ""
         self.all_atc_test_files: List[ATCTestFile] = []
         self.result_lines: List[ATCTestResultLine] = []
 
@@ -236,20 +256,24 @@ class ATCTestResult(ABC):
     def process(self) -> None:
         for atc_test_file in self.all_atc_test_files:
             atc_test_file.compute_all_variables_states()
+
+        for equipment in self.equipments_library.all_equipments:
+            self.all_variables_unsorted += equipment.variables_library.all_variables
+
         self._compute_variables_states()
         self._compute_variables_states_changes()
 
     @logger_config.stopwatch_decorator()
     def _compute_variables_states(self) -> None:
-        all_variables_unsorted = [state for variable in self._all_variables for state in variable.states]
+        all_variables_unsorted = [state for variable in self.all_variables_unsorted for state in variable.states_chronologically_sorted]
         self.all_variables_states_sorted_by_timestamp = sorted(all_variables_unsorted, key=lambda state: state.timestamp or datetime.datetime.min)
         assert self.all_variables_states_sorted_by_timestamp
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def _compute_variables_states_changes(self) -> None:
-        for variable in self._all_variables:
+        for variable in self.all_variables_unsorted:
             previous_state = None
-            for state in variable.states:
+            for state in variable.states_chronologically_sorted:
                 if previous_state is not None and state.value != previous_state.value:
                     variable_state_change = VariableStateChange(previous_state, state)
                     self._all_variables_states_changes_unsorted.append(variable_state_change)
@@ -300,7 +324,24 @@ class ATCTestResult(ABC):
                 for state in self.all_variables_states_sorted_by_timestamp
                 if variable_name_must_be_kept_after_filters(state.variable.name, variables_names_reports_filters)
             ],
-            file_base_name=f"{files_base_name}_states",
+            file_base_name=f"{files_base_name}_states_variable_by_rows",
+            output_directory_path=self.output_directory_path,
+            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.DO_BOTH,
+        )
+
+        reports_utils.save_rows_to_output_files(
+            rows_as_list_dict=[
+                OrderedDict(
+                    {
+                        "date": state.timestamp,
+                        "equipment": state.variable.equipment.name,
+                        state.variable.name: state.value,
+                    }
+                )
+                for state in self.all_variables_states_sorted_by_timestamp
+                if variable_name_must_be_kept_after_filters(state.variable.name, variables_names_reports_filters)
+            ],
+            file_base_name=f"{files_base_name}_states_variable_by_column",
             output_directory_path=self.output_directory_path,
             suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.DO_BOTH,
         )
@@ -320,7 +361,7 @@ class ATCTestResult(ABC):
                         "previous_state_duration": state_change.previous_state_duration,
                     }
                 )
-                for state_change in variable.states_changes
+                for state_change in variable.states_changes_chronologically_sorted
             ],
             file_base_name=f"{files_base_name}_state_changes",
             output_directory_path=self.output_directory_path,
@@ -335,7 +376,7 @@ class ATCTestResult(ABC):
                         "value": state.value,
                     }
                 )
-                for state in variable.states
+                for state in variable.states_chronologically_sorted
             ],
             file_base_name=f"{files_base_name}_all_states",
             output_directory_path=self.output_directory_path,

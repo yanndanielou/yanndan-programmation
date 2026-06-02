@@ -3,7 +3,7 @@
 
 import json
 import textwrap
-from datetime import datetime
+from datetime import datetime, timedelta
 from json import JSONEncoder
 from pathlib import Path
 from typing import Any
@@ -18,6 +18,8 @@ class ListOfObjectsEncoder(JSONEncoder):
         if isinstance(o, set):
             return list(o)
         if isinstance(o, datetime):
+            return str(o)
+        if isinstance(o, timedelta):
             return str(o)
         # return json.JSONEncoder.default(self, obj)
         return o.__dict__

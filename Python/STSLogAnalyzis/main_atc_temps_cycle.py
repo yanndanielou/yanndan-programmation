@@ -11,7 +11,7 @@ OUTPUT_DIRECTORY = "output"
 def main() -> None:
     with logger_config.application_logger():
         perturbo_test = (
-            perturbo.PerturboTestResult.Builder().add_file(file_full_path=r"C:\Users\fr232487\Downloads\260330_011108_prb cnx evc (2) - Copie.txt", equipment_name="PAE 48")
+            perturbo.PerturboTestResult.Builder(label="atc temps cycle").add_file(file_full_path=r"C:\Users\fr232487\Downloads\260330_011108_prb cnx evc_1_line.txt", equipment_name="PAE 48")
             # .add_variables_names_creation_filter(variables_filter=atc_logs.VariableFilter)
             .build()
         )

@@ -47,22 +47,15 @@ class PerturboFile(atc_logs.ATCTestFile):
 
 class PerturboTestResult(atc_logs.ATCTestResult):
 
-    def __init__(self) -> None:
-        super().__init__()
-
     @property
     def all_perturbo_files(self) -> List[PerturboFile]:
         return cast(List[PerturboFile], self.all_atc_test_files)
 
     class Builder(atc_logs.ATCTestResult.Builder):
 
-        def __init__(self) -> None:
+        def __init__(self, label: str) -> None:
             super().__init__()
-            self._perturbo_test_created = PerturboTestResult()
-
-        def with_label(self, label: str) -> Self:
-            self._perturbo_test_created.label = label
-            return self
+            self._perturbo_test_created = PerturboTestResult(label)
 
         def add_file(self, file_full_path: str, equipment_name: str) -> Self:
             self._perturbo_test_created.all_atc_test_files.append(
