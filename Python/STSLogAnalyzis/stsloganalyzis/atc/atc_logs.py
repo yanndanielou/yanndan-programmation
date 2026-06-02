@@ -79,7 +79,7 @@ class EquipmentsLibrary:
             self._all_equipments.append(Equipment(raw_name=equipment_name))
             return self.get_or_create_equipment_by_name(equipment_name=equipment_name)
 
-        assert len(all_equipment_found) == 0
+        assert len(all_equipment_found) == 1
         return all_equipment_found[0]
 
 
@@ -105,7 +105,7 @@ class ATCVariablesLineDictionary:
         self.all_fields = raw_line.split(ATC_LOG_FILES_FIELDS_SEPARATOR)
 
     @staticmethod
-    def get_line_timestamp(all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE], value_raw_line: str) -> Optional[datetime.datetime]:
+    def get_line_timestamp(all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE], value_raw_line: str) -> datetime.datetime:
         c_heure_c_decalage_c_decenie_c_jour_as_date = ATCVariablesLineDictionary.get_c_heure_c_decalage_c_decenie_c_jour_as_date(all_fields_names_and_values, value_raw_line)
         assert c_heure_c_decalage_c_decenie_c_jour_as_date is not None
         return c_heure_c_decalage_c_decenie_c_jour_as_date
@@ -169,10 +169,25 @@ class VariableNameFilter(VariableFilter):
         return f"filter {','.join(self.string_filter.filter_field_values)}"
 
 
-class ATCTestVariablesLine(ABC):
-    def __init__(self, full_raw_line: str) -> None:
-        super().__init__()
-        pass
+@dataclass
+class ATCTestResultLine(ABC):
+    timestamp: datetime.datetime
+    equipment: Equipment
+    test_result: "ATCTestResult"
+    all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE]
+
+    def __post_init__(self) -> None:
+        self.all_variables_states: List[VariableState] = []
+        self.test_result.result_lines.append(self)
+
+        for variable_name, variable_raw_value in self.all_fields_names_and_values.items():
+            self.handle_variable_state(variable_name=variable_name, variable_raw_value=variable_raw_value)
+
+    def handle_variable_state(self, variable_name: str, variable_raw_value: str) -> None:
+        if variable_name_must_be_kept_after_filters(variable_name=variable_name, all_filters=self.test_result.variables_names_creation_filters):
+            variable = self.equipment.variables_library.get_or_create_variable_by_name(variable_name=variable_name)
+            variable_state = VariableState(variable=variable, timestamp=self.timestamp, value=variable_raw_value)
+            variable.add_state(variable_state)
 
 
 @dataclass
@@ -191,7 +206,7 @@ class ATCTestFile(ABC):
         return test_result.equipments_library.get_or_create_equipment_by_name(self.get_equipment_name())
 
     @abstractmethod
-    def get_all_raw_variables_states(self) -> List[VariableState]:
+    def compute_all_variables_states(self) -> None:
         pass
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
@@ -208,31 +223,30 @@ class ATCTestResult(ABC):
     def __init__(self) -> None:
         self.equipments_library = EquipmentsLibrary()
         self._all_variables: List[Variable] = []
-        self._all_variables_states_sorted_by_timestamp_lazy_init: List[VariableState] = []
+        self.all_variables_states_sorted_by_timestamp: List[VariableState] = []
         self._all_variables_states_changes_unsorted: List[VariableStateChange] = []
         self.all_variables_states_changes_sorted_by_timestamp: List[VariableStateChange] = []
         self.variables_names_creation_filters: List[VariableNameFilter] = []
         self.output_directory_path = "output"
         self.label = ""
         self.all_atc_test_files: List[ATCTestFile] = []
+        self.result_lines: List[ATCTestResultLine] = []
 
-    @property
-    def all_variables_states_sorted_by_timestamp(self) -> List[VariableState]:
-        if not self._all_variables_states_sorted_by_timestamp_lazy_init:
-            all_variables_unsorted = [state for variable in self._all_variables for state in variable.states]
-            self._all_variables_states_sorted_by_timestamp_lazy_init = sorted(all_variables_unsorted, key=lambda state: state.timestamp or datetime.datetime.min)
-            return self.all_variables_states_sorted_by_timestamp
+    @logger_config.stopwatch_decorator()
+    def process(self) -> None:
+        for atc_test_file in self.all_atc_test_files:
+            atc_test_file.compute_all_variables_states()
+        self._compute_variables_states()
+        self._compute_variables_states_changes()
 
-        return self._all_variables_states_sorted_by_timestamp_lazy_init
-
-    def handle_variable_state(self, equipment: Equipment, variable_name: str, variable_raw_value: str, timestamp: Optional[datetime.datetime]) -> None:
-        if variable_name_must_be_kept_after_filters(variable_name=variable_name, all_filters=self.variables_names_creation_filters):
-            variable = equipment.variables_library.get_or_create_variable_by_name(variable_name=variable_name)
-            variable_state = VariableState(variable=variable, timestamp=timestamp, value=variable_raw_value)
-            variable.add_state(variable_state)
+    @logger_config.stopwatch_decorator()
+    def _compute_variables_states(self) -> None:
+        all_variables_unsorted = [state for variable in self._all_variables for state in variable.states]
+        self.all_variables_states_sorted_by_timestamp = sorted(all_variables_unsorted, key=lambda state: state.timestamp or datetime.datetime.min)
+        assert self.all_variables_states_sorted_by_timestamp
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def compute_variables_states_changes(self) -> None:
+    def _compute_variables_states_changes(self) -> None:
         for variable in self._all_variables:
             previous_state = None
             for state in variable.states:
@@ -246,7 +260,10 @@ class ATCTestResult(ABC):
                 self._all_variables_states_changes_unsorted, key=lambda state_change: state_change.new_state.timestamp or datetime.datetime.min
             )
 
-    def create_report_all_variables(self, variables_names_reports_filters: List[VariableNameFilter], files_base_name: Optional[str] = None) -> None:
+    def create_report_all_variables(self, variables_names_reports_filters: Optional[List[VariableNameFilter]] = None, files_base_name: Optional[str] = None) -> None:
+        if variables_names_reports_filters is None:
+            variables_names_reports_filters = []
+
         if files_base_name is None:
             files_base_name = f"{self.label}_all"
 

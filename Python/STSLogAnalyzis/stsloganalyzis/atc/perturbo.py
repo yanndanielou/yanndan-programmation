@@ -28,23 +28,21 @@ class PerturboFile(atc_logs.ATCTestFile):
         return self.equipment_name
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def get_all_raw_variables_states(self) -> List[atc_logs.VariableState]:
+    def compute_all_variables_states(self) -> None:
 
         equipment = self.get_equipment(self.atc_test_result)
         assert isinstance(equipment, atc_logs.Equipment)
 
-        all_variables_states: List[atc_logs.VariableState] = []
         for value_raw_line in self.all_values_raw_lines:
 
             all_fields_names_and_values = self.variables_line_dictionary.get_all_fields_names_and_values_in_data_line(value_raw_line)
 
-            timestamp = self.variables_line_dictionary.get_line_timestamp(all_fields_names_and_values, value_raw_line)
-
-            for variable_name, variable_raw_value in all_fields_names_and_values.items():
-                self.atc_test_result.handle_variable_state(timestamp=timestamp, equipment=equipment, variable_name=variable_name, variable_raw_value=variable_raw_value)
-
-        logger_config.print_and_log_info(f"{len(all_variables_states)} variable states found for equipment {self.equipment_name} in {self.file_full_path}")
-        return all_variables_states
+            atc_logs.ATCTestResultLine(
+                timestamp=self.variables_line_dictionary.get_line_timestamp(all_fields_names_and_values, value_raw_line),
+                equipment=equipment,
+                test_result=self.atc_test_result,
+                all_fields_names_and_values=all_fields_names_and_values,
+            )
 
 
 class PerturboTestResult(atc_logs.ATCTestResult):
@@ -86,4 +84,5 @@ class PerturboTestResult(atc_logs.ATCTestResult):
             if self._perturbo_test_created.label == "" and len(self._perturbo_test_created.all_atc_test_files) == 1:
                 pass
 
+            self._perturbo_test_created.process()
             return self._perturbo_test_created
