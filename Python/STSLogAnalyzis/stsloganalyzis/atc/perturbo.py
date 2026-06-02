@@ -54,13 +54,12 @@ class PerturboTestResult(atc_logs.ATCTestResult):
     class Builder(atc_logs.ATCTestResult.Builder):
 
         def __init__(self, label: str) -> None:
-            super().__init__()
-            self._perturbo_test_created = PerturboTestResult(label)
+            super().__init__(atc_test_result_created=PerturboTestResult(label))
 
         def add_file(self, file_full_path: str, equipment_name: str) -> Self:
-            self._perturbo_test_created.all_atc_test_files.append(
+            self._atc_test_result_created.all_atc_test_files.append(
                 PerturboFile(
-                    atc_test_result=self._perturbo_test_created,
+                    atc_test_result=self._atc_test_result_created,
                     file_full_path=file_full_path,
                     equipment_name=equipment_name,
                 )
@@ -71,11 +70,3 @@ class PerturboTestResult(atc_logs.ATCTestResult):
             for file_full_path in self.get_files_full_paths(directory_path=directory_path, filename_pattern=filename_pattern):
                 self.add_file(file_full_path=file_full_path, equipment_name=equipment_name)
             return self
-
-        def build(self) -> "PerturboTestResult":
-            self._perturbo_test_created.variables_names_creation_filters = self.variables_names_creation_filters
-            if self._perturbo_test_created.label == "" and len(self._perturbo_test_created.all_atc_test_files) == 1:
-                pass
-
-            self._perturbo_test_created.process()
-            return self._perturbo_test_created

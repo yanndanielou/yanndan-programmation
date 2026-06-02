@@ -2,6 +2,7 @@ import json
 import re
 from enum import Enum
 from typing import Dict, List
+from datetime import datetime
 
 
 class WhiteOrBlackListFilterType(Enum):
@@ -52,3 +53,18 @@ class StringFieldValueBasedFilter:
             return ret
         except (TypeError, ValueError, json.JSONDecodeError, KeyError):
             return False
+
+
+class DatesFilter:
+    class DateBetweenFilter:
+
+        def __init__(self, date_min: datetime, date_max: datetime) -> None:
+            super().__init__()
+            self.date_min = date_min
+            self.date_max = date_max
+
+        def do_passes(self, timestamp: datetime) -> bool:
+            return timestamp > self.date_min and timestamp < self.date_max
+
+        def __str__(self) -> str:
+            return f"{self.__class__.__name__} {self.date_min} {self.date_max} "

@@ -162,15 +162,14 @@ class DatesFilter(SqlArchFilter):
 
         def __init__(self, date_min: datetime, date_max: datetime) -> None:
             super().__init__()
-            self.date_min = date_min
-            self.date_max = date_max
+            self.the_date_filter = common_filters.DatesFilter.DateBetweenFilter(date_min=date_min, date_max=date_max)
 
         def do_passes(self, raw_sql_arch_line: str, parent: "ArchiveSource") -> bool:
             line_date = self.get_line_date(raw_sql_arch_line)
-            return line_date > self.date_min and line_date < self.date_max
+            return self.the_date_filter.do_passes(line_date)
 
         def __str__(self) -> str:
-            return f"{self.__class__.__name__} {self.date_min} {self.date_max} "
+            return str(self.the_date_filter)
 
 
 ARCHIVE_VERSION_LINE_PREFIX = '{"' + ArchiveLineTag.VERSIONS.value + '":{'

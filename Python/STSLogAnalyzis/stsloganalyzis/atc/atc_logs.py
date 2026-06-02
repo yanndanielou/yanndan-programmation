@@ -251,6 +251,7 @@ class ATCTestResult(ABC):
         self._all_variables_states_changes_unsorted: List[VariableStateChange] = []
         self.all_variables_states_changes_sorted_by_timestamp: List[VariableStateChange] = []
         self.variables_names_creation_filters: List[VariableNameFilter] = []
+        self.variables_timestamp_creation_filters: List[common_filters.DatesFilter.DateBetweenFilter] = []
         self.output_directory_path = "output"
         self.all_atc_test_files: List[ATCTestFile] = []
         self.result_lines: List[ATCTestResultLine] = []
@@ -400,17 +401,28 @@ class ATCTestResult(ABC):
 
     class Builder(ABC):
 
-        def __init__(self) -> None:
+        def __init__(self, atc_test_result_created: "ATCTestResult") -> None:
             super().__init__()
-            self.variables_names_creation_filters: List[VariableNameFilter] = []
+            self._atc_test_result_created = atc_test_result_created
 
         def get_files_full_paths(self, directory_path: str, filename_pattern: str) -> List[str]:
             ret = file_utils.get_files_by_directory_and_file_name_mask(directory_path, filename_pattern, file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER)
             return cast(List[str], ret)
 
         def add_variables_names_creation_filter(self, variables_filter: VariableNameFilter) -> Self:
-            self.variables_names_creation_filters.append(variables_filter)
+            self._atc_test_result_created.variables_names_creation_filters.append(variables_filter)
             return self
+
+        def add_timestamp_filter(self, timestamp_filter: common_filters.DatesFilter.DateBetweenFilter) -> Self:
+            self._atc_test_result_created.variables_timestamp_creation_filters.append(timestamp_filter)
+            return self
+
+        def build(self) -> "ATCTestResult":
+            if self._atc_test_result_created.label == "" and len(self._atc_test_result_created.all_atc_test_files) == 1:
+                pass
+
+            self._atc_test_result_created.process()
+            return self._atc_test_result_created
 
 
 def pert_variable_to_timestamp(c_heure: int, c_decalage: int, c_decenie: int, c_jour: int) -> datetime.datetime:
