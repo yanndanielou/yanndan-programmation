@@ -469,6 +469,7 @@ def stopwatch_decorator(
                 enabled=enabled,
                 inform_beginning=inform_beginning,
                 monitor_ram_usage=monitor_ram_usage,
+                call_stack_frame=3,
             ):
                 return func(*args, **kwargs)
 
