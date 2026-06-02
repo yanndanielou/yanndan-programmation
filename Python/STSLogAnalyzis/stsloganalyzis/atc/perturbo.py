@@ -4,8 +4,6 @@ from typing import List, Self, cast
 from stsloganalyzis.atc import atc_logs
 from logger import logger_config
 
-from common import file_name_utils
-
 
 @dataclass
 class PerturboFile(atc_logs.ATCTestFile):
@@ -64,9 +62,4 @@ class PerturboTestResult(atc_logs.ATCTestResult):
                     equipment_name=equipment_name,
                 )
             )
-            return self
-
-        def add_files(self, directory_path: str, filename_pattern: str, equipment_name: str) -> Self:
-            for file_full_path in self.get_files_full_paths(directory_path=directory_path, filename_pattern=filename_pattern):
-                self.add_file(file_full_path=file_full_path, equipment_name=equipment_name)
             return self

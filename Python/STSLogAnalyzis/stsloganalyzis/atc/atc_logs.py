@@ -417,6 +417,11 @@ class ATCTestResult(ABC):
             self._atc_test_result_created.variables_timestamp_creation_filters.append(timestamp_filter)
             return self
 
+        def add_files(self, directory_path: str, filename_pattern: str, equipment_name: str) -> Self:
+            for file_full_path in self.get_files_full_paths(directory_path=directory_path, filename_pattern=filename_pattern):
+                self.add_file(file_full_path=file_full_path, equipment_name=equipment_name)
+            return self
+
         def build(self) -> "ATCTestResult":
             if self._atc_test_result_created.label == "" and len(self._atc_test_result_created.all_atc_test_files) == 1:
                 pass
