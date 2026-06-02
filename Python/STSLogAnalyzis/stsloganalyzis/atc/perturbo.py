@@ -14,10 +14,10 @@ class PerturboFile(atc_logs.ATCTestFile):
         super().__post_init__()
         self.variables_line_dictionary: atc_logs.ATCVariablesLineDictionary
         self.all_values_raw_lines: List[str] = []
-        self.create_dictionnary_and_raw_line_values()
+        self.create_dictionary_and_raw_line_values()
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def create_dictionnary_and_raw_line_values(self) -> None:
+    def create_dictionary_and_raw_line_values(self) -> None:
         all_raw_lines = self.open_and_get_all_raw_lines()
         self.variables_line_dictionary = atc_logs.ATCVariablesLineDictionary(all_raw_lines[0])
         self.all_values_raw_lines = all_raw_lines[1:]
@@ -44,10 +44,6 @@ class PerturboFile(atc_logs.ATCTestFile):
 
 
 class PerturboTestResult(atc_logs.ATCTestResult):
-
-    @property
-    def all_perturbo_files(self) -> List[PerturboFile]:
-        return cast(List[PerturboFile], self.all_atc_test_files)
 
     class Builder(atc_logs.ATCTestResult.Builder):
 

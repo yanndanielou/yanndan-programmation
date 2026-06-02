@@ -220,20 +220,13 @@ class ATCTestFile(ABC):
         self.file_name = file_name_utils.get_file_name_without_extension_from_full_path(self.file_full_path)
 
     @abstractmethod
-    def get_equipment_name(self) -> str:
-        pass
-
-    def get_equipment(self, test_result: "ATCTestResult") -> Equipment:
-        return test_result.equipments_library.get_or_create_equipment_by_name(self.get_equipment_name())
-
-    @abstractmethod
     def compute_all_variables_states(self) -> None:
         pass
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def open_and_get_all_raw_lines(self) -> List[str]:
 
-        with open(self.file_full_path, mode="r", encoding="utf-8") as file:
+        with open(self.file_full_path, mode="r", encoding="ANSI") as file:
             all_raw_lines = file.readlines()
             logger_config.print_and_log_info(f"Perturbo file {self.file_full_path} has {len(all_raw_lines)} lines")
             assert all_raw_lines

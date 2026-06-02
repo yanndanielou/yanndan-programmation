@@ -422,7 +422,8 @@ class ArchiveAnalyzis:
         for line_with_context in self.all_sql_arch_lines_with_context:
             all_fields: Dict[str, constants.FIELD_TYPE] = OrderedDict()
             rows_as_list_dict.append(all_fields)
-            all_fields["Timestamp"] = line_with_context.sql_arch_line.date.replace(tzinfo=None)
+            # all_fields["Timestamp"] = line_with_context.sql_arch_line.date.replace(tzinfo=None)
+            all_fields["Timestamp"] = line_with_context.sql_arch_line.get_date_raw_str()
             all_fields["Id"] = line_with_context.sql_arch_line.id_field
             all_fields.update(line_with_context.decoded_fields_flat_directory)
 
