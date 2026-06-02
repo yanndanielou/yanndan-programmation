@@ -19,7 +19,12 @@ from logger import logger_config
 from stsloganalyzis.archive import (
     helpers,
 )
-from stsloganalyzis.archive import constants, decode_archive, decode_message, decode_product_topology_dependant_messages_content
+from stsloganalyzis.archive import (
+    constants,
+    decode_archive,
+    decode_message,
+    decode_product_topology_dependant_messages_content,
+)
 from stsloganalyzis.topology import line_topology
 
 
@@ -415,7 +420,11 @@ class ArchiveAnalyzis:
         rows_as_list_dict: List[Dict[str, Any]] = []
 
         for line_with_context in self.all_sql_arch_lines_with_context:
-            rows_as_list_dict.append(line_with_context.decoded_fields_flat_directory)
+            all_fields: Dict[str, constants.FIELD_TYPE] = OrderedDict()
+            rows_as_list_dict.append(all_fields)
+            all_fields["Timestamp"] = line_with_context.sql_arch_line.date.replace(tzinfo=None)
+            all_fields["Id"] = line_with_context.sql_arch_line.id_field
+            all_fields.update(line_with_context.decoded_fields_flat_directory)
 
         # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
         reports_utils.save_rows_to_output_files(
