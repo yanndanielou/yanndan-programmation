@@ -1,8 +1,9 @@
 import datetime
+from warnings import deprecated
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Self, Tuple, cast
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Self, cast, Tuple
 
 from common import file_name_utils, file_utils, reports_utils, time_utils
 from logger import logger_config
@@ -11,7 +12,7 @@ from stsloganalyzis.common import common_filters
 
 ATC_LOG_FILES_FIELDS_SEPARATOR = ";"
 
-VARIABLE_STATE_TYPE = str | int | bool | datetime.datetime
+VARIABLE_STATE_TYPE = str | int | bool | datetime.datetime | None
 
 
 @dataclass
@@ -44,7 +45,7 @@ class Variable:
 class VariableState:
     variable: Variable
     value: VARIABLE_STATE_TYPE
-    timestamp: Optional[datetime.datetime]
+    result_line: "ATCTestResultLine"
 
     def __post_init__(self) -> None:
         self.variable.states_chronologically_sorted.append(self)
@@ -59,8 +60,8 @@ class VariableStateChange:
         self.variable.states_changes_chronologically_sorted.append(self)
 
         self.previous_state_duration = (
-            (self.new_state.timestamp - self.previous_state.timestamp)
-            if self.previous_state is not None and self.previous_state.timestamp is not None and self.new_state.timestamp is not None
+            (self.new_state.result_line.horodate - self.previous_state.result_line.horodate)
+            if self.previous_state is not None and self.previous_state.result_line.horodate is not None and self.new_state.result_line.horodate is not None
             else None
         )
 
@@ -100,9 +101,9 @@ class EquipmentVariablesLibrary:
         return all_variable_found[0]
 
 
+@dataclass
 class ATCVariablesLineDictionary:
-    def __init__(self, raw_line: str) -> None:
-        self.all_fields = raw_line.split(ATC_LOG_FILES_FIELDS_SEPARATOR)
+    all_fields_names: List[str]
 
     @staticmethod
     def _convert_to_proper_type(value: str) -> VARIABLE_STATE_TYPE:
@@ -123,13 +124,7 @@ class ATCVariablesLineDictionary:
         return value
 
     @staticmethod
-    def get_line_timestamp(all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE], value_raw_line: str) -> datetime.datetime:
-        c_heure_c_decalage_c_decenie_c_jour_as_date = ATCVariablesLineDictionary.get_c_heure_c_decalage_c_decenie_c_jour_as_date(all_fields_names_and_values, value_raw_line)
-        assert c_heure_c_decalage_c_decenie_c_jour_as_date is not None
-        return c_heure_c_decalage_c_decenie_c_jour_as_date
-
-    @staticmethod
-    def get_c_heure_c_decalage_c_decenie_c_jour_as_date(all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE], value_raw_line: str) -> Optional[datetime.datetime]:
+    def get_horodate_from_cheure_etc(all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE]) -> Optional[datetime.datetime]:
 
         c_heure = cast(int, all_fields_names_and_values.get("CHEURE"))
         c_decalage = cast(int, all_fields_names_and_values.get("CDECALAGE"))
@@ -142,10 +137,15 @@ class ATCVariablesLineDictionary:
         return pert_variable_to_timestamp(c_heure=c_heure, c_decalage=c_decalage, c_decenie=c_decenie, c_jour=c_jour)
 
     def get_all_fields_names_and_values_in_data_line(self, value_raw_line: str) -> Dict[str, VARIABLE_STATE_TYPE]:
-
-        all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE] = dict()
         all_raw_values = value_raw_line.rstrip().split(ATC_LOG_FILES_FIELDS_SEPARATOR)
-        for variable_index, variable_name in enumerate(self.all_fields):
+        return self.get_all_fields_names_and_values_in_data_raw_fields(all_raw_values=all_raw_values)
+
+    def get_all_fields_names_and_values_in_data_raw_fields(self, all_raw_values: List[str]) -> Dict[str, VARIABLE_STATE_TYPE]:
+        all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE] = dict()
+
+        assert len(all_raw_values) == len(self.all_fields_names)
+
+        for variable_index, variable_name in enumerate(self.all_fields_names):
             variable_value = all_raw_values[variable_index]
             assert variable_name not in all_fields_names_and_values
             all_fields_names_and_values[variable_name] = self._convert_to_proper_type(variable_value)
@@ -175,8 +175,8 @@ class VariableNameFilter(VariableFilter):
             )
         )
 
-    def passes(self, variable_name: str) -> bool:
-        match = self.string_filter.do_passes(variable_name)
+    def passes(self, to_test: str) -> bool:
+        match = self.string_filter.do_passes(to_test)
         assert isinstance(match, bool)
         return match
 
@@ -189,9 +189,12 @@ class VariableNameFilter(VariableFilter):
 
 @dataclass
 class ATCTestResultLine(ABC):
-    timestamp: datetime.datetime
+    parent_file: "ATCTestFile"
+    line_number: int
+    horodate: Optional[datetime.datetime]
+    time_according_to_simulation_start: Optional[datetime.datetime]
     equipment: Equipment
-    test_result: "ATCTestResult"
+
     all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE]
 
     def __post_init__(self) -> None:
@@ -201,14 +204,25 @@ class ATCTestResultLine(ABC):
         for variable_name, variable_value in self.all_fields_names_and_values.items():
             self.handle_variable_state(variable_name=variable_name, variable_value=variable_value)
 
+    @property
+    @deprecated("not used")
+    def best_timestamp(self) -> Optional[datetime.datetime]:
+        if self.horodate:
+            return self.horodate
+        return self.time_according_to_simulation_start
+
     def handle_variable_state(self, variable_name: str, variable_value: VARIABLE_STATE_TYPE) -> None:
         # logger_config.print_and_log_info(f"handle_variable_state: {variable_name} {variable_value}")
         if variable_name_must_be_kept_after_filters(variable_name=variable_name, all_filters=self.test_result.variables_names_creation_filters):
             # logger_config.print_and_log_info(f"handle_variable_state, must be kept: {variable_name} {variable_value}")
             variable = self.equipment.variables_library.get_or_create_variable_by_name(variable_name=variable_name)
-            variable_state = VariableState(variable=variable, timestamp=self.timestamp, value=variable_value)
+            variable_state = VariableState(variable=variable, value=variable_value, result_line=self)
             variable.add_state(variable_state)
             self.all_variables_states.append(variable_state)
+
+    @property
+    def test_result(self) -> "ATCTestResult":
+        return self.parent_file.atc_test_result
 
 
 @dataclass
@@ -218,6 +232,7 @@ class ATCTestFile(ABC):
 
     def __post_init__(self) -> None:
         self.file_name = file_name_utils.get_file_name_without_extension_from_full_path(self.file_full_path)
+        self.all_lines: List[ATCTestResultLine] = []
 
     @abstractmethod
     def compute_all_variables_states(self) -> None:
@@ -232,6 +247,36 @@ class ATCTestFile(ABC):
             assert all_raw_lines
             return all_raw_lines
 
+    def create_result_line_if_needed(
+        self,
+        line_number: int,
+        horodate: Optional[datetime.datetime],
+        time_according_to_simulation_start: Optional[datetime.datetime],
+        equipment: Equipment,
+        all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE],
+    ) -> None:
+
+        def variable_must_be_ignored_because_timestamp_filters(timestamp: datetime.datetime, all_filters: List[common_filters.DatesFilter.DateBetweenFilter]) -> bool:
+            return all(filter.do_passes(timestamp) for filter in all_filters) if all_filters else True
+
+        if horodate:
+            if not variable_must_be_ignored_because_timestamp_filters(horodate, self.atc_test_result.variables_timestamp_creation_filters):
+                return
+        if time_according_to_simulation_start:
+            if not variable_must_be_ignored_because_timestamp_filters(time_according_to_simulation_start, self.atc_test_result.variables_timestamp_creation_filters):
+                return
+
+        self.all_lines.append(
+            ATCTestResultLine(
+                line_number=line_number,
+                parent_file=self,
+                horodate=horodate,
+                time_according_to_simulation_start=time_according_to_simulation_start,
+                equipment=equipment,
+                all_fields_names_and_values=all_fields_names_and_values,
+            )
+        )
+
 
 @dataclass
 class ATCTestResult(ABC):
@@ -240,7 +285,7 @@ class ATCTestResult(ABC):
     def __post_init__(self) -> None:
         self.equipments_library = EquipmentsLibrary()
         self.all_variables_unsorted: List[Variable] = []
-        self.all_variables_states_sorted_by_timestamp: List[VariableState] = []
+        self.all_variables_states_sorted_by_line_number: List[VariableState] = []
         self._all_variables_states_changes_unsorted: List[VariableStateChange] = []
         self.all_variables_states_changes_sorted_by_timestamp: List[VariableStateChange] = []
         self.variables_names_creation_filters: List[VariableNameFilter] = []
@@ -253,6 +298,7 @@ class ATCTestResult(ABC):
     def process(self) -> None:
         for atc_test_file in self.all_atc_test_files:
             atc_test_file.compute_all_variables_states()
+            logger_config.print_and_log_info(f"In file {atc_test_file.file_name}, {len(atc_test_file.all_lines)} kept")
 
         for equipment in self.equipments_library.all_equipments:
             self.all_variables_unsorted += equipment.variables_library.all_variables
@@ -263,8 +309,8 @@ class ATCTestResult(ABC):
     @logger_config.stopwatch_decorator()
     def _compute_variables_states(self) -> None:
         all_variables_unsorted = [state for variable in self.all_variables_unsorted for state in variable.states_chronologically_sorted]
-        self.all_variables_states_sorted_by_timestamp = sorted(all_variables_unsorted, key=lambda state: state.timestamp or datetime.datetime.min)
-        assert self.all_variables_states_sorted_by_timestamp
+        self.all_variables_states_sorted_by_line_number = sorted(all_variables_unsorted, key=lambda state: state.result_line.line_number)
+        assert self.all_variables_states_sorted_by_line_number
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def _compute_variables_states_changes(self) -> None:
@@ -277,9 +323,7 @@ class ATCTestResult(ABC):
                 previous_state = state
 
         with logger_config.stopwatch_with_label("Order states changes"):
-            self.all_variables_states_changes_sorted_by_timestamp = sorted(
-                self._all_variables_states_changes_unsorted, key=lambda state_change: state_change.new_state.timestamp or datetime.datetime.min
-            )
+            self.all_variables_states_changes_sorted_by_timestamp = sorted(self._all_variables_states_changes_unsorted, key=lambda state_change: state_change.new_state.result_line.line_number)
 
     def create_report_all_variables(self, variables_names_reports_filters: Optional[List[VariableNameFilter]] = None, files_base_name: Optional[str] = None) -> None:
         if variables_names_reports_filters is None:
@@ -297,7 +341,9 @@ class ATCTestResult(ABC):
             rows_as_list_dict=[
                 OrderedDict(
                     {
-                        "date": state_change.new_state.timestamp,
+                        "horodate": state_change.new_state.result_line.horodate,
+                        "Date according to simulation start": state_change.new_state.result_line.time_according_to_simulation_start,
+                        "line": state_change.new_state.result_line.line_number,
                         "equipment": state_change.variable.equipment.name,
                         "variable": state_change.variable.name,
                         "old_value": state_change.previous_state.value if state_change.previous_state else None,
@@ -319,13 +365,15 @@ class ATCTestResult(ABC):
             rows_as_list_dict=[
                 OrderedDict(
                     {
-                        "date": state.timestamp,
+                        "horodate": state.result_line.horodate,
+                        "Date according to simulation start": state.result_line.time_according_to_simulation_start,
+                        "line": state.result_line.line_number,
                         "equipment": state.variable.equipment.name,
                         "variable": state.variable.name,
                         "value": state.value,
                     }
                 )
-                for state in self.all_variables_states_sorted_by_timestamp
+                for state in self.all_variables_states_sorted_by_line_number
                 if variable_name_must_be_kept_after_filters(state.variable.name, variables_names_reports_filters)
             ],
             file_base_name=f"{files_base_name}_states_variable_by_rows",
@@ -342,7 +390,9 @@ class ATCTestResult(ABC):
             if variables_states:
                 result_line_dict: Dict[str, VARIABLE_STATE_TYPE] = OrderedDict()
                 rows_as_list_dict.append(result_line_dict)
-                result_line_dict["date"] = result_line.timestamp
+                result_line_dict["horodate"] = result_line.horodate
+                result_line_dict["Date according to simulation start"] = result_line.time_according_to_simulation_start
+                result_line_dict["line"] = result_line.line_number
                 result_line_dict["equipment"] = result_line.equipment.name
 
             for variable_state in variables_states:
@@ -364,7 +414,9 @@ class ATCTestResult(ABC):
             rows_as_list_dict=[
                 OrderedDict(
                     {
-                        "date": state_change.new_state.timestamp,
+                        "horodate": state_change.new_state.result_line.horodate,
+                        "Date according to simulation start": state_change.new_state.result_line.time_according_to_simulation_start,
+                        "line": state_change.new_state.result_line.line_number,
                         "old_value": state_change.previous_state.value if state_change.previous_state else None,
                         "new_value": state_change.new_state.value,
                         "previous_state_duration": state_change.previous_state_duration,
@@ -381,7 +433,9 @@ class ATCTestResult(ABC):
             rows_as_list_dict=[
                 OrderedDict(
                     {
-                        "date": state.timestamp,
+                        "horodate": state.result_line.horodate,
+                        "Date according to simulation start": state.result_line.time_according_to_simulation_start,
+                        "line": state.result_line.line_number,
                         "value": state.value,
                     }
                 )
@@ -408,11 +462,6 @@ class ATCTestResult(ABC):
 
         def add_timestamp_filter(self, timestamp_filter: common_filters.DatesFilter.DateBetweenFilter) -> Self:
             self._atc_test_result_created.variables_timestamp_creation_filters.append(timestamp_filter)
-            return self
-
-        def add_files(self, directory_path: str, filename_pattern: str, equipment_name: str) -> Self:
-            for file_full_path in self.get_files_full_paths(directory_path=directory_path, filename_pattern=filename_pattern):
-                self.add_file(file_full_path=file_full_path, equipment_name=equipment_name)
             return self
 
         def build(self) -> "ATCTestResult":
