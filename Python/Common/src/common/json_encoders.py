@@ -63,7 +63,7 @@ class JsonEncodersUtils(metaclass=singleton.Singleton):
                     chunk_number = chunk_start_index // chunk_size
 
                     # Create filename with chunk number
-                    chunk_file_path = parent / f"{stem}_{chunk_number}{suffix}"
+                    chunk_file_path = parent / f"{stem}_part_{chunk_number}{suffix}"
 
                     with logger_config.stopwatch_with_label(f"Serialize {len(chunk)} in {chunk_file_path}"):
                         with open(chunk_file_path, "w", encoding="utf-8") as json_file:
