@@ -21,17 +21,16 @@ railway_line, archive_decoder = next_data.get_encoders()
 class IgnoredTestDecodeOneArchiveFile:
     def test_process_one_file(self) -> None:
 
-        archive_file = decode_archive.ArchiveFile(r"Input\archive_2025_07_22\NEXTFileArchiveServer_365.json")
-        archive_file.get_all_archive_file_lines()
-        archive_file.(archive_decoder=archive_decoder)
-        assert len(archive_file.all_version_lines) == 1
-        assert len(archive_file.all_sqlarch_lines) > 100
+        archive_library = decode_archive.ArchiveLibrary.Builder().add_archive_file(r"Input\archive_2025_07_22\NEXTFileArchiveServer_365.json").build()
+        # archive_file.(archive_decoder=archive_decoder)
+        assert len(archive_library.all_version_lines) == 1
+        assert len(archive_library.all_sqlarch_lines) > 100
         pass
 
 
 class IgnoredTestDecodeOneLineWithoutXml:
     def test_decode_basic_fields_zc_ats_tracking_status(self) -> None:
-        archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_zc_ats_tracking_status)
+        archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_zc_ats_tracking_status, parent=None)
         assert archive_line.get_date_raw_str() == "2025-07-21T10:54:18.440+02:00"
         assert archive_line.get_id() == "M_PAS_05_ZC_ATS_TRACKING_STATUS_TRAINS_ID"
         assert (
@@ -40,13 +39,13 @@ class IgnoredTestDecodeOneLineWithoutXml:
         )
 
     def test_get_archive_line_fields_message_ats_pae_action_set(self) -> None:
-        archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_action_set)
+        archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_ats_pae_action_set, parent=None)
         assert archive_line.get_id() == "M_TRAIN_CC_9_ATS_CC_ACTION_SET"
 
 
 class IgnoredTestDecodeOneLineWithXml:
     def test_decode_basic_fields_lc_ats_sso_versions(self) -> None:
-        archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_lc_ats_sso_versions)
+        archive_line = decode_archive.SqlArchArchiveLine(full_raw_archive_line=archive_line_str_message_lc_ats_sso_versions, parent=None)
         assert archive_line.get_id() == "M_PAL_01_LC_ATS_SSO_VERSIONS"
 
         invariant_message = message_manager.get_message_by_id(archive_line.get_id())
@@ -121,4 +120,3 @@ class IgnoredTestDecodeOneLineWithXml:
         assert cast(str, decoded_message.decoded_fields_flat_directory["RestrEnd1Offset"]) == 60103
         assert cast(str, decoded_message.decoded_fields_flat_directory["RestrEnd1Stationning"]) == 454
         assert cast(str, decoded_message.decoded_fields_flat_directory["DownRestrReason"]) == 0
- 
