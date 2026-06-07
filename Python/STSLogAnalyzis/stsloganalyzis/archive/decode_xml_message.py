@@ -184,10 +184,10 @@ class XmlMessageDecoder:
         """Convert a hex string to an integer."""
         return int(hex_string, 16)
 
-    def extract_bits(self, start_bit: int, bit_length: int) -> str:
+    def extract_bits(self, start_bit: int, number_of_bits: int) -> str:
         assert self.decoded_xml_message
-        bits_extracted = self.extract_bits_to_bytes(data=self.decoded_xml_message.hex_bytes, start_bit=start_bit, bit_length=bit_length)
-        self.decoded_xml_message.current_bit_index += bit_length
+        bits_extracted = self.extract_bits_to_bytes(data=self.decoded_xml_message.hex_bytes, start_bit=start_bit, bit_length=number_of_bits)
+        self.decoded_xml_message.current_bit_index += number_of_bits
         return bits_extracted
 
     @staticmethod
