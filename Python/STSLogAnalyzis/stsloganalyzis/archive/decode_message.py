@@ -62,7 +62,7 @@ class DecodedMessage:
         self.decoded_fields_flat_directory: Dict[str, constants.FIELD_TYPE] = {}
         self.hlf_decoded: Optional[datetime.datetime] = None
 
-    def get_field_value_human_readable(self, field_name: str) -> float | int | bool | str:
+    def get_field_value_human_readable(self, field_name: str) -> constants.HUMAN_READABLE_FIELD_TYPE:
         field_value_by_name = self.decoded_fields_flat_directory[field_name]
         assert field_value_by_name is not None
 
