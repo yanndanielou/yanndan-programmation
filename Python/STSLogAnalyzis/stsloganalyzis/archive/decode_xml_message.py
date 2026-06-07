@@ -1,11 +1,12 @@
 import datetime
-from enum import Enum
 import os
 import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import ClassVar, Dict, List, Optional, cast, Tuple
+from enum import Enum
+from typing import ClassVar, Dict, List, Optional, cast
 
+from common import bytes_messages
 from logger import logger_config
 
 
@@ -111,10 +112,8 @@ class DecodedXmlMessage:
         self.all_fields_by_name: Dict[str, DecodedXmlMessage.XmlMessageFieldUnit | List[DecodedXmlMessage.XmlMessageFieldUnit]] = {}
         self.all_records_by_name: Dict[str, DecodedXmlMessage.XmlMessageRecordUnit | List[DecodedXmlMessage.XmlMessageRecordUnit]] = {}
         self.not_decoded_because_error_fields_names: List[str] = []
-        self.hex_string = hex_string
+        self.decoded_bytes_message = bytes_messages.DecodedBytesMessage(hex_string=hex_string)
         self.hlf_decoded: Optional[datetime.datetime] = None
-        self.current_bit_index = 0
-        self.hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
         self.root_record: Optional[DecodedXmlMessage.XmlMessageRecordMacro] = None
 
     def add_field_by_name(self, message_field: XmlMessageFieldUnit) -> None:
@@ -141,8 +140,7 @@ class DecodedXmlMessage:
         if self.not_decoded_because_error_fields_names:
             return False
 
-        size_bits = len(self.hex_bytes) * 8
-        return self.current_bit_index == size_bits
+        return self.decoded_bytes_message.is_correctly_and_completely_decoded()
 
 
 class SignedOrUnsignedTypeForIntegerFieldsManagerBase(ABC):
@@ -179,58 +177,6 @@ class XmlMessageDecoder:
         self.cached_messages_by_id: Dict[int, ET.Element] = dict()
         self.decoded_xml_message: Optional[DecodedXmlMessage] = None
 
-    @staticmethod
-    def hex_to_int(hex_string: str) -> int:
-        """Convert a hex string to an integer."""
-        return int(hex_string, 16)
-
-    def extract_bits(self, start_bit: int, number_of_bits: int) -> str:
-        assert self.decoded_xml_message
-        bits_extracted = self.extract_bits_to_bytes(data=self.decoded_xml_message.hex_bytes, start_bit=start_bit, bit_length=number_of_bits)
-        self.decoded_xml_message.current_bit_index += number_of_bits
-        return bits_extracted
-
-    @staticmethod
-    def extract_bits_to_bytes(data: bytes, start_bit: int, bit_length: int) -> str:
-        """Extract a specific number of bits starting at a given bit index from a list of bytes."""
-        # logger_config.print_and_log_info(f"data length:{len(data)}, start_bit:{start_bit},bit_length:{bit_length},")
-        start_byte = start_bit // 8
-        end_bit = start_bit + bit_length
-        end_byte = (end_bit + 7) // 8
-
-        # Get the relevant bytes
-        relevant_bytes = data[start_byte:end_byte]
-        combined_bits = "".join(f"{byte:08b}" for byte in relevant_bytes)
-
-        return combined_bits
-
-    @staticmethod
-    def convert_bits_bitfield(combined_bits: str, start_bit: int, bit_length: int) -> str:
-        # Extract the substring of the combined bits and convert to an integer
-        bit_segment = combined_bits[(start_bit - bit_length) % 8 : (start_bit - bit_length) % 8 + bit_length]
-        return bit_segment
-
-    @staticmethod
-    def convert_bits_ascii_char(combined_bits: str, start_bit: int, bit_length: int) -> str:
-        # Extract the substring of the combined bits and convert to an integer
-        result_int = XmlMessageDecoder.convert_bits_unsigned_int(combined_bits=combined_bits, start_bit=start_bit, bit_length=bit_length)
-        return chr(result_int)
-
-    @staticmethod
-    def convert_bits_unsigned_int(combined_bits: str, start_bit: int, bit_length: int) -> int:
-        # Extract the substring of the combined bits and convert to an integer
-        bit_segment = XmlMessageDecoder.convert_bits_bitfield(combined_bits=combined_bits, start_bit=start_bit, bit_length=bit_length)
-        return int(bit_segment, 2)
-
-    @staticmethod
-    def convert_bits_signed_int(combined_bits: str, start_bit: int, bit_length: int) -> int:
-        # Extract the substring of the combined bits and convert to a signed integer
-        bit_segment = XmlMessageDecoder.convert_bits_bitfield(combined_bits=combined_bits, start_bit=start_bit, bit_length=bit_length)
-        value = int(bit_segment, 2)
-        if value >= (1 << (bit_length - 1)):
-            value -= 1 << bit_length
-        return value
-
     def _parse_selector(self, record: ET.Element, parent_record: DecodedXmlMessage.XmlMessageRecordUnit) -> None:
 
         decoded_xml_message = cast(DecodedXmlMessage, self.decoded_xml_message)
@@ -259,19 +205,8 @@ class XmlMessageDecoder:
     def _parse_string_type_field(self, xml_decoded_field_macro: DecodedXmlMessage.XmlMessageFieldMacro) -> None:
 
         assert self.decoded_xml_message is not None
-        all_chars: List[str] = []
-
-        for i in range(0, xml_decoded_field_macro.dim):
-            xml_decoded_field_macro.bits_extracted = self.extract_bits(self.decoded_xml_message.current_bit_index, xml_decoded_field_macro.size_bits)
-
-            current_char = self.convert_bits_ascii_char(xml_decoded_field_macro.bits_extracted, self.decoded_xml_message.current_bit_index, xml_decoded_field_macro.size_bits)
-            all_chars.append(current_char)
-            # self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix + "_" + str(i)] = current_char
-
-        string_value = "".join(cast(str, all_chars)).rstrip()
-        # logger_config.print_and_log_info(f"Field {field_name} is {decoded_fields[field_name]}")
+        string_value = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_ascii_char(number_of_chars=xml_decoded_field_macro.dim, size_bits_per_char=xml_decoded_field_macro.size_bits)
         self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = string_value
-        # self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix + "_list"] = all_chars
 
         DecodedXmlMessage.XmlMessageFieldString(field_macro=xml_decoded_field_macro, value=string_value)
 
@@ -279,8 +214,7 @@ class XmlMessageDecoder:
 
         assert self.decoded_xml_message is not None
 
-        xml_decoded_field_macro.bits_extracted = self.extract_bits(self.decoded_xml_message.current_bit_index, xml_decoded_field_macro.size_bits)
-        field_value = self.convert_bits_bitfield(xml_decoded_field_macro.bits_extracted, self.decoded_xml_message.current_bit_index, xml_decoded_field_macro.size_bits)
+        field_value = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_bitset_str(size_bits=xml_decoded_field_macro.size_bits)
         self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_value
 
         DecodedXmlMessage.XmlMessageFieldBitfield(field_macro=xml_decoded_field_macro, value=field_value)
@@ -289,18 +223,9 @@ class XmlMessageDecoder:
 
         assert self.decoded_xml_message is not None
 
-        all_signed_values: List[int] = []
-        all_unsigned_values: List[int] = []
-
-        for _ in range(0, xml_decoded_field_macro.dim):
-            xml_decoded_field_macro.bits_extracted = self.extract_bits(self.decoded_xml_message.current_bit_index, xml_decoded_field_macro.size_bits)
-            field_unsigned_value = self.convert_bits_unsigned_int(xml_decoded_field_macro.bits_extracted, self.decoded_xml_message.current_bit_index, xml_decoded_field_macro.size_bits)
-            all_unsigned_values.append(field_unsigned_value)
-
-            field_signed_value = self.convert_bits_signed_int(xml_decoded_field_macro.bits_extracted, self.decoded_xml_message.current_bit_index, xml_decoded_field_macro.size_bits)
-            all_signed_values.append(field_signed_value)
-            # self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_value
-
+        all_signed_values, all_unsigned_values = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_int_table_signed_and_unsigned(
+            table_dim=xml_decoded_field_macro.dim, size_bits=xml_decoded_field_macro.size_bits
+        )
         field = DecodedXmlMessage.XmlMessageFieldInt(field_macro=xml_decoded_field_macro, unsigned_value=all_unsigned_values, signed_value=all_signed_values)
         self.decoded_xml_message.decoded_fields_flat_directory[field.long_name] = all_unsigned_values
 
@@ -308,10 +233,7 @@ class XmlMessageDecoder:
 
         assert self.decoded_xml_message is not None
 
-        xml_decoded_field_macro.bits_extracted = self.extract_bits(self.decoded_xml_message.current_bit_index, xml_decoded_field_macro.size_bits)
-
-        field_unsigned_value = self.convert_bits_unsigned_int(xml_decoded_field_macro.bits_extracted, self.decoded_xml_message.current_bit_index, xml_decoded_field_macro.size_bits)
-        field_signed_value = self.convert_bits_signed_int(xml_decoded_field_macro.bits_extracted, self.decoded_xml_message.current_bit_index, xml_decoded_field_macro.size_bits)
+        field_signed_value, field_unsigned_value = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_single_int_signed_and_unsigned(size_bits=xml_decoded_field_macro.size_bits)
 
         decoding_type = self.signed_or_unsigned_type_for_integer_fields_manager.get_decoding_type_for_field(
             message_number=self.decoded_xml_message.message_number, field_name=xml_decoded_field_macro.identifier
