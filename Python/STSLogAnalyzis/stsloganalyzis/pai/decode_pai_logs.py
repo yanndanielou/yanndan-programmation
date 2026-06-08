@@ -1,14 +1,14 @@
 import pandas as pd
 import datetime
 import os
-from collections import Counter
+from collections import Counter, OrderedDict
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Dict, List, Optional, Self, Tuple, cast, Any
 
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-from common import custom_iterator, file_name_utils
+from common import file_utils, file_name_utils, reports_utils
 from logger import logger_config
 
 # CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR = "!!! Decoding Error !!!"
@@ -23,6 +23,7 @@ class AlarmLineType(Enum):
     CMD_ESSAIS = auto()
     CMD_CPT_RENDU = auto()
     CSI = auto()
+    ACK_ALA = auto()
 
 
 @dataclass
@@ -152,13 +153,29 @@ class TerminalTechniqueArchivesMaintLibrary:
     def load_folder(self, folder_full_path: str) -> Self:
 
         last_line = None
-        for dirpath, dirnames, filenames in os.walk(folder_full_path):
-            for file_name in filenames:
-                file = TerminalTechniqueArchivesMaintFile(parent_folder_full_path=dirpath, file_name=file_name, library=self, last_line=last_line)
-                last_line = file.last_line
-                self.all_processed_files.append(file)
+        for file_full_path in file_utils.get_files_by_directory_and_file_name_mask(
+            directory_path=folder_full_path, filename_pattern="maint_*.txt", file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER
+        ):
 
-                assert self.all_processed_lines
+            file = TerminalTechniqueArchivesMaintFile(
+                file_name_utils.get_file_folder_from_full_path(file_full_path),
+                file_name=file_name_utils.get_file_name_with_extension_from_full_path(full_path=file_full_path),
+                library=self,
+                last_line=last_line,
+            )
+            last_line = file.last_line
+            self.all_processed_files.append(file)
+
+            assert self.all_processed_lines
+
+        # for dirpath, dirnames, filenames in os.walk(folder_full_path):
+        #
+        #    for file_name in filenames:
+        #        file = TerminalTechniqueArchivesMaintFile(parent_folder_full_path=dirpath, file_name=file_name, library=self, last_line=last_line)
+        #        last_line = file.last_line
+        #        self.all_processed_files.append(file)
+        #
+        #        assert self.all_processed_lines
         assert self.all_processed_lines
 
         logger_config.print_and_log_info(f"{self.name}: ignored_end_alarms_without_alarm_begin:{len(self.ignored_end_alarms_without_alarm_begin)}")
@@ -873,6 +890,30 @@ class TerminalTechniqueArchivesMaintLibrary:
 
             except Exception as e:
                 logger_config.print_and_log_exception(e)
+
+    def dump_all_mccs_alarms(self, output_folder_path: str) -> None:
+
+        reports_utils.save_rows_to_output_files(
+            rows_as_list_dict=[
+                OrderedDict(
+                    {
+                        "Alarm Type": mccs_alarm.alarm_type.name,
+                        "Duration in seconds": (mccs_alarm.end_alarm_line.decoded_timestamp - mccs_alarm.raise_line.decoded_timestamp).total_seconds() if mccs_alarm.end_alarm_line else None,
+                        "Timestamp": mccs_alarm.raise_line.decoded_timestamp,
+                        "File Name": mccs_alarm.raise_line.parent_file.file_name,
+                        "Line Number": mccs_alarm.raise_line.line_number_inside_file,
+                        "End Timestamp": mccs_alarm.end_alarm_line.decoded_timestamp if mccs_alarm.end_alarm_line else "NA",
+                        "End File Name": mccs_alarm.end_alarm_line.parent_file.file_name if mccs_alarm.end_alarm_line else "NA",
+                        "End Line Number": mccs_alarm.end_alarm_line.line_number_inside_file if mccs_alarm.end_alarm_line else "NA",
+                        "Full Text": mccs_alarm.full_text.strip(),
+                    }
+                )
+                for mccs_alarm in self.mccs_hs_alarms
+            ],
+            file_base_name=f"{self.name}_mccs_alarms",
+            output_directory_path=output_folder_path,
+            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
+        )
 
     def dump_all_events_to_text_file(self, output_folder_path: str) -> None:
         """
