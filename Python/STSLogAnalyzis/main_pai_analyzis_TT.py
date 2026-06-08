@@ -10,6 +10,7 @@ with logger_config.application_logger():
     file_utils.create_folder_if_not_exist(OUTPUT_FOLDER_NAME)
 
     for library_name, folder_path in [
+        ("2026-06-08-PAI-Yann-Danielou", r"D:\temp\2026-06-08-PAI-Yann-Danielou"),
         ("NEXT-16351 - Déconnexion rare mais permanente du MESD", r"C:\Users\fr232487\Downloads\TT-026401+(TerminalTechnique)\TT-026401 (TerminalTechnique)\Z_Archives_maint"),
         ("2026-02-06 CrashMesd P81", r"D:\temp\2026-02-06 CrashMesd\TT 81"),
         ("2026-02-06 CrashMesd P75", r"D:\temp\2026-02-06 CrashMesd\TT P75"),
@@ -19,6 +20,7 @@ with logger_config.application_logger():
     ]:
         tt_maint_library = decode_pai_logs.TerminalTechniqueArchivesMaintLibrary(library_name).load_folder(folder_path)
 
+        tt_maint_library.dump_all_mccs_alarms(output_folder_path=OUTPUT_FOLDER_NAME)
         tt_maint_library.dump_all_events_to_text_file(output_folder_path=OUTPUT_FOLDER_NAME)
         tt_maint_library.export_back_to_past_with_context_to_excel(output_folder_path=OUTPUT_FOLDER_NAME)
         tt_maint_library.export_mesd_alarms_groups_with_context_to_excel(output_folder_path=OUTPUT_FOLDER_NAME)
