@@ -42,6 +42,12 @@ class DecodedBytesMessage:
         bits_extracted = self.extract_bits(self.current_bit_index, size_bits)
         return self.convert_bits_signed_and_unsigned_int(bits_extracted, self.current_bit_index, size_bits)
 
+    def get_next_bits_as_single_int_signed(self, size_bits: int) -> int:
+        return self.get_next_bits_as_single_int_signed_and_unsigned(size_bits).signed_value
+
+    def get_next_bits_as_single_int_unsigned(self, size_bits: int) -> int:
+        return self.get_next_bits_as_single_int_signed_and_unsigned(size_bits).unsigned_value
+
     def get_next_bits_as_int_table_signed_and_unsigned(self, table_dim: int, size_bits: int) -> List[DecodedIntResult]:
         all_values: List[DecodedIntResult] = []
 
