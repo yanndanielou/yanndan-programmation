@@ -1,4 +1,8 @@
 import binascii
+from dateutil import parser
+
+from datetime import datetime, timedelta
+
 import re
 from typing import Dict, Tuple, Union, Optional
 
@@ -9,7 +13,7 @@ from dataclasses import dataclass
 
 @dataclass
 class DecodedFrame:
-    time: int
+    timestamp: datetime
     source: int
     target: int
     sequence: int
@@ -23,14 +27,10 @@ def decode_frame(line: str) -> Optional[DecodedFrame]:
     fields = line.split(" ")
     if len(fields) <= 4:
         print(f"-> bad line format\n{line}")
-        return False
+        return None
 
     # Extract time: 1970-01-01 02:18:14:652
-    time_value = fields[1]
-    time_fields = time_value.split(":")
-    time = int(time_fields[0]) * 3600 * 1000 + int(time_fields[1]) * 60 * 1000 + int(time_fields[2]) * 1000 + int(time_fields[3])
-
-    print(f"Time: {time}")
+    timestamp = datetime.strptime(f"{fields[0]} {fields[1]}", "%Y-%m-%d %H:%M:%S:%f")
 
     # Extract source and target: [99:37 <= 2:37]
     sap_pattern = re.compile(r"\[(\d+):(\d+) (<=|=>) (\d+):(\d+)\]")
@@ -73,8 +73,16 @@ def decode_frame(line: str) -> Optional[DecodedFrame]:
     bytes_ = line.split("]")[-1].strip()
 
     if mode in ("SDA", "SDN"):
-        return DecodedFrame(time=time,source=source,target=target,sequence=sequence,mode=mode,length=length,bytes_=bytes_)
-    else
+        return DecodedFrame(
+            timestamp=timestamp,
+            source=source,
+            target=target,
+            sequence=sequence,
+            mode=mode,
+            length=length,
+            bytes_=bytes_,
+        )
+    else:
         return None
 
 
@@ -140,7 +148,7 @@ if __name__ == "__main__":
     print(f"Valid frame: {decoded_frame is not None}")
     if decoded_frame:
         # Affichage des résultats
-        print(f"Time: {decoded_frame.time}")
+        print(f"Time: {decoded_frame.timestamp}")
         print(f"Source: {decoded_frame.source}")
         print(f"Target: {decoded_frame.target}")
         print(f"Sequence: {decoded_frame.sequence}")
@@ -151,8 +159,8 @@ if __name__ == "__main__":
     hex_frame = "2a 85 01 05 49 64 6c 65 20 63 79 63 6c 65 20 74 69 6d 65 6f 75 74 1e ab fe d1 92 5e"
 
     byte_message_decoded = bytes_messages.DecodedBytesMessage(hex_frame)
-    nid_message = byte_message_decoded.get_next_bits_as_single_int_signed_and_unsigned(size_bits=8)[1]
-    l_message = byte_message_decoded.get_next_bits_as_single_int_signed_and_unsigned(size_bits=8)[1]
+    nid_message = byte_message_decoded.get_next_bits_as_single_int_signed_and_unsigned(size_bits=8).unsigned_value
+    l_message = byte_message_decoded.get_next_bits_as_single_int_signed_and_unsigned(size_bits=8).unsigned_value
     pass
 
     decoder = ETCSFrameDecoder()

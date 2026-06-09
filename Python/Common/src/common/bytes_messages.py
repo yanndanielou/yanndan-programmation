@@ -1,12 +1,11 @@
-import datetime
-from enum import Enum
-import os
-import xml.etree.ElementTree as ET
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import ClassVar, Dict, List, Optional, cast, Tuple
+from typing import List, cast
 
-from logger import logger_config
+
+@dataclass
+class DecodedIntResult:
+    signed_value: int
+    unsigned_value: int
 
 
 class DecodedBytesMessage:
@@ -39,23 +38,21 @@ class DecodedBytesMessage:
         field_value = self.convert_bits_bitfield(bits_extracted, self.current_bit_index, size_bits)
         return field_value
 
-    def get_next_bits_as_single_int_signed_and_unsigned(self, size_bits: int) -> Tuple[int, int]:
+    def get_next_bits_as_single_int_signed_and_unsigned(self, size_bits: int) -> DecodedIntResult:
         bits_extracted = self.extract_bits(self.current_bit_index, size_bits)
         return self.convert_bits_signed_and_unsigned_int(bits_extracted, self.current_bit_index, size_bits)
 
-    def get_next_bits_as_int_table_signed_and_unsigned(self, table_dim: int, size_bits: int) -> Tuple[List[int], List[int]]:
-        all_signed_values: List[Tuple[int, int]] = []
-        all_unsigned_values: List[Tuple[int, int]] = []
+    def get_next_bits_as_int_table_signed_and_unsigned(self, table_dim: int, size_bits: int) -> List[DecodedIntResult]:
+        all_values: List[DecodedIntResult] = []
 
         for _ in range(0, table_dim):
             bits_extracted = self.extract_bits(self.current_bit_index, size_bits)
             field_unsigned_value = self.convert_bits_unsigned_int(bits_extracted, self.current_bit_index, size_bits)
-            all_unsigned_values.append(field_unsigned_value)
 
             field_signed_value = self.convert_bits_signed_int(bits_extracted, self.current_bit_index, size_bits)
-            all_signed_values.append(field_signed_value)
+            all_values.append(DecodedIntResult(signed_value=field_signed_value, unsigned_value=field_unsigned_value))
 
-        return all_signed_values, all_unsigned_values
+        return all_values
 
     def is_correctly_and_completely_decoded(self) -> bool:
         size_bits = len(self.hex_bytes) * 8
@@ -88,9 +85,11 @@ class DecodedBytesMessage:
         return chr(result_int)
 
     @staticmethod
-    def convert_bits_signed_and_unsigned_int(combined_bits: str, start_bit: int, number_of_bits: int) -> Tuple[int, int]:
-        return DecodedBytesMessage.convert_bits_signed_int(combined_bits=combined_bits, start_bit=start_bit, number_of_bits=number_of_bits), DecodedBytesMessage.convert_bits_unsigned_int(
-            combined_bits=combined_bits, start_bit=start_bit, number_of_bits=number_of_bits
+    def convert_bits_signed_and_unsigned_int(combined_bits: str, start_bit: int, number_of_bits: int) -> DecodedIntResult:
+
+        return DecodedIntResult(
+            signed_value=DecodedBytesMessage.convert_bits_signed_int(combined_bits=combined_bits, start_bit=start_bit, number_of_bits=number_of_bits),
+            unsigned_value=DecodedBytesMessage.convert_bits_unsigned_int(combined_bits=combined_bits, start_bit=start_bit, number_of_bits=number_of_bits),
         )
 
     @staticmethod

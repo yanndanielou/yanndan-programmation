@@ -223,11 +223,11 @@ class XmlMessageDecoder:
 
         assert self.decoded_xml_message is not None
 
-        all_signed_values, all_unsigned_values = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_int_table_signed_and_unsigned(
-            table_dim=xml_decoded_field_macro.dim, size_bits=xml_decoded_field_macro.size_bits
+        int_value = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_int_table_signed_and_unsigned(table_dim=xml_decoded_field_macro.dim, size_bits=xml_decoded_field_macro.size_bits)
+        field = DecodedXmlMessage.XmlMessageFieldInt(
+            field_macro=xml_decoded_field_macro, unsigned_value=[value.unsigned_value for value in int_value], signed_value=[value.signed_value for value in int_value]
         )
-        field = DecodedXmlMessage.XmlMessageFieldInt(field_macro=xml_decoded_field_macro, unsigned_value=all_unsigned_values, signed_value=all_signed_values)
-        self.decoded_xml_message.decoded_fields_flat_directory[field.long_name] = all_unsigned_values
+        self.decoded_xml_message.decoded_fields_flat_directory[field.long_name] = [value.unsigned_value for value in int_value]
 
     def _parse_single_int_type_field(self, xml_decoded_field_macro: DecodedXmlMessage.XmlMessageFieldMacro) -> None:
 
