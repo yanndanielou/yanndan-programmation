@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import List, cast
 
+NUMBER_OF_BITS_IN_BYTE = 8
+
 
 @dataclass
 class DecodedIntResult:
@@ -47,6 +49,11 @@ class DecodedBytesMessage:
 
     def get_next_bits_as_single_int_unsigned(self, size_bits: int) -> int:
         return self.get_next_bits_as_single_int_signed_and_unsigned(size_bits).unsigned_value
+
+    def get_next_bits_as_bool_0_or_1(self, size_bits: int) -> bool:
+        as_int = self.get_next_bits_as_single_int_unsigned(size_bits)
+        assert as_int in [0, 1], f"Unsupported bool with value {as_int}"
+        return as_int == 1
 
     def get_next_bits_as_int_table_signed_and_unsigned(self, table_dim: int, size_bits: int) -> List[DecodedIntResult]:
         all_values: List[DecodedIntResult] = []

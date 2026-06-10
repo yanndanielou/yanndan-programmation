@@ -27,7 +27,7 @@ class ProfibusLogFile:
         with open(self.file_full_path, "r", encoding=self.encoding) as f:
             lines = f.readlines()
             for line in lines:
-                decoded_line = ProfibusLogLine.decode_frame(line=line)
+                decoded_line = ProfibusLogLine.decode_raw_log_line(line=line)
                 if decoded_line is not None:
                     self.lines.append(decoded_line)
 
@@ -43,7 +43,7 @@ class ProfibusLogLine:
     bytes_hexa: str
 
     @staticmethod
-    def decode_frame(line: str) -> Optional["ProfibusLogLine"]:
+    def decode_raw_log_line(line: str) -> Optional["ProfibusLogLine"]:
 
         fields = line.split(" ")
         if len(fields) <= 4:
@@ -106,33 +106,8 @@ class ProfibusLogLine:
         else:
             return None
 
-    def decode_sdn_or_sna(self) -> None:
+    def decode_sdn_or_sna(self) -> Optional[decode_unisig.UnisigMessage]:
         if self.mode == SendingMode.SDA:
-            sda_message = decode_unisig.SdaUnisigMessage.decode_bytes_hexa(self.bytes_hexa)
-            pass
-
-
-def main() -> None:
-
-    line = "2026-06-02 17:38:09:961 kppn 1.3.3: [99:33 <= 2:33] Received PROFIBUS message [num:169690][mode:SDA][len:28] 1e 85 01 05 49 64 6c 65 20 63 79 63 6c 65 20 74 69 6d 65 6f 75 74 bc 0b 17 6d 17 78"
-
-    decoded_frame = ProfibusLogLine.decode_frame(line)
-
-    print(f"Valid frame: {decoded_frame is not None}")
-    if decoded_frame:
-        # Affichage des résultats
-        print(f"Time: {decoded_frame.timestamp}")
-        print(f"Source: {decoded_frame.source}")
-        print(f"Target: {decoded_frame.target}")
-        print(f"Sequence: {decoded_frame.sequence}")
-        print(f"Mode: {decoded_frame.mode}")
-        print(f"Length: {decoded_frame.length}")
-        print(f"Bytes: {decoded_frame.bytes_hexa}")
-        # Trame d'exemple donnée par l'utilisateur
-
-        decoded_frame.decode_sdn_or_sna()
-
-
-# Exemple d'utilisation
-if __name__ == "__main__":
-    main()
+            sda_message = decode_unisig.decode_sda_bytes_hexa(self.bytes_hexa)
+            return sda_message
+        return None
