@@ -1,0 +1,38 @@
+[
+    {
+        "number": 2,
+        "name": "Juridical data"
+    },
+    {
+        "number": 4,
+        "name": "DMI channel 1"
+    },
+    {
+        "number": 10,
+        "name": "DMI channel 1"
+    },
+    {
+        "number": 32,
+        "name": "Reference time"
+    },
+    {
+        "number": 33,
+        "name": "STM control"
+    },
+    {
+        "number": 37,
+        "name": "Train interface"
+    },
+    {
+        "number": 38,
+        "name": "Break interface"
+    },
+    {
+        "number": 39,
+        "name": "Odometer"
+    },
+    {
+        "number": 44,
+        "name": "DMI channel 1 (derogatoire)"
+    }
+]

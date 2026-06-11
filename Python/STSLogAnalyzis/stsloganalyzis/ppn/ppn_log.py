@@ -14,6 +14,14 @@ class SendingMode(Enum):
     SDA = "SDA"
     SDN = "SDN"
 
+@dataclass
+class ServiceAccessPoint:
+    number:int
+    name:str
+
+class ServiceAccessPointLibrary:
+
+
 
 @dataclass
 class ProfibusLogFile:

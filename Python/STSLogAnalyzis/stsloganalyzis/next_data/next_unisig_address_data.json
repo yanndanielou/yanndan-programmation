@@ -1,0 +1,22 @@
+[
+    {
+        "number": 2,
+        "name": "EVC"
+    },
+    {
+        "number": 3,
+        "name": "JRU"
+    },
+    {
+        "number": 5,
+        "name": "DMI"
+    },
+    {
+        "number": 99,
+        "name": "STM Next"
+    },
+    {
+        "number": 127,
+        "name": "Multicast"
+    }
+]

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, cast
 
-NUMBER_OF_BITS_IN_BYTE = 8
+NUMBER_OF_BITS_IN_BYTE = int(8)
 
 
 @dataclass
@@ -16,6 +16,10 @@ class DecodedBytesMessage:
         self.hex_string = hex_string
         self.current_bit_index = 0
         self.hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
+
+    @property
+    def number_of_bits_remaining_to_decode(self) -> int:
+        return len(self.hex_bytes) * NUMBER_OF_BITS_IN_BYTE - self.current_bit_index
 
     def extract_bits(self, start_bit: int, number_of_bits: int) -> str:
         bits_extracted = self.extract_bits_to_bytes(data=self.hex_bytes, start_bit=start_bit, number_of_bits=number_of_bits)
@@ -46,6 +50,12 @@ class DecodedBytesMessage:
 
     def get_next_bits_as_single_int_signed(self, size_bits: int) -> int:
         return self.get_next_bits_as_single_int_signed_and_unsigned(size_bits).signed_value
+
+    def get_next_byte_as_single_int_unsigned(self) -> int:
+        return self.get_next_bytes_as_single_int_unsigned(size_bytes=1)
+
+    def get_next_bytes_as_single_int_unsigned(self, size_bytes: int) -> int:
+        return self.get_next_bits_as_single_int_unsigned(size_bytes * NUMBER_OF_BITS_IN_BYTE)
 
     def get_next_bits_as_single_int_unsigned(self, size_bits: int) -> int:
         return self.get_next_bits_as_single_int_signed_and_unsigned(size_bits).unsigned_value

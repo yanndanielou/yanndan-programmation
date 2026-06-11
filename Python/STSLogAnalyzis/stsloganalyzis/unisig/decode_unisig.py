@@ -4,7 +4,7 @@ from abc import ABC
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum, IntEnum, auto
-from typing import Dict, Optional, Tuple, Union
+from typing import Optional, cast
 
 from common import bytes_messages
 from dateutil import parser
@@ -28,16 +28,14 @@ class UnisigMessage(ABC):
 class SdnUnisigMessage(UnisigMessage):
     pass
 
-    @staticmethod
-    def decode_bytes_hexa(bytes_hexa: str) -> "SdnUnisigMessage":
-        pass
-
 
 @dataclass
 class SdaUnisigMessage(UnisigMessage):
     safety_level: SafetyLevel
+    telegram_name: str
     byte_message_decoded: bytes_messages.DecodedBytesMessage
     lowest_order_byte_sequence_number: int
+    command_type: "SdaUnisigMessage.CommandType"
 
     @property
     def crc_size_in_bits(self) -> int:
@@ -50,7 +48,7 @@ class SdaUnisigMessage(UnisigMessage):
 
     @property
     def crc_size_in_bytes(self) -> int:
-        return self.crc_size_in_bits // bytes_messages.NUMBER_OF_BITS_IN_BYTE
+        return cast(int, self.crc_size_in_bits // bytes_messages.NUMBER_OF_BITS_IN_BYTE)
 
     class CommandType(IntEnum):
         SL4_IDLE_TELEGRAM = int("0x86", 16)
@@ -77,7 +75,7 @@ class SdaDisconnectTelegram(SdaUnisigMessage):
     def __post_init__(self) -> None:
         self.new_setup_desired = self.byte_message_decoded.get_next_bits_as_bool_0_or_1(size_bits=bytes_messages.NUMBER_OF_BITS_IN_BYTE)
         self.disconnect_reason_raw = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=bytes_messages.NUMBER_OF_BITS_IN_BYTE)
-        disconnect_reason_text_length_in_bits = len(self.byte_message_decoded.hex_bytes) * bytes_messages.NUMBER_OF_BITS_IN_BYTE - self.byte_message_decoded.current_bit_index - self.crc_size_in_bits
+        disconnect_reason_text_length_in_bits = self.byte_message_decoded.number_of_bits_remaining_to_decode - self.crc_size_in_bits
         self.disconnect_reason_text = self.byte_message_decoded.get_next_bits_as_ascii_char(
             number_of_chars=disconnect_reason_text_length_in_bits // bytes_messages.NUMBER_OF_BITS_IN_BYTE, size_bits_per_char=bytes_messages.NUMBER_OF_BITS_IN_BYTE
         )
@@ -86,7 +84,25 @@ class SdaDisconnectTelegram(SdaUnisigMessage):
 
 
 @dataclass
-class SdaIdleTelegram(SdaUnisigMessage):
+class SdaConnectRequestOrConfirmTelegram(SdaUnisigMessage):
+
+    def __post_init__(self) -> None:
+        self.random_number_representing_sequence_number = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
+        self.idle_cycle_timeout_in_100ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=2)
+        self.configuration_data_prefix_x = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        assert self.configuration_data_prefix_x == 3
+        self.configuration_data_prefix_y = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        assert self.configuration_data_prefix_y == 0
+        self.configuration_data_prefix_z = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        assert self.configuration_data_prefix_z == 0
+        dual_bus_length_in_bits = self.byte_message_decoded.number_of_bits_remaining_to_decode - self.crc_size_in_bits
+        self.dual_bus = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=dual_bus_length_in_bits)
+        self.crc = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=self.crc_size_in_bits) if self.crc_size_in_bits > 0 else None
+        pass
+
+
+@dataclass
+class SdaGenericTelegram(SdaUnisigMessage):
 
     def __post_init__(self) -> None:
         self.crc = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=self.crc_size_in_bits) if self.crc_size_in_bits > 0 else None
@@ -100,17 +116,38 @@ def decode_sda_bytes_hexa(bytes_hexa: str) -> Optional[SdaUnisigMessage]:
     raw_command = byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=bytes_messages.NUMBER_OF_BITS_IN_BYTE)
     command_type = SdaUnisigMessage.CommandType(raw_command)
 
+    safety_level = SafetyLevel[command_type.name[:3]]
+    telegram_name = command_type.name[4:]
+
     if command_type == SdaUnisigMessage.CommandType.SL0_DISCONNECT_TELEGRAM or command_type == SdaUnisigMessage.CommandType.SL4_DISCONNECT_TELEGRAM:
         return SdaDisconnectTelegram(
-            safety_level=SafetyLevel[command_type.name[:3]],
+            command_type=command_type,
+            safety_level=safety_level,
+            telegram_name=telegram_name,
             byte_message_decoded=byte_message_decoded,
             lowest_order_byte_sequence_number=mistery_0,
         )
 
-    if command_type == SdaUnisigMessage.CommandType.SL0_IDLE_TELEGRAM or command_type == SdaUnisigMessage.CommandType.SL4_IDLE_TELEGRAM:
-        return SdaIdleTelegram(
-            safety_level=SafetyLevel[command_type.name[:3]],
+    elif command_type == SdaUnisigMessage.CommandType.SL0_IDLE_TELEGRAM or command_type == SdaUnisigMessage.CommandType.SL4_IDLE_TELEGRAM:
+        return SdaGenericTelegram(
+            command_type=command_type,
+            safety_level=safety_level,
+            telegram_name=telegram_name,
             byte_message_decoded=byte_message_decoded,
             lowest_order_byte_sequence_number=mistery_0,
         )
+    elif (
+        command_type == SdaUnisigMessage.CommandType.SL0_CONNECT_REQUEST_TELEGRAM
+        or command_type == SdaUnisigMessage.CommandType.SL4_CONNECT_REQUEST_TELEGRAM
+        or command_type == SdaUnisigMessage.CommandType.SL0_CONNECT_CONFIRM_TELEGRAM
+        or command_type == SdaUnisigMessage.CommandType.SL4_CONNECT_CONFIRM_TELEGRAM
+    ):
+        return SdaConnectRequestOrConfirmTelegram(
+            command_type=command_type,
+            safety_level=safety_level,
+            telegram_name=telegram_name,
+            byte_message_decoded=byte_message_decoded,
+            lowest_order_byte_sequence_number=mistery_0,
+        )
+
     return None
