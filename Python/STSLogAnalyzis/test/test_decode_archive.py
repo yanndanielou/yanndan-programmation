@@ -4,7 +4,7 @@ import pytest
 
 from typing import cast
 
-from stsloganalyzis import next_data
+from stsloganalyzis.next_data import next_ats_data
 from stsloganalyzis.archive import decode_archive, decode_message, decode_xml_message
 from stsloganalyzis.topology import line_topology
 
@@ -15,7 +15,7 @@ archive_line_str_message_ats_pae_action_set = '{"SQLARCH":{"caller":"","catAla":
 archive_line_str_message_ats_pae_spe_remote_ctrl = '{"SQLARCH":{"caller":"","catAla":0,"eqp":"TRAIN 9","eqpId":"EQ_CET_9","exeSt":"","id":"M_TRAIN_CC_9_ATS_CC_REMOTE_CONTROL_SPE","jdb":false,"label":"TRAIN : ATS_CC_REMOTE_CONTROL_SPE [101]","loc":"TB_CDV_z2466_01","locale":"2025-07-21T18:03:50.661+02:00","newSt":"04 A0 83 18 EA C7 00 71 82 0C 20 00 00 00 F8 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ","oldSt":"","orders":"","sigT":"TCA","tstamp":"","utc_locale":"2025-07-21T16:03:50.661+01:00"},"date":"2025-07-21T18:03:50.662+02:00","tags":["SQLARCH"]}'
 archive_line_str_message_pae_ats_spe_oper = '{"SQLARCH":{"caller":"","catAla":0,"eqp":"TRAIN 9","eqpId":"EQ_CET_9","exeSt":"","id":"M_TRAIN_CC_9_CC_ATS_OPERATION_SPE","jdb":false,"label":"TRAIN : CC_ATS_OPERATION_SPE [36]","loc":"INDETERMINE","locale":"2025-07-21T17:57:14.924+02:00","newSt":"00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 40 40 40 40 40 40 40 40 01 C5 23 FF FF FF FF FF FE 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 10 40 00 00 00 00 02 84 00 00 00 00 00 00 00 00 00 00 00 00 ","oldSt":"","orders":"","sigT":"TSA","tstamp":"2000-01-01T01:00:01.200+01:00","utc_locale":"2025-07-21T15:57:14.924+01:00"},"date":"2025-07-21T17:57:14.924+02:00","tags":["SQLARCH"]}'
 
-railway_line, archive_decoder = next_data.get_encoders()
+railway_line, archive_decoder = next_ats_data.get_encoders()
 
 
 class IgnoredTestDecodeOneArchiveFile:

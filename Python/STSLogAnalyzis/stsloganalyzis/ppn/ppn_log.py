@@ -1,11 +1,9 @@
-import binascii
 import re
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import List, Optional
 
-from common import bytes_messages
 
 from stsloganalyzis.unisig import decode_unisig
 
@@ -14,13 +12,11 @@ class SendingMode(Enum):
     SDA = "SDA"
     SDN = "SDN"
 
+
 @dataclass
 class ServiceAccessPoint:
-    number:int
-    name:str
-
-class ServiceAccessPointLibrary:
-
+    number: int
+    name: str
 
 
 @dataclass
@@ -49,6 +45,9 @@ class ProfibusLogLine:
     mode: SendingMode
     length: int
     bytes_hexa: str
+
+    def __post_init__(self) -> None:
+        self.unisig_messages: List[decode_unisig.UnisigMessage] = []
 
     @staticmethod
     def decode_raw_log_line(line: str) -> Optional["ProfibusLogLine"]:
@@ -114,8 +113,6 @@ class ProfibusLogLine:
         else:
             return None
 
-    def decode_sdn_or_sna(self) -> Optional[decode_unisig.UnisigMessage]:
+    def decode_sdn_or_sna(self) -> None:
         if self.mode == SendingMode.SDA:
-            sda_message = decode_unisig.decode_sda_bytes_hexa(self.bytes_hexa)
-            return sda_message
-        return None
+            self.unisig_messages = decode_unisig.decode_sda_bytes_hexa(self.bytes_hexa)

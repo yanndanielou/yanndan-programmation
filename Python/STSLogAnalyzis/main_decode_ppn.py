@@ -1,7 +1,7 @@
 from logger import logger_config
 
-from stsloganalyzis import (
-    next_data,
+from stsloganalyzis.next_data import (
+    next_ats_data,
 )
 from stsloganalyzis.ppn import ppn_log
 

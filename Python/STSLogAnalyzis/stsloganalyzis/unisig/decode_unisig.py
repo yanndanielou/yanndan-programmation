@@ -4,7 +4,7 @@ from abc import ABC
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum, IntEnum, auto
-from typing import Optional, cast
+from typing import Optional, cast, List
 
 from common import bytes_messages
 from dateutil import parser
@@ -109,8 +109,7 @@ class SdaGenericTelegram(SdaUnisigMessage):
         pass
 
 
-@staticmethod
-def decode_sda_bytes_hexa(bytes_hexa: str) -> Optional[SdaUnisigMessage]:
+def decode_sda_bytes_hexa(bytes_hexa: str) -> List[UnisigMessage]:
     byte_message_decoded = bytes_messages.DecodedBytesMessage(bytes_hexa)
     mistery_0 = byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=bytes_messages.NUMBER_OF_BITS_IN_BYTE)
     raw_command = byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=bytes_messages.NUMBER_OF_BITS_IN_BYTE)
@@ -119,22 +118,28 @@ def decode_sda_bytes_hexa(bytes_hexa: str) -> Optional[SdaUnisigMessage]:
     safety_level = SafetyLevel[command_type.name[:3]]
     telegram_name = command_type.name[4:]
 
+    ret: List[SdaUnisigMessage] = []
+
     if command_type == SdaUnisigMessage.CommandType.SL0_DISCONNECT_TELEGRAM or command_type == SdaUnisigMessage.CommandType.SL4_DISCONNECT_TELEGRAM:
-        return SdaDisconnectTelegram(
-            command_type=command_type,
-            safety_level=safety_level,
-            telegram_name=telegram_name,
-            byte_message_decoded=byte_message_decoded,
-            lowest_order_byte_sequence_number=mistery_0,
+        ret.append(
+            SdaDisconnectTelegram(
+                command_type=command_type,
+                safety_level=safety_level,
+                telegram_name=telegram_name,
+                byte_message_decoded=byte_message_decoded,
+                lowest_order_byte_sequence_number=mistery_0,
+            )
         )
 
     elif command_type == SdaUnisigMessage.CommandType.SL0_IDLE_TELEGRAM or command_type == SdaUnisigMessage.CommandType.SL4_IDLE_TELEGRAM:
-        return SdaGenericTelegram(
-            command_type=command_type,
-            safety_level=safety_level,
-            telegram_name=telegram_name,
-            byte_message_decoded=byte_message_decoded,
-            lowest_order_byte_sequence_number=mistery_0,
+        ret.append(
+            SdaGenericTelegram(
+                command_type=command_type,
+                safety_level=safety_level,
+                telegram_name=telegram_name,
+                byte_message_decoded=byte_message_decoded,
+                lowest_order_byte_sequence_number=mistery_0,
+            )
         )
     elif (
         command_type == SdaUnisigMessage.CommandType.SL0_CONNECT_REQUEST_TELEGRAM
@@ -142,12 +147,14 @@ def decode_sda_bytes_hexa(bytes_hexa: str) -> Optional[SdaUnisigMessage]:
         or command_type == SdaUnisigMessage.CommandType.SL0_CONNECT_CONFIRM_TELEGRAM
         or command_type == SdaUnisigMessage.CommandType.SL4_CONNECT_CONFIRM_TELEGRAM
     ):
-        return SdaConnectRequestOrConfirmTelegram(
-            command_type=command_type,
-            safety_level=safety_level,
-            telegram_name=telegram_name,
-            byte_message_decoded=byte_message_decoded,
-            lowest_order_byte_sequence_number=mistery_0,
+        ret.append(
+            SdaConnectRequestOrConfirmTelegram(
+                command_type=command_type,
+                safety_level=safety_level,
+                telegram_name=telegram_name,
+                byte_message_decoded=byte_message_decoded,
+                lowest_order_byte_sequence_number=mistery_0,
+            )
         )
 
-    return None
+    return ret
