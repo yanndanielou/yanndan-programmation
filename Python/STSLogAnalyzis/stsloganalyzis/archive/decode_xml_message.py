@@ -112,7 +112,7 @@ class DecodedXmlMessage:
         self.all_fields_by_name: Dict[str, DecodedXmlMessage.XmlMessageFieldUnit | List[DecodedXmlMessage.XmlMessageFieldUnit]] = {}
         self.all_records_by_name: Dict[str, DecodedXmlMessage.XmlMessageRecordUnit | List[DecodedXmlMessage.XmlMessageRecordUnit]] = {}
         self.not_decoded_because_error_fields_names: List[str] = []
-        self.decoded_bytes_message = bytes_messages.DecodedBytesMessage(hex_string=hex_string)
+        self.decoded_bytes_message = bytes_messages.DecodedBytesMessage.from_hex_string(hex_string=hex_string)
         self.hlf_decoded: Optional[datetime.datetime] = None
         self.root_record: Optional[DecodedXmlMessage.XmlMessageRecordMacro] = None
 
@@ -205,7 +205,7 @@ class XmlMessageDecoder:
     def _parse_string_type_field(self, xml_decoded_field_macro: DecodedXmlMessage.XmlMessageFieldMacro) -> None:
 
         assert self.decoded_xml_message is not None
-        string_value = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_ascii_char(number_of_chars=xml_decoded_field_macro.dim, size_bits_per_char=xml_decoded_field_macro.size_bits)
+        string_value = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_ascii_char(number_of_chars=xml_decoded_field_macro.dim)
         self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = string_value
 
         DecodedXmlMessage.XmlMessageFieldString(field_macro=xml_decoded_field_macro, value=string_value)
@@ -233,7 +233,9 @@ class XmlMessageDecoder:
 
         assert self.decoded_xml_message is not None
 
-        field_signed_value, field_unsigned_value = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_single_int_signed_and_unsigned(size_bits=xml_decoded_field_macro.size_bits)
+        field_value = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_single_int_signed_and_unsigned(size_bits=xml_decoded_field_macro.size_bits)
+        field_signed_value = field_value.signed_value
+        field_unsigned_value = field_value.unsigned_value
 
         decoding_type = self.signed_or_unsigned_type_for_integer_fields_manager.get_decoding_type_for_field(
             message_number=self.decoded_xml_message.message_number, field_name=xml_decoded_field_macro.identifier

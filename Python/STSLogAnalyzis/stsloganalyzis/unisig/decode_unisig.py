@@ -78,9 +78,7 @@ class SdaDisconnectTelegram(SdaUnisigMessage):
         self.new_setup_desired = self.byte_message_decoded.get_next_bits_as_bool_0_or_1(size_bits=bytes_messages.NUMBER_OF_BITS_IN_BYTE)
         self.disconnect_reason_raw = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=bytes_messages.NUMBER_OF_BITS_IN_BYTE)
         disconnect_reason_text_length_in_bits = self.byte_message_decoded.number_of_bits_remaining_to_decode - self.crc_size_in_bits
-        self.disconnect_reason_text = self.byte_message_decoded.get_next_bits_as_ascii_char(
-            number_of_chars=disconnect_reason_text_length_in_bits // bytes_messages.NUMBER_OF_BITS_IN_BYTE, size_bits_per_char=bytes_messages.NUMBER_OF_BITS_IN_BYTE
-        )
+        self.disconnect_reason_text = self.byte_message_decoded.get_next_bits_as_ascii_char(number_of_chars=disconnect_reason_text_length_in_bits // bytes_messages.NUMBER_OF_BITS_IN_BYTE)
         self.crc = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=self.crc_size_in_bits) if self.crc_size_in_bits > 0 else None
         pass
 
@@ -127,7 +125,7 @@ class SdaGenericTelegram(SdaUnisigMessage):
 
 
 def decode_sda_bytes_hexa(bytes_hexa: str) -> List[UnisigMessage]:
-    byte_message_decoded = bytes_messages.DecodedBytesMessage(bytes_hexa)
+    byte_message_decoded = bytes_messages.DecodedBytesMessage.from_hex_string(bytes_hexa)
     mistery_0 = byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=bytes_messages.NUMBER_OF_BITS_IN_BYTE)
     raw_command = byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=bytes_messages.NUMBER_OF_BITS_IN_BYTE)
     command_type = SdaUnisigMessage.CommandType(raw_command)
@@ -204,9 +202,9 @@ def decode_sda_bytes_hexa(bytes_hexa: str) -> List[UnisigMessage]:
         nid_stm = byte_message_decoded.get_next_byte_as_single_int_unsigned()
         l_packet = byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=13)
 
-        nid_content_as_hex_bytes_str = byte_message_decoded.get_next_bits_as_hex_bytes_str(size_bits=l_packet)
+        nid_content_as_bit_str = byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=l_packet)
 
-        stm_byte_message_decoded = bytes_messages.DecodedBytesMessage(nid_content_as_hex_bytes_str)
+        stm_byte_message_decoded = bytes_messages.DecodedBytesMessage.from_bit_string(nid_content_as_bit_str)
         logger_config.print_and_log_info(f"STM found:{nid_stm}, packet length:{l_packet}")
         nid_stm_state_order = stm_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=4)
         crc = stm_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=SL4_CRC_SIZE_IN_BITES) if safety_level == SafetyLevel.SL4 else None
