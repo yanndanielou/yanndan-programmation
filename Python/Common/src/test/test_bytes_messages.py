@@ -3,7 +3,7 @@ import pytest
 from common import bytes_messages
 
 
-def test_decode_a() -> None:
+def test_decode_byte_message() -> None:
     decoded_message = bytes_messages.DecodedBytesMessage("01 02 03 04 FF 41 00 AA 41 6E 74")
 
     # 01
@@ -38,3 +38,8 @@ def test_decode_a() -> None:
     # 41 6E 74
     assert decoded_message.get_next_bits_as_ascii_char(number_of_chars=3, size_bits_per_char=8) == "Ant"
     assert decoded_message.is_correctly_and_completely_decoded()
+
+
+def test_decode_bits_message() -> None:
+    decoded_message = bytes_messages.DecodedBitsMessage("01110101")
+    pass
