@@ -22,7 +22,7 @@ class DecodedBytesMessage:
         return len(self.hex_bytes) * NUMBER_OF_BITS_IN_BYTE - self.current_bit_index
 
     def extract_bits(self, start_bit: int, number_of_bits: int) -> str:
-        bits_extracted = self.extract_bits_to_bytes(data=self.hex_bytes, start_bit=start_bit, number_of_bits=number_of_bits)
+        bits_extracted = self.extract_bits_as_str_of_bit(data=self.hex_bytes, start_bit=start_bit, number_of_bits=number_of_bits)
         self.current_bit_index += number_of_bits
         return bits_extracted
 
@@ -54,6 +54,20 @@ class DecodedBytesMessage:
     def get_next_byte_as_single_int_unsigned(self) -> int:
         return self.get_next_bytes_as_single_int_unsigned(size_bytes=1)
 
+    def get_next_bits_as_hex_bytes_str(self, size_bits: int) -> str:
+        next_bits_as_hex_bytes = self.get_next_bits_as_hex_bytes(size_bits=size_bits)
+        return str(next_bits_as_hex_bytes).replace("\\x", " ").replace("b' ", "").replace("'", "").strip()
+
+    def get_next_bits_as_hex_bytes(self, size_bits: int) -> bytes:
+        bytes_extracted = self.extract_bits_to_bytes(data=self.hex_bytes, start_bit=self.current_bit_index, number_of_bits=size_bits)
+        self.current_bit_index += size_bits
+        return bytes_extracted
+
+    def get_next_bytes_as_hex_bytes_str(self, size_bytes: int) -> str:
+        assert size_bytes / NUMBER_OF_BITS_IN_BYTE == 0
+        bits_extracted = self.extract_bits(self.current_bit_index, size_bytes * NUMBER_OF_BITS_IN_BYTE)
+        return bits_extracted
+
     def get_next_bytes_as_single_int_unsigned(self, size_bytes: int) -> int:
         return self.get_next_bits_as_single_int_unsigned(size_bytes * NUMBER_OF_BITS_IN_BYTE)
 
@@ -82,8 +96,7 @@ class DecodedBytesMessage:
         return self.current_bit_index == size_bits
 
     @staticmethod
-    def extract_bits_to_bytes(data: bytes, start_bit: int, number_of_bits: int) -> str:
-        """Extract a specific number of bits starting at a given bit index from a list of bytes."""
+    def extract_bits_to_bytes(data: bytes, start_bit: int, number_of_bits: int) -> bytes:
         # logger_config.print_and_log_info(f"data length:{len(data)}, start_bit:{start_bit},number_of_bits:{number_of_bits},")
         start_byte = start_bit // 8
         end_bit = start_bit + number_of_bits
@@ -91,6 +104,12 @@ class DecodedBytesMessage:
 
         # Get the relevant bytes
         relevant_bytes = data[start_byte:end_byte]
+        return relevant_bytes
+
+    @staticmethod
+    def extract_bits_as_str_of_bit(data: bytes, start_bit: int, number_of_bits: int) -> str:
+        """Extract a specific number of bits starting at a given bit index from a list of bytes."""
+        relevant_bytes = DecodedBytesMessage.extract_bits_to_bytes(data=data, start_bit=start_bit, number_of_bits=number_of_bits)
         combined_bits = "".join(f"{byte:08b}" for byte in relevant_bytes)
 
         return combined_bits

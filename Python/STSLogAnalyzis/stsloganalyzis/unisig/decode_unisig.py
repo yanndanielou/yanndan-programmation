@@ -9,6 +9,8 @@ from typing import Optional, cast, List
 from common import bytes_messages
 from dateutil import parser
 
+from logger import logger_config
+
 SL4_CRC_SIZE_IN_BYTES = 6
 SL4_CRC_SIZE_IN_BITES = SL4_CRC_SIZE_IN_BYTES * bytes_messages.NUMBER_OF_BITS_IN_BYTE
 
@@ -102,6 +104,21 @@ class SdaConnectRequestOrConfirmTelegram(SdaUnisigMessage):
 
 
 @dataclass
+class SdaAuthenticationOrAuthenticationAcknowledgementTelegram(SdaUnisigMessage):
+
+    def __post_init__(self) -> None:
+        self.authentication_number = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
+        self.crc = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=self.crc_size_in_bits)
+
+
+@dataclass
+class SdaRunOrReadyToRunTelegram(SdaUnisigMessage):
+
+    def __post_init__(self) -> None:
+        self.stl_time_stamp_ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
+
+
+@dataclass
 class SdaGenericTelegram(SdaUnisigMessage):
 
     def __post_init__(self) -> None:
@@ -156,5 +173,48 @@ def decode_sda_bytes_hexa(bytes_hexa: str) -> List[UnisigMessage]:
                 lowest_order_byte_sequence_number=mistery_0,
             )
         )
+    elif command_type == SdaUnisigMessage.CommandType.SL4_AUTHENTICATION_TELEGRAM or command_type == SdaUnisigMessage.CommandType.SL4_AUTHENTICATION_ACKNOWLEDGEMENT_TELEGRAM:
+        ret.append(
+            SdaConnectRequestOrConfirmTelegram(
+                command_type=command_type,
+                safety_level=safety_level,
+                telegram_name=telegram_name,
+                byte_message_decoded=byte_message_decoded,
+                lowest_order_byte_sequence_number=mistery_0,
+            )
+        )
+    elif (
+        command_type == SdaUnisigMessage.CommandType.SL0_READY_TO_RUN
+        or command_type == SdaUnisigMessage.CommandType.SL4_READY_TO_RUN
+        or command_type == SdaUnisigMessage.CommandType.SL0_RUN
+        or command_type == SdaUnisigMessage.CommandType.SL4_RUN
+    ):
+        ret.append(
+            SdaRunOrReadyToRunTelegram(
+                command_type=command_type,
+                safety_level=safety_level,
+                telegram_name=telegram_name,
+                byte_message_decoded=byte_message_decoded,
+                lowest_order_byte_sequence_number=mistery_0,
+            )
+        )
+    elif command_type == SdaUnisigMessage.CommandType.SL0_TELEGRAM_FOR_UPPER_LAYER or command_type == SdaUnisigMessage.CommandType.SL4_TELEGRAM_FOR_UPPER_LAYER:
+        mistery_1 = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        raw_command_1 = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        nid_stm = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        l_packet = byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=13)
+
+        nid_content_as_hex_bytes_str = byte_message_decoded.get_next_bits_as_hex_bytes_str(size_bits=l_packet)
+
+        stm_byte_message_decoded = bytes_messages.DecodedBytesMessage(nid_content_as_hex_bytes_str)
+        logger_config.print_and_log_info(f"STM found:{nid_stm}, packet length:{l_packet}")
+        nid_stm_state_order = stm_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=4)
+        crc = stm_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=SL4_CRC_SIZE_IN_BITES) if safety_level == SafetyLevel.SL4 else None
+        assert stm_byte_message_decoded.is_correctly_and_completely_decoded()
+        # remaining  =
+
+        assert byte_message_decoded.is_correctly_and_completely_decoded()
+
+        pass
 
     return ret

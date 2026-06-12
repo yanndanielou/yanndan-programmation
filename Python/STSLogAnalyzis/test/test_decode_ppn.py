@@ -1,3 +1,5 @@
+import pytest
+
 from stsloganalyzis.ppn import ppn_log
 from stsloganalyzis.unisig import decode_unisig
 
@@ -26,6 +28,40 @@ def test_decode_one_disconnect_sl4() -> None:
     assert isinstance(disconnect, decode_unisig.SdaDisconnectTelegram)
     assert disconnect.byte_message_decoded.is_correctly_and_completely_decoded()
     print(disconnect.disconnect_reason_text)
+
+
+@pytest.mark.parametrize(
+    "raw_ppn_log_line",
+    [
+        "2026-05-22 15:17:08:758 kppn 1.3.3: [99:33 => 2:33] Sending PROFIBUS message [num:197704][rt:3903][mode:SDA][len:18] e0 89 1d 06 0f 00 ca 00 95 d1 b2 04 c0 fd 4f 34 44 a1",
+        "2026-05-22 15:26:13:149 kppn 1.3.3: [99:37 => 2:37] Sending PROFIBUS message [num:199067][rt:1679][mode:SDA][len:18] f4 89 1d 06 0f 00 ca 00 23 20 bb 04 75 e8 c4 a2 d6 ad",
+    ],
+)
+def test_decode_line_with_stm15(
+    raw_ppn_log_line: str,
+) -> None:
+    ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(raw_ppn_log_line)
+    assert ppn_log_line
+    ppn_log_line.decode_sdn_or_sna()
+    assert ppn_log_line.unisig_messages
+
+
+@pytest.mark.parametrize(
+    "raw_ppn_log_line",
+    [
+        "2025-11-02 03:14:06:508 kppn 1.3.3: [99:33 <= 2:33] Received PROFIBUS message [num:47967][mode:SDA][len:18] 4c 89 1d 06 0e 00 cc 7f ff 1a d8 00 67 e2 63 48 c4 9b",
+        "2025-09-28 01:37:13:841 kppn 1.3.3: [99:33 <= 2:33] Received PROFIBUS message [num:55373][mode:SDA][len:18] 21 89 1d 06 0e 00 cc 7f 58 19 50 00 df f7 6c 1e 1d 4f",
+        "2026-03-29 23:33:14:389 kppn 1.3.3: [99:33 <= 2:33] Received PROFIBUS message [num:22933][mode:SDA][len:18] cc 89 1d 06 0e 00 cc 7f c4 86 18 00 d4 fa 89 85 2a ed",
+        "2026-03-29 22:36:04:676 kppn 1.3.3: [99:33 <= 2:33] Received PROFIBUS message [num:186142][mode:SDA][len:18] cc 89 1d 06 0e 00 cc 7f 0c 00 c5 00 fb f1 e3 98 3e 9e",
+    ],
+)
+def test_decode_line_with_stm14_failure(
+    raw_ppn_log_line: str,
+) -> None:
+    ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(raw_ppn_log_line)
+    assert ppn_log_line
+    ppn_log_line.decode_sdn_or_sna()
+    assert ppn_log_line.unisig_messages
 
 
 def test_decode_line_with_stm1_and_stm8() -> None:
