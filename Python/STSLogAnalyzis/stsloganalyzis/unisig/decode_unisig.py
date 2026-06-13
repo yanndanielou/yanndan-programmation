@@ -133,7 +133,7 @@ def decode_sda_bytes_hexa(bytes_hexa: str) -> List[UnisigMessage]:
     safety_level = SafetyLevel[command_type.name[:3]]
     telegram_name = command_type.name[4:]
 
-    ret: List[SdaUnisigMessage] = []
+    ret: List[UnisigMessage] = []
 
     if command_type == SdaUnisigMessage.CommandType.SL0_DISCONNECT_TELEGRAM or command_type == SdaUnisigMessage.CommandType.SL4_DISCONNECT_TELEGRAM:
         ret.append(
