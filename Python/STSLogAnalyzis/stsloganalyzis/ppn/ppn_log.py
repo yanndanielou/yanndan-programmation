@@ -5,7 +5,7 @@ from enum import Enum
 from typing import List, Optional
 
 
-from stsloganalyzis.unisig import decode_unisig
+from stsloganalyzis.unisig import decode_unisig, upper_layer_libraries
 
 
 class SendingMode(Enum):
@@ -45,12 +45,13 @@ class ProfibusLogLine:
     mode: SendingMode
     length: int
     bytes_hexa: str
+    upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary
 
     def __post_init__(self) -> None:
         self.unisig_messages: List[decode_unisig.UnisigMessage] = []
 
     @staticmethod
-    def decode_raw_log_line(line: str) -> Optional["ProfibusLogLine"]:
+    def decode_raw_log_line(line: str, upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary) -> Optional["ProfibusLogLine"]:
 
         fields = line.split(" ")
         if len(fields) <= 4:
@@ -109,10 +110,11 @@ class ProfibusLogLine:
                 mode=SendingMode[mode],
                 length=length,
                 bytes_hexa=bytes_hexa,
+                upper_layer_decoding_library=upper_layer_decoding_library,
             )
         else:
             return None
 
     def decode_sdn_or_sna(self) -> None:
         if self.mode == SendingMode.SDA:
-            self.unisig_messages = decode_unisig.decode_sda_bytes_hexa(self.bytes_hexa)
+            self.unisig_messages = decode_unisig.decode_sda_bytes_hexa(self.bytes_hexa, self.upper_layer_decoding_library)
