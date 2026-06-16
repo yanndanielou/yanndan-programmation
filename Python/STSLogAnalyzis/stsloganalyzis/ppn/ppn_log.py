@@ -117,4 +117,6 @@ class ProfibusLogLine:
 
     def decode_sdn_or_sna(self) -> None:
         if self.mode == SendingMode.SDA:
-            self.unisig_messages = decode_unisig.decode_sda_bytes_hexa(self.bytes_hexa, self.upper_layer_decoding_library)
+            self.unisig_messages = decode_unisig.SdaUnisigMessage.from_sda_hexa_bytes_str(self.bytes_hexa, self.upper_layer_decoding_library)
+        else:
+            self.unisig_messages = decode_unisig.SdnUnisigMessage.from_sda_hexa_bytes_str(self.bytes_hexa, self.upper_layer_decoding_library)

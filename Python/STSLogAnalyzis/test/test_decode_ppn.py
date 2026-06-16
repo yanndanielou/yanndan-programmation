@@ -1,12 +1,16 @@
 import pytest
 
+from typing import cast
+
 from stsloganalyzis.ppn import ppn_log
 from stsloganalyzis.unisig import decode_unisig, upper_layer_libraries
 
 
 @pytest.fixture(scope="session", name="next_unisig_58_library_fixture")
 def next_unisig_58_library() -> upper_layer_libraries.UpperLayerDecodingLibrary:
-    return upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(json_file_full_path=r"D:\temp\GenTel\0.0-RC12-Original_Edition\GenTel\rom\unisig_s58.json")
+    ret = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(json_file_full_path=r"D:\temp\GenTel\0.0-RC12-Original_Edition\GenTel\rom\unisig_s58.json")
+    assert isinstance(ret, upper_layer_libraries.UpperLayerDecodingLibrary)
+    return ret
 
 
 class TestDecodeOnePpnLogLine:
