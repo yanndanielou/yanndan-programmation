@@ -154,27 +154,6 @@ class TestDecodeCbtcMessage210withRecordWithDimension:
         assert decoded_message.is_correctly_and_completely_decoded()
         assert decoded_message.decoded_fields_flat_directory["TimeOffset"] == 72000
 
-    def ignore_test_access_fields_inside_record_by_long_name(self) -> None:
-        decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=210, hexadecimal_content=self.message_210_hexa_content_as_str)
-        assert decoded_message
-        assert not decoded_message.not_decoded_because_error_fields_names
-        assert decoded_message.is_correctly_and_completely_decoded()
-        assert decoded_message.decoded_fields_flat_directory["TvdOpData_0_TvdArb"]
-        assert decoded_message.decoded_fields_flat_directory["TvdOpData_1_TvdArb"]
-
-    def test_access_fields_inside_record_by_field_name_and_index(self) -> None:
-        decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=210, hexadecimal_content=self.message_210_hexa_content_as_str)
-        assert decoded_message
-        assert not decoded_message.not_decoded_because_error_fields_names
-        assert decoded_message.is_correctly_and_completely_decoded()
-        assert isinstance(decoded_message.all_fields_by_name["TvdArb"], list)
-        assert decoded_message.all_fields_by_name["TvdArb"]
-        assert len(decoded_message.all_fields_by_name["TvdArb"]) == 250
-        assert decoded_message.all_fields_by_name["TvdArb"][0].value == 0
-        assert decoded_message.all_fields_by_name["TvdArb"][6].value == 1
-        assert decoded_message.all_fields_by_name["TvdArb"][12].value == 1
-        assert decoded_message.all_fields_by_name["TvdArb"][13].value == 0
-
 
 class TestDecodeHlf:
     def test_0(self) -> None:

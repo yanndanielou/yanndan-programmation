@@ -67,7 +67,7 @@ class DecodedXmlMessage:
         ):
             self.field_macro = field_macro
             self.human_readable_value: Optional[int | bool | str] = None
-            self.value: Optional[int | bool | str | List[int] | List[bool]] = None
+            self.value: Optional[int | bool | str | List[int] | List[bool] | List[List[bytes_messages.DecodedIntResult]]] = None
 
             self.index = index
             field_macro.unit_fields.append(self)
@@ -90,11 +90,19 @@ class DecodedXmlMessage:
             self.value = value
 
     class XmlMessageFieldInt(XmlMessageFieldUnit):
-        def __init__(self, field_macro: "DecodedXmlMessage.XmlMessageFieldMacro", unsigned_value: int | List[int], signed_value: int | List[int]):
-            super().__init__(field_macro=field_macro, decoded_xml_message=field_macro.decoded_xml_message, index=0)
+        def __init__(self, field_macro: "DecodedXmlMessage.XmlMessageFieldMacro", unsigned_value: int | List[int], signed_value: int | List[int], index: int = 0):
+            super().__init__(field_macro=field_macro, decoded_xml_message=field_macro.decoded_xml_message, index=index)
             self.value = unsigned_value
             self.unsigned_value = unsigned_value
             self.signed_value = signed_value
+
+    class XmlMessageMultiDimFieldInt(XmlMessageFieldUnit):
+        def __init__(self, field_macro: "DecodedXmlMessage.XmlMessageFieldMacro", int_values: List[List[bytes_messages.DecodedIntResult]]):
+            super().__init__(field_macro=field_macro, decoded_xml_message=field_macro.decoded_xml_message, index=0)
+            self.value = int_values
+            long_name_record_prefix = "" if self.field_macro.parent_record.record_macro.dim == 1 else f"{self.field_macro.parent_record.record_macro.identifier}"
+            field_name = self.field_macro.identifier if self.field_macro.dim == 1 else f"{self.field_macro.identifier}"
+            self.long_name = long_name_record_prefix + field_name
 
     @dataclass
     class XmlMessageEnumerationValue:
@@ -223,11 +231,22 @@ class XmlMessageDecoder:
 
         assert self.decoded_xml_message is not None
 
-        int_value = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_int_table_signed_and_unsigned(table_dim=xml_decoded_field_macro.dim, size_bits=xml_decoded_field_macro.size_bits)
-        field = DecodedXmlMessage.XmlMessageFieldInt(
-            field_macro=xml_decoded_field_macro, unsigned_value=[value.unsigned_value for value in int_value], signed_value=[value.signed_value for value in int_value]
+        # int_value = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_int_table_signed_and_unsigned(
+        #    table_dim=xml_decoded_field_macro.dim, size_bits=xml_decoded_field_macro.size_bits
+        # )
+        # field = DecodedXmlMessage.XmlMessageFieldInt(
+        #    field_macro=xml_decoded_field_macro, unsigned_value=[value.unsigned_value for value in int_value], signed_value=[value.signed_value for value in int_value]
+        # )
+        # self.decoded_xml_message.decoded_fields_flat_directory[field.long_name] = [value.unsigned_value for value in int_value]
+
+        int_values = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_int_table_signed_and_unsigned(table_dim=xml_decoded_field_macro.dim, size_bits=xml_decoded_field_macro.size_bits)
+
+        field = DecodedXmlMessage.XmlMessageMultiDimFieldInt(
+            field_macro=xml_decoded_field_macro,
+            int_values=int_values,
         )
-        self.decoded_xml_message.decoded_fields_flat_directory[field.long_name] = [value.unsigned_value for value in int_value]
+        for index, int_value in enumerate(int_values):
+            self.decoded_xml_message.decoded_fields_flat_directory[f"{field.long_name}_{index}"] = int_value.unsigned_value
 
     def _parse_single_int_type_field(self, xml_decoded_field_macro: DecodedXmlMessage.XmlMessageFieldMacro) -> None:
 
@@ -269,7 +288,7 @@ class XmlMessageDecoder:
         field_type = element.get("class")
         assert field_type
 
-        field_name_with_record_prefix = record_prefix + "_" + raw_field_name
+        field_name_with_record_prefix = record_prefix + "_" + raw_field_name if record_prefix else raw_field_name
 
         xml_decoded_field_macro = DecodedXmlMessage.XmlMessageFieldMacro(
             raw_class=field_type,
