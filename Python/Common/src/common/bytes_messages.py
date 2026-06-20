@@ -91,6 +91,7 @@ class DecodedBytesMessage:
     def extract_next_bits_to_str_of_bit(self, number_of_bits: int) -> str:
         bits_extracted = self.str_of_bits[self.current_bit_index : self.current_bit_index + number_of_bits]
         self.current_bit_index += number_of_bits
+        assert self.number_of_bits_remaining_to_decode >= 0, f"Too many ({-self.current_bit_index}) bits decoded!!"
         return bits_extracted
 
     def get_next_bits_as_ascii_char(self, number_of_chars: int) -> str:
