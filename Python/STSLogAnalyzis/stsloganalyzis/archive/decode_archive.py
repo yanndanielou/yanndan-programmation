@@ -139,7 +139,9 @@ class SqlArchLineStringFieldValueBasedFilter(SqlArchFilter):
 
 
 class IdFilter(SqlArchLineStringFieldValueBasedFilter):
-    def __init__(self, field_values: List[str], filter_type: common_filters.StringFilterType, white_or_black_list: common_filters.WhiteOrBlackListFilterType) -> None:
+    def __init__(self, field_values: str | List[str], filter_type: common_filters.StringFilterType, white_or_black_list: common_filters.WhiteOrBlackListFilterType) -> None:
+        if isinstance(field_values, str):
+            field_values = [field_values]
         super().__init__(white_or_black_list=white_or_black_list, field_name="id", field_values=field_values, filter_type=filter_type)
 
 
