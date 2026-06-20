@@ -148,7 +148,7 @@ class DecodedXmlMessage:
         if self.not_decoded_because_error_fields_names:
             return False
 
-        return self.decoded_bytes_message.is_correctly_and_completely_decoded()
+        return cast(bool, self.decoded_bytes_message.is_correctly_and_completely_decoded())
 
 
 class SignedOrUnsignedTypeForIntegerFieldsManagerBase(ABC):
@@ -224,6 +224,9 @@ class XmlMessageDecoder:
 
         field_value = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_bitset_str(size_bits=xml_decoded_field_macro.size_bits)
         self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_value
+
+        for bit_index in range(0, xml_decoded_field_macro.size_bits):
+            self.decoded_xml_message.decoded_fields_flat_directory[f"{xml_decoded_field_macro.field_name_with_record_prefix}_{bit_index}"] = int(field_value[bit_index])
 
         DecodedXmlMessage.XmlMessageFieldBitfield(field_macro=xml_decoded_field_macro, value=field_value)
 
