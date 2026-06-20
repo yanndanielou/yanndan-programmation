@@ -269,7 +269,7 @@ class XmlMessageDecoder:
         field_type = element.get("class")
         assert field_type
 
-        field_name_with_record_prefix = record_prefix + raw_field_name
+        field_name_with_record_prefix = record_prefix + "_" + raw_field_name
 
         xml_decoded_field_macro = DecodedXmlMessage.XmlMessageFieldMacro(
             raw_class=field_type,
