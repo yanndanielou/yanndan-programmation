@@ -230,14 +230,13 @@ class SqlArchArchiveLineWithContext:
         self.all_fields_changed = copy.deepcopy(self.all_fields_changed)
 
     @property
-    def decoded_message(self) -> decode_message.DecodedMessage:
-        decoded_message = cast(decode_message.DecodedMessage, self.sql_arch_line.decoded_message)
-        assert decoded_message is not None
-        return decoded_message
+    def decoded_message(self) -> Optional[decode_message.DecodedMessage]:
+        ret = cast(decode_message.DecodedMessage, self.sql_arch_line.decoded_message)
+        return ret
 
     @property
     def decoded_fields_flat_directory(self) -> Dict[str, constants.FIELD_TYPE]:
-        return self.decoded_message.decoded_fields_flat_directory
+        return self.decoded_message.decoded_fields_flat_directory if self.decoded_message else cast(constants.FIELD_TYPE, self.sql_arch_line.sqlarch_fields_dict_raw)
 
     def get_all_changes_since_previous(self) -> List[OrderedDict[str, Any]]:
         to_ret: List[OrderedDict[str, Any]] = []
@@ -435,9 +434,12 @@ class ArchiveAnalyzis:
         return len(rows_as_list_dict)
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def create_reports_all_sqlarch_changes_since_previous(self, output_directory_path: str, file_base_name: Optional[str] = None) -> int:
+    def create_reports_all_sqlarch_changes_since_previous(self, output_directory_path: Optional[str] = None, file_base_name: Optional[str] = None) -> int:
         if file_base_name is None:
             file_base_name = f"{self.label}_all_changes"
+
+        if output_directory_path is None:
+            output_directory_path = self.output_directory_path
 
         rows_as_list_dict: List[Dict[str, Any]] = []
 
