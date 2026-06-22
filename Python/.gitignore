@@ -2,4 +2,4 @@
 *.pyc.*
 .coverage
 *.egg-info
-
+install_external_common_libraries *.bat
