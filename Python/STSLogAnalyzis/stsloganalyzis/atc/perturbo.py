@@ -37,7 +37,7 @@ class PerturboFile(atc_logs.ATCTestFile):
         previous_all_fields_names_and_values = None
         for line_number, value_raw_line in enumerate(self.all_values_raw_lines):
 
-            all_fields_names_and_values = self.variables_line_dictionary.get_all_fields_names_and_values_in_data_line(value_raw_line)
+            all_fields_names_and_values = self.variables_line_dictionary.get_all_fields_names_and_values_in_data_line(value_raw_line, self.atc_test_result)
             self.add_missing_horodate_fields_and_ensure_incremental_horodate(all_fields_names_and_values, previous_all_fields_names_and_values)
 
             self.create_result_line_if_needed(

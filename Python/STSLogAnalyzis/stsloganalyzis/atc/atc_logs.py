@@ -1,4 +1,5 @@
 import datetime
+import line_profiler
 import cProfile, pstats, io
 from pstats import SortKey
 from warnings import deprecated
@@ -134,19 +135,21 @@ class ATCVariablesLineDictionary:
 
         return pert_variable_to_timestamp(c_heure=c_heure, c_decalage=c_decalage, c_decenie=c_decenie, c_jour=c_jour)
 
-    def get_all_fields_names_and_values_in_data_line(self, value_raw_line: str) -> Dict[str, VARIABLE_STATE_TYPE]:
+    def get_all_fields_names_and_values_in_data_line(self, value_raw_line: str, test_result: "ATCTestResult") -> Dict[str, VARIABLE_STATE_TYPE]:
         all_raw_values = value_raw_line.rstrip().split(ATC_LOG_FILES_FIELDS_SEPARATOR)
-        return self.get_all_fields_names_and_values_in_data_raw_fields(all_raw_values=all_raw_values)
+        return self.get_all_fields_names_and_values_in_data_raw_fields(all_raw_values=all_raw_values, test_result=test_result)
 
-    def get_all_fields_names_and_values_in_data_raw_fields(self, all_raw_values: List[str]) -> Dict[str, VARIABLE_STATE_TYPE]:
+    def get_all_fields_names_and_values_in_data_raw_fields(self, all_raw_values: List[str], test_result: "ATCTestResult") -> Dict[str, VARIABLE_STATE_TYPE]:
         all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE] = dict()
 
         assert len(all_raw_values) == len(self.all_fields_names)
 
         for variable_index, variable_name in enumerate(self.all_fields_names):
-            variable_value = all_raw_values[variable_index]
-            assert variable_name not in all_fields_names_and_values
-            all_fields_names_and_values[variable_name] = self._convert_to_proper_type(variable_value)
+            if test_result.variable_name_must_be_created(variable_name):
+                variable_raw_value = all_raw_values[variable_index]
+                assert variable_name not in all_fields_names_and_values
+                variable_proper_type_value = convert_to_proper_type(variable_raw_value)
+                all_fields_names_and_values[variable_name] = variable_proper_type_value
 
         return all_fields_names_and_values
 
@@ -216,16 +219,10 @@ class ATCTestResultLine(ABC):
         return self.time_according_to_simulation_start
 
     def handle_variable_state(self, variable_name: str, variable_raw_value: VARIABLE_STATE_TYPE) -> None:
-        # logger_config.print_and_log_info(f"handle_variable_state: {variable_name} {variable_value}")
-        # if variable_name_must_be_kept_after_filters(variable_name=variable_name, all_filters=self.test_result.variables_names_creation_filters):
-        if self.test_result.variable_name_must_be_created(variable_name):
-
-            variable_proper_type_value = convert_to_proper_type(variable_raw_value)
-
-            # logger_config.print_and_log_info(f"handle_variable_state, must be kept: {variable_name} {variable_value}")
-            variable = self.equipment.variables_library.get_or_create_variable_by_name(variable_name=variable_name)
-            variable_state = VariableState(variable=variable, value=variable_raw_value, result_line=self)
-            self.all_variables_states.append(variable_state)
+        # logger_config.print_and_log_info(f"handle_variable_state, must be kept: {variable_name} {variable_value}")
+        variable = self.equipment.variables_library.get_or_create_variable_by_name(variable_name=variable_name)
+        variable_state = VariableState(variable=variable, value=variable_raw_value, result_line=self)
+        self.all_variables_states.append(variable_state)
 
     @property
     def test_result(self) -> "ATCTestResult":
@@ -344,6 +341,7 @@ class ATCTestResult(ABC):
         return self.variable_name_must_be_created(variable_name=variable_name)
 
     @logger_config.stopwatch_decorator()
+    @line_profiler.profile
     def process(self) -> None:
         for atc_test_file in self.all_atc_test_files:
             atc_test_file.compute_all_variables_states()
@@ -515,22 +513,22 @@ class ATCTestResult(ABC):
 
         def build(self) -> "ATCTestResult":
 
-            pr = cProfile.Profile()
-            pr.enable()
+            # pr = cProfile.Profile()
+            # pr.enable()
 
             if self._atc_test_result_created.label == "" and len(self._atc_test_result_created.all_atc_test_files) == 1:
                 pass
 
             self._atc_test_result_created.process()
 
-            pr.disable()
-            s = io.StringIO()
-            sortby = SortKey.CUMULATIVE
-            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-            ps.print_stats()
-            print(s.getvalue())
-            ps.sort_stats(SortKey.TIME, SortKey.CUMULATIVE).print_stats(0.5, "init")
-            ps.print_callees()
+            # pr.disable()
+            # s = io.StringIO()
+            # sortby = SortKey.CUMULATIVE
+            # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            # ps.print_stats()
+            # print(s.getvalue())
+            # ps.sort_stats(SortKey.TIME, SortKey.CUMULATIVE).print_stats(0.5, "init")
+            # ps.print_callees()
 
             return self._atc_test_result_created
 

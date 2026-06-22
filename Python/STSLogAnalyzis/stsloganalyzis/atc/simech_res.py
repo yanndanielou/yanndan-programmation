@@ -96,7 +96,9 @@ class SimechResFile(atc_logs.ATCTestFile):
             elif raw_line_split[SimechResFileFirstColumnsByIndex.LINE_TYPE] == SimechResFileTypeLine.SD.value:
                 equipment_name = get_cleaned_equipment_name(raw_line_split[SimechResFileFirstColumnsByIndex.EQUIPMENT_OR_SIMECH_SCENARIO_INFO])
                 raw_useful_values = raw_line_split[SimechResFileFirstColumnsByIndex.EQUIPMENT_OR_SIMECH_SCENARIO_INFO.value + 1 :]
-                all_fields_names_and_values = self.variables_line_dictionary_by_equipment[equipment_name].get_all_fields_names_and_values_in_data_raw_fields(all_raw_values=raw_useful_values)
+                all_fields_names_and_values = self.variables_line_dictionary_by_equipment[equipment_name].get_all_fields_names_and_values_in_data_raw_fields(
+                    all_raw_values=raw_useful_values, test_result=self.atc_test_result
+                )
                 self.add_missing_horodate_fields_and_ensure_incremental_horodate(all_fields_names_and_values, previous_all_fields_names_and_values)
                 equipment = self.atc_test_result.equipments_library.get_or_create_equipment_by_name(equipment_name)
 
