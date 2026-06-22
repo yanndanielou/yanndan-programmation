@@ -1,4 +1,6 @@
 import datetime
+import cProfile, pstats, io
+from pstats import SortKey
 from warnings import deprecated
 from abc import ABC, abstractmethod
 from collections import OrderedDict
@@ -13,6 +15,10 @@ from stsloganalyzis.common import common_filters
 ATC_LOG_FILES_FIELDS_SEPARATOR = ";"
 
 VARIABLE_STATE_TYPE = str | int | bool | datetime.datetime | None
+
+
+NUMBER_OF_MILLISECONDS_IN_DAY = 24 * 60 * 60 * 100
+JUST_BEFORE_MIDNIGHT_IN_MILLISECONDS = NUMBER_OF_MILLISECONDS_IN_DAY - 1000
 
 
 @dataclass
@@ -35,9 +41,19 @@ class Variable:
         self.states_changes_chronologically_sorted: List[VariableStateChange] = []
 
     def add_state(self, variable_state: "VariableState") -> None:
+        assert variable_state not in self.states_chronologically_sorted
         if self.initial_state is None:
             self.initial_state = variable_state
         else:
+            # if self.states_chronologically_sorted:
+            # assert self.states_chronologically_sorted[-1].result_line
+            # assert self.states_chronologically_sorted[-1].result_line.horodate
+            # assert variable_state.result_line
+            # assert variable_state.result_line.horodate
+            # assert (
+            #    self.states_chronologically_sorted[-1].result_line.horodate < variable_state.result_line.horodate
+            # ), f"Return to past from {self.states_chronologically_sorted[-1].result_line.horodate} to {variable_state.result_line.horodate}  for {self.states_chronologically_sorted[-1].result_line.parent_file.file_full_path} in {len(self.states_chronologically_sorted)} th line"
+
             self.states_chronologically_sorted.append(variable_state)
 
 
@@ -48,7 +64,7 @@ class VariableState:
     result_line: "ATCTestResultLine"
 
     def __post_init__(self) -> None:
-        self.variable.states_chronologically_sorted.append(self)
+        self.variable.add_state(self)
 
 
 @dataclass
@@ -106,24 +122,6 @@ class ATCVariablesLineDictionary:
     all_fields_names: List[str]
 
     @staticmethod
-    def _convert_to_proper_type(value: str) -> VARIABLE_STATE_TYPE:
-        """Convert string value to proper type (bool, int, or str)."""
-        # Try to convert to bool
-        if value.lower() in ("VRAI", "true", "1", "yes", "on"):
-            return True
-        if value.lower() in ("FAUX", "false", "0", "no", "off"):
-            return False
-
-        # Try to convert to int
-        try:
-            return int(value)
-        except ValueError:
-            pass
-
-        # Keep as string
-        return value
-
-    @staticmethod
     def get_horodate_from_cheure_etc(all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE]) -> Optional[datetime.datetime]:
 
         c_heure = cast(int, all_fields_names_and_values.get("CHEURE"))
@@ -174,10 +172,16 @@ class VariableNameFilter(VariableFilter):
                 field_values=variables_names,
             )
         )
+        # self.cached_result_match_by_test_string: Dict[str, bool] = {}
 
     def passes(self, to_test: str) -> bool:
+        # if to_test in self.cached_result_match_by_test_string:
+        #    return self.cached_result_match_by_test_string[to_test]
+
         match = self.string_filter.do_passes(to_test)
         assert isinstance(match, bool)
+        # self.cached_result_match_by_test_string[to_test] = match
+        # return self.passes(to_test)
         return match
 
     def print_stats(self) -> None:
@@ -202,7 +206,7 @@ class ATCTestResultLine(ABC):
         self.test_result.result_lines.append(self)
 
         for variable_name, variable_value in self.all_fields_names_and_values.items():
-            self.handle_variable_state(variable_name=variable_name, variable_value=variable_value)
+            self.handle_variable_state(variable_name=variable_name, variable_raw_value=variable_value)
 
     @property
     @deprecated("not used")
@@ -211,13 +215,16 @@ class ATCTestResultLine(ABC):
             return self.horodate
         return self.time_according_to_simulation_start
 
-    def handle_variable_state(self, variable_name: str, variable_value: VARIABLE_STATE_TYPE) -> None:
+    def handle_variable_state(self, variable_name: str, variable_raw_value: VARIABLE_STATE_TYPE) -> None:
         # logger_config.print_and_log_info(f"handle_variable_state: {variable_name} {variable_value}")
-        if variable_name_must_be_kept_after_filters(variable_name=variable_name, all_filters=self.test_result.variables_names_creation_filters):
+        # if variable_name_must_be_kept_after_filters(variable_name=variable_name, all_filters=self.test_result.variables_names_creation_filters):
+        if self.test_result.variable_name_must_be_created(variable_name):
+
+            variable_proper_type_value = convert_to_proper_type(variable_raw_value)
+
             # logger_config.print_and_log_info(f"handle_variable_state, must be kept: {variable_name} {variable_value}")
             variable = self.equipment.variables_library.get_or_create_variable_by_name(variable_name=variable_name)
-            variable_state = VariableState(variable=variable, value=variable_value, result_line=self)
-            variable.add_state(variable_state)
+            variable_state = VariableState(variable=variable, value=variable_raw_value, result_line=self)
             self.all_variables_states.append(variable_state)
 
     @property
@@ -233,6 +240,35 @@ class ATCTestFile(ABC):
     def __post_init__(self) -> None:
         self.file_name = file_name_utils.get_file_name_without_extension_from_full_path(self.file_full_path)
         self.all_lines: List[ATCTestResultLine] = []
+        logger_config.print_and_log_info(f"Build {self.file_name}")
+        self.forced_cdecenie_value: Optional[int] = None
+        self.forced_cjour_value: Optional[int] = None
+
+    def add_missing_horodate_fields_and_ensure_incremental_horodate(
+        self, all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE], previous_all_fields_names_and_values: Optional[Dict[str, VARIABLE_STATE_TYPE]]
+    ) -> Dict[str, VARIABLE_STATE_TYPE]:
+
+        is_previous_line_just_before_midnight = previous_all_fields_names_and_values and cast(int, all_fields_names_and_values.get("CHEURE")) > JUST_BEFORE_MIDNIGHT_IN_MILLISECONDS
+        previous_line_cheure = cast(int, previous_all_fields_names_and_values.get("CHEURE")) if previous_all_fields_names_and_values else None
+        current_line_initial_cheure = cast(int, all_fields_names_and_values.get("CHEURE"))
+        is_current_line_just_after_midnight = current_line_initial_cheure < 100
+        change_of_day_detected_with_cheures = previous_line_cheure and is_previous_line_just_before_midnight and is_current_line_just_after_midnight
+
+        if previous_line_cheure and current_line_initial_cheure <= previous_line_cheure and not change_of_day_detected_with_cheures:
+            all_fields_names_and_values["CHEURE"] = previous_line_cheure + 1
+            logger_config.print_and_log_info(f"Fix Cheure from {current_line_initial_cheure} to {all_fields_names_and_values["CHEURE"]} to avoir return to past")
+
+        if "CJOUR" not in all_fields_names_and_values and self.forced_cjour_value:
+            if change_of_day_detected_with_cheures:
+                assert previous_all_fields_names_and_values
+                logger_config.print_and_log_info(f"Detect new day from {all_fields_names_and_values.get("CHEURE")} to {previous_all_fields_names_and_values.get("CHEURE")}")
+                self.forced_cjour_value += 1
+            all_fields_names_and_values["CJOUR"] = self.forced_cjour_value
+
+        if "CDECENNIE" not in all_fields_names_and_values and self.forced_cdecenie_value:
+            all_fields_names_and_values["CDECENNIE"] = self.forced_cdecenie_value
+
+        return all_fields_names_and_values
 
     @abstractmethod
     def compute_all_variables_states(self) -> None:
@@ -277,6 +313,9 @@ class ATCTestFile(ABC):
             )
         )
 
+        if len(self.all_lines) % 10000 == 0:
+            logger_config.print_and_log_info(f"{len(self.all_lines)} lines created so far")
+
 
 @dataclass
 class ATCTestResult(ABC):
@@ -293,6 +332,16 @@ class ATCTestResult(ABC):
         self.output_directory_path = "output"
         self.all_atc_test_files: List[ATCTestFile] = []
         self.result_lines: List[ATCTestResultLine] = []
+        self.variable_name_must_be_created_cache_result: Dict[str, bool] = {}
+
+        logger_config.print_and_log_info(f"Build {self.label}")
+
+    def variable_name_must_be_created(self, variable_name: str) -> bool:
+        if variable_name in self.variable_name_must_be_created_cache_result:
+            return self.variable_name_must_be_created_cache_result[variable_name]
+
+        self.variable_name_must_be_created_cache_result[variable_name] = variable_name_must_be_kept_after_filters(variable_name=variable_name, all_filters=self.variables_names_creation_filters)
+        return self.variable_name_must_be_created(variable_name=variable_name)
 
     @logger_config.stopwatch_decorator()
     def process(self) -> None:
@@ -465,10 +514,24 @@ class ATCTestResult(ABC):
             return self
 
         def build(self) -> "ATCTestResult":
+
+            pr = cProfile.Profile()
+            pr.enable()
+
             if self._atc_test_result_created.label == "" and len(self._atc_test_result_created.all_atc_test_files) == 1:
                 pass
 
             self._atc_test_result_created.process()
+
+            pr.disable()
+            s = io.StringIO()
+            sortby = SortKey.CUMULATIVE
+            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            ps.print_stats()
+            print(s.getvalue())
+            ps.sort_stats(SortKey.TIME, SortKey.CUMULATIVE).print_stats(0.5, "init")
+            ps.print_callees()
+
             return self._atc_test_result_created
 
 
@@ -499,3 +562,20 @@ def variable_name_must_be_kept_after_filters(variable_name: str, all_filters: Li
     # if not all_filters:
     #    return True
     return all(filter.passes(variable_name) for filter in all_filters) if all_filters else True
+
+
+def convert_to_proper_type(value: str) -> VARIABLE_STATE_TYPE:
+    # Try to convert to bool
+    if value.lower() in ("VRAI", "true", "1", "yes", "on"):
+        return True
+    if value.lower() in ("FAUX", "false", "0", "no", "off"):
+        return False
+
+    # Try to convert to int
+    try:
+        return int(value)
+    except ValueError:
+        pass
+
+    # Keep as string
+    return value

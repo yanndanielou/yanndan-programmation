@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Self
+from typing import List, Self, Optional, cast
 
 from stsloganalyzis.atc import atc_logs
 from logger import logger_config
@@ -34,9 +34,11 @@ class PerturboFile(atc_logs.ATCTestFile):
         equipment = self.get_equipment(self.atc_test_result)
         assert isinstance(equipment, atc_logs.Equipment)
 
+        previous_all_fields_names_and_values = None
         for line_number, value_raw_line in enumerate(self.all_values_raw_lines):
 
             all_fields_names_and_values = self.variables_line_dictionary.get_all_fields_names_and_values_in_data_line(value_raw_line)
+            self.add_missing_horodate_fields_and_ensure_incremental_horodate(all_fields_names_and_values, previous_all_fields_names_and_values)
 
             self.create_result_line_if_needed(
                 line_number=line_number,
@@ -45,6 +47,7 @@ class PerturboFile(atc_logs.ATCTestFile):
                 equipment=equipment,
                 all_fields_names_and_values=all_fields_names_and_values,
             )
+            previous_all_fields_names_and_values = all_fields_names_and_values
 
 
 class PerturboTestResult(atc_logs.ATCTestResult):
@@ -59,12 +62,13 @@ class PerturboTestResult(atc_logs.ATCTestResult):
                 self.add_file(file_full_path=file_full_path, equipment_name=equipment_name)
             return self
 
-        def add_file(self, file_full_path: str, equipment_name: str) -> Self:
-            self._atc_test_result_created.all_atc_test_files.append(
-                PerturboFile(
-                    atc_test_result=self._atc_test_result_created,
-                    file_full_path=file_full_path,
-                    equipment_name=equipment_name,
-                )
+        def add_file(self, file_full_path: str, equipment_name: str, forced_cdecenie_value: Optional[int] = None, forced_cjour_at_beginning_value: Optional[int] = None) -> Self:
+            pert_file = PerturboFile(
+                atc_test_result=self._atc_test_result_created,
+                file_full_path=file_full_path,
+                equipment_name=equipment_name,
             )
+            pert_file.forced_cdecenie_value = forced_cdecenie_value
+            pert_file.forced_cjour_value = forced_cjour_at_beginning_value
+            self._atc_test_result_created.all_atc_test_files.append(pert_file)
             return self
