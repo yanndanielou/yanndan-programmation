@@ -1,30 +1,18 @@
 from __future__ import annotations
 
+import copy
 from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import datetime
+from enum import IntEnum
 from typing import Any, Dict, List, Optional, Tuple, cast
 
-from enum import IntEnum
-
-import copy
-
 import humanize
-from common import (
-    date_time_formats,
-    reports_utils,
-)
+from common import date_time_formats, reports_utils
+from dateutil import parser
 from logger import logger_config
 
-from stsloganalyzis.archive import (
-    helpers,
-)
-from stsloganalyzis.archive import (
-    constants,
-    decode_archive,
-    decode_message,
-    decode_product_topology_dependant_messages_content,
-)
+from stsloganalyzis.archive import constants, decode_archive, decode_message, decode_product_topology_dependant_messages_content, helpers
 from stsloganalyzis.topology import line_topology
 
 
@@ -412,19 +400,20 @@ class ArchiveAnalyzis:
             self.current_latest_line_by_id[sql_arch_line.id_field] = line_with_context
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def create_output_with_all_fields_decoded(self, file_base_name: Optional[str] = None) -> int:
+    def create_output_with_all_fields_decoded(self, file_base_name: Optional[str] = None, begin_time_to_put_in_reports: datetime = parser.parse("1970-01-01T00:00:00.000")) -> int:
         if file_base_name is None:
             file_base_name = f"{self.label}_all_fields"
 
         rows_as_list_dict: List[Dict[str, Any]] = []
 
         for line_with_context in self.all_sql_arch_lines_with_context:
-            all_fields: Dict[str, constants.FIELD_TYPE] = OrderedDict()
-            rows_as_list_dict.append(all_fields)
-            # all_fields["Timestamp"] = line_with_context.sql_arch_line.date.replace(tzinfo=None)
-            all_fields["Timestamp"] = line_with_context.sql_arch_line.get_date_raw_str()
-            all_fields["Id"] = line_with_context.sql_arch_line.id_field
-            all_fields.update(line_with_context.decoded_fields_flat_directory)
+            if line_with_context.sql_arch_line.date.replace(tzinfo=None) > begin_time_to_put_in_reports.replace(tzinfo=None):
+                all_fields: Dict[str, constants.FIELD_TYPE] = OrderedDict()
+                rows_as_list_dict.append(all_fields)
+                # all_fields["Timestamp"] = line_with_context.sql_arch_line.date.replace(tzinfo=None)
+                all_fields["Timestamp"] = line_with_context.sql_arch_line.get_date_raw_str()
+                all_fields["Id"] = line_with_context.sql_arch_line.id_field
+                all_fields.update(line_with_context.decoded_fields_flat_directory)
 
         # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
         reports_utils.save_rows_to_output_files(
@@ -434,7 +423,9 @@ class ArchiveAnalyzis:
         return len(rows_as_list_dict)
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def create_reports_all_sqlarch_changes_since_previous(self, output_directory_path: Optional[str] = None, file_base_name: Optional[str] = None) -> int:
+    def create_reports_all_sqlarch_changes_since_previous(
+        self, output_directory_path: Optional[str] = None, file_base_name: Optional[str] = None, begin_time_to_put_in_reports: datetime = parser.parse("1970-01-01T00:00:00.000")
+    ) -> int:
         if file_base_name is None:
             file_base_name = f"{self.label}_all_changes"
 
@@ -448,7 +439,7 @@ class ArchiveAnalyzis:
             #    previous_line_for_this_id=line_with_context.previous_line_for_this_id.sql_arch_line if line_with_context.previous_line_for_this_id else None
             # )
             all_changes_since_previous = line_with_context.get_all_changes_since_previous()
-            if all_changes_since_previous:
+            if all_changes_since_previous and line_with_context.sql_arch_line.date.replace(tzinfo=None) > begin_time_to_put_in_reports.replace(tzinfo=None):
                 rows_as_list_dict += all_changes_since_previous
 
         # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
