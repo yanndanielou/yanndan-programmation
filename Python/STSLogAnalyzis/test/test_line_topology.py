@@ -53,12 +53,12 @@ class TestNextData:
                     assert seg1
                     distance_0_to_length = line.get_distance_in_cm_between_to_locations(
                         line_topology.ExactLocation(segment=seg1, abscissa=0),
-                        line_topology.ExactLocation(segment=seg1, abscissa=seg1.length),
+                        line_topology.ExactLocation(segment=seg1, abscissa=seg1.length_in_cm),
                         line_topology.SegmentDirection.INCREASING_OFFSET,
                     )
                     assert distance_0_to_length is not None
                     assert distance_0_to_length > 0
-                    assert distance_0_to_length == seg1.length
+                    assert distance_0_to_length == seg1.length_in_cm
 
                 def test_decreasing(self, next_line_fixture: line_topology.Line) -> None:
                     line = next_line_fixture
@@ -66,7 +66,7 @@ class TestNextData:
                     assert (
                         line.get_distance_in_cm_between_to_locations(
                             line_topology.ExactLocation(segment=seg1, abscissa=0),
-                            line_topology.ExactLocation(segment=seg1, abscissa=seg1.length),
+                            line_topology.ExactLocation(segment=seg1, abscissa=seg1.length_in_cm),
                             line_topology.SegmentDirection.DECREASING_OFFSET,
                         )
                         is None
@@ -79,7 +79,7 @@ class TestNextData:
                     seg = line.get_segment("SEG_010812")
                     assert (
                         line.get_distance_in_cm_between_to_locations(
-                            line_topology.ExactLocation(segment=seg, abscissa=seg.length),
+                            line_topology.ExactLocation(segment=seg, abscissa=seg.length_in_cm),
                             line_topology.ExactLocation(segment=seg, abscissa=0),
                             line_topology.SegmentDirection.INCREASING_OFFSET,
                         )
@@ -91,7 +91,7 @@ class TestNextData:
                     seg = line.get_segment("SEG_010812")
                     assert (
                         line.get_distance_in_cm_between_to_locations(
-                            line_topology.ExactLocation(segment=seg, abscissa=seg.length),
+                            line_topology.ExactLocation(segment=seg, abscissa=seg.length_in_cm),
                             line_topology.ExactLocation(segment=seg, abscissa=0),
                             line_topology.SegmentDirection.DECREASING_OFFSET,
                         )

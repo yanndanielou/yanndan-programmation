@@ -93,7 +93,7 @@ class Segment(TopologyElement):
     direction: str
     pk_abs_start: float
     pk_abs_end: float
-    length: int
+    length_in_cm: int
     upstream_normal: Optional["Segment"] = None
     upstream_reverse: Optional["Segment"] = None
     downstream_normal: Optional["Segment"] = None
@@ -109,7 +109,7 @@ class Segment(TopologyElement):
         assert isinstance(self.identifier, str)
         self.tracking_blocks_in_segment: List[TrackingBlockOnSegment] = []
         self.min_abscissa_exact_location = ExactLocation(self, 0)
-        self.max_abscissa_exact_location = ExactLocation(self, self.length)
+        self.max_abscissa_exact_location = ExactLocation(self, self.length_in_cm)
 
     def __hash__(self) -> int:
         return hash(self.identifier)
@@ -118,7 +118,7 @@ class Segment(TopologyElement):
         return self.identifier == cast("TopologyElement", other).identifier
 
     def __str__(self) -> str:
-        return f"Segment [{self.identifier} #{self.num_segment} length:{self.length}]"
+        return f"Segment [{self.identifier} #{self.num_segment} length:{self.length_in_cm}]"
 
     def __repr__(self) -> str:
         return str(self)
@@ -127,12 +127,12 @@ class Segment(TopologyElement):
 
         consistency_errors: List[ConsistencyError] = []
         all_tracking_blocks_in_segment_sizes = sum([tracking_block_in_segment.length for tracking_block_in_segment in self.tracking_blocks_in_segment])
-        if all_tracking_blocks_in_segment_sizes < self.length:
+        if all_tracking_blocks_in_segment_sizes < self.length_in_cm:
             # logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : has error", do_not_print=True)
 
             consistency_error_type = ConsistencyError.ConsistencyErrorType.MISSING_TB_ON_SEGMENT
             topology_element = self
-            consistency_error_text = f"{all_tracking_blocks_in_segment_sizes} < {self.length}"
+            consistency_error_text = f"{all_tracking_blocks_in_segment_sizes} < {self.length_in_cm}"
             consist_error = ConsistencyError(topology_element=topology_element, consistency_error_type=consistency_error_type, consistency_error_text=consistency_error_text)
             consistency_errors.append(consist_error)
             # logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier}")
@@ -169,7 +169,7 @@ class Segment(TopologyElement):
                     direction=row["DIRECTION"],
                     pk_abs_start=float(row["PK_ABS_START"]),
                     pk_abs_end=float(row["PK_ABS_END"]),
-                    length=int(row["LENGTH"]),
+                    length_in_cm=int(row["LENGTH"]),
                 )
                 segments.append(segment)
 
@@ -263,12 +263,12 @@ class ExactLocation:
     def __post_init__(self) -> None:
         assert self.segment is not None
         assert self.abscissa is not None
-        assert self.abscissa <= self.segment.length
+        assert self.abscissa <= self.segment.length_in_cm
 
     def get_distance_to_end_of_segment_in_cm(self, direction: SegmentDirection) -> int:
         assert direction != SegmentDirection.BOTH
         if direction == SegmentDirection.INCREASING_OFFSET:
-            return self.segment.length - self.abscissa
+            return self.segment.length_in_cm - self.abscissa
         else:
             return self.abscissa
 
@@ -505,7 +505,7 @@ class Line:
     def get_pk_by_segment_and_abscissa(self, segment: Segment | str | int, abscissa: int) -> float:
         segment = self.get_segment(segment)
         assert segment
-        assert abscissa <= segment.length
+        assert abscissa <= segment.length_in_cm
         ret = segment.pk_abs_start + abscissa
         return ret
 
@@ -604,6 +604,12 @@ class Line:
             not_created_tracking_blocks_ids_without_track_circuits=not_created_tracking_blocks_ids_without_track_circuits,
             tracking_block_on_segments_csv_full_path=tracking_block_on_segments_csv_full_path,
         )
+
+
+@dataclass
+class VirtualCanton(TopologyElement):
+    identifier: str
+    segment: Segment
 
 
 @dataclass
