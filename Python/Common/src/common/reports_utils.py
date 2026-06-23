@@ -94,7 +94,7 @@ def save_rows_to_output_files(
                     with logger_config.stopwatch_with_label(f"Create {file_path_without_suffix}.xlsx", inform_beginning=True, monitor_ram_usage=True):
                         pandas.DataFrame(rows_as_list_dict).to_excel(f"{file_path_without_suffix}.xlsx", index=False)
                 with logger_config.stopwatch_with_label(f"Create {file_path_without_suffix}.csv", inform_beginning=True, monitor_ram_usage=True):
-                    pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.csv", index=False)
+                    pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.csv", index=False, sep=";")
                 with logger_config.stopwatch_with_label(f"Create {file_path_without_suffix}.txt", inform_beginning=True, monitor_ram_usage=True):
                     pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.txt", index=False, sep="\t")
                 # _write_xlsx_file(rows_as_list_dict, f"{file_path_without_suffix}.xlsx")
