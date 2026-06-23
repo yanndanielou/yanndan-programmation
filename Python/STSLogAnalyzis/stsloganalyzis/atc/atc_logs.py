@@ -125,15 +125,15 @@ class ATCVariablesLineDictionary:
     @staticmethod
     def get_horodate_from_cheure_etc(all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE]) -> Optional[datetime.datetime]:
 
-        c_heure = cast(int, all_fields_names_and_values.get("CHEURE"))
-        c_decalage = cast(int, all_fields_names_and_values.get("CDECALAGE"))
-        c_decenie = cast(int, all_fields_names_and_values.get("CDECENNIE"))
-        c_jour = cast(int, all_fields_names_and_values.get("CJOUR"))
+        c_heure = cast(Optional[int], all_fields_names_and_values.get("CHEURE"))
+        c_decalage = cast(int, all_fields_names_and_values.get("CDECALAGE")) or 0
+        c_decenie = cast(int, all_fields_names_and_values.get("CDECENNIE")) or 0
+        c_jour = cast(int, all_fields_names_and_values.get("CJOUR")) or 0
 
         if any(elem is None for elem in [c_heure, c_decalage, c_decenie, c_jour]):
             return None
 
-        return pert_variable_to_timestamp(c_heure=c_heure, c_decalage=c_decalage, c_decenie=c_decenie, c_jour=c_jour)
+        return pert_variable_to_timestamp(c_heure=cast(int, c_heure), c_decalage=c_decalage, c_decenie=c_decenie, c_jour=c_jour)
 
     def get_all_fields_names_and_values_in_data_line(self, value_raw_line: str, test_result: "ATCTestResult") -> Dict[str, VARIABLE_STATE_TYPE]:
         all_raw_values = value_raw_line.rstrip().split(ATC_LOG_FILES_FIELDS_SEPARATOR)
