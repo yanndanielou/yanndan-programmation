@@ -214,7 +214,7 @@ class ArchiveLibrary:
             self.archive_inputs.append(ArchiveLinesSet(raw_archives_json_lines=raw_archives_json_lines))
             return self
 
-        def add_archive_files(self, directory_path: str, filename_pattern: str) -> Self:
+        def add_archive_files(self, directory_path: str, filename_pattern: str = "*FileArchiveServer*.json") -> Self:
             for file_full_path in file_utils.get_files_by_directory_and_file_name_mask(directory_path, filename_pattern, file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER):
                 self.add_archive_file(file_full_path=file_full_path)
             if not self._label_is_forced:
