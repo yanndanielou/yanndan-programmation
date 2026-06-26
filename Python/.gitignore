@@ -7,3 +7,4 @@ install_external_common_libraries *.bat
 *.suo
 *.pyperf
 *.lprof
+DocumentLayout.json
