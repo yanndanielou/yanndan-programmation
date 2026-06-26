@@ -14,6 +14,7 @@ class StringFilterType(Enum):
     EQUALS_TO = "EQUALS_TO"
     BEGIN_WITH_STRING = "BEGIN_WITH_STRING"
     MATCHES_REGEX = "MATCHES_REGEX"
+    ENDS_WITH_STRING = "ENDS_WITH_STRING"
     CONTAINS = "CONTAINS"
 
 
@@ -38,6 +39,8 @@ class StringFieldValueBasedFilter:
                 match = any(filter_field_value in string_value for filter_field_value in self.filter_field_values)
             elif self.filter_type == StringFilterType.BEGIN_WITH_STRING:
                 match = any(string_value.startswith(filter_field_value) for filter_field_value in self.filter_field_values)
+            elif self.filter_type == StringFilterType.ENDS_WITH_STRING:
+                match = any(string_value.endswith(filter_field_value) for filter_field_value in self.filter_field_values)
             elif self.filter_type == StringFilterType.MATCHES_REGEX:
                 match = any(bool(re.search(filter_field_value, string_value)) for filter_field_value in self.filter_field_values)
             else:
