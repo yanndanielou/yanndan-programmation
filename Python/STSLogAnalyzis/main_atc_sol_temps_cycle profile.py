@@ -17,7 +17,7 @@ OUTPUT_DIRECTORY = "output"
 def main() -> None:
     with logger_config.application_logger():
 
-        all_files = [r"C:\Users\fr232487\Downloads\2026-06-20&21 ITC\Perturbo sol\2026-06-20&21 perturbos duree total\PAS_01_.txt"]
+        all_files = [r"C:\Users\fr232487\Downloads\2026-06-20&21 ITC\Perturbo sol\2026-06-20&21 perturbos duree total\PAARTIEL_PAS1.txt"]
 
         for perturbo_file in all_files:
 
