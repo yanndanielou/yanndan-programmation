@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+import line_profiler
+
 from typing import List, Self, Optional, cast
 
 from stsloganalyzis.atc import atc_logs
@@ -29,6 +31,7 @@ class PerturboFile(atc_logs.ATCTestFile):
         return test_result.equipments_library.get_or_create_equipment_by_name(self.get_equipment_name())
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+    @line_profiler.profile
     def compute_all_variables_states(self) -> None:
 
         equipment = self.get_equipment(self.atc_test_result)
