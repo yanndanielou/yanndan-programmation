@@ -19,6 +19,6 @@ def decode_hlf_to_datetime(time_field_value: int, time_offset_value: int, decade
     offset_minutes = (time_offset_value % 36000) // 600
 
     # Apply the offset for local time
-    local_time = decade_date + datetime.timedelta(hours=hours - offset_hours, minutes=minutes - offset_minutes, seconds=seconds)
+    local_time = decade_date + datetime.timedelta(hours=hours + offset_hours, minutes=minutes - offset_minutes, seconds=seconds)
 
     return local_time
