@@ -143,7 +143,7 @@ class ATCVariablesLineDictionary:
     def get_all_fields_names_and_values_in_data_raw_fields(self, all_raw_values: List[str], test_result: "ATCTestResult") -> Dict[str, VARIABLE_STATE_TYPE]:
         all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE] = dict()
 
-        assert len(all_raw_values) == len(self.all_fields_names)
+        assert len(all_raw_values) == len(self.all_fields_names), f"Inconsistency in {','.join(all_raw_values)}"
 
         for variable_index, variable_name in enumerate(self.all_fields_names):
             if test_result.variable_name_must_be_created(variable_name):
@@ -250,7 +250,7 @@ class ATCTestFile(ABC):
         self, all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE], previous_all_fields_names_and_values: Optional[Dict[str, VARIABLE_STATE_TYPE]]
     ) -> Dict[str, VARIABLE_STATE_TYPE]:
 
-        is_previous_line_just_before_midnight = previous_all_fields_names_and_values and cast(int, all_fields_names_and_values.get("CHEURE")) > JUST_BEFORE_MIDNIGHT_IN_MILLISECONDS
+        is_previous_line_just_before_midnight = previous_all_fields_names_and_values and cast(int, previous_all_fields_names_and_values.get("CHEURE")) > JUST_BEFORE_MIDNIGHT_IN_MILLISECONDS
         previous_line_cheure = cast(int, previous_all_fields_names_and_values.get("CHEURE")) if previous_all_fields_names_and_values else None
         current_line_initial_cheure = cast(int, all_fields_names_and_values.get("CHEURE"))
         is_current_line_just_after_midnight = current_line_initial_cheure < 100
@@ -261,11 +261,11 @@ class ATCTestFile(ABC):
 
             logger_config.print_and_log_info_if(
                 current_line_initial_cheure == previous_line_cheure,
-                f"Fix Cheure from {current_line_initial_cheure} to {all_fields_names_and_values["CHEURE"]} to avoid same date, previous line was {previous_line_cheure}",
+                f"Fix Cheure from {current_line_initial_cheure} to {all_fields_names_and_values["CHEURE"]} to avoid same date, previous line was {previous_line_cheure}. File:{self.file_name}",
             )
             logger_config.print_and_log_info_if(
                 current_line_initial_cheure < previous_line_cheure,
-                f"Fix Cheure from {current_line_initial_cheure} to {all_fields_names_and_values["CHEURE"]} to avoid return to past, previous line was {previous_line_cheure}",
+                f"Fix Cheure from {current_line_initial_cheure} to {all_fields_names_and_values["CHEURE"]} to avoid return to past, previous line was {previous_line_cheure}. File:{self.file_name}",
             )
 
         if "CJOUR" not in all_fields_names_and_values and self.forced_cjour_value:
