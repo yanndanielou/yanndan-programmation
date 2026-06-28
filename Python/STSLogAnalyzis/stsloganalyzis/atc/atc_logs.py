@@ -204,6 +204,7 @@ class ATCTestResultLine(ABC):
 
     all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE]
 
+    @line_profiler.profile
     def __post_init__(self) -> None:
         self.all_variables_states: List[VariableState] = []
         self.test_result.result_lines.append(self)
@@ -281,6 +282,7 @@ class ATCTestFile(ABC):
             assert all_raw_lines
             return all_raw_lines
 
+    @line_profiler.profile
     def create_result_line_if_needed(
         self,
         line_number: int,
@@ -337,6 +339,7 @@ class ATCTestResult(ABC):
 
         logger_config.print_and_log_info(f"Build {self.label}")
 
+    @line_profiler.profile
     def variable_name_must_be_created(self, variable_name: str) -> bool:
         if variable_name in self.variable_name_must_be_created_cache_result:
             return self.variable_name_must_be_created_cache_result[variable_name]
