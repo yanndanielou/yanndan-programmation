@@ -8,7 +8,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Self, cast, Tuple
 
-from common import file_name_utils, file_utils, reports_utils, time_utils
+from common import file_name_utils, file_utils, reports_utils, time_utils, date_time_formats
 from logger import logger_config
 
 from stsloganalyzis.common import common_filters
@@ -240,6 +240,7 @@ class ATCTestFile(ABC):
         logger_config.print_and_log_info(f"Build {self.file_name}")
         self.forced_cdecenie_value: Optional[int] = None
         self.forced_cjour_value: Optional[int] = None
+        self.last_chunk_created_timestamp = datetime.datetime.now()
 
     def add_missing_horodate_fields_and_ensure_incremental_horodate(
         self, all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE], previous_all_fields_names_and_values: Optional[Dict[str, VARIABLE_STATE_TYPE]]
@@ -310,8 +311,11 @@ class ATCTestFile(ABC):
             )
         )
 
-        if len(self.all_lines) % 10000 == 0:
-            logger_config.print_and_log_info(f"{len(self.all_lines)} lines created so far")
+        if len(self.all_lines) % 1000 == 0:
+            logger_config.print_and_log_info(
+                f"{len(self.all_lines)} lines created so far. Duration since last chunk {date_time_formats.format_duration_between_timestamps_to_string(self.last_chunk_created_timestamp,datetime.datetime.now())}"
+            )
+            self.last_chunk_created_timestamp = datetime.datetime.now()
 
 
 @dataclass
