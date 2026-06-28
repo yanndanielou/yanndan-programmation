@@ -219,6 +219,7 @@ class ATCTestResultLine(ABC):
             return self.horodate
         return self.time_according_to_simulation_start
 
+    @line_profiler.profile
     def handle_variable_state(self, variable_name: str, variable_raw_value: VARIABLE_STATE_TYPE) -> None:
         # logger_config.print_and_log_info(f"handle_variable_state, must be kept: {variable_name} {variable_value}")
         variable = self.equipment.variables_library.get_or_create_variable_by_name(variable_name=variable_name)
@@ -359,6 +360,11 @@ class ATCTestResult(ABC):
 
         self._compute_variables_states()
         self._compute_variables_states_changes()
+
+        logger_config.print_and_log_info(f"{len(self.all_variables_unsorted)} variables_unsorted")
+        logger_config.print_and_log_info(f"{len(self.all_variables_states_sorted_by_line_number)} all_variables_states_sorted_by_line_number")
+        logger_config.print_and_log_info(f"{len(self._all_variables_states_changes_unsorted)} _all_variables_states_changes_unsorted")
+        logger_config.print_and_log_info(f"{len(self.all_variables_states_changes_sorted_by_timestamp)} all_variables_states_changes_sorted_by_timestamp")
 
     @logger_config.stopwatch_decorator()
     @line_profiler.profile
