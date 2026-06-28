@@ -258,7 +258,15 @@ class ATCTestFile(ABC):
 
         if previous_line_cheure and current_line_initial_cheure <= previous_line_cheure and not change_of_day_detected_with_cheures:
             all_fields_names_and_values["CHEURE"] = previous_line_cheure + 1
-            logger_config.print_and_log_info(f"Fix Cheure from {current_line_initial_cheure} to {all_fields_names_and_values["CHEURE"]} to avoir return to past")
+
+            logger_config.print_and_log_info_if(
+                current_line_initial_cheure == previous_line_cheure,
+                f"Fix Cheure from {current_line_initial_cheure} to {all_fields_names_and_values["CHEURE"]} to avoid same date, previous line was {previous_line_cheure}",
+            )
+            logger_config.print_and_log_info_if(
+                current_line_initial_cheure < previous_line_cheure,
+                f"Fix Cheure from {current_line_initial_cheure} to {all_fields_names_and_values["CHEURE"]} to avoid return to past, previous line was {previous_line_cheure}",
+            )
 
         if "CJOUR" not in all_fields_names_and_values and self.forced_cjour_value:
             if change_of_day_detected_with_cheures:
