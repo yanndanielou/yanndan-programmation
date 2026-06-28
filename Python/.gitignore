@@ -8,3 +8,5 @@ install_external_common_libraries *.bat
 *.pyperf
 *.lprof
 DocumentLayout.json
+CopilotIndices
+*.backup.json
