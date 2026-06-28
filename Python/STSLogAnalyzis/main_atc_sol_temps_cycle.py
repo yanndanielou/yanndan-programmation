@@ -19,6 +19,7 @@ def main() -> None:
 
         all_files = file_utils.get_files_by_directory_and_file_name_mask(
             directory_path=r"C:\Users\fr232487\Downloads\2026-06-20&21 ITC\Perturbo sol\2026-06-20&21 perturbos duree total",
+            filename_pattern="*.txt",
         )
 
         for perturbo_file in all_files:
