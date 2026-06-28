@@ -3,11 +3,16 @@
 
 from dateutil import parser
 from datetime import timedelta
+from datetime import datetime
 
 
 def format_duration_between_timestamps_str_to_string(start_timestamp_str: str, end_timestamp_str: str) -> str:
     start_timestamp = parser.parse(start_timestamp_str)
     end_timestamp = parser.parse(end_timestamp_str)
+    return format_duration_between_timestamps_to_string(start_timestamp, end_timestamp)
+
+
+def format_duration_between_timestamps_to_string(start_timestamp: datetime, end_timestamp: datetime) -> str:
     duration_timedelta = end_timestamp - start_timestamp
     return format_duration_timedelta_to_string(duration_timedelta)
 
