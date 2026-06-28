@@ -18,6 +18,7 @@ OUTPUT_DIRECTORY = "output"
 def main() -> None:
 
     # New-Item -Path Env:LINE_PROFILE -Value 1
+    os.environ["LINE_PROFILE"] = "1"
     assert os.environ["LINE_PROFILE"] == "1", f"You must set LINE_PROFILE to 1, it is {os.environ["LINE_PROFILE"]}"
     with logger_config.application_logger():
 
