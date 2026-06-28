@@ -41,8 +41,8 @@ class Variable:
         self.states_chronologically_sorted: List[VariableState] = []
         self.states_changes_chronologically_sorted: List[VariableStateChange] = []
 
+    @line_profiler.profile
     def add_state(self, variable_state: "VariableState") -> None:
-        assert variable_state not in self.states_chronologically_sorted
         if self.initial_state is None:
             self.initial_state = variable_state
         else:
@@ -108,6 +108,7 @@ class EquipmentVariablesLibrary:
     def __post_init__(self) -> None:
         self.all_variables: List[Variable] = []
 
+    @line_profiler.profile
     def get_or_create_variable_by_name(self, variable_name: str) -> Variable:
         all_variable_found = [var for var in self.all_variables if var.name == variable_name]
         if not all_variable_found:
@@ -195,7 +196,7 @@ class VariableNameFilter(VariableFilter):
 
 
 @dataclass
-class ATCTestResultLine(ABC):
+class ATCTestResultLine:
     parent_file: "ATCTestFile"
     line_number: int
     horodate: Optional[datetime.datetime]
@@ -244,6 +245,7 @@ class ATCTestFile(ABC):
         self.forced_cjour_value: Optional[int] = None
         self.last_chunk_created_timestamp = datetime.datetime.now()
 
+    @line_profiler.profile
     def add_missing_horodate_fields_and_ensure_incremental_horodate(
         self, all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE], previous_all_fields_names_and_values: Optional[Dict[str, VARIABLE_STATE_TYPE]]
     ) -> Dict[str, VARIABLE_STATE_TYPE]:
