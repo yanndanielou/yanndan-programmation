@@ -316,7 +316,7 @@ class ATCTestFile(ABC):
             )
         )
 
-        if len(self.all_lines) % 1000 == 0:
+        if len(self.all_lines) % 10000 == 0:
             logger_config.print_and_log_info(
                 f"{len(self.all_lines)} lines created so far. Duration since last chunk {date_time_formats.format_duration_between_timestamps_to_string(self.last_chunk_created_timestamp,datetime.datetime.now())}"
             )
