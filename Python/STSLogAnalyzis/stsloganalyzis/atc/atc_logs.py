@@ -354,12 +354,14 @@ class ATCTestResult(ABC):
         self._compute_variables_states_changes()
 
     @logger_config.stopwatch_decorator()
+    @line_profiler.profile
     def _compute_variables_states(self) -> None:
         all_variables_unsorted = [state for variable in self.all_variables_unsorted for state in variable.states_chronologically_sorted]
         self.all_variables_states_sorted_by_line_number = sorted(all_variables_unsorted, key=lambda state: state.result_line.line_number)
         assert self.all_variables_states_sorted_by_line_number
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+    @line_profiler.profile
     def _compute_variables_states_changes(self) -> None:
         for variable in self.all_variables_unsorted:
             previous_state = None
@@ -562,6 +564,7 @@ def variable_name_must_be_kept_after_filters(variable_name: str, all_filters: Li
     return all(filter.passes(variable_name) for filter in all_filters) if all_filters else True
 
 
+@line_profiler.profile
 def convert_to_proper_type(value: str) -> VARIABLE_STATE_TYPE:
     # Try to convert to bool
     if value.lower() in ("VRAI", "true", "1", "yes", "on"):
