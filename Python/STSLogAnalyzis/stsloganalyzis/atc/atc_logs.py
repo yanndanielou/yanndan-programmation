@@ -250,6 +250,9 @@ class ATCTestFile(ABC):
         self, all_fields_names_and_values: Dict[str, VARIABLE_STATE_TYPE], previous_all_fields_names_and_values: Optional[Dict[str, VARIABLE_STATE_TYPE]]
     ) -> Dict[str, VARIABLE_STATE_TYPE]:
 
+        if "CHEURE" not in all_fields_names_and_values:
+            return all_fields_names_and_values
+
         is_previous_line_just_before_midnight = previous_all_fields_names_and_values and cast(int, previous_all_fields_names_and_values.get("CHEURE")) > JUST_BEFORE_MIDNIGHT_IN_MILLISECONDS
         previous_line_cheure = cast(int, previous_all_fields_names_and_values.get("CHEURE")) if previous_all_fields_names_and_values else None
         current_line_initial_cheure = cast(int, all_fields_names_and_values.get("CHEURE"))
