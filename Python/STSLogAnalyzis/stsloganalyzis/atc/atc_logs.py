@@ -29,6 +29,17 @@ class Equipment:
     def __post_init__(self) -> None:
         self.name = self.raw_name
         self.variables_library = EquipmentVariablesLibrary(self)
+        self.all_variables_states_changes_unsorted: List[VariableStateChange] = []
+        self.all_variables_states_changes_sorted_by_timestamp: List[VariableStateChange] = []
+
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+    def order_states_changes(self) -> None:
+        with logger_config.stopwatch_with_label("Order states changes"):
+            self.all_variables_states_changes_sorted_by_timestamp = sorted(self.all_variables_states_changes_unsorted, key=lambda state_change: state_change.new_state.result_line.line_number)
+
+    def print_stats(self) -> None:
+        logger_config.print_and_log_info(f"Equipment {self.name} : {len(self.all_variables_states_changes_unsorted)} _all_variables_states_changes_unsorted")
+        logger_config.print_and_log_info(f"Equipment {self.name} : {len(self.all_variables_states_changes_sorted_by_timestamp)} all_variables_states_changes_sorted_by_timestamp")
 
 
 @dataclass
@@ -195,6 +206,29 @@ class VariableNameFilter(VariableFilter):
         return f"filter {','.join(self.string_filter.filter_field_values)}"
 
 
+class EquipmentNameFilter(VariableFilter):
+
+    def __init__(self, white_or_black_list: common_filters.WhiteOrBlackListFilterType, variables_names: List[str], filter_type: common_filters.StringFilterType) -> None:
+        super().__init__(
+            string_filter=common_filters.StringFieldValueBasedFilter(
+                white_or_black_list=white_or_black_list,
+                filter_type=filter_type,
+                field_values=variables_names,
+            )
+        )
+
+    def passes(self, to_test: str) -> bool:
+        match = self.string_filter.do_passes(to_test)
+        assert isinstance(match, bool)
+        return match
+
+    def print_stats(self) -> None:
+        logger_config.print_and_log_info(f"  Filter {self}: ' - rejected {self.string_filter.rejected_count} lines")
+
+    def __str__(self) -> str:
+        return f"filter {','.join(self.string_filter.filter_field_values)}"
+
+
 @dataclass
 class ATCTestResultLine:
     parent_file: "ATCTestFile"
@@ -251,6 +285,9 @@ class ATCTestFile(ABC):
     ) -> Dict[str, VARIABLE_STATE_TYPE]:
 
         if "CHEURE" not in all_fields_names_and_values:
+            return all_fields_names_and_values
+
+        if previous_all_fields_names_and_values and "CHEURE" not in previous_all_fields_names_and_values:
             return all_fields_names_and_values
 
         is_previous_line_just_before_midnight = previous_all_fields_names_and_values and cast(int, previous_all_fields_names_and_values.get("CHEURE")) > JUST_BEFORE_MIDNIGHT_IN_MILLISECONDS
@@ -374,6 +411,13 @@ class ATCTestResult(ABC):
         self._compute_variables_states()
         self._compute_variables_states_changes()
 
+        for equipment in self.equipments_library.all_equipments:
+            equipment.order_states_changes()
+            equipment.print_stats()
+
+        self.print_stats()
+
+    def print_stats(self) -> None:
         logger_config.print_and_log_info(f"{len(self.all_variables_unsorted)} variables_unsorted")
         logger_config.print_and_log_info(f"{len(self.all_variables_states_sorted_by_line_number)} all_variables_states_sorted_by_line_number")
         logger_config.print_and_log_info(f"{len(self._all_variables_states_changes_unsorted)} _all_variables_states_changes_unsorted")
@@ -395,23 +439,60 @@ class ATCTestResult(ABC):
                 if previous_state is not None and state.value != previous_state.value:
                     variable_state_change = VariableStateChange(previous_state, state)
                     self._all_variables_states_changes_unsorted.append(variable_state_change)
+                    variable.equipment.all_variables_states_changes_unsorted.append(variable_state_change)
                 previous_state = state
 
         with logger_config.stopwatch_with_label("Order states changes"):
             self.all_variables_states_changes_sorted_by_timestamp = sorted(self._all_variables_states_changes_unsorted, key=lambda state_change: state_change.new_state.result_line.line_number)
 
-    def create_report_all_variables(self, variables_names_reports_filters: Optional[List[VariableNameFilter]] = None, files_base_name: Optional[str] = None) -> None:
+    def create_report_all_variables(
+        self,
+        variables_names_reports_filters: Optional[List[VariableNameFilter]] = None,
+        equipment_names_reports_filters: Optional[List[EquipmentNameFilter]] = None,
+        files_base_name: Optional[str] = None,
+    ) -> None:
         if variables_names_reports_filters is None:
             variables_names_reports_filters = []
 
         if files_base_name is None:
             files_base_name = f"{self.label}_all"
 
-        self._create_report_all_variables_state_changes(variables_names_reports_filters=variables_names_reports_filters, files_base_name=files_base_name)
-        self._create_report_all_variables_states_variable_by_column(variables_names_reports_filters=variables_names_reports_filters, files_base_name=files_base_name)
-        self._create_report_all_variables_states_variable_by_rows(variables_names_reports_filters=variables_names_reports_filters, files_base_name=files_base_name)
+        if equipment_names_reports_filters is None:
+            for equipment in self.equipments_library.all_equipments:
+                self.create_report_all_variables(
+                    variables_names_reports_filters=variables_names_reports_filters,
+                    files_base_name=files_base_name + "_" + equipment.name,
+                    equipment_names_reports_filters=[
+                        EquipmentNameFilter(
+                            white_or_black_list=common_filters.WhiteOrBlackListFilterType.WHITELIST,
+                            filter_type=common_filters.StringFilterType.EQUALS_TO,
+                            variables_names=[equipment.name],
+                        )
+                    ],
+                )
 
-    def _create_report_all_variables_state_changes(self, variables_names_reports_filters: List[VariableNameFilter], files_base_name: str) -> None:
+        self._create_report_all_variables_state_changes(
+            variables_names_reports_filters=variables_names_reports_filters,
+            equipment_names_reports_filters=equipment_names_reports_filters,
+            files_base_name=files_base_name,
+        )
+        self._create_report_all_variables_states_variable_by_column(
+            variables_names_reports_filters=variables_names_reports_filters,
+            equipment_names_reports_filters=equipment_names_reports_filters,
+            files_base_name=files_base_name,
+        )
+        self._create_report_all_variables_states_variable_by_rows(
+            variables_names_reports_filters=variables_names_reports_filters,
+            equipment_names_reports_filters=equipment_names_reports_filters,
+            files_base_name=files_base_name,
+        )
+
+    def _create_report_all_variables_state_changes(
+        self,
+        variables_names_reports_filters: List[VariableNameFilter],
+        files_base_name: str,
+        equipment_names_reports_filters: Optional[List[EquipmentNameFilter]] = None,
+    ) -> None:
         reports_utils.save_rows_to_output_files(
             rows_as_list_dict=[
                 OrderedDict(
@@ -428,13 +509,19 @@ class ATCTestResult(ABC):
                 )
                 for state_change in self.all_variables_states_changes_sorted_by_timestamp
                 if variable_name_must_be_kept_after_filters(state_change.variable.name, variables_names_reports_filters)
+                and equipment_must_be_kept_after_filters(state_change.variable.equipment.name, equipment_names_reports_filters)
             ],
             file_base_name=f"{files_base_name}_state_changes",
             output_directory_path=self.output_directory_path,
             suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.DO_BOTH,
         )
 
-    def _create_report_all_variables_states_variable_by_rows(self, variables_names_reports_filters: List[VariableNameFilter], files_base_name: str) -> None:
+    def _create_report_all_variables_states_variable_by_rows(
+        self,
+        variables_names_reports_filters: List[VariableNameFilter],
+        files_base_name: str,
+        equipment_names_reports_filters: Optional[List[EquipmentNameFilter]] = None,
+    ) -> None:
 
         reports_utils.save_rows_to_output_files(
             rows_as_list_dict=[
@@ -450,18 +537,29 @@ class ATCTestResult(ABC):
                 )
                 for state in self.all_variables_states_sorted_by_line_number
                 if variable_name_must_be_kept_after_filters(state.variable.name, variables_names_reports_filters)
+                and equipment_must_be_kept_after_filters(state.variable.equipment.name, equipment_names_reports_filters)
             ],
             file_base_name=f"{files_base_name}_states_variable_by_rows",
             output_directory_path=self.output_directory_path,
             suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.DO_BOTH,
         )
 
-    def _create_report_all_variables_states_variable_by_column(self, variables_names_reports_filters: List[VariableNameFilter], files_base_name: str) -> None:
+    def _create_report_all_variables_states_variable_by_column(
+        self,
+        variables_names_reports_filters: List[VariableNameFilter],
+        files_base_name: str,
+        equipment_names_reports_filters: Optional[List[EquipmentNameFilter]] = None,
+    ) -> None:
 
         rows_as_list_dict = []
         # for state in self.all_variables_states_sorted_by_timestamp if variable_name_must_be_kept_after_filters(state.variable.name, variables_names_reports_filters):
         for result_line in self.result_lines:
-            variables_states = [state for state in result_line.all_variables_states if variable_name_must_be_kept_after_filters(state.variable.name, variables_names_reports_filters)]
+            variables_states = [
+                state
+                for state in result_line.all_variables_states
+                if variable_name_must_be_kept_after_filters(state.variable.name, variables_names_reports_filters)
+                and equipment_must_be_kept_after_filters(state.variable.equipment.name, equipment_names_reports_filters)
+            ]
             if variables_states:
                 result_line_dict: Dict[str, VARIABLE_STATE_TYPE] = OrderedDict()
                 rows_as_list_dict.append(result_line_dict)
@@ -585,9 +683,11 @@ def pert_variable_to_timestamp(c_heure: int, c_decalage: int, c_decenie: int, c_
 
 
 def variable_name_must_be_kept_after_filters(variable_name: str, all_filters: List[VariableNameFilter]) -> bool:
-    # if not all_filters:
-    #    return True
     return all(filter.passes(variable_name) for filter in all_filters) if all_filters else True
+
+
+def equipment_must_be_kept_after_filters(equipment_name: str, all_filters: List[EquipmentNameFilter]) -> bool:
+    return all(filter.passes(equipment_name) for filter in all_filters) if all_filters else True
 
 
 @line_profiler.profile
