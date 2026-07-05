@@ -66,8 +66,8 @@ class ZcAtsTrackingStatusVbOccDecoder:
             # Iterate through each row in the CSV
             for csv_row in csv_reader:
 
-                cv_identifier = cast(str, csv_row["'CV_ID'"])
-                zc_identifier = cast(str, csv_row["'PAS_ID'"])
+                cv_identifier = cast(str, csv_row["'CV_ID'"]).replace("'", "")
+                zc_identifier = cast(str, csv_row["'PAS_ID'"]).replace("'", "")
                 num_cv_pas = int(csv_row["'NUM_CV_PAS'"])
 
                 cv_zc_relation = VirtualCantonZcRelation(
