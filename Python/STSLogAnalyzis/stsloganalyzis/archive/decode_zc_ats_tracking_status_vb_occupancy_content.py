@@ -48,12 +48,12 @@ class VirtualCantonZcLibrary:
     def get_by_zc_name_and_cv_number(
         self,
         zc_identifier: str,
-        num_cv_zc_starting_0: int,
+        num_cv_zc_starting_1: int,
     ) -> Optional[VirtualCantonZcRelation]:
 
         assert zc_identifier in self.all_known_zc_id
 
-        matches = [relation for relation in self.all_cv_zc_relations if relation.zc_identifier == zc_identifier and relation.num_cv_zc_starting_1 == num_cv_zc_starting_0 - 1]
+        matches = [relation for relation in self.all_cv_zc_relations if relation.zc_identifier == zc_identifier and relation.num_cv_zc_starting_1 == num_cv_zc_starting_1]
         if not matches:
             return None
 
@@ -109,7 +109,7 @@ class ZcAtsTrackingStatusVbOccDecoder:
 
             cv_zc_relation = self.cv_zc_library.get_by_zc_name_and_cv_number(
                 zc_identifier=equipment_name,
-                num_cv_zc_starting_0=cv_number,
+                num_cv_zc_starting_1=cv_number,
             )
             if cv_zc_relation:
                 new_field_name = f"{cv_field_name_prefix}_{cv_number}_{cv_zc_relation.cv_identifier}"
