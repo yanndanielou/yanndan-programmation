@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import line_profiler
 
-from typing import List, Self, Optional, cast
+from typing import List, Self, Optional
 
 from stsloganalyzis.atc import atc_logs
 from logger import logger_config
@@ -37,20 +37,16 @@ class PerturboFile(atc_logs.ATCTestFile):
         equipment = self.get_equipment(self.atc_test_result)
         assert isinstance(equipment, atc_logs.Equipment)
 
-        previous_all_fields_names_and_values = None
         for line_number, value_raw_line in enumerate(self.all_values_raw_lines):
 
-            all_fields_names_and_values = self.variables_line_dictionary.get_all_fields_names_and_values_in_data_line(value_raw_line, self.atc_test_result)
-            self.add_missing_horodate_fields_and_ensure_incremental_horodate(all_fields_names_and_values, previous_all_fields_names_and_values)
+            all_fields_names_and_raw_values = self.variables_line_dictionary.get_all_fields_names_and_values_in_data_line(value_raw_line, self.atc_test_result)
 
             self.create_result_line_if_needed(
                 line_number=line_number,
-                horodate=self.variables_line_dictionary.get_horodate_from_cheure_etc(all_fields_names_and_values),
                 time_according_to_simulation_start=None,
                 equipment=equipment,
-                all_fields_names_and_values=all_fields_names_and_values,
+                all_fields_names_and_raw_values=all_fields_names_and_raw_values,
             )
-            previous_all_fields_names_and_values = all_fields_names_and_values
 
 
 class PerturboTestResult(atc_logs.ATCTestResult):
@@ -72,6 +68,6 @@ class PerturboTestResult(atc_logs.ATCTestResult):
                 equipment_name=equipment_name,
             )
             pert_file.forced_cdecenie_value = forced_cdecenie_value
-            pert_file.forced_cjour_value = forced_cjour_at_beginning_value
+            pert_file.current_forced_cjour_value = forced_cjour_at_beginning_value
             self._atc_test_result_created.all_atc_test_files.append(pert_file)
             return self
