@@ -12,10 +12,10 @@ OUTPUT_DIRECTORY = "output"
 def main() -> None:
     with logger_config.application_logger():
 
-        railway_line, archive_decoder = next_ats_data.get_encoders(dc_log_folder_full_path=r"C:\D\temp\NEXT_INV_V6_16_P2_conf\conf\dc_log")
+        railway_line, archive_decoder = next_ats_data.get_encoders(inv_conf_folder_full_path=r"C:\D\temp\NEXT_INV_V6_16_P2_conf\conf")
 
         for date_min, date_max, analysis_label in [
-            ("2026-03-29T15:40:00.000", "2026-03-29T15:55:00.000", "CFX00924230"),
+            ("2026-03-29T15:40:00.000", "2026-03-29T15:55:00.000", "CFX00924230_debug"),
             # ("2026-06-18T02:00:00.000", "2026-06-18T02:40:00.000", "FU"),
             # ("2026-03-28T16:35:00.000", "2026-03-28T16:59:00.000", "CFX00921734"),
             # ("2026-03-28T16:10:00.000", "2026-03-28T16:28:00.000", "CFX00921756"),
