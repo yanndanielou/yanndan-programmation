@@ -5,6 +5,8 @@ from stsloganalyzis.archive import (
     decode_archive,
     decode_message,
     decode_xml_message,
+    decode_zc_ats_tm_ao_sig_content,
+    decode_zc_ats_tracking_status_vb_occupancy_content,
 )
 from stsloganalyzis.common import common_filters
 from stsloganalyzis.topology import (
@@ -12,10 +14,10 @@ from stsloganalyzis.topology import (
 )
 
 
-def get_line_topology(dc_log_folder_full_path: Optional[str]) -> line_topology.Line:
+def get_line_topology(inv_conf_folder_full_path: Optional[str]) -> line_topology.Line:
 
-    cd_cv_csv_full_path = f"{dc_log_folder_full_path}\\dc_cv_pas.csv" if dc_log_folder_full_path else None
-    dc_ext_cv_csv_full_path = f"{dc_log_folder_full_path}\\dc_ext_cv.csv" if dc_log_folder_full_path else None
+    cd_cv_csv_full_path = f"{inv_conf_folder_full_path}\\dc_log\\dc_cv.csv" if inv_conf_folder_full_path else None
+    dc_ext_cv_csv_full_path = f"{inv_conf_folder_full_path}\\dc_log\\dc_ext_cv.csv" if inv_conf_folder_full_path else None
 
     railway_line = line_topology.Line.load_from_csv(
         segments_csv_full_path=r"D:\NEXT\Data\Csv\NEXT_segment.csv",
@@ -33,7 +35,7 @@ def get_line_topology(dc_log_folder_full_path: Optional[str]) -> line_topology.L
     return railway_line
 
 
-def get_encoders(dc_log_folder_full_path: Optional[str] = None) -> Tuple[line_topology.Line, decode_archive.ArchiveDecoder]:
+def get_encoders(inv_conf_folder_full_path: Optional[str] = None) -> Tuple[line_topology.Line, decode_archive.ArchiveDecoder]:
 
     messages_list_csv_file_full_path = r"D:\NEXT\Data\Csv\NEXT_message.csv"
     xml_directory_path = r"D:\NEXT\Data\Xml"
@@ -59,14 +61,24 @@ def get_encoders(dc_log_folder_full_path: Optional[str] = None) -> Tuple[line_to
     xml_message_decoder = decode_xml_message.XmlMessageDecoder(
         xml_directory_path=xml_directory_path, signed_or_unsigned_type_for_integer_fields_manager=NextSignedOrUnsignedTypeForIntegerFieldsManager()
     )
+    zc_ats_tm_ao_sig_content_decoder = (
+        decode_zc_ats_tm_ao_sig_content.ZcAtsTmAoSigDecoder(ats_inv_tvd_pas_csv_file_full_path=f"{inv_conf_folder_full_path}\\ats_inv\\TVD_PAS.csv") if inv_conf_folder_full_path else None
+    )
+    zc_ats_tracking_status_vb_occupancy_decoder = (
+        decode_zc_ats_tracking_status_vb_occupancy_content.ZcAtsTrackingStatusVbOccDecoder(dc_cv_pas_csv_file_full_path=f"{inv_conf_folder_full_path}\\dc_log\\dc_cv_pas.csv")
+        if inv_conf_folder_full_path
+        else None
+    )
 
-    railway_line = get_line_topology(dc_log_folder_full_path)
+    railway_line = get_line_topology(inv_conf_folder_full_path)
 
     archive_decoder = decode_archive.ArchiveDecoder(
         action_set_content_decoder=action_set_content_decoder,
         message_manager=message_manager,
         xml_message_decoder=xml_message_decoder,
         railway_line=railway_line,
+        zc_ats_tm_ao_sig_content_decoder=zc_ats_tm_ao_sig_content_decoder,
+        zc_ats_tracking_status_vb_occupancy_decoder=zc_ats_tracking_status_vb_occupancy_decoder,
     )
 
     return railway_line, archive_decoder

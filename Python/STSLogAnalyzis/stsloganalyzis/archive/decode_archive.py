@@ -13,7 +13,14 @@ from logger import logger_config
 from stsloganalyzis.archive import (
     helpers,
 )
-from stsloganalyzis.archive import constants, decode_action_set_content, decode_message, decode_xml_message
+from stsloganalyzis.archive import (
+    constants,
+    decode_action_set_content,
+    decode_message,
+    decode_xml_message,
+    decode_zc_ats_tm_ao_sig_content,
+    decode_zc_ats_tracking_status_vb_occupancy_content,
+)
 from stsloganalyzis.common import common_filters
 from stsloganalyzis.topology import line_topology
 
@@ -186,12 +193,20 @@ class ArchiveDecoder:
         message_manager: decode_message.InvariantMessagesManager,
         xml_message_decoder: decode_xml_message.XmlMessageDecoder,
         action_set_content_decoder: decode_action_set_content.ActionSetContentDecoder,
+        zc_ats_tm_ao_sig_content_decoder: Optional[decode_zc_ats_tm_ao_sig_content.ZcAtsTmAoSigDecoder],
+        zc_ats_tracking_status_vb_occupancy_decoder: Optional[decode_zc_ats_tracking_status_vb_occupancy_content.ZcAtsTrackingStatusVbOccDecoder],
         railway_line: line_topology.Line,
     ) -> None:
         self.message_manager = message_manager
         self.action_set_content_decoder = action_set_content_decoder
         self.xml_message_decoder = (xml_message_decoder,)
-        self.message_decoder = decode_message.MessageDecoder(xml_message_decoder=xml_message_decoder, action_set_content_decoder=self.action_set_content_decoder, railway_line=railway_line)
+        self.message_decoder = decode_message.MessageDecoder(
+            xml_message_decoder=xml_message_decoder,
+            action_set_content_decoder=self.action_set_content_decoder,
+            zc_ats_tm_ao_sig_content_decoder=zc_ats_tm_ao_sig_content_decoder,
+            zc_ats_tracking_status_vb_occupancy_decoder=zc_ats_tracking_status_vb_occupancy_decoder,
+            railway_line=railway_line,
+        )
 
 
 class ArchiveLibrary:
@@ -403,7 +418,9 @@ class SqlArchArchiveLine(ArchiveLine):
         self.sqlarch_fields_dict_raw = {f"{key}_raw": value for key, value in self.all_fields_dict.items()}
         self.invariant_message = archive_decoder.message_manager.get_message_by_id(self.get_id())
         if self.invariant_message:
-            self.decoded_message = archive_decoder.message_decoder.decode_raw_hexadecimal_message(message_number=self.invariant_message.message_number, hexadecimal_content=self.get_new_state_str())
+            self.decoded_message = archive_decoder.message_decoder.decode_raw_hexadecimal_message(
+                message_number=self.invariant_message.message_number, hexadecimal_content=self.get_new_state_str(), equipment_name=self.eqp
+            )
 
     def get_id(self) -> str:
         return cast(str, self.all_fields_dict.get("id"))
