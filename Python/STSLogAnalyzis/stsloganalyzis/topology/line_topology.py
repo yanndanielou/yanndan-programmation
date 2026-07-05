@@ -348,8 +348,8 @@ class Line:
     virtual_cantons: List[VirtualCanton]
     virtual_canton_by_id: Dict[str, VirtualCanton]
     not_created_tracking_blocks_ids_without_track_circuits: List[str]
-    tracking_block_on_segments_csv_full_path: str | Path
-    virtual_canton_extremities_csv_full_path: str | Path
+    tracking_block_on_segments_csv_full_path: Optional[str | Path]
+    virtual_canton_extremities_csv_full_path: Optional[str | Path]
 
     def __post_init__(self) -> None:
         self.tracking_block_by_id = {b.identifier: b for b in self.tracking_blocks}
@@ -560,28 +560,20 @@ class Line:
     ) -> Optional[VirtualCanton]:
 
         segment = self.get_segment(segment)
-        matches = [relation for relation in self.tracking_block_on_segments if relation.segment == segment and relation.abs_begin <= abscissa < relation.abs_end]
+        matches = [
+            virtual_canton_on_segment
+            for virtual_canton_on_segment in self.virtual_cantons_on_segments
+            if virtual_canton_on_segment.segment == segment and virtual_canton_on_segment.lowest_extremity_in_cm <= abscissa < virtual_canton_on_segment.highest_extremity_in_cm
+        ]
 
         if not matches:
-            if (segment, abscissa) not in self.occurences_of_not_found_tracking_block_in_segment:
-                self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)] = 0
-                logger_config.print_and_log_error(
-                    f"Aucun TrackingBlockOnSegment trouvé pour le segment '{segment}' "
-                    f"et l'abscisse {abscissa}. {self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)]} first occurence"
-                )
-            self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)] += 1
-
-            logger_config.print_and_log_warning(
-                f"Aucun TrackingBlockOnSegment trouvé pour le segment '{segment}' "
-                f"et l'abscisse {abscissa}. {self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)]} nth occurence"
-            )
+            logger_config.print_and_log_error(f"Aucun VirtualCantonOnSegment trouvé pour le segment '{segment}' et l'abscisse {abscissa}")
             return None
 
         if len(matches) > 1:
-            match_ids = ", ".join(relation.tracking_block.identifier for relation in matches)
-            raise ValueError(f"Plusieurs TrackingBlockOnSegment correspondent au segment '{segment}' " f"et à l'abscisse {abscissa} : {match_ids}.")
+            raise ValueError(f"Plusieurs ({len(matches)}) VirtualCantonOnSegment correspondent au segment '{segment}' " f"et à l'abscisse {abscissa}")
 
-        return matches[0].tracking_block
+        return cast(VirtualCanton, matches[0].virtual_canton)
 
     @logger_config.stopwatch_decorator(inform_beginning=True)
     def compute_consistency_errors(self) -> List[ConsistencyError]:
@@ -599,9 +591,9 @@ class Line:
         track_circuits_csv_full_path: str | Path,
         tracking_blocks_csv_full_path: str | Path,
         switches_csv_full_path: str | Path,
-        virtual_canton_csv_full_path: str | Path,
-        virtual_canton_extremities_csv_full_path: str | Path,
         tracking_block_on_segments_csv_full_path: str | Path,
+        virtual_canton_csv_full_path: Optional[str | Path] = None,
+        virtual_canton_extremities_csv_full_path: Optional[str | Path] = None,
         ignore_tracking_blocks_without_circuits: bool = False,
     ) -> "Line":
         """
@@ -642,7 +634,7 @@ class Line:
         switches_dict = {s.identifier: s for s in switches_list}
 
         # CV
-        virtual_cantons = VirtualCanton.load_from_csv(virtual_canton_csv_full_path)
+        virtual_cantons = VirtualCanton.load_from_csv(virtual_canton_csv_full_path) if virtual_canton_csv_full_path else []
         virtual_canton_by_id = {c.identifier: c for c in virtual_cantons}
 
         return Line(
@@ -690,8 +682,8 @@ class VirtualCanton(TopologyElement):
             reader = csv.DictReader(f, delimiter=";")
 
             for row in reader:
-                identifier = cast(str, row["CV_ID"])
-                longueur = cast(float, row["LONGUEUR"])
+                identifier = cast(str, row["'CV_ID'"])
+                longueur = float(row["'LONGUEUR'"])
                 length_in_cm = int(longueur * 100)
                 virtual_canton = cls(
                     identifier=identifier,
@@ -726,33 +718,33 @@ class VirtualCantonExtremity:
             'CV_TTEO_V1'	'SEG_010309'	'CROISSANT'	76.5	7650	2733.746
 
         """
-        extremities = []
+        extremities: List[VirtualCantonExtremity] = []
         csv_path = Path(csv_file_path)
 
         with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter=";")
 
             for row in reader:
-                cv_id = row["CV_ID"]
-                segment_id = row["SEGMENT_ID"]
-                ext_sens_seg_raw = row["EXT_SENS_SEG"]
-                extremity_absissa_on_segment_in_cm = int(row["EXT_ABS_SEG_CM"])
-                extremity_pk = cast(float, row["EXT_PK"])
+                cv_id = row["'CV_ID'"]
+                segment_id = cast(str, row["'SEGMENT_ID'"]).replace("'", "")
+                ext_sens_seg_raw = cast(str, row["'EXT_SENS_SEG'"]).replace("'", "")
+                extremity_absissa_on_segment_in_cm = int(row["'EXT_ABS_SEG_CM'"])
+                extremity_pk = float(row["'EXT_PK'"])
 
                 virtual_canton = line.virtual_canton_by_id[cv_id]
                 segment = line.segment_by_id[segment_id]
 
-                direction_on_seg = SegmentDirection[ext_sens_seg_raw]
+                increasing_segment_direction = ext_sens_seg_raw == "CROISSANT"
 
                 extremity = cls(
                     virtual_canton=virtual_canton,
                     segment=segment,
-                    increasing_segment_direction=direction_on_seg == SegmentDirection.INCREASING_OFFSET,
+                    increasing_segment_direction=increasing_segment_direction,
                     extremity_absissa_on_segment_in_cm=extremity_absissa_on_segment_in_cm,
                     extremity_pk=extremity_pk,
                 )
 
-                virtual_canton.extremities.append(extremities)
+                virtual_canton.extremities.append(extremity)
                 extremities.append(extremity)
 
         return extremities

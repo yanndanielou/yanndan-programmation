@@ -1,15 +1,21 @@
-from logger import logger_config
+from typing import Dict, Optional, Set, Tuple
 
-from typing import Tuple, Optional, Dict, Set
-
+from stsloganalyzis.archive import (
+    decode_action_set_content,
+    decode_archive,
+    decode_message,
+    decode_xml_message,
+)
+from stsloganalyzis.common import common_filters
 from stsloganalyzis.topology import (
     line_topology,
 )
-from stsloganalyzis.archive import decode_action_set_content, decode_archive, decode_message, decode_xml_message
-from stsloganalyzis.common import common_filters
 
 
-def get_line_topology() -> line_topology.Line:
+def get_line_topology(dc_log_folder_full_path: Optional[str]) -> line_topology.Line:
+
+    cd_cv_csv_full_path = f"{dc_log_folder_full_path}\\dc_cv_pas.csv" if dc_log_folder_full_path else None
+    dc_ext_cv_csv_full_path = f"{dc_log_folder_full_path}\\dc_ext_cv.csv" if dc_log_folder_full_path else None
 
     railway_line = line_topology.Line.load_from_csv(
         segments_csv_full_path=r"D:\NEXT\Data\Csv\NEXT_segment.csv",
@@ -19,13 +25,15 @@ def get_line_topology() -> line_topology.Line:
         segments_relations_csv_full_path=r"D:\NEXTTS\Data\Csv\NEXT_tsSegmentRelation.csv",
         tracking_block_on_segments_csv_full_path=r"D:\NEXTTS\Data\Csv\NEXT_tsLocUnitTopo.csv",
         ignore_tracking_blocks_without_circuits=True,
+        virtual_canton_csv_full_path=cd_cv_csv_full_path,
+        virtual_canton_extremities_csv_full_path=dc_ext_cv_csv_full_path,
     )
     assert railway_line
     assert isinstance(railway_line, line_topology.Line)
     return railway_line
 
 
-def get_encoders() -> Tuple[line_topology.Line, decode_archive.ArchiveDecoder]:
+def get_encoders(dc_log_folder_full_path: Optional[str] = None) -> Tuple[line_topology.Line, decode_archive.ArchiveDecoder]:
 
     messages_list_csv_file_full_path = r"D:\NEXT\Data\Csv\NEXT_message.csv"
     xml_directory_path = r"D:\NEXT\Data\Xml"
@@ -52,7 +60,7 @@ def get_encoders() -> Tuple[line_topology.Line, decode_archive.ArchiveDecoder]:
         xml_directory_path=xml_directory_path, signed_or_unsigned_type_for_integer_fields_manager=NextSignedOrUnsignedTypeForIntegerFieldsManager()
     )
 
-    railway_line = get_line_topology()
+    railway_line = get_line_topology(dc_log_folder_full_path)
 
     archive_decoder = decode_archive.ArchiveDecoder(
         action_set_content_decoder=action_set_content_decoder,
