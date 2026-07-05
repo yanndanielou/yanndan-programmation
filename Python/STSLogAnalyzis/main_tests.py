@@ -13,7 +13,7 @@ OUTPUT_DIRECTORY = "output"
 def main() -> None:
     with logger_config.application_logger():
 
-        railway_line, archive_decoder = next_ats_data.get_encoders()
+        railway_line, archive_decoder = next_ats_data.get_encoders(inv_conf_folder_full_path=r"C:\D\temp\NEXT_INV_V6_16_P2_conf\conf\dc_log")
 
         archive_library = (
             next_ats_data.get_classic_archive_library_base_builder(archive_decoder=archive_decoder)
