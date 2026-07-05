@@ -6,6 +6,9 @@ from typing import (
     cast,
 )
 
+from enum import IntEnum, auto
+
+
 from stsloganalyzis.topology import line_topology
 
 if TYPE_CHECKING:
@@ -17,6 +20,17 @@ import csv
 from stsloganalyzis.archive import decode_specific_message_content
 
 PAS_ATS_TRACKING_STATUS_VB_OCCUPANCY_MESSAGE_ID = 173
+
+
+class VbOccupancyState(IntEnum):
+    CV_LIBRE = 0
+    CV_TE_MOINS = 1
+    CV_TE_PLUS = 2
+    CV_TE_ARRIERE = 3
+    CV_TNI = 4
+    UNUSED_5 = auto()
+    UNUSED_6 = auto()
+    UNUSED_7 = auto()
 
 
 @dataclass
@@ -88,6 +102,7 @@ class ZcAtsTrackingStatusVbOccDecoder:
         all_tvd_op_data_fields_and_value = [(key, value) for (key, value) in decoded_message.decoded_fields_flat_directory.items() if key.startswith("VBOccupancy")]
 
         for initial_field_name, initial_field_value in all_tvd_op_data_fields_and_value:
+            assert isinstance(initial_field_value, int)
             field_name_split = initial_field_name.split("_")
             cv_field_name_prefix = field_name_split[0]
             cv_number = int(field_name_split[1])
@@ -98,7 +113,10 @@ class ZcAtsTrackingStatusVbOccDecoder:
             )
             if cv_zc_relation:
                 new_field_name = f"{cv_field_name_prefix}_{cv_number}_{cv_zc_relation.cv_identifier}"
-                decoded_specific_message.fields_with_value[new_field_name] = initial_field_value
+                decoded_specific_message.fields_with_value[new_field_name] = VbOccupancyState(initial_field_value).name
+                decoded_message.decoded_fields_flat_directory.pop(initial_field_name)
+            else:
+                decoded_message.decoded_fields_flat_directory[initial_field_name] = VbOccupancyState(initial_field_value).name
 
         assert decoded_specific_message
         return decoded_specific_message
