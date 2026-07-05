@@ -303,7 +303,7 @@ class ExactLocation:
         return f"No TB thus TC defined at {self.segment.identifier}/{self.abscissa}"
 
     def get_virtual_canton_id_string_if_no(self) -> str:
-        virtual_canton = self.segment.line.get_virtual_canton_by_segment_and_abscissa(segment=self.segment, abscissa=self.abscissa)
+        virtual_canton = self.segment.line.get_virtual_canton_by_segment_and_abscissa(segment=self.segment, abscissa_in_cm=self.abscissa)
         if virtual_canton:
             return virtual_canton.identifier
         return f"No CV defined at {self.segment.identifier}/{self.abscissa}"
@@ -556,22 +556,22 @@ class Line:
     def get_virtual_canton_by_segment_and_abscissa(
         self,
         segment: Segment | str | int,
-        abscissa: int,
+        abscissa_in_cm: int,
     ) -> Optional[VirtualCanton]:
 
         segment = self.get_segment(segment)
         matches = [
             virtual_canton_on_segment
             for virtual_canton_on_segment in self.virtual_cantons_on_segments
-            if virtual_canton_on_segment.segment == segment and virtual_canton_on_segment.lowest_extremity_in_cm <= abscissa < virtual_canton_on_segment.highest_extremity_in_cm
+            if virtual_canton_on_segment.segment == segment and virtual_canton_on_segment.lowest_extremity_in_cm <= abscissa_in_cm < virtual_canton_on_segment.highest_extremity_in_cm
         ]
 
         if not matches:
-            logger_config.print_and_log_error(f"Aucun VirtualCantonOnSegment trouvé pour le segment '{segment}' et l'abscisse {abscissa}")
+            logger_config.print_and_log_error(f"Aucun VirtualCantonOnSegment trouvé pour le segment '{segment}' et l'abscisse {abscissa_in_cm}")
             return None
 
         if len(matches) > 1:
-            raise ValueError(f"Plusieurs ({len(matches)}) VirtualCantonOnSegment correspondent au segment '{segment}' " f"et à l'abscisse {abscissa}")
+            raise ValueError(f"Plusieurs ({len(matches)}) VirtualCantonOnSegment correspondent au segment '{segment}' " f"et à l'abscisse {abscissa_in_cm}")
 
         return cast(VirtualCanton, matches[0].virtual_canton)
 
@@ -734,6 +734,7 @@ class VirtualCantonExtremity:
                 virtual_canton = line.virtual_canton_by_id[cv_id]
                 segment = line.segment_by_id[segment_id]
 
+                assert ext_sens_seg_raw in ["CROISSANT", "DECROISSANT"]
                 increasing_segment_direction = ext_sens_seg_raw == "CROISSANT"
 
                 extremity = cls(
@@ -779,8 +780,8 @@ class VirtualCantonOnSegment:
 
             virtual_canton_on_segment = VirtualCantonOnSegment(
                 segment=virtual_canton_extremity_2.segment,
-                highest_extremity_in_cm=virtual_canton_extremity_1.extremity_absissa_on_segment_in_cm,
-                lowest_extremity_in_cm=virtual_canton_extremity_2.extremity_absissa_on_segment_in_cm,
+                lowest_extremity_in_cm=virtual_canton_extremity_1.extremity_absissa_on_segment_in_cm,
+                highest_extremity_in_cm=virtual_canton_extremity_2.extremity_absissa_on_segment_in_cm,
                 virtual_canton=virtual_canton_extremity_2.virtual_canton,
             )
 

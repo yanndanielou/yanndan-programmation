@@ -80,6 +80,9 @@ class ZcAtsTmAoSigDecoder:
 
     def decode(self, decoded_message: "DecodedMessage", equipment_name: str) -> decode_specific_message_content.SpecificMessageContentDecoded:
 
+        if equipment_name not in self.tvd_zc_library.all_known_zc_id:
+            equipment_name = equipment_name.replace(" ", "_")
+
         decoded_specific_message = decode_specific_message_content.SpecificMessageContentDecoded()
         all_tvd_op_data_fields_and_value = [(key, value) for (key, value) in decoded_message.decoded_fields_flat_directory.items() if key.startswith("TvdOpData")]
 
