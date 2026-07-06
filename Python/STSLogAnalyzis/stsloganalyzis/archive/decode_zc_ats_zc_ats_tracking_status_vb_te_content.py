@@ -8,17 +8,17 @@ from stsloganalyzis.zone_controllers import virtual_canton_zc
 
 from stsloganalyzis.archive import decode_specific_message_content
 
-PAS_ATS_TRACKING_STATUS_VB_OCCUPANCY_MESSAGE_ID = 173
+ZC_ATS_TRACKING_STATUS_VB_TE_MESSAGE_ID = 210
 
 
 @dataclass
-class ZcAtsTrackingStatusVbOccDecoder:
+class ZcAtsTrackingStatusVBTeDecoder:
     virtual_canton_zc_library: "virtual_canton_zc.VirtualCantonZcLibrary"
 
     def decode(self, decoded_message: "DecodedMessage", equipment_name: str) -> decode_specific_message_content.SpecificMessageContentDecoded:
 
         decoded_specific_message = decode_specific_message_content.SpecificMessageContentDecoded()
-        all_tvd_op_data_fields_and_value = [(key, value) for (key, value) in decoded_message.decoded_fields_flat_directory.items() if key.startswith("VBOccupancy")]
+        all_tvd_op_data_fields_and_value = [(key, value) for (key, value) in decoded_message.decoded_fields_flat_directory.items() if key.startswith("VBOccupancyTrain")]
 
         for initial_field_name, initial_field_value in all_tvd_op_data_fields_and_value:
             assert isinstance(initial_field_value, int)
@@ -32,10 +32,10 @@ class ZcAtsTrackingStatusVbOccDecoder:
             )
             if cv_zc_relation:
                 new_field_name = f"{cv_field_name_prefix}_{cv_number}_{cv_zc_relation.cv_identifier}"
-                decoded_specific_message.fields_with_value[new_field_name] = virtual_canton_zc.VbOccupancyState(initial_field_value).name
+                decoded_specific_message.fields_with_value[new_field_name] = initial_field_value
                 decoded_message.decoded_fields_flat_directory.pop(initial_field_name)
             else:
-                decoded_message.decoded_fields_flat_directory[initial_field_name] = virtual_canton_zc.VbOccupancyState(initial_field_value).name
+                decoded_message.decoded_fields_flat_directory[initial_field_name] = initial_field_value
 
         assert decoded_specific_message
         return decoded_specific_message

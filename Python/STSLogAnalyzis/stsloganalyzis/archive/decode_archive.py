@@ -19,8 +19,9 @@ from stsloganalyzis.archive import (
     decode_message,
     decode_xml_message,
     decode_zc_ats_tm_ao_sig_content,
-    decode_zc_ats_tracking_status_vb_occupancy_content,
 )
+from stsloganalyzis.zone_controllers import virtual_canton_zc
+
 from stsloganalyzis.common import common_filters
 from stsloganalyzis.topology import line_topology
 
@@ -194,7 +195,7 @@ class ArchiveDecoder:
         xml_message_decoder: decode_xml_message.XmlMessageDecoder,
         action_set_content_decoder: decode_action_set_content.ActionSetContentDecoder,
         zc_ats_tm_ao_sig_content_decoder: Optional[decode_zc_ats_tm_ao_sig_content.ZcAtsTmAoSigDecoder],
-        zc_ats_tracking_status_vb_occupancy_decoder: Optional[decode_zc_ats_tracking_status_vb_occupancy_content.ZcAtsTrackingStatusVbOccDecoder],
+        virtual_canton_zc_library: Optional[virtual_canton_zc.VirtualCantonZcLibrary],
         railway_line: line_topology.Line,
     ) -> None:
         self.message_manager = message_manager
@@ -204,7 +205,7 @@ class ArchiveDecoder:
             xml_message_decoder=xml_message_decoder,
             action_set_content_decoder=self.action_set_content_decoder,
             zc_ats_tm_ao_sig_content_decoder=zc_ats_tm_ao_sig_content_decoder,
-            zc_ats_tracking_status_vb_occupancy_decoder=zc_ats_tracking_status_vb_occupancy_decoder,
+            virtual_canton_zc_library=virtual_canton_zc_library,
             railway_line=railway_line,
         )
 

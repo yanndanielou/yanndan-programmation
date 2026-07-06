@@ -6,9 +6,9 @@ from stsloganalyzis.archive import (
     decode_message,
     decode_xml_message,
     decode_zc_ats_tm_ao_sig_content,
-    decode_zc_ats_tracking_status_vb_occupancy_content,
 )
 from stsloganalyzis.common import common_filters
+from stsloganalyzis.zone_controllers import virtual_canton_zc
 from stsloganalyzis.topology import (
     line_topology,
 )
@@ -64,11 +64,9 @@ def get_encoders(inv_conf_folder_full_path: Optional[str] = None) -> Tuple[line_
     zc_ats_tm_ao_sig_content_decoder = (
         decode_zc_ats_tm_ao_sig_content.ZcAtsTmAoSigDecoder(ats_inv_tvd_pas_csv_file_full_path=f"{inv_conf_folder_full_path}\\ats_inv\\TVD_PAS.csv") if inv_conf_folder_full_path else None
     )
-    zc_ats_tracking_status_vb_occupancy_decoder = (
-        decode_zc_ats_tracking_status_vb_occupancy_content.ZcAtsTrackingStatusVbOccDecoder(dc_cv_pas_csv_file_full_path=f"{inv_conf_folder_full_path}\\dc_log\\dc_cv_pas.csv")
-        if inv_conf_folder_full_path
-        else None
-    )
+
+    dc_cv_pas_csv_file_full_path = f"{inv_conf_folder_full_path}\\dc_log\\dc_cv_pas.csv"
+    virtual_canton_zc_library = virtual_canton_zc.VirtualCantonZcLibrary.from_csv_file(dc_cv_pas_csv_file_full_path=dc_cv_pas_csv_file_full_path)
 
     railway_line = get_line_topology(inv_conf_folder_full_path)
 
@@ -78,7 +76,7 @@ def get_encoders(inv_conf_folder_full_path: Optional[str] = None) -> Tuple[line_
         xml_message_decoder=xml_message_decoder,
         railway_line=railway_line,
         zc_ats_tm_ao_sig_content_decoder=zc_ats_tm_ao_sig_content_decoder,
-        zc_ats_tracking_status_vb_occupancy_decoder=zc_ats_tracking_status_vb_occupancy_decoder,
+        virtual_canton_zc_library=virtual_canton_zc_library,
     )
 
     return railway_line, archive_decoder
