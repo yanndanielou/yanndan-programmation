@@ -227,8 +227,17 @@ class SqlArchArchiveLineWithContext:
         return ret
 
     @property
-    def decoded_fields_flat_directory(self) -> Dict[str, constants.FIELD_TYPE]:
-        return self.decoded_message.decoded_fields_flat_directory if self.decoded_message else cast(constants.FIELD_TYPE, self.sql_arch_line.sqlarch_fields_dict_raw)
+    def decoded_fields_flat_directory_except_fields_to_ignore(self) -> Dict[str, constants.FIELD_TYPE]:
+        ret: Dict[str, constants.FIELD_TYPE] = dict()
+        if self.decoded_message:
+            for field_name, field_value in self.decoded_message.decoded_fields_flat_directory.items():
+                if not helpers.is_field_name_to_be_ignored(field_name=field_name):
+                    ret[field_name] = field_value
+        else:
+            for field_name, field_value in self.sql_arch_line.sqlarch_fields_dict_raw.items():
+                if not helpers.is_field_name_to_be_ignored(field_name=field_name):
+                    ret[field_name] = field_value
+        return ret
 
     def get_all_changes_since_previous(self) -> List[OrderedDict[str, Any]]:
         to_ret: List[OrderedDict[str, Any]] = []
@@ -404,9 +413,12 @@ class ArchiveAnalyzis:
             self.current_latest_line_by_id[sql_arch_line.id_field] = line_with_context
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def create_output_with_all_fields_decoded(self, file_base_name: Optional[str] = None, begin_time_to_put_in_reports: datetime = parser.parse("1970-01-01T00:00:00.000")) -> int:
+    def create_output_with_all_fields_decoded(self, file_base_name: Optional[str] = None, begin_time_to_put_in_reports: str | datetime = parser.parse("1970-01-01T00:00:00.000")) -> int:
         if file_base_name is None:
             file_base_name = f"{self.label}_all_fields"
+
+        if isinstance(begin_time_to_put_in_reports, str):
+            begin_time_to_put_in_reports = parser.parse(begin_time_to_put_in_reports)
 
         rows_as_list_dict: List[Dict[str, Any]] = []
 
@@ -417,7 +429,7 @@ class ArchiveAnalyzis:
                 # all_fields["Timestamp"] = line_with_context.sql_arch_line.date.replace(tzinfo=None)
                 all_fields["Timestamp"] = line_with_context.sql_arch_line.get_date_raw_str()
                 all_fields["Id"] = line_with_context.sql_arch_line.id_field
-                all_fields.update(line_with_context.decoded_fields_flat_directory)
+                all_fields.update(line_with_context.decoded_fields_flat_directory_except_fields_to_ignore)
 
         # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
         reports_utils.save_rows_to_output_files(
@@ -428,8 +440,12 @@ class ArchiveAnalyzis:
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def create_reports_all_sqlarch_changes_since_previous(
-        self, output_directory_path: Optional[str] = None, file_base_name: Optional[str] = None, begin_time_to_put_in_reports: datetime = parser.parse("1970-01-01T00:00:00.000")
+        self, output_directory_path: Optional[str] = None, file_base_name: Optional[str] = None, begin_time_to_put_in_reports: str | datetime = parser.parse("1970-01-01T00:00:00.000")
     ) -> int:
+
+        if isinstance(begin_time_to_put_in_reports, str):
+            begin_time_to_put_in_reports = parser.parse(begin_time_to_put_in_reports)
+
         if file_base_name is None:
             file_base_name = f"{self.label}_all_changes"
 
