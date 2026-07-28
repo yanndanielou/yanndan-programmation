@@ -66,7 +66,7 @@ def get_encoders(inv_conf_folder_full_path: Optional[str] = None) -> Tuple[line_
     )
 
     dc_cv_pas_csv_file_full_path = f"{inv_conf_folder_full_path}\\dc_log\\dc_cv_pas.csv"
-    virtual_canton_zc_library = virtual_canton_zc.VirtualCantonZcLibrary.from_csv_file(dc_cv_pas_csv_file_full_path=dc_cv_pas_csv_file_full_path)
+    virtual_canton_zc_library = virtual_canton_zc.VirtualCantonZcLibrary.from_csv_file(dc_cv_pas_csv_file_full_path=dc_cv_pas_csv_file_full_path) if inv_conf_folder_full_path else None
 
     railway_line = get_line_topology(inv_conf_folder_full_path)
 
