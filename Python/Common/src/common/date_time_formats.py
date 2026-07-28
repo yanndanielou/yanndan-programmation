@@ -18,7 +18,11 @@ def format_duration_between_timestamps_to_string(start_timestamp: datetime, end_
 
 
 def format_duration_timedelta_to_string(duration_timedelta: timedelta) -> str:
-    return format_duration_to_string(duration_timedelta.seconds + duration_timedelta.microseconds / 1000000)
+    return format_duration_to_string(format_duration_timedelta_to_float_seconds(duration_timedelta))
+
+
+def format_duration_timedelta_to_float_seconds(duration_timedelta: timedelta) -> float:
+    return duration_timedelta.seconds + duration_timedelta.microseconds / 1000000
 
 
 def format_duration_to_string(duration_in_seconds_as_float: float) -> str:

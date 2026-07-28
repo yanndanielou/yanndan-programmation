@@ -460,7 +460,8 @@ class SqlArchArchiveLine(ArchiveLine):
         to_ret: List[OrderedDict[str, Any]] = []
 
         previous_date = previous_line_for_this_id.date if previous_line_for_this_id else None
-        exact_time_delta = date_time_formats.format_duration_timedelta_to_string(self.date - previous_line_for_this_id.date) if previous_line_for_this_id else "NA"
+        exact_time_delta_human_readable = date_time_formats.format_duration_timedelta_to_string(self.date - previous_line_for_this_id.date) if previous_line_for_this_id else "NA"
+        exact_time_delta_seconds = date_time_formats.format_duration_timedelta_to_float_seconds(self.date - previous_line_for_this_id.date) if previous_line_for_this_id else None
         approximative_time_delta = humanize.precisedelta(self.date - previous_date, minimum_unit="milliseconds") if previous_date else "NA"
         old_timestamp = previous_line_for_this_id.date_raw if previous_line_for_this_id else None
 
@@ -479,7 +480,8 @@ class SqlArchArchiveLine(ArchiveLine):
                             "old_value": previous_new_st,
                             "new_value": new_new_st,
                             "change_value": f"{previous_new_st} -> {new_new_st}",
-                            "exact_time_delta": exact_time_delta,
+                            "exact_time_delta_seconds": exact_time_delta_seconds,
+                            "exact_time_delta_human_readable": exact_time_delta_human_readable,
                             "approximative_time_delta": approximative_time_delta,
                             "old_timestamp": old_timestamp,
                         }
@@ -512,7 +514,8 @@ class SqlArchArchiveLine(ArchiveLine):
                                     "old_value": previous_value,
                                     "new_value": new_value,
                                     "change_value": f"{previous_value} -> {new_value}",
-                                    "exact_time_delta": exact_time_delta,
+                                    "exact_time_delta_seconds": exact_time_delta_seconds,
+                                    "exact_time_delta_human_readable": exact_time_delta_human_readable,
                                     "approximative_time_delta": approximative_time_delta,
                                     "old_timestamp": old_timestamp,
                                 }

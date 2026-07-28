@@ -247,7 +247,8 @@ class SqlArchArchiveLineWithContext:
             if not helpers.is_field_name_to_be_ignored(field_name=changed_field.field_name):
 
                 previous_date = changed_field.previous_different_value_timestamp
-                exact_time_delta = date_time_formats.format_duration_timedelta_to_string(self.sql_arch_line.date - previous_date) if previous_date else "NA"
+                exact_time_delta_human_readable = date_time_formats.format_duration_timedelta_to_string(self.sql_arch_line.date - previous_date) if previous_date else "NA"
+                exact_time_delta_seconds = date_time_formats.format_duration_timedelta_to_float_seconds(self.sql_arch_line.date - previous_date) if previous_date else None
                 approximative_time_delta = humanize.precisedelta(self.sql_arch_line.date - previous_date, minimum_unit="milliseconds") if previous_date else "NA"
                 old_timestamp = str(previous_date)
                 to_ret.append(
@@ -260,7 +261,8 @@ class SqlArchArchiveLineWithContext:
                             "old_value": changed_field.previous_different_value,
                             "new_value": changed_field.field_value,
                             "change_value": f"{changed_field.previous_different_value} -> {changed_field.field_value}",
-                            "exact_time_delta": exact_time_delta,
+                            "exact_time_delta_seconds": exact_time_delta_seconds,
+                            "exact_time_delta_human_readable": exact_time_delta_human_readable,
                             "approximative_time_delta": approximative_time_delta,
                             "old_timestamp": old_timestamp,
                         }
