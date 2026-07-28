@@ -417,6 +417,8 @@ class SqlArchArchiveLine(ArchiveLine):
     def decode_message(self, archive_decoder: ArchiveDecoder) -> None:
         # Directly copy all items from SQLARCH section into a new dictionary
         self.sqlarch_fields_dict_raw = {f"{key}_raw": value for key, value in self.all_fields_dict.items()}
+        self.sqlarch_fields_dict_raw["newSt"] = self.get_new_state_str()
+        self.sqlarch_fields_dict_raw["oldSt"] = self.get_old_state_str()
         self.invariant_message = archive_decoder.message_manager.get_message_by_id(self.get_id())
         if self.invariant_message:
             self.decoded_message = archive_decoder.message_decoder.decode_raw_hexadecimal_message(
@@ -428,6 +430,9 @@ class SqlArchArchiveLine(ArchiveLine):
 
     def get_new_state_str(self) -> str:
         return cast(str, self.all_fields_dict.get("newSt"))
+
+    def get_old_state_str(self) -> str:
+        return cast(str, self.all_fields_dict.get("oldSt"))
 
     def print_all(self) -> None:
         # Print extracted fields
