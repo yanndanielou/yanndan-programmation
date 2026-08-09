@@ -435,7 +435,31 @@ class ArchiveAnalyzis:
 
         # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
         reports_utils.save_rows_to_output_files(
-            rows_as_list_dict=rows_as_list_dict, file_base_name=file_base_name, output_directory_path=self.output_directory_path, suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.DO_BOTH
+            rows_as_list_dict=rows_as_list_dict,
+            file_base_name=file_base_name + "_by_column",
+            output_directory_path=self.output_directory_path,
+            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
+        )
+
+        rows_as_list_dict = []
+
+        for line_with_context in self.all_sql_arch_lines_with_context:
+            if line_with_context.sql_arch_line.date.replace(tzinfo=None) > begin_time_to_put_in_reports.replace(tzinfo=None):
+                for field_name, field_value in line_with_context.decoded_fields_flat_directory_except_fields_to_ignore.items():
+                    all_fields = OrderedDict()
+                    rows_as_list_dict.append(all_fields)
+                    # all_fields["Timestamp"] = line_with_context.sql_arch_line.date.replace(tzinfo=None)
+                    all_fields["Timestamp"] = line_with_context.sql_arch_line.get_date_raw_str()
+                    all_fields["Id"] = line_with_context.sql_arch_line.id_field
+                    all_fields["Field"] = field_name
+                    all_fields["Value"] = field_value
+
+        # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
+        reports_utils.save_rows_to_output_files(
+            rows_as_list_dict=rows_as_list_dict,
+            file_base_name=file_base_name + "_by_line",
+            output_directory_path=self.output_directory_path,
+            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
         )
 
         return len(rows_as_list_dict)
@@ -466,6 +490,9 @@ class ArchiveAnalyzis:
 
         # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
         reports_utils.save_rows_to_output_files(
-            rows_as_list_dict=rows_as_list_dict, file_base_name=file_base_name, output_directory_path=output_directory_path, suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.DO_BOTH
+            rows_as_list_dict=rows_as_list_dict,
+            file_base_name=file_base_name,
+            output_directory_path=output_directory_path,
+            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
         )
         return len(rows_as_list_dict)
