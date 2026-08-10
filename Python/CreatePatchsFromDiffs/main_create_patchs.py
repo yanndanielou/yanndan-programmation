@@ -21,6 +21,7 @@ def browse_directory(entry_var: tk.StringVar) -> None:
         entry_var.set(path)
 
 
+@logger_config.stopwatch_decorator()
 def get_all_files(base_path: str) -> set[str]:
     """Retourne un set de chemins relatifs de tous les fichiers sous base_path."""
     files = set()
@@ -32,6 +33,7 @@ def get_all_files(base_path: str) -> set[str]:
     return files
 
 
+@logger_config.stopwatch_decorator()
 def generate_patch(path1: str, path2: str, result_path: str, do_adds: bool, do_deletes: bool, do_modifications: bool) -> tuple[dict[str, int], str]:
     """
     Compare path1 (cible) et path2 (source à transformer).
@@ -142,17 +144,16 @@ def generate_patch(path1: str, path2: str, result_path: str, do_adds: bool, do_d
             # ---- Fichier texte : générer un patch granulaire ----
             bat_lines.append(f"REM --- Modification (texte) : {rel} ---")
 
-            # On utilise un fichier temporaire PowerShell pour appliquer
-            # les modifications ligne par ligne de manière fiable
-            ps_script_name = rel.replace(os.sep, "_").replace(".", "_") + "_patch.ps1"
-            ps_script_path = os.path.join(result_path, ps_script_name)
+            # Générer un petit script .bat qui compare ligne par ligne les
+            # contenus et applique le patch final avec un fallback PowerShell.
+            patch_script_name = rel.replace(os.sep, "_").replace(".", "_") + "_patch.bat"
+            patch_script_path = os.path.join(result_path, patch_script_name)
 
-            # Générer le script PowerShell de patch
-            ps_lines = generate_powershell_patch(file1, file2, rel, lines1, lines2)
-            with open(ps_script_path, "w", encoding="utf-8") as ps_f:
-                ps_f.write("\n".join(ps_lines))
+            bat_patch_lines = generate_powershell_patch(file1, file2, rel, lines1, lines2)
+            with open(patch_script_path, "w", encoding="utf-8") as patch_f:
+                patch_f.write("\n".join(bat_patch_lines))
 
-            bat_lines.append(f'powershell -ExecutionPolicy Bypass -File "{ps_script_path}" "{rel}"')
+            bat_lines.append(f'cmd /c ""{patch_script_path}" "{rel}""')
             bat_lines.append("")
 
     # ----------------------------------------------------------------
@@ -174,35 +175,64 @@ def generate_patch(path1: str, path2: str, result_path: str, do_adds: bool, do_d
     return stats, bat_path
 
 
-def generate_powershell_patch(file1: str, file2: str, rel_path: str, lines1: list[str], lines2: list[str]) -> list[str]:
+@logger_config.stopwatch_decorator()
+def generate_powershell_patch(file1: str, file2: str, rel_path: str, lines_file_1: list[str], lines_file_2: list[str]) -> list[str]:
     """
-    Génère un script PowerShell qui transforme le fichier file2
-    pour qu'il devienne identique à file1, en appliquant les diffs.
+    Compare les lignes de file1 et file2 puis génère un script .bat
+    qui applique le patch final. Le script peut encapsuler du PowerShell
+    lorsqu'une écriture plus contrôlée est nécessaire.
     """
-    ps = [
-        "param([string]$TargetFile)",
+    logger_config.print_and_log_info(f"generate_powershell_patch between {file1} ({len(lines_file_1)} lines) and {file2} ({len(lines_file_2)} lines)")
+    diff = difflib.SequenceMatcher(a=lines_file_2, b=lines_file_1)
+    opcodes = diff.get_opcodes()
+    logger_config.print_and_log_info(f"{len(opcodes)} opcodes computed")
+
+    # Lecture du contenu final attendu (chemin 1)
+    with open(file1, "r", encoding="utf-8") as f:
+        expected_content = f.read()
+
+    op_lines = [
+        "@echo off",
+        "setlocal EnableExtensions EnableDelayedExpansion",
         "",
-        "# Ce script remplace le contenu du fichier cible",
-        "# par le contenu attendu (issu de chemin 1).",
+        "REM ============================================================",
+        f"REM Patch de : {rel_path}",
+        "REM ============================================================",
         "",
-        "# Contenu final attendu :",
-        "$newContent = @'",
+        'set "TARGET=%~1"',
+        'if not defined TARGET (echo Usage: %~nx0 "path\\to\\file" & exit /b 1)',
+        'if not exist "%TARGET%" (echo Fichier cible introuvable: %TARGET% & exit /b 1)',
+        "",
+        "REM Comparaison ligne par ligne entre file1 et file2",
     ]
 
-    # Lire le contenu final attendu (celui de path1)
-    with open(file1, "r", encoding="utf-8") as f:
-        content = f.read()
+    for tag, i1, i2, j1, j2 in opcodes:
+        if tag == "equal":
+            continue
+        if tag == "replace":
+            op_lines.append(f"REM REPLACE : {i1 + 1}-{i2} -> {j1 + 1}-{j2}")
+            pass
+        elif tag == "delete":
+            op_lines.append(f"REM DELETE  : {i1 + 1}-{i2}")
+        elif tag == "insert":
+            op_lines.append(f"REM INSERT  : {i1 + 1} -> {j1 + 1}-{j2}")
+            op_lines.append(f"echo ")
 
-    ps.append(content)
-    ps.append("'@")
-    ps.append("")
-    ps.append("# Écriture du contenu dans le fichier cible")
-    ps.append("[System.IO.File]::WriteAllText($TargetFile, $newContent, " "[System.Text.Encoding]::UTF8)")
-    ps.append('Write-Host "Patché : $TargetFile"')
+    op_lines.extend(expected_content.splitlines())
 
-    return ps
+    op_lines.extend(
+        [
+            '\'@; [System.IO.File]::WriteAllText($target, $expected, [System.Text.Encoding]::UTF8); Write-Host "Patch appliqué : $target" " "%TARGET%"',
+            "",
+            "exit /b 0",
+        ]
+    )
+
+    logger_config.print_and_log_info(f"{len(op_lines)} patch lines created")
+    return op_lines
 
 
+@logger_config.stopwatch_decorator()
 def run_comparison(path1_var: tk.StringVar, path2_var: tk.StringVar, result_var: tk.StringVar, add_var: tk.BooleanVar, del_var: tk.BooleanVar, mod_var: tk.BooleanVar) -> None:
     """Callback du bouton GO."""
     path1 = path1_var.get().strip()
@@ -242,6 +272,7 @@ def run_comparison(path1_var: tk.StringVar, path2_var: tk.StringVar, result_var:
         messagebox.showerror("Erreur", f"Une erreur est survenue :\n{e}")
 
 
+@logger_config.stopwatch_decorator()
 def create_gui() -> None:
     """Crée la fenêtre principale."""
     root = tk.Tk()
