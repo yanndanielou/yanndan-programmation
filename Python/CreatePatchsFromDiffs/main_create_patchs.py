@@ -8,15 +8,20 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from pathlib import Path
 
+# r'D:\NEXT_PCC_FORM_2.0.1\NEXT_AutomaticTrainSupervision_Training_Simulator_2026_07_10_a_22h42 NEXT\Data'
+# r'D:\NEXT_PCC_FORM_2.1.0\NEXT_AutomaticTrainSupervision_Training_Simulator_2026_08_07_a_19h09 NEXT\Data'
 
-def browse_directory(entry_var):
+DEFAULT_RESULT_VALUE = r"D:\Temp"
+
+
+def browse_directory(entry_var: tk.StringVar) -> None:
     """Ouvre un sélecteur de répertoire et met à jour le champ."""
     path = filedialog.askdirectory()
     if path:
         entry_var.set(path)
 
 
-def get_all_files(base_path):
+def get_all_files(base_path: str) -> set[str]:
     """Retourne un set de chemins relatifs de tous les fichiers sous base_path."""
     files = set()
     for root, dirs, filenames in os.walk(base_path):
@@ -27,7 +32,7 @@ def get_all_files(base_path):
     return files
 
 
-def generate_patch(path1, path2, result_path, do_adds, do_deletes, do_modifications):
+def generate_patch(path1: str, path2: str, result_path: str, do_adds: bool, do_deletes: bool, do_modifications: bool) -> tuple[dict[str, int], str]:
     """
     Compare path1 (cible) et path2 (source à transformer).
     Génère Apply_patchs.bat dans result_path.
@@ -169,7 +174,7 @@ def generate_patch(path1, path2, result_path, do_adds, do_deletes, do_modificati
     return stats, bat_path
 
 
-def generate_powershell_patch(file1, file2, rel_path, lines1, lines2):
+def generate_powershell_patch(file1: str, file2: str, rel_path: str, lines1: list[str], lines2: list[str]) -> list[str]:
     """
     Génère un script PowerShell qui transforme le fichier file2
     pour qu'il devienne identique à file1, en appliquant les diffs.
@@ -198,7 +203,7 @@ def generate_powershell_patch(file1, file2, rel_path, lines1, lines2):
     return ps
 
 
-def run_comparison(path1_var, path2_var, result_var, add_var, del_var, mod_var):
+def run_comparison(path1_var: tk.StringVar, path2_var: tk.StringVar, result_var: tk.StringVar, add_var: tk.BooleanVar, del_var: tk.BooleanVar, mod_var: tk.BooleanVar) -> None:
     """Callback du bouton GO."""
     path1 = path1_var.get().strip()
     path2 = path2_var.get().strip()
@@ -237,16 +242,16 @@ def run_comparison(path1_var, path2_var, result_var, add_var, del_var, mod_var):
         messagebox.showerror("Erreur", f"Une erreur est survenue :\n{e}")
 
 
-def create_gui():
+def create_gui() -> None:
     """Crée la fenêtre principale."""
     root = tk.Tk()
     root.title("Comparateur de répertoires – Générateur de Patch")
     root.resizable(False, False)
 
     # Variables
-    path1_var = tk.StringVar()
-    path2_var = tk.StringVar()
-    result_var = tk.StringVar()
+    path1_var = tk.StringVar(value=r"D:\NEXT_PCC_FORM_2.0.1\NEXT_AutomaticTrainSupervision_Training_Simulator_2026_07_10_a_22h42 NEXT\Data")
+    path2_var = tk.StringVar(value=r"D:\NEXT_PCC_FORM_2.1.0\NEXT_AutomaticTrainSupervision_Training_Simulator_2026_08_07_a_19h09 NEXT\Data")
+    result_var = tk.StringVar(value=DEFAULT_RESULT_VALUE)
     add_var = tk.BooleanVar(value=True)
     del_var = tk.BooleanVar(value=True)
     mod_var = tk.BooleanVar(value=True)
@@ -293,4 +298,5 @@ def create_gui():
 
 
 if __name__ == "__main__":
-    create_gui()
+    with logger_config.application_logger():
+        create_gui()
