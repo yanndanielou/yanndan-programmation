@@ -28,8 +28,7 @@ class ListOfObjectsEncoder(JSONEncoder):
 class JsonEncodersUtils(metaclass=singleton.Singleton):
 
     @staticmethod
-    def serialize_list_objects_in_json(list_objects: list[Any], json_file_full_path: str) -> None:
-        chunk_size = 20000
+    def serialize_list_objects_in_json(list_objects: list[Any], json_file_full_path: str, split_big_files: bool = True, chunk_size: int = 20000) -> None:
 
         with logger_config.stopwatch_with_label(f"Serialize {len(list_objects)} in {json_file_full_path}"):
             with open(json_file_full_path, "w", encoding="utf-8") as json_file:
@@ -50,7 +49,7 @@ class JsonEncodersUtils(metaclass=singleton.Singleton):
 
                 json_file.write("\n]" if not first_item else "]")
 
-        if len(list_objects) > chunk_size:
+        if len(list_objects) > chunk_size and split_big_files:
             with logger_config.stopwatch_with_label(f"Serialize {len(list_objects)} in {json_file_full_path}* chunks files"):
                 # Split into chunks and create multiple files
                 base_path = Path(json_file_full_path)

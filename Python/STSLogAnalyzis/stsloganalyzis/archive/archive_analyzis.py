@@ -118,11 +118,11 @@ class MovementAuthorityLimitForOneZoneController:
         mal_tb_label = self.mal_location.get_tracking_block_id_string_if_no() if self.mal_location else "None"
         mal_cv_label = self.mal_location.get_virtual_canton_id_string_if_no() if self.mal_location else "None"
 
-        field_names_and_values.append((f"MAL {self.label} for {str(self.train)} TB", f"type {self.mal_type.name} {mal_tb_label}"))
-        field_names_and_values.append((f"MAL {self.label} for {str(self.train)} TC", f"type {self.mal_type.name} {mal_tc_label}"))
-        field_names_and_values.append((f"MAL {self.label} for {str(self.train)} CV", f"type {self.mal_type.name} {mal_cv_label}"))
-        field_names_and_values.append((f"MAL {self.label} for {str(self.train)} location", f"type {self.mal_type.name} {self.mal_location}"))
-        field_names_and_values.append((f"MAL {self.label} for {str(self.train)} Type", f"{self.mal_type.name}"))
+        field_names_and_values.append((f"{self.label} for {str(self.train)} TB", f"type {self.mal_type.name} {mal_tb_label}"))
+        field_names_and_values.append((f"{self.label} for {str(self.train)} TC", f"type {self.mal_type.name} {mal_tc_label}"))
+        field_names_and_values.append((f"{self.label} for {str(self.train)} CV", f"type {self.mal_type.name} {mal_cv_label}"))
+        field_names_and_values.append((f"{self.label} for {str(self.train)} location", f"type {self.mal_type.name} {self.mal_location}"))
+        field_names_and_values.append((f"{self.label} for {str(self.train)} Type", f"{self.mal_type.name}"))
         return field_names_and_values
 
     class MALType(IntEnum):
@@ -403,8 +403,8 @@ class ArchiveAnalyzis:
             previous_line_for_this_id = self.current_latest_line_by_id.get(sql_arch_line.id_field)
             all_fields_changed = self.update_latest_raw_fields_for_line(sql_arch_line=sql_arch_line)
 
-            if sql_arch_line.decoded_message and sql_arch_line.decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID____DISABLED:
-                all_fields_changed += self.decode_zc_mal_message(sql_arch_line=sql_arch_line)
+            # if sql_arch_line.decoded_message and sql_arch_line.decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID:
+            #    all_fields_changed += self.decode_zc_mal_message(sql_arch_line=sql_arch_line)
             if sql_arch_line.decoded_message and sql_arch_line.decoded_message.message_number == decode_product_topology_dependant_messages_content.CC_ATS_TRACKING_MESSAGE_ID:
                 all_fields_changed += self.decode_cc_ats_tracking_message(sql_arch_line=sql_arch_line)
 
@@ -439,6 +439,7 @@ class ArchiveAnalyzis:
             file_base_name=file_base_name + "_by_column",
             output_directory_path=self.output_directory_path,
             suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
+            split_big_files=False,
         )
 
         rows_as_list_dict = []
@@ -460,6 +461,7 @@ class ArchiveAnalyzis:
             file_base_name=file_base_name + "_by_line",
             output_directory_path=self.output_directory_path,
             suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
+            split_big_files=False,
         )
 
         return len(rows_as_list_dict)
@@ -494,5 +496,6 @@ class ArchiveAnalyzis:
             file_base_name=file_base_name,
             output_directory_path=output_directory_path,
             suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
+            split_big_files=False,
         )
         return len(rows_as_list_dict)

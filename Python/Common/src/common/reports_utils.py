@@ -69,7 +69,12 @@ class SuffixFileNameByDate(Enum):
 
 
 def save_rows_to_output_files(
-    rows_as_list_dict: List[Dict[str, Any]], file_base_name: str, output_directory_path: str, suffix_file_name_by_date: SuffixFileNameByDate = SuffixFileNameByDate.NO
+    rows_as_list_dict: List[Dict[str, Any]],
+    file_base_name: str,
+    output_directory_path: str,
+    suffix_file_name_by_date: SuffixFileNameByDate = SuffixFileNameByDate.NO,
+    split_big_files: bool = True,
+    chunk_size: int = 50000,
 ) -> bool:
 
     if suffix_file_name_by_date == SuffixFileNameByDate.DO_BOTH:
