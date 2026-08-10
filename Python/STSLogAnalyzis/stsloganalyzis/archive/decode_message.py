@@ -16,6 +16,7 @@ from stsloganalyzis.archive import (
     decode_zc_ats_tm_ao_sig_content,
     decode_zc_ats_tracking_status_vb_occupancy_content,
     decode_zc_ats_zc_ats_tracking_status_vb_te_content,
+    decode_zc_ats_mal_content,
 )
 from stsloganalyzis.common import hlf
 from stsloganalyzis.topology import (
@@ -110,7 +111,7 @@ class MessageDecoder:
     ) -> None:
         self.xml_message_decoder = xml_message_decoder
         self.action_set_content_decoder = action_set_content_decoder
-        self.zc_ats_mal_message_decoder = decode_product_topology_dependant_messages_content.ZcAtsMalMessageDecoder(railway_line=railway_line) if railway_line else None
+        self.zc_ats_mal_message_decoder = decode_zc_ats_mal_content.ZcAtsMalDecoder(railway_line=railway_line) if railway_line else None
         self.cc_ats_tracking_message_decoder = decode_product_topology_dependant_messages_content.CcAtsTrackingMessageDecoder(railway_line=railway_line) if railway_line else None
         self.zc_ats_tm_ao_sig_content_decoder = zc_ats_tm_ao_sig_content_decoder
         self.ats_cc_specific_remote_control_message_decoder = decode_next_specific_messages_content.AtsCcSpecificRemoteControlMessageDecoder(railway_line=railway_line) if railway_line else None
@@ -161,7 +162,7 @@ class MessageDecoder:
                 decoded = self.zc_ats_tracking_status_vb_occ_decoder.decode(decoded_message=decoded_message, equipment_name=equipment_name)
             elif decoded_message.message_number == decode_zc_ats_zc_ats_tracking_status_vb_te_content.ZC_ATS_TRACKING_STATUS_VB_TE_MESSAGE_ID and self.zc_ats_zc_ats_tracking_status_vb_te_decoder:
                 decoded = self.zc_ats_zc_ats_tracking_status_vb_te_decoder.decode(decoded_message=decoded_message, equipment_name=equipment_name)
-            elif decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID____DISABLED and self.zc_ats_mal_message_decoder:
+            elif decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID and self.zc_ats_mal_message_decoder:
                 decoded = self.zc_ats_mal_message_decoder.decode(decoded_message=decoded_message)
             elif decoded_message.message_number == decode_product_topology_dependant_messages_content.CC_ATS_TRACKING_MESSAGE_ID and self.cc_ats_tracking_message_decoder:
                 decoded = self.cc_ats_tracking_message_decoder.decode(decoded_message=decoded_message)
