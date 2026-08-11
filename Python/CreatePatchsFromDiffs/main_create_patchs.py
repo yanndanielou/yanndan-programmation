@@ -12,6 +12,9 @@ from pathlib import Path
 # r'D:\NEXT_PCC_FORM_2.1.0\NEXT_AutomaticTrainSupervision_Training_Simulator_2026_08_07_a_19h09 NEXT\Data'
 
 DEFAULT_RESULT_VALUE = r"D:\Temp"
+DEFAULT_PATH_1 = r"D:\NEXT_PCC_FORM_2.0.1\NEXT_AutomaticTrainSupervision_Training_Simulator_2026_07_10_a_22h42 NEXT\Data"
+DEFAULT_PATH_2 = r"D:\NEXT_PCC_FORM_2.1.0\NEXT_AutomaticTrainSupervision_Training_Simulator_2026_08_07_a_19h09 NEXT\Data"
+DEFAULT_FOLDER_TO_APPLY_PATCH = r"D:\NEXT\Data"
 
 
 def browse_directory(entry_var: tk.StringVar) -> None:
@@ -21,7 +24,7 @@ def browse_directory(entry_var: tk.StringVar) -> None:
         entry_var.set(path)
 
 
-@logger_config.stopwatch_decorator()
+@logger_config.stopwatch_decorator(inform_beginning=True)
 def get_all_files(base_path: str) -> set[str]:
     """Retourne un set de chemins relatifs de tous les fichiers sous base_path."""
     files = set()
@@ -33,15 +36,17 @@ def get_all_files(base_path: str) -> set[str]:
     return files
 
 
-@logger_config.stopwatch_decorator()
-def generate_patch(path1: str, path2: str, result_path: str, do_adds: bool, do_deletes: bool, do_modifications: bool) -> tuple[dict[str, int], str]:
+@logger_config.stopwatch_decorator(inform_beginning=True)
+def generate_patch(
+    folder_1_path: str, folder_2_path: str, result_path: str, folder_to_apply_patchs_path_instead_of_folder_2: str, do_adds: bool, do_deletes: bool, do_modifications: bool
+) -> tuple[dict[str, int], str]:
     """
     Compare path1 (cible) et path2 (source à transformer).
     Génère Apply_patchs.bat dans result_path.
     Le .bat, exécuté depuis path2, rend path2 identique à path1.
     """
-    files1 = get_all_files(path1)
-    files2 = get_all_files(path2)
+    files1 = get_all_files(folder_1_path)
+    files2 = get_all_files(folder_2_path)
 
     added_files = files1 - files2  # fichiers présents dans 1 mais pas dans 2
     deleted_files = files2 - files1  # fichiers présents dans 2 mais pas dans 1
@@ -54,12 +59,12 @@ def generate_patch(path1: str, path2: str, result_path: str, do_adds: bool, do_d
         "",
         f"REM ============================================================",
         f"REM  Apply_patchs.bat",
-        f'REM  Transforme le contenu de "{path2}"',
-        f'REM  pour le rendre identique à "{path1}"',
+        f'REM  Transforme le contenu de "{folder_2_path}"',
+        f'REM  pour le rendre identique à "{folder_1_path}"',
         f"REM ============================================================",
         "",
         "REM Ce script doit être exécuté depuis le répertoire cible (chemin 2)",
-        f'cd /d "{path2}"',
+        f'cd /d "{folder_2_path}"',
         "",
     ]
 
@@ -72,7 +77,7 @@ def generate_patch(path1: str, path2: str, result_path: str, do_adds: bool, do_d
         bat_lines.append("REM ========== FICHIERS À AJOUTER ==========")
         bat_lines.append("")
         for rel in sorted(added_files):
-            src = os.path.join(path1, rel)
+            src = os.path.join(folder_1_path, rel)
             dst_rel = rel
             dst_dir = os.path.dirname(dst_rel)
             stats["added"] += 1
@@ -115,19 +120,19 @@ def generate_patch(path1: str, path2: str, result_path: str, do_adds: bool, do_d
         bat_lines.append("REM ========== FICHIERS À MODIFIER ==========")
         bat_lines.append("")
         for rel in sorted(common_files):
-            file1 = os.path.join(path1, rel)
-            file2 = os.path.join(path2, rel)
+            file_1_full_path = os.path.join(folder_1_path, rel)
+            file_2_full_path = os.path.join(folder_2_path, rel)
 
             # Comparaison rapide
-            if filecmp.cmp(file1, file2, shallow=False):
+            if filecmp.cmp(file_1_full_path, file_2_full_path, shallow=False):
                 continue  # fichiers identiques
 
             # Tenter une comparaison texte ligne par ligne
             is_text = True
             try:
-                with open(file1, "r", encoding="utf-8", errors="strict") as f:
+                with open(file_1_full_path, "r", encoding="utf-8", errors="strict") as f:
                     lines1 = f.readlines()
-                with open(file2, "r", encoding="utf-8", errors="strict") as f:
+                with open(file_2_full_path, "r", encoding="utf-8", errors="strict") as f:
                     lines2 = f.readlines()
             except (UnicodeDecodeError, ValueError):
                 is_text = False
@@ -137,7 +142,7 @@ def generate_patch(path1: str, path2: str, result_path: str, do_adds: bool, do_d
             if not is_text:
                 # Fichier binaire : on copie simplement
                 bat_lines.append(f"REM --- Modification (binaire) : {rel} ---")
-                bat_lines.append(f'copy /Y "{file1}" "{rel}"')
+                bat_lines.append(f'copy /Y "{file_1_full_path}" "{rel}"')
                 bat_lines.append("")
                 continue
 
@@ -149,7 +154,8 @@ def generate_patch(path1: str, path2: str, result_path: str, do_adds: bool, do_d
             patch_script_name = rel.replace(os.sep, "_").replace(".", "_") + "_patch.bat"
             patch_script_path = os.path.join(result_path, patch_script_name)
 
-            bat_patch_lines = generate_powershell_patch(file1, file2, rel, lines1, lines2)
+            file_to_apply_patch = file_2_full_path.replace(folder_2_path, folder_to_apply_patchs_path_instead_of_folder_2) if folder_to_apply_patchs_path_instead_of_folder_2 else file_2_full_path
+            bat_patch_lines = generate_powershell_patch(file_1_full_path, file_to_apply_patch, rel, lines1, lines2)
             with open(patch_script_path, "w", encoding="utf-8") as patch_f:
                 patch_f.write("\n".join(bat_patch_lines))
 
@@ -175,20 +181,26 @@ def generate_patch(path1: str, path2: str, result_path: str, do_adds: bool, do_d
     return stats, bat_path
 
 
-@logger_config.stopwatch_decorator()
-def generate_powershell_patch(file1: str, file2: str, rel_path: str, lines_file_1: list[str], lines_file_2: list[str]) -> list[str]:
+@logger_config.stopwatch_decorator(inform_beginning=True)
+def generate_powershell_patch(
+    file_1_path: str,
+    file_to_apply_patch: str,
+    rel_path: str,
+    lines_file_1: list[str],
+    lines_file_2: list[str],
+) -> list[str]:
     """
     Compare les lignes de file1 et file2 puis génère un script .bat
     qui applique le patch final. Le script peut encapsuler du PowerShell
     lorsqu'une écriture plus contrôlée est nécessaire.
     """
-    logger_config.print_and_log_info(f"generate_powershell_patch between {file1} ({len(lines_file_1)} lines) and {file2} ({len(lines_file_2)} lines)")
+    logger_config.print_and_log_info(f"generate_powershell_patch between {file_1_path} ({len(lines_file_1)} lines) and {file_to_apply_patch} ({len(lines_file_2)} lines)")
     diff = difflib.SequenceMatcher(a=lines_file_2, b=lines_file_1)
     opcodes = diff.get_opcodes()
-    logger_config.print_and_log_info(f"{len(opcodes)} opcodes computed")
+    logger_config.print_and_log_info(f"{rel_path}: {len(opcodes)} opcodes computed")
 
     # Lecture du contenu final attendu (chemin 1)
-    with open(file1, "r", encoding="utf-8") as f:
+    with open(file_1_path, "r", encoding="utf-8") as f:
         expected_content = f.read()
 
     op_lines = [
@@ -216,28 +228,23 @@ def generate_powershell_patch(file1: str, file2: str, rel_path: str, lines_file_
             op_lines.append(f"REM DELETE  : {i1 + 1}-{i2}")
         elif tag == "insert":
             op_lines.append(f"REM INSERT  : {i1 + 1} -> {j1 + 1}-{j2}")
-            op_lines.append(f"echo ")
+            for k in range(i1 + 1, j2):
+                op_lines.append(f'echo  "{lines_file_1[k].strip()}" >> "{file_to_apply_patch}"')
 
-    op_lines.extend(expected_content.splitlines())
-
-    op_lines.extend(
-        [
-            '\'@; [System.IO.File]::WriteAllText($target, $expected, [System.Text.Encoding]::UTF8); Write-Host "Patch appliqué : $target" " "%TARGET%"',
-            "",
-            "exit /b 0",
-        ]
-    )
-
-    logger_config.print_and_log_info(f"{len(op_lines)} patch lines created")
+    logger_config.print_and_log_info(f"{rel_path}: {len(op_lines)} patch lines created")
     return op_lines
 
 
-@logger_config.stopwatch_decorator()
-def run_comparison(path1_var: tk.StringVar, path2_var: tk.StringVar, result_var: tk.StringVar, add_var: tk.BooleanVar, del_var: tk.BooleanVar, mod_var: tk.BooleanVar) -> None:
+@logger_config.stopwatch_decorator(inform_beginning=True)
+def run_comparison(
+    path1_var: tk.StringVar, path2_var: tk.StringVar, folder_to_apply_patchs_var: tk.StringVar, result_var: tk.StringVar, add_var: tk.BooleanVar, del_var: tk.BooleanVar, mod_var: tk.BooleanVar
+) -> None:
     """Callback du bouton GO."""
     path1 = path1_var.get().strip()
     path2 = path2_var.get().strip()
     result_path = result_var.get().strip()
+
+    folder_to_apply_patchs_path = folder_to_apply_patchs_var.get().strip()
 
     # Validations
     if not path1 or not os.path.isdir(path1):
@@ -259,7 +266,7 @@ def run_comparison(path1_var: tk.StringVar, path2_var: tk.StringVar, result_var:
         return
 
     try:
-        stats, bat_path = generate_patch(path1, path2, result_path, do_adds, do_deletes, do_mods)
+        stats, bat_path = generate_patch(path1, path2, result_path, folder_to_apply_patchs_path, do_adds, do_deletes, do_mods)
         msg = (
             f"Patch généré avec succès !\n\n"
             f"  Ajouts       : {stats['added']} fichier(s)\n"
@@ -272,7 +279,7 @@ def run_comparison(path1_var: tk.StringVar, path2_var: tk.StringVar, result_var:
         messagebox.showerror("Erreur", f"Une erreur est survenue :\n{e}")
 
 
-@logger_config.stopwatch_decorator()
+@logger_config.stopwatch_decorator(inform_beginning=True)
 def create_gui() -> None:
     """Crée la fenêtre principale."""
     root = tk.Tk()
@@ -280,8 +287,9 @@ def create_gui() -> None:
     root.resizable(False, False)
 
     # Variables
-    path1_var = tk.StringVar(value=r"D:\NEXT_PCC_FORM_2.0.1\NEXT_AutomaticTrainSupervision_Training_Simulator_2026_07_10_a_22h42 NEXT\Data")
-    path2_var = tk.StringVar(value=r"D:\NEXT_PCC_FORM_2.1.0\NEXT_AutomaticTrainSupervision_Training_Simulator_2026_08_07_a_19h09 NEXT\Data")
+    path_1_var = tk.StringVar(value=DEFAULT_PATH_1)
+    path_2_var = tk.StringVar(value=DEFAULT_PATH_2)
+    folder_to_apply_patchs_var = tk.StringVar(value=DEFAULT_FOLDER_TO_APPLY_PATCH)
     result_var = tk.StringVar(value=DEFAULT_RESULT_VALUE)
     add_var = tk.BooleanVar(value=True)
     del_var = tk.BooleanVar(value=True)
@@ -295,22 +303,29 @@ def create_gui() -> None:
     frame1 = tk.LabelFrame(root, text="Chemin 1 (référence / cible)", padx=10, pady=5)
     frame1.pack(fill="x", **pad)
 
-    tk.Entry(frame1, textvariable=path1_var, width=entry_width).pack(side="left", padx=(0, 5))
-    tk.Button(frame1, text="Parcourir…", command=lambda: browse_directory(path1_var)).pack(side="left")
+    tk.Entry(frame1, textvariable=path_1_var, width=entry_width).pack(side="left", padx=(0, 5))
+    tk.Button(frame1, text="Parcourir…", command=lambda: browse_directory(path_1_var)).pack(side="left")
 
     # ---- Chemin 2 ----
     frame2 = tk.LabelFrame(root, text="Chemin 2 (source à transformer)", padx=10, pady=5)
     frame2.pack(fill="x", **pad)
 
-    tk.Entry(frame2, textvariable=path2_var, width=entry_width).pack(side="left", padx=(0, 5))
-    tk.Button(frame2, text="Parcourir…", command=lambda: browse_directory(path2_var)).pack(side="left")
+    tk.Entry(frame2, textvariable=path_2_var, width=entry_width).pack(side="left", padx=(0, 5))
+    tk.Button(frame2, text="Parcourir…", command=lambda: browse_directory(path_2_var)).pack(side="left")
+
+    # ---- folder_to_apply_patchs ----
+    frame_apply = tk.LabelFrame(root, text="Chemin pour application des patchs", padx=10, pady=5)
+    frame_apply.pack(fill="x", **pad)
+
+    tk.Entry(frame_apply, textvariable=folder_to_apply_patchs_var, width=entry_width).pack(side="left", padx=(0, 5))
+    tk.Button(frame_apply, text="Parcourir…", command=lambda: browse_directory(folder_to_apply_patchs_var)).pack(side="left")
 
     # ---- Chemin résultats ----
-    frame3 = tk.LabelFrame(root, text="Chemin résultats", padx=10, pady=5)
-    frame3.pack(fill="x", **pad)
+    frame_results = tk.LabelFrame(root, text="Chemin résultats", padx=10, pady=5)
+    frame_results.pack(fill="x", **pad)
 
-    tk.Entry(frame3, textvariable=result_var, width=entry_width).pack(side="left", padx=(0, 5))
-    tk.Button(frame3, text="Parcourir…", command=lambda: browse_directory(result_var)).pack(side="left")
+    tk.Entry(frame_results, textvariable=result_var, width=entry_width).pack(side="left", padx=(0, 5))
+    tk.Button(frame_results, text="Parcourir…", command=lambda: browse_directory(result_var)).pack(side="left")
 
     # ---- Options ----
     frame_opts = tk.LabelFrame(root, text="Options", padx=10, pady=5)
@@ -322,7 +337,14 @@ def create_gui() -> None:
 
     # ---- Bouton GO ----
     tk.Button(
-        root, text="GO", font=("Arial", 14, "bold"), bg="#009999", fg="white", width=20, height=2, command=lambda: run_comparison(path1_var, path2_var, result_var, add_var, del_var, mod_var)
+        root,
+        text="GO",
+        font=("Arial", 14, "bold"),
+        bg="#009999",
+        fg="white",
+        width=20,
+        height=2,
+        command=lambda: run_comparison(path_1_var, path_2_var, folder_to_apply_patchs_var, result_var, add_var, del_var, mod_var),
     ).pack(pady=15)
 
     root.mainloop()
