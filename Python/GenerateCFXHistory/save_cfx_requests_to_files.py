@@ -52,6 +52,8 @@ NEXT_LINKS_CFX_QUERY_ID = 69467605
 EXCEL_FILE_EXTENSION = ".xlsx"
 TEXT_FILE_EXTENSION = ".txt"
 
+DISABLE_ALL_SCREENSHOTS = True
+
 
 class FilterFieldType(Enum):
     EQUAL_TO = "Egal à"
@@ -307,7 +309,8 @@ INTERESTED_IN_PROJECTS_NAMES: List[str] = ["FR_NEXTEO", "ATSP"]
 def stopwatch_with_label_and_surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, screenshots_directory_path: str) -> Generator[float, None, None]:
     """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
     https://www.docstring.fr/glossaire/with/"""
-    remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/before {label}.png")
+    if not DISABLE_ALL_SCREENSHOTS:
+        remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/before {label}.png")
 
     previous_stack = inspect.stack(0)[2]
     file_name = previous_stack.filename
@@ -324,7 +327,8 @@ def stopwatch_with_label_and_surround_with_screenshots(label: str, remote_web_dr
     debut = time.perf_counter()
     yield time.perf_counter() - debut
     fin = time.perf_counter()
-    remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/after {label}.png")
+    if not DISABLE_ALL_SCREENSHOTS:
+        remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/after {label}.png")
 
     duree = fin - debut
     to_print_and_log = f"{label} Elapsed: {duree:.2f} seconds"
@@ -339,9 +343,11 @@ def stopwatch_with_label_and_surround_with_screenshots(label: str, remote_web_dr
 
 @contextmanager
 def surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, screenshots_directory_path: str) -> Generator[float, None, None]:
-    remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/before {label}.png")
+    if not DISABLE_ALL_SCREENSHOTS:
+        remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/before {label}.png")
     yield 0.0
-    remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/after {label}.png")
+    if not DISABLE_ALL_SCREENSHOTS:
+        remote_web_driver.get_screenshot_as_file(f"{screenshots_directory_path}/after {label}.png")
 
 
 @dataclass
@@ -365,11 +371,13 @@ class SaveCfxRequestMultipagesResultsApplication:
     def stopwatch_with_label_and_surround_with_screenshots(self, label: str) -> Generator[float, None, None]:
         """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
         https://www.docstring.fr/glossaire/with/"""
-        self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/before {label}.png")
+        if not DISABLE_ALL_SCREENSHOTS:
+            self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/before {label}.png")
         debut = time.perf_counter()
         yield time.perf_counter() - debut
         fin = time.perf_counter()
-        self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/after {label}.png")
+        if not DISABLE_ALL_SCREENSHOTS:
+            self.driver.get_screenshot_as_file(f"{self.screenshots_output_relative_path}/after {label}.png")
 
         duree = fin - debut
         to_print_and_log = f"{label} Elapsed: {duree:.2f} seconds"
@@ -594,7 +602,8 @@ class SaveCfxRequestMultipagesResultsApplication:
             self.number_of_exceptions_caught += 1
             logger_config.print_and_log_exception(e)
             logger_config.print_and_log_error(f"{self.number_of_exceptions_caught}th Exception  {self.number_of_exceptions_caught}  number_of_retry_if_failure:{number_of_retry_if_failure}")
-            self.driver.get_screenshot_as_file(f"{self.errors_output_relative_path}/{self.number_of_exceptions_caught} th Exception caught.png")
+            if not DISABLE_ALL_SCREENSHOTS:
+                self.driver.get_screenshot_as_file(f"{self.errors_output_relative_path}/{self.number_of_exceptions_caught} th Exception caught.png")
 
             for i in range(1, 15):
                 with stopwatch_with_label_and_surround_with_screenshots(
@@ -602,7 +611,8 @@ class SaveCfxRequestMultipagesResultsApplication:
                 ):
                     time.sleep(i)
 
-            self.driver.get_screenshot_as_file(f"{self.errors_output_relative_path}/{self.number_of_exceptions_caught} th Exception caught after post mortem delay.png")
+            if not DISABLE_ALL_SCREENSHOTS:
+                self.driver.get_screenshot_as_file(f"{self.errors_output_relative_path}/{self.number_of_exceptions_caught} th Exception caught after post mortem delay.png")
 
             with logger_config.stopwatch_with_label("Reset_driver :"):
                 self.reset_driver()
