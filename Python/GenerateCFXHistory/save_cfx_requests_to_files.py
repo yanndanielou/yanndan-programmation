@@ -605,11 +605,12 @@ class SaveCfxRequestMultipagesResultsApplication:
             if not DISABLE_ALL_SCREENSHOTS:
                 self.driver.get_screenshot_as_file(f"{self.errors_output_relative_path}/{self.number_of_exceptions_caught} th Exception caught.png")
 
-            for i in range(1, 15):
-                with stopwatch_with_label_and_surround_with_screenshots(
-                    label=f"Post mortem {self.number_of_exceptions_caught}th Exception delay {i}", remote_web_driver=self.driver, screenshots_directory_path=self.errors_output_relative_path
-                ):
-                    time.sleep(i)
+            if not DISABLE_ALL_SCREENSHOTS:
+                for i in range(1, 15):
+                    with stopwatch_with_label_and_surround_with_screenshots(
+                        label=f"Post mortem {self.number_of_exceptions_caught}th Exception delay {i}", remote_web_driver=self.driver, screenshots_directory_path=self.errors_output_relative_path
+                    ):
+                        time.sleep(i)
 
             if not DISABLE_ALL_SCREENSHOTS:
                 self.driver.get_screenshot_as_file(f"{self.errors_output_relative_path}/{self.number_of_exceptions_caught} th Exception caught after post mortem delay.png")
