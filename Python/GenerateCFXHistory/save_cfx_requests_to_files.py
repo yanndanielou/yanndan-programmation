@@ -17,7 +17,7 @@ from common import download_utils, file_utils, web_driver_utils
 from logger import logger_config
 
 # Third Party
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.common.by import By
