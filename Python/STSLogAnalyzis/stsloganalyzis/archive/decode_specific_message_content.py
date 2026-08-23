@@ -24,7 +24,7 @@ class SpecificMessageContentDecoded:
     def _get_track_circuit_and_tracking_block_info(self, mal_seg_id: int, mal_offset: int, railway_line: line_topology.Line, decoded_message: "decode_message.DecodedMessage") -> Tuple[str, str]:
         location_is_defined = mal_seg_id > 0
         if location_is_defined:
-            tracking_block = railway_line.get_tracking_block_by_segment_and_abscissa(segment=mal_seg_id, abscissa=mal_offset)
+            tracking_block = railway_line.get_tracking_block_by_segment_and_abscissa(segment=mal_seg_id, abscissa_in_cm=mal_offset)
             logger_config.print_and_log_warning_if(not tracking_block, f"{decoded_message.message_number}, no TB defined at {mal_seg_id}/{mal_offset}")
             tracking_block_id = tracking_block.identifier if tracking_block else f"No TB defined at {mal_seg_id}/{mal_offset}"
             track_circuit_id = tracking_block.track_circuit_id if tracking_block else f"No TB thus TC defined at {mal_seg_id}/{mal_offset}"
