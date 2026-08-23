@@ -1,15 +1,9 @@
 from logger import logger_config
 
-from stsloganalyzis.next_data import (
-    next_ats_data,
-)
 from stsloganalyzis.atc import atc_logs, simech_res
 from stsloganalyzis.common import common_filters
 
-from common import file_utils, file_name_utils
-
-import cProfile, pstats, io
-from pstats import SortKey
+from common import file_name_utils
 
 OUTPUT_DIRECTORY = "output"
 
@@ -17,7 +11,10 @@ OUTPUT_DIRECTORY = "output"
 def main() -> None:
     with logger_config.application_logger():
 
-        all_files = [r"C:\Users\fr232487\DOWNLO~1\PAD_61~1.TAR\PAD_61~1.1_O\PAD_61~1.RES"]
+        all_files = [
+            r"D:\temp\Panne_VCC_US_CPA_A_Manu_RL3A01_20260625.res",
+            r"C:\Users\fr232487\DOWNLO~1\PAD_61~1.TAR\PAD_61~1.1_O\PAD_61~1.RES",
+        ]
 
         for simech_res_file in all_files:
 
@@ -37,7 +34,7 @@ def main() -> None:
                             "CDECENIE",
                             "TEMPS_AS",
                             "HLF",
-                            "STAB_CPT1",
+                            "STAB_CPT",
                         ],
                     )
                 )
