@@ -279,25 +279,25 @@ class ExactLocation:
         return str(self)
 
     def get_tracking_block_id_none_if_no(self) -> Optional[str]:
-        tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa=self.abscissa)
+        tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa_in_cm=self.abscissa)
         if tracking_block:
             return tracking_block.identifier
         return None
 
     def get_tracking_block_id_string_if_no(self) -> str:
-        tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa=self.abscissa)
+        tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa_in_cm=self.abscissa)
         if tracking_block:
             return tracking_block.identifier
         return f"No TB defined at {self.segment.identifier}/{self.abscissa}"
 
     def get_track_circuit_id_none_if_no(self) -> Optional[str]:
-        tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa=self.abscissa)
+        tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa_in_cm=self.abscissa)
         if tracking_block:
             return tracking_block.track_circuit_id
         return None
 
     def get_track_circuit_id_string_if_no(self) -> str:
-        tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa=self.abscissa)
+        tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa_in_cm=self.abscissa)
         if tracking_block:
             return tracking_block.track_circuit_id
         return f"No TB thus TC defined at {self.segment.identifier}/{self.abscissa}"
@@ -526,30 +526,30 @@ class Line:
     def get_tracking_block_by_segment_and_abscissa(
         self,
         segment: Segment | str | int,
-        abscissa: int,
+        abscissa_in_cm: int,
     ) -> Optional[TrackingBlock]:
 
         segment = self.get_segment(segment)
-        matches = [relation for relation in self.tracking_block_on_segments if relation.segment == segment and relation.abs_begin <= abscissa < relation.abs_end]
+        matches = [relation for relation in self.tracking_block_on_segments if relation.segment == segment and relation.abs_begin <= abscissa_in_cm < relation.abs_end]
 
         if not matches:
-            if (segment, abscissa) not in self.occurences_of_not_found_tracking_block_in_segment:
-                self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)] = 0
+            if (segment, abscissa_in_cm) not in self.occurences_of_not_found_tracking_block_in_segment:
+                self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa_in_cm)] = 0
                 logger_config.print_and_log_error(
                     f"Aucun TrackingBlockOnSegment trouvé pour le segment '{segment}' "
-                    f"et l'abscisse {abscissa}. {self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)]} first occurence"
+                    f"et l'abscisse {abscissa_in_cm}. {self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa_in_cm)]} first occurence"
                 )
-            self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)] += 1
+            self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa_in_cm)] += 1
 
             logger_config.print_and_log_warning(
                 f"Aucun TrackingBlockOnSegment trouvé pour le segment '{segment}' "
-                f"et l'abscisse {abscissa}. {self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa)]} nth occurence"
+                f"et l'abscisse {abscissa_in_cm}. {self.occurences_of_not_found_tracking_block_in_segment[(segment, abscissa_in_cm)]} nth occurence"
             )
             return None
 
         if len(matches) > 1:
             match_ids = ", ".join(relation.tracking_block.identifier for relation in matches)
-            raise ValueError(f"Plusieurs TrackingBlockOnSegment correspondent au segment '{segment}' " f"et à l'abscisse {abscissa} : {match_ids}.")
+            raise ValueError(f"Plusieurs TrackingBlockOnSegment correspondent au segment '{segment}' " f"et à l'abscisse {abscissa_in_cm} : {match_ids}.")
 
         return matches[0].tracking_block
 
