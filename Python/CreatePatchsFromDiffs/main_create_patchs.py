@@ -12,8 +12,8 @@ from pathlib import Path
 # r'D:\NEXT_PCC_FORM_2.1.0\NEXT_AutomaticTrainSupervision_Training_Simulator_2026_08_07_a_19h09 NEXT\Data'
 
 DEFAULT_RESULT_VALUE = r"D:\Temp"
-DEFAULT_PATH_1 = r"D:\NEXT_PCC_FORM_2.0.1\NEXT_AutomaticTrainSupervision_Training_Simulator_2026_07_10_a_22h42 NEXT\Data"
-DEFAULT_PATH_2 = r"D:\NEXT_PCC_FORM_2.1.0\NEXT_AutomaticTrainSupervision_Training_Simulator_2026_08_07_a_19h09 NEXT\Data"
+DEFAULT_PATH_1 = r"D:\NEXT_PCC_FORM_2.1.0\NEXT_AutomaticTrainSupervision_Training_Simulator_2026_08_07_a_19h09 NEXT\Data\Csv"
+DEFAULT_PATH_2 = r"D:\NEXT_PCC_FORM_2.0.1\NEXT_AutomaticTrainSupervision_Training_Simulator_2026_07_10_a_22h42 NEXT\Data\Csv"
 DEFAULT_FOLDER_TO_APPLY_PATCH = r"D:\NEXT\Data"
 
 
@@ -36,14 +36,43 @@ def get_all_files(base_path: str) -> set[str]:
     return files
 
 
+def _get_child_directory(rel_path: str) -> str:
+    """Retourne le premier sous-répertoire de la cible pour regrouper les diffs."""
+    norm_path = rel_path.replace("/", os.sep).replace("\\", os.sep)
+    parent = os.path.dirname(norm_path)
+    if not parent or parent == ".":
+        return "root"
+    first_child = parent.split(os.sep)[0]
+    return first_child or "root"
+
+
+def _safe_batch_name(value: str) -> str:
+    """Nettoie un nom pour un fichier .bat."""
+    safe = (value or "root").replace("/", "_").replace("\\", "_").replace(" ", "_")
+    safe = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in safe)
+    return safe or "root"
+
+
 @logger_config.stopwatch_decorator(inform_beginning=True)
 def generate_patch(
-    folder_1_path: str, folder_2_path: str, result_path: str, folder_to_apply_patchs_path_instead_of_folder_2: str, do_adds: bool, do_deletes: bool, do_modifications: bool
+    folder_1_path: str,
+    folder_2_path: str,
+    result_path: str,
+    folder_to_apply_patchs_path_instead_of_folder_2: str,
+    do_added_files: bool,
+    do_deleted_files: bool,
+    do_modified_lines: bool,
+    do_added_line_in_file: bool,
+    do_modified_line_in_file: bool,
+    do_deleted_line_in_file: bool,
 ) -> tuple[dict[str, int], str]:
     """
     Compare path1 (cible) et path2 (source à transformer).
     Génère Apply_patchs.bat dans result_path.
     Le .bat, exécuté depuis path2, rend path2 identique à path1.
+
+    En plus des scripts par fichier, génère un script .bat par sous-répertoire
+    enfant contenant l'ensemble des diff du dossier concerné.
     """
     files1 = get_all_files(folder_1_path)
     files2 = get_all_files(folder_2_path)
@@ -73,7 +102,7 @@ def generate_patch(
     # ----------------------------------------------------------------
     # 1. AJOUTS : fichiers qui existent dans path1 mais pas dans path2
     # ----------------------------------------------------------------
-    if do_adds:
+    if do_added_files:
         bat_lines.append("REM ========== FICHIERS À AJOUTER ==========")
         bat_lines.append("")
         for rel in sorted(added_files):
@@ -91,11 +120,12 @@ def generate_patch(
     # ----------------------------------------------------------------
     # 2. SUPPRESSIONS : fichiers dans path2 mais pas dans path1
     # ----------------------------------------------------------------
-    if do_deletes:
+    if do_deleted_files:
         bat_lines.append("REM ========== FICHIERS À SUPPRIMER ==========")
         bat_lines.append("")
         for rel in sorted(deleted_files):
             stats["deleted"] += 1
+            register_group(rel, "deleted")
             bat_lines.append(f"REM --- Suppression : {rel} ---")
             bat_lines.append(f'if exist "{rel}" del /F /Q "{rel}"')
             bat_lines.append("")
@@ -116,7 +146,7 @@ def generate_patch(
     # ----------------------------------------------------------------
     # 3. MODIFICATIONS : fichiers communs dont le contenu diffère
     # ----------------------------------------------------------------
-    if do_modifications:
+    if do_modified_lines:
         bat_lines.append("REM ========== FICHIERS À MODIFIER ==========")
         bat_lines.append("")
         for rel in sorted(common_files):
@@ -127,7 +157,6 @@ def generate_patch(
             if filecmp.cmp(file_1_full_path, file_2_full_path, shallow=False):
                 continue  # fichiers identiques
 
-            # Tenter une comparaison texte ligne par ligne
             is_text = True
             try:
                 with open(file_1_full_path, "r", encoding="utf-8", errors="strict") as f:
@@ -140,22 +169,26 @@ def generate_patch(
             stats["modified"] += 1
 
             if not is_text:
-                # Fichier binaire : on copie simplement
                 bat_lines.append(f"REM --- Modification (binaire) : {rel} ---")
                 bat_lines.append(f'copy /Y "{file_1_full_path}" "{rel}"')
                 bat_lines.append("")
                 continue
 
-            # ---- Fichier texte : générer un patch granulaire ----
             bat_lines.append(f"REM --- Modification (texte) : {rel} ---")
-
-            # Générer un petit script .bat qui compare ligne par ligne les
-            # contenus et applique le patch final avec un fallback PowerShell.
             patch_script_name = rel.replace(os.sep, "_").replace(".", "_") + "_patch.bat"
             patch_script_path = os.path.join(result_path, patch_script_name)
 
             file_to_apply_patch = file_2_full_path.replace(folder_2_path, folder_to_apply_patchs_path_instead_of_folder_2) if folder_to_apply_patchs_path_instead_of_folder_2 else file_2_full_path
-            bat_patch_lines = generate_powershell_patch(file_1_full_path, file_to_apply_patch, rel, lines1, lines2)
+            bat_patch_lines = generate_powershell_patch(
+                file_1_full_path,
+                file_to_apply_patch,
+                rel,
+                lines1,
+                lines2,
+                do_added_line_in_file,
+                do_modified_line_in_file,
+                do_deleted_line_in_file,
+            )
             with open(patch_script_path, "w", encoding="utf-8") as patch_f:
                 patch_f.write("\n".join(bat_patch_lines))
 
@@ -188,6 +221,9 @@ def generate_powershell_patch(
     rel_path: str,
     lines_file_1: list[str],
     lines_file_2: list[str],
+    do_added_line_in_file: bool,
+    do_modified_line_in_file: bool,
+    do_deleted_line_in_file: bool,
 ) -> list[str]:
     """
     Compare les lignes de file1 et file2 puis génère un script .bat
@@ -199,11 +235,7 @@ def generate_powershell_patch(
     opcodes = diff.get_opcodes()
     logger_config.print_and_log_info(f"{rel_path}: {len(opcodes)} opcodes computed")
 
-    # Lecture du contenu final attendu (chemin 1)
-    with open(file_1_path, "r", encoding="utf-8") as f:
-        expected_content = f.read()
-
-    op_lines = [
+    op_lines_intro = [
         "@echo off",
         "setlocal EnableExtensions EnableDelayedExpansion",
         "",
@@ -218,26 +250,37 @@ def generate_powershell_patch(
         "REM Comparaison ligne par ligne entre file1 et file2",
     ]
 
+    op_lines_changes: list = []
     for tag, i1, i2, j1, j2 in opcodes:
         if tag == "equal":
             continue
-        if tag == "replace":
-            op_lines.append(f"REM REPLACE : {i1 + 1}-{i2} -> {j1 + 1}-{j2}")
-            pass
-        elif tag == "delete":
-            op_lines.append(f"REM DELETE  : {i1 + 1}-{i2}")
-        elif tag == "insert":
-            op_lines.append(f"REM INSERT  : {i1 + 1} -> {j1 + 1}-{j2}")
-            for k in range(i1 + 1, j2):
-                op_lines.append(f'echo  "{lines_file_1[k].strip()}" >> "{file_to_apply_patch}"')
+        if tag == "replace" and do_modified_line_in_file:
+            op_lines_changes.append(f"REM REPLACE : {i1 + 1}-{i2} -> {j1 + 1}-{j2}")
+        elif tag == "delete" and do_deleted_line_in_file:
+            op_lines_changes.append(f"REM DELETE  : {i1 + 1}-{i2}")
+        elif tag == "insert" and do_added_line_in_file:
+            op_lines_changes.append(f"REM INSERT  : {j1} to {j2}")
+            # logger_config.print_and_log_info(f"INSERT: i1:{i1} i2:{i2} j1:{j1} j2:{j2}")
 
-    logger_config.print_and_log_info(f"{rel_path}: {len(op_lines)} patch lines created")
-    return op_lines
+            for k in range(j1, j2):
+                line_to_add = lines_file_1[k].strip()
+                op_lines_changes.append(f'echo  "{line_to_add}" >> "{file_to_apply_patch}"')
+
+    logger_config.print_and_log_info(f"{rel_path}: {len(op_lines_changes)} patch lines created")
+    return op_lines_intro + op_lines_changes if op_lines_changes else []
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True)
 def run_comparison(
-    path1_var: tk.StringVar, path2_var: tk.StringVar, folder_to_apply_patchs_var: tk.StringVar, result_var: tk.StringVar, add_var: tk.BooleanVar, del_var: tk.BooleanVar, mod_var: tk.BooleanVar
+    path1_var: tk.StringVar,
+    path2_var: tk.StringVar,
+    folder_to_apply_patchs_var: tk.StringVar,
+    result_var: tk.StringVar,
+    added_files_files_var: tk.BooleanVar,
+    deleted_files_var: tk.BooleanVar,
+    added_line_in_file_var: tk.BooleanVar,
+    modified_line_in_file_var: tk.BooleanVar,
+    deleted_line_in_file_var: tk.BooleanVar,
 ) -> None:
     """Callback du bouton GO."""
     path1 = path1_var.get().strip()
@@ -245,6 +288,8 @@ def run_comparison(
     result_path = result_var.get().strip()
 
     folder_to_apply_patchs_path = folder_to_apply_patchs_var.get().strip()
+
+    logger_config.print_and_log_info(f"run_comparison {path1_var.get()}")
 
     # Validations
     if not path1 or not os.path.isdir(path1):
@@ -257,16 +302,30 @@ def run_comparison(
         messagebox.showerror("Erreur", "Le chemin résultats n'est pas un répertoire valide.")
         return
 
-    do_adds = add_var.get()
-    do_deletes = del_var.get()
-    do_mods = mod_var.get()
+    do_added_files = added_files_files_var.get()
+    do_deleted_files = deleted_files_var.get()
+    do_added_line_in_file = added_line_in_file_var.get()
+    do_modified_line_in_file = modified_line_in_file_var.get()
+    do_deleted_line_in_file = deleted_line_in_file_var.get()
+    do_modified_lines = do_added_line_in_file or do_modified_line_in_file or do_deleted_line_in_file
 
-    if not do_adds and not do_deletes and not do_mods:
+    if not do_added_files and not do_deleted_files and not do_modified_lines:
         messagebox.showwarning("Attention", "Veuillez cocher au moins une option " "(Ajouts, Suppressions ou Modifications).")
         return
 
     try:
-        stats, bat_path = generate_patch(path1, path2, result_path, folder_to_apply_patchs_path, do_adds, do_deletes, do_mods)
+        stats, bat_path = generate_patch(
+            path1,
+            path2,
+            result_path,
+            folder_to_apply_patchs_path,
+            do_added_files,
+            do_deleted_files,
+            do_modified_lines,
+            do_added_line_in_file,
+            do_modified_line_in_file,
+            do_deleted_line_in_file,
+        )
         msg = (
             f"Patch généré avec succès !\n\n"
             f"  Ajouts       : {stats['added']} fichier(s)\n"
@@ -291,9 +350,11 @@ def create_gui() -> None:
     path_2_var = tk.StringVar(value=DEFAULT_PATH_2)
     folder_to_apply_patchs_var = tk.StringVar(value=DEFAULT_FOLDER_TO_APPLY_PATCH)
     result_var = tk.StringVar(value=DEFAULT_RESULT_VALUE)
-    add_var = tk.BooleanVar(value=True)
-    del_var = tk.BooleanVar(value=True)
-    mod_var = tk.BooleanVar(value=True)
+    add_files_var = tk.BooleanVar(value=False)
+    del_files_var = tk.BooleanVar(value=False)
+    added_line_in_file_var = tk.BooleanVar(value=True)
+    modified_line_in_file_var = tk.BooleanVar(value=False)
+    deleted_line_in_file_var = tk.BooleanVar(value=False)
 
     # Style
     pad = {"padx": 10, "pady": 5}
@@ -331,9 +392,11 @@ def create_gui() -> None:
     frame_opts = tk.LabelFrame(root, text="Options", padx=10, pady=5)
     frame_opts.pack(fill="x", **pad)
 
-    tk.Checkbutton(frame_opts, text="Ajouts", variable=add_var).pack(side="left", padx=10)
-    tk.Checkbutton(frame_opts, text="Suppressions", variable=del_var).pack(side="left", padx=10)
-    tk.Checkbutton(frame_opts, text="Modifications", variable=mod_var).pack(side="left", padx=10)
+    tk.Checkbutton(frame_opts, text="Ajouts fichiers", variable=add_files_var).pack(side="left", padx=10)
+    tk.Checkbutton(frame_opts, text="Suppressions fichiers", variable=del_files_var).pack(side="left", padx=10)
+    tk.Checkbutton(frame_opts, text="Modifications fichiers: lignes ajoutées", variable=added_line_in_file_var).pack(side="left", padx=10)
+    tk.Checkbutton(frame_opts, text="Modifications fichiers: lignes modifiées", variable=modified_line_in_file_var).pack(side="left", padx=10)
+    tk.Checkbutton(frame_opts, text="Modifications fichiers: lignes supprimées", variable=deleted_line_in_file_var).pack(side="left", padx=10)
 
     # ---- Bouton GO ----
     tk.Button(
@@ -344,7 +407,17 @@ def create_gui() -> None:
         fg="white",
         width=20,
         height=2,
-        command=lambda: run_comparison(path_1_var, path_2_var, folder_to_apply_patchs_var, result_var, add_var, del_var, mod_var),
+        command=lambda: run_comparison(
+            path_1_var,
+            path_2_var,
+            folder_to_apply_patchs_var,
+            result_var,
+            add_files_var,
+            del_files_var,
+            added_line_in_file_var,
+            modified_line_in_file_var,
+            deleted_line_in_file_var,
+        ),
     ).pack(pady=15)
 
     root.mainloop()
