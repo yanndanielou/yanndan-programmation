@@ -1,4 +1,5 @@
 import csv
+import numpy
 from enum import Enum
 import inspect
 import textwrap
@@ -97,11 +98,21 @@ def save_rows_to_output_files(
             try:
                 if len(rows_as_list_dict) < EXCEL_LIMIT_NUMBER_OF_LINES - 1:
                     with logger_config.stopwatch_with_label(f"Create {file_path_without_suffix}.xlsx", inform_beginning=True, monitor_ram_usage=True):
-                        pandas.DataFrame(rows_as_list_dict).to_excel(f"{file_path_without_suffix}.xlsx", index=False)
+                        try:
+                            pandas.DataFrame(rows_as_list_dict).to_excel(f"{file_path_without_suffix}.xlsx", index=False)
+                        except numpy._core._exceptions._ArrayMemoryError as arr_err:
+                            logger_config.print_and_log_exception(arr_err)
                 with logger_config.stopwatch_with_label(f"Create {file_path_without_suffix}.csv", inform_beginning=True, monitor_ram_usage=True):
-                    pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.csv", index=False, sep=";")
+                    try:
+                        pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.csv", index=False, sep=";")
+                    except numpy._core._exceptions._ArrayMemoryError as arr_err:
+                        logger_config.print_and_log_exception(arr_err)
+
                 with logger_config.stopwatch_with_label(f"Create {file_path_without_suffix}.txt", inform_beginning=True, monitor_ram_usage=True):
-                    pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.txt", index=False, sep="\t")
+                    try:
+                        pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.txt", index=False, sep="\t")
+                    except numpy._core._exceptions._ArrayMemoryError as arr_err:
+                        logger_config.print_and_log_exception(arr_err)
                 # _write_xlsx_file(rows_as_list_dict, f"{file_path_without_suffix}.xlsx")
                 # _write_delimited_file(rows_as_list_dict, f"{file_path_without_suffix}.csv", delimiter=",")
                 # _write_delimited_file(rows_as_list_dict, f"{file_path_without_suffix}.txt", delimiter="\t")
