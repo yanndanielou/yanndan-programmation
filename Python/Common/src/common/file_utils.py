@@ -65,6 +65,17 @@ def create_folder_if_not_exist(directory_path: str) -> bool:
         return False
 
 
+def open_text_file_and_get_read_lines(file_full_path: str) -> list[str] | None:
+    try:
+        with open(file_full_path, "r", encoding="utf-8", errors="strict") as f:
+            return f.readlines()
+    except (UnicodeDecodeError, ValueError):
+        with open(file_full_path, "r", encoding="ansi", errors="strict") as f:
+            return f.readlines()
+
+    return None
+
+
 def get_files_by_directory_and_file_name_mask(
     directory_path: str,
     filename_pattern: str = "*",
