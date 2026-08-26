@@ -404,7 +404,8 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
 
                 # Obtenir toutes les valeurs de la première ligne
                 headers_found_in_excel: List[str] = sht.range("A1").expand("right").value
-                logger_config.print_and_log_info(f"{len(headers_found_in_excel)} headers:{headers_found_in_excel}")
+                logger_config.print_and_log_info(f"{len(headers_found_in_excel)} headers:{headers_found_in_excel[:5]}...")
+                logger_config.print_and_log_info(f"{len(headers_found_in_excel)} headers:{headers_found_in_excel}", do_not_print=True)
 
                 if assert_if_column_is_missing:
                     # Check that all columns to remove are present
@@ -415,7 +416,8 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
                 for colum_it, column_name_to_remove in enumerate(columns_to_remove_names):
                     # Obtenir toutes les valeurs de la première ligne
                     headers_found_in_excel = sht.range("A1").expand("right").value
-                    logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: {len(headers_found_in_excel)} headers:{headers_found_in_excel}")
+                    logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: {len(headers_found_in_excel)} headers:{headers_found_in_excel[:5]}...")
+                    logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: {len(headers_found_in_excel)} headers:{headers_found_in_excel}", do_not_print=True)
 
                     if column_name_to_remove in headers_found_in_excel:
 
