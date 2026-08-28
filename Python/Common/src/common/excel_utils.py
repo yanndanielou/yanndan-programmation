@@ -367,7 +367,7 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
         number_of_columns_to_remove = len(columns_to_remove_names)
 
         with logger_config.stopwatch_with_label(
-            f"{inspect.stack(0)[0].function}:  input_excel_file_path:{workbook_dml.name}, sheet_name:{sheet_name}, {number_of_columns_to_remove} columns to remove: names:{columns_to_remove_names}",
+            f"{inspect.stack(0)[0].function}:  input_excel_file_path:{workbook_dml.name}, sheet_name:{sheet_name}, {number_of_columns_to_remove} columns to remove: names:{columns_to_remove_names[:10]}...",
             inform_beginning=True,
         ):
 
@@ -375,7 +375,8 @@ class XlWingsRemoveColumnsOperation(XlWingOperationBase):
 
             # Obtenir toutes les valeurs de la première ligne
             at_beginning_headers: List[str] = sht.range("A1").expand("right").value
-            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: At beginning, {len(at_beginning_headers)} headers: {at_beginning_headers}")
+            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: At beginning, {len(at_beginning_headers)} headers: {at_beginning_headers[:5]}...")
+            logger_config.print_and_log_info(f"{inspect.stack(0)[0].function}: At beginning, {len(at_beginning_headers)} headers: {at_beginning_headers}", do_not_print=True)
 
             if removal_operation_type == ColumnRemovalOperationType.ALL_COLUMNS_AT_ONCE:
 
