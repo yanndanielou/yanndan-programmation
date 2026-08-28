@@ -1,9 +1,10 @@
 import copy
 import datetime
 import os
+import time
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import List, Optional, cast, Dict, Any
+from typing import Any, Dict, List, Optional, cast
 
 import matplotlib.pyplot as plt
 import mplcursors
@@ -16,15 +17,9 @@ from mplcursors._mplcursors import HoverMode
 
 from generatecfxhistory.cfx import ChampFXLibrary
 from generatecfxhistory.constants import State
-from generatecfxhistory.dates_generators import (
-    DatesGenerator,
-    DecreasingIntervalDatesGenerator,
-)
+from generatecfxhistory.dates_generators import DatesGenerator, DecreasingIntervalDatesGenerator
 from generatecfxhistory.filters import ChampFxFilter, ChampFxFilterFieldProject, ChampFxFilterFieldSubsystem, ChampFXRoleDependingOnDateFilter, ChampFXtStaticCriteriaFilter
-from generatecfxhistory.results import (
-    AllResultsPerDates,
-    AllResultsPerDatesWithDebugDetails,
-)
+from generatecfxhistory.results import AllResultsPerDates, AllResultsPerDatesWithDebugDetails
 from generatecfxhistory.role import SubSystem
 
 state_colors = {
@@ -144,7 +139,7 @@ def produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
     if len(generation_instructions.cfx_filters) > 0:
         generation_label += "".join([filt.label for filt in generation_instructions.cfx_filters])
     else:
-        generation_label += "All"
+        generation_label += "All "
 
     with logger_config.stopwatch_with_label(label=f"{generation_label} Gather state counts for each date", inform_beginning=True):
         all_results_to_display: AllResultsPerDatesWithDebugDetails = cfx_library.gather_state_counts_for_each_date(
@@ -218,8 +213,16 @@ def produce_excel_output_file_results_number_of_cfx_by_state_per_date(output_exc
     data_for_excel.index.name = "Date"
 
     # Save DataFrame to Excel
-    with pd.ExcelWriter(output_excel_file) as writer:
-        data_for_excel.to_excel(writer, sheet_name="CFX State Counts")
+    success = False
+    while success is False:
+        try:
+            with pd.ExcelWriter(output_excel_file) as writer:
+                data_for_excel.to_excel(writer, sheet_name="CFX State Counts")
+                success = True
+
+        except PermissionError:
+            logger_config.print_and_log_error(f"File {output_excel_file} is used. Release it")
+            time.sleep(1)
 
 
 def produce_displays_and_create_html_number_of_cfx_by_state_per_date(
