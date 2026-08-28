@@ -11,7 +11,7 @@ import mplcursors
 import mpld3
 import pandas as pd
 import psutil
-from common import enums_utils, json_encoders, string_utils
+from common import enums_utils, json_encoders, string_utils, pandas_utils
 from logger import logger_config
 from mplcursors._mplcursors import HoverMode
 
@@ -212,17 +212,7 @@ def produce_excel_output_file_results_number_of_cfx_by_state_per_date(output_exc
     data_for_excel = pd.DataFrame(converted_data, index=all_timestamps)
     data_for_excel.index.name = "Date"
 
-    # Save DataFrame to Excel
-    success = False
-    while success is False:
-        try:
-            with pd.ExcelWriter(output_excel_file) as writer:
-                data_for_excel.to_excel(writer, sheet_name="CFX State Counts")
-                success = True
-
-        except PermissionError:
-            logger_config.print_and_log_error(f"File {output_excel_file} is used. Release it")
-            time.sleep(1)
+    pandas_utils.to_excel_wait_if_file_is_locked(sheet_name="CFX State Counts", output_excel_file=output_excel_file, data_for_excel=data_for_excel)
 
 
 def produce_displays_and_create_html_number_of_cfx_by_state_per_date(

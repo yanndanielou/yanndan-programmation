@@ -112,18 +112,7 @@ class DownloadFileDetector:
             retry_in_case_of_error = self.file_move_after_download_action.retry_in_case_of_error
 
             if retry_in_case_of_error:
-
-                number_of_retried_performed = 0
-                while not move_success and (retry_in_case_of_error.max_number_of_retry is None or retry_in_case_of_error.max_number_of_retry > number_of_retried_performed):
-                    try:
-                        shutil.move(file_detected_path, self.file_move_after_download_action.final_path)
-                        logger_config.print_and_log_info(f"{file_detected_path} moved to {self.file_move_after_download_action.final_path}")
-                        move_success = True
-                    except PermissionError:
-                        # logger_config.print_and_log_exception(permErr)
-                        logger_config.print_and_log_error(f"{self.label_with_separator}File {file_detected_path} is used. Release it. Will wait {number_of_retried_performed} seconds")
-                        number_of_retried_performed += 1
-                        time.sleep(number_of_retried_performed)
+                file_utils.rename_file_and_wait_if_is_locked(file_detected_path, self.file_move_after_download_action.final_path, retry_in_case_of_error.max_number_of_retry)
             else:
                 shutil.move(file_detected_path, self.file_move_after_download_action.final_path)
                 logger_config.print_and_log_info(f"{file_detected_path} moved to {self.file_move_after_download_action.final_path}")
