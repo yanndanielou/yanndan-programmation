@@ -312,9 +312,9 @@ class ChampFxFilter:
         label = self.label
 
         if label is None:
-            label = " "
+            label = ""
         else:
-            label += " "
+            label += ""
 
         if self.role_depending_on_date_filter:
             label = f"{label}role {self.role_depending_on_date_filter.roles_at_date_allowed} per date"
