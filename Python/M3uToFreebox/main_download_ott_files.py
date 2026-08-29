@@ -6,7 +6,9 @@ from logger import logger_config
 from common import date_time_formats, custom_iterator, file_download_with_progress_bar
 
 
+@logger_config.stopwatch_decorator(inform_beginning=True)
 def telecharger_fichier_basique(url_to_download: str, file_to_create: str) -> None:
+    logger_config.print_and_log_info(f"Download:{url_to_download} to {file_to_create}")
 
     # Effectuer la requête HTTP GET
     response = requests.get(url_to_download)
@@ -21,7 +23,10 @@ def telecharger_fichier_basique(url_to_download: str, file_to_create: str) -> No
     logger_config.print_and_log_info(f"Téléchargement {file_to_create} terminé  depuis {url_to_download}!")
 
 
+@logger_config.stopwatch_decorator(inform_beginning=True)
 def telecharger_fichier_robuste(url_to_download: str, file_to_create: str, max_retries: int = 5) -> bool:
+    logger_config.print_and_log_info(f"Download:{url_to_download} to {file_to_create}")
+
     headers = {}
     mode = "wb"
     bytes_telecharges = 0
@@ -37,7 +42,7 @@ def telecharger_fichier_robuste(url_to_download: str, file_to_create: str, max_r
             with requests.get(url_to_download, headers=headers, stream=True, timeout=(15, 60)) as r:
                 # Si le serveur ne supporte pas la reprise (Code 206), on recommence à 0
                 if r.status_code == 200 and bytes_telecharges > 0:
-                    logger_config.print_and_log_info("Le serveur ne supporte pas la reprise. Recommencement...")
+                    logger_config.print_and_log_error(f"Le serveur ne supporte pas la reprise. Recommencement...{url_to_download} to {file_to_create}")
                     mode = "wb"
                     bytes_telecharges = 0
 
@@ -60,10 +65,11 @@ def telecharger_fichier_robuste(url_to_download: str, file_to_create: str, max_r
             requests.exceptions.ConnectionError,
             requests.exceptions.Timeout,
         ) as e:
-            logger_config.print_and_log_info(f"\nConnexion interrompue ({e}). Tentative {tentative + 1}/{max_retries}...")
+            logger_config.print_and_log_exception(e)
+            logger_config.print_and_log_error(f"\nConnexion interrompue ({e}). Tentative {tentative + 1}/{max_retries}...")
             time.sleep(2)  # Pause avant de réessayer
 
-    logger_config.print_and_log_info("\nÉchec du téléchargement après plusieurs tentatives.")
+    logger_config.print_and_log_info(f"\nÉchec du téléchargement après plusieurs tentatives.{url_to_download} to {file_to_create}")
     return False
 
 
