@@ -10,5 +10,9 @@ from stsloganalyzis.atc import atc_logs
 
 OUTPUT_DIRECTORY = "output"
 
-print(atc_logs.pert_variable_to_timestamp(c_heure=51006750, c_decalage=3600000, c_decenie=2, c_jour=2278))
-print(atc_logs.pert_variable_to_timestamp(c_heure=59949450, c_decalage=3600000, c_decenie=0, c_jour=0))
+for c_heure in [
+    412920,
+    414620,
+    419670,
+]:
+    print(str(c_heure) + " = " + str(atc_logs.pert_variable_to_timestamp(c_heure=c_heure, c_decalage=7200000, c_decenie=0, c_jour=0)))
