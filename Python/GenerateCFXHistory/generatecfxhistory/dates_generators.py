@@ -35,7 +35,7 @@ class DatesGenerator(ABC):
 
         # Add tomorrow  if not exist
 
-        for additional_days_in_future_to_add in range(1, 2):
+        for additional_days_in_future_to_add in range(1, 5):
             additional_date_to_add = (datetime.datetime.now() + timedelta(days=additional_days_in_future_to_add)).replace(tzinfo=None)
             if additional_date_to_add not in all_dates:
                 all_dates.append(additional_date_to_add)
@@ -102,10 +102,10 @@ class DecreasingIntervalDatesGenerator(DatesGenerator):
             if days_diff > 365 * 10:
                 time_delta = relativedelta.relativedelta(months=4)
 
-            elif days_diff > 365 * 6:
+            elif days_diff > 365 * 7:
                 time_delta = relativedelta.relativedelta(months=3)
 
-            elif days_diff > 365 * 3:
+            elif days_diff > 365 * 5:
                 time_delta = relativedelta.relativedelta(months=2)
 
             elif days_diff > 365:
@@ -114,19 +114,19 @@ class DecreasingIntervalDatesGenerator(DatesGenerator):
             elif days_diff > 180:
                 time_delta = relativedelta.relativedelta(weeks=2)
 
-            elif days_diff > 60:
+            elif days_diff > 100:
                 time_delta = relativedelta.relativedelta(weeks=1)
 
-            elif days_diff > 40:
-                time_delta = relativedelta.relativedelta(days=4)
+            elif days_diff > 80:
+                time_delta = relativedelta.relativedelta(days=6)
 
-            elif days_diff > 30:
+            elif days_diff > 60:
                 time_delta = relativedelta.relativedelta(days=5)
 
-            elif days_diff > 20:
+            elif days_diff > 40:
                 time_delta = relativedelta.relativedelta(days=3)
 
-            elif days_diff > 10:
+            elif days_diff > 20:
                 time_delta = relativedelta.relativedelta(days=2)
 
             elif days_diff > 3:
