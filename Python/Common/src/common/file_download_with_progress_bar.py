@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
+from tkinter import ttk, messagebox, simpledialog, Toplevel, BaseWidget
 import urllib.request
 import threading
 import os
@@ -7,11 +7,11 @@ import time
 
 
 class MultipleFilesDownloadPopup:
-    def __init__(self, master, downloads, parallel=True):
+    def __init__(self, master: Toplevel, downloads: list[tuple[str, str]], parallel: bool = True) -> None:
         self.master = master
         self.downloads = downloads
         self.parallel = parallel
-        self.cancel_downloads = {}
+        self.cancel_downloads: dict[str, bool] = {}
 
         self.master.title("Downloading...")
         self.master.geometry("550x400")
@@ -19,9 +19,7 @@ class MultipleFilesDownloadPopup:
         self.frame_container = ttk.Frame(master)
         self.frame_container.pack(fill="both", expand=True)
 
-        self.add_button = tk.Button(
-            master, text="Add Download", command=self.add_download_asking_details
-        )
+        self.add_button = tk.Button(master, text="Add Download", command=self.add_download_asking_details)
         self.add_button.pack(pady=5)
 
         self.frames = []
@@ -38,7 +36,7 @@ class MultipleFilesDownloadPopup:
         else:
             threading.Thread(target=self.download_sequentially, daemon=True).start()
 
-    def _create_download_row(self, url, save_path):
+    def _create_download_row(self, url: str, save_path: str) -> None:
         frame = ttk.Frame(self.frame_container)
         frame.pack(fill="x", padx=10, pady=5)
 
@@ -51,9 +49,7 @@ class MultipleFilesDownloadPopup:
         progress_label = tk.Label(frame, text="0% (0 KB / 0 KB, ETA: --s)")
         progress_label.pack(side="left", padx=5)
 
-        cancel_button = tk.Button(
-            frame, text="Cancel", command=lambda sp=save_path: self.cancel(sp)
-        )
+        cancel_button = tk.Button(frame, text="Cancel", command=lambda sp=save_path: self.cancel(sp))
         cancel_button.pack(side="left", padx=5)
 
         self.frames.append(
@@ -76,11 +72,11 @@ class MultipleFilesDownloadPopup:
                 daemon=True,
             ).start()
 
-    def download_sequentially(self):
+    def download_sequentially(self) -> None:
         for url, save_path, progress, progress_label, _, _, _ in self.frames:
             self.download_file(url, save_path, progress, progress_label)
 
-    def download_file(self, url, save_path, progress, progress_label):
+    def download_file(self, url: str, save_path: str, progress: str, progress_label: str) -> None:
         try:
             response = urllib.request.urlopen(url)
             file_size = int(response.getheader("Content-Length", 0))
@@ -97,31 +93,17 @@ class MultipleFilesDownloadPopup:
                     downloaded += len(chunk)
                     elapsed_time = time.time() - start_time
                     speed = downloaded / elapsed_time if elapsed_time > 0 else 0
-                    remaining_time = (
-                        (file_size - downloaded) / speed if speed > 0 else 0
-                    )
+                    remaining_time = (file_size - downloaded) / speed if speed > 0 else 0
                     percent = (downloaded / file_size) * 100
                     progress["value"] = percent
-                    readable_size = lambda size: (
-                        f"{size / (1024 * 1024):.2f} MB"
-                        if size > 1024 * 1024
-                        else f"{size / 1024:.2f} KB"
-                    )
-                    eta_formatted = (
-                        time.strftime("%M:%S", time.gmtime(remaining_time))
-                        if remaining_time > 0
-                        else "--"
-                    )
-                    progress_label.config(
-                        text=f"{percent:.2f}% ({readable_size(downloaded)} / {readable_size(file_size)}, ETA: {eta_formatted})"
-                    )
+                    readable_size = lambda size: (f"{size / (1024 * 1024):.2f} MB" if size > 1024 * 1024 else f"{size / 1024:.2f} KB")
+                    eta_formatted = time.strftime("%M:%S", time.gmtime(remaining_time)) if remaining_time > 0 else "--"
+                    progress_label.config(text=f"{percent:.2f}% ({readable_size(downloaded)} / {readable_size(file_size)}, ETA: {eta_formatted})")
                     self.master.update_idletasks()
 
             if self.cancel_downloads[save_path]:
                 os.remove(save_path)
-                self.show_message(
-                    "Download", f"Download {os.path.basename(save_path)} canceled."
-                )
+                self.show_message("Download", f"Download {os.path.basename(save_path)} canceled.")
             else:
                 self.show_message(
                     "Download",
@@ -130,26 +112,24 @@ class MultipleFilesDownloadPopup:
         except Exception as e:
             self.show_message("Error", f"Download failed: {e}")
 
-    def cancel(self, save_path):
+    def cancel(self, save_path: str) -> None:
         self.cancel_downloads[save_path] = True
 
-    def show_message(self, title, message):
-        threading.Thread(
-            target=lambda: messagebox.showinfo(title, message), daemon=True
-        ).start()
+    def show_message(self, title: str, message: str) -> None:
+        threading.Thread(target=lambda: messagebox.showinfo(title, message), daemon=True).start()
 
-    def add_download_asking_details(self):
+    def add_download_asking_details(self) -> None:
         url = tk.simpledialog.askstring("Add Download", "Enter file URL:")
         save_path = tk.simpledialog.askstring("Add Download", "Enter save path:")
         if url and save_path:
             self._create_download_row(url, save_path)
 
-    def add_download(self, url, save_path):
+    def add_download(self, url: str, save_path: str) -> None:
         self._create_download_row(url, save_path)
 
 
 class SingleFileDownloadPopupWithProgressBar:
-    def __init__(self, master, url, save_path):
+    def __init__(self, master: Toplevel, url: str, save_path: str) -> None:
         self.master = master
         self.url = url
         self.save_path = save_path
@@ -172,7 +152,7 @@ class SingleFileDownloadPopupWithProgressBar:
 
         threading.Thread(target=self.download_file, daemon=True).start()
 
-    def download_file(self):
+    def download_file(self) -> None:
         try:
             response = urllib.request.urlopen(self.url)
             file_size = int(response.getheader("Content-Length", 0))
@@ -188,9 +168,7 @@ class SingleFileDownloadPopupWithProgressBar:
                     downloaded += len(chunk)
                     percent = (downloaded / file_size) * 100
                     self.progress["value"] = percent
-                    self.progress_label.config(
-                        text=f"{percent:.2f}% ({downloaded / 1024:.2f} KB / {file_size / 1024:.2f} KB)"
-                    )
+                    self.progress_label.config(text=f"{percent:.2f}% ({downloaded / 1024:.2f} KB / {file_size / 1024:.2f} KB)")
                     self.master.update_idletasks()
 
             if self.cancel_download:
@@ -203,12 +181,12 @@ class SingleFileDownloadPopupWithProgressBar:
             messagebox.showerror("Error", f"Download failed: {e}")
             self.master.destroy()
 
-    def cancel(self):
+    def cancel(self) -> None:
         self.cancel_download = True
 
 
 # Example usage
-def _example_usage(root):
+def _example_usage(root: tk.Tk) -> None:
     url = "https://example.com/largefile.zip"  # Replace with an actual file URL
     save_path = "largefile.zip"
 
@@ -216,7 +194,7 @@ def _example_usage(root):
     SingleFileDownloadPopupWithProgressBar(popup, url, save_path)
 
 
-def _example_main():
+def _example_main() -> None:
     root = tk.Tk()
     root.withdraw()  # Hide the main window
     _example_usage(root)
