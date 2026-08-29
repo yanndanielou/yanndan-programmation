@@ -1,6 +1,6 @@
 # -*-coding:Utf-8 -*
 
-""" https://tkdocs.com/tutorial/firstexample.html """
+"""https://tkdocs.com/tutorial/firstexample.html"""
 
 # sys.path.insert(1, os.getcwd())
 # sys.path.append("D:/GitHub/yanndanielou-programmation/Python/Logger")
@@ -159,9 +159,7 @@ class DetailsViewTab(ttk.Frame):
         self._tree_scroll_vertical.pack(side=tkinter.RIGHT, fill=tkinter.Y)
 
         # Create Treeview
-        self._tree_view = ttk.Treeview(
-            self._tree_view_frame, yscrollcommand=self._tree_scroll_vertical.set, selectmode="extended", show="headings"
-        )
+        self._tree_view = ttk.Treeview(self._tree_view_frame, yscrollcommand=self._tree_scroll_vertical.set, selectmode="extended", show="headings")
 
         # Pack to the screen
 
@@ -217,9 +215,7 @@ class DetailsViewTab(ttk.Frame):
             for destination_folder in DestinationsFolders().destinations_folders:
                 action_sub_context_menu.add_command(
                     label=action.value + " on " + destination_folder._label,
-                    command=lambda lambda_dest_folder=destination_folder, lambda_action=action: self._perform_action_on_destination_context_menu_choosen(
-                        lambda_action, lambda_dest_folder
-                    ),
+                    command=lambda lambda_dest_folder=destination_folder, lambda_action=action: self._perform_action_on_destination_context_menu_choosen(lambda_action, lambda_dest_folder),
                 )
 
         self.tree_view_context_menu.add_separator()
@@ -259,9 +255,7 @@ class DetailsViewTab(ttk.Frame):
         m3u_entry_id_str: str = m3u_entry_line["ID"]
         return m3u_entry_id_str
 
-    def _perform_action_on_destination_context_menu_choosen(
-        self, action: Action, destination: DestinationFolder
-    ) -> None:
+    def _perform_action_on_destination_context_menu_choosen(self, action: Action, destination: DestinationFolder) -> None:
 
         logger_config.print_and_log_info("destination chosen: " + str(destination))
         logger_config.print_and_log_info("action chosen: " + str(action))
@@ -279,16 +273,12 @@ class DetailsViewTab(ttk.Frame):
 
         match action:
             case Action.ADD_MOVIE_TO_DOWNLOAD_LIST:
-                url, save_path = self._parent.m3u_to_freebox_application.get_to_be_downloaded_movie_infos_by_id_str(
-                    destination_directory, m3u_entry_id_str
-                )
+                url, save_path = self._parent.m3u_to_freebox_application.get_to_be_downloaded_movie_infos_by_id_str(destination_directory, m3u_entry_id_str)
                 downloads = [(url, save_path)]
                 if self._files_download_popup is None:
                     popup = tkinter.Toplevel(self)
 
-                    self._files_download_popup = file_download_with_progress_bar.MultipleFilesDownloadPopup(
-                        master=popup, downloads=downloads, parallel=False
-                    )
+                    self._files_download_popup = file_download_with_progress_bar.MultipleFilesDownloadPopup(master=popup, downloads=downloads, parallel=False)
                 else:
                     self._files_download_popup.add_download(url, save_path)
 
@@ -298,16 +288,12 @@ class DetailsViewTab(ttk.Frame):
                 #    destination_directory, m3u_entry_id_str
                 # )
 
-                url, save_path = self._parent.m3u_to_freebox_application.get_to_be_downloaded_movie_infos_by_id_str(
-                    destination_directory, m3u_entry_id_str
-                )
+                url, save_path = self._parent.m3u_to_freebox_application.get_to_be_downloaded_movie_infos_by_id_str(destination_directory, m3u_entry_id_str)
                 popup = tkinter.Toplevel(self)
                 file_download_with_progress_bar.SingleFileDownloadPopupWithProgressBar(popup, url, save_path)
 
             case Action.CREATE_XSPF_FILE:
-                self._parent.m3u_to_freebox_application.create_xspf_file_by_id_str(
-                    destination_directory, m3u_entry_id_str
-                )
+                self._parent.m3u_to_freebox_application.create_xspf_file_by_id_str(destination_directory, m3u_entry_id_str)
 
     def _load_selected_file_size(self) -> None:
         m3u_entry_id_str = self._get_selected_m3u_entry_id_str()
@@ -340,9 +326,7 @@ class DetailsViewTab(ttk.Frame):
             self._title_filter_text_content = self._filter_input_text.get()
             self.refresh_m3u_entries()
         else:
-            logger_config.print_and_log_info(
-                f"Title filter text content not changed. Still:{self._title_filter_text_content}"
-            )
+            logger_config.print_and_log_info(f"Title filter text content not changed. Still:{self._title_filter_text_content}")
 
     def treeview_sort_column(self, tv: ttk.Treeview, col: int, reverse: bool) -> None:
         """Sort"""
@@ -374,18 +358,14 @@ class DetailsViewTab(ttk.Frame):
     def _clear_list(self) -> None:
         self._tree_view.delete(*self._tree_view.get_children())
 
-    def __get_selected_title_filter(self) -> None:
+    def __get_selected_title_filter(self) -> "M3uEntryByTitleFilter":
         selected_title_filter_name = self._title_filter_option_var.get()
-        selected_title_filter = [
-            filter for filter in self._by_title_filters if filter.label == selected_title_filter_name
-        ][0]
+        selected_title_filter = [filter for filter in self._by_title_filters if filter.label == selected_title_filter_name][0]
         return selected_title_filter
 
-    def __get_selected_type_filter(self) -> None:
+    def __get_selected_type_filter(self) -> "M3uEntryByTypeFilter":
         selected_type_filter_name = self._type_filter_option_var.get()
-        selected_type_filter = [
-            filter for filter in self._by_type_filters if filter.label == selected_type_filter_name
-        ][0]
+        selected_type_filter = [filter for filter in self._by_type_filters if filter.label == selected_type_filter_name][0]
         return selected_type_filter
 
     def refresh_m3u_entries(self) -> None:
@@ -394,14 +374,13 @@ class DetailsViewTab(ttk.Frame):
             fill_m3u_entries_start_time = time.time()
             logger_config.print_and_log_info("fill_m3u_entries: begin")
             self._clear_list()
-            logger_config.print_and_log_info(
-                f"fill_m3u_entries: list reset. Elapsed:{date_time_formats.format_duration_to_string(time.time() - fill_m3u_entries_start_time)}"
-            )
+            logger_config.print_and_log_info(f"fill_m3u_entries: list reset. Elapsed:{date_time_formats.format_duration_to_string(time.time() - fill_m3u_entries_start_time)}")
             m3u_entry_number = 0
 
             selected_title_filter = self.__get_selected_title_filter()
             selected_type_filter = self.__get_selected_type_filter()
 
+            assert self._parent.m3u_to_freebox_application is not None
             for m3u_entry in self._parent.m3u_to_freebox_application.m3u_library.get_m3u_entries_with_filter(
                 self._filter_input_text.get(),
                 selected_title_filter,
