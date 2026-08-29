@@ -2,7 +2,7 @@
 name = "m3utofreebox-app"
 
 [tool.black]
-line-length = 120  # Longueur maximale des lignes pour Black
+line-length = 200  # Longueur maximale des lignes pour Black
 
 [tool.mypy]
 # Specify files or directories to analyze
