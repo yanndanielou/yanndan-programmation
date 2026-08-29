@@ -9,11 +9,13 @@ from logger import logger_config
 
 
 class MultipleFilesDownloadPopup:
-    def __init__(self, master: Toplevel, downloads: list[tuple[str, str]], parallel: bool = True) -> None:
+    def __init__(self, master: Toplevel, downloads: list[tuple[str, str]], parallel: bool = True, chunk_size: int = 8192) -> None:
         self.master = master
         self.downloads = downloads
         self.parallel = parallel
         self.cancel_downloads: dict[str, bool] = {}
+
+        self.chunk_size = chunk_size
 
         self.master.title("Downloading...")
         self.master.geometry("550x400")
@@ -82,13 +84,12 @@ class MultipleFilesDownloadPopup:
         try:
             response = urllib.request.urlopen(url)
             file_size = int(response.getheader("Content-Length", 0))
-            chunk_size = 8192
             downloaded = 0
             start_time = time.time()
             previous_percent_logged = 0.0
             with open(save_path, "wb") as file:
                 while not self.cancel_downloads[save_path]:
-                    chunk = response.read(chunk_size)
+                    chunk = response.read(self.chunk_size)
                     if not chunk:
                         break
                     file.write(chunk)
@@ -140,11 +141,13 @@ class MultipleFilesDownloadPopup:
 
 
 class SingleFileDownloadPopupWithProgressBar:
-    def __init__(self, master: Toplevel, url: str, save_path: str) -> None:
+    def __init__(self, master: Toplevel, url: str, save_path: str, chunk_size: int = 8192) -> None:
         self.master = master
         self.url = url
         self.save_path = save_path
         self.cancel_download = False
+
+        self.chunk_size = chunk_size
 
         self.master.title("Downloading...")
         self.master.geometry("300x180")
@@ -167,13 +170,12 @@ class SingleFileDownloadPopupWithProgressBar:
         try:
             response = urllib.request.urlopen(self.url)
             file_size = int(response.getheader("Content-Length", 0))
-            chunk_size = 8192
             downloaded = 0
 
             previous_percent_logged = 0.0
             with open(self.save_path, "wb") as file:
                 while not self.cancel_download:
-                    chunk = response.read(chunk_size)
+                    chunk = response.read(self.chunk_size)
                     if not chunk:
                         break
                     file.write(chunk)
