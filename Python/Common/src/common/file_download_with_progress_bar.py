@@ -5,6 +5,8 @@ import tkinter as tk
 import urllib.request
 from tkinter import BaseWidget, Toplevel, messagebox, simpledialog, ttk
 
+from common import date_time_formats
+
 from logger import logger_config
 
 
@@ -87,6 +89,7 @@ class MultipleFilesDownloadPopup:
             downloaded = 0
             start_time = time.time()
             previous_percent_logged = 0.0
+            previous_percent_logged_elapsed_time = 0.0
             with open(save_path, "wb") as file:
                 while not self.cancel_downloads[save_path]:
                     chunk = response.read(self.chunk_size)
@@ -101,8 +104,11 @@ class MultipleFilesDownloadPopup:
                     progress["value"] = percent
 
                     if percent - previous_percent_logged > 5:
-                        logger_config.print_and_log_info(f"{save_path}, current progress: {round(percent,1)}%")
+                        logger_config.print_and_log_info(
+                            f"{save_path}, current progress: {round(percent,1)}% in {date_time_formats.format_duration_to_string(elapsed_time-previous_percent_logged_elapsed_time)}"
+                        )
                         previous_percent_logged = percent
+                        previous_percent_logged_elapsed_time = elapsed_time
 
                     readable_size = lambda size: (f"{size / (1024 * 1024):.2f} MB" if size > 1024 * 1024 else f"{size / 1024:.2f} KB")
                     eta_formatted = time.strftime("%M:%S", time.gmtime(remaining_time)) if remaining_time > 0 else "--"
@@ -173,6 +179,7 @@ class SingleFileDownloadPopupWithProgressBar:
             downloaded = 0
 
             previous_percent_logged = 0.0
+            previous_percent_logged_elapsed_time = 0.0
             with open(self.save_path, "wb") as file:
                 while not self.cancel_download:
                     chunk = response.read(self.chunk_size)

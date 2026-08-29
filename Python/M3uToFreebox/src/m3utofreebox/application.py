@@ -79,15 +79,15 @@ class M3uToFreeboxApplication:
 
     def load_file(self, file_path: str, save_path_of_m3u_file: bool = True) -> None:
         """Load file"""
-        logger_config.print_and_log_info("Load file:" + file_path)
+        with logger_config.stopwatch_with_label("Load file:" + file_path, inform_beginning=True):
 
-        m3u_file_parser = m3u.M3uFileParser()
-        for m3u_entry in m3u_file_parser.parse_file(file_path):
-            self._m3u_library.add(m3u_entry)
+            m3u_file_parser = m3u.M3uFileParser()
+            for m3u_entry in m3u_file_parser.parse_file(file_path):
+                self._m3u_library.add(m3u_entry)
 
-        if save_path_of_m3u_file:
-            with open(param.PATH_OF_FILE_LISTING_LAST_M3U_FILE_LOADED, "w", encoding="utf-8") as file_listing_last_m3u_file_loaded:
-                file_listing_last_m3u_file_loaded.write(f"{file_path}")
+            if save_path_of_m3u_file:
+                with open(param.PATH_OF_FILE_LISTING_LAST_M3U_FILE_LOADED, "w", encoding="utf-8") as file_listing_last_m3u_file_loaded:
+                    file_listing_last_m3u_file_loaded.write(f"{file_path}")
 
     def load_last_loaded_m3u_file(self) -> bool:
         """load_last_loaded_m3u_file"""
