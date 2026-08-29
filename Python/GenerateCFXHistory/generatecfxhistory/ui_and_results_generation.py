@@ -204,13 +204,17 @@ def produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
 def produce_excel_output_file_results_number_of_cfx_by_state_per_date(output_excel_file: str, all_results_to_display: AllResultsPerDatesWithDebugDetails) -> None:
     # Convert data to DataFrame for Excel output
 
-    state_counts_per_timestamp = all_results_to_display.get_state_counts_per_timestamp_plus_total_and_percentage()
     all_timestamps: List[datetime.datetime] = all_results_to_display.get_all_timestamps()
 
     # Convert state enumerations to their names for DataFrame columns
-    data_for_excel = pd.DataFrame(state_counts_per_timestamp, index=all_timestamps)
-    data_for_excel.index.name = "Date"
-    pandas_utils.to_excel_wait_if_file_is_locked(sheet_name="CFX State Counts", output_excel_file=output_excel_file, data_for_excel=data_for_excel)
+    # data_for_excel.index.name = "Date"
+    pandas_utils.to_excel_wait_if_file_is_locked(
+        {
+            "CFX State Counts": pd.DataFrame(all_results_to_display.get_state_counts_per_timestamp_plus_total(), index=all_timestamps),
+            "CFX State Percentages": pd.DataFrame(all_results_to_display.get_state_percentage_per_timestamp(), index=all_timestamps),
+        },
+        output_excel_file=output_excel_file,
+    )
 
 
 def produce_displays_and_create_html_number_of_cfx_by_state_per_date(

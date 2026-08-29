@@ -66,18 +66,24 @@ class AllResultsPerDates:
     def get_state_counts_per_timestamp(self) -> List[dict[State, int]]:
         return [results.count_by_state for results in self.timestamp_results]
 
-    def get_state_counts_per_timestamp_plus_total_and_percentage(self) -> list[dict[str, int | float]]:
+    def get_state_counts_per_timestamp_plus_total(self) -> list[dict[str, int | float]]:
         ret: list[dict[str, int | float]] = []
         for results in self.timestamp_results:
             count_by_state: dict[str, int | float] = OrderedDict()
             for state, count in results.count_by_state.items():
                 count_by_state[state.name] = count
-                count_by_state[state.name + " %"] = round(count / results.total_count * 100, 1) if results.total_count else 0
+            count_by_state["Total"] = results.total_count
             ret.append(count_by_state)
         return ret
 
-    def get_state_percentage_per_timestamp(self) -> List[dict[State, int]]:
-        return [results.count_by_state for results in self.timestamp_results]
+    def get_state_percentage_per_timestamp(self) -> List[dict[str, int | float]]:
+        ret: list[dict[str, int | float]] = []
+        for results in self.timestamp_results:
+            count_by_state: dict[str, int | float] = OrderedDict()
+            for state, count in results.count_by_state.items():
+                count_by_state[state.name + " %"] = round(count / results.total_count * 100, 1) if results.total_count else 0
+            ret.append(count_by_state)
+        return ret
 
     def compute_cumulative_counts_number_of_state_per_date(self) -> None:
         self.cumulative_counts = {state: [] for state in self.present_states_ordered()}
