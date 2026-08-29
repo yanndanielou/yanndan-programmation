@@ -35,13 +35,14 @@ def string_element(row: pandas.Series, column_name: str) -> str:
     return raw_value
 
 
-def to_excel_wait_if_file_is_locked(sheet_name: str, output_excel_file: str, data_for_excel: pandas.DataFrame) -> None:
+def to_excel_wait_if_file_is_locked(data_per_sheet_name: dict[str, pandas.DataFrame], output_excel_file: str) -> None:
     # Save DataFrame to Excel
     success = False
     while success is False:
         try:
             with pandas.ExcelWriter(output_excel_file) as writer:
-                data_for_excel.to_excel(writer, sheet_name="CFX State Counts")
+                for sheet_name, data_frame in data_per_sheet_name.items():
+                    data_frame.to_excel(writer, sheet_name=sheet_name)
                 success = True
                 return
 
