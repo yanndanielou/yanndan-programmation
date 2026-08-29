@@ -27,13 +27,11 @@ class M3uToFreeboxApplication:
 
         self._main_view: "M3uToFreeboxMainView" = main_view
 
-    def get_to_be_downloaded_movie_infos_by_id_str(self, destination_directory: str, m3u_entry_id: str):
+    def get_to_be_downloaded_movie_infos_by_id_str(self, destination_directory: str, m3u_entry_id: str) -> tuple[str | None, str | None]:
         m3u_entry_id_int = int(m3u_entry_id)
         m3u_entry: m3u.M3uEntry = self.m3u_library.get_m3u_entry_by_id(m3u_entry_id_int)
         if m3u_entry.can_be_downloaded():
-            file_destination_full_path = (
-                destination_directory + "\\" + m3u_entry.title_as_valid_file_name + m3u_entry.file_extension
-            )
+            file_destination_full_path = destination_directory + "\\" + m3u_entry.title_as_valid_file_name + m3u_entry.file_extension
             return m3u_entry.link, file_destination_full_path
         else:
             return None, None
@@ -55,9 +53,7 @@ class M3uToFreeboxApplication:
             result, length_or_error = file_size_utils.get_url_file_size(m3u_entry.link)
 
             if result:
-                m3u_entry.set_last_computed_file_size(
-                    file_size_utils.convert_bits_to_human_readable_size(length_or_error)
-                )
+                m3u_entry.set_last_computed_file_size(file_size_utils.convert_bits_to_human_readable_size(length_or_error))
                 return True
 
             else:
@@ -66,24 +62,22 @@ class M3uToFreeboxApplication:
 
         return False
 
-    def create_xspf_file_by_id_str(self, destination_directory: str, m3u_entry_id: str):
+    def create_xspf_file_by_id_str(self, destination_directory: str, m3u_entry_id: str) -> None:
         m3u_entry_id_int = int(m3u_entry_id)
         self.create_xspf_file_by_id(destination_directory, m3u_entry_id_int)
 
-    def create_xspf_file_by_id(self, destination_directory: str, m3u_entry_id: int):
+    def create_xspf_file_by_id(self, destination_directory: str, m3u_entry_id: int) -> None:
 
         m3u_entry: m3u.M3uEntry = self.m3u_library.get_m3u_entry_by_id(m3u_entry_id)
 
         xspf_file_content = xspf.XspfFileContent(m3u_entry.cleaned_title, m3u_entry.link)
         xsp_file_creator = xspf.XspfFileCreator()
-        xsp_file_creator.write(
-            xspf_file_content, destination_directory, m3u_entry.title_as_valid_file_name + ".xspf", True
-        )
+        xsp_file_creator.write(xspf_file_content, destination_directory, m3u_entry.title_as_valid_file_name + ".xspf", True)
 
-    def reset_library(self):
+    def reset_library(self) -> None:
         self._m3u_library = m3u.M3uEntriesLibrary()
 
-    def load_file(self, file_path, save_path_of_m3u_file: bool = True):
+    def load_file(self, file_path: str, save_path_of_m3u_file: bool = True) -> None:
         """Load file"""
         logger_config.print_and_log_info("Load file:" + file_path)
 
@@ -92,17 +86,13 @@ class M3uToFreeboxApplication:
             self._m3u_library.add(m3u_entry)
 
         if save_path_of_m3u_file:
-            with open(
-                param.PATH_OF_FILE_LISTING_LAST_M3U_FILE_LOADED, "w", encoding="utf-8"
-            ) as file_listing_last_m3u_file_loaded:
+            with open(param.PATH_OF_FILE_LISTING_LAST_M3U_FILE_LOADED, "w", encoding="utf-8") as file_listing_last_m3u_file_loaded:
                 file_listing_last_m3u_file_loaded.write(f"{file_path}")
 
     def load_last_loaded_m3u_file(self) -> bool:
         """load_last_loaded_m3u_file"""
         try:
-            with open(
-                param.PATH_OF_FILE_LISTING_LAST_M3U_FILE_LOADED, "r", encoding="utf-8"
-            ) as file_listing_last_m3u_file_loaded:
+            with open(param.PATH_OF_FILE_LISTING_LAST_M3U_FILE_LOADED, "r", encoding="utf-8") as file_listing_last_m3u_file_loaded:
                 content = file_listing_last_m3u_file_loaded.read()
                 logger_config.print_and_log_info(f"Last loaded m3u file:{content}")
                 self.load_file(content, False)
@@ -117,7 +107,7 @@ class M3uToFreeboxApplication:
         return self._m3u_library
 
     @m3u_library.setter
-    def m3u_library(self, value: m3u.M3uEntriesLibrary):
+    def m3u_library(self, value: m3u.M3uEntriesLibrary) -> None:
         self._m3u_library = value
 
 
