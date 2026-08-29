@@ -1,9 +1,11 @@
-import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog, Toplevel, BaseWidget
-import urllib.request
-import threading
 import os
+import threading
 import time
+import tkinter as tk
+import urllib.request
+from tkinter import BaseWidget, Toplevel, messagebox, simpledialog, ttk
+
+from logger import logger_config
 
 
 class MultipleFilesDownloadPopup:
@@ -104,13 +106,17 @@ class MultipleFilesDownloadPopup:
             if self.cancel_downloads[save_path]:
                 os.remove(save_path)
                 self.show_message("Download", f"Download {os.path.basename(save_path)} canceled.")
+                logger_config.print_and_log_info(f"Download {os.path.basename(save_path)} canceled.")
             else:
                 self.show_message(
                     "Download",
                     f"Download {os.path.basename(save_path)} completed successfully.",
                 )
+                logger_config.print_and_log_info(f"Download {os.path.basename(save_path)} completed successfully.")
         except Exception as e:
             self.show_message("Error", f"Download failed: {e}")
+            logger_config.print_and_log_exception(e)
+            logger_config.print_and_log_error(f"Download {os.path.basename(save_path)} failed.")
 
     def cancel(self, save_path: str) -> None:
         self.cancel_downloads[save_path] = True
