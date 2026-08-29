@@ -1,0 +1,501 @@
+from __future__ import annotations
+
+import copy
+from collections import OrderedDict
+from dataclasses import dataclass
+from datetime import datetime
+from enum import IntEnum
+from typing import Any, Dict, List, Optional, Tuple, cast
+
+import humanize
+from common import date_time_formats, reports_utils
+from dateutil import parser
+from logger import logger_config
+
+from stsloganalyzis.archive import constants, decode_archive, decode_message, decode_product_topology_dependant_messages_content, helpers
+from stsloganalyzis.topology import line_topology
+
+
+class TrainLocation:
+
+    def __init__(
+        self,
+        train: Train,
+        label: Optional[str] = None,
+        segment_number_and_offset_field_prefix: Optional[str] = None,
+        segment_number_field_name: Optional[str] = None,
+        abscissa_field_name: Optional[str] = None,
+    ) -> None:
+        self.train = train
+
+        if label is not None:
+            self.label = label
+
+        self.exact_location: Optional[line_topology.ExactLocation] = None
+        if segment_number_and_offset_field_prefix is not None:
+            self.segment_number_field_name = segment_number_and_offset_field_prefix + "SegId"
+            self.abscissa_field_name = segment_number_and_offset_field_prefix + "Offset"
+
+            if label is None:
+                self.label = segment_number_and_offset_field_prefix
+        else:
+            assert segment_number_field_name is not None
+            assert abscissa_field_name is not None
+            self.segment_number_field_name = segment_number_field_name
+            self.abscissa_field_name = abscissa_field_name
+
+            if label is None:
+                self.label = segment_number_field_name
+
+
+@dataclass
+class Train:
+    cc_id_with_offset: int
+
+    def __post_init__(self) -> None:
+        self.all_locations: List[TrainLocation] = []
+
+        self.all_locations = [
+            TrainLocation(train=self, segment_number_and_offset_field_prefix=location_label) for location_label in ["ExtFront", "IntFront", "ExtRear", "IntRear", "NvFront", "NvRear"]
+        ] + [
+            TrainLocation(train=self, segment_number_field_name=segment_number_and_offset_field_names[0], abscissa_field_name=segment_number_and_offset_field_names[1])
+            for segment_number_and_offset_field_names in [("CCId1RefPtSegId", "CCId1NvRefPtOffset"), ("CCId3RefPtSegId", "CCId3NvRefPtOffset")]
+        ]
+
+    def update_location_from_segment_number_field_name_and_abscissa_field_name(self, segment_number_field_name: str, abscissa_field_name: str, location: Optional[line_topology.ExactLocation]) -> None:
+        pass
+
+    def update_location_from_segment_and_abscissa_field_names_prefix(self, segment_and_abscissa_field_names_prefix: str, location: Optional[line_topology.ExactLocation]) -> None:
+        pass
+        pass
+
+    def update_location_from_decoded_fields_flat_directory(self, decoded_fields_flat_directory: Dict[str, constants.FIELD_TYPE], railway_line: line_topology.Line) -> None:
+
+        for location in self.all_locations:
+            exact_location = helpers.decode_one_exact_location(
+                decoded_fields_flat_directory=decoded_fields_flat_directory,
+                segment_id_field_name=location.segment_number_field_name,
+                abscissa_field_name=location.abscissa_field_name,
+                railway_line=railway_line,
+            )
+            location.exact_location = exact_location
+
+    @property
+    def field_names_and_values_in_report(self) -> List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]:
+        field_names_and_values: List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]] = []
+
+        for location in self.all_locations:
+
+            loc_tc_label = location.exact_location.get_track_circuit_id_string_if_no() if location.exact_location else "None"
+            loc_tb_label = location.exact_location.get_tracking_block_id_string_if_no() if location.exact_location else "None"
+            loc_cv_label = location.exact_location.get_virtual_canton_id_string_if_no() if location.exact_location else "None"
+            field_names_and_values.append((f"Location {location.label} for {str(self)} TB", f"{loc_tb_label}"))
+            field_names_and_values.append((f"Location {location.label} for {str(self)} TC", f"{loc_tc_label}"))
+            field_names_and_values.append((f"Location {location.label} for {str(self)} CV", f"{loc_cv_label}"))
+            field_names_and_values.append((f"Location {location.label} for {str(self)}", f"{location.exact_location}"))
+
+        return field_names_and_values
+
+
+@dataclass
+class MovementAuthorityLimitForOneZoneController:
+    label: str
+    train: Train
+    zone_controller: ZoneController
+    mal_location: Optional[line_topology.ExactLocation]
+    raw_mal_type: int
+
+    def __post_init__(self) -> None:
+        self.mal_type: "MovementAuthorityLimitForOneZoneController.MALType" = MovementAuthorityLimitForOneZoneController.MALType(self.raw_mal_type)
+
+    def get_distance_to_train_in_cm(self) -> int:
+        return 0
+
+    @property
+    def field_names_and_values_in_report(self) -> List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]:
+        field_names_and_values: List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]] = []
+        mal_tc_label = self.mal_location.get_track_circuit_id_string_if_no() if self.mal_location else "None"
+        mal_tb_label = self.mal_location.get_tracking_block_id_string_if_no() if self.mal_location else "None"
+        mal_cv_label = self.mal_location.get_virtual_canton_id_string_if_no() if self.mal_location else "None"
+
+        field_names_and_values.append((f"{self.label} for {str(self.train)} TB", f"type {self.mal_type.name} {mal_tb_label}"))
+        field_names_and_values.append((f"{self.label} for {str(self.train)} TC", f"type {self.mal_type.name} {mal_tc_label}"))
+        field_names_and_values.append((f"{self.label} for {str(self.train)} CV", f"type {self.mal_type.name} {mal_cv_label}"))
+        field_names_and_values.append((f"{self.label} for {str(self.train)} location", f"type {self.mal_type.name} {self.mal_location}"))
+        field_names_and_values.append((f"{self.label} for {str(self.train)} Type", f"{self.mal_type.name}"))
+        return field_names_and_values
+
+    class MALType(IntEnum):
+        AUTOMATIC_TRAIN = 0  # 0 = AT (train contrôlé)
+        MT_MANUAL = 1  # 1 = MT (train en manuel)
+        UNEQUIPPED_TRAIN = 2  # 2 = UT (train non équipé ou muet)
+        HOME_SIGNAL = 3  # 3 = HS (Origine de manoeuvre)
+        TRACK_LIMIT = 4  # 4 = Track_Limit (Limite de voie)
+        DEFAULT = 5  # 5 = Default (Défaut)
+        NOT_USED_6 = 6
+        NOT_USED_7 = 7
+
+
+@dataclass
+class ZoneController:
+    identifier: str
+
+
+@dataclass
+class FieldLastValue:
+    object_id: str
+    timestamp: datetime
+    field_name: str
+    field_value: constants.FIELD_TYPE
+
+    def __post_init__(self) -> None:
+        self.previous_value: Optional[constants.FIELD_TYPE] = None
+        self.previous_timestamp: Optional[datetime] = None
+
+        self.previous_different_value: Optional[constants.FIELD_TYPE] = None
+        self.previous_different_value_timestamp: Optional[datetime] = None
+
+        if self.object_id == "S_TRAIN_CC_48_SPEED_TRACKING" and self.field_name == "State":
+            pause = 1
+
+    def update_value(self, new_value: constants.FIELD_TYPE, new_timestamp: datetime) -> bool:
+
+        if self.object_id == "S_TRAIN_CC_48_SPEED_TRACKING" and self.field_name == "State":
+            pause = 1
+
+        has_changed = self.field_value != new_value
+
+        if has_changed:
+            self.previous_different_value = self.field_value
+            self.previous_different_value_timestamp = self.timestamp
+
+        self.previous_value = self.field_value
+        self.previous_timestamp = self.timestamp
+
+        self.field_value = new_value
+        self.timestamp = new_timestamp
+
+        assert self.previous_different_value != self.field_value
+
+        return has_changed
+
+
+class FieldsLibraryForOneObject:
+    def __init__(self, line_id: str) -> None:
+        self.object_id = line_id
+        self.last_values: List[FieldLastValue] = []
+
+    def get_field(self, field_name: str) -> Optional[FieldLastValue]:
+        fields_found = [field_found for field_found in self.last_values if field_found.field_name == field_name]
+        if fields_found:
+            assert len(fields_found) == 1
+            return fields_found[0]
+        return None
+
+    def get_latest_value_for_field(self, field_name: str) -> Tuple[Optional[constants.FIELD_TYPE], Optional[datetime]]:
+        field_found = self.get_field(field_name)
+        if field_found:
+            return field_found.field_value, field_found.timestamp
+        return None, None
+
+    def update_latest_value_for_field(self, field_name: str, field_value: constants.FIELD_TYPE, timestamp: datetime) -> Optional[FieldLastValue]:
+        field_found = self.get_field(field_name)
+        if field_found:
+            if field_found.update_value(field_value, timestamp):
+                return field_found
+            else:
+                return None
+        else:
+            new_field = FieldLastValue(object_id=self.object_id, timestamp=timestamp, field_value=field_value, field_name=field_name)
+            self.last_values.append(new_field)
+            return new_field
+
+
+@dataclass
+class SqlArchArchiveLineWithContext:
+    sql_arch_line: decode_archive.SqlArchArchiveLine
+    previous_line_for_this_id: Optional[SqlArchArchiveLineWithContext]
+    archive_analyzis: ArchiveAnalyzis
+    all_fields_changed: List[FieldLastValue]
+
+    def __post_init__(self) -> None:
+        self.all_fields_changed = copy.deepcopy(self.all_fields_changed)
+
+    @property
+    def decoded_message(self) -> Optional[decode_message.DecodedMessage]:
+        ret = cast(decode_message.DecodedMessage, self.sql_arch_line.decoded_message)
+        return ret
+
+    @property
+    def decoded_fields_flat_directory_except_fields_to_ignore(self) -> Dict[str, constants.FIELD_TYPE]:
+        ret: Dict[str, constants.FIELD_TYPE] = dict()
+        if self.decoded_message:
+            for field_name, field_value in self.decoded_message.decoded_fields_flat_directory.items():
+                if not helpers.is_field_name_to_be_ignored(field_name=field_name):
+                    ret[field_name] = field_value
+        else:
+            for field_name, field_value in self.sql_arch_line.sqlarch_fields_dict_raw.items():
+                if not helpers.is_field_name_to_be_ignored(field_name=field_name):
+                    ret[field_name] = field_value
+        return ret
+
+    def get_all_changes_since_previous(self) -> List[OrderedDict[str, Any]]:
+        to_ret: List[OrderedDict[str, Any]] = []
+
+        for changed_field in self.all_fields_changed:
+
+            if not helpers.is_field_name_to_be_ignored(field_name=changed_field.field_name):
+
+                previous_date = changed_field.previous_different_value_timestamp
+                exact_time_delta_human_readable = date_time_formats.format_duration_timedelta_to_string(self.sql_arch_line.date - previous_date) if previous_date else "NA"
+                exact_time_delta_seconds = date_time_formats.format_duration_timedelta_to_float_seconds(self.sql_arch_line.date - previous_date) if previous_date else None
+                approximative_time_delta = humanize.precisedelta(self.sql_arch_line.date - previous_date, minimum_unit="milliseconds") if previous_date else "NA"
+                old_timestamp = str(previous_date)
+                to_ret.append(
+                    OrderedDict(
+                        {
+                            "date": self.sql_arch_line.get_date_raw_str(),
+                            "id": self.sql_arch_line.id_field,
+                            "id_msg": self.sql_arch_line.decoded_message.message_number if self.sql_arch_line.decoded_message else "NA",
+                            "field": changed_field.field_name,
+                            "old_value": changed_field.previous_different_value,
+                            "new_value": changed_field.field_value,
+                            "change_value": f"{changed_field.previous_different_value} -> {changed_field.field_value}",
+                            "exact_time_delta_seconds": exact_time_delta_seconds,
+                            "exact_time_delta_human_readable": exact_time_delta_human_readable,
+                            "approximative_time_delta": approximative_time_delta,
+                            "old_timestamp": old_timestamp,
+                        }
+                    )
+                )
+
+        return to_ret
+
+
+@dataclass
+class ArchiveAnalyzis:
+    railway_line: line_topology.Line
+    archive_library: decode_archive.ArchiveLibrary
+    label: str
+
+    output_directory_path = "output"
+
+    def __post_init__(self) -> None:
+        self.trains: List[Train] = []
+        self.zone_controllers: List[ZoneController] = []
+
+        self.all_sql_arch_lines_with_context: List[SqlArchArchiveLineWithContext] = []
+        self.current_latest_line_by_id: Dict[str, SqlArchArchiveLineWithContext] = dict()
+        self.latest_fields_values_by_object_id: Dict[str, FieldsLibraryForOneObject] = dict()
+
+        self.handle_lines()
+
+    def get_or_create_zone_controller(self, zone_controller_id: str) -> ZoneController:
+        zone_controllers_found = [zone_controller for zone_controller in self.zone_controllers if zone_controller.identifier == zone_controller_id]
+
+        if not zone_controllers_found:
+            self.zone_controllers.append(ZoneController(identifier=zone_controller_id))
+            return self.get_or_create_zone_controller(zone_controller_id)
+
+        assert len(zone_controllers_found) == 1
+        return zone_controllers_found[0]
+
+    def get_or_create_train_by_cc_id_field_name(self, decoded_fields_flat_directory: Dict[str, constants.FIELD_TYPE], cc_id_field_name: str) -> Train:
+        train_cc_id = decoded_fields_flat_directory.get("CCId1")
+        assert isinstance(train_cc_id, int)
+        return self.get_or_create_train_by_cc_id(cc_id_with_offset=train_cc_id)
+
+    def get_or_create_train_by_cc_id(self, cc_id_with_offset: int) -> Train:
+        trains_found = [train for train in self.trains if train.cc_id_with_offset == cc_id_with_offset]
+
+        if not trains_found:
+            self.trains.append(Train(cc_id_with_offset=cc_id_with_offset))
+            return self.get_or_create_train_by_cc_id(cc_id_with_offset)
+
+        assert len(trains_found) == 1
+        return trains_found[0]
+
+    def update_field_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine, field_name: str, field_value: constants.HUMAN_READABLE_FIELD_TYPE) -> List[FieldLastValue]:
+        return self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=[(field_name, field_value)])
+
+    def update_fields_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine, fields_names_and_values: List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]) -> List[FieldLastValue]:
+        object_id = sql_arch_line.id_field
+        timestamp = sql_arch_line.date
+
+        all_fields_changed: List[FieldLastValue] = []
+
+        if object_id not in self.latest_fields_values_by_object_id:
+            self.latest_fields_values_by_object_id[object_id] = FieldsLibraryForOneObject(object_id)
+        latest_fields_values = self.latest_fields_values_by_object_id[object_id]
+
+        for field_name, field_value in fields_names_and_values:
+            field_has_changed = latest_fields_values.update_latest_value_for_field(field_name=field_name, field_value=field_value, timestamp=timestamp)
+            if field_has_changed is not None:
+                all_fields_changed.append(field_has_changed)
+
+        return all_fields_changed
+
+    def update_latest_raw_fields_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine) -> List[FieldLastValue]:
+        """returns all fields changed"""
+        if sql_arch_line.decoded_message:
+            fields_changed: List[FieldLastValue] = []
+            for field_name in sql_arch_line.decoded_message.decoded_fields_flat_directory.keys():
+                field_value = sql_arch_line.decoded_message.get_field_value_human_readable(field_name)
+                fields_changed += self.update_field_for_line(sql_arch_line=sql_arch_line, field_name=field_name, field_value=field_value)
+            return fields_changed
+            # for field_name, field_value in sql_arch_line.decoded_message.decoded_fields_flat_directory.items():
+            # fields_names_and_values = [pair for pair in ]
+            # return self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=fields_names_and_values)
+        else:
+            return self.update_field_for_line(sql_arch_line=sql_arch_line, field_name=constants.STATE_FIELD_NAME, field_value=sql_arch_line.get_new_state_str())
+
+    def decode_zc_mal_message(
+        self,
+        sql_arch_line: decode_archive.SqlArchArchiveLine,
+    ) -> List[FieldLastValue]:
+        all_fields_changed: List[FieldLastValue] = []
+
+        decoded_message = sql_arch_line.decoded_message
+        assert decoded_message is not None
+
+        zone_controller = self.get_or_create_zone_controller(sql_arch_line.eqp)
+        train = self.get_or_create_train_by_cc_id_field_name(decoded_fields_flat_directory=decoded_message.decoded_fields_flat_directory, cc_id_field_name="CCId1")
+
+        all_mals = [
+            MovementAuthorityLimitForOneZoneController(
+                label=mal_label,
+                train=train,
+                zone_controller=zone_controller,
+                mal_location=helpers.decode_one_exact_location(
+                    decoded_fields_flat_directory=decoded_message.decoded_fields_flat_directory,
+                    segment_id_field_name=segment_id_field_name,
+                    abscissa_field_name=abscissa_field_name,
+                    railway_line=self.railway_line,
+                ),
+                raw_mal_type=cast(int, decoded_message.decoded_fields_flat_directory.get("MALType")),
+            )
+            for mal_label, segment_id_field_name, abscissa_field_name in [
+                ("Vital MAL", "MALSegIdV", "MALOffsetV"),
+                ("Non Vital MAL", "MALSegIdNv", "MALOffsetNv"),
+                ("MAL ExtRear", "ExtRearSegId", "ExtRearOffset"),
+            ]
+        ]
+
+        for mal in all_mals:
+            all_fields_changed += self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=mal.field_names_and_values_in_report)
+
+        return all_fields_changed
+
+    def decode_cc_ats_tracking_message(
+        self,
+        sql_arch_line: decode_archive.SqlArchArchiveLine,
+    ) -> List[FieldLastValue]:
+        assert sql_arch_line.decoded_message is not None
+        train = self.get_or_create_train_by_cc_id_field_name(decoded_fields_flat_directory=sql_arch_line.decoded_message.decoded_fields_flat_directory, cc_id_field_name="CCId1")
+        train.update_location_from_decoded_fields_flat_directory(decoded_fields_flat_directory=sql_arch_line.decoded_message.decoded_fields_flat_directory, railway_line=self.railway_line)
+
+        all_fields_changed = self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=train.field_names_and_values_in_report)
+        return all_fields_changed
+
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+    def handle_lines(self) -> None:
+        for sql_arch_line in self.archive_library.all_sqlarch_lines:
+            previous_line_for_this_id = self.current_latest_line_by_id.get(sql_arch_line.id_field)
+            all_fields_changed = self.update_latest_raw_fields_for_line(sql_arch_line=sql_arch_line)
+
+            # if sql_arch_line.decoded_message and sql_arch_line.decoded_message.message_number == decode_product_topology_dependant_messages_content.ZC_ATS_MAL_MESSAGE_ID:
+            #    all_fields_changed += self.decode_zc_mal_message(sql_arch_line=sql_arch_line)
+            if sql_arch_line.decoded_message and sql_arch_line.decoded_message.message_number == decode_product_topology_dependant_messages_content.CC_ATS_TRACKING_MESSAGE_ID:
+                all_fields_changed += self.decode_cc_ats_tracking_message(sql_arch_line=sql_arch_line)
+
+            line_with_context = SqlArchArchiveLineWithContext(
+                sql_arch_line=sql_arch_line, previous_line_for_this_id=previous_line_for_this_id, archive_analyzis=self, all_fields_changed=all_fields_changed
+            )
+            self.all_sql_arch_lines_with_context.append(line_with_context)
+            self.current_latest_line_by_id[sql_arch_line.id_field] = line_with_context
+
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+    def create_output_with_all_fields_decoded(self, file_base_name: Optional[str] = None, begin_time_to_put_in_reports: str | datetime = parser.parse("1970-01-01T00:00:00.000")) -> int:
+        if file_base_name is None:
+            file_base_name = f"{self.label}_all_fields"
+
+        if isinstance(begin_time_to_put_in_reports, str):
+            begin_time_to_put_in_reports = parser.parse(begin_time_to_put_in_reports)
+
+        rows_as_list_dict: List[Dict[str, Any]] = []
+
+        for line_with_context in self.all_sql_arch_lines_with_context:
+            if line_with_context.sql_arch_line.date.replace(tzinfo=None) > begin_time_to_put_in_reports.replace(tzinfo=None):
+                all_fields: Dict[str, constants.FIELD_TYPE] = OrderedDict()
+                rows_as_list_dict.append(all_fields)
+                # all_fields["Timestamp"] = line_with_context.sql_arch_line.date.replace(tzinfo=None)
+                all_fields["Timestamp"] = line_with_context.sql_arch_line.get_date_raw_str()
+                all_fields["Id"] = line_with_context.sql_arch_line.id_field
+                all_fields.update(line_with_context.decoded_fields_flat_directory_except_fields_to_ignore)
+
+        # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
+        reports_utils.save_rows_to_output_files(
+            rows_as_list_dict=rows_as_list_dict,
+            file_base_name=file_base_name + "_by_column",
+            output_directory_path=self.output_directory_path,
+            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
+            split_big_files=False,
+        )
+
+        rows_as_list_dict = []
+
+        for line_with_context in self.all_sql_arch_lines_with_context:
+            if line_with_context.sql_arch_line.date.replace(tzinfo=None) > begin_time_to_put_in_reports.replace(tzinfo=None):
+                for field_name, field_value in line_with_context.decoded_fields_flat_directory_except_fields_to_ignore.items():
+                    all_fields = OrderedDict()
+                    rows_as_list_dict.append(all_fields)
+                    # all_fields["Timestamp"] = line_with_context.sql_arch_line.date.replace(tzinfo=None)
+                    all_fields["Timestamp"] = line_with_context.sql_arch_line.get_date_raw_str()
+                    all_fields["Id"] = line_with_context.sql_arch_line.id_field
+                    all_fields["Field"] = field_name
+                    all_fields["Value"] = field_value
+
+        # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
+        reports_utils.save_rows_to_output_files(
+            rows_as_list_dict=rows_as_list_dict,
+            file_base_name=file_base_name + "_by_line",
+            output_directory_path=self.output_directory_path,
+            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
+            split_big_files=False,
+        )
+
+        return len(rows_as_list_dict)
+
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+    def create_reports_all_sqlarch_changes_since_previous(
+        self, output_directory_path: Optional[str] = None, file_base_name: Optional[str] = None, begin_time_to_put_in_reports: str | datetime = parser.parse("1970-01-01T00:00:00.000")
+    ) -> int:
+
+        if isinstance(begin_time_to_put_in_reports, str):
+            begin_time_to_put_in_reports = parser.parse(begin_time_to_put_in_reports)
+
+        if file_base_name is None:
+            file_base_name = f"{self.label}_all_changes"
+
+        if output_directory_path is None:
+            output_directory_path = self.output_directory_path
+
+        rows_as_list_dict: List[Dict[str, Any]] = []
+
+        for line_with_context in self.all_sql_arch_lines_with_context:
+            # all_changes_since_previous = line_with_context.sql_arch_line.get_all_changes_since_previous(
+            #    previous_line_for_this_id=line_with_context.previous_line_for_this_id.sql_arch_line if line_with_context.previous_line_for_this_id else None
+            # )
+            all_changes_since_previous = line_with_context.get_all_changes_since_previous()
+            if all_changes_since_previous and line_with_context.sql_arch_line.date.replace(tzinfo=None) > begin_time_to_put_in_reports.replace(tzinfo=None):
+                rows_as_list_dict += all_changes_since_previous
+
+        # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
+        reports_utils.save_rows_to_output_files(
+            rows_as_list_dict=rows_as_list_dict,
+            file_base_name=file_base_name,
+            output_directory_path=output_directory_path,
+            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
+            split_big_files=False,
+        )
+        return len(rows_as_list_dict)

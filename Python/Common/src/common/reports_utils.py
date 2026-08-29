@@ -1,4 +1,6 @@
 import csv
+import numpy
+from enum import Enum
 import inspect
 import textwrap
 import time
@@ -61,8 +63,27 @@ def _write_xlsx_file_improved(rows_as_list_dict: List[Dict[str, Any]], xlsx_file
     workbook.close()
 
 
-def save_rows_to_output_files(rows_as_list_dict: List[Dict[str, Any]], file_base_name: str, output_directory_path: str, suffix_file_name_by_date: bool = False) -> bool:
-    if suffix_file_name_by_date:
+class SuffixFileNameByDate(Enum):
+    YES = "YES"
+    NO = "NO"
+    DO_BOTH = "DO_BOTH"
+
+
+def save_rows_to_output_files(
+    rows_as_list_dict: List[Dict[str, Any]],
+    file_base_name: str,
+    output_directory_path: str,
+    suffix_file_name_by_date: SuffixFileNameByDate = SuffixFileNameByDate.NO,
+    split_big_files: bool = True,
+    chunk_size: int = 50000,
+) -> bool:
+
+    if suffix_file_name_by_date == SuffixFileNameByDate.DO_BOTH:
+        return save_rows_to_output_files(rows_as_list_dict, file_base_name, output_directory_path, SuffixFileNameByDate.NO) and save_rows_to_output_files(
+            rows_as_list_dict, file_base_name, output_directory_path, SuffixFileNameByDate.YES
+        )
+
+    if suffix_file_name_by_date == SuffixFileNameByDate.YES:
         file_base_name += file_name_utils.get_file_suffix_with_current_datetime(include_underscore=True)
 
     with logger_config.stopwatch_with_label(f"{inspect.stack(0)[0].function} for {len(rows_as_list_dict)} lines to {file_base_name}", inform_beginning=True):
@@ -77,11 +98,21 @@ def save_rows_to_output_files(rows_as_list_dict: List[Dict[str, Any]], file_base
             try:
                 if len(rows_as_list_dict) < EXCEL_LIMIT_NUMBER_OF_LINES - 1:
                     with logger_config.stopwatch_with_label(f"Create {file_path_without_suffix}.xlsx", inform_beginning=True, monitor_ram_usage=True):
-                        pandas.DataFrame(rows_as_list_dict).to_excel(f"{file_path_without_suffix}.xlsx", index=False)
+                        try:
+                            pandas.DataFrame(rows_as_list_dict).to_excel(f"{file_path_without_suffix}.xlsx", index=False)
+                        except numpy._core._exceptions._ArrayMemoryError as arr_err:
+                            logger_config.print_and_log_exception(arr_err)
                 with logger_config.stopwatch_with_label(f"Create {file_path_without_suffix}.csv", inform_beginning=True, monitor_ram_usage=True):
-                    pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.csv", index=False)
+                    try:
+                        pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.csv", index=False, sep=";")
+                    except numpy._core._exceptions._ArrayMemoryError as arr_err:
+                        logger_config.print_and_log_exception(arr_err)
+
                 with logger_config.stopwatch_with_label(f"Create {file_path_without_suffix}.txt", inform_beginning=True, monitor_ram_usage=True):
-                    pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.txt", index=False, sep="\t")
+                    try:
+                        pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.txt", index=False, sep="\t")
+                    except numpy._core._exceptions._ArrayMemoryError as arr_err:
+                        logger_config.print_and_log_exception(arr_err)
                 # _write_xlsx_file(rows_as_list_dict, f"{file_path_without_suffix}.xlsx")
                 # _write_delimited_file(rows_as_list_dict, f"{file_path_without_suffix}.csv", delimiter=",")
                 # _write_delimited_file(rows_as_list_dict, f"{file_path_without_suffix}.txt", delimiter="\t")

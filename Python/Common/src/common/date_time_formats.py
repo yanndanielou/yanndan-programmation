@@ -1,10 +1,28 @@
 # -*-coding:Utf-8 -*
 """Date time formats"""
+
+from dateutil import parser
 from datetime import timedelta
+from datetime import datetime
+
+
+def format_duration_between_timestamps_str_to_string(start_timestamp_str: str, end_timestamp_str: str) -> str:
+    start_timestamp = parser.parse(start_timestamp_str)
+    end_timestamp = parser.parse(end_timestamp_str)
+    return format_duration_between_timestamps_to_string(start_timestamp, end_timestamp)
+
+
+def format_duration_between_timestamps_to_string(start_timestamp: datetime, end_timestamp: datetime) -> str:
+    duration_timedelta = end_timestamp - start_timestamp
+    return format_duration_timedelta_to_string(duration_timedelta)
 
 
 def format_duration_timedelta_to_string(duration_timedelta: timedelta) -> str:
-    return format_duration_to_string(duration_timedelta.seconds)
+    return format_duration_to_string(format_duration_timedelta_to_float_seconds(duration_timedelta))
+
+
+def format_duration_timedelta_to_float_seconds(duration_timedelta: timedelta) -> float:
+    return duration_timedelta.seconds + duration_timedelta.microseconds / 1000000
 
 
 def format_duration_to_string(duration_in_seconds_as_float: float) -> str:

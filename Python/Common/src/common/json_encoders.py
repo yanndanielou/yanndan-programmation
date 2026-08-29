@@ -1,8 +1,9 @@
 # -*-coding:Utf-8 -*
 """json encoders"""
+
 import json
 import textwrap
-from datetime import datetime
+from datetime import datetime, timedelta
 from json import JSONEncoder
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,8 @@ class ListOfObjectsEncoder(JSONEncoder):
             return list(o)
         if isinstance(o, datetime):
             return str(o)
+        if isinstance(o, timedelta):
+            return str(o)
         # return json.JSONEncoder.default(self, obj)
         return o.__dict__
 
@@ -25,17 +28,16 @@ class ListOfObjectsEncoder(JSONEncoder):
 class JsonEncodersUtils(metaclass=singleton.Singleton):
 
     @staticmethod
-    def serialize_list_objects_in_json(list_objects: list[Any], json_file_full_path: str) -> None:
-        chunk_size = 10000
+    def serialize_list_objects_in_json(list_objects: list[Any], json_file_full_path: str, split_big_files: bool = True, chunk_size: int = 20000) -> None:
 
         with logger_config.stopwatch_with_label(f"Serialize {len(list_objects)} in {json_file_full_path}"):
             with open(json_file_full_path, "w", encoding="utf-8") as json_file:
                 json_file.write("[\n")
                 first_item = True
 
-                for chunk_index in range(0, len(list_objects), chunk_size):
+                for chunk_index, chunk_start_index in enumerate(range(0, len(list_objects), chunk_size)):
                     with logger_config.stopwatch_with_label(f"Serialize {chunk_index} th chunk of {chunk_size} lines in {json_file_full_path}"):
-                        chunk = list_objects[chunk_index : chunk_index + chunk_size]
+                        chunk = list_objects[chunk_start_index : chunk_start_index + chunk_size]
 
                         for item in chunk:
                             if not first_item:
@@ -47,7 +49,7 @@ class JsonEncodersUtils(metaclass=singleton.Singleton):
 
                 json_file.write("\n]" if not first_item else "]")
 
-        if len(list_objects) > chunk_size:
+        if len(list_objects) > chunk_size and split_big_files:
             with logger_config.stopwatch_with_label(f"Serialize {len(list_objects)} in {json_file_full_path}* chunks files"):
                 # Split into chunks and create multiple files
                 base_path = Path(json_file_full_path)
@@ -55,12 +57,12 @@ class JsonEncodersUtils(metaclass=singleton.Singleton):
                 suffix = base_path.suffix
                 parent = base_path.parent
 
-                for chunk_index in range(0, len(list_objects), chunk_size):
-                    chunk = list_objects[chunk_index : chunk_index + chunk_size]
-                    chunk_number = chunk_index // chunk_size
+                for chunk_start_index in range(0, len(list_objects), chunk_size):
+                    chunk = list_objects[chunk_start_index : chunk_start_index + chunk_size]
+                    chunk_number = chunk_start_index // chunk_size
 
                     # Create filename with chunk number
-                    chunk_file_path = parent / f"{stem}_{chunk_number}{suffix}"
+                    chunk_file_path = parent / f"{stem}_part_{chunk_number}{suffix}"
 
                     with logger_config.stopwatch_with_label(f"Serialize {len(chunk)} in {chunk_file_path}"):
                         with open(chunk_file_path, "w", encoding="utf-8") as json_file:

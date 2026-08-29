@@ -65,9 +65,20 @@ def create_folder_if_not_exist(directory_path: str) -> bool:
         return False
 
 
+def open_text_file_and_get_read_lines(file_full_path: str) -> list[str] | None:
+    try:
+        with open(file_full_path, "r", encoding="utf-8", errors="strict") as f:
+            return f.readlines()
+    except (UnicodeDecodeError, ValueError):
+        with open(file_full_path, "r", encoding="ansi", errors="strict") as f:
+            return f.readlines()
+
+    return None
+
+
 def get_files_by_directory_and_file_name_mask(
     directory_path: str,
-    filename_pattern: str,
+    filename_pattern: str = "*",
     file_sort_order: FileSortOrder = FileSortOrder.NO_SORTING,
 ) -> List[str]:
     files_paths: List[str] = []
@@ -91,14 +102,22 @@ def get_files_modification_time(files_paths: List[str]) -> List[Tuple[str, datet
     return files_and_modified_time
 
 
-def rename_file_and_wait_if_is_locked(origin_path: str, dest_path: str) -> str:
+def rename_file_and_wait_if_is_locked(origin_path: str, dest_path: str, constant_retry_interval: bool = True, max_number_of_retry: int | None = None, additional_label: str = "") -> str:
 
-    success = False
-    while not success:
+    move_success = False
+    number_of_retried_performed = 0
+    while not move_success and (max_number_of_retry is None or max_number_of_retry > number_of_retried_performed):
         try:
-            return cast(str, shutil.copy(origin_path, dest_path))
-        except Exception as e:
-            logger_config.print_and_log_exception(e)
-            logger_config.print_and_log_error(f"Could not copy to :{dest_path}, must be used")
-            time.sleep(1)
+            shutil.move(origin_path, dest_path)
+            logger_config.print_and_log_info(f"{origin_path} moved to {dest_path}")
+            move_success = True
+            return dest_path
+        except PermissionError:
+            # logger_config.print_and_log_exception(permErr)
+            logger_config.print_and_log_error(f"{additional_label}File {origin_path} is used. Release it. Will wait {number_of_retried_performed} seconds")
+            number_of_retried_performed += 1
+            if constant_retry_interval:
+                time.sleep(1)
+            else:
+                time.sleep(number_of_retried_performed)
     assert False

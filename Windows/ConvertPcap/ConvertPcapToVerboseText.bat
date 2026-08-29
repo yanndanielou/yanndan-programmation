@@ -1,5 +1,10 @@
 SETLOCAL EnableDelayedExpansion
 
+@set argC=0
+@for %%x in (%*) do @Set /A argC+=1
+ECHO Number of files to process: %argC%
+
+:DO_PROCESS_BATCH_FILE
 
 @SET INPUT_PCAP_FILE_WITH_EXTENSION=%1
 
@@ -21,5 +26,7 @@ SETLOCAL EnableDelayedExpansion
 
 call "%ProgramFiles%\Wireshark\tshark.exe" -V -r %INPUT_PCAP_FILE_WITH_EXTENSION% > "%output_file_name%"
 
+rem shift
+rem if not "%~1"=="" goto :DO_PROCESS_BATCH_FILE
 
 @timeout /t 100

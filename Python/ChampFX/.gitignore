@@ -1,0 +1,14 @@
+*.zip
+*.7z
+*.xls*
+*.png
+/.mypy_cache/
+Input */
+test*.json
+test*.xlsx
+role_data.*
+*.html
+output*.txt
+Output/
+Output*/
+Output*

@@ -5,8 +5,7 @@ import pytest
 from typing import List
 
 from common import file_utils
-from stsloganalyzis import decode_cck
-
+from stsloganalyzis.cck import decode_cck
 
 decode_mpro_trace_date_data = [
     (

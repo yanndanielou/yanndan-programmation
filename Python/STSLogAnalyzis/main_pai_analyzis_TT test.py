@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 from common import file_name_utils, file_utils
 from logger import logger_config
 
-from stsloganalyzis import decode_cck, decode_pai_logs
+from stsloganalyzis.pai import decode_pai_logs
+from stsloganalyzis.cck import decode_cck
 
 OUTPUT_FOLDER_NAME = "output"
 

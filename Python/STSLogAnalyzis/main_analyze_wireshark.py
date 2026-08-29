@@ -1,4 +1,4 @@
-from stsloganalyzis import decode_wireshark
+from stsloganalyzis.wireshark import decode_wireshark
 from logger import logger_config
 
 with logger_config.application_logger():
@@ -7,4 +7,3 @@ with logger_config.application_logger():
     dissector.load_capture()
     dissector.print_packets_with_pretty_print()
     dissector.fill_dictionnary_for_each_packet()
-    pass

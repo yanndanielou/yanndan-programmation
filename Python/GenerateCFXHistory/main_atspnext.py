@@ -18,7 +18,7 @@ DISPLAY_OUTPUT = False
 def main() -> None:
     """Main function"""
 
-    with logger_config.application_logger("GenerateCFXHistory_nextatsp"):
+    with logger_config.application_logger(log_file_suffix_before_extension="GenerateCFXHistory_nextatsp"):
 
         if not os.path.exists(OUTPUT_DIRECTORY_NAME):
             os.mkdir(OUTPUT_DIRECTORY_NAME)

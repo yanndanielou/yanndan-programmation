@@ -1,11 +1,11 @@
 from logger import logger_config
 
-from stsloganalyzis import (
-    archive_analyzis,
-    decode_archive,
-    next_data,
+from stsloganalyzis.next_data import (
+    next_ats_data,
 )
 from dateutil import parser
+
+from stsloganalyzis.archive import archive_analyzis, decode_archive
 
 OUTPUT_DIRECTORY = "output"
 
@@ -13,10 +13,10 @@ OUTPUT_DIRECTORY = "output"
 def main() -> None:
     with logger_config.application_logger():
 
-        railway_line, archive_decoder = next_data.get_encoders()
+        railway_line, archive_decoder = next_ats_data.get_encoders(inv_conf_folder_full_path=r"C:\D\temp\NEXT_INV_V6_16_P2_conf\conf\dc_log")
 
         archive_library = (
-            next_data.get_classic_archive_library_base_builder(archive_decoder=archive_decoder)
+            next_ats_data.get_classic_archive_library_base_builder(archive_decoder=archive_decoder)
             .add_archive_file(file_full_path=r"C:\Users\fr232487\Downloads\Archives_site_202-03- 27 au 29\CFX00921734_FU.json")
             .add_sqlarch_archive_lines_filter(
                 decode_archive.DatesFilter.DateBetweenFilter(
