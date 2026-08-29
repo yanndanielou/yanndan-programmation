@@ -85,7 +85,7 @@ class MultipleFilesDownloadPopup:
             chunk_size = 8192
             downloaded = 0
             start_time = time.time()
-
+            previous_percent_logged = 0.0
             with open(save_path, "wb") as file:
                 while not self.cancel_downloads[save_path]:
                     chunk = response.read(chunk_size)
@@ -98,6 +98,11 @@ class MultipleFilesDownloadPopup:
                     remaining_time = (file_size - downloaded) / speed if speed > 0 else 0
                     percent = (downloaded / file_size) * 100
                     progress["value"] = percent
+
+                    if percent - previous_percent_logged > 5:
+                        logger_config.print_and_log_info(f"{save_path}, current progress: {round(percent,1)}%")
+                        previous_percent_logged = percent
+
                     readable_size = lambda size: (f"{size / (1024 * 1024):.2f} MB" if size > 1024 * 1024 else f"{size / 1024:.2f} KB")
                     eta_formatted = time.strftime("%M:%S", time.gmtime(remaining_time)) if remaining_time > 0 else "--"
                     progress_label.config(text=f"{percent:.2f}% ({readable_size(downloaded)} / {readable_size(file_size)}, ETA: {eta_formatted})")
@@ -165,6 +170,7 @@ class SingleFileDownloadPopupWithProgressBar:
             chunk_size = 8192
             downloaded = 0
 
+            previous_percent_logged = 0.0
             with open(self.save_path, "wb") as file:
                 while not self.cancel_download:
                     chunk = response.read(chunk_size)
@@ -174,6 +180,9 @@ class SingleFileDownloadPopupWithProgressBar:
                     downloaded += len(chunk)
                     percent = (downloaded / file_size) * 100
                     self.progress["value"] = percent
+                    if percent - previous_percent_logged > 5:
+                        logger_config.print_and_log_info(f"{self.save_path}, current progress: {round(percent,1)}%")
+                        previous_percent_logged = percent
                     self.progress_label.config(text=f"{percent:.2f}% ({downloaded / 1024:.2f} KB / {file_size / 1024:.2f} KB)")
                     self.master.update_idletasks()
 
