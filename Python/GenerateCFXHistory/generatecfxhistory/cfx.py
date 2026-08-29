@@ -100,7 +100,7 @@ class ChampFXLibrary:
         self._champfx_filters = champfx_filters
         self.label = label if label is not None else " ".join([field_filter._label for field_filter in self._champfx_filters])
 
-        self._all_projects: Set[str] = set()
+        self.all_projects: Set[str] = set()
 
         # self._all_current_owner_modifications_pickle_file_full_path = all_current_owner_modifications_pickle_file_full_path
         # self._all_current_owner_modifications_per_cfx_pickle_file_full_path = all_current_owner_modifications_per_cfx_pickle_file_full_path
@@ -151,7 +151,7 @@ class ChampFXLibrary:
         if all(champfx_filter.match_cfx_entry_with_cache(cfx_entry) for champfx_filter in self._champfx_filters):
             self._champfx_entry_by_id[cfx_entry.cfx_identifier] = cfx_entry
             self._champfx_entries.append(cfx_entry)
-            self._all_projects.add(cfx_entry.cfx_project_name)
+            self.all_projects.add(cfx_entry.cfx_project_name)
         return cfx_entry
 
     def create_or_fill_champfx_entry_with_inputs(self, cfx_inputs: ChampFxInputs) -> None:

@@ -100,7 +100,7 @@ def produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
         case GenerateByProjectInstruction.GLOBAL_ALL_PROJECTS:
             pass
         case GenerateByProjectInstruction.BY_PROJECT:
-            for project in sorted(cfx_library._all_projects):
+            for project in sorted(cfx_library.all_projects):
                 generation_instructions_copy = copy.deepcopy(generation_instructions)
                 generation_instructions_copy.generate_by_project_instruction = GenerateByProjectInstruction.ONLY_ONE_PROJECT
                 generation_instructions_copy.project_in_case_of_generate_by_project_instruction_one_project = project
@@ -137,7 +137,7 @@ def produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
 
     generation_label = cfx_library.label
     if len(generation_instructions.cfx_filters) > 0:
-        generation_label += "".join([filt.label for filt in generation_instructions.cfx_filters])
+        generation_label += " ".join([filt.label for filt in generation_instructions.cfx_filters])
     else:
         generation_label += "All "
 
@@ -174,13 +174,13 @@ def produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
         return
 
     if generation_instructions.create_excel_file:
-        with logger_config.stopwatch_with_label(label=f"produce_excel_output_file,  {generation_label}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(label=f"produce_excel_output_file, {generation_label}", inform_beginning=True):
             produce_excel_output_file_results_number_of_cfx_by_state_per_date(
                 output_excel_file=f"{generic_output_files_path_without_suffix_and_extension}.xlsx", all_results_to_display=all_results_to_display
             )
 
     if display_with_cumulative_eras:
-        with logger_config.stopwatch_with_label(label=f"produce_displays cumulative,  {generation_label}", inform_beginning=True, monitor_ram_usage=True):
+        with logger_config.stopwatch_with_label(label=f"produce_displays cumulative, {generation_label}", inform_beginning=True, monitor_ram_usage=True):
             produce_displays_and_create_html_number_of_cfx_by_state_per_date(
                 generation_instructions=generation_instructions,
                 use_cumulative=True,
@@ -204,14 +204,12 @@ def produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
 def produce_excel_output_file_results_number_of_cfx_by_state_per_date(output_excel_file: str, all_results_to_display: AllResultsPerDatesWithDebugDetails) -> None:
     # Convert data to DataFrame for Excel output
 
-    state_counts_per_timestamp: List[Dict[State, int]] = all_results_to_display.get_state_counts_per_timestamp()
+    state_counts_per_timestamp = all_results_to_display.get_state_counts_per_timestamp_plus_total_and_percentage()
     all_timestamps: List[datetime.datetime] = all_results_to_display.get_all_timestamps()
 
     # Convert state enumerations to their names for DataFrame columns
-    converted_data = [{state.name: count for state, count in state_dict.items()} for state_dict in state_counts_per_timestamp]
-    data_for_excel = pd.DataFrame(converted_data, index=all_timestamps)
+    data_for_excel = pd.DataFrame(state_counts_per_timestamp, index=all_timestamps)
     data_for_excel.index.name = "Date"
-
     pandas_utils.to_excel_wait_if_file_is_locked(sheet_name="CFX State Counts", output_excel_file=output_excel_file, data_for_excel=data_for_excel)
 
 
