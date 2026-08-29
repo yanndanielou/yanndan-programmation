@@ -278,7 +278,7 @@ class DetailsViewTab(ttk.Frame):
                 if self._files_download_popup is None:
                     popup = tkinter.Toplevel(self)
 
-                    self._files_download_popup = file_download_with_progress_bar.MultipleFilesDownloadPopup(master=popup, downloads=downloads, parallel=False, chunk_size=16384)
+                    self._files_download_popup = file_download_with_progress_bar.MultipleFilesDownloadPopup(master=popup, downloads=downloads, parallel=False)
                 else:
                     self._files_download_popup.add_download(url, save_path)
 
@@ -290,7 +290,7 @@ class DetailsViewTab(ttk.Frame):
 
                 url, save_path = self._parent.m3u_to_freebox_application.get_to_be_downloaded_movie_infos_by_id_str(destination_directory, m3u_entry_id_str)
                 popup = tkinter.Toplevel(self)
-                file_download_with_progress_bar.SingleFileDownloadPopupWithProgressBar(popup, url, save_path, chunk_size=16384)
+                file_download_with_progress_bar.SingleFileDownloadPopupWithProgressBar(popup, url, save_path)
 
             case Action.CREATE_XSPF_FILE:
                 self._parent.m3u_to_freebox_application.create_xspf_file_by_id_str(destination_directory, m3u_entry_id_str)
