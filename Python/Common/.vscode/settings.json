@@ -22,7 +22,7 @@
         "black"
     ],
     "python.sortImports.path": "isort",
-    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+    "python.testing.autoTestDiscoverOnSaveEnabled": false,
     // Formater automatiquement le code à la sauvegarde
     "editor.formatOnSave": true,
     // Configurer l'indentation pour Python
