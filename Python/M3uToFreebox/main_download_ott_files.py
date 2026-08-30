@@ -1,9 +1,9 @@
-import tkinter as tk
 import time
-import requests
+import tkinter as tk
 
+import requests
+from common import custom_iterator, date_time_formats, file_download_with_progress_bar, basic_encryption
 from logger import logger_config
-from common import date_time_formats, custom_iterator, file_download_with_progress_bar
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True)
@@ -78,27 +78,27 @@ def main() -> None:
 
         downloads_link_and_file = [
             (
-                "http://line.rex1468191.com/xmltv.php?username=029b58d302&password=360a41fadb",
+                f"http://line.rex1468191.com/xmltv.php?username={basic_encryption.decode_basic_encryption_string("13:c69e413")}&password={basic_encryption.decode_basic_encryption_string("471b52gbec")}",
                 r"D:\ott_all.txt",
             ),
             (
-                "http://line.rex1468191.com/get.php?username=029b58d302&password=360a41fadb&type=m3u_plus&output=ts",
+                f"http://line.rex1468191.com/get.php?username={basic_encryption.decode_basic_encryption_string("13:c69e413")}&password={basic_encryption.decode_basic_encryption_string("471b52gbec")}&type=m3u_plus&output=ts",
                 r"D:\ott_m3u.m3u",
             ),
             (
-                "http://line.rex1468191.com/player_api.php?username=029b58d302&password=360a41fadb&action=get_live_categories",
+                f"http://line.rex1468191.com/player_api.php?username={basic_encryption.decode_basic_encryption_string("13:c69e413")}&password={basic_encryption.decode_basic_encryption_string("471b52gbec")}&action=get_live_categories",
                 r"D:\ott_get_live_categories.json",
             ),
             (
-                "http://line.rex1468191.com/player_api.php?username=029b58d302&password=360a41fadb&action=get_vod_categories",
+                f"http://line.rex1468191.com/player_api.php?username={basic_encryption.decode_basic_encryption_string("13:c69e413")}&password={basic_encryption.decode_basic_encryption_string("471b52gbec")}&action=get_vod_categories",
                 r"D:\ott_get_vod_categories.json",
             ),
             (
-                "http://line.rex1468191.com/player_api.php?username=029b58d302&password=360a41fadb&action=get_series_categories",
+                f"http://line.rex1468191.com/player_api.php?username={basic_encryption.decode_basic_encryption_string("13:c69e413")}&password={basic_encryption.decode_basic_encryption_string("471b52gbec")}&action=get_series_categories",
                 r"D:\ott_get_series_categories.json",
             ),
             (
-                "http://line.rex1468191.com/player_api.php?username=029b58d302&password=360a41fadb&action=get_live_streams",
+                f"http://line.rex1468191.com/player_api.php?username={basic_encryption.decode_basic_encryption_string("13:c69e413")}&password={basic_encryption.decode_basic_encryption_string("471b52gbec")}&action=get_live_streams",
                 r"D:\get_live_streams.json",
             ),
         ]
