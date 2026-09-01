@@ -90,7 +90,7 @@ def save_rows_to_output_files(
         file_utils.create_folder_if_not_exist(output_directory_path)
         file_path_without_suffix = f"{output_directory_path}/{file_base_name}"
         try:
-            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(rows_as_list_dict, f"{file_path_without_suffix}.json")
+            json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(rows_as_list_dict, f"{file_path_without_suffix}.json", split_big_files=split_big_files, chunk_size=chunk_size)
         except MemoryError as err:
             logger_config.print_and_log_exception(err)
         success = False
