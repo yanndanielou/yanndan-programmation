@@ -98,6 +98,8 @@ class SimechResFile(atc_logs.ATCTestFile):
                 all_fields_names_and_raw_values = self.variables_line_dictionary_by_equipment[equipment_name].get_all_fields_names_and_values_in_data_raw_fields(
                     all_raw_values=raw_useful_values, test_result=self.atc_test_result
                 )
+                fix_specific_fields_values(all_fields_names_and_raw_values)
+
                 equipment = self.atc_test_result.equipments_library.get_or_create_equipment_by_name(equipment_name)
 
                 time_since_simulation_start = self.simulation_start_at_timestamp + timedelta(milliseconds=line_simulation_time_in_ms_since_beginning)
@@ -108,6 +110,29 @@ class SimechResFile(atc_logs.ATCTestFile):
                     equipment=equipment,
                     all_fields_names_and_raw_values=all_fields_names_and_raw_values,
                 )
+
+
+def fix_specific_fields_values(raw_variable_values: dict[str, str]) -> int:
+    number_of_fixes_applied = 0
+
+    # ST_US_MS             calcule 1 / 10000 * VAL + 0 en  s
+    pae_temps_cycle_fields_names_with_unit_in_value = [
+        "STAB_CPT1",
+        "STAB_CPT2",
+        "STAB_CPT3",
+        "STAB_CPTM1",
+        "STAB_CPTM2",
+        "STAB_CPTM3",
+    ]
+    for pae_temps_cycle_field_name_with_unit_in_value in pae_temps_cycle_fields_names_with_unit_in_value:
+        if pae_temps_cycle_field_name_with_unit_in_value in raw_variable_values:
+            inital_str_value = raw_variable_values[pae_temps_cycle_field_name_with_unit_in_value]
+            inital_str_value = inital_str_value.replace(" ms", "")
+            intial_float_value = float(inital_str_value)
+            raw_variable_values[pae_temps_cycle_field_name_with_unit_in_value + "_in_ms"] = str(round(intial_float_value * 100, 2))
+    pass
+
+    return number_of_fixes_applied
 
 
 class SimechResTestResult(atc_logs.ATCTestResult):
