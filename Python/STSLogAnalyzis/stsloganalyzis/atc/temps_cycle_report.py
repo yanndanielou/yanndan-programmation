@@ -15,33 +15,6 @@ import os
 OUTPUT_DIRECTORY = "output"
 
 
-def build_temps_cycle_report_from_res_files(all_res_files_paths: list[str]) -> None:
+def build_temps_cycle_report_from_atc_log(atc_test_result: atc_logs.ATCTestResult) -> None:
 
-    for perturbo_file in all_res_files_paths:
-
-        perturbo_test = (
-            perturbo.PerturboTestResult.Builder(label=f"{perturbo_file} temps cycle")
-            .add_file(
-                file_full_path=perturbo_file,
-                equipment_name=perturbo_file,
-                forced_cjour_at_beginning_value=2291,
-                forced_cdecenie_value=2,
-            )
-            .add_variables_names_creation_filter(
-                variables_filter=atc_logs.VariableNameFilter(
-                    white_or_black_list=common_filters.WhiteOrBlackListFilterType.WHITELIST,
-                    filter_type=common_filters.StringFilterType.BEGIN_WITH_STRING,
-                    variables_names=[
-                        "CHEURE",
-                        "CDECALAGE",
-                        "CJOUR",
-                        "CDECENIE",
-                        "TEMPS_AS",
-                        "STAB_CPT",
-                        "HLF",
-                    ],
-                )
-            )
-            .build()
-        )
-        # perturbo_test.create_report_all_variables()
+    atc_test_result.create_report_all_variables()
