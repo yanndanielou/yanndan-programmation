@@ -1,4 +1,5 @@
 from logger import logger_config
+from dataclasses import dataclass
 
 from stsloganalyzis.next_data import (
     next_ats_data,
@@ -13,6 +14,15 @@ from pstats import SortKey
 import os
 
 OUTPUT_DIRECTORY = "output"
+
+
+class OneEquipmentReport:
+    pass
+
+
+@dataclass
+class OneSimulationReport:
+    equipments_reports: list[OneEquipmentReport]
 
 
 def build_temps_cycle_report_from_atc_log(atc_test_result: atc_logs.ATCTestResult) -> None:
