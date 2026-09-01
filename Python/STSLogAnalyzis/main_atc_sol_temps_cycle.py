@@ -7,7 +7,7 @@ from pstats import SortKey
 from common import file_name_utils
 from logger import logger_config
 
-from stsloganalyzis.atc import temps_cycle_report, simech_res, atc_logs
+from stsloganalyzis.atc import atc_logs, simech_res, temps_cycle_report
 from stsloganalyzis.common import common_filters
 from stsloganalyzis.next_data import next_ats_data
 
