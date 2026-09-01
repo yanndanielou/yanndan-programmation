@@ -1,12 +1,11 @@
 from dataclasses import dataclass
-
-from enum import IntEnum, auto, Enum
-
 from datetime import datetime, timedelta
-from typing import List, Self, Dict
+from enum import Enum, IntEnum, auto
+from typing import Self
+
+from logger import logger_config
 
 from stsloganalyzis.atc import atc_logs
-from logger import logger_config
 
 
 class SimechResFileTypeLine(Enum):
@@ -40,11 +39,11 @@ class SimechResFile(atc_logs.ATCTestFile):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        self.variables_line_dictionary_by_equipment: Dict[str, atc_logs.ATCVariablesLineDictionary] = dict()
-        self.all_values_raw_lines: List[str] = []
+        self.variables_line_dictionary_by_equipment: dict[str, atc_logs.ATCVariablesLineDictionary] = {}
+        self.all_values_raw_lines: list[str] = []
         self.simulation_start_at_timestamp: datetime
 
-    def _compute_simulation_start_at(self, all_raw_lines: List[str]) -> None:
+    def _compute_simulation_start_at(self, all_raw_lines: list[str]) -> None:
         for raw_line in all_raw_lines:
             if 'SIMULATION_ENDED;"SIMU_START_AT:' in raw_line:
                 raw_date_as_str = raw_line.split(SimechResFileKnownScenarioInfo.SIMULATION_ENDED.value + ';"SIMU_START_AT:')[1].replace('"', "").replace(";", "").strip()
