@@ -53,14 +53,15 @@ class Variable:
     name: str
 
     def __post_init__(self) -> None:
-        self.initial_state: None | VariableStateInOneLine = None
-        self.states_chronologically_sorted: list[VariableStateInOneLine] = []
+        self.initial_state: None | InstantVariableState = None
+        self.instant_states_chronologically_sorted: list[InstantVariableState] = []
         self.states_changes_chronologically_sorted: list[VariableStateChange] = []
+        self.continuous_states_chronologically_sorted: list[ContinuousVariableState] = []
         self.all_raw_values: set[str] = set()
         self.number_of_occurences_by_value: dict[VARIABLE_STATE_TYPE, int] = defaultdict(int)
 
     @line_profiler.profile
-    def add_state(self, variable_state: "VariableStateInOneLine") -> None:
+    def add_state(self, variable_state: "InstantVariableState") -> None:
         self.number_of_occurences_by_value[variable_state.raw_value] += 1
         self.all_raw_values.add(variable_state.raw_value)
         if self.initial_state is None:
@@ -75,23 +76,40 @@ class Variable:
             #    self.states_chronologically_sorted[-1].result_line.horodate < variable_state.result_line.horodate
             # ), f"Return to past from {self.states_chronologically_sorted[-1].result_line.horodate} to {variable_state.result_line.horodate}  for {self.states_chronologically_sorted[-1].result_line.parent_file.file_full_path} in {len(self.states_chronologically_sorted)} th line"
 
-            self.states_chronologically_sorted.append(variable_state)
+            self.instant_states_chronologically_sorted.append(variable_state)
 
 
 @dataclass
-class VariableStateInOneLine:
+class ContinuousVariableState:
     variable: Variable
     raw_value: str
+
+    def __post_init__(self) -> None:
+        self.all_instant_variable_states: list[InstantVariableState] = []
+
+
+@dataclass
+class InstantVariableState:
     result_line: "ATCTestResultLine"
+    continuous_variable_state: ContinuousVariableState
 
     def __post_init__(self) -> None:
         self.variable.add_state(self)
+        self.continuous_variable_state.all_instant_variable_states.append(self)
+
+    @property
+    def raw_value(self) -> str:
+        return self.continuous_variable_state.raw_value
+
+    @property
+    def variable(self) -> Variable:
+        return self.continuous_variable_state.variable
 
 
 @dataclass
 class VariableStateChange:
-    previous_state: VariableStateInOneLine
-    new_state: VariableStateInOneLine
+    previous_state: InstantVariableState
+    new_state: InstantVariableState
 
     def __post_init__(self) -> None:
         self.variable.states_changes_chronologically_sorted.append(self)
@@ -250,7 +268,7 @@ class ATCTestResultLine:
 
     @line_profiler.profile
     def __post_init__(self) -> None:
-        self.all_variables_states: list[VariableStateInOneLine] = []
+        self.all_variables_states: list[InstantVariableState] = []
         self.test_result.result_lines.append(self)
 
         for variable_name, variable_raw_value in self.all_fields_names_and_raw_values.items():
@@ -267,7 +285,20 @@ class ATCTestResultLine:
     def handle_variable_state(self, variable_name: str, variable_raw_value: str) -> None:
         # logger_config.print_and_log_info(f"handle_variable_state, must be kept: {variable_name} {variable_raw_value}")
         variable = self.equipment.variables_library.get_or_create_variable_by_name(variable_name=variable_name)
-        variable_state = VariableStateInOneLine(variable=variable, raw_value=variable_raw_value, result_line=self)
+        assert isinstance(variable, Variable)
+        previous_variable_continuous_state = variable.continuous_states_chronologically_sorted[-1] if variable.continuous_states_chronologically_sorted else None
+        if previous_variable_continuous_state is None or previous_variable_continuous_state.raw_value != variable_raw_value:
+            variable.continuous_states_chronologically_sorted.append(
+                ContinuousVariableState(
+                    variable=variable,
+                    raw_value=variable_raw_value,
+                )
+            )
+
+        variable_state = InstantVariableState(
+            result_line=self,
+            continuous_variable_state=variable.continuous_states_chronologically_sorted[-1],
+        )
         self.all_variables_states.append(variable_state)
 
     @property
@@ -412,7 +443,7 @@ class ATCTestResult(ABC):
     def __post_init__(self) -> None:
         self.equipments_library = EquipmentsLibrary()
         self.all_variables_unsorted: list[Variable] = []
-        self.all_variables_states_sorted_by_line_number: list[VariableStateInOneLine] = []
+        self.all_variables_states_sorted_by_line_number: list[InstantVariableState] = []
         self._all_variables_states_changes_unsorted: list[VariableStateChange] = []
         self.all_variables_states_changes_sorted_by_timestamp: list[VariableStateChange] = []
         self.variables_names_creation_filters: list[VariableNameFilter] = []
@@ -463,7 +494,7 @@ class ATCTestResult(ABC):
     @logger_config.stopwatch_decorator()
     @line_profiler.profile
     def _compute_variables_states(self) -> None:
-        all_variables_unsorted = [state for variable in self.all_variables_unsorted for state in variable.states_chronologically_sorted]
+        all_variables_unsorted = [state for variable in self.all_variables_unsorted for state in variable.instant_states_chronologically_sorted]
         self.all_variables_states_sorted_by_line_number = sorted(all_variables_unsorted, key=lambda state: state.result_line.line_number)
         assert self.all_variables_states_sorted_by_line_number
 
@@ -472,7 +503,7 @@ class ATCTestResult(ABC):
     def _compute_variables_states_changes(self) -> None:
         for variable in self.all_variables_unsorted:
             previous_state = None
-            for state in variable.states_chronologically_sorted:
+            for state in variable.instant_states_chronologically_sorted:
                 if previous_state is not None and state.raw_value != previous_state.raw_value:
                     variable_state_change = VariableStateChange(previous_state, state)
                     self._all_variables_states_changes_unsorted.append(variable_state_change)
@@ -662,7 +693,7 @@ class ATCTestResult(ABC):
                         "value": state.raw_value,
                     }
                 )
-                for state in variable.states_chronologically_sorted
+                for state in variable.instant_states_chronologically_sorted
             ],
             file_base_name=f"{files_base_name}_all_states",
             output_directory_path=self.output_directory_path,
