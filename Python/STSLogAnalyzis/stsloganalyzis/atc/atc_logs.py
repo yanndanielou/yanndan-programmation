@@ -35,6 +35,7 @@ class Equipment:
         self.variables_library = EquipmentVariablesLibrary(self)
         self.all_variables_states_changes_unsorted: List[VariableStateChange] = []
         self.all_variables_states_changes_sorted_by_timestamp: List[VariableStateChange] = []
+        self.number_of_lines_with_horodate_conflits = 0
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def order_states_changes(self) -> None:
@@ -157,7 +158,7 @@ class ATCVariablesLineDictionary:
         all_raw_values = value_raw_line.rstrip().split(ATC_LOG_FILES_FIELDS_SEPARATOR)
         return self.get_all_fields_names_and_values_in_data_raw_fields(all_raw_values=all_raw_values, test_result=test_result)
 
-    def get_all_fields_names_and_values_in_data_raw_fields(self, all_raw_values: List[str], test_result: "ATCTestResult") -> Dict[str, str]:
+    def get_all_fields_names_and_values_in_data_raw_fields(self, all_raw_values: List[str], test_result: "ATCTestResult") -> dict[str, str]:
         all_fields_names_and_raw_values: Dict[str, str] = dict()
 
         assert len(all_raw_values) == len(self.all_fields_names), f"Inconsistency in {','.join(all_raw_values)}"
@@ -285,13 +286,21 @@ class ATCTestFile(ABC):
         self.current_forced_cjour_value: Optional[int] = None
         self.last_chunk_created_timestamp = datetime.datetime.now()
 
+    def get_last_line_for_equipment(self, equipment: Equipment) -> Optional[ATCTestResultLine]:
+        for previous_line_it in reversed(self.all_lines):
+            if previous_line_it.equipment == equipment:
+                return previous_line_it
+
+        return None
+
     @line_profiler.profile
-    def get_horodate(self, all_fields_names_and_raw_values: Dict[str, str]) -> Optional[datetime.datetime]:
+    def get_horodate(self, all_fields_names_and_raw_values: Dict[str, str], equipment: Equipment) -> Optional[datetime.datetime]:
 
         if "CHEURE" not in all_fields_names_and_raw_values:
             return None
 
-        previous_line = self.all_lines[-1] if self.all_lines else None
+        previous_line = self.get_last_line_for_equipment(equipment)
+        assert previous_line is not self
 
         if previous_line and previous_line.horodate is None:
             return None
@@ -331,13 +340,17 @@ class ATCTestFile(ABC):
         if previous_line and previous_line.horodate and previous_line.horodate >= horodate_computed:
             new_horodate = horodate_computed + datetime.timedelta(milliseconds=1)
 
-            logger_config.print_and_log_info_if(
-                horodate_computed == previous_line.horodate,
-                f"Fix horodate from {horodate_computed} (CHEURE {all_fields_names_and_raw_values["CHEURE"]}) to {new_horodate} to avoid same date, previous line was {previous_line_cheure}. File:{self.file_name}",
-            )
-            logger_config.print_and_log_info_if(
+            equipment.number_of_lines_with_horodate_conflits += 1
+
+            if horodate_computed == previous_line.horodate:
+                logger_config.print_and_log_info(
+                    f"Fix horodate for {equipment.name} from {horodate_computed} (CHEURE {all_fields_names_and_raw_values["CHEURE"]}) to {new_horodate} to avoid same date, previous line was {previous_line_cheure}. File:{self.file_name}",
+                    do_not_print=True,
+                )
+
+            logger_config.print_and_log_warning_if(
                 horodate_computed < previous_line.horodate,
-                f"Fix horodate from {horodate_computed} (CHEURE {all_fields_names_and_raw_values["CHEURE"]}) to {new_horodate} to avoid return to past, previous line was {previous_line_cheure}. File:{self.file_name}",
+                f"Fix horodate for {equipment.name} from {horodate_computed} (CHEURE {all_fields_names_and_raw_values["CHEURE"]}) to {new_horodate} to avoid return to past, previous line was {previous_line_cheure}. File:{self.file_name}",
             )
 
         return horodate_computed
@@ -367,7 +380,7 @@ class ATCTestFile(ABC):
         def variable_must_be_ignored_because_timestamp_filters(timestamp: datetime.datetime, all_filters: List[common_filters.DatesFilter.DateBetweenFilter]) -> bool:
             return all(filter.do_passes(timestamp) for filter in all_filters) if all_filters else True
 
-        horodate = cast(Optional[datetime.datetime], self.get_horodate(all_fields_names_and_raw_values))
+        horodate = cast(Optional[datetime.datetime], self.get_horodate(all_fields_names_and_raw_values, equipment))
 
         if horodate:
             if not variable_must_be_ignored_because_timestamp_filters(horodate, self.atc_test_result.variables_timestamp_creation_filters):
@@ -446,6 +459,9 @@ class ATCTestResult(ABC):
         logger_config.print_and_log_info(f"{len(self._all_variables_states_changes_unsorted)} _all_variables_states_changes_unsorted")
         logger_config.print_and_log_info(f"{len(self.all_variables_states_changes_sorted_by_timestamp)} all_variables_states_changes_sorted_by_timestamp")
 
+        for equipment in self.equipments_library.all_equipments:
+            logger_config.print_and_log_info(f"{equipment.name} : {equipment.number_of_lines_with_horodate_conflits} hordate conflicts")
+
     @logger_config.stopwatch_decorator()
     @line_profiler.profile
     def _compute_variables_states(self) -> None:
@@ -473,6 +489,10 @@ class ATCTestResult(ABC):
         variables_names_reports_filters: Optional[List[VariableNameFilter]] = None,
         equipment_names_reports_filters: Optional[List[EquipmentNameFilter]] = None,
         files_base_name: Optional[str] = None,
+        create_report_all_variables: bool = True,
+        create_report_all_variables_state_changes: bool = True,
+        create_report_all_variables_states_variable_by_column: bool = True,
+        create_report_all_variables_states_variable_by_rows: bool = True,
     ) -> None:
         if variables_names_reports_filters is None:
             variables_names_reports_filters = []
@@ -480,7 +500,7 @@ class ATCTestResult(ABC):
         if files_base_name is None:
             files_base_name = f"{self.label}_all"
 
-        if equipment_names_reports_filters is None:
+        if equipment_names_reports_filters is None and create_report_all_variables:
             for equipment in self.equipments_library.all_equipments:
                 self.create_report_all_variables(
                     variables_names_reports_filters=variables_names_reports_filters,
@@ -494,21 +514,26 @@ class ATCTestResult(ABC):
                     ],
                 )
 
-        self._create_report_all_variables_state_changes(
-            variables_names_reports_filters=variables_names_reports_filters,
-            equipment_names_reports_filters=equipment_names_reports_filters,
-            files_base_name=files_base_name,
-        )
-        self._create_report_all_variables_states_variable_by_column(
-            variables_names_reports_filters=variables_names_reports_filters,
-            equipment_names_reports_filters=equipment_names_reports_filters,
-            files_base_name=files_base_name,
-        )
-        self._create_report_all_variables_states_variable_by_rows(
-            variables_names_reports_filters=variables_names_reports_filters,
-            equipment_names_reports_filters=equipment_names_reports_filters,
-            files_base_name=files_base_name,
-        )
+        if create_report_all_variables_state_changes:
+            self._create_report_all_variables_state_changes(
+                variables_names_reports_filters=variables_names_reports_filters,
+                equipment_names_reports_filters=equipment_names_reports_filters,
+                files_base_name=files_base_name,
+            )
+
+        if create_report_all_variables_states_variable_by_column:
+            self._create_report_all_variables_states_variable_by_column(
+                variables_names_reports_filters=variables_names_reports_filters,
+                equipment_names_reports_filters=equipment_names_reports_filters,
+                files_base_name=files_base_name,
+            )
+
+        if create_report_all_variables_states_variable_by_rows:
+            self._create_report_all_variables_states_variable_by_rows(
+                variables_names_reports_filters=variables_names_reports_filters,
+                equipment_names_reports_filters=equipment_names_reports_filters,
+                files_base_name=files_base_name,
+            )
 
     def _create_report_all_variables_state_changes(
         self,
@@ -536,7 +561,8 @@ class ATCTestResult(ABC):
             ],
             file_base_name=f"{files_base_name}_state_changes",
             output_directory_path=self.output_directory_path,
-            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.DO_BOTH,
+            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
+            split_big_files=False,
         )
 
     def _create_report_all_variables_states_variable_by_rows(
@@ -564,7 +590,8 @@ class ATCTestResult(ABC):
             ],
             file_base_name=f"{files_base_name}_states_variable_by_rows",
             output_directory_path=self.output_directory_path,
-            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.DO_BOTH,
+            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
+            split_big_files=False,
         )
 
     def _create_report_all_variables_states_variable_by_column(
@@ -598,7 +625,8 @@ class ATCTestResult(ABC):
             rows_as_list_dict=rows_as_list_dict,
             file_base_name=f"{files_base_name}_states_variable_by_column",
             output_directory_path=self.output_directory_path,
-            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.DO_BOTH,
+            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
+            split_big_files=False,
         )
 
     def create_report_for_variable(self, variable: Variable, files_base_name: Optional[str] = None) -> None:
@@ -622,7 +650,8 @@ class ATCTestResult(ABC):
             ],
             file_base_name=f"{files_base_name}_state_changes",
             output_directory_path=self.output_directory_path,
-            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.DO_BOTH,
+            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
+            split_big_files=False,
         )
 
         reports_utils.save_rows_to_output_files(
@@ -639,7 +668,8 @@ class ATCTestResult(ABC):
             ],
             file_base_name=f"{files_base_name}_all_states",
             output_directory_path=self.output_directory_path,
-            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.DO_BOTH,
+            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
+            split_big_files=False,
         )
 
     class Builder(ABC):
