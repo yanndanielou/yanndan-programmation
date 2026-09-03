@@ -54,7 +54,8 @@ class GenerationInstructions:
     output_directory_name: str
     create_html_file: bool = True
     display_output_plots: bool = True
-    create_screenshot: bool = True
+    create_screenshot_png: bool = True
+    create_screenshot_svg: bool = True
 
 
 @dataclass
@@ -72,6 +73,8 @@ class NumberOfCfxStatePerDateGenerationInstructionsForLibrary(NumberOfCfxStatePe
     for_global: bool = True
     for_each_subsystem: bool = False
     for_each_current_owner_per_date: bool = False
+    display_without_cumulative_eras = True
+    display_with_cumulative_eras = True
 
 
 @dataclass
@@ -181,7 +184,7 @@ def produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
 
     if display_with_cumulative_eras:
         with logger_config.stopwatch_with_label(label=f"produce_displays cumulative, {generation_label}", inform_beginning=True, monitor_ram_usage=True):
-            produce_displays_and_create_html_number_of_cfx_by_state_per_date(
+            produce_displays_and_create_graph_files_number_of_cfx_by_state_per_date(
                 generation_instructions=generation_instructions,
                 use_cumulative=True,
                 all_results_to_display=all_results_to_display,
@@ -191,7 +194,7 @@ def produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
             )
     if display_without_cumulative_eras:
         with logger_config.stopwatch_with_label(label=f"produce_displays numbers, filter {generation_label} library {cfx_library.label}", inform_beginning=True, monitor_ram_usage=True):
-            produce_displays_and_create_html_number_of_cfx_by_state_per_date(
+            produce_displays_and_create_graph_files_number_of_cfx_by_state_per_date(
                 generation_instructions=generation_instructions,
                 use_cumulative=False,
                 all_results_to_display=all_results_to_display,
@@ -217,7 +220,7 @@ def produce_excel_output_file_results_number_of_cfx_by_state_per_date(output_exc
     )
 
 
-def produce_displays_and_create_html_number_of_cfx_by_state_per_date(
+def produce_displays_and_create_graph_files_number_of_cfx_by_state_per_date(
     generation_instructions: NumberOfCfxStatePerDateGenerationInstructions,
     use_cumulative: bool,
     all_results_to_display: AllResultsPerDates,
@@ -281,10 +284,12 @@ def produce_displays_and_create_html_number_of_cfx_by_state_per_date(
 
     # Close the figure to free up memory resources
     # Cleanup to avoid memory leaks
-    if generation_instructions.create_screenshot:
+    if generation_instructions.create_screenshot_png or generation_instructions.create_screenshot_svg:
         screenshot_file_path_without_extension = generation_instructions.output_directory_name + "/" + generation_label_for_valid_file_name + " cumulative " + str(use_cumulative)
-        fig.savefig(screenshot_file_path_without_extension + ".png")
-        fig.savefig(screenshot_file_path_without_extension + ".svg")
+        if generation_instructions.create_screenshot_png:
+            fig.savefig(screenshot_file_path_without_extension + ".png")
+        if generation_instructions.create_screenshot_svg:
+            fig.savefig(screenshot_file_path_without_extension + ".svg")
         # fig.savefig(screenshot_file_path_without_extension + ".pdf")
 
     if not generation_instructions.display_output_plots:
@@ -444,8 +449,8 @@ def produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
         produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
             cfx_library=cfx_library,
             generation_instructions=generation_instructions,
-            display_without_cumulative_eras=True,
-            display_with_cumulative_eras=True,
+            display_without_cumulative_eras=generation_instructions.display_without_cumulative_eras,
+            display_with_cumulative_eras=generation_instructions.display_with_cumulative_eras,
         )
 
     if generation_instructions.for_each_current_owner_per_date:
@@ -459,8 +464,8 @@ def produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
                 produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
                     cfx_library=cfx_library,
                     generation_instructions=generation_instructions_copy,
-                    display_without_cumulative_eras=False,
-                    display_with_cumulative_eras=True,
+                    display_without_cumulative_eras=generation_instructions.display_without_cumulative_eras,
+                    display_with_cumulative_eras=generation_instructions.display_with_cumulative_eras,
                 )
 
     if generation_instructions.for_each_subsystem:
@@ -473,7 +478,7 @@ def produce_number_of_cfx_by_state_per_date_line_graphs_for_library(
                     cfx_library=cfx_library,
                     generation_instructions=generation_instructions_copy,
                     display_without_cumulative_eras=False,
-                    display_with_cumulative_eras=True,
+                    display_with_cumulative_eras=generation_instructions.display_with_cumulative_eras,
                 )
 
 

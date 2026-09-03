@@ -67,6 +67,8 @@ def main() -> None:
                 create_html_file=CREATE_HTML_FILE,
                 display_output_plots=DISPLAY_OUTPUT,
                 dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+                create_screenshot_svg=False,
+                create_screenshot_png=False,
                 # states_whitelist=[State.SUBMITTED],
             ),
         )
