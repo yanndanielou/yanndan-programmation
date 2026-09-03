@@ -1,11 +1,13 @@
+import statistics
 import datetime
 from abc import ABC, abstractmethod
 from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
+from enum import Enum
 from typing import Self, cast
-from warnings import deprecated
 
 import line_profiler
+import numpy
 from common import (
     date_time_formats,
     file_name_utils,
@@ -19,11 +21,34 @@ from stsloganalyzis.common import common_filters
 
 ATC_LOG_FILES_FIELDS_SEPARATOR = ";"
 
-VARIABLE_STATE_TYPE = str | int | bool | datetime.datetime | None
+VARIABLE_STATE_TYPE_WITHOUT_NONE = str | int | float | bool | datetime.datetime
+VARIABLE_STATE_TYPE_WITH_NONE = VARIABLE_STATE_TYPE_WITHOUT_NONE | None
 
 
 NUMBER_OF_MILLISECONDS_IN_DAY = 24 * 60 * 60 * 100
 JUST_BEFORE_MIDNIGHT_IN_MILLISECONDS = NUMBER_OF_MILLISECONDS_IN_DAY - 1000
+
+
+class VariablesTypesLibrary:
+
+    def __init__(self, variable_type_by_name_dictionnary: dict[str, "VariablesTypesLibrary.VariableType"] | None = None) -> None:
+        self._variable_type_by_name_dictionary: dict[str, VariablesTypesLibrary.VariableType] = variable_type_by_name_dictionnary if variable_type_by_name_dictionnary else {}
+
+        for i in range(1, 3):
+            self.add_variable_type(f"STAB_CPT{i}", VariablesTypesLibrary.VariableType.FLOAT_TYPE)
+
+        self.add_variable_type("TEMPS_AS", VariablesTypesLibrary.VariableType.INT_TYPE)
+
+    def add_variable_type(self, variable_name: str, variable_type: "VariablesTypesLibrary.VariableType") -> None:
+        assert variable_name not in self._variable_type_by_name_dictionary
+        self._variable_type_by_name_dictionary[variable_name] = variable_type
+
+    def get_known_variable_type(self, variable_name: str) -> "VariablesTypesLibrary.VariableType | None":
+        return self._variable_type_by_name_dictionary.get(variable_name)
+
+    class VariableType(Enum):
+        INT_TYPE = "INT_TYPE"
+        FLOAT_TYPE = "FLOAT_TYPE"
 
 
 @dataclass
@@ -51,19 +76,76 @@ class Equipment:
 class Variable:
     equipment: Equipment
     name: str
+    known_variable_type: VariablesTypesLibrary.VariableType | None
 
     def __post_init__(self) -> None:
         self.initial_state: None | InstantVariableState = None
         self.instant_states_chronologically_sorted: list[InstantVariableState] = []
         self.states_changes_chronologically_sorted: list[VariableStateChange] = []
         self.continuous_states_chronologically_sorted: list[ContinuousVariableState] = []
-        self.all_raw_values: set[str] = set()
-        self.number_of_occurences_by_value: dict[VARIABLE_STATE_TYPE, int] = defaultdict(int)
+        self.number_of_occurrences_by_value: dict[VARIABLE_STATE_TYPE_WITH_NONE, int] = defaultdict(int)
+        self._cached_instant_states_best_values: list[VARIABLE_STATE_TYPE_WITH_NONE] | None = None
+
+    @property
+    def all_instant_states_best_values(self) -> list[VARIABLE_STATE_TYPE_WITH_NONE]:
+        if self._cached_instant_states_best_values is not None:
+            return self._cached_instant_states_best_values
+
+        self._cached_instant_states_best_values = [instant_variable_state.best_value for instant_variable_state in self.instant_states_chronologically_sorted]
+        return self.all_instant_states_best_values
+
+    @property
+    def mean_numeric_values_by_number_occurrences(self) -> float:
+        assert self.known_variable_type
+        assert self.known_variable_type in [VariablesTypesLibrary.VariableType.INT_TYPE, VariablesTypesLibrary.VariableType.FLOAT_TYPE]
+        ret_as_float_64 = numpy.mean(cast(list[int | float], self.all_instant_states_best_values))
+        ret_as_float = ret_as_float_64.item()
+        return ret_as_float
+
+    @property
+    def median_numeric_values_by_number_occurrences(self) -> float:
+        assert self.known_variable_type
+        assert self.known_variable_type in [VariablesTypesLibrary.VariableType.INT_TYPE, VariablesTypesLibrary.VariableType.FLOAT_TYPE]
+        ret_as_float_64 = numpy.median(cast(list[int | float], self.all_instant_states_best_values))
+        ret = ret_as_float_64.item()
+        return ret
+
+    @property
+    def variance_numeric_values_by_number_occurrences(self) -> float:
+        assert self.known_variable_type
+        assert self.known_variable_type in [VariablesTypesLibrary.VariableType.INT_TYPE, VariablesTypesLibrary.VariableType.FLOAT_TYPE]
+        return statistics.pvariance(cast(list[int | float], self.all_instant_states_best_values))
+
+    @property
+    def ecart_type_numeric_values_by_number_occurrences(self) -> float:
+        assert self.known_variable_type
+        assert self.known_variable_type in [VariablesTypesLibrary.VariableType.INT_TYPE, VariablesTypesLibrary.VariableType.FLOAT_TYPE]
+        return statistics.pstdev(cast(list[int | float], self.all_instant_states_best_values))
+
+    @property
+    def min_numeric_values_by_number_occurrences(self) -> int | float:
+        assert self.known_variable_type
+        assert self.known_variable_type in [VariablesTypesLibrary.VariableType.INT_TYPE, VariablesTypesLibrary.VariableType.FLOAT_TYPE]
+        ret = min(cast(list[int | float], self.all_instant_states_best_values))
+        return ret
+
+    @property
+    def max_numeric_values_by_number_occurrences(self) -> int | float:
+        assert self.known_variable_type
+        assert self.known_variable_type in [VariablesTypesLibrary.VariableType.INT_TYPE, VariablesTypesLibrary.VariableType.FLOAT_TYPE]
+        ret = max(cast(list[int | float], self.all_instant_states_best_values))
+        return ret
+
+    @property
+    def deciles_numeric_values_by_number_occurrences(self) -> list[float]:
+        assert self.known_variable_type
+        assert self.known_variable_type in [VariablesTypesLibrary.VariableType.INT_TYPE, VariablesTypesLibrary.VariableType.FLOAT_TYPE]
+        ret = numpy.percentile(cast(list[int | float], self.all_instant_states_best_values), numpy.arange(10, 100, 10))
+        return cast(list[float], ret)
 
     @line_profiler.profile
     def add_state(self, variable_state: "InstantVariableState") -> None:
-        self.number_of_occurences_by_value[variable_state.raw_value] += 1
-        self.all_raw_values.add(variable_state.raw_value)
+        self.number_of_occurrences_by_value[variable_state.best_value] += 1
         if self.initial_state is None:
             self.initial_state = variable_state
         else:
@@ -82,10 +164,23 @@ class Variable:
 @dataclass
 class ContinuousVariableState:
     variable: Variable
-    raw_value: str
+    raw_str_value: str
 
     def __post_init__(self) -> None:
         self.all_instant_variable_states: list[InstantVariableState] = []
+        self.value_in_proper_type = self._convert_to_known_type(self.raw_str_value, self.variable.known_variable_type) if self.variable.known_variable_type else None
+
+    @property
+    def best_value(self) -> VARIABLE_STATE_TYPE_WITH_NONE:
+        return self.value_in_proper_type if self.value_in_proper_type is not None else self.raw_str_value
+
+    def _convert_to_known_type(self, raw_str_value: str, known_variable_type: VariablesTypesLibrary.VariableType) -> VARIABLE_STATE_TYPE_WITH_NONE:
+        if known_variable_type == VariablesTypesLibrary.VariableType.INT_TYPE:
+            return int(raw_str_value)
+        if known_variable_type == VariablesTypesLibrary.VariableType.FLOAT_TYPE:
+            return float(raw_str_value)
+
+        assert False, f"Unsupported type {known_variable_type}"
 
 
 @dataclass
@@ -99,7 +194,11 @@ class InstantVariableState:
 
     @property
     def raw_value(self) -> str:
-        return self.continuous_variable_state.raw_value
+        return self.continuous_variable_state.raw_str_value
+
+    @property
+    def best_value(self) -> VARIABLE_STATE_TYPE_WITH_NONE:
+        return self.continuous_variable_state.best_value
 
     @property
     def variable(self) -> Variable:
@@ -146,15 +245,24 @@ class EquipmentVariablesLibrary:
     def __post_init__(self) -> None:
         self.all_variables: list[Variable] = []
 
-    @line_profiler.profile
-    def get_or_create_variable_by_name(self, variable_name: str) -> Variable:
+    def has_variable_with_name(self, variable_name: str) -> bool:
+        all_variable_found = [var for var in self.all_variables if var.name == variable_name]
+        return all_variable_found is not None
+
+    def get_variable_with_name_if_exists(self, variable_name: str) -> Variable | None:
         all_variable_found = [var for var in self.all_variables if var.name == variable_name]
         if not all_variable_found:
-            self.all_variables.append(Variable(equipment=self.equipment, name=variable_name))
-            return cast(Variable, self.get_or_create_variable_by_name(variable_name=variable_name))
-
+            return None
         assert len(all_variable_found) == 1
         return all_variable_found[0]
+
+    @line_profiler.profile
+    def get_or_create_variable_by_name(self, variable_name: str, variables_types_library: VariablesTypesLibrary) -> Variable:
+        variable_found = self.get_variable_with_name_if_exists(variable_name)
+        if variable_found is None:
+            self.all_variables.append(Variable(equipment=self.equipment, name=variable_name, known_variable_type=variables_types_library.get_known_variable_type(variable_name)))
+            return cast(Variable, self.get_or_create_variable_by_name(variable_name=variable_name, variables_types_library=variables_types_library))
+        return variable_found
 
 
 @dataclass
@@ -275,7 +383,6 @@ class ATCTestResultLine:
             self.handle_variable_state(variable_name=variable_name, variable_raw_value=variable_raw_value)
 
     @property
-    @deprecated("not used")
     def best_timestamp(self) -> None | datetime.datetime:
         if self.horodate:
             return self.horodate
@@ -284,14 +391,14 @@ class ATCTestResultLine:
     @line_profiler.profile
     def handle_variable_state(self, variable_name: str, variable_raw_value: str) -> None:
         # logger_config.print_and_log_info(f"handle_variable_state, must be kept: {variable_name} {variable_raw_value}")
-        variable = self.equipment.variables_library.get_or_create_variable_by_name(variable_name=variable_name)
+        variable = self.equipment.variables_library.get_or_create_variable_by_name(variable_name=variable_name, variables_types_library=self.parent_file.atc_test_result.variables_types_library)
         assert isinstance(variable, Variable)
         previous_variable_continuous_state = variable.continuous_states_chronologically_sorted[-1] if variable.continuous_states_chronologically_sorted else None
-        if previous_variable_continuous_state is None or previous_variable_continuous_state.raw_value != variable_raw_value:
+        if previous_variable_continuous_state is None or previous_variable_continuous_state.raw_str_value != variable_raw_value:
             variable.continuous_states_chronologically_sorted.append(
                 ContinuousVariableState(
                     variable=variable,
-                    raw_value=variable_raw_value,
+                    raw_str_value=variable_raw_value,
                 )
             )
 
@@ -429,9 +536,9 @@ class ATCTestFile(ABC):
             )
         )
 
-        if len(self.all_lines) % 10000 == 0:
+        if len(self.all_lines) % 20000 == 0:
             logger_config.print_and_log_info(
-                f"{len(self.all_lines)} lines created so far. Duration since last chunk {date_time_formats.format_duration_between_timestamps_to_string(self.last_chunk_created_timestamp,datetime.datetime.now())}"  # noqa: DTZ005
+                f"{len(self.all_lines)} lines handled created so far. Duration since last chunk {date_time_formats.format_duration_between_timestamps_to_string(self.last_chunk_created_timestamp,datetime.datetime.now())}"  # noqa: DTZ005
             )
             self.last_chunk_created_timestamp = datetime.datetime.now()  # noqa: DTZ005
 
@@ -448,6 +555,7 @@ class ATCTestResult(ABC):
         self.all_variables_states_changes_sorted_by_timestamp: list[VariableStateChange] = []
         self.variables_names_creation_filters: list[VariableNameFilter] = []
         self.variables_timestamp_creation_filters: list[common_filters.DatesFilter.DateBetweenFilter] = []
+        self.variables_types_library = VariablesTypesLibrary()
         self.output_directory_path = "output"
         self.all_atc_test_files: list[ATCTestFile] = []
         self.result_lines: list[ATCTestResultLine] = []
@@ -504,7 +612,7 @@ class ATCTestResult(ABC):
         for variable in self.all_variables_unsorted:
             previous_state = None
             for state in variable.instant_states_chronologically_sorted:
-                if previous_state is not None and state.raw_value != previous_state.raw_value:
+                if previous_state is not None and state.best_value != previous_state.best_value:
                     variable_state_change = VariableStateChange(previous_state, state)
                     self._all_variables_states_changes_unsorted.append(variable_state_change)
                     variable.equipment.all_variables_states_changes_unsorted.append(variable_state_change)
@@ -579,8 +687,8 @@ class ATCTestResult(ABC):
                         "line": state_change.new_state.result_line.line_number,
                         "equipment": state_change.variable.equipment.name,
                         "variable": state_change.variable.name,
-                        "old_value": state_change.previous_state.raw_value if state_change.previous_state else None,
-                        "new_value": state_change.new_state.raw_value,
+                        "old_value": state_change.previous_state.best_value if state_change.previous_state else None,
+                        "new_value": state_change.new_state.best_value,
                         "previous_state_duration": state_change.previous_state_duration,
                     }
                 )
@@ -610,7 +718,7 @@ class ATCTestResult(ABC):
                         "line": state.result_line.line_number,
                         "equipment": state.variable.equipment.name,
                         "variable": state.variable.name,
-                        "value": state.raw_value,
+                        "value": state.best_value,
                     }
                 )
                 for state in self.all_variables_states_sorted_by_line_number
@@ -640,7 +748,7 @@ class ATCTestResult(ABC):
                 and equipment_must_be_kept_after_filters(state.variable.equipment.name, equipment_names_reports_filters)
             ]
             if variables_states:
-                result_line_dict: dict[str, None | str | datetime.datetime | int] = OrderedDict()
+                result_line_dict: dict[str, VARIABLE_STATE_TYPE_WITH_NONE] = OrderedDict()
                 rows_as_list_dict.append(result_line_dict)
                 result_line_dict["horodate"] = result_line.horodate
                 result_line_dict["Date according to simulation start"] = result_line.time_according_to_simulation_start
@@ -648,7 +756,7 @@ class ATCTestResult(ABC):
                 result_line_dict["equipment"] = result_line.equipment.name
 
             for variable_state in variables_states:
-                result_line_dict[variable_state.variable.name] = variable_state.raw_value
+                result_line_dict[variable_state.variable.name] = variable_state.best_value
 
         reports_utils.save_rows_to_output_files(
             rows_as_list_dict=rows_as_list_dict,
@@ -670,8 +778,8 @@ class ATCTestResult(ABC):
                         "horodate": state_change.new_state.result_line.horodate,
                         "Date according to simulation start": state_change.new_state.result_line.time_according_to_simulation_start,
                         "line": state_change.new_state.result_line.line_number,
-                        "old_value": state_change.previous_state.raw_value if state_change.previous_state else None,
-                        "new_value": state_change.new_state.raw_value,
+                        "old_value": state_change.previous_state.best_value if state_change.previous_state else None,
+                        "new_value": state_change.new_state.best_value,
                         "previous_state_duration": state_change.previous_state_duration,
                     }
                 )
@@ -690,7 +798,7 @@ class ATCTestResult(ABC):
                         "horodate": state.result_line.horodate,
                         "Date according to simulation start": state.result_line.time_according_to_simulation_start,
                         "line": state.result_line.line_number,
-                        "value": state.raw_value,
+                        "value": state.best_value,
                     }
                 )
                 for state in variable.instant_states_chronologically_sorted
@@ -717,6 +825,10 @@ class ATCTestResult(ABC):
 
         def add_timestamp_filter(self, timestamp_filter: common_filters.DatesFilter.DateBetweenFilter) -> Self:
             self._atc_test_result_created.variables_timestamp_creation_filters.append(timestamp_filter)
+            return self
+
+        def add_variables_types_library(self, variables_types_library: VariablesTypesLibrary) -> Self:
+            self._atc_test_result_created.variables_types_library = variables_types_library
             return self
 
         def build(self) -> "ATCTestResult":
@@ -773,7 +885,7 @@ def equipment_must_be_kept_after_filters(equipment_name: str, all_filters: None 
 
 
 @line_profiler.profile
-def convert_to_proper_type(value: str) -> VARIABLE_STATE_TYPE:
+def convert_to_proper_type(value: str) -> VARIABLE_STATE_TYPE_WITH_NONE:
     # Try to convert to bool
     if value.lower() in ("VRAI", "true", "1", "yes", "on"):
         return True

@@ -1,9 +1,6 @@
-from dateutil import parser
 from logger import logger_config
 
-from stsloganalyzis.next_data import next_ats_data
 from stsloganalyzis.atc import simech_res
-from stsloganalyzis.common import common_filters
 
 OUTPUT_DIRECTORY = "output"
 

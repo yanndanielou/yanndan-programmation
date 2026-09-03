@@ -112,8 +112,11 @@ class SimechResFile(atc_logs.ATCTestFile):
 
 
 def fix_specific_fields_values(raw_variable_values: dict[str, str]) -> int:
-    number_of_fixes_applied = 0
+    number_of_fixes_applied = _fix_pae_temps_cycle_cyclos_fields_values(raw_variable_values) + _fix_pags_temps_cycle_cyclos_fields_values(raw_variable_values)
 
+
+def _fix_pae_temps_cycle_cyclos_fields_values(raw_variable_values: dict[str, str]) -> int:
+    number_of_fixes_applied = 0
     # ST_US_MS             calcule 1 / 10000 * VAL + 0 en  s
     pae_temps_cycle_fields_names_with_unit_in_value = [
         "STAB_CPT1",
@@ -128,9 +131,21 @@ def fix_specific_fields_values(raw_variable_values: dict[str, str]) -> int:
             inital_str_value = raw_variable_values[pae_temps_cycle_field_name_with_unit_in_value]
             inital_str_value = inital_str_value.replace(" ms", "")
             intial_float_value = float(inital_str_value)
-            raw_variable_values[pae_temps_cycle_field_name_with_unit_in_value + "_in_ms"] = str(round(intial_float_value * 100, 2))
+            raw_variable_values[pae_temps_cycle_field_name_with_unit_in_value] = str(round(intial_float_value * 100, 2))
+
     pass
 
+    return number_of_fixes_applied
+
+
+def _fix_pags_temps_cycle_cyclos_fields_values(raw_variable_values: dict[str, str]) -> int:
+    number_of_fixes_applied = 0
+    for raw_variable_name, _ in raw_variable_values.items():
+        if raw_variable_name.startswith("TEMPS_AS"):
+            inital_str_value = raw_variable_values[raw_variable_name]
+            intial_int_value = int(inital_str_value)
+            raw_variable_values[raw_variable_name] = str(intial_int_value // 10)
+            number_of_fixes_applied += 1
     return number_of_fixes_applied
 
 
