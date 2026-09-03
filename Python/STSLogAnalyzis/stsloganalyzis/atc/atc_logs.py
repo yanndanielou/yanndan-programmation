@@ -143,6 +143,13 @@ class Variable:
         ret = numpy.percentile(cast(list[int | float], self.all_instant_states_best_values), numpy.arange(10, 100, 10))
         return cast(list[float], ret)
 
+    @property
+    def centiles_numeric_values_by_number_occurrences(self) -> list[float]:
+        assert self.known_variable_type
+        assert self.known_variable_type in [VariablesTypesLibrary.VariableType.INT_TYPE, VariablesTypesLibrary.VariableType.FLOAT_TYPE]
+        ret = numpy.percentile(cast(list[int | float], self.all_instant_states_best_values), numpy.arange(1, 100, 1))
+        return cast(list[float], ret)
+
     @line_profiler.profile
     def add_state(self, variable_state: "InstantVariableState") -> None:
         self.number_of_occurrences_by_value[variable_state.best_value] += 1
@@ -538,7 +545,7 @@ class ATCTestFile(ABC):
 
         if len(self.all_lines) % 20000 == 0:
             logger_config.print_and_log_info(
-                f"{len(self.all_lines)} lines handled created so far. Duration since last chunk {date_time_formats.format_duration_between_timestamps_to_string(self.last_chunk_created_timestamp,datetime.datetime.now())}"  # noqa: DTZ005
+                f"{len(self.all_lines)} lines handled so far. Duration since last chunk {date_time_formats.format_duration_between_timestamps_to_string(self.last_chunk_created_timestamp,datetime.datetime.now())}"  # noqa: DTZ005
             )
             self.last_chunk_created_timestamp = datetime.datetime.now()  # noqa: DTZ005
 

@@ -113,6 +113,7 @@ class SimechResFile(atc_logs.ATCTestFile):
 
 def fix_specific_fields_values(raw_variable_values: dict[str, str]) -> int:
     number_of_fixes_applied = _fix_pae_temps_cycle_cyclos_fields_values(raw_variable_values) + _fix_pags_temps_cycle_cyclos_fields_values(raw_variable_values)
+    return number_of_fixes_applied
 
 
 def _fix_pae_temps_cycle_cyclos_fields_values(raw_variable_values: dict[str, str]) -> int:
