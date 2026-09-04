@@ -15,6 +15,9 @@ from logger import logger_config
 
 from common import file_name_utils
 
+import shutil
+from pathlib import Path
+
 
 class FileSortOrder(Enum):
     ALPHABETICAL = "alphabetical"
@@ -121,3 +124,34 @@ def rename_file_and_wait_if_is_locked(origin_path: str, dest_path: str, constant
             else:
                 time.sleep(number_of_retried_performed)
     assert False
+
+
+def copy_directory_full_arborescence_for_files_having_allowed_extension(src_dir: str, dest_dir: str, extensions_autorisees: list[str]) -> None:
+    """Copie l'arborescence de src_dir vers dest_dir en ne gardant que
+
+    les fichiers dont l'extension est dans extensions_autorisees.
+    """
+    src = Path(src_dir)
+    dest = Path(dest_dir)
+
+    # Normalise les extensions en minuscules et s'assure qu'elles commencent par un point
+    ext_set = {e.lower() if e.startswith(".") else f".{e.lower()}" for e in extensions_autorisees}
+
+    # Parcourt tous les éléments du dossier source (fichiers et sous-dossiers)
+    for chemin_element in src.rglob("*"):
+        # Calcule le chemin de destination correspondant
+        chemin_relatif = chemin_element.relative_to(src)
+        chemin_destination = dest / chemin_relatif
+
+        if chemin_element.is_dir():
+            # Crée le sous-dossier s'il n'existe pas encore
+            chemin_destination.mkdir(parents=True, exist_ok=True)
+
+        elif chemin_element.is_file():
+            # Vérifie si l'extension du fichier fait partie de la liste
+            if chemin_element.suffix.lower() in ext_set:
+                # S'assure que le dossier parent de destination existe (au cas où)
+                chemin_destination.parent.mkdir(parents=True, exist_ok=True)
+                # Copie le fichier en préservant les métadonnées (droits, dates)
+                shutil.copy2(chemin_element, chemin_destination)
+                logger_config.print_and_log_info(f"Copié : {chemin_relatif}")
