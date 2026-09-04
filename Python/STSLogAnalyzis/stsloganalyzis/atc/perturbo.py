@@ -28,33 +28,34 @@ class PerturboFile(atc_logs.ATCTestFile):
         return self.equipment_name
 
     def get_equipment(self, test_result: atc_logs.ATCTestResult) -> atc_logs.Equipment:
-        return test_result.equipments_library.get_or_create_equipment_by_name(self.get_equipment_name())
+        return test_result.get_or_create_equipment_by_name_if_allowed(self.get_equipment_name())
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     @line_profiler.profile
     def compute_all_variables_states(self) -> None:
 
-        equipment = self.get_equipment(self.atc_test_result)
-        assert isinstance(equipment, atc_logs.Equipment)
+        equipment = self.atc_test_result.get_or_create_equipment_by_name_if_allowed(self.equipment_name)
+        if equipment:
+            assert isinstance(equipment, atc_logs.Equipment)
 
-        for line_number, value_raw_line in enumerate(self.all_values_raw_lines):
+            for line_number, value_raw_line in enumerate(self.all_values_raw_lines):
 
-            all_fields_names_and_raw_values = self.variables_line_dictionary.get_all_fields_names_and_values_in_data_line(value_raw_line, self.atc_test_result)
+                all_fields_names_and_raw_values = self.variables_line_dictionary.get_all_fields_names_and_values_in_data_line(value_raw_line, self.atc_test_result)
 
-            self.create_result_line_if_needed(
-                line_number=line_number,
-                time_according_to_simulation_start=None,
-                equipment=equipment,
-                all_fields_names_and_raw_values=all_fields_names_and_raw_values,
-            )
+                self.create_result_line_if_needed(
+                    line_number=line_number,
+                    time_according_to_simulation_start=None,
+                    equipment=equipment,
+                    all_fields_names_and_raw_values=all_fields_names_and_raw_values,
+                )
 
 
 class PerturboTestResult(atc_logs.ATCTestResult):
 
     class Builder(atc_logs.ATCTestResult.Builder):
 
-        def __init__(self, label: str) -> None:
-            super().__init__(atc_test_result_created=PerturboTestResult(label))
+        def __init__(self, label: str, environment_name: str = "") -> None:
+            super().__init__(atc_test_result_created=PerturboTestResult(label, environment_name))
 
         def add_files(self, directory_path: str, filename_pattern: str, equipment_name: str) -> Self:
             for file_full_path in self.get_files_full_paths(directory_path=directory_path, filename_pattern=filename_pattern):

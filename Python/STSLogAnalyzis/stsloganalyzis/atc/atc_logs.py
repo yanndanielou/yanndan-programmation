@@ -35,6 +35,12 @@ class EquipmentType(Enum):
     PAE = "PAE"
 
 
+class EquipmentRedundancy(Enum):
+    REDUNDANT = "REDUNDANT"
+    NOT_REDUNDANT = "NOT_REDUNDANT"
+    UNKNOWN = "UNKNOWN"
+
+
 class VariablesTypesLibrary:
 
     def __init__(self, variable_type_by_name_dictionnary: dict[str, "VariablesTypesLibrary.VariableType"] | None = None) -> None:
@@ -77,10 +83,9 @@ class Equipment:
         )
         assert self.equipment_type is not None, f"Could not find type of equipment {self.raw_name}"
 
-    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True, enable_print=False)
     def order_states_changes(self) -> None:
-        with logger_config.stopwatch_with_label("Order states changes"):
-            self.all_variables_states_changes_sorted_by_timestamp = sorted(self.all_variables_states_changes_unsorted, key=lambda state_change: state_change.new_state.result_line.line_number)
+        self.all_variables_states_changes_sorted_by_timestamp = sorted(self.all_variables_states_changes_unsorted, key=lambda state_change: state_change.new_state.result_line.line_number)
 
     def print_stats(self) -> None:
         logger_config.print_and_log_info(f"Equipment {self.name} : {len(self.all_variables_states_changes_unsorted)} _all_variables_states_changes_unsorted")
@@ -249,15 +254,6 @@ class VariableStateChange:
 class EquipmentsLibrary:
     def __init__(self) -> None:
         self.all_equipments: list[Equipment] = []
-
-    def get_or_create_equipment_by_name(self, equipment_name: str) -> Equipment:
-        all_equipment_found = [eqpt for eqpt in self.all_equipments if eqpt.raw_name == equipment_name or eqpt.name == equipment_name]
-        if not all_equipment_found:
-            self.all_equipments.append(Equipment(raw_name=equipment_name))
-            return self.get_or_create_equipment_by_name(equipment_name=equipment_name)
-
-        assert len(all_equipment_found) == 1
-        return all_equipment_found[0]
 
 
 @dataclass
@@ -568,6 +564,7 @@ class ATCTestFile(ABC):
 @dataclass
 class ATCTestResult(ABC):
     label: str
+    environment_name: str
 
     def __post_init__(self) -> None:
         self.equipments_library = EquipmentsLibrary()
@@ -576,7 +573,10 @@ class ATCTestResult(ABC):
         self._all_variables_states_changes_unsorted: list[VariableStateChange] = []
         self.all_variables_states_changes_sorted_by_timestamp: list[VariableStateChange] = []
         self.variables_names_creation_filters: list[VariableNameFilter] = []
+        self.equipments_names_creation_filters: list[EquipmentNameFilter] = []
         self.variables_timestamp_creation_filters: list[common_filters.DatesFilter.DateBetweenFilter] = []
+        self.equipments_names_that_must_not_be_created: list[str] = []
+        self.equipments_names_that_must_be_created: list[str] = []
         self.variables_types_library = VariablesTypesLibrary()
         self.output_directory_path = "output"
         self.all_atc_test_files: list[ATCTestFile] = []
@@ -613,6 +613,7 @@ class ATCTestResult(ABC):
         self.print_stats()
 
     def print_stats(self) -> None:
+        logger_config.print_and_log_info(f"Equipments filtered : {','.join(self.equipments_names_that_must_not_be_created)}")
         logger_config.print_and_log_info(f"{len(self.all_variables_unsorted)} variables_unsorted")
         logger_config.print_and_log_info(f"{len(self.all_variables_states_sorted_by_line_number)} all_variables_states_sorted_by_line_number")
         logger_config.print_and_log_info(f"{len(self._all_variables_states_changes_unsorted)} _all_variables_states_changes_unsorted")
@@ -626,7 +627,11 @@ class ATCTestResult(ABC):
     def _compute_variables_states(self) -> None:
         all_variables_unsorted = [state for variable in self.all_variables_unsorted for state in variable.instant_states_chronologically_sorted]
         self.all_variables_states_sorted_by_line_number = sorted(all_variables_unsorted, key=lambda state: state.result_line.line_number)
-        assert self.all_variables_states_sorted_by_line_number
+        assert self.all_variables_states_sorted_by_line_number, f"No variable state found for {','.join([test_file.file_name for test_file in self.all_atc_test_files])}"
+
+    def get_equipment_redundancy_by_name(self, equipment_name: str) -> EquipmentRedundancy:
+        all_equipments_names_with_same_prefix = [eqpt.name for eqpt in self.equipments_library.all_equipments if eqpt.name.startswith(equipment_name[:-1])]
+        return EquipmentRedundancy.REDUNDANT if len(all_equipments_names_with_same_prefix) > 1 else EquipmentRedundancy.NOT_REDUNDANT
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     @line_profiler.profile
@@ -642,6 +647,31 @@ class ATCTestResult(ABC):
 
         with logger_config.stopwatch_with_label("Order states changes"):
             self.all_variables_states_changes_sorted_by_timestamp = sorted(self._all_variables_states_changes_unsorted, key=lambda state_change: state_change.new_state.result_line.line_number)
+
+    def is_equipment_name_allowed_for_creation(self, equipment_name: str) -> bool:
+        if equipment_name in self.equipments_names_that_must_not_be_created:
+            return False
+        if equipment_name in self.equipments_names_that_must_be_created:
+            return True
+
+        if equipment_must_be_kept_after_filters(equipment_name=equipment_name, all_filters=self.equipments_names_creation_filters):
+            self.equipments_names_that_must_be_created.append(equipment_name)
+        else:
+            self.equipments_names_that_must_not_be_created.append(equipment_name)
+
+        return self.is_equipment_name_allowed_for_creation(equipment_name)
+
+    def get_or_create_equipment_by_name_if_allowed(self, equipment_name: str) -> Equipment | None:
+        all_equipment_found = [eqpt for eqpt in self.equipments_library.all_equipments if eqpt.raw_name == equipment_name or eqpt.name == equipment_name]
+        if not all_equipment_found:
+            if self.is_equipment_name_allowed_for_creation(equipment_name):
+                self.equipments_library.all_equipments.append(Equipment(raw_name=equipment_name))
+                return self.get_or_create_equipment_by_name_if_allowed(equipment_name=equipment_name)
+            else:
+                return None
+
+        assert len(all_equipment_found) == 1
+        return all_equipment_found[0]
 
     def create_report_all_variables(
         self,
@@ -843,6 +873,10 @@ class ATCTestResult(ABC):
 
         def add_variables_names_creation_filter(self, variables_filter: VariableNameFilter) -> Self:
             self._atc_test_result_created.variables_names_creation_filters.append(variables_filter)
+            return self
+
+        def add_equipments_names_creation_filter(self, equipments_filter: EquipmentNameFilter) -> Self:
+            self._atc_test_result_created.equipments_names_creation_filters.append(equipments_filter)
             return self
 
         def add_timestamp_filter(self, timestamp_filter: common_filters.DatesFilter.DateBetweenFilter) -> Self:

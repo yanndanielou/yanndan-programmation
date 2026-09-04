@@ -23,43 +23,67 @@ def main() -> None:
         assert os.environ["LINE_PROFILE"] == "1", f"You must set LINE_PROFILE to 1, it is {os.environ["LINE_PROFILE"]}"
     with logger_config.application_logger():
 
-        root_result_files_folder_path = r"D:\temp\mesures_temps_cycle_usine"
-
-        input_files_full_path = [
-            r"C:\Users\fr232487\Siemens AG\ITV_ESSAIS_Usine_NEXTEO - Documents\General\Résultats Tests Plateforme Système 1\RL3a.0.2\Campagne de test\Conf_30\3.1.LR_RTV_par_OT\log_3.1.LR_RTV_par_OT\3.1.LR_RTV_par_OT_Manu.res",
-            r"D:\temp\mesures_temps_cycle_usine\rl3a02\YDA_4.1_LR_TrDyn_KVB-CMC_V1EO_PLDE7523__CMC_UM_A_ - partial.res",
-            r"D:\temp\mesures_temps_cycle_usine\rl3a02\4.1_LR_TrDyn_KVB-CMC_V1EO_PLDE7523__CMC_UM_A_.res",
-        ]
+        files_paths_not_handled_because_errors: list[str] = []
         atc_test_results: list[atc_logs.ATCTestResult] = []
-        for perturbo_file_path in Path(root_result_files_folder_path).rglob("*.res"):
-            try:
-                atc_test_result = (
-                    simech_res.SimechResTestResult.Builder(label=f"{file_name_utils.get_file_name_without_extension_from_full_path(perturbo_file_path)} temps cycle")
-                    .add_file(
-                        file_full_path=perturbo_file_path,
-                    )
-                    .add_variables_names_creation_filter(
-                        variables_filter=atc_logs.VariableNameFilter(
-                            white_or_black_list=common_filters.WhiteOrBlackListFilterType.WHITELIST,
-                            filter_type=common_filters.StringFilterType.BEGIN_WITH_STRING,
-                            variables_names=[
-                                "CHEURE",
-                                "CDECALAGE",
-                                "CJOUR",
-                                "CDECENIE",
-                                "TEMPS_AS",
-                                "STAB_CPT",
-                                "HLF",
-                            ],
+
+        for environment_type, root_result_files_folder_path in [
+            (
+                "PLT_SYST_1 RL3A02 Conf30",
+                r"D:\temp\mesures_temps_cycle_usine\PLT_SYST_1_RL3a.0.2_Conf_30",
+            ),
+            (
+                "PLT_SYST_2 RL3A02 Conf30",
+                r"D:\temp\mesures_temps_cycle_usine\PLT_SYST_2_RL3a.0.2_Conf_30",
+            ),
+        ]:
+            all_input_files = [full_path for full_path in Path(root_result_files_folder_path).rglob("*.res")]
+            for input_file_it, input_file_path in enumerate(all_input_files):
+                logger_config.print_and_log_info(f"Handle {input_file_it+1} th / {len(all_input_files)} ({round((input_file_it+1)/len(all_input_files)*100,1)}%) input file {input_file_path}")
+                try:
+                    atc_test_result = (
+                        simech_res.SimechResTestResult.Builder(
+                            label=f"{file_name_utils.get_file_name_without_extension_from_full_path(input_file_path)} temps cycle",
+                            environment_name=environment_type,
                         )
+                        .add_file(
+                            file_full_path=input_file_path,
+                        )
+                        .add_variables_names_creation_filter(
+                            variables_filter=atc_logs.VariableNameFilter(
+                                white_or_black_list=common_filters.WhiteOrBlackListFilterType.WHITELIST,
+                                filter_type=common_filters.StringFilterType.BEGIN_WITH_STRING,
+                                variables_names=[
+                                    "CHEURE",
+                                    "CDECALAGE",
+                                    "CJOUR",
+                                    "CDECENIE",
+                                    "TEMPS_AS",
+                                    "STAB_CPT",
+                                    "HLF",
+                                ],
+                            )
+                        )
+                        .add_equipments_names_creation_filter(
+                            equipments_filter=atc_logs.EquipmentNameFilter(
+                                white_or_black_list=common_filters.WhiteOrBlackListFilterType.BLACKLIST,
+                                filter_type=common_filters.StringFilterType.CONTAINS,
+                                variables_names=[
+                                    ".KINEMATICS",
+                                    ".TO.EUROBALISE",
+                                    "MOTOR.IXL",
+                                ],
+                            )
+                        )
+                        .build()
                     )
-                    .build()
-                )
-                atc_test_results.append(atc_test_result)
-            except AssertionError as ass_err:
-                logger_config.print_and_log_exception(ass_err)
-                logger_config.print_and_log_error(f"Could not compute temps cycle for {perturbo_file_path}")
-            temps_cycle_report.build_temps_cycle_report_from_atc_log(atc_test_results)
+                    atc_test_results.append(atc_test_result)
+                except AssertionError as ass_err:
+                    logger_config.print_and_log_exception(ass_err)
+                    logger_config.print_and_log_error(f"Could not compute temps cycle for {input_file_path}")
+                    files_paths_not_handled_because_errors.append(str(input_file_path))
+
+        temps_cycle_report.build_temps_cycle_report_from_atc_log(atc_test_results)
+        logger_config.print_and_log_error_if(len(files_paths_not_handled_because_errors), f"Files not handled because errors: \n{'\n'.join(files_paths_not_handled_because_errors)}")
 
 
 if __name__ == "__main__":
