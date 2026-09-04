@@ -1,13 +1,11 @@
-from collections import Counter
+from collections import Counter, OrderedDict
+from dataclasses import dataclass
+from typing import cast
+
 from common import (
     file_name_utils,
     reports_utils,
 )
-from typing import cast
-from collections import OrderedDict
-from dataclasses import dataclass
-
-from common import file_name_utils
 from logger import logger_config
 
 from stsloganalyzis.atc import atc_logs
@@ -17,8 +15,9 @@ OUTPUT_DIRECTORY = "output_temps_cycle"
 
 @dataclass
 class OneEquipmentReport:
-    equipment_name: str
+
     variable: atc_logs.Variable
+    atc_test_file: atc_logs.ATCTestFile
 
     def __post_init__(self) -> None:
         super().__init__()
@@ -31,15 +30,20 @@ class OneEquipmentReport:
         self.variance = self.variable.variance_numeric_values_by_number_occurrences
         self.ecart_type = self.variable.ecart_type_numeric_values_by_number_occurrences
 
+        self.high_consumption_threshold = (
+            # fmt: off
+            200 if self.variable.equipment.equipment_type is atc_logs.EquipmentType.PAL
+            else 250 if self.variable.equipment.equipment_type is atc_logs.EquipmentType.PAS 
+            else 100 if self.variable.equipment.equipment_type is atc_logs.EquipmentType.PAE 
+            else 0
+            # fmt: on
+        )
+
         # 1. Distribution (Médiane et Mode)
         donnees_triees = sorted(cast(list[float | int], self.variable.all_instant_states_best_values))
         n = len(donnees_triees)
         self.mediane = donnees_triees[n // 2] if n % 2 != 0 else (donnees_triees[n // 2 - 1] + donnees_triees[n // 2]) / 2
         self.mode = Counter(self.variable.all_instant_states_best_values).most_common(1)[0][0]
-
-        # 2. Définition dynamique du seuil (Moyenne + X * Écart-type)
-        multiplicateur_ecart_type = 2
-        self.high_consumption_threshold = self.mean_value + (multiplicateur_ecart_type * self.ecart_type)
 
         # 3. Identification des anomalies et segments de surconsommation
         self.anomalies = []
@@ -53,13 +57,11 @@ class OneEquipmentReport:
                 pics_consecutifs += 1
             else:
                 if pics_consecutifs > 0:
-                    if pics_consecutifs > self.duree_max_consecutive:
-                        self.duree_max_consecutive = pics_consecutifs
+                    self.duree_max_consecutive = max(self.duree_max_consecutive, pics_consecutifs)
                     pics_consecutifs = 0
 
         # Vérification si le dernier pic touchait la fin de la liste
-        if pics_consecutifs > self.duree_max_consecutive:
-            self.duree_max_consecutive = pics_consecutifs
+        self.duree_max_consecutive = max(self.duree_max_consecutive, pics_consecutifs)
 
         # 2. Dynamique (Deltas et Pentes)
         deltas = [
@@ -86,8 +88,7 @@ class OneEquipmentReport:
         for x in cast(list[int | float], self.variable.all_instant_states_best_values):
             if x > self.high_consumption_threshold:
                 en_crise = True
-                if compteur_recouv > 0:  # Nouvelle crise avant d'avoir récupéré
-                    compteur_recouv = 0
+                compteur_recouv = min(compteur_recouv, 0)
             elif en_crise:
                 compteur_recouv += 1
                 if x <= cpu_moyenne:  # Considéré comme récupéré quand sous la moyenne
@@ -101,32 +102,28 @@ class OneEquipmentReport:
         self.taux_anomalie = (self.nb_anomalies / len(self.variable.all_instant_states_best_values)) * 100
 
 
-@dataclass
-class OneSimulationReport:
-    name: str
+def build_temps_cycle_report_from_atc_log(atc_test_results: list[atc_logs.ATCTestResult]) -> None:
 
-    def __post_init__(self) -> None:
-        self.equipments_reports: list[OneEquipmentReport] = []
-
-
-def build_temps_cycle_report_from_atc_log(atc_test_result: atc_logs.ATCTestResult) -> None:
-
-    simulations_reports: list[OneSimulationReport] = []
-    for atc_test_file in atc_test_result.all_atc_test_files:
-        simulation_report = OneSimulationReport(file_name_utils.get_file_name_without_extension_from_full_path(atc_test_file.file_name))
-        simulations_reports.append(simulation_report)
-        for equipment in atc_test_result.equipments_library.all_equipments:
-            for temps_cycle_variable_name_candidate in ["STAB_CPT1", "TEMPS_AS"]:
-                variable = equipment.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name_candidate)
-                if variable is not None:
-                    equipment_report = OneEquipmentReport(equipment_name=equipment.name, variable=variable)
-                    simulation_report.equipments_reports.append(equipment_report)
+    equipments_reports: list[OneEquipmentReport] = []
+    for atc_test_result in atc_test_results:
+        for atc_test_file in atc_test_result.all_atc_test_files:
+            for equipment in atc_test_result.equipments_library.all_equipments:
+                for temps_cycle_variable_name_candidate in ["STAB_CPT1", "TEMPS_AS"]:
+                    variable = equipment.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name_candidate)
+                    if variable is not None:
+                        if variable.equipment.equipment_type in [atc_logs.EquipmentType.PAS, atc_logs.EquipmentType.PAL] and variable.max_numeric_values_by_number_occurrences < 60:
+                            logger_config.print_and_log_info(
+                                f"Ignore equipment {variable.equipment.name} in {atc_test_file.file_name} because is virtual (so no valid temps cycle). {variable.name} is too low to be real"
+                            )
+                        else:
+                            equipment_report = OneEquipmentReport(variable=variable, atc_test_file=atc_test_file)
+                            equipments_reports.append(equipment_report)
 
         rows_as_list_dict: list[OrderedDict] = []
-        for equipment_report in simulation_report.equipments_reports:
+        for equipment_report in equipments_reports:
             equipment_report_dict = OrderedDict(
                 {
-                    "file": atc_test_file.file_name,
+                    "file": equipment_report.atc_test_file.file_name,
                     "variable": equipment_report.variable.name,
                     "equipment": equipment_report.variable.equipment.name,
                     "min_value": equipment_report.min_value,

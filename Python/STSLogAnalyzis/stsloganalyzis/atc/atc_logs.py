@@ -1,5 +1,5 @@
-import statistics
 import datetime
+import statistics
 from abc import ABC, abstractmethod
 from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
@@ -27,6 +27,12 @@ VARIABLE_STATE_TYPE_WITH_NONE = VARIABLE_STATE_TYPE_WITHOUT_NONE | None
 
 NUMBER_OF_MILLISECONDS_IN_DAY = 24 * 60 * 60 * 100
 JUST_BEFORE_MIDNIGHT_IN_MILLISECONDS = NUMBER_OF_MILLISECONDS_IN_DAY - 1000
+
+
+class EquipmentType(Enum):
+    PAS = "PAS"
+    PAL = "PAL"
+    PAE = "PAE"
 
 
 class VariablesTypesLibrary:
@@ -61,6 +67,15 @@ class Equipment:
         self.all_variables_states_changes_unsorted: list[VariableStateChange] = []
         self.all_variables_states_changes_sorted_by_timestamp: list[VariableStateChange] = []
         self.number_of_lines_with_horodate_conflits = 0
+        self.equipment_type = (
+            # fmt: off
+            EquipmentType.PAS if "PAS" in self.raw_name   
+            else EquipmentType.PAE if "CC" in self.raw_name
+            else EquipmentType.PAE if "PAE" in self.raw_name 
+            else EquipmentType.PAL if "PAL" in self.raw_name else None
+            # fmt: on
+        )
+        assert self.equipment_type is not None, f"Could not find type of equipment {self.raw_name}"
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def order_states_changes(self) -> None:

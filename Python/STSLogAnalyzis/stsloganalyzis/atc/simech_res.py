@@ -1,3 +1,4 @@
+from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum, IntEnum, auto
@@ -157,7 +158,7 @@ class SimechResTestResult(atc_logs.ATCTestResult):
         def __init__(self, label: str) -> None:
             super().__init__(atc_test_result_created=SimechResTestResult(label))
 
-        def add_file(self, file_full_path: str) -> Self:
+        def add_file(self, file_full_path: str | Path) -> Self:
             self._atc_test_result_created.all_atc_test_files.append(
                 SimechResFile(
                     atc_test_result=self._atc_test_result_created,
