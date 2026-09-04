@@ -76,40 +76,44 @@ class SimechResFile(atc_logs.ATCTestFile):
 
         for line_number, raw_line in enumerate(all_raw_lines):
 
-            raw_line_split = raw_line.split(atc_logs.ATC_LOG_FILES_FIELDS_SEPARATOR)
-            line_simulation_time_in_ms_since_beginning = int(raw_line_split[SimechResFileFirstColumnsByIndex.SIMULATION_TIME_IN_MS])
+            try:
+                raw_line_split = raw_line.split(atc_logs.ATC_LOG_FILES_FIELDS_SEPARATOR)
+                line_simulation_time_in_ms_since_beginning = int(raw_line_split[SimechResFileFirstColumnsByIndex.SIMULATION_TIME_IN_MS])
 
-            if raw_line_split[SimechResFileFirstColumnsByIndex.LINE_TYPE] == SimechResFileTypeLine.SD_FIELDS.value:
-                equipment_name = get_cleaned_equipment_name(raw_line_split[SimechResFileFirstColumnsByIndex.EQUIPMENT_OR_SIMECH_SCENARIO_INFO])
-                logger_config.print_and_log_info_if(
-                    (equipment_name in self.variables_line_dictionary_by_equipment),
-                    (
-                        f"Redefine variables for {equipment_name}, previously {len(self.variables_line_dictionary_by_equipment[equipment_name].all_fields_names)} variables"
-                        if equipment_name in self.variables_line_dictionary_by_equipment
-                        else "NA"
-                    ),
-                )
-                raw_useful_values = [get_cleaned_variable_name(raw_variable) for raw_variable in raw_line_split[SimechResFileFirstColumnsByIndex.EQUIPMENT_OR_SIMECH_SCENARIO_INFO.value + 1 :]]
-                self.variables_line_dictionary_by_equipment[equipment_name] = atc_logs.ATCVariablesLineDictionary(all_fields_names=raw_useful_values)
-                logger_config.print_and_log_info(f"For {equipment_name}, {len(raw_useful_values)} variables found")
-            elif raw_line_split[SimechResFileFirstColumnsByIndex.LINE_TYPE] == SimechResFileTypeLine.SD.value:
-                equipment_name = get_cleaned_equipment_name(raw_line_split[SimechResFileFirstColumnsByIndex.EQUIPMENT_OR_SIMECH_SCENARIO_INFO])
-                raw_useful_values = raw_line_split[SimechResFileFirstColumnsByIndex.EQUIPMENT_OR_SIMECH_SCENARIO_INFO.value + 1 :]
-                all_fields_names_and_raw_values = self.variables_line_dictionary_by_equipment[equipment_name].get_all_fields_names_and_values_in_data_raw_fields(
-                    all_raw_values=raw_useful_values, test_result=self.atc_test_result
-                )
-                fix_specific_fields_values(all_fields_names_and_raw_values)
+                if raw_line_split[SimechResFileFirstColumnsByIndex.LINE_TYPE] == SimechResFileTypeLine.SD_FIELDS.value:
+                    equipment_name = get_cleaned_equipment_name(raw_line_split[SimechResFileFirstColumnsByIndex.EQUIPMENT_OR_SIMECH_SCENARIO_INFO])
+                    logger_config.print_and_log_info_if(
+                        (equipment_name in self.variables_line_dictionary_by_equipment),
+                        (
+                            f"Redefine variables for {equipment_name}, previously {len(self.variables_line_dictionary_by_equipment[equipment_name].all_fields_names)} variables"
+                            if equipment_name in self.variables_line_dictionary_by_equipment
+                            else "NA"
+                        ),
+                    )
+                    raw_useful_values = [get_cleaned_variable_name(raw_variable) for raw_variable in raw_line_split[SimechResFileFirstColumnsByIndex.EQUIPMENT_OR_SIMECH_SCENARIO_INFO.value + 1 :]]
+                    self.variables_line_dictionary_by_equipment[equipment_name] = atc_logs.ATCVariablesLineDictionary(all_fields_names=raw_useful_values)
+                    logger_config.print_and_log_info(f"For {equipment_name}, {len(raw_useful_values)} variables found")
+                elif raw_line_split[SimechResFileFirstColumnsByIndex.LINE_TYPE] == SimechResFileTypeLine.SD.value:
+                    equipment_name = get_cleaned_equipment_name(raw_line_split[SimechResFileFirstColumnsByIndex.EQUIPMENT_OR_SIMECH_SCENARIO_INFO])
+                    raw_useful_values = raw_line_split[SimechResFileFirstColumnsByIndex.EQUIPMENT_OR_SIMECH_SCENARIO_INFO.value + 1 :]
+                    all_fields_names_and_raw_values = self.variables_line_dictionary_by_equipment[equipment_name].get_all_fields_names_and_values_in_data_raw_fields(
+                        all_raw_values=raw_useful_values, test_result=self.atc_test_result
+                    )
+                    fix_specific_fields_values(all_fields_names_and_raw_values)
 
-                equipment = self.atc_test_result.equipments_library.get_or_create_equipment_by_name(equipment_name)
+                    equipment = self.atc_test_result.equipments_library.get_or_create_equipment_by_name(equipment_name)
 
-                time_since_simulation_start = self.simulation_start_at_timestamp + timedelta(milliseconds=line_simulation_time_in_ms_since_beginning)
+                    time_since_simulation_start = self.simulation_start_at_timestamp + timedelta(milliseconds=line_simulation_time_in_ms_since_beginning)
 
-                self.create_result_line_if_needed(
-                    line_number=line_number,
-                    time_according_to_simulation_start=time_since_simulation_start,
-                    equipment=equipment,
-                    all_fields_names_and_raw_values=all_fields_names_and_raw_values,
-                )
+                    self.create_result_line_if_needed(
+                        line_number=line_number,
+                        time_according_to_simulation_start=time_since_simulation_start,
+                        equipment=equipment,
+                        all_fields_names_and_raw_values=all_fields_names_and_raw_values,
+                    )
+            except ValueError as val_err:
+                logger_config.print_and_log_exception(val_err)
+                logger_config.print_and_log_error(f"Could not parse line number {line_number}in {self.file_name} ({self.file_full_path})")
 
 
 def fix_specific_fields_values(raw_variable_values: dict[str, str]) -> int:

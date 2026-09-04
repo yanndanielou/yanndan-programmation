@@ -32,30 +32,34 @@ def main() -> None:
         ]
         atc_test_results: list[atc_logs.ATCTestResult] = []
         for perturbo_file_path in Path(root_result_files_folder_path).rglob("*.res"):
-            atc_test_result = (
-                simech_res.SimechResTestResult.Builder(label=f"{file_name_utils.get_file_name_without_extension_from_full_path(perturbo_file_path)} temps cycle")
-                .add_file(
-                    file_full_path=perturbo_file_path,
-                )
-                .add_variables_names_creation_filter(
-                    variables_filter=atc_logs.VariableNameFilter(
-                        white_or_black_list=common_filters.WhiteOrBlackListFilterType.WHITELIST,
-                        filter_type=common_filters.StringFilterType.BEGIN_WITH_STRING,
-                        variables_names=[
-                            "CHEURE",
-                            "CDECALAGE",
-                            "CJOUR",
-                            "CDECENIE",
-                            "TEMPS_AS",
-                            "STAB_CPT",
-                            "HLF",
-                        ],
+            try:
+                atc_test_result = (
+                    simech_res.SimechResTestResult.Builder(label=f"{file_name_utils.get_file_name_without_extension_from_full_path(perturbo_file_path)} temps cycle")
+                    .add_file(
+                        file_full_path=perturbo_file_path,
                     )
+                    .add_variables_names_creation_filter(
+                        variables_filter=atc_logs.VariableNameFilter(
+                            white_or_black_list=common_filters.WhiteOrBlackListFilterType.WHITELIST,
+                            filter_type=common_filters.StringFilterType.BEGIN_WITH_STRING,
+                            variables_names=[
+                                "CHEURE",
+                                "CDECALAGE",
+                                "CJOUR",
+                                "CDECENIE",
+                                "TEMPS_AS",
+                                "STAB_CPT",
+                                "HLF",
+                            ],
+                        )
+                    )
+                    .build()
                 )
-                .build()
-            )
-            atc_test_results.append(atc_test_result)
-        temps_cycle_report.build_temps_cycle_report_from_atc_log(atc_test_results)
+                atc_test_results.append(atc_test_result)
+            except AssertionError as ass_err:
+                logger_config.print_and_log_exception(ass_err)
+                logger_config.print_and_log_error(f"Could not compute temps cycle for {perturbo_file_path}")
+            temps_cycle_report.build_temps_cycle_report_from_atc_log(atc_test_results)
 
 
 if __name__ == "__main__":

@@ -21,6 +21,7 @@ class OneEquipmentReport:
 
     def __post_init__(self) -> None:
         super().__init__()
+        logger_config.print_and_log_info(f"Create report for {self.atc_test_file.file_name} {self.variable.equipment.name} {self.variable.name}")
         self.min_value = self.variable.min_numeric_values_by_number_occurrences
         self.max_value = self.variable.max_numeric_values_by_number_occurrences
         self.mean_value = round(self.variable.mean_numeric_values_by_number_occurrences, 2)
