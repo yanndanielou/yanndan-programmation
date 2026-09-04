@@ -144,44 +144,46 @@ def build_temps_cycle_report_from_atc_log(atc_test_results: list[atc_logs.ATCTes
         rows_as_list_dict: list[OrderedDict] = []
 
         for equipment_report in equipments_reports:
-            equipment_report_dict = OrderedDict(
-                {
-                    "File name": equipment_report.atc_test_file.file_name,
-                    "File full path": equipment_report.atc_test_file.file_full_path,
-                    "label": equipment_report.atc_test_file.atc_test_result.label,
-                    "environment": equipment_report.atc_test_file.atc_test_result.environment_name,
-                    "variable": equipment_report.variable.name,
-                    "equipment": equipment_report.variable.equipment.name,
-                    "redundancy status": equipment_report.atc_test_file.atc_test_result.get_equipment_redundancy_by_name(equipment_report.variable.equipment.name),
-                    "min_value": equipment_report.min_value,
-                    "max_value": equipment_report.max_value,
-                    "mean_value": equipment_report.mean_value,
-                    "median_value": equipment_report.median_value,
-                    "mediane": equipment_report.mediane,
-                    "variance": equipment_report.variance,
-                    "ecart_type": equipment_report.ecart_type,
-                    "Number relevant values": len(equipment_report.all_relevant_values),
-                    "Number not relevant (filtered) values": len(equipment_report.variable.instant_states_chronologically_sorted) - len(equipment_report.all_relevant_values),
-                    "duree_max_consecutive above high": equipment_report.duree_max_above_high_consecutive,
-                    "nombre anomalies high": len(equipment_report.anomalies_high),
-                    "nombre anomalies very high": len(equipment_report.anomalies_very_high),
-                    "taux_anomalie (%)": equipment_report.taux_anomalie_high,
-                    "mode": equipment_report.mode,
-                    "recouvrement_moyen": equipment_report.recouvrement_moyen_high,
-                    "taux_saturation (%)": equipment_report.taux_saturation,
-                    "ratio_energie_pics high (%)": equipment_report.ratio_energie_pics_high,
-                    "ratio_energie_pics very high (%)": equipment_report.ratio_energie_pics_very_high,
-                    "max_hausse_brutale": equipment_report.max_hausse_brutale,
-                    "high_consumption_threshold": equipment_report.high_consumption_threshold,
-                    "very_high_consumption_threshold": equipment_report.very_high_consumption_threshold,
-                }
-            )
-            rows_as_list_dict.append(equipment_report_dict)
-            for decile_index, decile_value in enumerate(equipment_report.deciles):
-                equipment_report_dict[f"Decile_{decile_index+1}"] = decile_value
-            for centile_index, centile_value in enumerate(equipment_report.centiles):
-                if centile_index > 90:
-                    equipment_report_dict[f"Centile_{centile_index+1}"] = centile_value
+            if equipment_report.variable.equipment.equipment_type == equipment_type:
+                equipment_report_dict = OrderedDict(
+                    {
+                        "File name": equipment_report.atc_test_file.file_name,
+                        "File full path": equipment_report.atc_test_file.file_full_path,
+                        "label": equipment_report.atc_test_file.atc_test_result.label,
+                        "environment": equipment_report.atc_test_file.atc_test_result.environment_name,
+                        "variable": equipment_report.variable.name,
+                        "equipment": equipment_report.variable.equipment.name,
+                        "equipment type": equipment_report.variable.equipment.equipment_type.name,
+                        "redundancy status": equipment_report.atc_test_file.atc_test_result.get_equipment_redundancy_by_name(equipment_report.variable.equipment.name),
+                        "min_value": equipment_report.min_value,
+                        "max_value": equipment_report.max_value,
+                        "mean_value": equipment_report.mean_value,
+                        "median_value": equipment_report.median_value,
+                        "mediane": equipment_report.mediane,
+                        "variance": equipment_report.variance,
+                        "ecart_type": equipment_report.ecart_type,
+                        "Number relevant values": len(equipment_report.all_relevant_values),
+                        "Number not relevant (filtered) values": len(equipment_report.variable.instant_states_chronologically_sorted) - len(equipment_report.all_relevant_values),
+                        "duree_max_consecutive above high": equipment_report.duree_max_above_high_consecutive,
+                        "nombre anomalies high": len(equipment_report.anomalies_high),
+                        "nombre anomalies very high": len(equipment_report.anomalies_very_high),
+                        "taux_anomalie (%)": equipment_report.taux_anomalie_high,
+                        "mode": equipment_report.mode,
+                        "recouvrement_moyen": equipment_report.recouvrement_moyen_high,
+                        "taux_saturation (%)": equipment_report.taux_saturation,
+                        "ratio_energie_pics high (%)": equipment_report.ratio_energie_pics_high,
+                        "ratio_energie_pics very high (%)": equipment_report.ratio_energie_pics_very_high,
+                        "max_hausse_brutale": equipment_report.max_hausse_brutale,
+                        "high_consumption_threshold": equipment_report.high_consumption_threshold,
+                        "very_high_consumption_threshold": equipment_report.very_high_consumption_threshold,
+                    }
+                )
+                rows_as_list_dict.append(equipment_report_dict)
+                for decile_index, decile_value in enumerate(equipment_report.deciles):
+                    equipment_report_dict[f"Decile_{decile_index+1}"] = decile_value
+                for centile_index, centile_value in enumerate(equipment_report.centiles):
+                    if centile_index > 90:
+                        equipment_report_dict[f"Centile_{centile_index+1}"] = centile_value
 
         data_per_sheet_name[equipment_type.name] = pandas.DataFrame(rows_as_list_dict, index=None)
 
