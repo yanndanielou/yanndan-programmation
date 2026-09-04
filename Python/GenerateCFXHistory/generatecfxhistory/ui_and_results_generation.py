@@ -179,7 +179,7 @@ def produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
     if generation_instructions.create_excel_file:
         with logger_config.stopwatch_with_label(label=f"produce_excel_output_file, {generation_label}", inform_beginning=True):
             produce_excel_output_file_results_number_of_cfx_by_state_per_date(
-                output_excel_file=f"{generic_output_files_path_without_suffix_and_extension}.xlsx", all_results_to_display=all_results_to_display
+                output_excel_file_without_extension=f"{generic_output_files_path_without_suffix_and_extension}", all_results_to_display=all_results_to_display
             )
 
     if display_with_cumulative_eras:
@@ -204,7 +204,7 @@ def produce_line_graphs_number_of_cfx_by_state_per_date_line_graphs(
             )
 
 
-def produce_excel_output_file_results_number_of_cfx_by_state_per_date(output_excel_file: str, all_results_to_display: AllResultsPerDatesWithDebugDetails) -> None:
+def produce_excel_output_file_results_number_of_cfx_by_state_per_date(output_excel_file_without_extension: str, all_results_to_display: AllResultsPerDatesWithDebugDetails) -> None:
     # Convert data to DataFrame for Excel output
 
     all_timestamps: List[datetime.datetime] = all_results_to_display.get_all_timestamps()
@@ -216,7 +216,8 @@ def produce_excel_output_file_results_number_of_cfx_by_state_per_date(output_exc
             "CFX State Counts": pd.DataFrame(all_results_to_display.get_state_counts_per_timestamp_plus_total(), index=all_timestamps),
             "CFX State Percentages": pd.DataFrame(all_results_to_display.get_state_percentage_per_timestamp(), index=all_timestamps),
         },
-        output_excel_file=output_excel_file,
+        output_excel_file=output_excel_file_without_extension + ".xlsx",
+        suffix_file_name_by_date=False,
     )
 
 

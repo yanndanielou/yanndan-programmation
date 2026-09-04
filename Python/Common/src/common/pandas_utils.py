@@ -1,7 +1,10 @@
-import pandas
 import time
 from typing import Optional
+
+import pandas
 from logger import logger_config
+
+from common import file_name_utils
 
 
 def optional_element_as_optional_string(row: pandas.Series, column_name: str) -> Optional[str]:
@@ -35,7 +38,10 @@ def string_element(row: pandas.Series, column_name: str) -> str:
     return raw_value
 
 
-def to_excel_wait_if_file_is_locked(data_per_sheet_name: dict[str, pandas.DataFrame], output_excel_file: str) -> None:
+def to_excel_wait_if_file_is_locked(data_per_sheet_name: dict[str, pandas.DataFrame], output_excel_file: str, suffix_file_name_by_date: bool = False) -> None:
+    if suffix_file_name_by_date:
+        output_excel_file += file_name_utils.get_file_suffix_with_current_datetime(include_underscore=True)
+
     # Save DataFrame to Excel
     success = False
     while success is False:
