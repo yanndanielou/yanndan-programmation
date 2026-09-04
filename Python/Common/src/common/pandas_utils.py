@@ -38,20 +38,22 @@ def string_element(row: pandas.Series, column_name: str) -> str:
     return raw_value
 
 
-def to_excel_wait_if_file_is_locked(data_per_sheet_name: dict[str, pandas.DataFrame], output_excel_file: str, suffix_file_name_by_date: bool = False) -> None:
+def to_excel_wait_if_file_is_locked(data_per_sheet_name: dict[str, pandas.DataFrame], output_excel_file_without_extension: str, suffix_file_name_by_date: bool = False) -> None:
     if suffix_file_name_by_date:
-        output_excel_file += file_name_utils.get_file_suffix_with_current_datetime(include_underscore=True)
+        output_excel_file_without_extension += file_name_utils.get_file_suffix_with_current_datetime(include_underscore=True)
+
+    output_excel_file_without_extension += ".xlsx"
 
     # Save DataFrame to Excel
     success = False
     while success is False:
         try:
-            with pandas.ExcelWriter(output_excel_file) as writer:
+            with pandas.ExcelWriter(output_excel_file_without_extension) as writer:
                 for sheet_name, data_frame in data_per_sheet_name.items():
                     data_frame.to_excel(writer, sheet_name=sheet_name)
                 success = True
                 return
 
         except PermissionError:
-            logger_config.print_and_log_error(f"File {output_excel_file} is used. Release it")
+            logger_config.print_and_log_error(f"File {output_excel_file_without_extension} is used. Release it")
             time.sleep(1)

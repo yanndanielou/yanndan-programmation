@@ -216,7 +216,7 @@ def produce_excel_output_file_results_number_of_cfx_by_state_per_date(output_exc
             "CFX State Counts": pd.DataFrame(all_results_to_display.get_state_counts_per_timestamp_plus_total(), index=all_timestamps),
             "CFX State Percentages": pd.DataFrame(all_results_to_display.get_state_percentage_per_timestamp(), index=all_timestamps),
         },
-        output_excel_file=output_excel_file_without_extension + ".xlsx",
+        output_excel_file_without_extension=output_excel_file_without_extension,
         suffix_file_name_by_date=False,
     )
 

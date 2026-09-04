@@ -183,7 +183,7 @@ def build_temps_cycle_report_from_atc_log(atc_test_results: list[atc_logs.ATCTes
                     if centile_index > 90:
                         equipment_report_dict[f"Centile_{centile_index+1}"] = centile_value
 
-            data_per_sheet_name[equipment_type.name] = pandas.DataFrame(rows_as_list_dict, index=False)
+            data_per_sheet_name[equipment_type.name] = pandas.DataFrame(rows_as_list_dict, index=None)
 
     pandas_utils.to_excel_wait_if_file_is_locked(
         data_per_sheet_name,

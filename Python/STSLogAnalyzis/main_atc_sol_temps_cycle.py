@@ -70,6 +70,7 @@ def main() -> None:
                                 variables_names=[
                                     ".KINEMATICS",
                                     ".TO.EUROBALISE",
+                                    "EUROBALISE_CC",
                                     "MOTOR.IXL",
                                 ],
                             )
