@@ -1,7 +1,7 @@
-from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum, IntEnum, auto
+from pathlib import Path
 from typing import Self
 
 from logger import logger_config
@@ -44,8 +44,6 @@ class SimechResFile(atc_logs.ATCTestFile):
         self.all_values_raw_lines: list[str] = []
         self.simulation_start_at_timestamp: datetime
 
-        return atc_logs.EquipmentRedundancy.UNKNOWN
-
     def _compute_simulation_start_at(self, all_raw_lines: list[str]) -> None:
         for raw_line in all_raw_lines:
             if 'SIMULATION_ENDED;"SIMU_START_AT:' in raw_line:
@@ -54,7 +52,7 @@ class SimechResFile(atc_logs.ATCTestFile):
 
                 # Thu May 28 12:55:42 2026
                 date_format = "%a %b %d %H:%M:%S %Y"
-                self.simulation_start_at_timestamp = datetime.strptime(raw_date_as_str, date_format)
+                self.simulation_start_at_timestamp = datetime.strptime(raw_date_as_str, date_format)  # noqa: DTZ007
                 logger_config.print_and_log_info(f"simulation_start_at parsed:{self.simulation_start_at_timestamp}")
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
@@ -71,7 +69,7 @@ class SimechResFile(atc_logs.ATCTestFile):
             # .FIM_DISPO
             # 'STOP_TRANSMISSION
 
-            if full_raw_value.startswith(".") or full_raw_value.startswith("'"):
+            if full_raw_value.startswith((".", "'")):
                 full_raw_value = full_raw_value[1:]
 
             return full_raw_value
@@ -98,7 +96,8 @@ class SimechResFile(atc_logs.ATCTestFile):
                         )
                         raw_useful_values = [get_cleaned_variable_name(raw_variable) for raw_variable in raw_line_split[SimechResFileFirstColumnsByIndex.EQUIPMENT_OR_SIMECH_SCENARIO_INFO.value + 1 :]]
                         self.variables_line_dictionary_by_equipment[equipment_name] = atc_logs.ATCVariablesLineDictionary(all_fields_names=raw_useful_values)
-                        logger_config.print_and_log_info(f"For {equipment_name}, {len(raw_useful_values)} variables found")
+                        logger_config.print_and_log_info(f"For {equipment_name}, {len(raw_useful_values)} variables found", do_not_print=True)
+                        logger_config.print_and_log_error_if(not len(raw_useful_values), f"For {equipment_name}, No variables found")
                 elif raw_line_split[SimechResFileFirstColumnsByIndex.LINE_TYPE] == SimechResFileTypeLine.SD.value:
                     equipment_name = get_cleaned_equipment_name(raw_line_split[SimechResFileFirstColumnsByIndex.EQUIPMENT_OR_SIMECH_SCENARIO_INFO])
                     if self.atc_test_result.is_equipment_name_allowed_for_creation(equipment_name):
@@ -147,16 +146,13 @@ def _fix_pae_temps_cycle_cyclos_fields_values(raw_variable_values: dict[str, str
             intial_float_value = float(inital_str_value)
             raw_variable_values[pae_temps_cycle_field_name_with_unit_in_value] = str(round(intial_float_value * 100, 2))
 
-    pass
-
     return number_of_fixes_applied
 
 
 def _fix_pags_temps_cycle_cyclos_fields_values(raw_variable_values: dict[str, str]) -> int:
     number_of_fixes_applied = 0
-    for raw_variable_name, _ in raw_variable_values.items():
+    for raw_variable_name, inital_str_value in raw_variable_values.items():
         if raw_variable_name.startswith("TEMPS_AS"):
-            inital_str_value = raw_variable_values[raw_variable_name]
             intial_int_value = int(inital_str_value)
             raw_variable_values[raw_variable_name] = str(intial_int_value // 10)
             number_of_fixes_applied += 1
@@ -175,6 +171,7 @@ class SimechResTestResult(atc_logs.ATCTestResult):
                 SimechResFile(
                     atc_test_result=self._atc_test_result_created,
                     file_full_path=file_full_path,
+                    do_not_inform_same_horodate_as_last_line=True,  # Can happen on SIMECH
                 )
             )
             return self

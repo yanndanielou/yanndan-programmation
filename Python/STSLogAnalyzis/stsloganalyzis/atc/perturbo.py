@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-import line_profiler
+from typing import Self
 
-from typing import List, Self, Optional
+import line_profiler
+from logger import logger_config
 
 from stsloganalyzis.atc import atc_logs
-from logger import logger_config
 
 
 @dataclass
@@ -15,7 +15,7 @@ class PerturboFile(atc_logs.ATCTestFile):
     def __post_init__(self) -> None:
         super().__post_init__()
         self.variables_line_dictionary: atc_logs.ATCVariablesLineDictionary
-        self.all_values_raw_lines: List[str] = []
+        self.all_values_raw_lines: list[str] = []
         self.create_dictionary_and_raw_line_values()
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
@@ -28,7 +28,9 @@ class PerturboFile(atc_logs.ATCTestFile):
         return self.equipment_name
 
     def get_equipment(self, test_result: atc_logs.ATCTestResult) -> atc_logs.Equipment:
-        return test_result.get_or_create_equipment_by_name_if_allowed(self.get_equipment_name())
+        ret = test_result.get_or_create_equipment_by_name_if_allowed(self.get_equipment_name())
+        assert ret is not None
+        return ret
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     @line_profiler.profile
@@ -62,11 +64,12 @@ class PerturboTestResult(atc_logs.ATCTestResult):
                 self.add_file(file_full_path=file_full_path, equipment_name=equipment_name)
             return self
 
-        def add_file(self, file_full_path: str, equipment_name: str, forced_cdecenie_value: Optional[int] = None, forced_cjour_at_beginning_value: Optional[int] = None) -> Self:
+        def add_file(self, file_full_path: str, equipment_name: str, forced_cdecenie_value: int | None = None, forced_cjour_at_beginning_value: int | None = None) -> Self:
             pert_file = PerturboFile(
                 atc_test_result=self._atc_test_result_created,
                 file_full_path=file_full_path,
                 equipment_name=equipment_name,
+                do_not_inform_same_horodate_as_last_line=False,  # Should only happen on SIMECH
             )
             pert_file.forced_cdecenie_value = forced_cdecenie_value
             pert_file.current_forced_cjour_value = forced_cjour_at_beginning_value

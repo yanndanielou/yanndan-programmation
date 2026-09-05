@@ -15,7 +15,7 @@ def main() -> None:
             # .add_variables_names_creation_filter(variables_filter=atc_logs.VariableFilter)
             .build()
         )
-        perturbo_test.create_report_all_variables()
+        perturbo_test.create_full_report_all_variables()
 
 
 if __name__ == "__main__":

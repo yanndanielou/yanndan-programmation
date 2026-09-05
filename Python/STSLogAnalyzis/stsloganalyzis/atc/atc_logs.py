@@ -72,8 +72,8 @@ class Equipment:
         self.variables_library = EquipmentVariablesLibrary(self)
         self.all_variables_states_changes_unsorted: list[VariableStateChange] = []
         self.all_variables_states_changes_sorted_by_timestamp: list[VariableStateChange] = []
-        self.number_of_lines_with_horodate_conflits = 0
-        self.equipment_type = (
+        self.number_of_lines_with_horodate_conflicts = 0
+        self._equipment_type = (
             # fmt: off
             EquipmentType.PAS if "PAS" in self.raw_name   
             else EquipmentType.PAE if "CC" in self.raw_name
@@ -81,7 +81,11 @@ class Equipment:
             else EquipmentType.PAL if "PAL" in self.raw_name else None
             # fmt: on
         )
-        assert self.equipment_type is not None, f"Could not find type of equipment {self.raw_name}"
+
+    @property
+    def equipment_type(self) -> EquipmentType:
+        assert self._equipment_type is not None, f"Could not find type of equipment {self.raw_name}"
+        return self._equipment_type
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True, enable_print=False)
     def order_states_changes(self) -> None:
@@ -435,6 +439,7 @@ class ATCTestResultLine:
 class ATCTestFile(ABC):
     file_full_path: str
     atc_test_result: "ATCTestResult"
+    do_not_inform_same_horodate_as_last_line: bool
 
     def __post_init__(self) -> None:
         self.file_name = file_name_utils.get_file_name_without_extension_from_full_path(self.file_full_path)
@@ -496,10 +501,11 @@ class ATCTestFile(ABC):
         if previous_line and previous_line.horodate and previous_line.horodate >= horodate_computed:
             new_horodate = horodate_computed + datetime.timedelta(milliseconds=1)
 
-            equipment.number_of_lines_with_horodate_conflits += 1
+            equipment.number_of_lines_with_horodate_conflicts += 1
 
             if horodate_computed == previous_line.horodate:
-                logger_config.print_and_log_info(
+                logger_config.print_and_log_info_if(
+                    not self.do_not_inform_same_horodate_as_last_line,
                     f"Fix horodate for {equipment.name} from {horodate_computed} (CHEURE {all_fields_names_and_raw_values["CHEURE"]}) to {new_horodate} to avoid same date, previous line was {previous_line_cheure}. File:{self.file_name}",
                     do_not_print=True,
                 )
@@ -620,7 +626,7 @@ class ATCTestResult(ABC):
         logger_config.print_and_log_info(f"{len(self.all_variables_states_changes_sorted_by_timestamp)} all_variables_states_changes_sorted_by_timestamp")
 
         for equipment in self.equipments_library.all_equipments:
-            logger_config.print_and_log_info(f"{equipment.name} : {equipment.number_of_lines_with_horodate_conflits} hordate conflicts")
+            logger_config.print_and_log_info_if(equipment.number_of_lines_with_horodate_conflicts, f"{equipment.name} : {equipment.number_of_lines_with_horodate_conflicts} hordate conflicts")
 
     @logger_config.stopwatch_decorator()
     @line_profiler.profile
