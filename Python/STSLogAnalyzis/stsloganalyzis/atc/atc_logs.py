@@ -95,6 +95,9 @@ class Equipment:
         logger_config.print_and_log_info(f"Equipment {self.name} : {len(self.all_variables_states_changes_unsorted)} _all_variables_states_changes_unsorted")
         logger_config.print_and_log_info(f"Equipment {self.name} : {len(self.all_variables_states_changes_sorted_by_timestamp)} all_variables_states_changes_sorted_by_timestamp")
 
+        for hlf_variable_name in ["CHEURE", "CDECALAGE", "CDECENNIE", "CJOUR"]:
+            logger_config.print_and_log_error_if(not self.variables_library.has_variable_with_name(hlf_variable_name), f"{self.name}: missing {hlf_variable_name}")
+
 
 @dataclass
 class Variable:
@@ -444,7 +447,7 @@ class ATCTestFile(ABC):
     def __post_init__(self) -> None:
         self.file_name = file_name_utils.get_file_name_without_extension_from_full_path(self.file_full_path)
         self.all_lines: list[ATCTestResultLine] = []
-        logger_config.print_and_log_info(f"Build {self.file_name}")
+        logger_config.print_and_log_info(f"Build {self.file_name}", do_not_print=True)
         self.forced_cdecenie_value: None | int = None
         self.current_forced_cjour_value: None | int = None
         self.last_chunk_created_timestamp = datetime.datetime.now()  # noqa: DTZ005
@@ -847,7 +850,7 @@ class ATCTestResult(ABC):
         files_base_name: None | str = None,
     ) -> None:
         if files_base_name is None:
-            files_base_name = f"{self.label}_variable_{variable.name}"
+            files_base_name = f"{self.label}_{variable.equipment.name}_variable_{variable.name}"
 
         # all state changes
         reports_utils.save_rows_to_output_files(
@@ -882,7 +885,7 @@ class ATCTestResult(ABC):
         files_base_name: None | str = None,
     ) -> None:
         if files_base_name is None:
-            files_base_name = f"{self.label}_variable_{variable.name}"
+            files_base_name = f"{self.label}_{variable.equipment.name}_variable_{variable.name}"
 
         reports_utils.save_rows_to_output_files(
             rows_as_list_dict=[
