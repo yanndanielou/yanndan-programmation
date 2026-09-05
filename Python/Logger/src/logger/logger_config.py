@@ -136,7 +136,9 @@ def print_and_log_warning(
             + str()
             + to_print_and_log
         )
-    logging.warning(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
+    logging.warning(
+        f"{__get_calling_file_name_and_line_number(call_stack_frame=call_stack_frame)} \t {to_print_and_log}"
+    )
 
 
 def print_and_log_exception(exception_to_print: Exception, additional_text: Optional[str] = None) -> None:
