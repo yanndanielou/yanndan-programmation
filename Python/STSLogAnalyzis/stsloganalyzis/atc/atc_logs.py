@@ -21,8 +21,8 @@ from stsloganalyzis.common import common_filters
 
 ATC_LOG_FILES_FIELDS_SEPARATOR = ";"
 
-VARIABLE_STATE_TYPE_WITHOUT_NONE = str | int | float | bool | datetime.datetime
-VARIABLE_STATE_TYPE_WITH_NONE = VARIABLE_STATE_TYPE_WITHOUT_NONE | None
+VariableStateTypeWithoutNone = str | int | float | bool | datetime.datetime
+VariableStateTypeWithNone = VariableStateTypeWithoutNone | None
 
 
 NUMBER_OF_MILLISECONDS_IN_DAY = 24 * 60 * 60 * 100
@@ -37,7 +37,7 @@ class EquipmentType(Enum):
 
 class EquipmentRedundancy(Enum):
     REDUNDANT = "REDUNDANT"
-    NOT_REDUNDANT = "NOT_REDUNDANT"
+    PROBABLY_NOT_REDUNDANT = "NOT_REDUNDANT"
     UNKNOWN = "UNKNOWN"
 
 
@@ -103,11 +103,11 @@ class Variable:
         self.instant_states_chronologically_sorted: list[InstantVariableState] = []
         self.states_changes_chronologically_sorted: list[VariableStateChange] = []
         self.continuous_states_chronologically_sorted: list[ContinuousVariableState] = []
-        self.number_of_occurrences_by_value: dict[VARIABLE_STATE_TYPE_WITH_NONE, int] = defaultdict(int)
-        self._cached_instant_states_best_values: list[VARIABLE_STATE_TYPE_WITH_NONE] | None = None
+        self.number_of_occurrences_by_value: dict[VariableStateTypeWithNone, int] = defaultdict(int)
+        self._cached_instant_states_best_values: list[VariableStateTypeWithNone] | None = None
 
     @property
-    def all_instant_states_best_values(self) -> list[VARIABLE_STATE_TYPE_WITH_NONE]:
+    def all_instant_states_best_values(self) -> list[VariableStateTypeWithNone]:
         if self._cached_instant_states_best_values is not None:
             return self._cached_instant_states_best_values
 
@@ -198,10 +198,10 @@ class ContinuousVariableState:
         self.value_in_proper_type = self._convert_to_known_type(self.raw_str_value, self.variable.known_variable_type) if self.variable.known_variable_type else None
 
     @property
-    def best_value(self) -> VARIABLE_STATE_TYPE_WITH_NONE:
+    def best_value(self) -> VariableStateTypeWithNone:
         return self.value_in_proper_type if self.value_in_proper_type is not None else self.raw_str_value
 
-    def _convert_to_known_type(self, raw_str_value: str, known_variable_type: VariablesTypesLibrary.VariableType) -> VARIABLE_STATE_TYPE_WITH_NONE:
+    def _convert_to_known_type(self, raw_str_value: str, known_variable_type: VariablesTypesLibrary.VariableType) -> VariableStateTypeWithNone:
         if known_variable_type == VariablesTypesLibrary.VariableType.INT_TYPE:
             return int(raw_str_value)
         if known_variable_type == VariablesTypesLibrary.VariableType.FLOAT_TYPE:
@@ -224,7 +224,7 @@ class InstantVariableState:
         return self.continuous_variable_state.raw_str_value
 
     @property
-    def best_value(self) -> VARIABLE_STATE_TYPE_WITH_NONE:
+    def best_value(self) -> VariableStateTypeWithNone:
         return self.continuous_variable_state.best_value
 
     @property
@@ -630,8 +630,11 @@ class ATCTestResult(ABC):
         assert self.all_variables_states_sorted_by_line_number, f"No variable state found for {','.join([test_file.file_name for test_file in self.all_atc_test_files])}"
 
     def get_equipment_redundancy_by_name(self, equipment_name: str) -> EquipmentRedundancy:
+        if len(self.equipments_library.all_equipments) == 1:
+            return EquipmentRedundancy.UNKNOWN
+
         all_equipments_names_with_same_prefix = [eqpt.name for eqpt in self.equipments_library.all_equipments if eqpt.name.startswith(equipment_name[:-1])]
-        return EquipmentRedundancy.REDUNDANT if len(all_equipments_names_with_same_prefix) > 1 else EquipmentRedundancy.NOT_REDUNDANT
+        return EquipmentRedundancy.REDUNDANT if len(all_equipments_names_with_same_prefix) > 1 else EquipmentRedundancy.PROBABLY_NOT_REDUNDANT
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     @line_profiler.profile
@@ -800,7 +803,7 @@ class ATCTestResult(ABC):
                 and equipment_must_be_kept_after_filters(state.variable.equipment.name, equipment_names_reports_filters)
             ]
             if variables_states:
-                result_line_dict: dict[str, VARIABLE_STATE_TYPE_WITH_NONE] = OrderedDict()
+                result_line_dict: dict[str, VariableStateTypeWithNone] = OrderedDict()
                 rows_as_list_dict.append(result_line_dict)
                 result_line_dict["horodate"] = result_line.horodate
                 result_line_dict["Date according to simulation start"] = result_line.time_according_to_simulation_start
@@ -941,7 +944,7 @@ def equipment_must_be_kept_after_filters(equipment_name: str, all_filters: None 
 
 
 @line_profiler.profile
-def convert_to_proper_type(value: str) -> VARIABLE_STATE_TYPE_WITH_NONE:
+def convert_to_proper_type(value: str) -> VariableStateTypeWithNone:
     # Try to convert to bool
     if value.lower() in ("VRAI", "true", "1", "yes", "on"):
         return True
