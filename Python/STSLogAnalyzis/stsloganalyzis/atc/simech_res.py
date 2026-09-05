@@ -48,12 +48,11 @@ class SimechResFile(atc_logs.ATCTestFile):
         for raw_line in all_raw_lines:
             if 'SIMULATION_ENDED;"SIMU_START_AT:' in raw_line:
                 raw_date_as_str = raw_line.split(SimechResFileKnownScenarioInfo.SIMULATION_ENDED.value + ';"SIMU_START_AT:')[1].replace('"', "").replace(";", "").strip()
-                logger_config.print_and_log_info(f"raw_date_as_str found:{raw_date_as_str}")
 
                 # Thu May 28 12:55:42 2026
                 date_format = "%a %b %d %H:%M:%S %Y"
                 self.simulation_start_at_timestamp = datetime.strptime(raw_date_as_str, date_format)  # noqa: DTZ007
-                logger_config.print_and_log_info(f"simulation_start_at parsed:{self.simulation_start_at_timestamp}")
+                logger_config.print_and_log_info(f"simulation_start_at parsed:{self.simulation_start_at_timestamp}", do_not_print=True)
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def compute_all_variables_states(self) -> None:

@@ -64,7 +64,7 @@ def create_folder_if_not_exist(directory_path: str) -> bool:
         os.mkdir(directory_path)
         return True
     else:
-        logger_config.print_and_log_info(f"Folder {directory_path} already exists")
+        # logger_config.print_and_log_info(f"Folder {directory_path} already exists")
         return False
 
 

@@ -90,7 +90,7 @@ def save_rows_to_output_files(
     if suffix_file_name_by_date == SuffixFileNameByDate.YES:
         file_base_name += file_name_utils.get_file_suffix_with_current_datetime(include_underscore=True)
 
-    with logger_config.stopwatch_with_label(f"{inspect.stack(0)[0].function} for {len(rows_as_list_dict)} lines to {file_base_name}", inform_beginning=True):
+    with logger_config.stopwatch_alert_if_exceeds_duration(f"{inspect.stack(0)[0].function} for {len(rows_as_list_dict)} lines to {file_base_name}", duration_threshold_to_alert_info_in_s=1):
         file_utils.create_folder_if_not_exist(output_directory_path)
         file_path_without_suffix = f"{output_directory_path}/{file_base_name}"
         if create_json_file:

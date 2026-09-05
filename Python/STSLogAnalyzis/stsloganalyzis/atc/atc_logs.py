@@ -682,7 +682,7 @@ class ATCTestResult(ABC):
         assert len(all_equipment_found) == 1
         return all_equipment_found[0]
 
-    def create_report_all_variables(
+    def create_full_report_all_variables(
         self,
         variables_names_reports_filters: None | list[VariableNameFilter] = None,
         equipment_names_reports_filters: None | list[EquipmentNameFilter] = None,
@@ -700,7 +700,7 @@ class ATCTestResult(ABC):
 
         if equipment_names_reports_filters is None and create_report_all_variables:
             for equipment in self.equipments_library.all_equipments:
-                self.create_report_all_variables(
+                self.create_full_report_all_variables(
                     variables_names_reports_filters=variables_names_reports_filters,
                     files_base_name=files_base_name + "_" + equipment.name,
                     equipment_names_reports_filters=[
@@ -713,27 +713,27 @@ class ATCTestResult(ABC):
                 )
 
         if create_report_all_variables_state_changes:
-            self._create_report_all_variables_state_changes(
+            self.create_report_all_variables_state_changes(
                 variables_names_reports_filters=variables_names_reports_filters,
                 equipment_names_reports_filters=equipment_names_reports_filters,
                 files_base_name=files_base_name,
             )
 
         if create_report_all_variables_states_variable_by_column:
-            self._create_report_all_variables_states_variable_by_column(
+            self.create_report_all_variables_states_variable_by_column(
                 variables_names_reports_filters=variables_names_reports_filters,
                 equipment_names_reports_filters=equipment_names_reports_filters,
                 files_base_name=files_base_name,
             )
 
         if create_report_all_variables_states_variable_by_rows:
-            self._create_report_all_variables_states_variable_by_rows(
+            self.create_report_all_variables_states_variable_by_rows(
                 variables_names_reports_filters=variables_names_reports_filters,
                 equipment_names_reports_filters=equipment_names_reports_filters,
                 files_base_name=files_base_name,
             )
 
-    def _create_report_all_variables_state_changes(
+    def create_report_all_variables_state_changes(
         self,
         variables_names_reports_filters: list[VariableNameFilter],
         files_base_name: str,
@@ -763,7 +763,7 @@ class ATCTestResult(ABC):
             split_big_files=False,
         )
 
-    def _create_report_all_variables_states_variable_by_rows(
+    def create_report_all_variables_states_variable_by_rows(
         self,
         variables_names_reports_filters: list[VariableNameFilter],
         files_base_name: str,
@@ -792,7 +792,7 @@ class ATCTestResult(ABC):
             split_big_files=False,
         )
 
-    def _create_report_all_variables_states_variable_by_column(
+    def create_report_all_variables_states_variable_by_column(
         self,
         variables_names_reports_filters: list[VariableNameFilter],
         files_base_name: str,
@@ -827,7 +827,25 @@ class ATCTestResult(ABC):
             split_big_files=False,
         )
 
-    def create_report_for_variable(self, variable: Variable, files_base_name: None | str = None) -> None:
+    def create_report_for_variable(
+        self,
+        variable: Variable,
+        create_json_file: bool = False,
+        create_csv_file: bool = False,
+        create_txt_file: bool = False,
+        files_base_name: None | str = None,
+    ) -> None:
+        self.create_report_for_variable_states_changes(variable, create_json_file, create_csv_file, create_txt_file, files_base_name)
+        self.create_report_for_variable_all_states(variable, create_json_file, create_csv_file, create_txt_file, files_base_name)
+
+    def create_report_for_variable_states_changes(
+        self,
+        variable: Variable,
+        create_json_file: bool = False,
+        create_csv_file: bool = False,
+        create_txt_file: bool = False,
+        files_base_name: None | str = None,
+    ) -> None:
         if files_base_name is None:
             files_base_name = f"{self.label}_variable_{variable.name}"
 
@@ -850,7 +868,21 @@ class ATCTestResult(ABC):
             output_directory_path=self.output_directory_path,
             suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
             split_big_files=False,
+            create_json_file=create_json_file,
+            create_csv_file=create_csv_file,
+            create_txt_file=create_txt_file,
         )
+
+    def create_report_for_variable_all_states(
+        self,
+        variable: Variable,
+        create_json_file: bool = False,
+        create_csv_file: bool = False,
+        create_txt_file: bool = False,
+        files_base_name: None | str = None,
+    ) -> None:
+        if files_base_name is None:
+            files_base_name = f"{self.label}_variable_{variable.name}"
 
         reports_utils.save_rows_to_output_files(
             rows_as_list_dict=[
@@ -868,6 +900,9 @@ class ATCTestResult(ABC):
             output_directory_path=self.output_directory_path,
             suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
             split_big_files=False,
+            create_json_file=create_json_file,
+            create_csv_file=create_csv_file,
+            create_txt_file=create_txt_file,
         )
 
     class Builder(ABC):

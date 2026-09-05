@@ -194,8 +194,12 @@ def build_equipment_line_in_eqpt_type_report(equipment_report: OneEquipmentRepor
     current_report_line_dict = OrderedDict(
         {
             "Date": (
-                equipment_report.variable.continuous_states_chronologically_sorted[-1].all_instant_variable_states[-1].result_line.horodate.replace(microsecond=0).replace(second=0).replace(minute=0)
-                if equipment_report.variable.continuous_states_chronologically_sorted[-1].all_instant_variable_states[-1].result_line.horodate
+                equipment_report.variable.continuous_states_chronologically_sorted[-1]
+                .all_instant_variable_states[-1]
+                .result_line.best_timestamp.replace(microsecond=0)
+                .replace(second=0)
+                .replace(minute=0)
+                if equipment_report.variable.continuous_states_chronologically_sorted[-1].all_instant_variable_states[-1].result_line.best_timestamp
                 else None
             ),
             "File name": equipment_report.atc_test_file.file_name,
@@ -273,14 +277,11 @@ def build_temps_cycle_report_from_atc_log_results(atc_test_results: list[atc_log
             index=None,
         )
 
-        for equipment_report in equipments_reports:
-            data_per_sheet_name[f"{equipment_report.atc_test_file.atc_test_result.label}_{equipment_type.name}"] = pandas.DataFrame(
-                data=[build_lines_in_one_simulation_equipment_report(equipment_report=equipment_report)],
-                index=None,
-            )
-
     pandas_utils.to_excel_wait_if_file_is_locked(
         data_per_sheet_name,
         f"{OUTPUT_DIRECTORY}\\temps_cycle_report",
         suffix_file_name_by_date=True,
     )
+
+    for equipment_report in equipments_reports:
+        equipment_report.atc_test_file.atc_test_result.create_report_for_variable(equipment_report.variable)
