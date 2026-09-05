@@ -94,6 +94,7 @@ class SimechResFile(atc_logs.ATCTestFile):
                                 if equipment_name in self.variables_line_dictionary_by_equipment
                                 else "NA"
                             ),
+                            do_not_print=True,
                         )
                         raw_useful_values = [get_cleaned_variable_name(raw_variable) for raw_variable in raw_line_split[SimechResFileFirstColumnsByIndex.EQUIPMENT_OR_SIMECH_SCENARIO_INFO.value + 1 :]]
                         self.variables_line_dictionary_by_equipment[equipment_name] = atc_logs.ATCVariablesLineDictionary(all_fields_names=raw_useful_values)
