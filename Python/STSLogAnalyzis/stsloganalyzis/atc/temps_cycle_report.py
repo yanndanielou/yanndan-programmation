@@ -118,7 +118,10 @@ class OneEquipmentReport:
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True)
-def build_temps_cycle_report_from_files(root_folders_and_environments: list[tuple[str, str]]) -> tuple[list[str], list[atc_logs.ATCTestResult]]:
+def build_temps_cycle_report_from_files(
+    root_folders_and_environments: list[tuple[str, str]],
+    create_reports_files_by_equipment: bool = False,
+) -> tuple[list[str], list[atc_logs.ATCTestResult]]:
 
     files_paths_not_handled_because_errors: list[str] = []
     atc_test_results: list[atc_logs.ATCTestResult] = []
@@ -171,7 +174,7 @@ def build_temps_cycle_report_from_files(root_folders_and_environments: list[tupl
                 logger_config.print_and_log_error(f"Could not compute temps cycle for {input_file_path}")
                 files_paths_not_handled_because_errors.append(str(input_file_path))
 
-    build_temps_cycle_report_from_atc_log_results(atc_test_results)
+    build_temps_cycle_report_from_atc_log_results(atc_test_results, create_reports_files_by_equipment)
     logger_config.print_and_log_error_if(len(files_paths_not_handled_because_errors), f"Files not handled because errors: \n{'\n'.join(files_paths_not_handled_because_errors)}")
     return files_paths_not_handled_because_errors, atc_test_results
 
@@ -242,7 +245,10 @@ def build_equipment_line_in_eqpt_type_report(equipment_report: OneEquipmentRepor
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True)
-def build_temps_cycle_report_from_atc_log_results(atc_test_results: list[atc_logs.ATCTestResult]) -> None:
+def build_temps_cycle_report_from_atc_log_results(
+    atc_test_results: list[atc_logs.ATCTestResult],
+    create_reports_files_by_equipment: bool = False,
+) -> None:
 
     equipments_reports: list[OneEquipmentReport] = []
 
@@ -283,5 +289,6 @@ def build_temps_cycle_report_from_atc_log_results(atc_test_results: list[atc_log
         suffix_file_name_by_date=True,
     )
 
-    for equipment_report in equipments_reports:
-        equipment_report.atc_test_file.atc_test_result.create_report_for_variable(equipment_report.variable)
+    if create_reports_files_by_equipment:
+        for equipment_report in equipments_reports:
+            equipment_report.atc_test_file.atc_test_result.create_report_for_variable(equipment_report.variable)

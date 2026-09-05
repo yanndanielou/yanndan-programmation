@@ -30,7 +30,8 @@ def main() -> None:
                     "PLT_SYST_2 RL3A02 Conf30",
                     r"D:\temp\mesures_temps_cycle_usine\PLT_SYST_2_RL3a.0.2_Conf_30",
                 ),
-            ]
+            ],
+            create_reports_files_by_equipment=False,
         )
 
 
