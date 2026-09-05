@@ -33,6 +33,7 @@ class EquipmentType(Enum):
     PAS = "PAS"
     PAL = "PAL"
     PAE = "PAE"
+    MES = "MES"
 
 
 class EquipmentRedundancy(Enum):
@@ -673,17 +674,21 @@ class ATCTestResult(ABC):
 
         return self.is_equipment_name_allowed_for_creation(equipment_name)
 
-    def get_or_create_equipment_by_name_if_allowed(self, equipment_name: str) -> Equipment | None:
+    def get_existing_equipment_by_name(self, equipment_name: str) -> Equipment | None:
         all_equipment_found = [eqpt for eqpt in self.equipments_library.all_equipments if eqpt.raw_name == equipment_name or eqpt.name == equipment_name]
-        if not all_equipment_found:
-            if self.is_equipment_name_allowed_for_creation(equipment_name):
-                self.equipments_library.all_equipments.append(Equipment(raw_name=equipment_name))
-                return self.get_or_create_equipment_by_name_if_allowed(equipment_name=equipment_name)
-            else:
-                return None
+        assert len(all_equipment_found) <= 1
+        return all_equipment_found[0] if all_equipment_found else None
 
-        assert len(all_equipment_found) == 1
-        return all_equipment_found[0]
+    def get_or_create_equipment_by_name_if_allowed(self, equipment_name: str) -> Equipment | None:
+        existing_equipment_by_name = self.get_existing_equipment_by_name(equipment_name)
+        if existing_equipment_by_name is not None:
+            return existing_equipment_by_name
+
+        if self.is_equipment_name_allowed_for_creation(equipment_name):
+            self.equipments_library.all_equipments.append(Equipment(raw_name=equipment_name))
+            return self.get_or_create_equipment_by_name_if_allowed(equipment_name=equipment_name)
+        else:
+            return None
 
     def create_full_report_all_variables(
         self,

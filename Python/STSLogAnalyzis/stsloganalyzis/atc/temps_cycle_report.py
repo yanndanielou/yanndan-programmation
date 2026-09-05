@@ -121,7 +121,17 @@ class OneEquipmentReport:
 def build_temps_cycle_report_from_files(
     root_folders_and_environments: list[tuple[str, str]],
     create_reports_files_by_equipment: bool = False,
-) -> tuple[list[str], list[atc_logs.ATCTestResult]]:
+) -> list[atc_logs.ATCTestResult]:
+
+    atc_test_results = build_atc_test_results(root_folders_and_environments=root_folders_and_environments)
+    create_global_graphs_by_platform(atc_test_results)
+    build_temps_cycle_report_from_atc_log_results(atc_test_results, create_reports_files_by_equipment)
+    return atc_test_results
+
+
+def build_atc_test_results(
+    root_folders_and_environments: list[tuple[str, str]],
+) -> list[atc_logs.ATCTestResult]:
 
     files_paths_not_handled_because_errors: list[str] = []
     atc_test_results: list[atc_logs.ATCTestResult] = []
@@ -174,9 +184,8 @@ def build_temps_cycle_report_from_files(
                 logger_config.print_and_log_error(f"Could not compute temps cycle for {input_file_path}")
                 files_paths_not_handled_because_errors.append(str(input_file_path))
 
-    build_temps_cycle_report_from_atc_log_results(atc_test_results, create_reports_files_by_equipment)
     logger_config.print_and_log_error_if(len(files_paths_not_handled_because_errors), f"Files not handled because errors: \n{'\n'.join(files_paths_not_handled_because_errors)}")
-    return files_paths_not_handled_because_errors, atc_test_results
+    return atc_test_results
 
 
 def build_lines_in_one_simulation_equipment_report(equipment_report: OneEquipmentReport) -> list[OrderedDict[str, datetime.datetime | str | int | float | numpy.float64 | None]]:
@@ -242,6 +251,98 @@ def build_equipment_line_in_eqpt_type_report(equipment_report: OneEquipmentRepor
         if centile_index > 90:
             current_report_line_dict[f"Centile_{centile_index+1}"] = centile_value
     return current_report_line_dict
+
+
+def get_temps_cycle_variable_name_by_equipment(equipment: atc_logs.Equipment) -> str:
+    return "TEMPS_AS" if equipment.equipment_type in [atc_logs.EquipmentType.PAL, atc_logs.EquipmentType.PAS, atc_logs.EquipmentType.MES] else "STAB_CPT1"
+
+
+@logger_config.stopwatch_decorator(inform_beginning=True)
+def create_global_graphs_by_platform(
+    atc_test_results: list[atc_logs.ATCTestResult],
+) -> None:
+    atc_test_results_sorted_chronologically = sorted(
+        atc_test_results, key=lambda x: cast(datetime.datetime, x.all_variables_states_changes_sorted_by_timestamp[-1].previous_state.result_line.best_timestamp), reverse=True
+    )
+    all_equipments_names = {equipment.name for atc_test_result in atc_test_results for equipment in atc_test_result.equipments_library.all_equipments}
+    create_global_graphs_by_platform_all_states(atc_test_results_sorted_chronologically, all_equipments_names)
+    create_global_graphs_by_platform_all_continuous_states(atc_test_results_sorted_chronologically, all_equipments_names)
+
+
+def create_global_graphs_by_platform_all_states(atc_test_results_sorted_chronologically: list[atc_logs.ATCTestResult], all_equipments_names: set[str]) -> None:
+    data_per_sheet_name: dict[str, pandas.DataFrame] = {}
+    for equipment_name in all_equipments_names:
+        all_lines_of_equipment: list[OrderedDict] = []
+        for atc_test_result in atc_test_results_sorted_chronologically:
+            equipment_found = atc_test_result.get_existing_equipment_by_name(equipment_name)
+            if equipment_found:
+                temps_cycle_variable_name = get_temps_cycle_variable_name_by_equipment(equipment_found)
+                variable = equipment_found.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name)
+                if variable:
+                    new_lines = [
+                        OrderedDict(
+                            {
+                                "Date": instant_state.result_line.best_timestamp,
+                                temps_cycle_variable_name: instant_state.best_value,
+                            },
+                        )
+                        for instant_state in variable.instant_states_chronologically_sorted
+                    ]
+                    all_lines_of_equipment += new_lines
+
+        data_per_sheet_name[equipment_name] = pandas.DataFrame(
+            all_lines_of_equipment,
+            index=None,
+        )
+
+    pandas_utils.to_excel_wait_if_file_is_locked(
+        data_per_sheet_name,
+        f"{OUTPUT_DIRECTORY}\\gaph_all_temps_cycles_all_states",
+        suffix_file_name_by_date=True,
+    )
+
+
+def create_global_graphs_by_platform_all_continuous_states(atc_test_results_sorted_chronologically: list[atc_logs.ATCTestResult], all_equipments_names: set[str]) -> None:
+    data_per_sheet_name: dict[str, pandas.DataFrame] = {}
+    for equipment_name in all_equipments_names:
+        all_lines_of_equipment: list[OrderedDict] = []
+        for atc_test_result in atc_test_results_sorted_chronologically:
+            equipment_found = atc_test_result.get_existing_equipment_by_name(equipment_name)
+            if equipment_found:
+                temps_cycle_variable_name = get_temps_cycle_variable_name_by_equipment(equipment_found)
+                variable = equipment_found.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name)
+                if variable:
+
+                    new_lines: list[OrderedDict] = []
+                    for continuous_state in variable.continuous_states_chronologically_sorted:
+                        new_lines.append(
+                            OrderedDict(
+                                {
+                                    "Date": continuous_state.all_instant_variable_states[0].result_line.best_timestamp,
+                                    temps_cycle_variable_name: continuous_state.best_value,
+                                },
+                            )
+                        )
+                        new_lines.append(
+                            OrderedDict(
+                                {
+                                    "Date": continuous_state.all_instant_variable_states[-1].result_line.best_timestamp,
+                                    temps_cycle_variable_name: continuous_state.best_value,
+                                },
+                            )
+                        )
+                    all_lines_of_equipment += new_lines
+
+        data_per_sheet_name[equipment_name] = pandas.DataFrame(
+            all_lines_of_equipment,
+            index=None,
+        )
+
+    pandas_utils.to_excel_wait_if_file_is_locked(
+        data_per_sheet_name,
+        f"{OUTPUT_DIRECTORY}\\gaph_all_temps_cycles_all_states",
+        suffix_file_name_by_date=True,
+    )
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True)
