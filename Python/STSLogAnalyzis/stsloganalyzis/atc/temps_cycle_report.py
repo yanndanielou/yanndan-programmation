@@ -154,7 +154,7 @@ def build_temps_cycle_report_from_atc_log(atc_test_results: list[atc_logs.ATCTes
                         "variable": equipment_report.variable.name,
                         "equipment": equipment_report.variable.equipment.name,
                         "equipment type": equipment_report.variable.equipment.equipment_type.name,
-                        "redundancy status": equipment_report.atc_test_file.atc_test_result.get_equipment_redundancy_by_name(equipment_report.variable.equipment.name),
+                        "redundancy status": equipment_report.atc_test_file.atc_test_result.get_equipment_redundancy_by_name(equipment_report.variable.equipment.name).name,
                         "min_value": equipment_report.min_value,
                         "max_value": equipment_report.max_value,
                         "mean_value": equipment_report.mean_value,
