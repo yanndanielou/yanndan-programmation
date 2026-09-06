@@ -334,6 +334,26 @@ def get_temps_cycle_variable_name_by_equipment(equipment: atc_logs.Equipment) ->
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+def create_global_graphs_by_platform_for_equipment_reports(
+    equipments_reports_sorted_chronologically: list[OneEquipmentReport],
+) -> None:
+
+    all_equipments_names = {equipment_report.equipment_name for equipment_report in equipments_reports_sorted_chronologically}
+    all_environment_names = {equipment_report.environment_name for equipment_report in equipments_reports_sorted_chronologically}
+
+    for environment_name in all_environment_names:
+        try:
+            create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports(
+                equipments_reports_sorted_chronologically=equipments_reports_sorted_chronologically,
+                all_environment_names=all_environment_names,
+                all_equipments_names=all_equipments_names,
+                only_environment_name_to_keep_if_defined=environment_name,
+            )
+        except MemoryError as ex:
+            logger_config.print_and_log_exception(ex)
+
+
+@logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
 def create_global_graphs_for_equipment_reports(
     equipments_reports_sorted_chronologically: list[OneEquipmentReport],
 ) -> None:
