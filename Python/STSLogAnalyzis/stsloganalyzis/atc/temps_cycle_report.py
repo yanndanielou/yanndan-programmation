@@ -26,6 +26,38 @@ class InstantTempsCycleVariableState:
     equipment_report: "OneEquipmentReport"
 
 
+def get_min_relevant_value_for_variable(variable_name: str) -> int | None:
+    if variable_name.startswith("TEMPS_AS"):
+        return 30
+    if variable_name.startswith("STAB_CPT"):
+        return 30
+    return None
+
+
+def get_threshold_high_for_variable(variable: atc_logs.Variable) -> int | None:
+    return (
+        180
+        if variable.equipment.equipment_type is atc_logs.EquipmentType.PAL and variable.name.startswith("TEMPS_AS")
+        else (
+            230
+            if variable.equipment.equipment_type is atc_logs.EquipmentType.PAS and variable.name.startswith("TEMPS_AS")
+            else 110 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAE and variable.name.startswith("STAB_CPT") else None
+        )
+    )
+
+
+def get_threshold_very_high_for_variable(variable: atc_logs.Variable) -> int | None:
+    return (
+        200
+        if variable.equipment.equipment_type is atc_logs.EquipmentType.PAL and variable.name.startswith("TEMPS_AS")
+        else (
+            260
+            if variable.equipment.equipment_type is atc_logs.EquipmentType.PAS and variable.name.startswith("TEMPS_AS")
+            else 120 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAE else None
+        )
+    )
+
+
 class OneEquipmentReport:
 
     def __init__(self, atc_test_result: atc_logs.ATCTestResult, variable: atc_logs.Variable) -> None:
@@ -46,6 +78,7 @@ class OneEquipmentReport:
             for instant_variable_state in variable.instant_states_chronologically_sorted
         ]
 
+        min_relevant_value = get_min_relevant_value_for_variable(self.variable_name)
         self.all_relevant_values_only_instant_states_chronologically_sorted = [
             InstantTempsCycleVariableState(
                 equipment_report=self,
@@ -53,7 +86,7 @@ class OneEquipmentReport:
                 value=instant_variable_state.value,
             )
             for instant_variable_state in self.all_unfiltered_instant_states_chronologically_sorted
-            if instant_variable_state.value > 50
+            if min_relevant_value is None or instant_variable_state.value > min_relevant_value
         ]
         self.all_relevant_values = [instant_state.value for instant_state in self.all_relevant_values_only_instant_states_chronologically_sorted]
 
@@ -75,38 +108,23 @@ class OneEquipmentReport:
         self.variance_of_relevant_values = statistics.pvariance(self.all_relevant_values)
         self.ecart_type_of_relevant_values = statistics.pstdev(self.all_relevant_values)
 
-        self.high_consumption_threshold = (
-            # fmt: off
-            180 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAL
-            else 230 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAS 
-            else 100 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAE 
-            else 0
-            # fmt: on
-        )
-        self.very_high_consumption_threshold = (
-            # fmt: off
-            200 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAL
-            else 260 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAS 
-            else 120 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAE 
-            else 0
-            # fmt: on
-        )
+        self.high_consumption_threshold = get_threshold_high_for_variable(variable)
+        self.very_high_consumption_threshold = get_threshold_very_high_for_variable(variable)
 
         # 1. Distribution (Médiane et Mode)
         relevant_values_sorted_by_value = sorted(self.all_relevant_values)
         n = len(relevant_values_sorted_by_value)
-        self.mediane_relevant_values = relevant_values_sorted_by_value[n // 2] if n % 2 != 0 else (relevant_values_sorted_by_value[n // 2 - 1] + relevant_values_sorted_by_value[n // 2]) / 2
         self.mode = Counter(self.all_relevant_values).most_common(1)[0][0]
 
         # 3. Identification des anomalies et segments de surconsommation
         self.anomalies_high = []
-        self.anomalies_very_high = [value for value in self.all_relevant_values if value > self.very_high_consumption_threshold]
+        self.anomalies_very_high = [value for value in self.all_relevant_values if self.very_high_consumption_threshold and value > self.very_high_consumption_threshold]
         high_pics_consecutifs_above_high = 0
         self.duree_max_above_high_consecutive = 0
         self.total_anomalies_high_consecutives = 0
 
         for i, cpu in enumerate(self.all_relevant_values):
-            if cpu > self.high_consumption_threshold:
+            if self.high_consumption_threshold and cpu > self.high_consumption_threshold:
                 self.anomalies_high.append((i, cpu))
                 high_pics_consecutifs_above_high += 1
             else:
@@ -123,9 +141,9 @@ class OneEquipmentReport:
 
         # 3. Énergie engloutie par les anomalies
         conso_totale = sum(self.all_relevant_values)
-        conso_anomalies_high = sum(x for x in self.all_relevant_values if x > self.high_consumption_threshold)
+        conso_anomalies_high = sum(x for x in self.all_relevant_values if x > self.high_consumption_threshold) if self.high_consumption_threshold else 0
         self.ratio_energie_pics_high = (conso_anomalies_high / conso_totale * 100) if conso_totale > 0 else 0
-        conso_anomalies_very_high = sum(x for x in self.all_relevant_values if x > self.very_high_consumption_threshold)
+        conso_anomalies_very_high = sum(x for x in self.all_relevant_values if x > self.very_high_consumption_threshold) if self.very_high_consumption_threshold else 0
         self.ratio_energie_pics_very_high = (conso_anomalies_very_high / conso_totale * 100) if conso_totale > 0 else 0
 
         # 5. Temps de recouvrement (Cool-down) après anomalie
@@ -135,7 +153,7 @@ class OneEquipmentReport:
         cpu_moyenne = sum(self.all_relevant_values) / n
 
         for x in self.all_relevant_values:
-            if x > self.high_consumption_threshold:
+            if self.high_consumption_threshold and x > self.high_consumption_threshold:
                 en_crise = True
                 compteur_recouv_high = min(compteur_recouv_high, 0)
             elif en_crise:
@@ -155,10 +173,6 @@ class OneEquipmentReport:
 def process_root_folders_and_environments(root_folders_and_environments: list[tuple[str, str]]) -> None:
     equipments_reports_sorted_chronologically = sorted(build_temps_cycle_reports_from_root_folders_and_environments(root_folders_and_environments), key=lambda x: x.end_of_test_timestamp)
     build_temps_cycle_excel_report_from_atc_log_results(equipments_reports=equipments_reports_sorted_chronologically)
-    try:
-        create_global_graphs_by_platform_for_equipment_reports(equipments_reports_sorted_chronologically)
-    except MemoryError as mem_err:
-        logger_config.print_and_log_exception(mem_err)
 
     try:
         create_global_graphs_for_equipment_reports(equipments_reports_sorted_chronologically)
@@ -226,6 +240,7 @@ def build_atc_test_result_from_simech_file_path(
                     "CDECALAGE",
                     "CJOUR",
                     "CDECENIE",
+                    "FAS_VF",
                     "TEMPS_AS",
                     "STAB_CPT",
                     "HLF",
@@ -296,27 +311,27 @@ def build_equipment_line_in_eqpt_type_excel_report(equipment_report: OneEquipmen
             "equipment": equipment_report.equipment_name,
             "equipment type": equipment_report.equipment_type.name,
             "redundancy status": equipment_report.equipment_redundancy,
-            "min_of_relevant_values": equipment_report.min_of_relevant_values,
-            "max_value": equipment_report.max_value,
-            "mean_of_relevant_values": equipment_report.mean_of_relevant_values,
-            "median_of_relevant_values": equipment_report.median_of_relevant_values,
-            "mediane_relevant_values": equipment_report.mediane_relevant_values,
-            "Number relevant values": len(equipment_report.all_relevant_values),
-            "Number not relevant (filtered) values": len(equipment_report.all_unfiltered_instant_states_chronologically_sorted) - len(equipment_report.all_relevant_values),
-            "duree_max_consecutive above high": equipment_report.duree_max_above_high_consecutive,
-            "nombre anomalies high": len(equipment_report.anomalies_high),
-            "taux_anomalie high (%)": equipment_report.taux_anomalie_high,
-            "nombre anomalies very high": len(equipment_report.anomalies_very_high),
-            "taux_anomalie very high (%)": equipment_report.taux_anomalie_very_high,
-            "variance_of_relevant_values": equipment_report.variance_of_relevant_values,
-            "ecart_type_of_relevant_values": equipment_report.ecart_type_of_relevant_values,
-            "mode": equipment_report.mode,
-            "recouvrement_moyen high": equipment_report.recouvrement_moyen_high,
-            "ratio_energie_pics high (%)": equipment_report.ratio_energie_pics_high,
-            "ratio_energie_pics very high (%)": equipment_report.ratio_energie_pics_very_high,
-            "max_hausse_brutale": equipment_report.max_hausse_brutale,
-            "high_consumption_threshold": equipment_report.high_consumption_threshold,
-            "very_high_consumption_threshold": equipment_report.very_high_consumption_threshold,
+            f"min_of_relevant_values {equipment_report.variable_name} by test": equipment_report.min_of_relevant_values,
+            f"max_value {equipment_report.variable_name} by test": equipment_report.max_value,
+            f"mean_of_relevant_values {equipment_report.variable_name} by test": equipment_report.mean_of_relevant_values,
+            f"median_of_relevant_values {equipment_report.variable_name} by test": equipment_report.median_of_relevant_values,
+            f"Number relevant values {equipment_report.variable_name} by test": len(equipment_report.all_relevant_values),
+            f"duree_max_consecutive above high {equipment_report.variable_name} by test": equipment_report.duree_max_above_high_consecutive,
+            f"nombre anomalies high {equipment_report.variable_name} by test": len(equipment_report.anomalies_high),
+            f"taux_anomalie high (%) {equipment_report.variable_name} by test": equipment_report.taux_anomalie_high,
+            f"nombre anomalies very high {equipment_report.variable_name} by test": len(equipment_report.anomalies_very_high),
+            f"taux_anomalie very high (%) {equipment_report.variable_name} by test": equipment_report.taux_anomalie_very_high,
+            f"variance_of_relevant_values {equipment_report.variable_name} by test": equipment_report.variance_of_relevant_values,
+            f"ecart_type_of_relevant_values {equipment_report.variable_name} by test": equipment_report.ecart_type_of_relevant_values,
+            f"mode {equipment_report.variable_name} by test": equipment_report.mode,
+            f"recouvrement_moyen high {equipment_report.variable_name} by test": equipment_report.recouvrement_moyen_high,
+            f"ratio_energie_pics high (%) {equipment_report.variable_name} by test": equipment_report.ratio_energie_pics_high,
+            f"ratio_energie_pics very high (%) {equipment_report.variable_name} by test": equipment_report.ratio_energie_pics_very_high,
+            f"max_hausse_brutale {equipment_report.variable_name} by test": equipment_report.max_hausse_brutale,
+            f"Number not relevant (filtered) values {equipment_report.variable_name} by test": len(equipment_report.all_unfiltered_instant_states_chronologically_sorted)
+            - len(equipment_report.all_relevant_values),
+            f"high_consumption_threshold {equipment_report.variable_name} by test": equipment_report.high_consumption_threshold,
+            f"very_high_consumption_threshold {equipment_report.variable_name} by test": equipment_report.very_high_consumption_threshold,
             "File full path": equipment_report.atc_test_file_file_full_path,
             "label": equipment_report.atc_test_result_label,
         }
@@ -333,24 +348,11 @@ def get_temps_cycle_variable_name_by_equipment(equipment: atc_logs.Equipment) ->
     return "TEMPS_AS" if equipment.equipment_type in [atc_logs.EquipmentType.PAL, atc_logs.EquipmentType.PAS, atc_logs.EquipmentType.MES] else "STAB_CPT1"
 
 
-@logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-def create_global_graphs_by_platform_for_equipment_reports(
-    equipments_reports_sorted_chronologically: list[OneEquipmentReport],
-) -> None:
-
-    all_equipments_names = {equipment_report.equipment_name for equipment_report in equipments_reports_sorted_chronologically}
-    all_environment_names = {equipment_report.environment_name for equipment_report in equipments_reports_sorted_chronologically}
-
-    for environment_name in all_environment_names:
-        try:
-            create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports(
-                equipments_reports_sorted_chronologically=equipments_reports_sorted_chronologically,
-                all_environment_names=all_environment_names,
-                all_equipments_names=all_equipments_names,
-                only_environment_name_to_keep_if_defined=environment_name,
-            )
-        except MemoryError as ex:
-            logger_config.print_and_log_exception(ex)
+def get_interesting_variables_names_by_equipment(equipment: atc_logs.Equipment) -> list[str]:
+    all_variable_names = [get_temps_cycle_variable_name_by_equipment(equipment)]
+    if equipment.equipment_type == atc_logs.EquipmentType.PAE:
+        all_variable_names.append("FAS_VF")
+    return all_variable_names
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
@@ -365,7 +367,7 @@ def create_global_graphs_for_equipment_reports(
         try:
             create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports(
                 equipments_reports_sorted_chronologically=equipments_reports_sorted_chronologically,
-                all_environment_names=all_environment_names,
+                all_equipments_names=all_equipments_names,
                 only_environment_name_to_keep_if_defined=environment_name,
             )
         except MemoryError as ex:
@@ -375,9 +377,10 @@ def create_global_graphs_for_equipment_reports(
         try:
             create_global_graphs_by_environment_in_sheet_all_states_for_equipments_reports(
                 equipments_reports_sorted_chronologically=equipments_reports_sorted_chronologically,
-                all_equipments_names=all_equipments_names,
+                all_environment_names=all_environment_names,
                 only_equipment_name_to_keep_if_defined=equipment_name,
             )
+
         except MemoryError as ex:
             logger_config.print_and_log_exception(ex)
 
@@ -417,20 +420,20 @@ def create_global_graphs_by_platform_all_states_for_atc_tests_results(
         for atc_test_result in atc_test_results_sorted_chronologically:
             equipment_found = atc_test_result.get_existing_equipment_by_name(equipment_name)
             if equipment_found:
-                temps_cycle_variable_name = get_temps_cycle_variable_name_by_equipment(equipment_found)
-                variable = equipment_found.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name)
-                if variable:
-                    new_lines = [
-                        OrderedDict(
-                            {
-                                "Date": instant_state.result_line.best_timestamp,
-                                temps_cycle_variable_name: instant_state.best_value,
-                            },
-                        )
-                        for instant_state in variable.instant_states_chronologically_sorted
-                        if instant_state.best_value > 30
-                    ]
-                    all_lines_of_equipment += new_lines
+                for intersting_variable_name in get_interesting_variables_names_by_equipment(equipment_found):
+                    variable = equipment_found.variables_library.get_variable_with_name_if_exists(intersting_variable_name)
+                    if variable:
+                        new_lines = [
+                            OrderedDict(
+                                {
+                                    "Date": instant_state.result_line.best_timestamp,
+                                    intersting_variable_name: instant_state.best_value,
+                                },
+                            )
+                            for instant_state in variable.instant_states_chronologically_sorted
+                            if instant_state.best_value > 30
+                        ]
+                        all_lines_of_equipment += new_lines
 
         data_per_sheet_name[equipment_name] = pandas.DataFrame(
             all_lines_of_equipment,
@@ -439,16 +442,14 @@ def create_global_graphs_by_platform_all_states_for_atc_tests_results(
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-def create_global_graphs_by_environment_in_sheet_all_states_for_equipments_reports(
+def create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports(
     equipments_reports_sorted_chronologically: list[OneEquipmentReport],
     all_equipments_names: set[str],
     only_environment_name_to_keep_if_defined: str | None = None,
-    only_equipment_name_to_keep_if_defined: str | None = None,
 ) -> None:
     data_per_sheet_name: dict[str, pandas.DataFrame] = {}
 
     only_environment_name_label = f"_{only_environment_name_to_keep_if_defined}" if only_environment_name_to_keep_if_defined else ""
-    only_equipment_name_label = f"_{only_equipment_name_to_keep_if_defined}" if only_equipment_name_to_keep_if_defined else ""
 
     for equipment_name in all_equipments_names:
         all_lines_of_equipment: list[OrderedDict] = []
@@ -458,7 +459,6 @@ def create_global_graphs_by_environment_in_sheet_all_states_for_equipments_repor
             if equipment_report.equipment_name == equipment_name
             # fmt: off
             and (only_environment_name_to_keep_if_defined is None or only_environment_name_to_keep_if_defined == equipment_report.environment_name)
-            and (only_equipment_name_to_keep_if_defined is None or only_equipment_name_to_keep_if_defined == equipment_report.equipment_name)
             # fmt: on
         ]:
             all_lines_of_equipment += [
@@ -478,13 +478,13 @@ def create_global_graphs_by_environment_in_sheet_all_states_for_equipments_repor
 
     pandas_utils.to_excel_wait_if_file_is_locked(
         data_per_sheet_name,
-        f"{OUTPUT_DIRECTORY}\\graph_all_temps_cycles{only_equipment_name_label}{only_environment_name_label}_all_states",
+        f"{OUTPUT_DIRECTORY}\\graph_all_temps_cycles{only_environment_name_label}_all_states",
         suffix_file_name_by_date=True,
     )
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-def create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports(
+def create_global_graphs_by_environment_in_sheet_all_states_for_equipments_reports(
     equipments_reports_sorted_chronologically: list[OneEquipmentReport],
     all_environment_names: set[str],
     only_equipment_name_to_keep_if_defined: str | None = None,
@@ -539,30 +539,29 @@ def create_global_graphs_by_platform_all_continuous_states_for_atc_tests_results
         for atc_test_result in atc_test_results_sorted_chronologically:
             equipment_found = atc_test_result.get_existing_equipment_by_name(equipment_name)
             if equipment_found:
-                temps_cycle_variable_name = get_temps_cycle_variable_name_by_equipment(equipment_found)
-                variable = equipment_found.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name)
-                if variable:
-
-                    new_lines: list[OrderedDict] = []
-                    for continuous_state in variable.continuous_states_chronologically_sorted:
-                        if continuous_state.best_value != 0:
-                            new_lines.append(
-                                OrderedDict(
-                                    {
-                                        "Date": continuous_state.all_instant_variable_states[0].result_line.best_timestamp,
-                                        temps_cycle_variable_name: continuous_state.best_value,
-                                    },
+                for temps_cycle_variable_name in get_interesting_variables_names_by_equipment(equipment_found):
+                    variable = equipment_found.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name)
+                    if variable:
+                        new_lines: list[OrderedDict] = []
+                        for continuous_state in variable.continuous_states_chronologically_sorted:
+                            if continuous_state.best_value != 0:
+                                new_lines.append(
+                                    OrderedDict(
+                                        {
+                                            "Date": continuous_state.all_instant_variable_states[0].result_line.best_timestamp,
+                                            temps_cycle_variable_name: continuous_state.best_value,
+                                        },
+                                    )
                                 )
-                            )
-                            new_lines.append(
-                                OrderedDict(
-                                    {
-                                        "Date": continuous_state.all_instant_variable_states[-1].result_line.best_timestamp,
-                                        temps_cycle_variable_name: continuous_state.best_value,
-                                    },
+                                new_lines.append(
+                                    OrderedDict(
+                                        {
+                                            "Date": continuous_state.all_instant_variable_states[-1].result_line.best_timestamp,
+                                            temps_cycle_variable_name: continuous_state.best_value,
+                                        },
+                                    )
                                 )
-                            )
-                        all_lines_of_equipment += new_lines
+                            all_lines_of_equipment += new_lines
 
         data_per_sheet_name[equipment_name] = pandas.DataFrame(
             all_lines_of_equipment,
@@ -645,7 +644,7 @@ def build_temps_cycle_equipment_report_from_atc_log_result(
     equipments_reports: list[OneEquipmentReport] = []
     for equipment in atc_test_result.equipments_library.all_equipments:
         at_least_one_variable_found = False
-        for temps_cycle_variable_name_candidate in ["STAB_CPT1", "TEMPS_AS"]:
+        for temps_cycle_variable_name_candidate in ["STAB_CPT1", "TEMPS_AS", "FAS_VC"]:
             variable = equipment.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name_candidate)
             if variable is not None:
                 at_least_one_variable_found = True
