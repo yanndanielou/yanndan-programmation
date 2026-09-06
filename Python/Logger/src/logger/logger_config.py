@@ -1,5 +1,9 @@
 ﻿"""logger"""
 
+from dataclasses import dataclass
+
+import csv
+
 import datetime
 from warnings import deprecated
 
@@ -33,10 +37,70 @@ from common import date_time_formats, file_name_utils
 DEFAULT_CALL_STACK_CONTEXT_VALUE = 1
 DEFAULT_CALL_STACK_FRAME_VALUE = 2
 
+
 log_counts_occurrences_per_level: dict[str, int] = defaultdict(int)
 log_counts_warning_occurrences_per_file_and_line: dict[str, int] = defaultdict(int)
 log_counts_errors_occurrences_per_file_and_line: dict[str, int] = defaultdict(int)
 log_counts_exceptions_occurrences_per_file_and_line: dict[str, int] = defaultdict(int)
+
+
+class RamUsageMonitor:
+
+    @dataclass
+    class MesureToWrite:
+        timestamp: datetime.datetime | str
+        ram_usage_int: int
+        ram_usage_human_readable: str | None
+
+    def __init__(self) -> None:
+        self.output_file_path = ""
+        self.output_file = None
+        self.all_mesures_to_write: list[RamUsageMonitor.MesureToWrite] = []
+
+    def set_output_file_path(self, output_file_path: str) -> None:
+        self.output_file = open(output_file_path, "w", newline="", encoding="utf-8")
+
+        self.fieldnames = ["Timestamp", "Ram usage (int)", "Ram usage (human readable)"]
+        self.writer = csv.DictWriter(self.output_file, fieldnames=self.fieldnames, delimiter="\t")
+        self.writer.writeheader()
+        self.mesure_now()
+
+    def add_measure(
+        self,
+        timestamp: datetime.datetime | str,
+        ram_usage_int: int,
+        ram_usage_human_readable: str | None = None,
+    ) -> None:
+        self.all_mesures_to_write.append(
+            RamUsageMonitor.MesureToWrite(timestamp, ram_usage_int, ram_usage_human_readable)
+        )
+
+    def mesure_now(self) -> None:
+        current_ram_int = cast(int, psutil.Process(os.getpid()).memory_info().rss)
+        self.add_measure(
+            timestamp=datetime.datetime.now(),
+            ram_usage_int=current_ram_int,
+            ram_usage_human_readable=humanize.naturalsize(current_ram_int),
+        )
+
+    def write_pending_lines(self) -> None:
+        for mesure_to_write in self.all_mesures_to_write:
+            self.writer.writerow(
+                {
+                    self.fieldnames[0]: mesure_to_write.timestamp,
+                    self.fieldnames[1]: mesure_to_write.ram_usage_int,
+                    self.fieldnames[2]: mesure_to_write.ram_usage_human_readable,
+                },
+            )
+        self.all_mesures_to_write.clear()
+
+    def save_and_close(self) -> None:
+        self.mesure_now()
+        self.write_pending_lines()
+        self.output_file.close()
+
+
+ram_usage_monitor = RamUsageMonitor()
 
 
 class MessagesCounterHandler(logging.Handler):
@@ -272,6 +336,7 @@ def application_logger(
 
     logger_created.removeHandler(counting_handler)
     logging.root.removeHandler(counting_handler)
+    ram_usage_monitor.save_and_close()
 
 
 def configure_logger_with_timestamp_log_file_suffix(
@@ -284,8 +349,10 @@ def configure_logger_with_timestamp_log_file_suffix(
     log_file_suffix_before_extension = (
         "" if not log_file_suffix_before_extension else f"_{log_file_suffix_before_extension}"
     )
-    log_file_name = f"{log_file_name_prefix}{file_name_utils.get_file_suffix_with_current_datetime()}{log_file_suffix_before_extension}.{log_file_extension}"
-    return configure_logger_with_exact_file_name(log_file_name, logger_level)
+    log_file_name_without_extension = f"{log_file_name_prefix}{file_name_utils.get_file_suffix_with_current_datetime()}{log_file_suffix_before_extension}"
+    log_file_name_with_extension = f"{log_file_name_without_extension}.{log_file_extension}"
+    ram_usage_monitor.set_output_file_path(f"logs/{log_file_name_with_extension}.xlsx")
+    return configure_logger_with_exact_file_name(log_file_name_with_extension, logger_level)
 
 
 @deprecated("Use application logger instead")
@@ -434,9 +501,12 @@ def stopwatch_with_label(
             at_beginning_log_timestamp = time.asctime(time.localtime(time.time()))
 
             if monitor_ram_usage:
-                to_print_and_log = f"{label} : begin. Initial ram usage {humanize.naturalsize(initial_ram_rss)}"
+                human_readable_ram = humanize.naturalsize(initial_ram_rss)
+                to_print_and_log = f"{label} : begin. Initial ram usage {human_readable_ram}"
+                ram_usage_monitor.add_measure(at_beginning_log_timestamp, initial_ram_rss, human_readable_ram)
             else:
                 to_print_and_log = f"{label} : begin"
+                ram_usage_monitor.add_measure(at_beginning_log_timestamp, initial_ram_rss)
 
             if enable_print:
                 print(at_beginning_log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
@@ -451,12 +521,15 @@ def stopwatch_with_label(
         delta_rss_since_reference = final_ram_rss - initial_ram_rss
         fin = time.perf_counter()
         elapsed_time_seconds = fin - debut
-        if monitor_ram_usage:
-            to_print_and_log = f"{label} Elapsed: {date_time_formats.format_duration_to_string(elapsed_time_seconds)}. Final ram {humanize.naturalsize(final_ram_rss)}. Delta ram : {humanize.naturalsize(delta_rss_since_reference)}"
-        else:
-            to_print_and_log = f"{label} Elapsed: {date_time_formats.format_duration_to_string(elapsed_time_seconds)}"
-
         end_log_timestamp = time.asctime(time.localtime(time.time()))
+
+        if monitor_ram_usage:
+            human_readable_ram = humanize.naturalsize(final_ram_rss)
+            ram_usage_monitor.add_measure(end_log_timestamp, final_ram_rss, human_readable_ram)
+            to_print_and_log = f"{label} Elapsed: {date_time_formats.format_duration_to_string(elapsed_time_seconds)}. Final ram {human_readable_ram}. Delta ram : {humanize.naturalsize(delta_rss_since_reference)}"
+        else:
+            ram_usage_monitor.add_measure(end_log_timestamp, initial_ram_rss)
+            to_print_and_log = f"{label} Elapsed: {date_time_formats.format_duration_to_string(elapsed_time_seconds)}"
 
         # pylint: disable=line-too-long
         if enable_print:
