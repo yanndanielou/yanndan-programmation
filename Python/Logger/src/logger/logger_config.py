@@ -245,10 +245,10 @@ def application_logger(
 
     to_print_and_log_lines: list[str] = []
     to_print_and_log_lines.append(
-        f"\nWarning stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " warning raised" for item in list(dict(sorted(log_counts_warning_occurrences_per_file_and_line.items(), key=lambda item: item[1])).items()))}\n"
+        f"\nWarning stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " warning raised" for item in list(dict(sorted(log_counts_warning_occurrences_per_file_and_line.items(), key=lambda item: item[1])).items()))}"
     )
     to_print_and_log_lines.append(
-        f"\nErrors stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " errors raised" for item in list(dict(sorted(log_counts_errors_occurrences_per_file_and_line.items(), key=lambda item: item[1])).items()))}\n"
+        f"\nErrors stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " errors raised" for item in list(dict(sorted(log_counts_errors_occurrences_per_file_and_line.items(), key=lambda item: item[1])).items()))}"
     )
     to_print_and_log_lines.append(
         f"{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s. Final ram usage: {humanize.naturalsize(cast(int, psutil.Process(os.getpid()).memory_info().rss))}."
