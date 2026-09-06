@@ -6,6 +6,8 @@ from logger import logger_config
 
 from common import file_name_utils
 
+EXCEL_LIMIT_SIZE_OF_SHEET_NAME = 31
+
 
 def optional_element_as_optional_string(row: pandas.Series, column_name: str) -> Optional[str]:
     raw_value = row[column_name]
@@ -50,6 +52,11 @@ def to_excel_wait_if_file_is_locked(data_per_sheet_name: dict[str, pandas.DataFr
         try:
             with pandas.ExcelWriter(output_excel_file_without_extension) as writer:
                 for sheet_name, data_frame in data_per_sheet_name.items():
+                    if len(sheet_name) > EXCEL_LIMIT_SIZE_OF_SHEET_NAME:
+                        logger_config.print_and_log_warning(f"Sheet {sheet_name} renamed to {EXCEL_LIMIT_SIZE_OF_SHEET_NAME} characters")
+                        sheet_name = sheet_name[:EXCEL_LIMIT_SIZE_OF_SHEET_NAME]
+                        logger_config.print_and_log_error_if(sheet_name in data_per_sheet_name, f"Renamed sheet {sheet_name} conflicts with other ones")
+
                     data_frame.to_excel(writer, sheet_name=sheet_name)
                 success = True
                 return

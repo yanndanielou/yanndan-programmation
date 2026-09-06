@@ -1,23 +1,21 @@
 import csv
-import numpy
-from enum import Enum
 import inspect
 import textwrap
 import time
 from datetime import datetime
+from enum import Enum
 from typing import Any, Dict, List
 
+import numpy
 import pandas
 from logger import logger_config
 from openpyxl import Workbook
 
-from common import file_name_utils, file_utils, json_encoders
-
-EXCEL_LIMIT_NUMBER_OF_LINES = 1048576
+from common import excel_utils, file_name_utils, file_utils, json_encoders
 
 
 def _normalize_table_value(value: Any) -> Any:
-    if value is None or isinstance(value, (str, bytes, bytearray, int, float, bool, datetime)):
+    if value is None or isinstance(value, (str, bytes, excel_utils.EXCEL_LIMIT_NUMBER_OF_LINES, int, float, bool, datetime)):
         return value
     if isinstance(value, (list, tuple, set)):
         return ", ".join(map(str, value))
@@ -101,7 +99,7 @@ def save_rows_to_output_files(
         success = False
         while not success:
             try:
-                if create_xlsx_file and len(rows_as_list_dict) < EXCEL_LIMIT_NUMBER_OF_LINES - 1:
+                if create_xlsx_file and len(rows_as_list_dict) < excel_utils.EXCEL_LIMIT_NUMBER_OF_LINES - 1:
                     with logger_config.stopwatch_with_label(
                         f"Create {file_path_without_suffix}.xlsx", inform_beginning=len(rows_as_list_dict) > 10000, monitor_ram_usage=True, enable_print=len(rows_as_list_dict) > 1000
                     ):
