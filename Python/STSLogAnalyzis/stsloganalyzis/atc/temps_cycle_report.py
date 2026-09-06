@@ -160,6 +160,11 @@ def process_root_folders_and_environments(root_folders_and_environments: list[tu
     except MemoryError as mem_err:
         logger_config.print_and_log_exception(mem_err)
 
+    try:
+        create_global_graphs_for_equipment_reports(equipments_reports_sorted_chronologically)
+    except MemoryError as mem_err:
+        logger_config.print_and_log_exception(mem_err)
+
 
 @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
 def build_temps_cycle_reports_from_root_folders_and_environments(
@@ -174,7 +179,7 @@ def build_temps_cycle_reports_from_root_folders_and_environments(
         for input_file_it, input_file_path in enumerate(all_input_files):
             number_of_input_files_processed += 1
             try:
-                atc_test_result = build_atc_test_result_from_file_path(environment_name=environment_name, input_file_path=input_file_path, label=f"{number_of_input_files_processed}")
+                atc_test_result = build_atc_test_result_from_simech_file_path(environment_name=environment_name, input_file_path=input_file_path, label=f"{number_of_input_files_processed}")
                 logger_config.print_and_log_info(f"Handle {input_file_it+1} th / {len(all_input_files)} ({round((input_file_it+1)/len(all_input_files)*100,1)}%) input file {input_file_path}")
                 equipments_reports += build_temps_cycle_equipment_report_from_atc_log_result(atc_test_result)
             except AssertionError as ass_err:
@@ -199,7 +204,7 @@ def process_root_folders_and_environments_build_results_then_reports(
     build_temps_cycle_excel_report_from_atc_log_results(equipments_reports=equipments_reports)
 
 
-def build_atc_test_result_from_file_path(
+def build_atc_test_result_from_simech_file_path(
     environment_name: str,
     input_file_path: str | Path,
     label: str,
@@ -255,7 +260,7 @@ def build_atc_test_results_from_root_folders_and_environments(
         all_input_files = [full_path for full_path in Path(root_result_files_folder_path).rglob("*.res")]
         for input_file_it, input_file_path in enumerate(all_input_files):
             try:
-                atc_test_result = build_atc_test_result_from_file_path(environment_name=environment_name, input_file_path=input_file_path, label=f"{len(atc_test_results)+1}")
+                atc_test_result = build_atc_test_result_from_simech_file_path(environment_name=environment_name, input_file_path=input_file_path, label=f"{len(atc_test_results)+1}")
                 logger_config.print_and_log_info(f"Handle {input_file_it+1} th / {len(all_input_files)} ({round((input_file_it+1)/len(all_input_files)*100,1)}%) input file {input_file_path}")
                 atc_test_results.append(atc_test_result)
             except AssertionError as ass_err:
@@ -329,7 +334,7 @@ def get_temps_cycle_variable_name_by_equipment(equipment: atc_logs.Equipment) ->
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-def create_global_graphs_by_platform_for_equipment_reports(
+def create_global_graphs_for_equipment_reports(
     equipments_reports_sorted_chronologically: list[OneEquipmentReport],
 ) -> None:
 
@@ -341,8 +346,17 @@ def create_global_graphs_by_platform_for_equipment_reports(
             create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports(
                 equipments_reports_sorted_chronologically=equipments_reports_sorted_chronologically,
                 all_environment_names=all_environment_names,
-                all_equipments_names=all_equipments_names,
                 only_environment_name_to_keep_if_defined=environment_name,
+            )
+        except MemoryError as ex:
+            logger_config.print_and_log_exception(ex)
+
+    for equipment_name in all_equipments_names:
+        try:
+            create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports(
+                equipments_reports_sorted_chronologically=equipments_reports_sorted_chronologically,
+                all_environment_names=all_environment_names,
+                only_equipment_name_to_keep_if_defined=equipment_name,
             )
         except MemoryError as ex:
             logger_config.print_and_log_exception(ex)
@@ -405,10 +419,9 @@ def create_global_graphs_by_platform_all_states_for_atc_tests_results(
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-def create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports(
+def create_global_graphs_by_environment_in_sheet_all_states_for_equipments_reports(
     equipments_reports_sorted_chronologically: list[OneEquipmentReport],
     all_equipments_names: set[str],
-    all_environment_names: set[str],
     only_environment_name_to_keep_if_defined: str | None = None,
     only_equipment_name_to_keep_if_defined: str | None = None,
 ) -> None:
@@ -439,6 +452,48 @@ def create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports
             ]
 
         data_per_sheet_name[equipment_name] = pandas.DataFrame(
+            all_lines_of_equipment,
+            index=None,
+        )
+
+    pandas_utils.to_excel_wait_if_file_is_locked(
+        data_per_sheet_name,
+        f"{OUTPUT_DIRECTORY}\\graph_all_temps_cycles{only_equipment_name_label}{only_environment_name_label}_all_states",
+        suffix_file_name_by_date=True,
+    )
+
+
+@logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+def create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports(
+    equipments_reports_sorted_chronologically: list[OneEquipmentReport],
+    all_environment_names: set[str],
+    only_equipment_name_to_keep_if_defined: str | None = None,
+) -> None:
+    data_per_sheet_name: dict[str, pandas.DataFrame] = {}
+
+    only_equipment_name_label = f"_{only_equipment_name_to_keep_if_defined}" if only_equipment_name_to_keep_if_defined else ""
+
+    for environment_name in all_environment_names:
+        all_lines_of_equipment: list[OrderedDict] = []
+        for equipments_report in [
+            equipment_report
+            for equipment_report in equipments_reports_sorted_chronologically
+            if equipment_report.environment_name == environment_name
+            # fmt: off
+            and (only_equipment_name_to_keep_if_defined is None or only_equipment_name_to_keep_if_defined == equipment_report.equipment_name)
+            # fmt: on
+        ]:
+            all_lines_of_equipment += [
+                OrderedDict(
+                    {
+                        "Date": instant_state.timestamp,
+                        equipments_report.variable_name: instant_state.value,
+                    },
+                )
+                for instant_state in equipments_report.all_relevant_values_only_instant_states_chronologically_sorted
+            ]
+
+        data_per_sheet_name[environment_name] = pandas.DataFrame(
             all_lines_of_equipment,
             index=None,
         )
