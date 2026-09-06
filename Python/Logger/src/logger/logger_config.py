@@ -33,21 +33,25 @@ from common import date_time_formats, file_name_utils
 DEFAULT_CALL_STACK_CONTEXT_VALUE = 1
 DEFAULT_CALL_STACK_FRAME_VALUE = 2
 
-log_counts_occurences_per_level: Dict[str, int] = defaultdict(int)
-log_counts_errors_occurences_per_file_and_line: Dict[str, int] = defaultdict(int)
-log_counts_exceptions_occurences_per_file_and_line: Dict[str, int] = defaultdict(int)
+log_counts_occurrences_per_level: dict[str, int] = defaultdict(int)
+log_counts_errors_occurrences_per_file_and_line: dict[str, int] = defaultdict(int)
+log_counts_exceptions_occurrences_per_file_and_line: dict[str, int] = defaultdict(int)
 
 
 class MessagesCounterHandler(logging.Handler):
 
     def __init__(self) -> None:
         super(MessagesCounterHandler, self).__init__()
+        self.disabled_for_unit_tests = False
 
     def emit(self, record: logging.LogRecord) -> None:
-        log_counts_occurences_per_level[record.levelname] += 1
+        if self.disabled_for_unit_tests:
+            return
+        if not record.message.startswith("create exception"):  # to avoid multiple entries for exceptions
+            log_counts_occurrences_per_level[record.levelname] += 1
         if record.levelname == "ERROR":
             record_file_and_line = record.message.split(" \t")[0]
-            log_counts_errors_occurences_per_file_and_line[record_file_and_line] += 1
+            log_counts_errors_occurrences_per_file_and_line[record_file_and_line] += 1
 
 
 def __get_calling_file_name_and_line_number(
@@ -142,7 +146,7 @@ def print_and_log_warning(
 
 
 def print_and_log_exception(exception_to_print: Exception, additional_text: Optional[str] = None) -> None:
-    log_counts_exceptions_occurences_per_file_and_line[
+    log_counts_exceptions_occurrences_per_file_and_line[
         __get_calling_file_name_and_line_number(call_stack_context=0)
     ] += 1
 
@@ -214,7 +218,7 @@ def application_logger(
     if not application_name:
         application_name = os.path.basename(os.path.dirname(file_name))
 
-    configure_logger_with_timestamp_log_file_suffix(
+    logger_created, counting_handler = configure_logger_with_timestamp_log_file_suffix(
         log_file_name_prefix=application_name,
         logger_level=logger_level,
         log_file_suffix_before_extension=log_file_suffix_before_extension,
@@ -234,14 +238,14 @@ def application_logger(
     application_end_timestamp = time.asctime(time.localtime(time.time()))
 
     elapsed_time = application_end_time - application_start_time
-    to_print_and_log = f"\nErrors stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " errors raised" for item in list(dict(sorted(log_counts_errors_occurences_per_file_and_line.items(), key=lambda item: item[1])).items()))}\n{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s.\nLogger stats: \t{'\t'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts_occurences_per_level.items()))}"
-    if log_counts_exceptions_occurences_per_file_and_line:
+    to_print_and_log = f"\nErrors stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " errors raised" for item in list(dict(sorted(log_counts_errors_occurrences_per_file_and_line.items(), key=lambda item: item[1])).items()))}\n{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s.\nLogger stats: \t{'\t'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts_occurrences_per_level.items()))}"
+    if log_counts_exceptions_occurrences_per_file_and_line:
         to_print_and_log += f"\nExceptions logged\n  {
             "\n".join(
                 str(item[0]) + ": " + str(item[1]) + " exception logged"
                 for item in list(
                     dict(
-                        sorted(log_counts_exceptions_occurences_per_file_and_line.items(), key=lambda item: item[1])
+                        sorted(log_counts_exceptions_occurrences_per_file_and_line.items(), key=lambda item: item[1])
                     ).items()
                 )
             )
@@ -249,40 +253,36 @@ def application_logger(
     print(application_end_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
     logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
 
+    logger_created.removeHandler(counting_handler)
+    logging.root.removeHandler(counting_handler)
+
 
 def configure_logger_with_timestamp_log_file_suffix(
     log_file_name_prefix: str,
     log_file_extension: str = "log",
     logger_level: int = logging.INFO,
     log_file_suffix_before_extension: Optional[str] = None,
-) -> None:
+) -> tuple[logging.Logger, MessagesCounterHandler]:
 
     log_file_suffix_before_extension = (
         "" if not log_file_suffix_before_extension else f"_{log_file_suffix_before_extension}"
     )
     log_file_name = f"{log_file_name_prefix}{file_name_utils.get_file_suffix_with_current_datetime()}{log_file_suffix_before_extension}.{log_file_extension}"
-    configure_logger_with_exact_file_name(log_file_name, logger_level)
+    return configure_logger_with_exact_file_name(log_file_name, logger_level)
 
 
+@deprecated("Use application logger instead")
 def configure_logger_with_random_log_file_suffix(
     log_file_name_prefix: str, log_file_extension: str = "log", logger_level: int = logging.INFO
-) -> None:
+) -> tuple[logging.Logger, MessagesCounterHandler]:
     """Configure the logger with_random_log_file_suffix"""
     log_file_name = f"{log_file_name_prefix}_{str(random.randrange(100000))}.{log_file_extension}"
-    configure_logger_with_exact_file_name(log_file_name, logger_level)
+    return configure_logger_with_exact_file_name(log_file_name, logger_level)
 
 
-def configure_logger_not_working(logger_level: int = logging.INFO) -> None:
-    """Configure the logger with_random_log_file_suffix"""
-    previous_stack = inspect.stack(1)[2]
-    calling_script_file_name = previous_stack.filename
-    log_file_extension: str = "log"
-    log_file_name_prefix = calling_script_file_name
-    log_file_name = f"{log_file_name_prefix}_{str(random.randrange(100000))}.{log_file_extension}"
-    configure_logger_with_exact_file_name(log_file_name, logger_level)
-
-
-def configure_logger_with_exact_file_name(log_file_name: str, logger_level: int = logging.INFO) -> None:
+def configure_logger_with_exact_file_name(
+    log_file_name: str, logger_level: int = logging.INFO
+) -> tuple[logging.Logger, MessagesCounterHandler]:
     """Configure the logger"""
     logger_directory = "logs"
 
@@ -311,6 +311,8 @@ def configure_logger_with_exact_file_name(log_file_name: str, logger_level: int 
     # Add the custom handler
     counting_handler = MessagesCounterHandler()
     logger.addHandler(counting_handler)
+
+    return logger, counting_handler
 
 
 class ExecutionTime(object):
