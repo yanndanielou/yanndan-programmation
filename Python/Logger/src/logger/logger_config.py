@@ -353,7 +353,7 @@ def configure_logger_with_timestamp_log_file_suffix(
     )
     log_file_name_without_extension = f"{log_file_name_prefix}{file_name_utils.get_file_suffix_with_current_datetime()}{log_file_suffix_before_extension}"
     log_file_name_with_extension = f"{log_file_name_without_extension}.{log_file_extension}"
-    ram_usage_monitor.set_output_file_path(f"logs/{log_file_name_with_extension}.xlsx")
+    ram_usage_monitor.set_output_file_path(f"logs/{log_file_name_with_extension}.csv")
     return configure_logger_with_exact_file_name(log_file_name_with_extension, logger_level)
 
 

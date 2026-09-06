@@ -10,4 +10,4 @@ install_external_common_libraries *.bat
 DocumentLayout.json
 CopilotIndices
 *.backup.json
-*.log.xlsx
+*.log.*
