@@ -257,7 +257,7 @@ def get_temps_cycle_variable_name_by_equipment(equipment: atc_logs.Equipment) ->
     return "TEMPS_AS" if equipment.equipment_type in [atc_logs.EquipmentType.PAL, atc_logs.EquipmentType.PAS, atc_logs.EquipmentType.MES] else "STAB_CPT1"
 
 
-@logger_config.stopwatch_decorator(inform_beginning=True)
+@logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
 def create_global_graphs_by_platform(
     atc_test_results: list[atc_logs.ATCTestResult],
 ) -> None:
@@ -265,11 +265,25 @@ def create_global_graphs_by_platform(
         atc_test_results, key=lambda x: cast(datetime.datetime, x.all_variables_states_changes_sorted_by_timestamp[-1].previous_state.result_line.best_timestamp), reverse=True
     )
     all_equipments_names = {equipment.name for atc_test_result in atc_test_results for equipment in atc_test_result.equipments_library.all_equipments}
-    create_global_graphs_by_platform_all_states(atc_test_results_sorted_chronologically, all_equipments_names)
-    create_global_graphs_by_platform_all_continuous_states(atc_test_results_sorted_chronologically, all_equipments_names)
+    all_environment_names = {atc_test_result.environment_name for atc_test_result in atc_test_results}
+
+    try:
+        create_global_graphs_by_platform_all_states(atc_test_results_sorted_chronologically, all_equipments_names, all_environment_names)
+    except Exception as ex:
+        logger_config.print_and_log_exception(ex)
+
+    try:
+        create_global_graphs_by_platform_all_continuous_states(atc_test_results_sorted_chronologically, all_equipments_names, all_environment_names)
+    except Exception as ex:
+        logger_config.print_and_log_exception(ex)
 
 
-def create_global_graphs_by_platform_all_states(atc_test_results_sorted_chronologically: list[atc_logs.ATCTestResult], all_equipments_names: set[str]) -> None:
+@logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+def create_global_graphs_by_platform_all_states(
+    atc_test_results_sorted_chronologically: list[atc_logs.ATCTestResult],
+    all_equipments_names: set[str],
+    all_environment_names: set[str],
+) -> None:
     data_per_sheet_name: dict[str, pandas.DataFrame] = {}
     for equipment_name in all_equipments_names:
         all_lines_of_equipment: list[OrderedDict] = []
@@ -287,6 +301,7 @@ def create_global_graphs_by_platform_all_states(atc_test_results_sorted_chronolo
                             },
                         )
                         for instant_state in variable.instant_states_chronologically_sorted
+                        if instant_state.best_value > 30
                     ]
                     all_lines_of_equipment += new_lines
 
@@ -295,6 +310,32 @@ def create_global_graphs_by_platform_all_states(atc_test_results_sorted_chronolo
             index=None,
         )
 
+    for equipment_name in all_equipments_names:
+        for environment_name in all_environment_names:
+            all_lines_of_equipment = []
+            for atc_test_result in [atc_test_result for atc_test_result in atc_test_results_sorted_chronologically if atc_test_result.environment_name == environment_name]:
+                equipment_found = atc_test_result.get_existing_equipment_by_name(equipment_name)
+                if equipment_found:
+                    temps_cycle_variable_name = get_temps_cycle_variable_name_by_equipment(equipment_found)
+                    variable = equipment_found.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name)
+                    if variable:
+                        new_lines = [
+                            OrderedDict(
+                                {
+                                    "Date": instant_state.result_line.best_timestamp,
+                                    temps_cycle_variable_name: instant_state.best_value,
+                                },
+                            )
+                            for instant_state in variable.instant_states_chronologically_sorted
+                            if instant_state.best_value > 50
+                        ]
+                        all_lines_of_equipment += new_lines
+
+            data_per_sheet_name[f"{equipment_name}_{environment_name}"] = pandas.DataFrame(
+                all_lines_of_equipment,
+                index=None,
+            )
+
     pandas_utils.to_excel_wait_if_file_is_locked(
         data_per_sheet_name,
         f"{OUTPUT_DIRECTORY}\\gaph_all_temps_cycles_all_states",
@@ -302,8 +343,14 @@ def create_global_graphs_by_platform_all_states(atc_test_results_sorted_chronolo
     )
 
 
-def create_global_graphs_by_platform_all_continuous_states(atc_test_results_sorted_chronologically: list[atc_logs.ATCTestResult], all_equipments_names: set[str]) -> None:
+@logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+def create_global_graphs_by_platform_all_continuous_states(
+    atc_test_results_sorted_chronologically: list[atc_logs.ATCTestResult],
+    all_equipments_names: set[str],
+    all_environment_names: set[str],
+) -> None:
     data_per_sheet_name: dict[str, pandas.DataFrame] = {}
+
     for equipment_name in all_equipments_names:
         all_lines_of_equipment: list[OrderedDict] = []
         for atc_test_result in atc_test_results_sorted_chronologically:
@@ -315,32 +362,68 @@ def create_global_graphs_by_platform_all_continuous_states(atc_test_results_sort
 
                     new_lines: list[OrderedDict] = []
                     for continuous_state in variable.continuous_states_chronologically_sorted:
-                        new_lines.append(
-                            OrderedDict(
-                                {
-                                    "Date": continuous_state.all_instant_variable_states[0].result_line.best_timestamp,
-                                    temps_cycle_variable_name: continuous_state.best_value,
-                                },
+                        if continuous_state.best_value != 0:
+                            new_lines.append(
+                                OrderedDict(
+                                    {
+                                        "Date": continuous_state.all_instant_variable_states[0].result_line.best_timestamp,
+                                        temps_cycle_variable_name: continuous_state.best_value,
+                                    },
+                                )
                             )
-                        )
-                        new_lines.append(
-                            OrderedDict(
-                                {
-                                    "Date": continuous_state.all_instant_variable_states[-1].result_line.best_timestamp,
-                                    temps_cycle_variable_name: continuous_state.best_value,
-                                },
+                            new_lines.append(
+                                OrderedDict(
+                                    {
+                                        "Date": continuous_state.all_instant_variable_states[-1].result_line.best_timestamp,
+                                        temps_cycle_variable_name: continuous_state.best_value,
+                                    },
+                                )
                             )
-                        )
-                    all_lines_of_equipment += new_lines
+                        all_lines_of_equipment += new_lines
 
         data_per_sheet_name[equipment_name] = pandas.DataFrame(
             all_lines_of_equipment,
             index=None,
         )
 
+    for equipment_name in all_equipments_names:
+        for environment_name in all_environment_names:
+            all_lines_of_equipment = []
+            for atc_test_result in [atc_test_result for atc_test_result in atc_test_results_sorted_chronologically if atc_test_result.environment_name == environment_name]:
+                equipment_found = atc_test_result.get_existing_equipment_by_name(equipment_name)
+                if equipment_found:
+                    temps_cycle_variable_name = get_temps_cycle_variable_name_by_equipment(equipment_found)
+                    variable = equipment_found.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name)
+                    if variable:
+                        new_lines = []
+                        for continuous_state in variable.continuous_states_chronologically_sorted:
+                            if continuous_state.best_value != 0:
+                                new_lines.append(
+                                    OrderedDict(
+                                        {
+                                            "Date": continuous_state.all_instant_variable_states[0].result_line.best_timestamp,
+                                            temps_cycle_variable_name: continuous_state.best_value,
+                                        },
+                                    )
+                                )
+                                new_lines.append(
+                                    OrderedDict(
+                                        {
+                                            "Date": continuous_state.all_instant_variable_states[-1].result_line.best_timestamp,
+                                            temps_cycle_variable_name: continuous_state.best_value,
+                                        },
+                                    )
+                                )
+                            all_lines_of_equipment += new_lines
+
+            data_per_sheet_name[f"{equipment_name}_{environment_name}"] = pandas.DataFrame(
+                all_lines_of_equipment,
+                index=None,
+            )
+
     pandas_utils.to_excel_wait_if_file_is_locked(
         data_per_sheet_name,
-        f"{OUTPUT_DIRECTORY}\\gaph_all_temps_cycles_all_states",
+        f"{OUTPUT_DIRECTORY}\\gaph_all_temps_cycles_all_continuous_states",
         suffix_file_name_by_date=True,
     )
 
