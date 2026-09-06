@@ -1,10 +1,10 @@
 import datetime
-from warnings import deprecated
 import statistics
 from collections import Counter, OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
+from warnings import deprecated
 
 import numpy
 import pandas
@@ -28,14 +28,14 @@ class InstantTempsCycleVariableState:
 
 class OneEquipmentReport:
 
-    def __init__(self, atc_test_file: atc_logs.ATCTestFile, variable: atc_logs.Variable) -> None:
+    def __init__(self, atc_test_result: atc_logs.ATCTestResult, variable: atc_logs.Variable) -> None:
         super().__init__()
-        logger_config.print_and_log_info(f"Create report for {atc_test_file.file_name} {variable.equipment.name} {variable.name}", do_not_print=True)
+        logger_config.print_and_log_info(f"Create report for {atc_test_result.label} {variable.equipment.name} {variable.name}", do_not_print=True)
 
         self.variable_name = variable.name
         self.equipment_name = variable.equipment.name
         self.equipment_type = variable.equipment.equipment_type
-        self.end_of_test_timestamp = cast(datetime.datetime, atc_test_file.atc_test_result.all_variables_states_changes_sorted_by_timestamp[-1].previous_state.result_line.best_timestamp)
+        self.end_of_test_timestamp = cast(datetime.datetime, atc_test_result.all_variables_states_changes_sorted_by_timestamp[-1].previous_state.result_line.best_timestamp)
 
         self.all_unfiltered_instant_states_chronologically_sorted = [
             InstantTempsCycleVariableState(
@@ -46,14 +46,24 @@ class OneEquipmentReport:
             for instant_variable_state in variable.instant_states_chronologically_sorted
         ]
 
-        self.environment_name = atc_test_file.atc_test_result.environment_name
-        self.file_name = atc_test_file.file_name
-        self.equipment_redundancy = atc_test_file.atc_test_result.get_equipment_redundancy_by_name(variable.equipment.name).name
+        self.all_relevant_values_only_instant_states_chronologically_sorted = [
+            InstantTempsCycleVariableState(
+                equipment_report=self,
+                timestamp=instant_variable_state.timestamp,
+                value=instant_variable_state.value,
+            )
+            for instant_variable_state in self.all_unfiltered_instant_states_chronologically_sorted
+            if instant_variable_state.value > 50
+        ]
+        self.all_relevant_values = [instant_state.value for instant_state in self.all_relevant_values_only_instant_states_chronologically_sorted]
 
-        self.atc_test_file_file_full_path = atc_test_file.file_full_path
-        self.atc_test_result_label = atc_test_file.atc_test_result.label
+        self.environment_name = atc_test_result.environment_name
+        self.file_name = atc_test_result.all_atc_test_files[0].file_name
+        self.equipment_redundancy = atc_test_result.get_equipment_redundancy_by_name(variable.equipment.name).name
 
-        self.all_relevant_values = [value for value in cast(list[int | float], variable.all_instant_states_best_values) if value > 50]
+        self.atc_test_file_file_full_path = atc_test_result.all_atc_test_files[0].file_full_path
+        self.atc_test_result_label = atc_test_result.label
+
         self.number_relevant_values = len(self.all_relevant_values)
 
         self.min_of_relevant_values = min(self.all_relevant_values)
@@ -143,11 +153,15 @@ class OneEquipmentReport:
 
 
 def process_root_folders_and_environments(root_folders_and_environments: list[tuple[str, str]]) -> None:
-    equipments_reports = build_temps_cycle_reports_from_root_folders_and_environments(root_folders_and_environments)
-    build_temps_cycle_excel_report_from_atc_log_results(equipments_reports=equipments_reports)
+    equipments_reports_sorted_chronologically = sorted(build_temps_cycle_reports_from_root_folders_and_environments(root_folders_and_environments), key=lambda x: x.end_of_test_timestamp)
+    build_temps_cycle_excel_report_from_atc_log_results(equipments_reports=equipments_reports_sorted_chronologically)
+    try:
+        create_global_graphs_by_platform_for_equipment_reports(equipments_reports_sorted_chronologically)
+    except MemoryError as mem_err:
+        logger_config.print_and_log_exception(mem_err)
 
 
-@logger_config.stopwatch_decorator(inform_beginning=True)
+@logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
 def build_temps_cycle_reports_from_root_folders_and_environments(
     root_folders_and_environments: list[tuple[str, str]],
 ) -> list[OneEquipmentReport]:
@@ -180,7 +194,7 @@ def process_root_folders_and_environments_build_results_then_reports(
 ) -> None:
 
     atc_test_results = build_atc_test_results_from_root_folders_and_environments(root_folders_and_environments=root_folders_and_environments)
-    create_global_graphs_by_platform(atc_test_results)
+    create_global_graphs_by_platform_for_atc_tests_results(atc_test_results)
     equipments_reports = build_temps_cycle_report_from_atc_log_results(atc_test_results)
     build_temps_cycle_excel_report_from_atc_log_results(equipments_reports=equipments_reports)
 
@@ -315,8 +329,28 @@ def get_temps_cycle_variable_name_by_equipment(equipment: atc_logs.Equipment) ->
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+def create_global_graphs_by_platform_for_equipment_reports(
+    equipments_reports_sorted_chronologically: list[OneEquipmentReport],
+) -> None:
+
+    all_equipments_names = {equipment_report.equipment_name for equipment_report in equipments_reports_sorted_chronologically}
+    all_environment_names = {equipment_report.environment_name for equipment_report in equipments_reports_sorted_chronologically}
+
+    for environment_name in all_environment_names:
+        try:
+            create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports(
+                equipments_reports_sorted_chronologically=equipments_reports_sorted_chronologically,
+                all_environment_names=all_environment_names,
+                all_equipments_names=all_equipments_names,
+                only_environment_name_to_keep_if_defined=environment_name,
+            )
+        except MemoryError as ex:
+            logger_config.print_and_log_exception(ex)
+
+
+@logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
 @deprecated("Too much ram usage")
-def create_global_graphs_by_platform(
+def create_global_graphs_by_platform_for_atc_tests_results(
     atc_test_results: list[atc_logs.ATCTestResult],
 ) -> None:
     atc_test_results_sorted_chronologically = sorted(
@@ -326,19 +360,19 @@ def create_global_graphs_by_platform(
     all_environment_names = {atc_test_result.environment_name for atc_test_result in atc_test_results}
 
     try:
-        create_global_graphs_by_platform_all_states(atc_test_results_sorted_chronologically, all_equipments_names, all_environment_names)
-    except Exception as ex:
+        create_global_graphs_by_platform_all_states_for_atc_tests_results(atc_test_results_sorted_chronologically, all_equipments_names, all_environment_names)
+    except MemoryError as ex:
         logger_config.print_and_log_exception(ex)
 
     try:
-        create_global_graphs_by_platform_all_continuous_states(atc_test_results_sorted_chronologically, all_equipments_names, all_environment_names)
-    except Exception as ex:
+        create_global_graphs_by_platform_all_continuous_states_for_atc_tests_results(atc_test_results_sorted_chronologically, all_equipments_names, all_environment_names)
+    except MemoryError as ex:
         logger_config.print_and_log_exception(ex)
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
 @deprecated("Too much ram usage")
-def create_global_graphs_by_platform_all_states(
+def create_global_graphs_by_platform_all_states_for_atc_tests_results(
     atc_test_results_sorted_chronologically: list[atc_logs.ATCTestResult],
     all_equipments_names: set[str],
     all_environment_names: set[str],
@@ -369,42 +403,56 @@ def create_global_graphs_by_platform_all_states(
             index=None,
         )
 
-    for equipment_name in all_equipments_names:
-        for environment_name in all_environment_names:
-            all_lines_of_equipment = []
-            for atc_test_result in [atc_test_result for atc_test_result in atc_test_results_sorted_chronologically if atc_test_result.environment_name == environment_name]:
-                equipment_found = atc_test_result.get_existing_equipment_by_name(equipment_name)
-                if equipment_found:
-                    temps_cycle_variable_name = get_temps_cycle_variable_name_by_equipment(equipment_found)
-                    variable = equipment_found.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name)
-                    if variable:
-                        new_lines = [
-                            OrderedDict(
-                                {
-                                    "Date": instant_state.result_line.best_timestamp,
-                                    temps_cycle_variable_name: instant_state.best_value,
-                                },
-                            )
-                            for instant_state in variable.instant_states_chronologically_sorted
-                            if instant_state.best_value > 50
-                        ]
-                        all_lines_of_equipment += new_lines
 
-            data_per_sheet_name[f"{equipment_name}_{environment_name}"] = pandas.DataFrame(
-                all_lines_of_equipment,
-                index=None,
-            )
+@logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+def create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports(
+    equipments_reports_sorted_chronologically: list[OneEquipmentReport],
+    all_equipments_names: set[str],
+    all_environment_names: set[str],
+    only_environment_name_to_keep_if_defined: str | None = None,
+    only_equipment_name_to_keep_if_defined: str | None = None,
+) -> None:
+    data_per_sheet_name: dict[str, pandas.DataFrame] = {}
+
+    only_environment_name_label = f"_{only_environment_name_to_keep_if_defined}" if only_environment_name_to_keep_if_defined else ""
+    only_equipment_name_label = f"_{only_equipment_name_to_keep_if_defined}" if only_equipment_name_to_keep_if_defined else ""
+
+    for equipment_name in all_equipments_names:
+        all_lines_of_equipment: list[OrderedDict] = []
+        for equipments_report in [
+            equipment_report
+            for equipment_report in equipments_reports_sorted_chronologically
+            if equipment_report.equipment_name == equipment_name
+            # fmt: off
+            and (only_environment_name_to_keep_if_defined is None or only_environment_name_to_keep_if_defined == equipment_report.environment_name)
+            and (only_equipment_name_to_keep_if_defined is None or only_equipment_name_to_keep_if_defined == equipment_report.equipment_name)
+            # fmt: on
+        ]:
+            all_lines_of_equipment += [
+                OrderedDict(
+                    {
+                        "Date": instant_state.timestamp,
+                        equipments_report.variable_name: instant_state.value,
+                    },
+                )
+                for instant_state in equipments_report.all_relevant_values_only_instant_states_chronologically_sorted
+            ]
+
+        data_per_sheet_name[equipment_name] = pandas.DataFrame(
+            all_lines_of_equipment,
+            index=None,
+        )
 
     pandas_utils.to_excel_wait_if_file_is_locked(
         data_per_sheet_name,
-        f"{OUTPUT_DIRECTORY}\\gaph_all_temps_cycles_all_states",
+        f"{OUTPUT_DIRECTORY}\\graph_all_temps_cycles{only_equipment_name_label}{only_environment_name_label}_all_states",
         suffix_file_name_by_date=True,
     )
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
 @deprecated("Too much ram usage")
-def create_global_graphs_by_platform_all_continuous_states(
+def create_global_graphs_by_platform_all_continuous_states_for_atc_tests_results(
     atc_test_results_sorted_chronologically: list[atc_logs.ATCTestResult],
     all_equipments_names: set[str],
     all_environment_names: set[str],
@@ -489,6 +537,7 @@ def create_global_graphs_by_platform_all_continuous_states(
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True)
+@deprecated("Too much ram usage")
 def build_temps_cycle_report_from_atc_log_result(
     atc_test_result: atc_logs.ATCTestResult,
 ) -> list[OneEquipmentReport]:
@@ -506,7 +555,7 @@ def build_temps_cycle_report_from_atc_log_result(
                             f"Ignore equipment {variable.equipment.name} in {atc_test_file.atc_test_result.environment_name} in file {atc_test_file.file_name} because is virtual (so no valid temps cycle). {variable.name} is too low ({variable.max_numeric_values_by_number_occurrences}) to be real"
                         )
                     else:
-                        equipment_report = OneEquipmentReport(variable=variable, atc_test_file=atc_test_file)
+                        equipment_report = OneEquipmentReport(variable=variable, atc_test_result=atc_test_result)
 
                         equipments_reports.append(equipment_report)
             logger_config.print_and_log_error_if(
@@ -519,24 +568,23 @@ def build_temps_cycle_equipment_report_from_atc_log_result(
     atc_test_result: atc_logs.ATCTestResult,
 ) -> list[OneEquipmentReport]:
     equipments_reports: list[OneEquipmentReport] = []
-    for atc_test_file in atc_test_result.all_atc_test_files:
-        for equipment in atc_test_result.equipments_library.all_equipments:
-            at_least_one_variable_found = False
-            for temps_cycle_variable_name_candidate in ["STAB_CPT1", "TEMPS_AS"]:
-                variable = equipment.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name_candidate)
-                if variable is not None:
-                    at_least_one_variable_found = True
+    for equipment in atc_test_result.equipments_library.all_equipments:
+        at_least_one_variable_found = False
+        for temps_cycle_variable_name_candidate in ["STAB_CPT1", "TEMPS_AS"]:
+            variable = equipment.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name_candidate)
+            if variable is not None:
+                at_least_one_variable_found = True
 
-                    if variable.equipment.equipment_type in [atc_logs.EquipmentType.PAS, atc_logs.EquipmentType.PAL] and variable.max_numeric_values_by_number_occurrences < 60:
-                        logger_config.print_and_log_info(
-                            f"Ignore equipment {variable.equipment.name} in {atc_test_file.atc_test_result.environment_name} in file {atc_test_file.file_name} because is virtual (so no valid temps cycle). {variable.name} is too low ({variable.max_numeric_values_by_number_occurrences}) to be real"
-                        )
-                    else:
-                        equipment_report = OneEquipmentReport(variable=variable, atc_test_file=atc_test_file)
-                        equipments_reports.append(equipment_report)
-            logger_config.print_and_log_error_if(
-                not at_least_one_variable_found, f"No temps cycle variable found in {atc_test_file.file_name} for equipment {equipment.name} in {atc_test_result.environment_name}"
-            )
+                if variable.equipment.equipment_type in [atc_logs.EquipmentType.PAS, atc_logs.EquipmentType.PAL] and variable.max_numeric_values_by_number_occurrences < 60:
+                    logger_config.print_and_log_info(
+                        f"Ignore equipment {variable.equipment.name} in {atc_test_result.environment_name} in file {atc_test_result.all_atc_test_files[0].file_name} because is virtual (so no valid temps cycle). {variable.name} is too low ({variable.max_numeric_values_by_number_occurrences}) to be real"
+                    )
+                else:
+                    equipment_report = OneEquipmentReport(variable=variable, atc_test_result=atc_test_result)
+                    equipments_reports.append(equipment_report)
+        logger_config.print_and_log_error_if(
+            not at_least_one_variable_found, f"No temps cycle variable found in {atc_test_result.all_atc_test_files[0].file_name} for equipment {equipment.name} in {atc_test_result.environment_name}"
+        )
     return equipments_reports
 
 
