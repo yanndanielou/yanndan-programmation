@@ -34,6 +34,7 @@ DEFAULT_CALL_STACK_CONTEXT_VALUE = 1
 DEFAULT_CALL_STACK_FRAME_VALUE = 2
 
 log_counts_occurrences_per_level: dict[str, int] = defaultdict(int)
+log_counts_warning_occurrences_per_file_and_line: dict[str, int] = defaultdict(int)
 log_counts_errors_occurrences_per_file_and_line: dict[str, int] = defaultdict(int)
 log_counts_exceptions_occurrences_per_file_and_line: dict[str, int] = defaultdict(int)
 
@@ -52,6 +53,9 @@ class MessagesCounterHandler(logging.Handler):
         if record.levelname == "ERROR":
             record_file_and_line = record.message.split(" \t")[0]
             log_counts_errors_occurrences_per_file_and_line[record_file_and_line] += 1
+        if record.levelname == "WARNING":
+            record_file_and_line = record.message.split(" \t")[0]
+            log_counts_warning_occurrences_per_file_and_line[record_file_and_line] += 1
 
 
 def __get_calling_file_name_and_line_number(
@@ -238,20 +242,33 @@ def application_logger(
     application_end_timestamp = time.asctime(time.localtime(time.time()))
 
     elapsed_time = application_end_time - application_start_time
-    to_print_and_log = f"\nErrors stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " errors raised" for item in list(dict(sorted(log_counts_errors_occurrences_per_file_and_line.items(), key=lambda item: item[1])).items()))}\n{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s. Final ram usage: {humanize.naturalsize(cast(int, psutil.Process(os.getpid()).memory_info().rss))}.\nLogger stats: \t{'\t'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts_occurrences_per_level.items()))}"
+
+    to_print_and_log_lines: list[str] = []
+    to_print_and_log_lines.append(
+        f"\nWarning stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " warning raised" for item in list(dict(sorted(log_counts_warning_occurrences_per_file_and_line.items(), key=lambda item: item[1])).items()))}\n"
+    )
+    to_print_and_log_lines.append(
+        f"\nErrors stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " errors raised" for item in list(dict(sorted(log_counts_errors_occurrences_per_file_and_line.items(), key=lambda item: item[1])).items()))}\n"
+    )
+    to_print_and_log_lines.append(
+        f"{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s. Final ram usage: {humanize.naturalsize(cast(int, psutil.Process(os.getpid()).memory_info().rss))}."
+    )
+    to_print_and_log_lines.append(
+        f"Logger stats: \t{'\t'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts_occurrences_per_level.items()))}"
+    )
     if log_counts_exceptions_occurrences_per_file_and_line:
-        to_print_and_log += f"\nExceptions logged\n  {
-            "\n".join(
-                str(item[0]) + ": " + str(item[1]) + " exception logged"
-                for item in list(
-                    dict(
-                        sorted(log_counts_exceptions_occurrences_per_file_and_line.items(), key=lambda item: item[1])
-                    ).items()
-                )
+        to_print_and_log_lines.append("Exceptions logged:")
+        to_print_and_log_lines += [
+            str(item[0]) + ": " + str(item[1]) + " exception logged"
+            for item in list(
+                dict(
+                    sorted(log_counts_exceptions_occurrences_per_file_and_line.items(), key=lambda item: item[1])
+                ).items()
             )
-        }"
-    print(application_end_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
-    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
+        ]
+    for to_print_and_log in to_print_and_log_lines:
+        print(application_end_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
+        logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
 
     logger_created.removeHandler(counting_handler)
     logging.root.removeHandler(counting_handler)
