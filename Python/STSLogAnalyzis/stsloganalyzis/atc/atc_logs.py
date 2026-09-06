@@ -603,7 +603,7 @@ class ATCTestResult(ABC):
         self.variable_name_must_be_created_cache_result[variable_name] = variable_name_must_be_kept_after_filters(variable_name=variable_name, all_filters=self.variables_names_creation_filters)
         return cast(bool, self.variable_name_must_be_created(variable_name=variable_name))
 
-    @logger_config.stopwatch_decorator()
+    @logger_config.stopwatch_decorator(monitor_ram_usage=True)
     @line_profiler.profile
     def process(self) -> None:
         for atc_test_file in self.all_atc_test_files:
