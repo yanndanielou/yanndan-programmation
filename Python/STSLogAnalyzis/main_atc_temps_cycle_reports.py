@@ -20,7 +20,7 @@ def main() -> None:
         assert os.environ["LINE_PROFILE"] == "1", f"You must set LINE_PROFILE to 1, it is {os.environ["LINE_PROFILE"]}"
     with logger_config.application_logger():
 
-        temps_cycle_report.build_temps_cycle_report_from_files(
+        temps_cycle_report.process_root_folders_and_environments_build_results_then_reports(
             [
                 (
                     "PLT_SYST_1 RL3A02 Conf30",
@@ -31,7 +31,6 @@ def main() -> None:
                     r"D:\temp\mesures_temps_cycle_usine\PLT_SYST_2_RL3a.0.2_Conf_30",
                 ),
             ],
-            create_reports_files_by_equipment=False,
         )
 
 
