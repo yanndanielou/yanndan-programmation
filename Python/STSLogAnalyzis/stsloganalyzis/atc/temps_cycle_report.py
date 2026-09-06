@@ -373,9 +373,9 @@ def create_global_graphs_for_equipment_reports(
 
     for equipment_name in all_equipments_names:
         try:
-            create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports(
+            create_global_graphs_by_environment_in_sheet_all_states_for_equipments_reports(
                 equipments_reports_sorted_chronologically=equipments_reports_sorted_chronologically,
-                all_environment_names=all_environment_names,
+                all_equipments_names=all_equipments_names,
                 only_equipment_name_to_keep_if_defined=equipment_name,
             )
         except MemoryError as ex:
@@ -520,7 +520,7 @@ def create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports
 
     pandas_utils.to_excel_wait_if_file_is_locked(
         data_per_sheet_name,
-        f"{OUTPUT_DIRECTORY}\\graph_all_temps_cycles{only_equipment_name_label}{only_environment_name_label}_all_states",
+        f"{OUTPUT_DIRECTORY}\\graph_all_temps_cycles{only_equipment_name_label}_all_states",
         suffix_file_name_by_date=True,
     )
 
