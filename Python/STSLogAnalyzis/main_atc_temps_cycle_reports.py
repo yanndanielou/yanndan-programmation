@@ -20,7 +20,8 @@ def main() -> None:
         assert os.environ["LINE_PROFILE"] == "1", f"You must set LINE_PROFILE to 1, it is {os.environ["LINE_PROFILE"]}"
     with logger_config.application_logger():
 
-        temps_cycle_report.process_root_folders_and_environments_build_results_then_reports(
+        # temps_cycle_report.process_root_folders_and_environments_build_results_then_reports(
+        temps_cycle_report.process_root_folders_and_environments(
             [
                 (
                     "PLT_SYST_1 RL3A02 Conf30",

@@ -20,15 +20,31 @@ OUTPUT_DIRECTORY = "output_temps_cycle"
 
 
 @dataclass
-class OneEquipmentReport:
+class InstantTempsCycleVariableState:
+    timestamp: datetime.datetime
+    value: int | float
+    equipment_report: "OneEquipmentReport"
 
-    variable: atc_logs.Variable
+
+class OneEquipmentReport:
 
     def __init__(self, atc_test_file: atc_logs.ATCTestFile, variable: atc_logs.Variable) -> None:
         super().__init__()
-        logger_config.print_and_log_info(f"Create report for {atc_test_file.file_name} {self.variable.equipment.name} {self.variable.name}", do_not_print=True)
+        logger_config.print_and_log_info(f"Create report for {atc_test_file.file_name} {variable.equipment.name} {variable.name}", do_not_print=True)
 
-        end_of_test_timestamp = atc_test_file.atc_test_result.all_variables_states_changes_sorted_by_timestamp[-1].previous_state.result_line.best_timestamp
+        self.variable_name = variable.name
+        self.equipment_name = variable.equipment.name
+        self.equipment_type = variable.equipment.equipment_type
+        self.end_of_test_timestamp = cast(datetime.datetime, atc_test_file.atc_test_result.all_variables_states_changes_sorted_by_timestamp[-1].previous_state.result_line.best_timestamp)
+
+        self.all_unfiltered_instant_states_chronologically_sorted = [
+            InstantTempsCycleVariableState(
+                equipment_report=self,
+                timestamp=cast(datetime.datetime, instant_variable_state.result_line.best_timestamp),
+                value=cast(int | float, instant_variable_state.best_value),
+            )
+            for instant_variable_state in variable.instant_states_chronologically_sorted
+        ]
 
         self.environment_name = atc_test_file.atc_test_result.environment_name
         self.file_name = atc_test_file.file_name
@@ -37,11 +53,11 @@ class OneEquipmentReport:
         self.atc_test_file_file_full_path = atc_test_file.file_full_path
         self.atc_test_result_label = atc_test_file.atc_test_result.label
 
-        self.all_relevant_values = [value for value in cast(list[int | float], self.variable.all_instant_states_best_values) if value > 50]
+        self.all_relevant_values = [value for value in cast(list[int | float], variable.all_instant_states_best_values) if value > 50]
         self.number_relevant_values = len(self.all_relevant_values)
 
         self.min_of_relevant_values = min(self.all_relevant_values)
-        self.max_value = self.variable.max_numeric_values_by_number_occurrences
+        self.max_value = variable.max_numeric_values_by_number_occurrences
         self.mean_of_relevant_values = round(numpy.mean(self.all_relevant_values), 2)
         self.median_of_relevant_values = numpy.median(self.all_relevant_values).item()
         self.deciles_of_relevant_values = cast(list[float], numpy.percentile(self.all_relevant_values, numpy.arange(10, 100, 10)))
@@ -51,17 +67,17 @@ class OneEquipmentReport:
 
         self.high_consumption_threshold = (
             # fmt: off
-            180 if self.variable.equipment.equipment_type is atc_logs.EquipmentType.PAL
-            else 230 if self.variable.equipment.equipment_type is atc_logs.EquipmentType.PAS 
-            else 100 if self.variable.equipment.equipment_type is atc_logs.EquipmentType.PAE 
+            180 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAL
+            else 230 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAS 
+            else 100 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAE 
             else 0
             # fmt: on
         )
         self.very_high_consumption_threshold = (
             # fmt: off
-            200 if self.variable.equipment.equipment_type is atc_logs.EquipmentType.PAL
-            else 260 if self.variable.equipment.equipment_type is atc_logs.EquipmentType.PAS 
-            else 120 if self.variable.equipment.equipment_type is atc_logs.EquipmentType.PAE 
+            200 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAL
+            else 260 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAS 
+            else 120 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAE 
             else 0
             # fmt: on
         )
@@ -128,6 +144,7 @@ class OneEquipmentReport:
 
 def process_root_folders_and_environments(root_folders_and_environments: list[tuple[str, str]]) -> None:
     equipments_reports = build_temps_cycle_reports_from_root_folders_and_environments(root_folders_and_environments)
+    build_temps_cycle_excel_report_from_atc_log_results(equipments_reports=equipments_reports)
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True)
@@ -240,12 +257,12 @@ def build_lines_in_one_simulation_equipment_report(equipment_report: OneEquipmen
     return [
         OrderedDict(
             {
-                "Horodate": instant_state.result_line.horodate,
-                "variable": equipment_report.variable.name,
-                "value": instant_state.best_value,
+                "Horodate": instant_state.timestamp,
+                "variable": equipment_report.variable_name,
+                "value": instant_state.value,
             },
         )
-        for instant_state in equipment_report.variable.instant_states_chronologically_sorted
+        for instant_state in equipment_report.all_unfiltered_instant_states_chronologically_sorted
     ]
 
 
@@ -253,20 +270,12 @@ def build_equipment_line_in_eqpt_type_excel_report(equipment_report: OneEquipmen
 
     current_report_line_dict = OrderedDict(
         {
-            "Date": (
-                equipment_report.variable.continuous_states_chronologically_sorted[-1]
-                .all_instant_variable_states[-1]
-                .result_line.best_timestamp.replace(microsecond=0)
-                .replace(second=0)
-                .replace(minute=0)
-                if equipment_report.variable.continuous_states_chronologically_sorted[-1].all_instant_variable_states[-1].result_line.best_timestamp
-                else None
-            ),
+            "Date": (equipment_report.end_of_test_timestamp.replace(microsecond=0).replace(second=0).replace(minute=0) if equipment_report.end_of_test_timestamp else None),
             "File name": equipment_report.file_name,
             "environment": equipment_report.environment_name,
-            "variable": equipment_report.variable.name,
-            "equipment": equipment_report.variable.equipment.name,
-            "equipment type": equipment_report.variable.equipment.equipment_type.name if equipment_report.variable.equipment.equipment_type else None,
+            "variable": equipment_report.variable_name,
+            "equipment": equipment_report.equipment_name,
+            "equipment type": equipment_report.equipment_type.name,
             "redundancy status": equipment_report.equipment_redundancy,
             "min_of_relevant_values": equipment_report.min_of_relevant_values,
             "max_value": equipment_report.max_value,
@@ -274,7 +283,7 @@ def build_equipment_line_in_eqpt_type_excel_report(equipment_report: OneEquipmen
             "median_of_relevant_values": equipment_report.median_of_relevant_values,
             "mediane_relevant_values": equipment_report.mediane_relevant_values,
             "Number relevant values": len(equipment_report.all_relevant_values),
-            "Number not relevant (filtered) values": len(equipment_report.variable.instant_states_chronologically_sorted) - len(equipment_report.all_relevant_values),
+            "Number not relevant (filtered) values": len(equipment_report.all_unfiltered_instant_states_chronologically_sorted) - len(equipment_report.all_relevant_values),
             "duree_max_consecutive above high": equipment_report.duree_max_above_high_consecutive,
             "nombre anomalies high": len(equipment_report.anomalies_high),
             "taux_anomalie high (%)": equipment_report.taux_anomalie_high,
@@ -551,11 +560,7 @@ def build_temps_cycle_excel_report_from_atc_log_results(
     data_per_sheet_name: dict[str, pandas.DataFrame] = {}
     for equipment_type in atc_logs.EquipmentType:
         data_per_sheet_name[equipment_type.name] = pandas.DataFrame(
-            data=[
-                build_equipment_line_in_eqpt_type_excel_report(equipment_report=equipment_report)
-                for equipment_report in equipments_reports
-                if equipment_report.variable.equipment.equipment_type == equipment_type
-            ],
+            data=[build_equipment_line_in_eqpt_type_excel_report(equipment_report=equipment_report) for equipment_report in equipments_reports if equipment_report.equipment_type == equipment_type],
             index=None,
         )
 
