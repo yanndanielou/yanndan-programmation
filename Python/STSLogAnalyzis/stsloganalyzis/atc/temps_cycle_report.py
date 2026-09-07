@@ -24,6 +24,17 @@ class InstantTempsCycleVariableState:
     timestamp: datetime.datetime
     value: int | float
     equipment_report: "OneEquipmentReport"
+    other_interesting_variables_values_by_name: dict[str, atc_logs.VariableStateTypeWithNone]
+
+
+def get_other_interesting_variables_names(equipment_type: atc_logs.EquipmentType) -> list[str]:
+    if equipment_type == atc_logs.EquipmentType.PAE:
+        return [
+            "FAS_VF",
+            "EBF_VITESSE",
+            "FODR_VITODO",
+        ]
+    return []
 
 
 def get_min_relevant_value_for_variable(variable_name: str) -> int | None:
@@ -58,22 +69,46 @@ def get_threshold_very_high_for_variable(variable: atc_logs.Variable) -> int | N
     )
 
 
+def get_temps_cycle_variable_name_by_equipment(equipment: atc_logs.Equipment) -> str:
+    return "TEMPS_AS" if equipment.equipment_type in [atc_logs.EquipmentType.PAL, atc_logs.EquipmentType.PAS, atc_logs.EquipmentType.MES] else "STAB_CPT1"
+
+
+def get_other_interesting_variables_at_one_atc_log_instant_variable_state(
+    atc_log_instant_variable_state: atc_logs.InstantVariableState, other_interesting_variables_names: list[str]
+) -> dict[str, atc_logs.VariableStateTypeWithNone]:
+    ret: dict[str, atc_logs.VariableStateTypeWithNone] = {}
+    for other_interesting_variables_name in other_interesting_variables_names:
+        interesting_instant_variable_states = [
+            interesting_instant_variable_state
+            for interesting_instant_variable_state in atc_log_instant_variable_state.result_line.all_variables_states
+            if interesting_instant_variable_state.variable.name == other_interesting_variables_name
+        ]
+        for interesting_instant_variable_state in interesting_instant_variable_states:
+            ret[interesting_instant_variable_state.variable.name] = interesting_instant_variable_state.best_value
+
+    return ret
+
+
 class OneEquipmentReport:
 
     def __init__(self, atc_test_result: atc_logs.ATCTestResult, variable: atc_logs.Variable) -> None:
         super().__init__()
-        logger_config.print_and_log_info(f"Create report for {atc_test_result.label} {variable.equipment.name} {variable.name}", do_not_print=True)
+        logger_config.print_and_log_info(
+            f"Create report for {atc_test_result.label} {variable.equipment.name} {variable.name} from {atc_test_result.all_atc_test_files[0].file_name}", do_not_print=True
+        )
 
         self.variable_name = variable.name
         self.equipment_name = variable.equipment.name
         self.equipment_type = variable.equipment.equipment_type
         self.end_of_test_timestamp = cast(datetime.datetime, atc_test_result.all_variables_states_changes_sorted_by_timestamp[-1].previous_state.result_line.best_timestamp)
 
+        other_interesting_variables_names = get_other_interesting_variables_names(self.equipment_type)
         self.all_unfiltered_instant_states_chronologically_sorted = [
             InstantTempsCycleVariableState(
                 equipment_report=self,
                 timestamp=cast(datetime.datetime, instant_variable_state.result_line.best_timestamp),
                 value=cast(int | float, instant_variable_state.best_value),
+                other_interesting_variables_values_by_name=get_other_interesting_variables_at_one_atc_log_instant_variable_state(instant_variable_state, other_interesting_variables_names),
             )
             for instant_variable_state in variable.instant_states_chronologically_sorted
         ]
@@ -84,6 +119,7 @@ class OneEquipmentReport:
                 equipment_report=self,
                 timestamp=instant_variable_state.timestamp,
                 value=instant_variable_state.value,
+                other_interesting_variables_values_by_name=instant_variable_state.other_interesting_variables_values_by_name,
             )
             for instant_variable_state in self.all_unfiltered_instant_states_chronologically_sorted
             if min_relevant_value is None or instant_variable_state.value > min_relevant_value
@@ -190,6 +226,7 @@ def build_temps_cycle_reports_from_root_folders_and_environments(
     files_paths_not_handled_because_errors: list[str] = []
     for environment_name, root_result_files_folder_path in root_folders_and_environments:
         all_input_files = [full_path for full_path in Path(root_result_files_folder_path).rglob("*.res")]
+        logger_config.print_and_log_info(f"{len(all_input_files)} files matching in {root_result_files_folder_path}")
         for input_file_it, input_file_path in enumerate(all_input_files):
             number_of_input_files_processed += 1
             try:
@@ -229,6 +266,8 @@ def build_atc_test_result_from_simech_file_path(
                     "CJOUR",
                     "CDECENIE",
                     "FAS_VF",
+                    "EBF_VITESSE",
+                    "FODR_VITODO",
                     "TEMPS_AS",
                     "STAB_CPT",
                     "HLF",
@@ -250,19 +289,6 @@ def build_atc_test_result_from_simech_file_path(
         .build()
     )
     return atc_test_result
-
-
-def build_lines_in_one_simulation_equipment_report(equipment_report: OneEquipmentReport) -> list[OrderedDict[str, datetime.datetime | str | int | float | numpy.float64 | None]]:
-    return [
-        OrderedDict(
-            {
-                "Horodate": instant_state.timestamp,
-                "variable": equipment_report.variable_name,
-                "value": instant_state.value,
-            },
-        )
-        for instant_state in equipment_report.all_unfiltered_instant_states_chronologically_sorted
-    ]
 
 
 def build_equipment_line_in_eqpt_type_excel_report(equipment_report: OneEquipmentReport) -> OrderedDict[str, datetime.datetime | str | int | float | numpy.float64 | None]:
@@ -307,17 +333,6 @@ def build_equipment_line_in_eqpt_type_excel_report(equipment_report: OneEquipmen
         if centile_index > 90:
             current_report_line_dict[f"Centile_{centile_index+1}"] = centile_value
     return current_report_line_dict
-
-
-def get_temps_cycle_variable_name_by_equipment(equipment: atc_logs.Equipment) -> str:
-    return "TEMPS_AS" if equipment.equipment_type in [atc_logs.EquipmentType.PAL, atc_logs.EquipmentType.PAS, atc_logs.EquipmentType.MES] else "STAB_CPT1"
-
-
-def get_interesting_variables_names_by_equipment(equipment: atc_logs.Equipment) -> list[str]:
-    all_variable_names = [get_temps_cycle_variable_name_by_equipment(equipment)]
-    if equipment.equipment_type == atc_logs.EquipmentType.PAE:
-        all_variable_names.append("FAS_VF")
-    return all_variable_names
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
@@ -370,15 +385,18 @@ def create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports
             and (only_environment_name_to_keep_if_defined is None or only_environment_name_to_keep_if_defined == equipment_report.environment_name)
             # fmt: on
         ]:
-            all_lines_of_equipment += [
-                OrderedDict(
+
+            for instant_state in equipments_report.all_relevant_values_only_instant_states_chronologically_sorted:
+                new_line = OrderedDict(
                     {
                         "Date": instant_state.timestamp,
                         f"{equipments_report.variable_name} {instant_state.equipment_report.variable_name}": instant_state.value,
                     },
                 )
-                for instant_state in equipments_report.all_relevant_values_only_instant_states_chronologically_sorted
-            ]
+                for other_interesting_variables_name, other_interesting_variables_value in instant_state.other_interesting_variables_values_by_name.items():
+                    new_line[other_interesting_variables_name] = other_interesting_variables_value
+
+                all_lines_of_equipment.append(new_line)
 
         if all_lines_of_equipment:
             data_per_sheet_name[equipment_name] = pandas.DataFrame(
@@ -413,15 +431,17 @@ def create_global_graphs_by_environment_in_sheet_all_states_for_equipments_repor
             and (only_equipment_name_to_keep_if_defined is None or only_equipment_name_to_keep_if_defined == equipment_report.equipment_name)
             # fmt: on
         ]:
-            all_lines_of_equipment += [
-                OrderedDict(
+            for instant_state in equipments_report.all_relevant_values_only_instant_states_chronologically_sorted:
+                new_line = OrderedDict(
                     {
                         "Date": instant_state.timestamp,
                         f"{equipments_report.variable_name} {instant_state.equipment_report.variable_name}": instant_state.value,
                     },
                 )
-                for instant_state in equipments_report.all_relevant_values_only_instant_states_chronologically_sorted
-            ]
+                for other_interesting_variables_name, other_interesting_variables_value in instant_state.other_interesting_variables_values_by_name.items():
+                    new_line[other_interesting_variables_name] = other_interesting_variables_value
+
+                all_lines_of_equipment.append(new_line)
 
         if all_lines_of_equipment:
             data_per_sheet_name[environment_name] = pandas.DataFrame(
@@ -447,7 +467,11 @@ def build_temps_cycle_equipment_report_from_atc_log_result(
             if variable is not None:
                 at_least_one_variable_found = True
 
-                if variable.equipment.equipment_type in [atc_logs.EquipmentType.PAS, atc_logs.EquipmentType.PAL] and variable.max_numeric_values_by_number_occurrences < 60:
+                if (
+                    variable.equipment.equipment_type in [atc_logs.EquipmentType.PAS, atc_logs.EquipmentType.PAL]
+                    and variable.name.startswith(("STAB_CPT1", "TEMPS_AS"))
+                    and variable.max_numeric_values_by_number_occurrences < 60
+                ):
                     logger_config.print_and_log_info(
                         f"Ignore equipment {variable.equipment.name} in {atc_test_result.environment_name} in file {atc_test_result.all_atc_test_files[0].file_name} because is virtual (so no valid temps cycle). {variable.name} is too low ({variable.max_numeric_values_by_number_occurrences}) to be real"
                     )
