@@ -4,7 +4,7 @@ from collections import Counter, OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
-from warnings import deprecated
+
 
 import numpy
 import pandas
@@ -53,7 +53,7 @@ def get_threshold_very_high_for_variable(variable: atc_logs.Variable) -> int | N
         else (
             260
             if variable.equipment.equipment_type is atc_logs.EquipmentType.PAS and variable.name.startswith("TEMPS_AS")
-            else 120 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAE else None
+            else 120 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAE and variable.name.startswith("STAB_CPT") else None
         )
     )
 
@@ -206,18 +206,6 @@ def build_temps_cycle_reports_from_root_folders_and_environments(
     return equipments_reports
 
 
-@logger_config.stopwatch_decorator(inform_beginning=True)
-@deprecated("Too much ram usage")
-def process_root_folders_and_environments_build_results_then_reports(
-    root_folders_and_environments: list[tuple[str, str]],
-) -> None:
-
-    atc_test_results = build_atc_test_results_from_root_folders_and_environments(root_folders_and_environments=root_folders_and_environments)
-    create_global_graphs_by_platform_for_atc_tests_results(atc_test_results)
-    equipments_reports = build_temps_cycle_report_from_atc_log_results(atc_test_results)
-    build_temps_cycle_excel_report_from_atc_log_results(equipments_reports=equipments_reports)
-
-
 def build_atc_test_result_from_simech_file_path(
     environment_name: str,
     input_file_path: str | Path,
@@ -262,29 +250,6 @@ def build_atc_test_result_from_simech_file_path(
         .build()
     )
     return atc_test_result
-
-
-@deprecated("Too much ram usage")
-def build_atc_test_results_from_root_folders_and_environments(
-    root_folders_and_environments: list[tuple[str, str]],
-) -> list[atc_logs.ATCTestResult]:
-
-    files_paths_not_handled_because_errors: list[str] = []
-    atc_test_results: list[atc_logs.ATCTestResult] = []
-    for environment_name, root_result_files_folder_path in root_folders_and_environments:
-        all_input_files = [full_path for full_path in Path(root_result_files_folder_path).rglob("*.res")]
-        for input_file_it, input_file_path in enumerate(all_input_files):
-            try:
-                atc_test_result = build_atc_test_result_from_simech_file_path(environment_name=environment_name, input_file_path=input_file_path, label=f"{len(atc_test_results)+1}")
-                logger_config.print_and_log_info(f"Handle {input_file_it+1} th / {len(all_input_files)} ({round((input_file_it+1)/len(all_input_files)*100,1)}%) input file {input_file_path}")
-                atc_test_results.append(atc_test_result)
-            except AssertionError as ass_err:
-                logger_config.print_and_log_exception(ass_err)
-                logger_config.print_and_log_error(f"Could not compute temps cycle for {input_file_path}")
-                files_paths_not_handled_because_errors.append(str(input_file_path))
-
-    logger_config.print_and_log_error_if(len(files_paths_not_handled_because_errors), f"Files not handled because errors: \n{'\n'.join(files_paths_not_handled_because_errors)}")
-    return atc_test_results
 
 
 def build_lines_in_one_simulation_equipment_report(equipment_report: OneEquipmentReport) -> list[OrderedDict[str, datetime.datetime | str | int | float | numpy.float64 | None]]:
@@ -386,62 +351,6 @@ def create_global_graphs_for_equipment_reports(
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-@deprecated("Too much ram usage")
-def create_global_graphs_by_platform_for_atc_tests_results(
-    atc_test_results: list[atc_logs.ATCTestResult],
-) -> None:
-    atc_test_results_sorted_chronologically = sorted(
-        atc_test_results, key=lambda x: cast(datetime.datetime, x.all_variables_states_changes_sorted_by_timestamp[-1].previous_state.result_line.best_timestamp), reverse=True
-    )
-    all_equipments_names = {equipment.name for atc_test_result in atc_test_results for equipment in atc_test_result.equipments_library.all_equipments}
-    all_environment_names = {atc_test_result.environment_name for atc_test_result in atc_test_results}
-
-    try:
-        create_global_graphs_by_platform_all_states_for_atc_tests_results(atc_test_results_sorted_chronologically, all_equipments_names, all_environment_names)
-    except MemoryError as ex:
-        logger_config.print_and_log_exception(ex)
-
-    try:
-        create_global_graphs_by_platform_all_continuous_states_for_atc_tests_results(atc_test_results_sorted_chronologically, all_equipments_names, all_environment_names)
-    except MemoryError as ex:
-        logger_config.print_and_log_exception(ex)
-
-
-@logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-@deprecated("Too much ram usage")
-def create_global_graphs_by_platform_all_states_for_atc_tests_results(
-    atc_test_results_sorted_chronologically: list[atc_logs.ATCTestResult],
-    all_equipments_names: set[str],
-    all_environment_names: set[str],
-) -> None:
-    data_per_sheet_name: dict[str, pandas.DataFrame] = {}
-    for equipment_name in all_equipments_names:
-        all_lines_of_equipment: list[OrderedDict] = []
-        for atc_test_result in atc_test_results_sorted_chronologically:
-            equipment_found = atc_test_result.get_existing_equipment_by_name(equipment_name)
-            if equipment_found:
-                for intersting_variable_name in get_interesting_variables_names_by_equipment(equipment_found):
-                    variable = equipment_found.variables_library.get_variable_with_name_if_exists(intersting_variable_name)
-                    if variable:
-                        new_lines = [
-                            OrderedDict(
-                                {
-                                    "Date": instant_state.result_line.best_timestamp,
-                                    intersting_variable_name: instant_state.best_value,
-                                },
-                            )
-                            for instant_state in variable.instant_states_chronologically_sorted
-                            if instant_state.best_value > 30
-                        ]
-                        all_lines_of_equipment += new_lines
-
-        data_per_sheet_name[equipment_name] = pandas.DataFrame(
-            all_lines_of_equipment,
-            index=None,
-        )
-
-
-@logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
 def create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports(
     equipments_reports_sorted_chronologically: list[OneEquipmentReport],
     all_equipments_names: set[str],
@@ -465,16 +374,17 @@ def create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports
                 OrderedDict(
                     {
                         "Date": instant_state.timestamp,
-                        equipments_report.variable_name: instant_state.value,
+                        f"{equipments_report.variable_name} {instant_state.equipment_report.variable_name}": instant_state.value,
                     },
                 )
                 for instant_state in equipments_report.all_relevant_values_only_instant_states_chronologically_sorted
             ]
 
-        data_per_sheet_name[equipment_name] = pandas.DataFrame(
-            all_lines_of_equipment,
-            index=None,
-        )
+        if all_lines_of_equipment:
+            data_per_sheet_name[equipment_name] = pandas.DataFrame(
+                all_lines_of_equipment,
+                index=None,
+            )
 
     pandas_utils.to_excel_wait_if_file_is_locked(
         data_per_sheet_name,
@@ -507,135 +417,23 @@ def create_global_graphs_by_environment_in_sheet_all_states_for_equipments_repor
                 OrderedDict(
                     {
                         "Date": instant_state.timestamp,
-                        equipments_report.variable_name: instant_state.value,
+                        f"{equipments_report.variable_name} {instant_state.equipment_report.variable_name}": instant_state.value,
                     },
                 )
                 for instant_state in equipments_report.all_relevant_values_only_instant_states_chronologically_sorted
             ]
 
-        data_per_sheet_name[environment_name] = pandas.DataFrame(
-            all_lines_of_equipment,
-            index=None,
-        )
-
-    pandas_utils.to_excel_wait_if_file_is_locked(
-        data_per_sheet_name,
-        f"{OUTPUT_DIRECTORY}\\graph_all_temps_cycles{only_equipment_name_label}_all_states",
-        suffix_file_name_by_date=True,
-    )
-
-
-@logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-@deprecated("Too much ram usage")
-def create_global_graphs_by_platform_all_continuous_states_for_atc_tests_results(
-    atc_test_results_sorted_chronologically: list[atc_logs.ATCTestResult],
-    all_equipments_names: set[str],
-    all_environment_names: set[str],
-) -> None:
-    data_per_sheet_name: dict[str, pandas.DataFrame] = {}
-
-    for equipment_name in all_equipments_names:
-        all_lines_of_equipment: list[OrderedDict] = []
-        for atc_test_result in atc_test_results_sorted_chronologically:
-            equipment_found = atc_test_result.get_existing_equipment_by_name(equipment_name)
-            if equipment_found:
-                for temps_cycle_variable_name in get_interesting_variables_names_by_equipment(equipment_found):
-                    variable = equipment_found.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name)
-                    if variable:
-                        new_lines: list[OrderedDict] = []
-                        for continuous_state in variable.continuous_states_chronologically_sorted:
-                            if continuous_state.best_value != 0:
-                                new_lines.append(
-                                    OrderedDict(
-                                        {
-                                            "Date": continuous_state.all_instant_variable_states[0].result_line.best_timestamp,
-                                            temps_cycle_variable_name: continuous_state.best_value,
-                                        },
-                                    )
-                                )
-                                new_lines.append(
-                                    OrderedDict(
-                                        {
-                                            "Date": continuous_state.all_instant_variable_states[-1].result_line.best_timestamp,
-                                            temps_cycle_variable_name: continuous_state.best_value,
-                                        },
-                                    )
-                                )
-                            all_lines_of_equipment += new_lines
-
-        data_per_sheet_name[equipment_name] = pandas.DataFrame(
-            all_lines_of_equipment,
-            index=None,
-        )
-
-    for equipment_name in all_equipments_names:
-        for environment_name in all_environment_names:
-            all_lines_of_equipment = []
-            for atc_test_result in [atc_test_result for atc_test_result in atc_test_results_sorted_chronologically if atc_test_result.environment_name == environment_name]:
-                equipment_found = atc_test_result.get_existing_equipment_by_name(equipment_name)
-                if equipment_found:
-                    temps_cycle_variable_name = get_temps_cycle_variable_name_by_equipment(equipment_found)
-                    variable = equipment_found.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name)
-                    if variable:
-                        new_lines = []
-                        for continuous_state in variable.continuous_states_chronologically_sorted:
-                            if continuous_state.best_value != 0:
-                                new_lines.append(
-                                    OrderedDict(
-                                        {
-                                            "Date": continuous_state.all_instant_variable_states[0].result_line.best_timestamp,
-                                            temps_cycle_variable_name: continuous_state.best_value,
-                                        },
-                                    )
-                                )
-                                new_lines.append(
-                                    OrderedDict(
-                                        {
-                                            "Date": continuous_state.all_instant_variable_states[-1].result_line.best_timestamp,
-                                            temps_cycle_variable_name: continuous_state.best_value,
-                                        },
-                                    )
-                                )
-                            all_lines_of_equipment += new_lines
-
-            data_per_sheet_name[f"{equipment_name}_{environment_name}"] = pandas.DataFrame(
+        if all_lines_of_equipment:
+            data_per_sheet_name[environment_name] = pandas.DataFrame(
                 all_lines_of_equipment,
                 index=None,
             )
 
     pandas_utils.to_excel_wait_if_file_is_locked(
         data_per_sheet_name,
-        f"{OUTPUT_DIRECTORY}\\gaph_all_temps_cycles_all_continuous_states",
+        f"{OUTPUT_DIRECTORY}\\graph_all_temps_cycles{only_equipment_name_label}_all_states",
         suffix_file_name_by_date=True,
     )
-
-
-@logger_config.stopwatch_decorator(inform_beginning=True)
-@deprecated("Too much ram usage")
-def build_temps_cycle_report_from_atc_log_result(
-    atc_test_result: atc_logs.ATCTestResult,
-) -> list[OneEquipmentReport]:
-    equipments_reports: list[OneEquipmentReport] = []
-    for atc_test_file in atc_test_result.all_atc_test_files:
-        for equipment in atc_test_result.equipments_library.all_equipments:
-            at_least_one_variable_found = False
-            for temps_cycle_variable_name_candidate in ["STAB_CPT1", "TEMPS_AS"]:
-                variable = equipment.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name_candidate)
-                if variable is not None:
-                    at_least_one_variable_found = True
-
-                    if variable.equipment.equipment_type in [atc_logs.EquipmentType.PAS, atc_logs.EquipmentType.PAL] and variable.max_numeric_values_by_number_occurrences < 60:
-                        logger_config.print_and_log_info(
-                            f"Ignore equipment {variable.equipment.name} in {atc_test_file.atc_test_result.environment_name} in file {atc_test_file.file_name} because is virtual (so no valid temps cycle). {variable.name} is too low ({variable.max_numeric_values_by_number_occurrences}) to be real"
-                        )
-                    else:
-                        equipment_report = OneEquipmentReport(variable=variable, atc_test_result=atc_test_result)
-
-                        equipments_reports.append(equipment_report)
-            logger_config.print_and_log_error_if(
-                not at_least_one_variable_found, f"No temps cycle variable found in {atc_test_file.file_name} for equipment {equipment.name} in {atc_test_result.environment_name}"
-            )
-    return equipments_reports
 
 
 def build_temps_cycle_equipment_report_from_atc_log_result(
@@ -659,19 +457,6 @@ def build_temps_cycle_equipment_report_from_atc_log_result(
         logger_config.print_and_log_error_if(
             not at_least_one_variable_found, f"No temps cycle variable found in {atc_test_result.all_atc_test_files[0].file_name} for equipment {equipment.name} in {atc_test_result.environment_name}"
         )
-    return equipments_reports
-
-
-@logger_config.stopwatch_decorator(inform_beginning=True)
-@deprecated("Too much ram usage")
-def build_temps_cycle_report_from_atc_log_results(
-    atc_test_results: list[atc_logs.ATCTestResult],
-) -> list[OneEquipmentReport]:
-
-    equipments_reports: list[OneEquipmentReport] = []
-
-    for atc_test_result in atc_test_results:
-        equipments_reports += build_temps_cycle_equipment_report_from_atc_log_result(atc_test_result)
     return equipments_reports
 
 
