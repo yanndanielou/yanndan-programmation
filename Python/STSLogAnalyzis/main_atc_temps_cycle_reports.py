@@ -25,11 +25,15 @@ def main() -> None:
             [
                 (
                     "PLT_SYST_1 RL3A02 Conf30",
-                    r"D:\temp\mesures_temps_cycle_usine\PLT_SYST_1_RL3a.0.2_Conf_30",
+                    r"D:\temp\mesures_temps_cycle_usine\PLT_SYST_1_RL3a.0.2_Conf_30____",
                 ),
                 (
                     "PLT_SYST_2 RL3A02 Conf30",
-                    r"D:\temp\mesures_temps_cycle_usine\PLT_SYST_2_RL3a.0.2_Conf_30",
+                    r"D:\temp\mesures_temps_cycle_usine\PLT_SYST_2_RL3a.0.2_Conf_30___",
+                ),
+                (
+                    "4.1_LR_TrDyn_KVB",
+                    r"D:\temp\mesures_temps_cycle_usine\PLT_SYST_2_RL3a.0.2_Conf_30\4.1_LR_TrDyn_KVB-CMC_V2EO_PLDE2480__CMC_US_AC_V2EO_PLDE2480__CMC_US_A",
                 ),
             ],
         )
