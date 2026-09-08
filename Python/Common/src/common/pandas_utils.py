@@ -61,6 +61,11 @@ def to_excel_wait_if_file_is_locked(data_per_sheet_name: dict[str, pandas.DataFr
                 success = True
                 return
 
-        except PermissionError:
+        except PermissionError as perm_err:
+            logger_config.print_and_log_exception(perm_err)
             logger_config.print_and_log_error(f"File {output_excel_file_without_extension} is used. Release it")
             time.sleep(1)
+        except ValueError as val_err:
+            logger_config.print_and_log_exception(val_err)
+            logger_config.print_and_log_error(f"Error creating {output_excel_file_without_extension}")
+            return
