@@ -8,9 +8,11 @@ from generatecfxhistory import constants, role, inputs
 from generatecfxhistory import ui_and_results_generation
 
 OUTPUT_DIRECTORY_NAME = "output"
-CREATE_JSON_DUMP = True
-CREATE_EXCEL_FILE = False
+CREATE_JSON_DUMP = False
+CREATE_EXCEL_FILE = True
 CREATE_HTML_FILE = True
+CREATE_PNG_FILE = False
+CREATE_SVG_FILE = False
 
 DISPLAY_OUTPUT = False
 
@@ -48,6 +50,8 @@ def main() -> None:
                 generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
                 display_output_plots=DISPLAY_OUTPUT,
                 dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+                create_screenshot_svg=CREATE_SVG_FILE,
+                create_screenshot_png=CREATE_PNG_FILE,
             ),
         )
 
@@ -67,8 +71,8 @@ def main() -> None:
                 create_html_file=CREATE_HTML_FILE,
                 display_output_plots=DISPLAY_OUTPUT,
                 dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
-                create_screenshot_svg=False,
-                create_screenshot_png=False,
+                create_screenshot_svg=CREATE_SVG_FILE,
+                create_screenshot_png=CREATE_PNG_FILE,
                 # states_whitelist=[State.SUBMITTED],
             ),
         )
@@ -87,6 +91,8 @@ def main() -> None:
                 create_html_file=CREATE_HTML_FILE,
                 display_output_plots=DISPLAY_OUTPUT,
                 dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+                create_screenshot_svg=CREATE_SVG_FILE,
+                create_screenshot_png=CREATE_PNG_FILE,
             ),
         )
 
@@ -132,6 +138,8 @@ def main() -> None:
                 create_html_file=CREATE_HTML_FILE,
                 display_output_plots=DISPLAY_OUTPUT,
                 dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
+                create_screenshot_svg=CREATE_SVG_FILE,
+                create_screenshot_png=CREATE_PNG_FILE,
             ),
         )
 
@@ -150,6 +158,8 @@ def main() -> None:
                 display_output_plots=DISPLAY_OUTPUT,
                 dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
                 generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.BY_PROJECT_AND_ALSO_GLOBAL_ALL_PROJECTS,
+                create_screenshot_svg=CREATE_SVG_FILE,
+                create_screenshot_png=CREATE_PNG_FILE,
             ),
         )
 
@@ -173,6 +183,8 @@ def main() -> None:
                 dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
                 generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.ONLY_ONE_PROJECT,
                 project_in_case_of_generate_by_project_instruction_one_project=constants.CfxProject.ATSP,
+                create_screenshot_svg=CREATE_SVG_FILE,
+                create_screenshot_png=CREATE_PNG_FILE,
             ),
         )
 
@@ -196,6 +208,8 @@ def main() -> None:
                 dump_all_cfx_ids_in_json=CREATE_JSON_DUMP,
                 generate_by_project_instruction=ui_and_results_generation.GenerateByProjectInstruction.ONLY_ONE_PROJECT,
                 project_in_case_of_generate_by_project_instruction_one_project=constants.CfxProject.ATSP,
+                create_screenshot_svg=CREATE_SVG_FILE,
+                create_screenshot_png=CREATE_PNG_FILE,
             ),
         )
 
