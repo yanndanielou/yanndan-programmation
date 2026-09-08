@@ -404,11 +404,15 @@ def create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports
                 index=None,
             )
 
-    pandas_utils.to_excel_wait_if_file_is_locked(
-        data_per_sheet_name,
-        f"{OUTPUT_DIRECTORY}\\graph_all_temps_cycles{only_environment_name_label}_all_states",
-        suffix_file_name_by_date=True,
-    )
+    try:
+        pandas_utils.to_excel_wait_if_file_is_locked(
+            data_per_sheet_name,
+            f"{OUTPUT_DIRECTORY}\\graph_all_temps_cycles{only_environment_name_label}_all_states",
+            suffix_file_name_by_date=True,
+        )
+    except ValueError as val_err:
+        logger_config.print_and_log_exception(val_err)
+        logger_config.print_and_log_error(f"Could not save {data_per_sheet_name}")
 
 
 @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
