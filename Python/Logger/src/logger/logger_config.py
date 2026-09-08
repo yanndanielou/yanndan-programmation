@@ -84,7 +84,9 @@ class RamUsageMonitor:
         )
 
     def write_pending_lines(self) -> None:
-        print_and_log_info(f"Write {len(self.all_mesures_to_write)} pending lines to {self.output_file_path}")
+        print_and_log_info(
+            f"Logger ram monitor usage: write {len(self.all_mesures_to_write)} pending lines to {self.output_file_path}"
+        )
         for mesure_to_write in self.all_mesures_to_write:
             self.writer.writerow(
                 {
@@ -98,8 +100,9 @@ class RamUsageMonitor:
     def save_and_close(self) -> None:
         self.mesure_now()
         self.write_pending_lines()
-        print_and_log_info(f"Save and close {self.output_file_path}")
+        print_and_log_info(f"Logger ram monitor usage: save and close {self.output_file_path}")
         self.output_file.close()
+        print_and_log_info("Logger ram monitor usage: saved")
 
 
 ram_usage_monitor = RamUsageMonitor()
