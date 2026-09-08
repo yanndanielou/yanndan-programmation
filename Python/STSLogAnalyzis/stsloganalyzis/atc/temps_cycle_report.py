@@ -69,8 +69,8 @@ def get_threshold_very_high_for_variable(variable: atc_logs.Variable) -> int | N
     )
 
 
-def get_temps_cycle_variable_name_by_equipment(equipment: atc_logs.Equipment) -> str:
-    return "TEMPS_AS" if equipment.equipment_type in [atc_logs.EquipmentType.PAL, atc_logs.EquipmentType.PAS, atc_logs.EquipmentType.MES] else "STAB_CPT1"
+def get_temps_cycle_variables_names_by_equipment(equipment: atc_logs.Equipment) -> list[str]:
+    return ["TEMPS_AS"] if equipment.equipment_type in [atc_logs.EquipmentType.PAL, atc_logs.EquipmentType.PAS, atc_logs.EquipmentType.MES] else ["STAB_CPT1"]
 
 
 def get_other_interesting_variables_at_one_atc_log_instant_variable_state(
@@ -390,7 +390,7 @@ def create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports
                 new_line = OrderedDict(
                     {
                         "Date": instant_state.timestamp,
-                        f"{equipments_report.variable_name} {instant_state.equipment_report.variable_name}": instant_state.value,
+                        f"{equipments_report.variable_name} {instant_state.equipment_report.equipment_name}": instant_state.value,
                     },
                 )
                 for other_interesting_variables_name, other_interesting_variables_value in instant_state.other_interesting_variables_values_by_name.items():
@@ -435,7 +435,7 @@ def create_global_graphs_by_environment_in_sheet_all_states_for_equipments_repor
                 new_line = OrderedDict(
                     {
                         "Date": instant_state.timestamp,
-                        f"{equipments_report.variable_name} {instant_state.equipment_report.variable_name}": instant_state.value,
+                        f"{equipments_report.variable_name} {instant_state.equipment_report.equipment_name}": instant_state.value,
                     },
                 )
                 for other_interesting_variables_name, other_interesting_variables_value in instant_state.other_interesting_variables_values_by_name.items():
@@ -462,7 +462,7 @@ def build_temps_cycle_equipment_report_from_atc_log_result(
     equipments_reports: list[OneEquipmentReport] = []
     for equipment in atc_test_result.equipments_library.all_equipments:
         at_least_one_variable_found = False
-        for temps_cycle_variable_name_candidate in ["STAB_CPT1", "TEMPS_AS", "FAS_VC"]:
+        for temps_cycle_variable_name_candidate in get_temps_cycle_variables_names_by_equipment(equipment):
             variable = equipment.variables_library.get_variable_with_name_if_exists(temps_cycle_variable_name_candidate)
             if variable is not None:
                 at_least_one_variable_found = True
@@ -479,7 +479,8 @@ def build_temps_cycle_equipment_report_from_atc_log_result(
                     equipment_report = OneEquipmentReport(variable=variable, atc_test_result=atc_test_result)
                     equipments_reports.append(equipment_report)
         logger_config.print_and_log_error_if(
-            not at_least_one_variable_found, f"No temps cycle variable found in {atc_test_result.all_atc_test_files[0].file_name} for equipment {equipment.name} in {atc_test_result.environment_name}"
+            not at_least_one_variable_found,
+            f"No temps cycle variable {','.join(temps_cycle_variable_name_candidate)}found in {atc_test_result.all_atc_test_files[0].file_name} for equipment {equipment.name} in {atc_test_result.environment_name}",
         )
     return equipments_reports
 

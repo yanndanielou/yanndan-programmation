@@ -52,6 +52,10 @@ class VariablesTypesLibrary:
 
         self.add_variable_type("TEMPS_AS", VariablesTypesLibrary.VariableType.INT_TYPE)
 
+        self.add_variable_type("FAS_VF", VariablesTypesLibrary.VariableType.FLOAT_TYPE)
+        self.add_variable_type("EBF_VITESSE", VariablesTypesLibrary.VariableType.INT_TYPE)
+        self.add_variable_type("FODR_VITODO", VariablesTypesLibrary.VariableType.FLOAT_TYPE)
+
     def add_variable_type(self, variable_name: str, variable_type: "VariablesTypesLibrary.VariableType") -> None:
         assert variable_name not in self._variable_type_by_name_dictionary
         self._variable_type_by_name_dictionary[variable_name] = variable_type
@@ -448,7 +452,7 @@ class ATCTestFile(ABC):
     def __post_init__(self) -> None:
         self.file_name = file_name_utils.get_file_name_without_extension_from_full_path(self.file_full_path)
         self.all_lines: list[ATCTestResultLine] = []
-        logger_config.print_and_log_info(f"Build {self.file_name}", do_not_print=True)
+        logger_config.print_and_log_info(f"Build {self.__class__.__name__} {self.file_name}", do_not_print=True)
         self.forced_cdecenie_value: None | int = None
         self.current_forced_cjour_value: None | int = None
         self.last_chunk_created_timestamp = datetime.datetime.now()  # noqa: DTZ005
@@ -593,7 +597,7 @@ class ATCTestResult(ABC):
         self.result_lines: list[ATCTestResultLine] = []
         self.variable_name_must_be_created_cache_result: dict[str, bool] = {}
 
-        logger_config.print_and_log_info(f"Build {self.label}")
+        logger_config.print_and_log_info(f"Build {self.__class__.__n} {self.label}")
 
     @line_profiler.profile
     def variable_name_must_be_created(self, variable_name: str) -> bool:
