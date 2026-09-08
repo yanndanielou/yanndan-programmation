@@ -35,7 +35,7 @@ class DatesGenerator(ABC):
 
         # Add tomorrow  if not exist
 
-        for additional_days_in_future_to_add in range(1, 5):
+        for additional_days_in_future_to_add in range(1, 4):
             additional_date_to_add = (datetime.datetime.now() + timedelta(days=additional_days_in_future_to_add)).replace(tzinfo=None)
             if additional_date_to_add not in all_dates:
                 all_dates.append(additional_date_to_add)
@@ -135,7 +135,7 @@ class DecreasingIntervalDatesGenerator(DatesGenerator):
             elif days_diff > 2:
                 time_delta = relativedelta.relativedelta(hours=12)
 
-            elif days_diff > 1:
+            elif days_diff >= 1:
                 time_delta = relativedelta.relativedelta(hours=6)
 
             else:
