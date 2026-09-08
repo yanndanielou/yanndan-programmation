@@ -145,6 +145,11 @@ def _fix_pae_temps_cycle_cyclos_fields_values(raw_variable_values: dict[str, str
             intial_float_value = float(inital_str_value)
             raw_variable_values[pae_temps_cycle_field_name_with_unit_in_value] = str(round(intial_float_value * 100, 2))
 
+    for variable_name in ["FODR_VITODO", "FAS_VF"]:
+        if variable_name in raw_variable_values:
+            inital_str_value = raw_variable_values[variable_name]
+            raw_variable_values[variable_name] = inital_str_value.replace(" m/s", "").replace(" m", "")
+
     return number_of_fixes_applied
 
 
