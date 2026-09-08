@@ -42,7 +42,7 @@ class SimechResFile(atc_logs.ATCTestFile):
         super().__post_init__()
         self.variables_line_dictionary_by_equipment: dict[str, atc_logs.ATCVariablesLineDictionary] = {}
         self.all_values_raw_lines: list[str] = []
-        self.simulation_start_at_timestamp: datetime
+        self.simulation_start_at_timestamp: datetime | None = None
 
     def _compute_simulation_start_at(self, all_raw_lines: list[str]) -> None:
         for raw_line in all_raw_lines:
@@ -53,6 +53,8 @@ class SimechResFile(atc_logs.ATCTestFile):
                 date_format = "%a %b %d %H:%M:%S %Y"
                 self.simulation_start_at_timestamp = datetime.strptime(raw_date_as_str, date_format)  # noqa: DTZ007
                 logger_config.print_and_log_info(f"simulation_start_at parsed:{self.simulation_start_at_timestamp}", do_not_print=True)
+
+        logger_config.print_and_log_error_if(not self.simulation_start_at_timestamp, "Could not find simulation start timestamp in res file")
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def compute_all_variables_states(self) -> None:
@@ -109,7 +111,9 @@ class SimechResFile(atc_logs.ATCTestFile):
 
                         equipment = self.atc_test_result.get_or_create_equipment_by_name_if_allowed(equipment_name)
                         if equipment:
-                            time_since_simulation_start = self.simulation_start_at_timestamp + timedelta(milliseconds=line_simulation_time_in_ms_since_beginning)
+                            time_since_simulation_start = (
+                                self.simulation_start_at_timestamp + timedelta(milliseconds=line_simulation_time_in_ms_since_beginning) if self.simulation_start_at_timestamp is not None else None
+                            )
 
                             self.create_result_line_if_needed(
                                 line_number=line_number,

@@ -20,6 +20,16 @@ OUTPUT_DIRECTORY = "output_temps_cycle"
 
 
 @dataclass
+class InputFilesInstruction:
+    environment_name: str
+    root_result_files_folder_path: str
+
+    def __post_init__(self) -> None:
+        self.all_full_paths = [full_path for full_path in Path(self.root_result_files_folder_path).rglob("*.res")]
+        logger_config.print_and_log_error_if(not self.all_full_paths, f"No file found in {self.root_result_files_folder_path}")
+
+
+@dataclass
 class InstantTempsCycleVariableState:
     timestamp: datetime.datetime
     value: int | float
@@ -206,8 +216,8 @@ class OneEquipmentReport:
         self.taux_anomalie_very_high = (len(self.anomalies_very_high) / len(self.all_relevant_values)) * 100
 
 
-def process_root_folders_and_environments(root_folders_and_environments: list[tuple[str, str]]) -> None:
-    equipments_reports_sorted_chronologically = sorted(build_temps_cycle_reports_from_root_folders_and_environments(root_folders_and_environments), key=lambda x: x.end_of_test_timestamp)
+def process_root_folders_and_environments(input_files_instructions: list[InputFilesInstruction]) -> None:
+    equipments_reports_sorted_chronologically = sorted(build_temps_cycle_reports_from_root_folders_and_environments(input_files_instructions), key=lambda x: x.end_of_test_timestamp)
     build_temps_cycle_excel_report_from_atc_log_results(equipments_reports=equipments_reports_sorted_chronologically)
 
     try:
@@ -218,19 +228,22 @@ def process_root_folders_and_environments(root_folders_and_environments: list[tu
 
 @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
 def build_temps_cycle_reports_from_root_folders_and_environments(
-    root_folders_and_environments: list[tuple[str, str]],
+    input_files_instructions: list[InputFilesInstruction],
 ) -> list[OneEquipmentReport]:
     equipments_reports: list[OneEquipmentReport] = []
 
     number_of_input_files_processed = 0
     files_paths_not_handled_because_errors: list[str] = []
-    for environment_name, root_result_files_folder_path in root_folders_and_environments:
-        all_input_files = [full_path for full_path in Path(root_result_files_folder_path).rglob("*.res")]
-        logger_config.print_and_log_info(f"{len(all_input_files)} files matching in {root_result_files_folder_path}")
+    for input_files_instruction in input_files_instructions:
+
+        all_input_files = input_files_instruction.all_full_paths
+        logger_config.print_and_log_info(f"{len(input_files_instruction.all_full_paths)} files matching in {input_files_instruction.root_result_files_folder_path}")
         for input_file_it, input_file_path in enumerate(all_input_files):
             number_of_input_files_processed += 1
             try:
-                atc_test_result = build_atc_test_result_from_simech_file_path(environment_name=environment_name, input_file_path=input_file_path, label=f"{number_of_input_files_processed}")
+                atc_test_result = build_atc_test_result_from_simech_file_path(
+                    environment_name=input_files_instruction.environment_name, input_file_path=input_file_path, label=f"{number_of_input_files_processed}"
+                )
                 logger_config.print_and_log_info(f"Handle {input_file_it+1} th / {len(all_input_files)} ({round((input_file_it+1)/len(all_input_files)*100,1)}%) input file {input_file_path}")
                 equipments_reports += build_temps_cycle_equipment_report_from_atc_log_result(atc_test_result)
             except AssertionError as ass_err:
