@@ -597,7 +597,7 @@ class ATCTestResult(ABC):
         self.result_lines: list[ATCTestResultLine] = []
         self.variable_name_must_be_created_cache_result: dict[str, bool] = {}
 
-        logger_config.print_and_log_info(f"Build {self.__class__.__n} {self.label}")
+        logger_config.print_and_log_info(f"Build {self.__class__.__name__} {self.label}")
 
     @line_profiler.profile
     def variable_name_must_be_created(self, variable_name: str) -> bool:
