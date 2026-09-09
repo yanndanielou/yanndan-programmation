@@ -44,13 +44,14 @@ def to_excel_wait_if_file_is_locked(data_per_sheet_name: dict[str, pandas.DataFr
     if suffix_file_name_by_date:
         output_excel_file_without_extension += file_name_utils.get_file_suffix_with_current_datetime(include_underscore=True)
 
-    output_excel_file_without_extension += ".xlsx"
+    output_excel_file_with_extension = output_excel_file_without_extension + ".xlsx"
 
     # Save DataFrame to Excel
     success = False
     while success is False:
         try:
-            with pandas.ExcelWriter(output_excel_file_without_extension) as writer:
+
+            with pandas.ExcelWriter(output_excel_file_with_extension) as writer:
                 for sheet_name, data_frame in data_per_sheet_name.items():
                     if len(sheet_name) > EXCEL_LIMIT_SIZE_OF_SHEET_NAME:
                         new_sheet_name = sheet_name[:EXCEL_LIMIT_SIZE_OF_SHEET_NAME]
