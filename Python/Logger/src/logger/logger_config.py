@@ -660,15 +660,15 @@ def datetime_convenient_log_format(datetime_to_log: datetime.datetime, number_of
 
 
 def print_and_log_current_ram_usage(
-    prefix: str = "", suffix: str = "", previous_reference_rss_value_and_label: tuple[int, str] | None = None
+    prefix: str = "", suffix: str = "", previous_measure_and_label: tuple[RamUsageMonitor.Measure, str] | None = None
 ) -> RamUsageMonitor.Measure:
     current_ram = ram_usage_monitor.measure_now()
 
     comparison_text = ""
-    if previous_reference_rss_value_and_label:
-        previous_reference_rss_value = previous_reference_rss_value_and_label[0]
-        previous_reference_rss_label = previous_reference_rss_value_and_label[1]
-        delta_rss_since_reference = current_ram.as_bytes_int - previous_reference_rss_value
+    if previous_measure_and_label:
+        previous_measure = previous_measure_and_label[0]
+        previous_reference_rss_label = previous_measure_and_label[1]
+        delta_rss_since_reference = current_ram.as_bytes_int - previous_measure.as_bytes_int
         comparison_text = (
             f". Evolution since {previous_reference_rss_label} : {humanize.naturalsize(delta_rss_since_reference)}"
         )
