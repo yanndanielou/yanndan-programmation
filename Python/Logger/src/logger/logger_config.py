@@ -1,11 +1,6 @@
 ﻿"""logger"""
 
-from dataclasses import dataclass
-
-import csv
-
 import datetime
-from warnings import deprecated
 
 # To get line number for logs
 # from inspect import currentframe, getframeinfo
@@ -17,18 +12,21 @@ import os
 import random
 import sys
 import time
+from collections import OrderedDict, defaultdict
 from collections.abc import Generator
 from contextlib import contextmanager
+from dataclasses import dataclass
 from functools import wraps
 
 # from warnings import deprecated
 from logging.handlers import RotatingFileHandler
-from typing import Any, Callable, Optional, Tuple, cast, Dict, ParamSpec, TypeVar
+from typing import ParamSpec, TypeVar, cast
+from collections.abc import Callable
+from warnings import deprecated
 
 import humanize
+import pandas
 import psutil
-from collections import defaultdict
-
 from common import date_time_formats, file_name_utils
 
 # pylint: enable=logging-not-lazy
@@ -47,61 +45,57 @@ log_counts_exceptions_occurrences_per_file_and_line: dict[str, int] = defaultdic
 class RamUsageMonitor:
 
     @dataclass
-    class MesureToWrite:
+    class Measure:
         timestamp: datetime.datetime | str
         ram_usage_int: int
-        ram_usage_human_readable: str | None
+
+        def __post_init__(self) -> None:
+            self.ram_usage_human_readable = humanize.naturalsize(self.ram_usage_int)
 
     def __init__(self) -> None:
-        self.output_file_path = ""
-        self.output_file = None
-        self.all_mesures_to_write: list[RamUsageMonitor.MesureToWrite] = []
+        self.output_file_path_with_extension = ""
+        self.all_mesures_to_write: list[RamUsageMonitor.Measure] = []
 
-    def set_output_file_path(self, output_file_path: str) -> None:
-        self.output_file = open(output_file_path, "w", newline="", encoding="utf-8")
+    def set_output_file_name_without_extension(self, output_file_name_without_extension: str) -> None:
+        self.output_file_path_with_extension = f"logs/{output_file_name_without_extension}"
 
-        self.fieldnames = ["Timestamp", "Ram usage (int)", "Ram usage (human readable)"]
-        self.writer = csv.DictWriter(self.output_file, fieldnames=self.fieldnames, delimiter="\t")
-        self.writer.writeheader()
-        self.mesure_now()
+        self.measure_now()
 
-    def add_measure(
-        self,
-        timestamp: datetime.datetime | str,
-        ram_usage_int: int,
-        ram_usage_human_readable: str | None = None,
-    ) -> None:
-        self.all_mesures_to_write.append(
-            RamUsageMonitor.MesureToWrite(timestamp, ram_usage_int, ram_usage_human_readable)
-        )
-
-    def mesure_now(self) -> None:
+    def measure_now(self) -> "RamUsageMonitor.Measure":
         current_ram_int = cast(int, psutil.Process(os.getpid()).memory_info().rss)
-        self.add_measure(
-            timestamp=datetime.datetime.now(),
+        new_measure = RamUsageMonitor.Measure(
+            timestamp=datetime.datetime.now(),  # noqa: DTZ005
             ram_usage_int=current_ram_int,
-            ram_usage_human_readable=humanize.naturalsize(current_ram_int),
+        )
+        self.all_mesures_to_write.append(new_measure)
+        return new_measure
+
+    def append_pending_lines_to_file(self) -> None:
+        print_and_log_info(
+            f"Logger ram monitor usage: write {len(self.all_mesures_to_write)} pending lines to {self.output_file_path_with_extension}"
         )
 
-    def write_pending_lines(self) -> None:
-        print_and_log_info(
-            f"Logger ram monitor usage: write {len(self.all_mesures_to_write)} pending lines to {self.output_file_path}"
-        )
-        for mesure_to_write in self.all_mesures_to_write:
-            self.writer.writerow(
-                {
-                    self.fieldnames[0]: mesure_to_write.timestamp,
-                    self.fieldnames[1]: mesure_to_write.ram_usage_int,
-                    self.fieldnames[2]: mesure_to_write.ram_usage_human_readable,
-                },
-            )
+        with pandas.ExcelWriter(self.output_file_path_with_extension + ".xlsx") as writer:
+            pandas.DataFrame(
+                [
+                    OrderedDict(
+                        {
+                            "date": mesure_to_write.timestamp,
+                            "As bytes": mesure_to_write.ram_usage_int,
+                            "As human readable": mesure_to_write.ram_usage_human_readable,
+                        }
+                    )
+                    for mesure_to_write in self.all_mesures_to_write
+                ],
+                index=None,
+            ).to_excel(writer, sheet_name="RAM")
+
         self.all_mesures_to_write.clear()
 
     def save_and_close(self) -> None:
-        self.mesure_now()
-        self.write_pending_lines()
-        print_and_log_info(f"Logger ram monitor usage: save and close {self.output_file_path}")
-        self.output_file.close()
+        self.measure_now()
+        print_and_log_info(f"Logger ram monitor usage: save and close {self.output_file_path_with_extension}")
+        self.append_pending_lines_to_file()
         print_and_log_info("Logger ram monitor usage: saved")
 
 
@@ -111,7 +105,7 @@ ram_usage_monitor = RamUsageMonitor()
 class MessagesCounterHandler(logging.Handler):
 
     def __init__(self) -> None:
-        super(MessagesCounterHandler, self).__init__()
+        super().__init__()
         self.disabled_for_unit_tests = False
 
     def emit(self, record: logging.LogRecord) -> None:
@@ -158,8 +152,8 @@ def print_and_log_critical_and_kill(to_print_and_log: str) -> None:
     print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + to_print_and_log)
     print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + "Kill application")
 
-    logging.critical(f"{__get_calling_file_name_and_line_number()} '\t' {to_print_and_log}")
-    logging.critical(f"{__get_calling_file_name_and_line_number()} '\t' Kill application")
+    logging.critical(f"{__get_calling_file_name_and_line_number()} '\t' {to_print_and_log}")  # noqa: LOG015
+    logging.critical(f"{__get_calling_file_name_and_line_number()} '\t' Kill application")  # noqa: LOG015
     sys.exit()
 
 
@@ -171,17 +165,21 @@ def print_and_log_info_if(condition: bool, to_print_and_log: str, do_not_print: 
         # pylint: disable=line-too-long
         if not do_not_print:
             print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + to_print_and_log)
-        logging.info(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
+        logging.info(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")  # noqa: LOG015
 
 
-def print_and_log_info(to_print_and_log: str, do_not_print: bool = False) -> None:
+def print_and_log_info(to_print_and_log: str, do_not_print: bool = False, print_ram_usage: bool = False) -> None:
     """Print in standard output and log in file as info level"""
     log_timestamp = time.asctime(time.localtime(time.time()))
+
+    if print_ram_usage:
+        measure = ram_usage_monitor.measure_now()
+        to_print_and_log += f".Current ram usage: {measure.ram_usage_human_readable}"
 
     # pylint: disable=line-too-long
     if not do_not_print:
         print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + to_print_and_log)
-    logging.info(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
+    logging.info(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")  # noqa: LOG015
 
 
 def print_and_log_warning_if(condition: bool, to_print_and_log: str, do_not_print: bool = False) -> None:
@@ -210,15 +208,14 @@ def print_and_log_warning(
             + "\t"
             + __get_calling_file_name_and_line_number(call_stack_frame=call_stack_frame)
             + "\t"
-            + str()
             + to_print_and_log
         )
-    logging.warning(
+    logging.warning(  # noqa: LOG015
         f"{__get_calling_file_name_and_line_number(call_stack_frame=call_stack_frame)} \t {to_print_and_log}"
     )
 
 
-def print_and_log_exception(exception_to_print: Exception, additional_text: Optional[str] = None) -> None:
+def print_and_log_exception(exception_to_print: Exception, additional_text: str | None = None) -> None:
     log_counts_exceptions_occurrences_per_file_and_line[
         __get_calling_file_name_and_line_number(call_stack_context=0)
     ] += 1
@@ -238,7 +235,7 @@ def print_and_log_exception(exception_to_print: Exception, additional_text: Opti
         log_timestamp + "\t" + __get_calling_file_name_and_line_number(call_stack_context=0) + "\t !!EXCEPTION THROWN!!"
     )
 
-    logging.exception(exception_to_print)
+    logging.exception(exception_to_print)  # noqa: LOG015
 
 
 def print_and_log_error_if(condition: bool, to_print_and_log: str, do_not_print: bool = False) -> None:
@@ -269,7 +266,6 @@ def print_and_log_error(
                 call_stack_context=call_stack_context, call_stack_frame=call_stack_frame
             )
             + "\t"
-            + str()
             + to_print_and_log
         )
     logging.error(f"{__get_calling_file_name_and_line_number(
@@ -279,9 +275,9 @@ def print_and_log_error(
 
 @contextmanager
 def application_logger(
-    application_name: Optional[str] = None,
+    application_name: str | None = None,
     logger_level: int = logging.INFO,
-    log_file_suffix_before_extension: Optional[str] = None,
+    log_file_suffix_before_extension: str | None = None,
 ) -> Generator[float, None, None]:
 
     previous_stack = inspect.stack(0)[2]
@@ -301,7 +297,7 @@ def application_logger(
     calling_file_name_and_line_number = file_name + ":" + str(line_number)
 
     at_beginning_log_timestamp = time.asctime(time.localtime(time.time()))
-    to_print_and_log = f"{application_name} : application begin. Ram usage: {humanize.naturalsize(cast(int, psutil.Process(os.getpid()).memory_info().rss))}"
+    to_print_and_log = f"{application_name} : application begin. Ram usage: {ram_usage_monitor.measure_now()}"
     print(at_beginning_log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
     logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
 
@@ -320,7 +316,7 @@ def application_logger(
         f"\nErrors stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " errors raised" for item in list(dict(sorted(log_counts_errors_occurrences_per_file_and_line.items(), key=lambda item: item[1])).items()))}"
     )
     to_print_and_log_lines.append(
-        f"{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s. Final ram usage: {humanize.naturalsize(cast(int, psutil.Process(os.getpid()).memory_info().rss))}."
+        f"{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s. Final ram usage: {ram_usage_monitor.measure_now().ram_usage_human_readable}."
     )
     to_print_and_log_lines.append(
         f"Logger stats: \t{'\t'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts_occurrences_per_level.items()))}"
@@ -348,7 +344,7 @@ def configure_logger_with_timestamp_log_file_suffix(
     log_file_name_prefix: str,
     log_file_extension: str = "log",
     logger_level: int = logging.INFO,
-    log_file_suffix_before_extension: Optional[str] = None,
+    log_file_suffix_before_extension: str | None = None,
 ) -> tuple[logging.Logger, MessagesCounterHandler]:
 
     log_file_suffix_before_extension = (
@@ -356,7 +352,7 @@ def configure_logger_with_timestamp_log_file_suffix(
     )
     log_file_name_without_extension = f"{log_file_name_prefix}{file_name_utils.get_file_suffix_with_current_datetime()}{log_file_suffix_before_extension}"
     log_file_name_with_extension = f"{log_file_name_without_extension}.{log_file_extension}"
-    ram_usage_monitor.set_output_file_path(f"logs/{log_file_name_with_extension}.csv")
+    ram_usage_monitor.set_output_file_name_without_extension("log_file_name_with_extension")
     return configure_logger_with_exact_file_name(log_file_name_with_extension, logger_level)
 
 
@@ -495,7 +491,7 @@ def stopwatch_with_label(
     """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
     https://www.docstring.fr/glossaire/with/"""
     if enabled:
-        initial_ram_rss = cast(int, psutil.Process(os.getpid()).memory_info().rss)
+        initial_ram = ram_usage_monitor.measure_now()
 
         previous_stack = inspect.stack(call_stack_context)[call_stack_frame]
         file_name = previous_stack.filename
@@ -506,12 +502,9 @@ def stopwatch_with_label(
             at_beginning_log_timestamp = time.asctime(time.localtime(time.time()))
 
             if monitor_ram_usage:
-                human_readable_ram = humanize.naturalsize(initial_ram_rss)
-                to_print_and_log = f"{label} : begin. Initial ram usage {human_readable_ram}"
-                ram_usage_monitor.add_measure(at_beginning_log_timestamp, initial_ram_rss, human_readable_ram)
+                to_print_and_log = f"{label} : begin. Initial ram usage {initial_ram.ram_usage_human_readable}"
             else:
                 to_print_and_log = f"{label} : begin"
-                ram_usage_monitor.add_measure(at_beginning_log_timestamp, initial_ram_rss)
 
             if enable_print:
                 print(at_beginning_log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
@@ -522,18 +515,15 @@ def stopwatch_with_label(
         debut = time.perf_counter()
         yield time.perf_counter() - debut
 
-        final_ram_rss = cast(int, psutil.Process(os.getpid()).memory_info().rss)
-        delta_rss_since_reference = final_ram_rss - initial_ram_rss
+        final_ram = ram_usage_monitor.measure_now()
+        delta_rss_since_reference = final_ram.ram_usage_int - initial_ram.ram_usage_int
         fin = time.perf_counter()
         elapsed_time_seconds = fin - debut
         end_log_timestamp = time.asctime(time.localtime(time.time()))
 
         if monitor_ram_usage:
-            human_readable_ram = humanize.naturalsize(final_ram_rss)
-            ram_usage_monitor.add_measure(end_log_timestamp, final_ram_rss, human_readable_ram)
-            to_print_and_log = f"{label} Elapsed: {date_time_formats.format_duration_to_string(elapsed_time_seconds)}. Final ram {human_readable_ram}. Delta ram : {humanize.naturalsize(delta_rss_since_reference)}"
+            to_print_and_log = f"{label} Elapsed: {date_time_formats.format_duration_to_string(elapsed_time_seconds)}. Final ram {final_ram.ram_usage_human_readable}. Delta ram : {humanize.naturalsize(delta_rss_since_reference)}"
         else:
-            ram_usage_monitor.add_measure(end_log_timestamp, initial_ram_rss)
             to_print_and_log = f"{label} Elapsed: {date_time_formats.format_duration_to_string(elapsed_time_seconds)}"
 
         # pylint: disable=line-too-long
@@ -551,7 +541,7 @@ R = TypeVar("R")
 
 
 def stopwatch_decorator(
-    label: Optional[str] = None,
+    label: str | None = None,
     enable_print: bool = True,
     enable_log: bool = True,
     enabled: bool = True,
@@ -582,9 +572,9 @@ def stopwatch_decorator(
 def stopwatch_alert_if_exceeds_duration(
     label: str,
     duration_threshold_to_alert_info_in_s: float,
-    duration_threshold_to_alert_warning_in_s: Optional[float] = None,
-    duration_threshold_to_alert_error_in_s: Optional[float] = None,
-    duration_threshold_to_alert_critical_in_s: Optional[float] = None,
+    duration_threshold_to_alert_warning_in_s: float | None = None,
+    duration_threshold_to_alert_error_in_s: float | None = None,
+    duration_threshold_to_alert_critical_in_s: float | None = None,
     enable_print: bool = True,
     enable_log: bool = True,
     enabled: bool = True,
@@ -670,20 +660,20 @@ def datetime_convenient_log_format(datetime_to_log: datetime.datetime, number_of
 
 
 def print_and_log_current_ram_usage(
-    prefix: str = "", suffix: str = "", previous_reference_rss_value_and_label: Optional[Tuple[int, str]] = None
-) -> int:
-    current_ram_rss = cast(int, psutil.Process(os.getpid()).memory_info().rss)
+    prefix: str = "", suffix: str = "", previous_reference_rss_value_and_label: tuple[int, str] | None = None
+) -> RamUsageMonitor.Measure:
+    current_ram = ram_usage_monitor.measure_now()
 
     comparison_text = ""
     if previous_reference_rss_value_and_label:
         previous_reference_rss_value = previous_reference_rss_value_and_label[0]
         previous_reference_rss_label = previous_reference_rss_value_and_label[1]
-        delta_rss_since_reference = current_ram_rss - previous_reference_rss_value
+        delta_rss_since_reference = current_ram.ram_usage_int - previous_reference_rss_value
         comparison_text = (
             f". Evolution since {previous_reference_rss_label} : {humanize.naturalsize(delta_rss_since_reference)}"
         )
 
-    to_print_and_log = f"{prefix} current ram:{humanize.naturalsize(current_ram_rss)} {comparison_text} {suffix}"
+    to_print_and_log = f"{prefix} current ram:{current_ram.ram_usage_human_readable} {comparison_text} {suffix}"
 
     log_timestamp = time.asctime(time.localtime(time.time()))
 
@@ -691,4 +681,4 @@ def print_and_log_current_ram_usage(
     print(log_timestamp + "\t" + __get_calling_file_name_and_line_number() + "\t" + to_print_and_log)
     logging.info(f"{__get_calling_file_name_and_line_number()} \t {to_print_and_log}")
 
-    return current_ram_rss
+    return current_ram
