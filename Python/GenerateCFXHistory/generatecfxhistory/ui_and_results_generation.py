@@ -229,7 +229,7 @@ def produce_displays_and_create_graph_files_number_of_cfx_by_state_per_date(
     generation_label: str,
     generation_label_for_valid_file_name: str,
 ) -> None:
-    before_plots_computation_ram_rss = cast(int, psutil.Process(os.getpid()).memory_info().rss)
+    before_plots_measure = logger_config.ram_usage_monitor.measure_now()
 
     # Create a figure and axis
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -302,7 +302,7 @@ def produce_displays_and_create_graph_files_number_of_cfx_by_state_per_date(
         plt.clf()
         plt.close(fig)
 
-    logger_config.print_and_log_current_ram_usage(prefix="After UI computation", previous_reference_rss_value_and_label=[before_plots_computation_ram_rss, "Compared to before UI computation"])
+    logger_config.print_and_log_current_ram_usage(prefix="After UI computation", previous_measure_and_label=[before_plots_measure, "Compared to before UI computation"])
 
 
 def produce_baregraph_number_of_cfx(
