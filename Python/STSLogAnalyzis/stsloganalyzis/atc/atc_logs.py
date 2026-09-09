@@ -570,7 +570,7 @@ class ATCTestFile(ABC):
 
         if len(self.all_lines) % 20000 == 0:
             logger_config.print_and_log_info(
-                f"{len(self.all_lines)} lines handled so far. Duration since last chunk {date_time_formats.format_duration_between_timestamps_to_string(self.chunks_created_timestamps[-1],datetime.datetime.now()) if self.chunks_created_timestamps else 'NA'}",
+                f"{len(self.all_lines)} lines handled so far. Duration since last chunk {date_time_formats.format_duration_between_timestamps_to_string(self.chunks_created_timestamps[-1],datetime.datetime.now()) if self.chunks_created_timestamps else 'NA'}",  # noqa: DTZ005
                 print_ram_usage=len(self.chunks_created_timestamps) % 2 == 0,
             )
             self.chunks_created_timestamps.append(datetime.datetime.now())  # noqa: DTZ005

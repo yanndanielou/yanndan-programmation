@@ -124,6 +124,9 @@ class SimechResFile(atc_logs.ATCTestFile):
             except ValueError as val_err:
                 logger_config.print_and_log_exception(val_err)
                 logger_config.print_and_log_error(f"Could not parse line number {line_number} in {self.file_name} ({self.file_full_path})")
+            except AssertionError as val_err:
+                logger_config.print_and_log_exception(val_err)
+                logger_config.print_and_log_error(f"Could not parse line number {line_number} in {self.file_name} ({self.file_full_path})")
 
 
 def fix_specific_fields_values(raw_variable_values: dict[str, str]) -> int:
