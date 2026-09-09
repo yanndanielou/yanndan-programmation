@@ -391,7 +391,5 @@ class ChampFxInputsWithFilesBuilder:
                 _cfx_extended_history_files_contents=cfx_extended_history_files_contents,
                 user_and_role_data_text_file_full_path=self.user_and_role_data_text_file_full_path,
             )
-            logger_config.print_and_log_current_ram_usage(
-                prefix="After cfx inputs opened", previous_reference_rss_value_and_label=[before_cfx_inputs_opening_ram_rss, "Delta compared to before cfx inputs"]
-            )
+            logger_config.print_and_log_current_ram_usage(prefix="After cfx inputs opened", previous_measure_and_label=[before_cfx_inputs_opening_ram_rss, "Delta compared to before cfx inputs"])
             return cfx_inputs
