@@ -54,7 +54,7 @@ class SimechResFile(atc_logs.ATCTestFile):
                 self.simulation_start_at_timestamp = datetime.strptime(raw_date_as_str, date_format)  # noqa: DTZ007
                 logger_config.print_and_log_info(f"simulation_start_at parsed:{self.simulation_start_at_timestamp}", do_not_print=True)
 
-        logger_config.print_and_log_error_if(not self.simulation_start_at_timestamp, "Could not find simulation start timestamp in res file")
+        logger_config.print_and_log_error_if(not self.simulation_start_at_timestamp, f"Could not find simulation start timestamp in res file {self.file_full_path}")
 
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def compute_all_variables_states(self) -> None:
