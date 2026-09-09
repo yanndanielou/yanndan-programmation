@@ -455,7 +455,7 @@ class ATCTestFile(ABC):
         logger_config.print_and_log_info(f"Build {self.__class__.__name__} {self.file_name}", do_not_print=True)
         self.forced_cdecenie_value: None | int = None
         self.current_forced_cjour_value: None | int = None
-        self.last_chunk_created_timestamp = datetime.datetime.now()  # noqa: DTZ005
+        self.chunks_created_timestamps: list[datetime.datetime] = []
 
     def get_last_line_for_equipment(self, equipment: Equipment) -> None | ATCTestResultLine:
         for previous_line_it in reversed(self.all_lines):
@@ -534,7 +534,7 @@ class ATCTestFile(ABC):
 
         with open(self.file_full_path, mode="r", encoding="ANSI") as file:
             all_raw_lines = file.readlines()
-            logger_config.print_and_log_info(f"Perturbo file {self.file_full_path} has {len(all_raw_lines)} lines")
+            logger_config.print_and_log_info(f"Input file {self.file_full_path} has {len(all_raw_lines)} lines")
             assert all_raw_lines
             return all_raw_lines
 
@@ -570,9 +570,10 @@ class ATCTestFile(ABC):
 
         if len(self.all_lines) % 20000 == 0:
             logger_config.print_and_log_info(
-                f"{len(self.all_lines)} lines handled so far. Duration since last chunk {date_time_formats.format_duration_between_timestamps_to_string(self.last_chunk_created_timestamp,datetime.datetime.now())}"  # noqa: DTZ005
+                f"{len(self.all_lines)} lines handled so far. Duration since last chunk {date_time_formats.format_duration_between_timestamps_to_string(self.chunks_created_timestamps[-1],datetime.datetime.now()) if self.chunks_created_timestamps else 'NA'}",
+                print_ram_usage=len(self.chunks_created_timestamps) % 2 == 0,
             )
-            self.last_chunk_created_timestamp = datetime.datetime.now()  # noqa: DTZ005
+            self.chunks_created_timestamps.append(datetime.datetime.now())  # noqa: DTZ005
 
 
 @dataclass
