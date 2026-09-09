@@ -451,6 +451,7 @@ class ATCTestFile(ABC):
 
     def __post_init__(self) -> None:
         self.file_name = file_name_utils.get_file_name_without_extension_from_full_path(self.file_full_path)
+        self.number_of_lines_in_file: int = 0
         self.all_lines: list[ATCTestResultLine] = []
         logger_config.print_and_log_info(f"Build {self.__class__.__name__} {self.file_name}", do_not_print=True)
         self.forced_cdecenie_value: None | int = None
@@ -536,6 +537,7 @@ class ATCTestFile(ABC):
             all_raw_lines = file.readlines()
             logger_config.print_and_log_info(f"Input file {self.file_full_path} has {len(all_raw_lines)} lines")
             assert all_raw_lines
+            self.number_of_lines_in_file = len(all_raw_lines)
             return all_raw_lines
 
     @line_profiler.profile
@@ -570,7 +572,7 @@ class ATCTestFile(ABC):
 
         if len(self.all_lines) % 20000 == 0:
             logger_config.print_and_log_info(
-                f"{len(self.all_lines)} lines handled so far. Duration since last chunk {date_time_formats.format_duration_between_timestamps_to_string(self.chunks_created_timestamps[-1],datetime.datetime.now()) if self.chunks_created_timestamps else 'NA'}",  # noqa: DTZ005
+                f"{len(self.all_lines)}/{self.number_of_lines_in_file} lines handled so far. Duration since last chunk {date_time_formats.format_duration_between_timestamps_to_string(self.chunks_created_timestamps[-1],datetime.datetime.now()) if self.chunks_created_timestamps else 'NA'}",  # noqa: DTZ005
                 print_ram_usage=len(self.chunks_created_timestamps) % 2 == 0,
             )
             self.chunks_created_timestamps.append(datetime.datetime.now())  # noqa: DTZ005
