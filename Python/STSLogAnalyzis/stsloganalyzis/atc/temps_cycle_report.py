@@ -107,10 +107,14 @@ class OneEquipmentReport:
             f"Create report for {atc_test_result.label} {variable.equipment.name} {variable.name} from {atc_test_result.all_atc_test_files[0].file_name}", do_not_print=True
         )
 
+        self.atc_test_file_file_full_path = atc_test_result.all_atc_test_files[0].file_full_path
+        self.atc_test_result_label = atc_test_result.label
+
         self.variable_name = variable.name
         self.equipment_name = variable.equipment.name
         self.equipment_type = variable.equipment.equipment_type
         self.end_of_test_timestamp = cast(datetime.datetime, atc_test_result.all_variables_states_changes_sorted_by_timestamp[-1].previous_state.result_line.best_timestamp)
+        assert self.end_of_test_timestamp, f"{self.variable_name} {self.equipment_name} {self.atc_test_file_file_full_path}: cannot compute end_of_test_timestamp"
 
         other_interesting_variables_names = get_other_interesting_variables_names(self.equipment_type)
         self.all_unfiltered_instant_states_chronologically_sorted = [
@@ -139,9 +143,6 @@ class OneEquipmentReport:
         self.environment_name = atc_test_result.environment_name
         self.file_name = atc_test_result.all_atc_test_files[0].file_name
         self.equipment_redundancy = atc_test_result.get_equipment_redundancy_by_name(variable.equipment.name).name
-
-        self.atc_test_file_file_full_path = atc_test_result.all_atc_test_files[0].file_full_path
-        self.atc_test_result_label = atc_test_result.label
 
         self.number_relevant_values = len(self.all_relevant_values)
 
@@ -497,7 +498,7 @@ def build_temps_cycle_equipment_report_from_atc_log_result(
                     equipments_reports.append(equipment_report)
         logger_config.print_and_log_error_if(
             not at_least_one_variable_found,
-            f"No temps cycle variable {','.join(temps_cycle_variable_name_candidate)}found in {atc_test_result.all_atc_test_files[0].file_name} for equipment {equipment.name} in {atc_test_result.environment_name}",
+            f"No temps cycle variable {','.join(get_temps_cycle_variables_names_by_equipment(equipment))}found in {atc_test_result.all_atc_test_files[0].file_name} for equipment {equipment.name} in {atc_test_result.environment_name}",
         )
     return equipments_reports
 
