@@ -304,6 +304,7 @@ BIGGEST_PROJECTS_NAMES: List[str] = [
 
 INTERESTED_IN_PROJECTS_NAMES: List[str] = ["FR_NEXTEO", "ATSP"]
 
+ALSO_DO_FOR_NOT_INTERSTING_PROJECTS = False
 
 @contextmanager
 def stopwatch_with_label_and_surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, screenshots_directory_path: str) -> Generator[float, None, None]:
@@ -443,6 +444,8 @@ class SaveCfxRequestMultipagesResultsApplication:
             ):
                 self.generate_and_download_query_results_for_project_filters(change_state_cfx_query=extended_history_cfx_query)
 
+
+        if ALSO_DO_FOR_NOT_INTERSTING_PROJECTS:
         with stopwatch_with_label_and_surround_with_screenshots(
             label="generate_and_download_query_results_for_project_filters for all other projects",
             remote_web_driver=self.driver,
