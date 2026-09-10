@@ -422,11 +422,11 @@ class ArchiveAnalyzis:
         if isinstance(begin_time_to_put_in_reports, str):
             begin_time_to_put_in_reports = parser.parse(begin_time_to_put_in_reports)
 
-        rows_as_list_dict: List[Dict[str, Any]] = []
+        rows_as_list_dict: list[dict[str, Any]] = []
 
         for line_with_context in self.all_sql_arch_lines_with_context:
             if line_with_context.sql_arch_line.date.replace(tzinfo=None) > begin_time_to_put_in_reports.replace(tzinfo=None):
-                all_fields: Dict[str, constants.FIELD_TYPE] = OrderedDict()
+                all_fields: dict[str, constants.FIELD_TYPE] = OrderedDict()
                 rows_as_list_dict.append(all_fields)
                 # all_fields["Timestamp"] = line_with_context.sql_arch_line.date.replace(tzinfo=None)
                 all_fields["Timestamp"] = line_with_context.sql_arch_line.get_date_raw_str()
