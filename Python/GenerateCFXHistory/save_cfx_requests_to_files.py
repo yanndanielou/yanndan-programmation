@@ -306,6 +306,7 @@ INTERESTED_IN_PROJECTS_NAMES: List[str] = ["FR_NEXTEO", "ATSP"]
 
 ALSO_DO_FOR_NOT_INTERSTING_PROJECTS = False
 
+
 @contextmanager
 def stopwatch_with_label_and_surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, screenshots_directory_path: str) -> Generator[float, None, None]:
     """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
@@ -444,32 +445,31 @@ class SaveCfxRequestMultipagesResultsApplication:
             ):
                 self.generate_and_download_query_results_for_project_filters(change_state_cfx_query=extended_history_cfx_query)
 
-
         if ALSO_DO_FOR_NOT_INTERSTING_PROJECTS:
-        with stopwatch_with_label_and_surround_with_screenshots(
-            label="generate_and_download_query_results_for_project_filters for all other projects",
-            remote_web_driver=self.driver,
-            screenshots_directory_path=self.screenshots_output_relative_path,
-        ):
-            projects_field_filters = ProjectsFieldFilter(projects_names=set(self.projects_to_handle_list), filter_type=FilterFieldType.DIFFERENT_TO)
+            with stopwatch_with_label_and_surround_with_screenshots(
+                label="generate_and_download_query_results_for_project_filters for all other projects",
+                remote_web_driver=self.driver,
+                screenshots_directory_path=self.screenshots_output_relative_path,
+            ):
+                projects_field_filters = ProjectsFieldFilter(projects_names=set(self.projects_to_handle_list), filter_type=FilterFieldType.DIFFERENT_TO)
 
-            self.generate_and_download_query_results_for_project_filters(
-                change_state_cfx_query=CfxQuery(
-                    projects_field_filters=projects_field_filters,
-                    query_id=PROJECT_MANUAL_SELECTION_CHANGE_STATE_QUERY_ID,
-                    output_file_name_without_extension="states_changes_other_projects",
-                    output_file_type=QueryOutputFileType.EXCEL_EXPORT,
+                self.generate_and_download_query_results_for_project_filters(
+                    change_state_cfx_query=CfxQuery(
+                        projects_field_filters=projects_field_filters,
+                        query_id=PROJECT_MANUAL_SELECTION_CHANGE_STATE_QUERY_ID,
+                        output_file_name_without_extension="states_changes_other_projects",
+                        output_file_type=QueryOutputFileType.EXCEL_EXPORT,
+                    )
                 )
-            )
 
-            self.generate_and_download_query_results_for_project_filters(
-                change_state_cfx_query=CfxQuery(
-                    projects_field_filters=projects_field_filters,
-                    query_id=PROJECT_MANUAL_SELECTION_DETAIL_QUERY_ID,
-                    output_file_name_without_extension="details_project_other_projects",
-                    output_file_type=QueryOutputFileType.EXCEL_EXPORT,
+                self.generate_and_download_query_results_for_project_filters(
+                    change_state_cfx_query=CfxQuery(
+                        projects_field_filters=projects_field_filters,
+                        query_id=PROJECT_MANUAL_SELECTION_DETAIL_QUERY_ID,
+                        output_file_name_without_extension="details_project_other_projects",
+                        output_file_type=QueryOutputFileType.EXCEL_EXPORT,
+                    )
                 )
-            )
 
     def generate_and_download_query_results_for_project_filters(self, change_state_cfx_query: CfxQuery, number_of_retry_if_failure: int = 3) -> None:
 
