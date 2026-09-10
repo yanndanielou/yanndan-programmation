@@ -24,16 +24,12 @@ def main() -> None:
         temps_cycle_report.process_root_folders_and_environments(
             [
                 temps_cycle_report.InputFilesInstruction(
-                    environment_name="PLT_SYST_x redondé RL3A02 Conf30",
-                    root_result_files_folder_path=r"C:\D\temp\mesures_temps_cycle_usine\PLT_SYST_1_RL3a.0.2_Conf_30_redondé",
-                ),
-                temps_cycle_report.InputFilesInstruction(
                     environment_name="PLT_SYST_1 RL3A02 Conf30",
                     root_result_files_folder_path=r"C:\D\temp\mesures_temps_cycle_usine\PLT_SYST_1_RL3a.0.2_Conf_30",
                 ),
                 temps_cycle_report.InputFilesInstruction(
                     environment_name="PLT_SYST_2 RL3A02 Conf30",
-                    root_result_files_folder_path=r"C:\D\temp\mesures_temps_cycle_usine\PLT_SYST_2_RL3a.0.2_Conf_30",
+                    root_result_files_folder_path=r"C:\D\temp\mesures_temps_cycle_usine\PLT_SYST_2_RL3a.0.2_Conf_30__",
                 ),
             ],
         )
