@@ -1,5 +1,6 @@
 # Standard
 
+import urllib3
 import inspect
 import logging
 import os
@@ -9,15 +10,15 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import List, Optional, Set
 
+import selenium
 from common import download_utils, file_utils, web_driver_utils
 
 # Other libraries
 from logger import logger_config
 
 # Third Party
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.common.by import By
@@ -76,7 +77,7 @@ class QueryOutputFileType(Enum):
 
 @dataclass
 class ProjectsFieldFilter:
-    projects_names: Set[str] | List[str]
+    projects_names: set[str] | list[str]
     filter_type: FilterFieldType
 
 
@@ -85,13 +86,13 @@ class CfxQuery:
     output_file_name_without_extension: str
     query_id: int
     output_file_type: QueryOutputFileType
-    projects_field_filters: Optional[ProjectsFieldFilter] = None
+    projects_field_filters: ProjectsFieldFilter | None = None
 
     def __post_init__(self) -> None:
         self.label = self.output_file_name_without_extension
 
 
-BIGGEST_PROJECTS_NAMES: List[str] = [
+BIGGEST_PROJECTS_NAMES = [
     "SA_RMP_COM",
     "SA_RMP_REL",
     "ESBO",
@@ -302,7 +303,7 @@ BIGGEST_PROJECTS_NAMES: List[str] = [
     "WCCT",
 ]
 
-INTERESTED_IN_PROJECTS_NAMES: List[str] = ["FR_NEXTEO", "ATSP"]
+INTERESTED_IN_PROJECTS_NAMES = ["FR_NEXTEO", "ATSP"]
 
 ALSO_DO_FOR_NOT_INTERSTING_PROJECTS = False
 
@@ -324,7 +325,7 @@ def stopwatch_with_label_and_surround_with_screenshots(label: str, remote_web_dr
     log_timestamp = time.asctime(time.localtime(time.time()))
 
     print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
-    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")  # pylint: disable=logging-fstring-interpolation
+    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")  # pylint: disable=logging-fstring-interpolation  # noqa: LOG015
 
     debut = time.perf_counter()
     yield time.perf_counter() - debut
@@ -340,7 +341,7 @@ def stopwatch_with_label_and_surround_with_screenshots(label: str, remote_web_dr
     # pylint: disable=line-too-long
     print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
 
-    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")  # pylint: disable=logging-fstring-interpolation
+    logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")  # pylint: disable=logging-fstring-interpolation  # noqa: LOG015
 
 
 @contextmanager
@@ -354,7 +355,8 @@ def surround_with_screenshots(label: str, remote_web_driver: ChromiumDriver, scr
 
 @dataclass
 class SaveCfxRequestMultipagesResultsApplication:
-    projects_to_handle_list: List[str]
+    interesting_projects_list_handle_list: list[str]
+    biggest_projects_names: list[str]
     output_parent_directory_name: str = OUTPUT_PARENT_DIRECTORY_DEFAULT_NAME
     output_downloaded_files_final_directory_path: str = DOWNLOADED_FILES_FINAL_DIRECTORY
     web_browser_download_directory = DEFAULT_DOWNLOAD_DIRECTORY
@@ -394,7 +396,30 @@ class SaveCfxRequestMultipagesResultsApplication:
         # pylint: disable=line-too-long
         print(log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
 
-        logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")  # pylint: disable=logging-fstring-interpolation
+        logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")  # pylint: disable=logging-fstring-interpolation  # noqa: LOG015
+
+    def handle_project(self, project_name: str) -> None:
+        projects_field_filter = ProjectsFieldFilter(projects_names=[project_name], filter_type=FilterFieldType.EQUAL_TO)
+        change_state_cfx_query = CfxQuery(
+            projects_field_filters=projects_field_filter,
+            query_id=PROJECT_MANUAL_SELECTION_CHANGE_STATE_QUERY_ID,
+            output_file_name_without_extension=f"states_changes_project_{project_name}",
+            output_file_type=QueryOutputFileType.EXCEL_EXPORT,
+        )
+        extended_history_cfx_query = CfxQuery(
+            projects_field_filters=projects_field_filter,
+            query_id=PROJECT_MANUAL_SELECTION_DETAIL_QUERY_ID,
+            output_file_name_without_extension=f"details_project_{project_name}",
+            output_file_type=QueryOutputFileType.EXCEL_EXPORT,
+        )
+        logger_config.print_and_log_info(f"Handling project {project_name}")
+        with logger_config.stopwatch_with_label(f"generate_and_dowload_query_for_project:{project_name} {change_state_cfx_query.label} {change_state_cfx_query.output_file_name_without_extension}"):
+            self.generate_and_download_query_results_for_project_filters(change_state_cfx_query=change_state_cfx_query)
+        logger_config.print_and_log_info(f"Handling project {project_name}")
+        with logger_config.stopwatch_with_label(
+            f"generate_and_dowload_query_for_project:{project_name} {extended_history_cfx_query.label} {extended_history_cfx_query.output_file_name_without_extension}"
+        ):
+            self.generate_and_download_query_results_for_project_filters(change_state_cfx_query=extended_history_cfx_query)
 
     def run(self) -> None:
 
@@ -420,38 +445,25 @@ class SaveCfxRequestMultipagesResultsApplication:
             )
         )
 
-        for project_name in self.projects_to_handle_list:
-            projects_field_filter = ProjectsFieldFilter(projects_names=[project_name], filter_type=FilterFieldType.EQUAL_TO)
-            change_state_cfx_query = CfxQuery(
-                projects_field_filters=projects_field_filter,
-                query_id=PROJECT_MANUAL_SELECTION_CHANGE_STATE_QUERY_ID,
-                output_file_name_without_extension=f"states_changes_project_{project_name}",
-                output_file_type=QueryOutputFileType.EXCEL_EXPORT,
-            )
-            extended_history_cfx_query = CfxQuery(
-                projects_field_filters=projects_field_filter,
-                query_id=PROJECT_MANUAL_SELECTION_DETAIL_QUERY_ID,
-                output_file_name_without_extension=f"details_project_{project_name}",
-                output_file_type=QueryOutputFileType.EXCEL_EXPORT,
-            )
-            logger_config.print_and_log_info(f"Handling project {project_name}")
-            with logger_config.stopwatch_with_label(
-                f"generate_and_dowload_query_for_project:{project_name} {change_state_cfx_query.label} {change_state_cfx_query.output_file_name_without_extension}"
-            ):
-                self.generate_and_download_query_results_for_project_filters(change_state_cfx_query=change_state_cfx_query)
-            logger_config.print_and_log_info(f"Handling project {project_name}")
-            with logger_config.stopwatch_with_label(
-                f"generate_and_dowload_query_for_project:{project_name} {extended_history_cfx_query.label} {extended_history_cfx_query.output_file_name_without_extension}"
-            ):
-                self.generate_and_download_query_results_for_project_filters(change_state_cfx_query=extended_history_cfx_query)
+        for project_name in self.interesting_projects_list_handle_list:
+            self.handle_project(project_name)
 
         if ALSO_DO_FOR_NOT_INTERSTING_PROJECTS:
+
+            with stopwatch_with_label_and_surround_with_screenshots(
+                label="Handle biggests projects",
+                remote_web_driver=self.driver,
+                screenshots_directory_path=self.screenshots_output_relative_path,
+            ):
+                for project_name in self.interesting_projects_list_handle_list:
+                    self.handle_project(project_name)
+
             with stopwatch_with_label_and_surround_with_screenshots(
                 label="generate_and_download_query_results_for_project_filters for all other projects",
                 remote_web_driver=self.driver,
                 screenshots_directory_path=self.screenshots_output_relative_path,
             ):
-                projects_field_filters = ProjectsFieldFilter(projects_names=set(self.projects_to_handle_list), filter_type=FilterFieldType.DIFFERENT_TO)
+                projects_field_filters = ProjectsFieldFilter(projects_names=set(self.interesting_projects_list_handle_list), filter_type=FilterFieldType.DIFFERENT_TO)
 
                 self.generate_and_download_query_results_for_project_filters(
                     change_state_cfx_query=CfxQuery(
@@ -600,7 +612,7 @@ class SaveCfxRequestMultipagesResultsApplication:
                             file_to_create_path_with_extension=f"{self.output_downloaded_files_final_directory_path}/{change_state_cfx_query.output_file_name_without_extension}{TEXT_FILE_EXTENSION}",
                         )
 
-        except Exception as e:
+        except (TimeoutError, urllib3.exceptions.ReadTimeoutError, TimeoutException, WebDriverException, urllib3.exceptions.MaxRetryError, FileNotFoundError) as e:
 
             self.number_of_exceptions_caught += 1
             logger_config.print_and_log_exception(e)
@@ -659,7 +671,7 @@ class SaveCfxRequestMultipagesResultsApplication:
         ):
             export_button.click()
 
-        file_downloaded_path: Optional[str] = download_file_detector.monitor_download_automatically_with_event_handler()
+        file_downloaded_path = download_file_detector.monitor_download_automatically_with_event_handler()
         if not file_downloaded_path:
             logger_config.print_and_log_error(f"No downloaded file found for {change_state_cfx_query.label}")
             return False
@@ -740,7 +752,8 @@ def main() -> None:
 
         application: SaveCfxRequestMultipagesResultsApplication = SaveCfxRequestMultipagesResultsApplication(
             output_parent_directory_name=output_parent_directory_name,
-            projects_to_handle_list=INTERESTED_IN_PROJECTS_NAMES + BIGGEST_PROJECTS_NAMES,
+            interesting_projects_list_handle_list=INTERESTED_IN_PROJECTS_NAMES,
+            biggest_projects_names=BIGGEST_PROJECTS_NAMES,
         )
         application.run()
 
