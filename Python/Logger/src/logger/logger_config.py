@@ -70,10 +70,8 @@ class RamUsageMonitor:
         self.all_mesures_to_write.append(new_measure)
         return new_measure
 
-    def append_pending_lines_to_file(self) -> None:
-        print_and_log_info(
-            f"Logger ram monitor usage: write {len(self.all_mesures_to_write)} pending lines to {self.output_file_path_with_extension}"
-        )
+    def save_pending_lines_to_file(self) -> None:
+        print_and_log_info(f"Logger ram monitor usage: write {len(self.all_mesures_to_write)} pending lines")
 
         with pandas.ExcelWriter(self.output_file_path_with_extension + ".xlsx") as writer:
             pandas.DataFrame(
@@ -94,8 +92,7 @@ class RamUsageMonitor:
 
     def save_and_close(self) -> None:
         self.measure_now()
-        print_and_log_info(f"Logger ram monitor usage: save and close {self.output_file_path_with_extension}")
-        self.append_pending_lines_to_file()
+        self.save_pending_lines_to_file()
         print_and_log_info("Logger ram monitor usage: saved")
 
 
@@ -315,9 +312,9 @@ def application_logger(
     to_print_and_log_lines.append(
         f"\nErrors stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " errors raised" for item in list(dict(sorted(log_counts_errors_occurrences_per_file_and_line.items(), key=lambda item: item[1])).items()))}"
     )
-    to_print_and_log_lines.append(
-        f"{application_name} : application end. Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s. Final ram usage: {ram_usage_monitor.measure_now().as_human_readable}."
-    )
+    to_print_and_log_lines.append(f"{application_name} : application end.")
+    to_print_and_log_lines.append(f"Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s.")
+    to_print_and_log_lines.append(f"Final ram usage: {ram_usage_monitor.measure_now().as_human_readable}.")
     to_print_and_log_lines.append(
         f"Logger stats: \t{'\t'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts_occurrences_per_level.items()))}"
     )
