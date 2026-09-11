@@ -115,11 +115,11 @@ def rename_file_and_wait_if_is_locked(origin_path: str, dest_path: str, constant
             logger_config.print_and_log_info(f"{origin_path} moved to {dest_path}")
             move_success = True
             return dest_path
-        except PermissionError:
-            # logger_config.print_and_log_exception(permErr)
+        except PermissionError as per_err:
             number_of_retried_performed += 1
             next_delay_in_seconds = 1 if constant_retry_interval else number_of_retried_performed
-            logger_config.print_and_log_error(f"{additional_label}File {origin_path} is used. Release it. Will wait {next_delay_in_seconds} seconds")
+            logger_config.print_and_log_error(f"{str(per_err)}\n{per_err.filename} {per_err.strerror} {per_err.filename2}", do_not_print=True)
+            logger_config.print_and_log_error(f"{additional_label}File {origin_path} or {dest_path} is used. Release it. Will wait {next_delay_in_seconds} seconds")
             time.sleep(next_delay_in_seconds)
     assert False
 
