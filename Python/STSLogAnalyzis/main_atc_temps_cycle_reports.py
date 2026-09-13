@@ -8,8 +8,14 @@ OUTPUT_DIRECTORY = "output"
 
 ENABLE_PROFILING = False
 
-# robocopy "C:\Users\fr232487\Siemens AG\ITV_ESSAIS_Usine_NEXTEO - Documents\General\Résultats Tests Plateforme Système 2\Suivi test système PTF2\RL3a.0.2\Campagne de test" "D:\temp\mesures_temps_cycle_usine\PLT_SYST_2_RL3a.0.2_Conf_30" *.res *.zip *.7z *.tar *.gz /S /R:1 /W:1
-# robocopy "C:\Users\fr232487\Siemens AG\ITV_ESSAIS_Usine_NEXTEO - Documents\General\Résultats Tests Plateforme Système 1\RL3a.0.2\Campagne de test\Conf_30" "D:\temp\mesures_temps_cycle_usine\PLT_SYST_1_RL3a.0.2_Conf_30" *.res *.zip *.7z *.tar *.gz /S /R:1 /W:1
+# fmt: off
+#robocopy "C:\Users\fr232487\Siemens AG\ITV_ESSAIS_Usine_NEXTEO - Documents\General\Résultats Tests Plateforme Système 2\Suivi test système PTF2\RL3a.0.2\Campagne de test" "D:\temp\mesures_temps_cycle\usine\PLT_SYST_2_RL3a.0.2_Conf_30\res" *.res /S /R:1 /W:1
+#robocopy "C:\Users\fr232487\Siemens AG\ITV_ESSAIS_Usine_NEXTEO - Documents\General\Résultats Tests Plateforme Système 2\Suivi test système PTF2\RL3a.0.2\Campagne de test" "D:\temp\mesures_temps_cycle\usine\PLT_SYST_2_RL3a.0.2_Conf_30\tar_gz" *.tar *.gz /S /R:1 /W:1
+#robocopy "C:\Users\fr232487\Siemens AG\ITV_ESSAIS_Usine_NEXTEO - Documents\General\Résultats Tests Plateforme Système 2\Suivi test système PTF2\RL3a.0.2\Campagne de test" "D:\temp\mesures_temps_cycle\usine\PLT_SYST_2_RL3a.0.2_Conf_30\zips" *.zip *.7z /S /R:1 /W:1
+#robocopy "C:\Users\fr232487\Siemens AG\ITV_ESSAIS_Usine_NEXTEO - Documents\General\Résultats Tests Plateforme Système 1\RL3a.0.2\Campagne de test\Conf_30" "D:\temp\mesures_temps_cycle\usine\PLT_SYST_1_RL3a.0.2_Conf_30\res" *.res /S /R:1 /W:1
+#robocopy "C:\Users\fr232487\Siemens AG\ITV_ESSAIS_Usine_NEXTEO - Documents\General\Résultats Tests Plateforme Système 1\RL3a.0.2\Campagne de test\Conf_30" "D:\temp\mesures_temps_cycle\usine\PLT_SYST_1_RL3a.0.2_Conf_30\tar_gz" *.tar *.gz /S /R:1 /W:1
+#robocopy "C:\Users\fr232487\Siemens AG\ITV_ESSAIS_Usine_NEXTEO - Documents\General\Résultats Tests Plateforme Système 1\RL3a.0.2\Campagne de test\Conf_30" "D:\temp\mesures_temps_cycle\usine\PLT_SYST_1_RL3a.0.2_Conf_30\zips" *.zip *.7z /S /R:1 /W:1
+# fmt: on
 
 
 def main() -> None:
@@ -25,11 +31,11 @@ def main() -> None:
             [
                 temps_cycle_report.InputFilesInstruction(
                     environment_name="PLT_SYST_1 RL3A02 Conf30",
-                    root_result_files_folder_path=r"C:\D\temp\mesures_temps_cycle_usine\PLT_SYST_1_RL3a.0.2_Conf_30",
+                    root_result_files_folder_path=r"C:\D\temp\mesures_temps_cycle\usine\PLT_SYST_1_RL3a.0.2_Conf_30",
                 ),
                 temps_cycle_report.InputFilesInstruction(
                     environment_name="PLT_SYST_2 RL3A02 Conf30",
-                    root_result_files_folder_path=r"C:\D\temp\mesures_temps_cycle_usine\PLT_SYST_2_RL3a.0.2_Conf_30__",
+                    root_result_files_folder_path=r"C:\D\temp\mesures_temps_cycle\usine\PLT_SYST_2_RL3a.0.2_Conf_30",
                 ),
             ],
         )
