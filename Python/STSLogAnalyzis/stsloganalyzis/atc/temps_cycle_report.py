@@ -49,7 +49,7 @@ def get_other_interesting_variables_names(equipment_type: atc_logs.EquipmentType
 
 def get_min_relevant_value_for_variable(variable_name: str) -> int | None:
     if variable_name.startswith("TEMPS_AS"):
-        return 30
+        return 80
     if variable_name.startswith("STAB_CPT"):
         return 30
     return None
