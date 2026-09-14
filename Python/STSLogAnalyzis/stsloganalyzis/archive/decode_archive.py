@@ -1,29 +1,26 @@
 import json
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from enum import Enum
-from typing import Any, Optional, Self, Set, cast
-
 from datetime import datetime
+from enum import Enum
+from typing import Any, Self, cast
+
 import humanize
 from common import date_time_formats, file_name_utils, file_utils
 from dateutil import parser
 from logger import logger_config
 
 from stsloganalyzis.archive import (
-    helpers,
-)
-from stsloganalyzis.archive import (
     constants,
     decode_action_set_content,
     decode_message,
     decode_xml_message,
     decode_zc_ats_tm_ao_sig_content,
+    helpers,
 )
-from stsloganalyzis.zone_controllers import virtual_canton_zc
-
 from stsloganalyzis.common import common_filters
 from stsloganalyzis.topology import line_topology
+from stsloganalyzis.zone_controllers import virtual_canton_zc
 
 
 class ArchiveLineTag(Enum):
@@ -35,7 +32,7 @@ class ArchiveLineTag(Enum):
 
 class SqlArchLineSignalType:
 
-    def __init__(self, identifier: str, label: Optional[str] = None) -> None:
+    def __init__(self, identifier: str, label: str | None = None) -> None:
         self.identifier = identifier
         self.label = label if label else identifier
 
@@ -89,7 +86,7 @@ sql_arch_line_signal_type_library = SqlArchLineSignalType.Library()
 class SqlArchFilter(ABC):
     def __init__(self) -> None:
         self.rejected_count: int = 0
-        self.rejected_count_by_item: dict[str, int] = dict()
+        self.rejected_count_by_item: dict[str, int] = {}
 
     def get_top_x_items_by_value(self, x: int) -> dict[str, int]:
         # Trier par valeur en ordre croissant tout en conservant les x premiers éléments
@@ -194,8 +191,8 @@ class ArchiveDecoder:
         message_manager: decode_message.InvariantMessagesManager,
         xml_message_decoder: decode_xml_message.XmlMessageDecoder,
         action_set_content_decoder: decode_action_set_content.ActionSetContentDecoder,
-        zc_ats_tm_ao_sig_content_decoder: Optional[decode_zc_ats_tm_ao_sig_content.ZcAtsTmAoSigDecoder],
-        virtual_canton_zc_library: Optional[virtual_canton_zc.VirtualCantonZcLibrary],
+        zc_ats_tm_ao_sig_content_decoder: decode_zc_ats_tm_ao_sig_content.ZcAtsTmAoSigDecoder | None,
+        virtual_canton_zc_library: virtual_canton_zc.VirtualCantonZcLibrary | None,
         railway_line: line_topology.Line,
     ) -> None:
         self.message_manager = message_manager
@@ -216,7 +213,7 @@ class ArchiveLibrary:
             self._library = ArchiveLibrary()
 
             self.archive_inputs: list[ArchiveSource] = []
-            self.archive_decoder: Optional[ArchiveDecoder] = None
+            self.archive_decoder: ArchiveDecoder | None = None
             self.sqlarch_archive_lines_filters: list[SqlArchFilter] = []
 
             self._label_is_forced = False
@@ -270,11 +267,11 @@ class ArchiveLibrary:
     def __init__(self) -> None:
         self.label = ""
 
-        self.archive_inputs: list["ArchiveSource"] = []
+        self.archive_inputs: list[ArchiveSource] = []
         self.all_archive_lines: list[ArchiveLine] = []
-        self.all_archive_lines_by_type: dict[ArchiveLineTag, list[ArchiveLine]] = dict()
-        self.all_sqlarch_archive_lines_by_id: dict[str, list[ArchiveLine]] = dict()
-        self._last_sqlarch_line_by_id: dict[str, SqlArchArchiveLine] = dict()
+        self.all_archive_lines_by_type: dict[ArchiveLineTag, list[ArchiveLine]] = {}
+        self.all_sqlarch_archive_lines_by_id: dict[str, list[ArchiveLine]] = {}
+        self._last_sqlarch_line_by_id: dict[str, SqlArchArchiveLine] = {}
         self.all_sqlarch_lines: list[SqlArchArchiveLine] = []
         self.all_version_lines: list[VersionArchiveLine] = []
         self.all_spmq_lines: list[ArchiveLine] = []
@@ -284,7 +281,7 @@ class ArchiveLibrary:
 
     @property
     def all_sqlarch_archive_lines_ids(self) -> list[str]:
-        return list(self.all_sqlarch_archive_lines_by_id.keys()) 
+        return list(self.all_sqlarch_archive_lines_by_id.keys())
 
     def handle_input(self, archive_input: "ArchiveSource") -> int:
         self.archive_inputs.append(archive_input)
@@ -352,7 +349,7 @@ class ArchiveLibrary:
             self.all_archive_lines_by_type[ArchiveLineTag[archive_line_type]] = []
         self.all_archive_lines_by_type[ArchiveLineTag[archive_line_type]].append(archive_line)
 
-    def get_all_signal_types(self) -> Set[str]:
+    def get_all_signal_types(self) -> set[str]:
         return {line.signal_type_raw for line in self.all_sqlarch_lines}
 
     def print_filter_stats_and_info(self) -> None:
@@ -418,9 +415,9 @@ class SqlArchArchiveLine(ArchiveLine):
         self.label = self.sqlarch_json_section.get("label")
         self.loc = self.sqlarch_json_section.get("loc")
 
-        self.sqlarch_fields_dict_raw: dict[str, constants.HUMAN_READABLE_FIELD_TYPE] = dict()
-        self.invariant_message: Optional[decode_message.InvariantMessage] = None
-        self.decoded_message: Optional[decode_message.DecodedMessage] = None
+        self.sqlarch_fields_dict_raw: dict[str, constants.HUMAN_READABLE_FIELD_TYPE] = {}
+        self.invariant_message: decode_message.InvariantMessage | None = None
+        self.decoded_message: decode_message.DecodedMessage | None = None
 
     def decode_message(self, archive_decoder: ArchiveDecoder) -> None:
         # Directly copy all items from SQLARCH section into a new dictionary
@@ -464,7 +461,7 @@ class SqlArchArchiveLine(ArchiveLine):
     def _get_print_prefix(self) -> str:
         return f"{self.date_raw}\t{self.id_field}\t"
 
-    def get_all_changes_since_previous(self, previous_line_for_this_id: Optional["SqlArchArchiveLine"]) -> list[OrderedDict[str, Any]]:
+    def get_all_changes_since_previous(self, previous_line_for_this_id: "SqlArchArchiveLine | None") -> list[OrderedDict[str, Any]]:
         to_ret: list[OrderedDict[str, Any]] = []
 
         previous_date = previous_line_for_this_id.date if previous_line_for_this_id else None
@@ -499,7 +496,7 @@ class SqlArchArchiveLine(ArchiveLine):
         else:
 
             # If decoded message exists, show only decoded message fields that changed
-            for field_name in self.decoded_message.decoded_fields_flat_directory.keys():
+            for field_name in self.decoded_message.decoded_fields_flat_directory:
 
                 # if field_name not in constants.FIELD_FULL_NAMES_TO_EXCLUDE_IN_REPORTS and not any(field_name.startswith(prefix) for prefix in constants.FIELD_NAMES_PREFIXES_TO_EXCLUDE_IN_REPORTS):
                 if not helpers.is_field_name_to_be_ignored(field_name=field_name):
@@ -532,7 +529,7 @@ class SqlArchArchiveLine(ArchiveLine):
 
         return to_ret
 
-    def print_all_changes_since_previous(self, white_list_signal_types: Optional[list[SqlArchLineSignalType]], previous_line_for_this_id: "SqlArchArchiveLine") -> None:
+    def print_all_changes_since_previous(self, white_list_signal_types: list[SqlArchLineSignalType] | None, previous_line_for_this_id: "SqlArchArchiveLine") -> None:
 
         field_names_to_ignore = ["Time"]
 
@@ -556,7 +553,7 @@ class SqlArchArchiveLine(ArchiveLine):
             else:
                 # If decoded message exists, show only decoded message fields that changed
                 if previous_line_for_this_id.decoded_message:
-                    for field_name in self.decoded_message.decoded_fields_flat_directory.keys():
+                    for field_name in self.decoded_message.decoded_fields_flat_directory:
                         if field_name not in field_names_to_ignore:
                             new_field = self.decoded_message.decoded_fields_flat_directory.get(field_name)
                             previous_field = previous_line_for_this_id.decoded_message.decoded_fields_flat_directory.get(field_name)
@@ -599,8 +596,7 @@ class ArchiveFile(ArchiveSource):
 
     def _open_and_get_all_archive_file_lines(self) -> list[str]:
 
-        with logger_config.stopwatch_with_label(f"Open and read archive file lines {self.file_full_path}", monitor_ram_usage=True):
-            with open(self.file_full_path, mode="r", encoding="utf-8") as file:
-                all_raw_lines = file.readlines()
-                logger_config.print_and_log_info(f"Archive file {self.file_full_path} has {len(all_raw_lines)} lines")
-                return all_raw_lines
+        with logger_config.stopwatch_with_label(f"Open and read archive file lines {self.file_full_path}", monitor_ram_usage=True) and open(self.file_full_path, mode="r", encoding="utf-8") as file:
+            all_raw_lines = file.readlines()
+            logger_config.print_and_log_info(f"Archive file {self.file_full_path} has {len(all_raw_lines)} lines")
+            return all_raw_lines

@@ -1,8 +1,7 @@
 import json
 import re
-from enum import Enum
-from typing import Dict, List
 from datetime import datetime
+from enum import Enum
 
 
 class WhiteOrBlackListFilterType(Enum):
@@ -20,14 +19,14 @@ class StringFilterType(Enum):
 
 class StringFieldValueBasedFilter:
 
-    def __init__(self, white_or_black_list: WhiteOrBlackListFilterType, field_values: List[str], filter_type: StringFilterType) -> None:
+    def __init__(self, white_or_black_list: WhiteOrBlackListFilterType, field_values: list[str], filter_type: StringFilterType) -> None:
         super().__init__()
         self.white_or_black_list = white_or_black_list
         self.is_whitelist = white_or_black_list == WhiteOrBlackListFilterType.WHITELIST
         self.filter_type = filter_type
         self.filter_field_values = field_values
         self.rejected_count: int = 0
-        self.rejected_count_by_item: Dict[str, int] = dict()
+        self.rejected_count_by_item: dict[str, int] = {}
 
     def do_passes(self, string_value: str) -> bool:
         try:
@@ -56,6 +55,10 @@ class StringFieldValueBasedFilter:
             return ret
         except (TypeError, ValueError, json.JSONDecodeError, KeyError):
             return False
+
+
+def must_be_kept_after_string_filters(to_test: str, all_filters: None | list[StringFieldValueBasedFilter]) -> bool:
+    return all(filter.do_passes(to_test) for filter in all_filters) if all_filters else True
 
 
 class DatesFilter:
