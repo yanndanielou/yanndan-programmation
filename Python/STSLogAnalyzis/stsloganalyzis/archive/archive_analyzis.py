@@ -3,9 +3,9 @@ from __future__ import annotations
 import copy
 from collections import OrderedDict
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import IntEnum
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Optional, Tuple, cast
 
 import humanize
 from common import date_time_formats, reports_utils
@@ -13,6 +13,7 @@ from dateutil import parser
 from logger import logger_config
 
 from stsloganalyzis.archive import constants, decode_archive, decode_message, decode_product_topology_dependant_messages_content, helpers
+from stsloganalyzis.common import common_filters
 from stsloganalyzis.topology import line_topology
 
 
@@ -53,7 +54,7 @@ class Train:
     cc_id_with_offset: int
 
     def __post_init__(self) -> None:
-        self.all_locations: List[TrainLocation] = []
+        self.all_locations: list[TrainLocation] = []
 
         self.all_locations = [
             TrainLocation(train=self, segment_number_and_offset_field_prefix=location_label) for location_label in ["ExtFront", "IntFront", "ExtRear", "IntRear", "NvFront", "NvRear"]
@@ -67,9 +68,8 @@ class Train:
 
     def update_location_from_segment_and_abscissa_field_names_prefix(self, segment_and_abscissa_field_names_prefix: str, location: Optional[line_topology.ExactLocation]) -> None:
         pass
-        pass
 
-    def update_location_from_decoded_fields_flat_directory(self, decoded_fields_flat_directory: Dict[str, constants.FIELD_TYPE], railway_line: line_topology.Line) -> None:
+    def update_location_from_decoded_fields_flat_directory(self, decoded_fields_flat_directory: dict[str, constants.FIELD_TYPE], railway_line: line_topology.Line) -> None:
 
         for location in self.all_locations:
             exact_location = helpers.decode_one_exact_location(
@@ -81,8 +81,8 @@ class Train:
             location.exact_location = exact_location
 
     @property
-    def field_names_and_values_in_report(self) -> List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]:
-        field_names_and_values: List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]] = []
+    def field_names_and_values_in_report(self) -> list[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]:
+        field_names_and_values: list[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]] = []
 
         for location in self.all_locations:
 
@@ -112,8 +112,8 @@ class MovementAuthorityLimitForOneZoneController:
         return 0
 
     @property
-    def field_names_and_values_in_report(self) -> List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]:
-        field_names_and_values: List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]] = []
+    def field_names_and_values_in_report(self) -> list[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]:
+        field_names_and_values: list[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]] = []
         mal_tc_label = self.mal_location.get_track_circuit_id_string_if_no() if self.mal_location else "None"
         mal_tb_label = self.mal_location.get_tracking_block_id_string_if_no() if self.mal_location else "None"
         mal_cv_label = self.mal_location.get_virtual_canton_id_string_if_no() if self.mal_location else "None"
@@ -183,7 +183,7 @@ class FieldLastValue:
 class FieldsLibraryForOneObject:
     def __init__(self, line_id: str) -> None:
         self.object_id = line_id
-        self.last_values: List[FieldLastValue] = []
+        self.last_values: list[FieldLastValue] = []
 
     def get_field(self, field_name: str) -> Optional[FieldLastValue]:
         fields_found = [field_found for field_found in self.last_values if field_found.field_name == field_name]
@@ -216,7 +216,7 @@ class SqlArchArchiveLineWithContext:
     sql_arch_line: decode_archive.SqlArchArchiveLine
     previous_line_for_this_id: Optional[SqlArchArchiveLineWithContext]
     archive_analyzis: ArchiveAnalyzis
-    all_fields_changed: List[FieldLastValue]
+    all_fields_changed: list[FieldLastValue]
 
     def __post_init__(self) -> None:
         self.all_fields_changed = copy.deepcopy(self.all_fields_changed)
@@ -227,8 +227,8 @@ class SqlArchArchiveLineWithContext:
         return ret
 
     @property
-    def decoded_fields_flat_directory_except_fields_to_ignore(self) -> Dict[str, constants.FIELD_TYPE]:
-        ret: Dict[str, constants.FIELD_TYPE] = dict()
+    def decoded_fields_flat_directory_except_fields_to_ignore(self) -> dict[str, constants.FIELD_TYPE]:
+        ret: dict[str, constants.FIELD_TYPE] = dict()
         if self.decoded_message:
             for field_name, field_value in self.decoded_message.decoded_fields_flat_directory.items():
                 if not helpers.is_field_name_to_be_ignored(field_name=field_name):
@@ -239,8 +239,8 @@ class SqlArchArchiveLineWithContext:
                     ret[field_name] = field_value
         return ret
 
-    def get_all_changes_since_previous(self) -> List[OrderedDict[str, Any]]:
-        to_ret: List[OrderedDict[str, Any]] = []
+    def get_all_changes_since_previous(self) -> list[OrderedDict[str, Any]]:
+        to_ret: list[OrderedDict[str, Any]] = []
 
         for changed_field in self.all_fields_changed:
 
@@ -281,12 +281,12 @@ class ArchiveAnalyzis:
     output_directory_path = "output"
 
     def __post_init__(self) -> None:
-        self.trains: List[Train] = []
-        self.zone_controllers: List[ZoneController] = []
+        self.trains: list[Train] = []
+        self.zone_controllers: list[ZoneController] = []
 
-        self.all_sql_arch_lines_with_context: List[SqlArchArchiveLineWithContext] = []
-        self.current_latest_line_by_id: Dict[str, SqlArchArchiveLineWithContext] = dict()
-        self.latest_fields_values_by_object_id: Dict[str, FieldsLibraryForOneObject] = dict()
+        self.all_sql_arch_lines_with_context: list[SqlArchArchiveLineWithContext] = []
+        self.current_latest_line_by_id: dict[str, SqlArchArchiveLineWithContext] = dict()
+        self.latest_fields_values_by_object_id: dict[str, FieldsLibraryForOneObject] = dict()
 
         self.handle_lines()
 
@@ -298,9 +298,9 @@ class ArchiveAnalyzis:
             return self.get_or_create_zone_controller(zone_controller_id)
 
         assert len(zone_controllers_found) == 1
-        return zone_controllers_found[0]
+        return cast(ZoneController, zone_controllers_found[0])
 
-    def get_or_create_train_by_cc_id_field_name(self, decoded_fields_flat_directory: Dict[str, constants.FIELD_TYPE], cc_id_field_name: str) -> Train:
+    def get_or_create_train_by_cc_id_field_name(self, decoded_fields_flat_directory: dict[str, constants.FIELD_TYPE], cc_id_field_name: str) -> Train:
         train_cc_id = decoded_fields_flat_directory.get("CCId1")
         assert isinstance(train_cc_id, int)
         return self.get_or_create_train_by_cc_id(cc_id_with_offset=train_cc_id)
@@ -315,14 +315,14 @@ class ArchiveAnalyzis:
         assert len(trains_found) == 1
         return trains_found[0]
 
-    def update_field_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine, field_name: str, field_value: constants.HUMAN_READABLE_FIELD_TYPE) -> List[FieldLastValue]:
+    def update_field_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine, field_name: str, field_value: constants.HUMAN_READABLE_FIELD_TYPE) -> list[FieldLastValue]:
         return self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=[(field_name, field_value)])
 
-    def update_fields_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine, fields_names_and_values: List[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]) -> List[FieldLastValue]:
+    def update_fields_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine, fields_names_and_values: list[Tuple[str, constants.HUMAN_READABLE_FIELD_TYPE]]) -> list[FieldLastValue]:
         object_id = sql_arch_line.id_field
         timestamp = sql_arch_line.date
 
-        all_fields_changed: List[FieldLastValue] = []
+        all_fields_changed: list[FieldLastValue] = []
 
         if object_id not in self.latest_fields_values_by_object_id:
             self.latest_fields_values_by_object_id[object_id] = FieldsLibraryForOneObject(object_id)
@@ -335,10 +335,10 @@ class ArchiveAnalyzis:
 
         return all_fields_changed
 
-    def update_latest_raw_fields_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine) -> List[FieldLastValue]:
+    def update_latest_raw_fields_for_line(self, sql_arch_line: decode_archive.SqlArchArchiveLine) -> list[FieldLastValue]:
         """returns all fields changed"""
         if sql_arch_line.decoded_message:
-            fields_changed: List[FieldLastValue] = []
+            fields_changed: list[FieldLastValue] = []
             for field_name in sql_arch_line.decoded_message.decoded_fields_flat_directory.keys():
                 field_value = sql_arch_line.decoded_message.get_field_value_human_readable(field_name)
                 fields_changed += self.update_field_for_line(sql_arch_line=sql_arch_line, field_name=field_name, field_value=field_value)
@@ -352,8 +352,8 @@ class ArchiveAnalyzis:
     def decode_zc_mal_message(
         self,
         sql_arch_line: decode_archive.SqlArchArchiveLine,
-    ) -> List[FieldLastValue]:
-        all_fields_changed: List[FieldLastValue] = []
+    ) -> list[FieldLastValue]:
+        all_fields_changed: list[FieldLastValue] = []
 
         decoded_message = sql_arch_line.decoded_message
         assert decoded_message is not None
@@ -389,7 +389,7 @@ class ArchiveAnalyzis:
     def decode_cc_ats_tracking_message(
         self,
         sql_arch_line: decode_archive.SqlArchArchiveLine,
-    ) -> List[FieldLastValue]:
+    ) -> list[FieldLastValue]:
         assert sql_arch_line.decoded_message is not None
         train = self.get_or_create_train_by_cc_id_field_name(decoded_fields_flat_directory=sql_arch_line.decoded_message.decoded_fields_flat_directory, cc_id_field_name="CCId1")
         train.update_location_from_decoded_fields_flat_directory(decoded_fields_flat_directory=sql_arch_line.decoded_message.decoded_fields_flat_directory, railway_line=self.railway_line)
@@ -480,7 +480,7 @@ class ArchiveAnalyzis:
         if output_directory_path is None:
             output_directory_path = self.output_directory_path
 
-        rows_as_list_dict: List[Dict[str, Any]] = []
+        rows_as_list_dict: list[dict[str, Any]] = []
 
         for line_with_context in self.all_sql_arch_lines_with_context:
             # all_changes_since_previous = line_with_context.sql_arch_line.get_all_changes_since_previous(
@@ -499,3 +499,66 @@ class ArchiveAnalyzis:
             split_big_files=False,
         )
         return len(rows_as_list_dict)
+    @dataclass
+    class GroupToCreateForFrequencyReportDefinition:
+        label: str
+        archive_id_filters: list[common_filters.StringFieldValueBasedFilter]
+    @dataclass
+    class GroupForFrequencyReport:
+        identifiers: list[str]
+        label: str
+
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+    def create_output_with_frequencies_of_terms(
+        self,
+        groups_to_create_split_by_id: list[GroupToCreateForFrequencyReportDefinition],
+        frequency_between_measures: timedelta,
+        file_base_name: str | None = None,
+    ) -> None:
+        if file_base_name is None:
+            file_base_name = f"{self.label}_all_fields"
+
+        rows_as_list_dict: list[dict[str, Any]] = []
+
+        groups_created: list[ArchiveAnalyzis.GroupForFrequencyReport] = []
+
+        for group_to_create in groups_to_create_split_by_id:
+
+            pass
+
+        current_measure_begin_timestamp = self.all_sql_arch_lines_with_context[0].sql_arch_line.date
+        end_data_timestamp = self.all_sql_arch_lines_with_context[0].sql_arch_line.date
+
+        current_mesure_end_timestamp = current_measure_begin_timestamp
+
+        while current_mesure_end_timestamp < end_data_timestamp:
+            current_mesure_end_timestamp += frequency_between_measures
+
+            all_rows_in_measure_interval = [
+                line_with_context
+                for line_with_context in self.all_sql_arch_lines_with_context
+                if line_with_context.sql_arch_line.date >= current_measure_begin_timestamp and line_with_context.sql_arch_line.date < current_mesure_end_timestamp
+            ]
+
+            current_row = OrderedDict(
+                {
+                    "Interval begin": current_measure_begin_timestamp,
+                    "Interval end": current_mesure_end_timestamp,
+                }
+            )
+
+            for group in groups_created:
+                pass
+
+            rows_as_list_dict.append(current_row)
+
+            current_measure_begin_timestamp = current_mesure_end_timestamp
+
+        # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
+        reports_utils.save_rows_to_output_files(
+            rows_as_list_dict=rows_as_list_dict,
+            file_base_name=file_base_name + "_by_column",
+            output_directory_path=self.output_directory_path,
+            suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
+            split_big_files=False,
+        )
