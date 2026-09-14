@@ -2,7 +2,7 @@ import json
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from enum import Enum
-from typing import Any, Dict, List, Optional, Self, Set, cast
+from typing import Any, Optional, Self, Set, cast
 
 from datetime import datetime
 import humanize
@@ -41,7 +41,7 @@ class SqlArchLineSignalType:
 
     class Library:
         def __init__(self) -> None:
-            self.all_types: List[SqlArchLineSignalType] = []
+            self.all_types: list[SqlArchLineSignalType] = []
             for type_str in [
                 "TRAIN",
                 "TCA",
@@ -89,9 +89,9 @@ sql_arch_line_signal_type_library = SqlArchLineSignalType.Library()
 class SqlArchFilter(ABC):
     def __init__(self) -> None:
         self.rejected_count: int = 0
-        self.rejected_count_by_item: Dict[str, int] = dict()
+        self.rejected_count_by_item: dict[str, int] = dict()
 
-    def get_top_x_items_by_value(self, x: int) -> Dict[str, int]:
+    def get_top_x_items_by_value(self, x: int) -> dict[str, int]:
         # Trier par valeur en ordre croissant tout en conservant les x premiers éléments
         sorted_items = sorted(self.rejected_count_by_item.items(), key=lambda item: item[1])[:x]
         # Convertir en dictionnaire
@@ -122,7 +122,7 @@ class SqlArchFilter(ABC):
 
 class SqlArchLineStringFieldValueBasedFilter(SqlArchFilter):
 
-    def __init__(self, white_or_black_list: common_filters.WhiteOrBlackListFilterType, field_name: str, field_values: List[str], filter_type: common_filters.StringFilterType) -> None:
+    def __init__(self, white_or_black_list: common_filters.WhiteOrBlackListFilterType, field_name: str, field_values: list[str], filter_type: common_filters.StringFilterType) -> None:
         super().__init__()
         self.field_name = field_name
         self.string_filter = common_filters.StringFieldValueBasedFilter(white_or_black_list=white_or_black_list, filter_type=filter_type, field_values=field_values)
@@ -147,14 +147,14 @@ class SqlArchLineStringFieldValueBasedFilter(SqlArchFilter):
 
 
 class IdFilter(SqlArchLineStringFieldValueBasedFilter):
-    def __init__(self, field_values: str | List[str], filter_type: common_filters.StringFilterType, white_or_black_list: common_filters.WhiteOrBlackListFilterType) -> None:
+    def __init__(self, field_values: str | list[str], filter_type: common_filters.StringFilterType, white_or_black_list: common_filters.WhiteOrBlackListFilterType) -> None:
         if isinstance(field_values, str):
             field_values = [field_values]
         super().__init__(white_or_black_list=white_or_black_list, field_name="id", field_values=field_values, filter_type=filter_type)
 
 
 class SignalTypeFilter(SqlArchLineStringFieldValueBasedFilter):
-    def __init__(self, white_or_black_list: common_filters.WhiteOrBlackListFilterType, field_values: List[str], filter_type: common_filters.StringFilterType) -> None:
+    def __init__(self, white_or_black_list: common_filters.WhiteOrBlackListFilterType, field_values: list[str], filter_type: common_filters.StringFilterType) -> None:
         super().__init__(white_or_black_list=white_or_black_list, field_values=field_values, field_name="sigT", filter_type=filter_type)
 
 
@@ -215,9 +215,9 @@ class ArchiveLibrary:
         def __init__(self) -> None:
             self._library = ArchiveLibrary()
 
-            self.archive_inputs: List[ArchiveSource] = []
+            self.archive_inputs: list[ArchiveSource] = []
             self.archive_decoder: Optional[ArchiveDecoder] = None
-            self.sqlarch_archive_lines_filters: List[SqlArchFilter] = []
+            self.sqlarch_archive_lines_filters: list[SqlArchFilter] = []
 
             self._label_is_forced = False
 
@@ -226,7 +226,7 @@ class ArchiveLibrary:
             self._label_is_forced = True
             return self
 
-        def add_raw_archives_json_lines(self, raw_archives_json_lines: List[str]) -> Self:
+        def add_raw_archives_json_lines(self, raw_archives_json_lines: list[str]) -> Self:
             self.archive_inputs.append(ArchiveLinesSet(raw_archives_json_lines=raw_archives_json_lines))
             return self
 
@@ -270,16 +270,21 @@ class ArchiveLibrary:
     def __init__(self) -> None:
         self.label = ""
 
-        self.archive_inputs: List["ArchiveSource"] = []
-        self.all_archive_lines: List[ArchiveLine] = []
-        self.all_archive_lines_by_type: Dict[ArchiveLineTag, List[ArchiveLine]] = dict()
-        self._last_sqlarch_line_by_id: Dict[str, SqlArchArchiveLine] = dict()
-        self.all_sqlarch_lines: List[SqlArchArchiveLine] = []
-        self.all_version_lines: List[VersionArchiveLine] = []
-        self.all_spmq_lines: List[ArchiveLine] = []
-        self.all_alarm_lines: List[ArchiveLine] = []
-        self.sqlarch_archive_lines_filters: List[SqlArchFilter] = []
+        self.archive_inputs: list["ArchiveSource"] = []
+        self.all_archive_lines: list[ArchiveLine] = []
+        self.all_archive_lines_by_type: dict[ArchiveLineTag, list[ArchiveLine]] = dict()
+        self.all_sqlarch_archive_lines_by_id: dict[str, list[ArchiveLine]] = dict()
+        self._last_sqlarch_line_by_id: dict[str, SqlArchArchiveLine] = dict()
+        self.all_sqlarch_lines: list[SqlArchArchiveLine] = []
+        self.all_version_lines: list[VersionArchiveLine] = []
+        self.all_spmq_lines: list[ArchiveLine] = []
+        self.all_alarm_lines: list[ArchiveLine] = []
+        self.sqlarch_archive_lines_filters: list[SqlArchFilter] = []
         self.total_sqlarch_lines_processed: int = 0
+
+    @property
+    def all_sqlarch_archive_lines_ids(self) -> list[str]:
+        return list(self.all_sqlarch_archive_lines_by_id.keys()) 
 
     def handle_input(self, archive_input: "ArchiveSource") -> int:
         self.archive_inputs.append(archive_input)
@@ -325,6 +330,10 @@ class ArchiveLibrary:
             archive_line = SqlArchArchiveLine(full_raw_archive_line=line, parent=parent)
             self._last_sqlarch_line_by_id[archive_line.id_field] = archive_line
 
+            if archive_line.id_field not in self.all_sqlarch_archive_lines_by_id:
+                self.all_sqlarch_archive_lines_by_id[archive_line.id_field] = []
+            self.all_sqlarch_archive_lines_by_id[archive_line.id_field].append(archive_line)
+
             parent.all_sqlarch_lines.append(archive_line)
             self.all_sqlarch_lines.append(archive_line)
         elif line.startswith(ARCHIVE_SPMQ_LINE_PREFIX):
@@ -341,7 +350,6 @@ class ArchiveLibrary:
 
         if archive_line_type not in self.all_archive_lines_by_type:
             self.all_archive_lines_by_type[ArchiveLineTag[archive_line_type]] = []
-
         self.all_archive_lines_by_type[ArchiveLineTag[archive_line_type]].append(archive_line)
 
     def get_all_signal_types(self) -> Set[str]:
@@ -364,15 +372,15 @@ class ArchiveLine:
         self.parent = parent
         self.full_raw_archive_line = full_raw_archive_line
         # Parsing JSON string
-        self.full_archive_line_as_json: Dict = json.loads(full_raw_archive_line)
+        self.full_archive_line_as_json: dict = json.loads(full_raw_archive_line)
 
         # Access global fields
         self.date_raw = self.full_archive_line_as_json["date"]
         self.date = parser.parse(self.date_raw)
-        self.tags: List[str] = self.full_archive_line_as_json["tags"]
+        self.tags: list[str] = self.full_archive_line_as_json["tags"]
         self.tag: str = self.tags[0]
 
-        self.all_fields_dict: Dict[str, constants.HUMAN_READABLE_FIELD_TYPE] = self.full_archive_line_as_json.get(self.tag, {})
+        self.all_fields_dict: dict[str, constants.HUMAN_READABLE_FIELD_TYPE] = self.full_archive_line_as_json.get(self.tag, {})
         self.all_fields_dict["date_raw"] = self.date_raw
 
     def get_date_raw_str(self) -> str:
@@ -389,7 +397,7 @@ class SqlArchArchiveLine(ArchiveLine):
         super().__init__(full_raw_archive_line=full_raw_archive_line, parent=parent)
 
         # Accessing specific fields
-        self.sqlarch_json_section: Dict[str, str | int] = self.full_archive_line_as_json["SQLARCH"]
+        self.sqlarch_json_section: dict[str, str | int] = self.full_archive_line_as_json["SQLARCH"]
 
         # Accessing specific fields
         self.caller = self.sqlarch_json_section.get("caller")
@@ -456,8 +464,8 @@ class SqlArchArchiveLine(ArchiveLine):
     def _get_print_prefix(self) -> str:
         return f"{self.date_raw}\t{self.id_field}\t"
 
-    def get_all_changes_since_previous(self, previous_line_for_this_id: Optional["SqlArchArchiveLine"]) -> List[OrderedDict[str, Any]]:
-        to_ret: List[OrderedDict[str, Any]] = []
+    def get_all_changes_since_previous(self, previous_line_for_this_id: Optional["SqlArchArchiveLine"]) -> list[OrderedDict[str, Any]]:
+        to_ret: list[OrderedDict[str, Any]] = []
 
         previous_date = previous_line_for_this_id.date if previous_line_for_this_id else None
         exact_time_delta_human_readable = date_time_formats.format_duration_timedelta_to_string(self.date - previous_line_for_this_id.date) if previous_line_for_this_id else "NA"
@@ -524,7 +532,7 @@ class SqlArchArchiveLine(ArchiveLine):
 
         return to_ret
 
-    def print_all_changes_since_previous(self, white_list_signal_types: Optional[List[SqlArchLineSignalType]], previous_line_for_this_id: "SqlArchArchiveLine") -> None:
+    def print_all_changes_since_previous(self, white_list_signal_types: Optional[list[SqlArchLineSignalType]], previous_line_for_this_id: "SqlArchArchiveLine") -> None:
 
         field_names_to_ignore = ["Time"]
 
@@ -564,20 +572,20 @@ class SqlArchArchiveLine(ArchiveLine):
 class ArchiveSource(ABC):
 
     def __init__(self) -> None:
-        self.all_sqlarch_lines: List[SqlArchArchiveLine] = []
+        self.all_sqlarch_lines: list[SqlArchArchiveLine] = []
 
     @abstractmethod
-    def get_all_archive_file_lines(self) -> List[str]:
+    def get_all_archive_file_lines(self) -> list[str]:
         pass
 
 
 class ArchiveLinesSet(ArchiveSource):
-    def __init__(self, raw_archives_json_lines: List[str]) -> None:
+    def __init__(self, raw_archives_json_lines: list[str]) -> None:
         super().__init__()
         logger_config.print_and_log_info(f"Archive lines set has {len(raw_archives_json_lines)} lines")
         self.raw_archives_json_lines = raw_archives_json_lines
 
-    def get_all_archive_file_lines(self) -> List[str]:
+    def get_all_archive_file_lines(self) -> list[str]:
         return self.raw_archives_json_lines
 
 
@@ -586,10 +594,10 @@ class ArchiveFile(ArchiveSource):
         super().__init__()
         self.file_full_path = file_full_path
 
-    def get_all_archive_file_lines(self) -> List[str]:
+    def get_all_archive_file_lines(self) -> list[str]:
         return self._open_and_get_all_archive_file_lines()
 
-    def _open_and_get_all_archive_file_lines(self) -> List[str]:
+    def _open_and_get_all_archive_file_lines(self) -> list[str]:
 
         with logger_config.stopwatch_with_label(f"Open and read archive file lines {self.file_full_path}", monitor_ram_usage=True):
             with open(self.file_full_path, mode="r", encoding="utf-8") as file:
