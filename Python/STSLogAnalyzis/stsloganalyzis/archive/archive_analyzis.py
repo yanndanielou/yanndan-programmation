@@ -445,6 +445,8 @@ class ArchiveAnalyzis:
             output_directory_path=self.output_directory_path,
             suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
             split_big_files=False,
+            create_txt_file=False,
+            create_csv_file=False,
         )
 
         rows_as_list_dict = []
@@ -505,6 +507,8 @@ class ArchiveAnalyzis:
             output_directory_path=output_directory_path,
             suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
             split_big_files=False,
+            create_txt_file=False,
+            create_csv_file=False,
         )
         return len(rows_as_list_dict)
 
@@ -512,6 +516,7 @@ class ArchiveAnalyzis:
     class GroupToCreateForFrequencyReportDefinition:
         label: str
         archive_id_filters: list[common_filters.StringFieldValueBasedFilter]
+        split_by_id: bool
 
     @dataclass
     class GroupForFrequencyReport:
@@ -525,7 +530,7 @@ class ArchiveAnalyzis:
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def create_output_with_frequencies_of_terms(
         self,
-        groups_to_create_split_by_id: list[GroupToCreateForFrequencyReportDefinition],
+        groups_definitions_to_create: list[GroupToCreateForFrequencyReportDefinition],
         frequency_between_measures: timedelta,
         file_base_name: str | None = None,
     ) -> None:
@@ -538,39 +543,50 @@ class ArchiveAnalyzis:
 
         all_existing_ids_identifiers = self.archive_library.all_sqlarch_archive_lines_ids
 
-        for group_to_create in groups_to_create_split_by_id:
-            matching_ids = [archive_id for archive_id in all_existing_ids_identifiers if common_filters.must_be_kept_after_string_filters(archive_id, group_to_create.archive_id_filters)]
-            matching_lines: list[decode_archive.ArchiveLine] = []
-            for matching_id in matching_ids:
-                matching_lines += self.archive_library.all_sqlarch_archive_lines_by_id[matching_id]
+        for group_to_create_definition in groups_definitions_to_create:
+            matching_ids = [archive_id for archive_id in all_existing_ids_identifiers if common_filters.must_be_kept_after_string_filters(archive_id, group_to_create_definition.archive_id_filters)]
 
-            # archive_lines_matching_ids = [archive_line for self.archive_library.all_sqlarch_archive_lines_by_id[archive_id] in self.archive_library.all_sqlarch_archive_lines_by_id[archive_id] for archive_id in matching_ids]
-            # [state for variable in self.all_variables_unsorted for state in variable.instant_states_chronologically_sorted]
-            group_created = ArchiveAnalyzis.GroupForFrequencyReport(
-                identifiers=matching_ids,
-                matching_lines=matching_lines,
-                label=group_to_create.label,
-            )
-            groups_created.append(group_created)
+            if group_to_create_definition.split_by_id:
+                for matching_id in matching_ids:
+                    matching_lines = self.archive_library.all_sqlarch_archive_lines_by_id[matching_id]
+                    group_created = ArchiveAnalyzis.GroupForFrequencyReport(
+                        identifiers=matching_ids,
+                        matching_lines=matching_lines,
+                        label=f"{group_to_create_definition.label} {matching_id}",
+                    )
+                    groups_created.append(group_created)
 
+            else:
+                matching_lines = []
+                for matching_id in matching_ids:
+                    matching_lines += self.archive_library.all_sqlarch_archive_lines_by_id[matching_id]
+
+                group_created = ArchiveAnalyzis.GroupForFrequencyReport(
+                    identifiers=matching_ids,
+                    matching_lines=matching_lines,
+                    label=group_to_create_definition.label,
+                )
+                groups_created.append(group_created)
+
+        logger_config.print_and_log_info(f"Frequency report : {len(groups_created)} groups of variable ID created")
         current_measure_begin_timestamp = self.all_sql_arch_lines_with_context[0].sql_arch_line.date
-        end_data_timestamp = self.all_sql_arch_lines_with_context[0].sql_arch_line.date
+        end_data_timestamp = self.all_sql_arch_lines_with_context[-1].sql_arch_line.date
 
-        current_mesure_end_timestamp = current_measure_begin_timestamp
+        current_measure_end_timestamp = current_measure_begin_timestamp
 
-        while current_mesure_end_timestamp < end_data_timestamp:
-            current_mesure_end_timestamp += frequency_between_measures
+        while current_measure_end_timestamp < end_data_timestamp:
+            current_measure_end_timestamp += frequency_between_measures
 
             all_sql_archive_lines_in_measure_interval = [
                 sql_archive_line
                 for sql_archive_line in self.archive_library.all_sqlarch_lines
-                if sql_archive_line.date >= current_measure_begin_timestamp and sql_archive_line.date < current_mesure_end_timestamp
+                if sql_archive_line.date >= current_measure_begin_timestamp and sql_archive_line.date < current_measure_end_timestamp
             ]
 
             current_row: OrderedDict[str, int | datetime] = OrderedDict(
                 {
-                    "Interval begin": current_measure_begin_timestamp,
-                    "Interval end": current_mesure_end_timestamp,
+                    "Interval begin": current_measure_begin_timestamp.replace(tzinfo=None),
+                    "Interval end": current_measure_end_timestamp.replace(tzinfo=None),
                 }
             )
 
@@ -584,13 +600,15 @@ class ArchiveAnalyzis:
 
             rows_as_list_dict.append(current_row)
 
-            current_measure_begin_timestamp = current_mesure_end_timestamp
+            current_measure_begin_timestamp = current_measure_end_timestamp
 
         # logger_config.print_and_log_info(f"{len(rows_as_list_dict)} lines changed detected, report created")
         reports_utils.save_rows_to_output_files(
             rows_as_list_dict=rows_as_list_dict,
-            file_base_name=file_base_name + "_by_column",
+            file_base_name="frequencies " + file_base_name + "_by_column",
             output_directory_path=self.output_directory_path,
             suffix_file_name_by_date=reports_utils.SuffixFileNameByDate.NO,
             split_big_files=False,
+            create_txt_file=False,
+            create_csv_file=False,
         )
