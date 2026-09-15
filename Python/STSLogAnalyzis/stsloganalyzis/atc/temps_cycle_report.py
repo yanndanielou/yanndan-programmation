@@ -405,6 +405,7 @@ def create_global_graphs_by_equipment_in_sheet_all_states_for_equipments_reports
                     {
                         "Date": instant_state.timestamp,
                         f"{equipments_report.variable_name} {instant_state.equipment_report.equipment_name}": instant_state.value,
+                        "Scenario": equipments_report.file_name,
                     },
                 )
                 for other_interesting_variables_name, other_interesting_variables_value in instant_state.other_interesting_variables_values_by_name.items():
@@ -509,10 +510,12 @@ def build_temps_cycle_excel_report_from_atc_log_results(
 ) -> None:
     data_per_sheet_name: dict[str, pandas.DataFrame] = {}
     for equipment_type in atc_logs.EquipmentType:
-        data_per_sheet_name[equipment_type.name] = pandas.DataFrame(
-            data=[build_equipment_line_in_eqpt_type_excel_report(equipment_report=equipment_report) for equipment_report in equipments_reports if equipment_report.equipment_type == equipment_type],
-            index=None,
-        )
+        data = ([build_equipment_line_in_eqpt_type_excel_report(equipment_report=equipment_report) for equipment_report in equipments_reports if equipment_report.equipment_type == equipment_type],)
+        if data:
+            data_per_sheet_name[equipment_type.name] = pandas.DataFrame(
+                index=None,
+                data=data,
+            )
 
     for equipment_name in {equipment_report.equipment_name for equipment_report in equipments_reports}:
         data_per_sheet_name[equipment_name] = pandas.DataFrame(
