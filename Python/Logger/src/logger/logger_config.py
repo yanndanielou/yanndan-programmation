@@ -13,7 +13,7 @@ import random
 import sys
 import time
 from collections import OrderedDict, defaultdict
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
@@ -21,7 +21,6 @@ from functools import wraps
 # from warnings import deprecated
 from logging.handlers import RotatingFileHandler
 from typing import ParamSpec, TypeVar, cast
-from collections.abc import Callable
 from warnings import deprecated
 
 import humanize

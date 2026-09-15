@@ -3,14 +3,13 @@ import datetime
 import inspect
 import os
 from dataclasses import dataclass
-from typing import Optional
+
+import pywintypes
 
 # Other libraries
 from common import download_utils, excel_utils, file_name_utils, file_utils
 from logger import logger_config
 from rhapsody import rhapsody_utils
-
-import pywintypes
 
 import param
 
@@ -178,7 +177,7 @@ class DownloadAndCleanDMLApplication:
         today_copy_file_name = (
             file_name_utils.get_file_name_without_extension_from_full_path(dml_file_path)
             + " - "
-            + datetime.datetime.now().strftime("%Y-%m-%d")
+            + datetime.datetime.now().strftime("%Y-%m-%d")  # noqa: DTZ005
             + file_name_utils.file_extension_from_full_path(dml_file_path)
         )
         final_excel_file_directory = os.path.dirname(dml_file_path)
@@ -196,7 +195,7 @@ class DownloadAndCleanDMLApplication:
             return file_to_create_path
 
         dml_download_url = f"https://rhapsody.siemens.net/livelink/livelink.exe?func=ll&objId={param.DML_FILE_RHAPS_ID}&objAction=Download"
-        file_downloaded: Optional[str] = rhapsody_utils.download_file_from_rhapsody_old(
+        file_downloaded = rhapsody_utils.download_file_from_rhapsody_old(
             file_to_download_pattern=param.DML_FILE_DOWNLOADED_PATTERN,
             file_to_download_url=dml_download_url,
             file_move_after_download_action=download_utils.DownloadFileDetector.FileMoveAfterDownloadAction(
