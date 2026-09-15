@@ -48,6 +48,7 @@ class RamUsageMonitor:
     class Measure:
         timestamp: datetime.datetime | str
         as_bytes_int: int
+        label: str
 
         def __post_init__(self) -> None:
             self.as_human_readable = humanize.naturalsize(self.as_bytes_int)
@@ -59,13 +60,14 @@ class RamUsageMonitor:
     def set_output_file_name_without_extension(self, output_file_name_without_extension: str) -> None:
         self.output_file_path_with_extension = f"logs/{output_file_name_without_extension}"
 
-        self.measure_now()
+        self.measure_now(f"{inspect.stack(0)[0].function}")
 
-    def measure_now(self) -> "RamUsageMonitor.Measure":
+    def measure_now(self, measure_label: str | None) -> "RamUsageMonitor.Measure":
         current_ram_int = cast(int, psutil.Process(os.getpid()).memory_info().rss)
         new_measure = RamUsageMonitor.Measure(
             timestamp=datetime.datetime.now(),  # noqa: DTZ005
             as_bytes_int=current_ram_int,
+            label=measure_label,
         )
         self.all_mesures_to_write.append(new_measure)
         return new_measure
@@ -82,6 +84,7 @@ class RamUsageMonitor:
                             "As bytes": mesure_to_write.as_bytes_int,
                             "As Mo": mesure_to_write.as_bytes_int / 1024 / 1024,
                             "As human readable": mesure_to_write.as_human_readable,
+                            "label": mesure_to_write.label,
                         }
                     )
                     for mesure_to_write in self.all_mesures_to_write
@@ -92,7 +95,7 @@ class RamUsageMonitor:
         self.all_mesures_to_write.clear()
 
     def save_and_close(self) -> None:
-        self.measure_now()
+        self.measure_now(measure_label=inspect.stack(0)[0].function)
         self.save_pending_lines_to_file()
         print_and_log_info("Logger ram monitor usage: saved")
 
@@ -171,7 +174,7 @@ def print_and_log_info(to_print_and_log: str, do_not_print: bool = False, print_
     log_timestamp = time.asctime(time.localtime(time.time()))
 
     if print_ram_usage:
-        measure = ram_usage_monitor.measure_now()
+        measure = ram_usage_monitor.measure_now(measure_label=to_print_and_log)
         to_print_and_log += f".Current ram usage: {measure.as_human_readable}"
 
     # pylint: disable=line-too-long
@@ -295,7 +298,7 @@ def application_logger(
     calling_file_name_and_line_number = file_name + ":" + str(line_number)
 
     at_beginning_log_timestamp = time.asctime(time.localtime(time.time()))
-    to_print_and_log = f"{application_name} : application begin. Ram usage: {ram_usage_monitor.measure_now()}"
+    to_print_and_log = f"{application_name} : application begin. Ram usage: {ram_usage_monitor.measure_now(measure_label=f"{application_name} : application begin")}"
     print(at_beginning_log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
     logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
 
@@ -315,7 +318,9 @@ def application_logger(
     )
     to_print_and_log_lines.append(f"{application_name} : application end.")
     to_print_and_log_lines.append(f"Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s.")
-    to_print_and_log_lines.append(f"Final ram usage: {ram_usage_monitor.measure_now().as_human_readable}.")
+    to_print_and_log_lines.append(
+        f"Final ram usage: {ram_usage_monitor.measure_now("Final ram usage").as_human_readable}."
+    )
     to_print_and_log_lines.append(
         f"Logger stats: \t{'\t'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts_occurrences_per_level.items()))}"
     )
@@ -489,7 +494,7 @@ def stopwatch_with_label(
     """Décorateur de contexte pour mesurer le temps d'exécution d'une fonction :
     https://www.docstring.fr/glossaire/with/"""
     if enabled:
-        initial_ram = ram_usage_monitor.measure_now()
+        initial_ram = ram_usage_monitor.measure_now(measure_label=f"Begin {label}")
 
         previous_stack = inspect.stack(call_stack_context)[call_stack_frame]
         file_name = previous_stack.filename
@@ -513,7 +518,7 @@ def stopwatch_with_label(
         debut = time.perf_counter()
         yield time.perf_counter() - debut
 
-        final_ram = ram_usage_monitor.measure_now()
+        final_ram = ram_usage_monitor.measure_now(measure_label=f"End: {label}")
         delta_rss_since_reference = final_ram.as_bytes_int - initial_ram.as_bytes_int
         fin = time.perf_counter()
         elapsed_time_seconds = fin - debut
@@ -660,7 +665,7 @@ def datetime_convenient_log_format(datetime_to_log: datetime.datetime, number_of
 def print_and_log_current_ram_usage(
     prefix: str = "", suffix: str = "", previous_measure_and_label: tuple[RamUsageMonitor.Measure, str] | None = None
 ) -> RamUsageMonitor.Measure:
-    current_ram = ram_usage_monitor.measure_now()
+    current_ram = ram_usage_monitor.measure_now(f"{prefix} {suffix}")
 
     comparison_text = ""
     if previous_measure_and_label:
