@@ -62,7 +62,7 @@ def get_threshold_high_for_variable(variable: atc_logs.Variable) -> int | None:
         else (
             230
             if variable.equipment.equipment_type is atc_logs.EquipmentType.PAS and variable.name.startswith("TEMPS_AS")
-            else 110 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAE and variable.name.startswith("STAB_CPT") else None
+            else 140 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAE and variable.name.startswith("STAB_CPT") else None
         )
     )
 
@@ -74,7 +74,7 @@ def get_threshold_very_high_for_variable(variable: atc_logs.Variable) -> int | N
         else (
             260
             if variable.equipment.equipment_type is atc_logs.EquipmentType.PAS and variable.name.startswith("TEMPS_AS")
-            else 120 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAE and variable.name.startswith("STAB_CPT") else None
+            else 160 if variable.equipment.equipment_type is atc_logs.EquipmentType.PAE and variable.name.startswith("STAB_CPT") else None
         )
     )
 
