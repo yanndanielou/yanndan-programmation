@@ -10,6 +10,8 @@ from common import download_utils, excel_utils, file_name_utils, file_utils
 from logger import logger_config
 from rhapsody import rhapsody_utils
 
+import pywintypes
+
 import param
 
 
@@ -20,14 +22,6 @@ class DownloadAndCleanDMLApplication:
 
         excel_utils.close_all_xlwings()
         dml_file_path = self.download_dml_file()
-
-        dml_file_path = excel_utils.copy_and_paste_excel_content_with_format_with_win32(
-            input_excel_file_path=dml_file_path,
-            sheet_name="Database",
-            output_excel_file_path=param.DML_FILE_CONVERTED_TO_STANDARD_XSLX_PATH,
-            replace_formulas_by_value=False,
-            # output_excel_file_path=f"{os.path.expandvars(r"%userprofile%\downloads")}\\copy_and_paste_excel_content_with_format_with_win32.xlsx",
-        )
 
         # dml_file_path = excel_utils.convert_xlsx_file_to_xls_with_win32com_dispatch(dml_file_path)
         self.run_step_by_step(dml_file_path)
@@ -48,17 +42,36 @@ class DownloadAndCleanDMLApplication:
 
     def run_step_by_step(self, dml_file_path: str) -> None:
 
+        dml_file_path = self.copy_and_paste_excel_content_with_format_with_win32(dml_file_path)
         dml_file_path = self.remove_useless_tabs(dml_file_path)
         dml_file_path = self.remove_excel_external_links(dml_file_path)
         dml_file_path = self.remove_useless_ranges(dml_file_path)
         # dml_file_path_standard_excel = self.convert_excel_to_standard_xslx(dml_file_path)
         # dml_file_path_openpyxl = self.remove_useless_columns_with_openpyxl(dml_file_path)
-        dml_file_path_xlwings = self.remove_useless_columns_with_xlwings(dml_file_path)
+        dml_file_path = self.remove_useless_columns_with_xlwings(dml_file_path)
 
-        dml_file_path = file_utils.rename_file_and_wait_if_is_locked(dml_file_path_xlwings, param.DML_FILE_CLEANED_FINAL_PATH)
+        dml_file_path = file_utils.rename_file_and_wait_if_is_locked(dml_file_path, param.DML_FILE_CLEANED_FINAL_PATH)
 
         self.create_dated_copy_of_dml(dml_file_path)
 
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
+    def copy_and_paste_excel_content_with_format_with_win32(self, dml_file_path: str) -> str:
+        file_to_create_path = param.DML_FILE_CONVERTED_TO_STANDARD_XSLX_PATH
+
+        if not param.COPY_AND_PASTE_EXCEL_CONTENT_WITH_FORMAT_WITH_WIN32_ENABLED:
+            logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
+            return file_to_create_path
+
+        dml_file_path = excel_utils.copy_and_paste_excel_content_with_format_with_win32(
+            input_excel_file_path=dml_file_path,
+            sheet_name="Database",
+            output_excel_file_path=file_to_create_path,
+            replace_formulas_by_value=False,
+            # output_excel_file_path=f"{os.path.expandvars(r"%userprofile%\downloads")}\\copy_and_paste_excel_content_with_format_with_win32.xlsx",
+        )
+        return file_to_create_path
+
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def remove_useless_tabs(self, dml_file_path: str) -> str:
         file_to_create_path = param.DML_FILE_WITHOUT_USELESS_SHEETS_PATH
 
@@ -74,6 +87,7 @@ class DownloadAndCleanDMLApplication:
 
         return final_excel_file_path
 
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def remove_excel_external_links(self, dml_file_path: str) -> str:
         file_to_create_path = param.DML_FILE_WITHOUT_LINKS_PATH
 
@@ -81,10 +95,15 @@ class DownloadAndCleanDMLApplication:
             logger_config.print_and_log_warning(f"{inspect.stack(0)[0].function} Disabled: pass")
             return file_to_create_path
 
-        final_excel_file_path: str = excel_utils.remove_excel_external_links_with_xlwings(input_excel_file_path=dml_file_path, file_to_create_path=file_to_create_path)
+        try:
+            final_excel_file_path: str = excel_utils.remove_excel_external_links_with_xlwings(input_excel_file_path=dml_file_path, file_to_create_path=file_to_create_path)
+        except pywintypes.com_error as com_err:
+            logger_config.print_and_log_exception(com_err)
+            return dml_file_path
 
         return final_excel_file_path
 
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def remove_useless_ranges(self, dml_file_path: str) -> str:
         file_to_create_path = param.DML_FILE_WITH_USELESS_RANGES_PATH
 
@@ -95,6 +114,7 @@ class DownloadAndCleanDMLApplication:
         final_excel_file_path: str = excel_utils.remove_ranges_with_xlwings(input_excel_file_path=dml_file_path, ranges_to_remove=param.RANGES_TO_REMOVE, file_to_create_path=file_to_create_path)
         return final_excel_file_path
 
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def convert_excel_to_standard_xslx(self, dml_file_path: str) -> str:
         file_to_create_path = param.DML_FILE_CONVERTED_TO_STANDARD_XSLX_PATH
 
@@ -111,6 +131,7 @@ class DownloadAndCleanDMLApplication:
 
         return file_to_create_path
 
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def remove_useless_columns_with_openpyxl(self, dml_file_path: str) -> str:
         file_to_create_path = param.DML_FILE_WITH_USELESS_COLUMNS_REMOVED_OPENPYXL_PATH
 
@@ -130,6 +151,7 @@ class DownloadAndCleanDMLApplication:
         )
         return final_excel_file_path
 
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def remove_useless_columns_with_xlwings(self, dml_file_path: str) -> str:
         file_to_create_path = param.DML_FILE_WITH_USELESS_COLUMNS_REMOVED_XLWINGS_PATH
 
@@ -150,6 +172,7 @@ class DownloadAndCleanDMLApplication:
 
         return final_excel_file_path
 
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def create_dated_copy_of_dml(self, dml_file_path: str) -> None:
 
         today_copy_file_name = (
@@ -164,6 +187,7 @@ class DownloadAndCleanDMLApplication:
 
         file_utils.rename_file_and_wait_if_is_locked(dml_file_path, today_copy_file_full_path)
 
+    @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def download_dml_file(self) -> str:
         file_to_create_path = param.DML_RAW_DOWNLOADED_FROM_RHAPSODY_FILE_PATH
 
