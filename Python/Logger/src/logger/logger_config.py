@@ -308,6 +308,8 @@ def application_logger(
 
     elapsed_time = application_end_time - application_start_time
 
+    ram_usage_monitor.save_and_close()
+
     to_print_and_log_lines: list[str] = []
     to_print_and_log_lines.append(
         f"\nWarning stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " warning raised" for item in list(dict(sorted(log_counts_warning_occurrences_per_file_and_line.items(), key=lambda item: item[1])).items()))}"
@@ -315,14 +317,7 @@ def application_logger(
     to_print_and_log_lines.append(
         f"\nErrors stats: \n{'\n'.join(str(item[0])+ ': ' + str(item[1]) + " errors raised" for item in list(dict(sorted(log_counts_errors_occurrences_per_file_and_line.items(), key=lambda item: item[1])).items()))}"
     )
-    to_print_and_log_lines.append(f"{application_name} : application end.")
-    to_print_and_log_lines.append(f"Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s.")
-    to_print_and_log_lines.append(
-        f"Final ram usage: {ram_usage_monitor.measure_now("Final ram usage").as_human_readable}."
-    )
-    to_print_and_log_lines.append(
-        f"Logger stats: \t{'\t'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts_occurrences_per_level.items()))}"
-    )
+
     if log_counts_exceptions_occurrences_per_file_and_line:
         to_print_and_log_lines.append("Exceptions logged:")
         to_print_and_log_lines += [
@@ -333,13 +328,24 @@ def application_logger(
                 ).items()
             )
         ]
+
+    to_print_and_log_lines.append(f"{application_name} : application end.")
+    to_print_and_log_lines.append(f"Elapsed: {date_time_formats.format_duration_to_string(elapsed_time)} s.")
+    to_print_and_log_lines.append(
+        f"Final ram usage: {ram_usage_monitor.measure_now("Final ram usage").as_human_readable}."
+    )
+    to_print_and_log_lines.append(
+        f"Logger stats: \t{'\t'.join(str(item[0])+ ':' + str(item[1]) for item in list(log_counts_occurrences_per_level.items()))}"
+    )
+    if log_counts_exceptions_occurrences_per_file_and_line:
+        to_print_and_log_lines[-1] += f"\tEXCEPTIONS:{len(log_counts_exceptions_occurrences_per_file_and_line)}"
+
     for to_print_and_log in to_print_and_log_lines:
         print(application_end_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
         logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
 
     logger_created.removeHandler(counting_handler)
     logging.root.removeHandler(counting_handler)
-    ram_usage_monitor.save_and_close()
 
 
 def configure_logger_with_timestamp_log_file_suffix(
