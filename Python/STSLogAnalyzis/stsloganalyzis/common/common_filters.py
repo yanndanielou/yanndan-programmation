@@ -19,12 +19,12 @@ class StringFilterType(Enum):
 
 class StringFieldValueBasedFilter:
 
-    def __init__(self, white_or_black_list: WhiteOrBlackListFilterType, field_values: list[str], filter_type: StringFilterType) -> None:
+    def __init__(self, white_or_black_list: WhiteOrBlackListFilterType, field_values: list[str] | str, filter_type: StringFilterType) -> None:
         super().__init__()
         self.white_or_black_list = white_or_black_list
         self.is_whitelist = white_or_black_list == WhiteOrBlackListFilterType.WHITELIST
         self.filter_type = filter_type
-        self.filter_field_values = field_values
+        self.filter_field_values = field_values if isinstance(field_values, list) else [field_values]
         self.rejected_count: int = 0
         self.rejected_count_by_item: dict[str, int] = {}
 
