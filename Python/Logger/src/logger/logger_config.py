@@ -80,9 +80,9 @@ class RamUsageMonitor:
                     OrderedDict(
                         {
                             "date": mesure_to_write.timestamp,
-                            "As bytes": mesure_to_write.as_bytes_int,
-                            "As Mo": mesure_to_write.as_bytes_int / 1024 / 1024,
-                            "As human readable": mesure_to_write.as_human_readable,
+                            "RAM usage, bytes": mesure_to_write.as_bytes_int,
+                            "RAM usage, Mo": mesure_to_write.as_bytes_int / 1024 / 1024,
+                            "RAM usage, human readable": mesure_to_write.as_human_readable,
                             "label": mesure_to_write.label,
                         }
                     )
