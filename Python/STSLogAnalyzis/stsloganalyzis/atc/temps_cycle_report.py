@@ -306,10 +306,10 @@ def build_atc_test_result_from_simech_file_path(
 
 
 def build_equipment_line_in_eqpt_type_excel_report(
-    equipment_report: OneEquipmentReport, prefix_with_equipment_name: bool
+    equipment_report: OneEquipmentReport, suffix_with_equipment_name: bool
 ) -> OrderedDict[str, datetime.datetime | str | int | float | numpy.float64 | None]:
 
-    equipment_name_prefix = f"{equipment_report.equipment_name} " if prefix_with_equipment_name else ""
+    equipment_name_suffix = f" ({equipment_report.equipment_name})" if suffix_with_equipment_name else ""
 
     current_report_line_dict = OrderedDict(
         {
@@ -320,36 +320,36 @@ def build_equipment_line_in_eqpt_type_excel_report(
             "equipment": equipment_report.equipment_name,
             "equipment type": equipment_report.equipment_type.name,
             "redundancy status": equipment_report.equipment_redundancy,
-            f"{equipment_name_prefix}min_of_relevant_values {equipment_report.variable_name} by test": equipment_report.min_of_relevant_values,
-            f"{equipment_name_prefix}max_value {equipment_report.variable_name} by test": equipment_report.max_value,
-            f"{equipment_name_prefix}mean_of_relevant_values {equipment_report.variable_name} by test": equipment_report.mean_of_relevant_values,
-            f"{equipment_name_prefix}median_of_relevant_values {equipment_report.variable_name} by test": equipment_report.median_of_relevant_values,
-            f"{equipment_name_prefix}Number relevant values {equipment_report.variable_name} by test": len(equipment_report.all_relevant_values),
-            f"{equipment_name_prefix}duree_max_consecutive above high {equipment_report.variable_name} by test": equipment_report.duree_max_above_high_consecutive,
-            f"{equipment_name_prefix}nombre anomalies high {equipment_report.variable_name} by test": len(equipment_report.anomalies_high),
-            f"{equipment_name_prefix}taux_anomalie high (%) {equipment_report.variable_name} by test": equipment_report.taux_anomalie_high,
-            f"{equipment_name_prefix}nombre anomalies very high {equipment_report.variable_name} by test": len(equipment_report.anomalies_very_high),
-            f"{equipment_name_prefix}taux_anomalie very high (%) {equipment_report.variable_name} by test": equipment_report.taux_anomalie_very_high,
-            f"{equipment_name_prefix}variance_of_relevant_values {equipment_report.variable_name} by test": equipment_report.variance_of_relevant_values,
-            f"{equipment_name_prefix}ecart_type_of_relevant_values {equipment_report.variable_name} by test": equipment_report.ecart_type_of_relevant_values,
-            f"{equipment_name_prefix}mode {equipment_report.variable_name} by test": equipment_report.mode,
-            f"{equipment_name_prefix}recouvrement_moyen high {equipment_report.variable_name} by test": equipment_report.recouvrement_moyen_high,
-            f"{equipment_name_prefix}ratio_energie_pics high (%) {equipment_report.variable_name} by test": equipment_report.ratio_energie_pics_high,
-            f"{equipment_name_prefix}ratio_energie_pics very high (%) {equipment_report.variable_name} by test": equipment_report.ratio_energie_pics_very_high,
-            f"{equipment_name_prefix}max_hausse_brutale {equipment_report.variable_name} by test": equipment_report.max_hausse_brutale,
-            f"{equipment_name_prefix}Number not relevant (filtered) values {equipment_report.variable_name} by test": len(equipment_report.all_unfiltered_instant_states_chronologically_sorted)
+            f"min_of_relevant_values {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.min_of_relevant_values,
+            f"max_value {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.max_value,
+            f"mean_of_relevant_values {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.mean_of_relevant_values,
+            f"median_of_relevant_values {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.median_of_relevant_values,
+            f"Number relevant values {equipment_report.variable_name} by test{equipment_name_suffix}":len(equipment_report.all_relevant_values),
+            f"duree_max_consecutive above high {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.duree_max_above_high_consecutive,
+            f"nombre anomalies high {equipment_report.variable_name} by test{equipment_name_suffix}":len(equipment_report.anomalies_high),
+            f"taux_anomalie high (%) {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.taux_anomalie_high,
+            f"nombre anomalies very high {equipment_report.variable_name} by test{equipment_name_suffix}":len(equipment_report.anomalies_very_high),
+            f"taux_anomalie very high (%) {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.taux_anomalie_very_high,
+            f"variance_of_relevant_values {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.variance_of_relevant_values,
+            f"ecart_type_of_relevant_values {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.ecart_type_of_relevant_values,
+            f"mode {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.mode,
+            f"recouvrement_moyen high {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.recouvrement_moyen_high,
+            f"ratio_energie_pics high (%) {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.ratio_energie_pics_high,
+            f"ratio_energie_pics very high (%) {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.ratio_energie_pics_very_high,
+            f"max_hausse_brutale {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.max_hausse_brutale,
+            f"Number not relevant (filtered) values {equipment_report.variable_name} by test{equipment_name_suffix}":len(equipment_report.all_unfiltered_instant_states_chronologically_sorted)
             - len(equipment_report.all_relevant_values),
-            f"{equipment_name_prefix}high_consumption_threshold {equipment_report.variable_name} by test": equipment_report.high_consumption_threshold,
-            f"{equipment_name_prefix}very_high_consumption_threshold {equipment_report.variable_name} by test": equipment_report.very_high_consumption_threshold,
+            f"high_consumption_threshold {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.high_consumption_threshold,
+            f"very_high_consumption_threshold {equipment_report.variable_name} by test{equipment_name_suffix}":equipment_report.very_high_consumption_threshold,
             "File full path": equipment_report.atc_test_file_file_full_path,
             "label": equipment_report.atc_test_result_label,
         }
     )
     for decile_index, decile_value in enumerate(equipment_report.deciles_of_relevant_values):
-        current_report_line_dict[f"Decile_{decile_index+1}"] = decile_value
+        current_report_line_dict[f"Decile_{decile_index+1}{equipment_name_suffix}"] = decile_value
     for centile_index, centile_value in enumerate(equipment_report.centiles_of_relevant_values):
         if centile_index > 90:
-            current_report_line_dict[f"Centile_{centile_index+1}"] = centile_value
+            current_report_line_dict[f"Centile_{centile_index+1}{equipment_name_suffix}"] = centile_value
     return current_report_line_dict
 
 
@@ -518,7 +518,7 @@ def build_temps_cycle_excel_report_from_atc_log_results(
         data = [
             build_equipment_line_in_eqpt_type_excel_report(
                 equipment_report=equipment_report,
-                prefix_with_equipment_name=False,
+                suffix_with_equipment_name=False,
             )
             for equipment_report in equipments_reports
             if equipment_report.equipment_type == equipment_type
@@ -533,7 +533,7 @@ def build_temps_cycle_excel_report_from_atc_log_results(
         data = [
             build_equipment_line_in_eqpt_type_excel_report(
                 equipment_report=equipment_report,
-                prefix_with_equipment_name=True,
+                suffix_with_equipment_name=True,
             )
             for equipment_report in equipments_reports
             if equipment_report.equipment_name == equipment_name
