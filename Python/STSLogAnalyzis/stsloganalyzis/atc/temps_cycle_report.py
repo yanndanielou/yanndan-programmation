@@ -518,10 +518,12 @@ def build_temps_cycle_excel_report_from_atc_log_results(
             )
 
     for equipment_name in {equipment_report.equipment_name for equipment_report in equipments_reports}:
-        data_per_sheet_name[equipment_name] = pandas.DataFrame(
-            data=[build_equipment_line_in_eqpt_type_excel_report(equipment_report=equipment_report) for equipment_report in equipments_reports if equipment_report.equipment_name == equipment_name],
-            index=None,
-        )
+        data=[build_equipment_line_in_eqpt_type_excel_report(equipment_report=equipment_report) for equipment_report in equipments_reports if equipment_report.equipment_name == equipment_name],
+        if data:
+            data_per_sheet_name[equipment_name] = pandas.DataFrame(
+                data=data,
+                index=None,
+            )
 
     pandas_utils.to_excel_wait_if_file_is_locked(
         data_per_sheet_name,
