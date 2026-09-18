@@ -5,9 +5,9 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import cast
 
 import openpyxl
+import pywintypes
 import xlwings
 
 # Other libraries
@@ -21,7 +21,7 @@ from win32com.client import Dispatch, gencache
 from xlsxwriter.utility import xl_cell_to_rowcol, xl_col_to_name
 from xlwings.constants import DeleteShiftDirection
 
-from common import file_name_utils, file_utils, date_time_formats
+from common import date_time_formats, file_name_utils, file_utils
 
 EXCEL_INTERNAL_RESERVED_SHEETS_NAMES = ["Register"]
 
@@ -268,7 +268,10 @@ class XlWingsRemoveExcelExternalLinksOperation(XlWingOperationBase):
 
                 for external_links_source_name in external_links_sources:
                     with logger_config.stopwatch_with_label(label=f"Removing link:{external_links_source_name}"):
-                        workbook_dml.api.BreakLink(Name=external_links_source_name, Type=1)  # Type=1 pour les liaisons de type Excel
+                        try:
+                            workbook_dml.api.BreakLink(Name=external_links_source_name, Type=1)  # Type=1 pour les liaisons de type Excel
+                        except pywintypes.com_error as com_error:
+                            logger_config.print_and_log_exception(com_error)
             else:
                 logger_config.print_and_log_info("No external link found (pass)")
 
