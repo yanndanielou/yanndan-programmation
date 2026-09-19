@@ -23,9 +23,12 @@ class ServiceAccessPoint:
 class ProfibusLogFile:
     file_full_path: str
     encoding: str = "utf-8"
+    upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary | None = None
 
     def __post_init__(self) -> None:
-        self.lines: List[ProfibusLogLine] = []
+        self.decoded_lines: list[ProfibusLogLine] = []
+        if self.upper_layer_decoding_library is None:
+            self.upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(json_file_full_path=r"C:\Tools\GenTel\GenTel\rom\unisig_s58.json")
 
     def process(self) -> None:
         with open(self.file_full_path, "r", encoding=self.encoding) as f:
@@ -33,7 +36,7 @@ class ProfibusLogFile:
             for line in lines:
                 decoded_line = ProfibusLogLine.decode_raw_log_line(line=line)
                 if decoded_line is not None:
-                    self.lines.append(decoded_line)
+                    self.decoded_lines.append(decoded_line)
 
 
 @dataclass
