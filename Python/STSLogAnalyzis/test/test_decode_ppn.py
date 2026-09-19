@@ -78,6 +78,13 @@ class TestDecodeOnePpnLogLine:
         ppn_log_line.decode_sdn_or_sna()
         assert ppn_log_line.unisig_messages
 
+    def test_decode_line_stms_184_176_175(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+        log_file = ppn_log.ProfibusLogFile(r"resources\ppn\STMs 175 184 176.log_ppn")
+        log_file.process()
+        assert log_file.decoded_lines
+        log_line = log_file.decoded_lines[0]
+        log_line.decode_sdn_or_sna()
+
     def test_decode_line_with_stm1_and_stm8(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
         ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
             line="2026-05-28 12:37:16:645 kppn 1.3.3: [127:39 <= 2:39] Received PROFIBUS message [num:39003][mode:SDN][len:51] 03 00 00 8d 40 08 00 00 ff 21 01 01 28 20 00 40 33 40 02 3b 8d c0 00 00 00 00 00 00 00 1d 36 80 00 1c 42 c0 00 1b a4 82 bf 6a ee 08 00 e9 df a7 f2 8d 66",
