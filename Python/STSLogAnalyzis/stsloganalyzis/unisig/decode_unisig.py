@@ -60,87 +60,99 @@ class SdaUnisigMessage(UnisigMessage):
     lowest_order_byte_sequence_number: int
     command_type: "SdaUnisigMessage.CommandType"
 
+    class Header:
+        def __init__(self, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> None:
+            self.sequence = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            self.command_number = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+
+        @property
+        def command_type(self) -> "SdaUnisigMessage.CommandType":
+            return SdaUnisigMessage.CommandType(self.command_number)
+
+        @property
+        def safety_level(self) -> SafetyLevel:
+            return SafetyLevel[self.command_type.name[:3]]
+
+        @property
+        def telegram_name(self) -> str:
+            return self.command_type.name[4:]
+
     @classmethod
     def from_sda_hexa_bytes_str(cls, bytes_hexa: str, upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary) -> List[UnisigMessage]:
         byte_message_decoded = bytes_messages.DecodedBytesMessage.from_hex_string(bytes_hexa)
-        mistery_0 = byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=bytes_messages.NUMBER_OF_BITS_IN_BYTE)
-        raw_command_number = byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=bytes_messages.NUMBER_OF_BITS_IN_BYTE)
-        command_type = SdaUnisigMessage.CommandType(raw_command_number)
+        sda_header = SdaUnisigMessage.Header(byte_message_decoded)
 
-        safety_level = SafetyLevel[command_type.name[:3]]
-        telegram_name = command_type.name[4:]
+        ret: list[UnisigMessage] = []
 
-        ret: List[UnisigMessage] = []
-
-        if command_type == SdaUnisigMessage.CommandType.SL0_DISCONNECT_TELEGRAM or command_type == SdaUnisigMessage.CommandType.SL4_DISCONNECT_TELEGRAM:
+        if sda_header.command_type == SdaUnisigMessage.CommandType.SL0_DISCONNECT_TELEGRAM or sda_header.command_type == SdaUnisigMessage.CommandType.SL4_DISCONNECT_TELEGRAM:
             ret.append(
                 SdaDisconnectTelegram(
-                    command_type=command_type,
-                    safety_level=safety_level,
-                    telegram_name=telegram_name,
+                    command_type=sda_header.command_type,
+                    safety_level=sda_header.safety_level,
+                    telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
-                    lowest_order_byte_sequence_number=mistery_0,
+                    lowest_order_byte_sequence_number=sda_header.sequence,
                 )
             )
 
-        elif command_type == SdaUnisigMessage.CommandType.SL0_IDLE_TELEGRAM or command_type == SdaUnisigMessage.CommandType.SL4_IDLE_TELEGRAM:
+        elif sda_header.command_type == SdaUnisigMessage.CommandType.SL0_IDLE_TELEGRAM or sda_header.command_type == SdaUnisigMessage.CommandType.SL4_IDLE_TELEGRAM:
             ret.append(
                 SdaGenericTelegram(
-                    command_type=command_type,
-                    safety_level=safety_level,
-                    telegram_name=telegram_name,
+                    command_type=sda_header.command_type,
+                    safety_level=sda_header.safety_level,
+                    telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
-                    lowest_order_byte_sequence_number=mistery_0,
+                    lowest_order_byte_sequence_number=sda_header.sequence,
                 )
             )
         elif (
-            command_type == SdaUnisigMessage.CommandType.SL0_CONNECT_REQUEST_TELEGRAM
-            or command_type == SdaUnisigMessage.CommandType.SL4_CONNECT_REQUEST_TELEGRAM
-            or command_type == SdaUnisigMessage.CommandType.SL0_CONNECT_CONFIRM_TELEGRAM
-            or command_type == SdaUnisigMessage.CommandType.SL4_CONNECT_CONFIRM_TELEGRAM
+            sda_header.command_type == SdaUnisigMessage.CommandType.SL0_CONNECT_REQUEST_TELEGRAM
+            or sda_header.command_type == SdaUnisigMessage.CommandType.SL4_CONNECT_REQUEST_TELEGRAM
+            or sda_header.command_type == SdaUnisigMessage.CommandType.SL0_CONNECT_CONFIRM_TELEGRAM
+            or sda_header.command_type == SdaUnisigMessage.CommandType.SL4_CONNECT_CONFIRM_TELEGRAM
         ):
             ret.append(
                 SdaConnectRequestOrConfirmTelegram(
-                    command_type=command_type,
-                    safety_level=safety_level,
-                    telegram_name=telegram_name,
+                    command_type=sda_header.command_type,
+                    safety_level=sda_header.safety_level,
+                    telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
-                    lowest_order_byte_sequence_number=mistery_0,
+                    lowest_order_byte_sequence_number=sda_header.sequence,
                 )
             )
-        elif command_type == SdaUnisigMessage.CommandType.SL4_AUTHENTICATION_TELEGRAM or command_type == SdaUnisigMessage.CommandType.SL4_AUTHENTICATION_ACKNOWLEDGEMENT_TELEGRAM:
+        elif sda_header.command_type == SdaUnisigMessage.CommandType.SL4_AUTHENTICATION_TELEGRAM or sda_header.command_type == SdaUnisigMessage.CommandType.SL4_AUTHENTICATION_ACKNOWLEDGEMENT_TELEGRAM:
             ret.append(
                 SdaConnectRequestOrConfirmTelegram(
-                    command_type=command_type,
-                    safety_level=safety_level,
-                    telegram_name=telegram_name,
+                    command_type=sda_header.command_type,
+                    safety_level=sda_header.safety_level,
+                    telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
-                    lowest_order_byte_sequence_number=mistery_0,
+                    lowest_order_byte_sequence_number=sda_header.sequence,
                 )
             )
         elif (
-            command_type == SdaUnisigMessage.CommandType.SL0_READY_TO_RUN
-            or command_type == SdaUnisigMessage.CommandType.SL4_READY_TO_RUN
-            or command_type == SdaUnisigMessage.CommandType.SL0_RUN
-            or command_type == SdaUnisigMessage.CommandType.SL4_RUN
+            sda_header.command_type == SdaUnisigMessage.CommandType.SL0_READY_TO_RUN
+            or sda_header.command_type == SdaUnisigMessage.CommandType.SL4_READY_TO_RUN
+            or sda_header.command_type == SdaUnisigMessage.CommandType.SL0_RUN
+            or sda_header.command_type == SdaUnisigMessage.CommandType.SL4_RUN
         ):
             ret.append(
                 SdaRunOrReadyToRunTelegram(
-                    command_type=command_type,
-                    safety_level=safety_level,
-                    telegram_name=telegram_name,
+                    command_type=sda_header.command_type,
+                    safety_level=sda_header.safety_level,
+                    telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
-                    lowest_order_byte_sequence_number=mistery_0,
+                    lowest_order_byte_sequence_number=sda_header.sequence,
                 )
             )
-        elif command_type == SdaUnisigMessage.CommandType.SL0_TELEGRAM_FOR_UPPER_LAYER or command_type == SdaUnisigMessage.CommandType.SL4_TELEGRAM_FOR_UPPER_LAYER:
+        elif sda_header.command_type == SdaUnisigMessage.CommandType.SL0_TELEGRAM_FOR_UPPER_LAYER or sda_header.command_type == SdaUnisigMessage.CommandType.SL4_TELEGRAM_FOR_UPPER_LAYER:
             ret.append(
                 UpperLayerTelegram(
-                    safety_level=safety_level,
-                    telegram_name=telegram_name,
+                    safety_level=sda_header.safety_level,
+                    telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
-                    lowest_order_byte_sequence_number=mistery_0,
-                    command_type=command_type,
+                    lowest_order_byte_sequence_number=sda_header.sequence,
+                    command_type=sda_header.command_type,
                     upper_layer_decoding_library=upper_layer_decoding_library,
                 )
             )
@@ -236,7 +248,16 @@ class UpperLayerStm:
 class UpperLayerTelegram(SdaUnisigMessage):
     upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary
 
+    class SdaDelegate:
+        def __init__(self, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> None:
+            self.header = SdaUnisigMessage.Header(byte_message_decoded)
+            self.nid_stm = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            self.l_message = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+
     def __post_init__(self) -> None:
+
+        self.sda_delgate = UpperLayerTelegram.SdaDelegate(self.byte_message_decoded)
+
         self.stl_time_stamp_ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
 
         mistery_1 = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
@@ -244,7 +265,7 @@ class UpperLayerTelegram(SdaUnisigMessage):
         nid_stm = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
         l_packet = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=13)
 
-        self.upper_layer_decoded_stm: List[UpperLayerStm] = []
+        self.upper_layer_decoded_stm: list[UpperLayerStm] = []
         packets_definitions = [packet_definition for packet_definition in self.upper_layer_decoding_library.packets_definitions if packet_definition.identifier == nid_stm]
         if packets_definitions:
 
