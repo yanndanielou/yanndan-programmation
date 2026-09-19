@@ -78,8 +78,8 @@ class TestDecodeOnePpnLogLine:
         ppn_log_line.decode_sdn_or_sna()
         assert ppn_log_line.unisig_messages
 
-    def test_decode_line_stms_184_176_175(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
-        log_file = ppn_log.ProfibusLogFile(r"resources\ppn\STMs 175 184 176.log_ppn")
+    def test_decode_line_stms_184_176_175_from_file(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+        log_file = ppn_log.ProfibusLogFile(r"test\resources\ppn\STMs 175 184 176.log_ppn")
         log_file.process()
         assert log_file.decoded_lines
         log_line = log_file.decoded_lines[0]
