@@ -546,27 +546,26 @@ class ArchiveAnalyzis:
         for group_to_create_definition in groups_definitions_to_create:
             matching_ids = [archive_id for archive_id in all_existing_ids_identifiers if common_filters.must_be_kept_after_string_filters(archive_id, group_to_create_definition.archive_id_filters)]
 
-            if group_to_create_definition.split_by_id:
+            if group_to_create_definition.split_by_id and len(matching_ids) > 1:
                 for matching_id in matching_ids:
                     matching_lines = self.archive_library.all_sqlarch_archive_lines_by_id[matching_id]
                     group_created = ArchiveAnalyzis.GroupForFrequencyReport(
                         identifiers=matching_ids,
                         matching_lines=matching_lines,
-                        label=f"{group_to_create_definition.label} {matching_id}",
+                        label=matching_id,
                     )
                     groups_created.append(group_created)
 
-            else:
-                matching_lines = []
-                for matching_id in matching_ids:
-                    matching_lines += self.archive_library.all_sqlarch_archive_lines_by_id[matching_id]
+            matching_lines = []
+            for matching_id in matching_ids:
+                matching_lines += self.archive_library.all_sqlarch_archive_lines_by_id[matching_id]
 
-                group_created = ArchiveAnalyzis.GroupForFrequencyReport(
-                    identifiers=matching_ids,
-                    matching_lines=matching_lines,
-                    label=group_to_create_definition.label,
-                )
-                groups_created.append(group_created)
+            group_created = ArchiveAnalyzis.GroupForFrequencyReport(
+                identifiers=matching_ids,
+                matching_lines=matching_lines,
+                label=group_to_create_definition.label,
+            )
+            groups_created.append(group_created)
 
         logger_config.print_and_log_info(f"Frequency report : {len(groups_created)} groups of variable ID created")
         current_measure_begin_timestamp = self.all_sql_arch_lines_with_context[0].sql_arch_line.date
@@ -586,6 +585,7 @@ class ArchiveAnalyzis:
             current_row: OrderedDict[str, int | datetime] = OrderedDict(
                 {
                     "Interval begin": current_measure_begin_timestamp.replace(tzinfo=None),
+                    "Interval begin (string)": current_measure_begin_timestamp.isoformat(),
                     "Interval end": current_measure_end_timestamp.replace(tzinfo=None),
                 }
             )
