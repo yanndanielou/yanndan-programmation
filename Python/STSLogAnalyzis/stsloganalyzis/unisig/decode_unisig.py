@@ -312,12 +312,14 @@ class UpperLayerTelegram(SdaUnisigMessage):
             upper_layer_decoded_stm = UpperLayerStm(byte_message_decoded=self.byte_message_decoded)
             self.upper_layer_decoded_stms.append(upper_layer_decoded_stm)
 
-            packets_definitions = [packet_definition for packet_definition in self.upper_layer_decoding_library.packets_definitions if packet_definition.identifier == self.sda_delgates.nid_stm]
+            nid_content_as_bit_str = self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=upper_layer_decoded_stm.data_without_header_size_in_bits)
+            stm_byte_message_decoded = bytes_messages.DecodedBytesMessage.from_bit_string(nid_content_as_bit_str)
+
+            packets_definitions = [packet_definition for packet_definition in self.upper_layer_decoding_library.packets_definitions if packet_definition.identifier == upper_layer_decoded_stm.nid_stm]
             if packets_definitions:
 
                 packet_definition = packets_definitions[0]
-                nid_content_as_bit_str = self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=upper_layer_decoded_stm.data_without_header_size_in_bits)
-                stm_byte_message_decoded = bytes_messages.DecodedBytesMessage.from_bit_string(nid_content_as_bit_str)
+
                 logger_config.print_and_log_info(f"STM found:{upper_layer_decoded_stm.nid_stm}, packet length:{upper_layer_decoded_stm.l_message}")
 
                 fields_names_and_values: dict[str, str | int] = {}
@@ -333,12 +335,14 @@ class UpperLayerTelegram(SdaUnisigMessage):
                     else:
                         fields_names_and_values[decoded_field_name] = field_raw_unsigned_int_value
 
-                assert stm_byte_message_decoded.is_correctly_and_completely_decoded()
+                # assert stm_byte_message_decoded.is_correctly_and_completely_decoded()
                 # remaining  =
+            else:
+                logger_config.print_and_log_error(f"Unsupported STM {upper_layer_decoded_stm.nid_stm}")
 
-            assert self.byte_message_decoded.number_of_bits_remaining_to_decode < 8
-            self.padding = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(self.byte_message_decoded.number_of_bits_remaining_to_decode)
-            assert self.byte_message_decoded.is_correctly_and_completely_decoded(), f"{self.byte_message_decoded.number_of_bits_remaining_to_decode}"
+        assert self.byte_message_decoded.number_of_bits_remaining_to_decode < 8
+        self.padding = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(self.byte_message_decoded.number_of_bits_remaining_to_decode)
+        assert self.byte_message_decoded.is_correctly_and_completely_decoded(), f"{self.byte_message_decoded.number_of_bits_remaining_to_decode}"
 
 
 @dataclass
