@@ -57,7 +57,7 @@ class ProfibusLogLine:
     def decode_raw_log_line(line: str, upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary | None = None) -> Optional["ProfibusLogLine"]:
         if upper_layer_decoding_library is None:
             upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(
-                json_file_full_path=r"D:\temp\GenTel\0.0-RC12-Original_Edition\GenTel\rom\unisig_s58.json"
+                json_file_full_path=r"D:\temp\GenTel\0.0-1-Original_Edition\GenTel\rom\unisig_s58.json"
             )
 
         fields = line.split(" ")

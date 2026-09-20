@@ -95,6 +95,16 @@ class TestDecodeOnePpnLogLine:
             ppn_log_line.decode_sdn_or_sna()
             assert ppn_log_line.unisig_messages
 
+        def test_decode_one_line_with_stm7_stm47_stm31_stm2_stm1_stm30_stm5(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+            ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
+                line="2026-03-29 09:46:10:152 kppn 1.3.3: [99:33 <= 2:33] Received PROFIBUS message [num:1710][mode:SDA][len:48] 67 89 1d 24 01 01 28 20 00 10 17 41 81 40 18 0c 06 0a 05 02 81 40 48 42 18 1c 02 c1 f0 0c 11 e0 12 b3 39 17 80 59 ff 2c 02 00 6d 6a 87 67 e3 81",
+                upper_layer_decoding_library=next_unisig_58_library_fixture,
+            )
+
+            assert ppn_log_line
+            ppn_log_line.decode_sdn_or_sna()
+            assert ppn_log_line.unisig_messages
+
         def test_decode_line_with_stms_5_47_7_31_1(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
             ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
                 line="2026-06-01 18:16:18:270 kppn 1.3.3: [99:33 <= 2:33] Received PROFIBUS message [num:121266][mode:SDA][len:32] 82 89 1d 14 01 01 28 20 00 28 09 08 42 83 80 58 3e 01 80 5e 01 67 0e 4e 22 00 86 23 39 5a ab df",

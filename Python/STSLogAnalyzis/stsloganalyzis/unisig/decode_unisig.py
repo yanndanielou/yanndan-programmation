@@ -322,18 +322,22 @@ class UpperLayerTelegram(SdaUnisigMessage):
 
                 logger_config.print_and_log_info(f"STM found:{upper_layer_decoded_stm.nid_stm}, packet length:{upper_layer_decoded_stm.l_message}")
 
-                fields_names_and_values: dict[str, str | int] = {}
                 for field_definition in packet_definition.fields:
                     decoded_field_name = field_definition.name
                     decoded_field_size_in_bits = field_definition.size_in_bits
 
-                    field_raw_unsigned_int_value = stm_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=decoded_field_size_in_bits)
+                    if stm_byte_message_decoded.number_of_bits_remaining_to_decode >= decoded_field_size_in_bits:
 
-                    if field_definition.enum_type_definition:
-                        fields_names_and_values[decoded_field_name] = field_definition.enum_type_definition.states_ordered_by_value_from_zero[field_raw_unsigned_int_value]
+                        field_raw_unsigned_int_value = stm_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=decoded_field_size_in_bits)
 
+                        if field_definition.enum_type_definition:
+                            upper_layer_decoded_stm.fields_names_and_values[decoded_field_name] = field_definition.enum_type_definition.states_ordered_by_value_from_zero[field_raw_unsigned_int_value]
+
+                        else:
+                            upper_layer_decoded_stm.fields_names_and_values[decoded_field_name] = field_raw_unsigned_int_value
                     else:
-                        fields_names_and_values[decoded_field_name] = field_raw_unsigned_int_value
+                        logger_config.print_and_log_info(f"Not enough data for {upper_layer_decoded_stm.nid_stm} {decoded_field_name}")
+                        upper_layer_decoded_stm.fields_names_and_values[decoded_field_name] = "No enough data"
 
                 # assert stm_byte_message_decoded.is_correctly_and_completely_decoded()
                 # remaining  =
