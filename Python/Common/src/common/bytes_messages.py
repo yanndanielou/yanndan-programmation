@@ -61,6 +61,12 @@ def convert_bits_to_signed_int(combined_bits: str) -> int:
     return value
 
 
+def convert_hex_string_to_hex_bytes(hex_string: str) -> bytes:
+    valid_hex_string = hex_string.replace("h", "").replace(" ", "")
+    hex_bytes = bytes.fromhex(valid_hex_string)
+    return hex_bytes
+
+
 class DecodedBytesMessage:
     __key_to_protect_constructor = object()
 
@@ -72,8 +78,7 @@ class DecodedBytesMessage:
 
     @classmethod
     def from_hex_string(cls, hex_string: str) -> Self:
-        hex_bytes = bytes.fromhex(hex_string.replace(" ", ""))
-        return cls.from_bytes(hex_bytes)
+        return cls.from_bytes(convert_hex_string_to_hex_bytes(hex_string))
 
     @classmethod
     def from_bit_string(cls, str_of_bits: str) -> Self:
