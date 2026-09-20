@@ -2,8 +2,8 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
+from logger import logger_config
 
 from stsloganalyzis.unisig import decode_unisig, upper_layer_libraries
 
@@ -31,12 +31,17 @@ class ProfibusLogFile:
             self.upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(json_file_full_path=r"C:\Tools\GenTel\GenTel\rom\unisig_s58.json")
 
     def process(self) -> None:
+        logger_config.print_and_log_info(f"Process {self.file_full_path}")
         with open(self.file_full_path, "r", encoding=self.encoding) as f:
             lines = f.readlines()
             for line in lines:
-                decoded_line = ProfibusLogLine.decode_raw_log_line(line=line, upper_layer_decoding_library=self.upper_layer_decoding_library)
-                if decoded_line is not None:
-                    self.decoded_lines.append(decoded_line)
+                try:
+                    decoded_line = ProfibusLogLine.decode_raw_log_line(line=line, upper_layer_decoding_library=self.upper_layer_decoding_library)
+                    if decoded_line is not None:
+                        self.decoded_lines.append(decoded_line)
+
+                except ValueError as val_err:
+                    logger_config.print_and_log_exception(val_err)
 
 
 @dataclass
@@ -51,14 +56,17 @@ class ProfibusLogLine:
     upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary
 
     def __post_init__(self) -> None:
-        self.unisig_messages: List[decode_unisig.UnisigMessage] = []
+        self.unisig_messages: list[decode_unisig.UnisigMessage] = []
 
     @staticmethod
-    def decode_raw_log_line(line: str, upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary | None = None) -> Optional["ProfibusLogLine"]:
+    def decode_raw_log_line(line: str, upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary | None = None) -> "ProfibusLogLine|None":
         if upper_layer_decoding_library is None:
             upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(
                 json_file_full_path=r"D:\temp\GenTel\0.1-0-Original_Edition\GenTel\rom\unisig_s58.json"
             )
+
+        while line.startswith("\x00"):
+            line = line[1:]
 
         fields = line.split(" ")
         if len(fields) <= 4:
@@ -126,4 +134,9 @@ class ProfibusLogLine:
         if self.mode == SendingMode.SDA:
             self.unisig_messages = decode_unisig.SdaUnisigMessage.from_sda_hexa_bytes_str(self.bytes_hexa, self.upper_layer_decoding_library)
         else:
-            self.unisig_messages = decode_unisig.SdnUnisigMessage.decode_sdn_bytes_hexa(self.bytes_hexa, self.upper_layer_decoding_library)
+            try:
+                self.unisig_messages = decode_unisig.SdnUnisigMessage.decode_sdn_bytes_hexa(self.bytes_hexa, self.upper_layer_decoding_library)
+            except AssertionError as ass_err:
+                logger_config.print_and_log_exception(ass_err)
+            except ValueError as ass_err:
+                logger_config.print_and_log_exception(ass_err)
