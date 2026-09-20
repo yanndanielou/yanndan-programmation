@@ -3,28 +3,35 @@ from logger import logger_config
 from stsloganalyzis.next_data import (
     next_ats_data,
 )
+
+from common import file_utils
+
 from stsloganalyzis.ppn import ppn_log
 
 
 def main() -> None:
 
-    line = "2026-06-02 17:38:09:961 kppn 1.3.3: [99:33 <= 2:33] Received PROFIBUS message [num:169690][mode:SDA][len:28] 1e 85 01 05 49 64 6c 65 20 63 79 63 6c 65 20 74 69 6d 65 6f 75 74 bc 0b 17 6d 17 78"
+    with logger_config.application_logger():
+        all_ppn_logs_paths = file_utils.get_files_by_directory_and_file_name_mask(
+            # directory_path=r"D:\temp\2026-09-20 logs PPN we mars 26\ppn_cab1_log.tar",
+            directory_path=r"D:\temp\2026-09-20 logs PPN we mars 26",
+            file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER,
+            # filename_pattern="*",
+            filename_pattern="*.txt",
+        )
 
-    decoded_frame = ppn_log.ProfibusLogLine.decode_raw_log_line(line)
+        for ppn_log_path in all_ppn_logs_paths:
 
-    print(f"Valid frame: {decoded_frame is not None}")
-    if decoded_frame:
-        # Affichage des résultats
-        print(f"Time: {decoded_frame.timestamp}")
-        print(f"Source: {decoded_frame.source}")
-        print(f"Target: {decoded_frame.target}")
-        print(f"Sequence: {decoded_frame.sequence}")
-        print(f"Mode: {decoded_frame.mode}")
-        print(f"Length: {decoded_frame.length}")
-        print(f"Bytes: {decoded_frame.bytes_hexa}")
-        # Trame d'exemple donnée par l'utilisateur
+            decoded_file = ppn_log.ProfibusLogFile(
+                file_full_path=ppn_log_path,
+            )
+            decoded_file.process()
 
-        decoded_frame.decode_sdn_or_sna()
+            logger_config.print_and_log_info(f"Decode {len(decoded_file.decoded_lines)} lines of {ppn_log_path}")
+            for line_number, decoded_line in enumerate(decoded_file.decoded_lines):
+                decoded_line.decode_sdn_or_sna()
+
+        pass
 
 
 # Exemple d'utilisation
