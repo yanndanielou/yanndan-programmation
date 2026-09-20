@@ -17,6 +17,8 @@ SL0_CRC_SIZE_IN_BITES = SL0_CRC_SIZE_IN_BYTES * bytes_messages.NUMBER_OF_BITS_IN
 STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES = 4
 STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BITS = STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES * bytes_messages.NUMBER_OF_BITS_IN_BYTE
 
+MAXIMUM_PADDING_SIZE_IN_BITS_SUBSET_58 = 7
+
 
 def compute_crc_unisig_32(data: bytes, poly: int = 0x04C11DB7, init: int = 0xFFFFFFFF, xor_out: int = 0xFFFFFFFF) -> int:
     """
@@ -282,71 +284,61 @@ class SdaRunOrReadyToRunTelegram(SdaUnisigMessage):
 
 @dataclass
 class UpperLayerStm:
-    fields_names_and_values: dict[str, str | int]
-    bit_message_decoded: bytes_messages.DecodedBytesMessage
-    size_in_bits: int
+    byte_message_decoded: bytes_messages.DecodedBytesMessage
+
+    def __post_init__(self) -> None:
+
+        self.fields_names_and_values: dict[str, str | int] = {}
+
+        self.nid_stm = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        self.l_message = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=13)
+        self.data_without_header_size_in_bits = self.l_message - 8 - 13
 
 
 @dataclass
 class UpperLayerTelegram(SdaUnisigMessage):
     upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary
 
-    class SdaDelegate:
-        def __init__(self, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> None:
-            self.nid_stm = byte_message_decoded.get_next_byte_as_single_int_unsigned()
-            self.l_message = byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=13)
-            self.data_without_header_size_in_bits = self.l_message - 8 - 13
-
-            pass
-
     def __post_init__(self) -> None:
         self.header = SdaUnisigMessage.Header(self.byte_message_decoded)
-        self.sda_delgate = UpperLayerTelegram.SdaDelegate(self.byte_message_decoded)
 
         self.raw_received_crc = self.byte_message_decoded.get_and_remove_last_bits_as_single_int_unsigned(size_bits=self.safety_level.get_crc_size_in_bits())
         self.stl_time_stamp = self.byte_message_decoded.get_and_remove_last_bytes_as_single_int_unsigned(size_bytes=STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES)
 
-        # all_data_to_delegate =
+        self.upper_layer_decoded_stms: list[UpperLayerStm] = []
 
-        # self.stl_time_stamp_ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
+        while self.byte_message_decoded.number_of_bits_remaining_to_decode > MAXIMUM_PADDING_SIZE_IN_BITS_SUBSET_58:
 
-        # mistery_1 = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        # raw_command_1 = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        # nid_stm = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        # l_packet = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=13)
+            upper_layer_decoded_stm = UpperLayerStm(byte_message_decoded=self.byte_message_decoded)
+            self.upper_layer_decoded_stms.append(upper_layer_decoded_stm)
 
-        self.upper_layer_decoded_stm: list[UpperLayerStm] = []
-        packets_definitions = [packet_definition for packet_definition in self.upper_layer_decoding_library.packets_definitions if packet_definition.identifier == self.sda_delgate.nid_stm]
-        if packets_definitions:
+            packets_definitions = [packet_definition for packet_definition in self.upper_layer_decoding_library.packets_definitions if packet_definition.identifier == self.sda_delgates.nid_stm]
+            if packets_definitions:
 
-            packet_definition = packets_definitions[0]
-            nid_content_as_bit_str = self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=self.sda_delgate.data_without_header_size_in_bits)
-            stm_byte_message_decoded = bytes_messages.DecodedBytesMessage.from_bit_string(nid_content_as_bit_str)
-            logger_config.print_and_log_info(f"STM found:{self.sda_delgate.nid_stm}, packet length:{self.sda_delgate.l_message}")
+                packet_definition = packets_definitions[0]
+                nid_content_as_bit_str = self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=upper_layer_decoded_stm.data_without_header_size_in_bits)
+                stm_byte_message_decoded = bytes_messages.DecodedBytesMessage.from_bit_string(nid_content_as_bit_str)
+                logger_config.print_and_log_info(f"STM found:{upper_layer_decoded_stm.nid_stm}, packet length:{upper_layer_decoded_stm.l_message}")
 
-            fields_names_and_values: dict[str, str | int] = {}
-            for field_definition in packet_definition.fields:
-                decoded_field_name = field_definition.name
-                decoded_field_size_in_bits = field_definition.size_in_bits
+                fields_names_and_values: dict[str, str | int] = {}
+                for field_definition in packet_definition.fields:
+                    decoded_field_name = field_definition.name
+                    decoded_field_size_in_bits = field_definition.size_in_bits
 
-                field_raw_unsigned_int_value = stm_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=decoded_field_size_in_bits)
+                    field_raw_unsigned_int_value = stm_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=decoded_field_size_in_bits)
 
-                if field_definition.enum_type_definition:
-                    fields_names_and_values[decoded_field_name] = field_definition.enum_type_definition.states_ordered_by_value_from_zero[field_raw_unsigned_int_value]
+                    if field_definition.enum_type_definition:
+                        fields_names_and_values[decoded_field_name] = field_definition.enum_type_definition.states_ordered_by_value_from_zero[field_raw_unsigned_int_value]
 
-                else:
-                    fields_names_and_values[decoded_field_name] = field_raw_unsigned_int_value
+                    else:
+                        fields_names_and_values[decoded_field_name] = field_raw_unsigned_int_value
 
-            self.upper_layer_decoded_stm.append(
-                UpperLayerStm(
-                    fields_names_and_values=fields_names_and_values,
-                    bit_message_decoded=stm_byte_message_decoded,
-                    size_in_bits=decoded_field_size_in_bits,
-                )
-            )
+                assert stm_byte_message_decoded.is_correctly_and_completely_decoded()
+                # remaining  =
 
-            assert stm_byte_message_decoded.is_correctly_and_completely_decoded()
-            # remaining  =
+            assert self.byte_message_decoded.number_of_bits_remaining_to_decode < 8
+            self.padding = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(self.byte_message_decoded.number_of_bits_remaining_to_decode)
+            assert self.byte_message_decoded.is_correctly_and_completely_decoded(), f"{self.byte_message_decoded.number_of_bits_remaining_to_decode}"
 
 
 @dataclass
