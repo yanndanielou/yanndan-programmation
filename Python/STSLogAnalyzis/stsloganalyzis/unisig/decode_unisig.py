@@ -302,7 +302,9 @@ class UpperLayerTelegram(SdaUnisigMessage):
     def __post_init__(self) -> None:
         self.header = SdaUnisigMessage.Header(self.byte_message_decoded)
 
-        self.raw_received_crc = self.byte_message_decoded.get_and_remove_last_bits_as_single_int_unsigned(size_bits=self.safety_level.get_crc_size_in_bits())
+        self.raw_received_crc = (
+            self.byte_message_decoded.get_and_remove_last_bits_as_single_int_unsigned(size_bits=self.safety_level.get_crc_size_in_bits()) if self.safety_level.get_crc_size_in_bits() else 0
+        )
         self.stl_time_stamp = self.byte_message_decoded.get_and_remove_last_bytes_as_single_int_unsigned(size_bytes=STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES)
 
         self.upper_layer_decoded_stms: list[UpperLayerStm] = []
