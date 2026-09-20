@@ -62,6 +62,13 @@ class SafetyLevel(IntEnum):
     SL0 = 0
     SL4 = 4
 
+    def get_crc_size_in_bits(self) -> int:
+        if self == SafetyLevel.SL4:
+            return int(SL4_CRC_SIZE_IN_BITES)
+        elif self == SafetyLevel.SL0:
+            return int(SL0_CRC_SIZE_IN_BITES)
+        assert False
+
 
 class UnisigMessage(ABC):
     pass
@@ -205,12 +212,7 @@ class SdaUnisigMessage(UnisigMessage):
 
     @property
     def crc_size_in_bits(self) -> int:
-        if self.safety_level == SafetyLevel.SL4:
-            return int(SL4_CRC_SIZE_IN_BITES)
-        elif self.safety_level == SafetyLevel.SL0:
-            return int(SL0_CRC_SIZE_IN_BITES)
-        else:
-            assert False
+        return self.safety_level.get_crc_size_in_bits()
 
     @property
     def crc_size_in_bytes(self) -> int:
@@ -302,6 +304,8 @@ class UpperLayerTelegram(SdaUnisigMessage):
 
         self.sda_delgate = UpperLayerTelegram.SdaDelegate(self.byte_message_decoded)
 
+        # all_data_to_delegate =
+
         # self.stl_time_stamp_ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
 
         # mistery_1 = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
@@ -339,7 +343,7 @@ class UpperLayerTelegram(SdaUnisigMessage):
                 )
             )
 
-            crc = stm_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=SL4_CRC_SIZE_IN_BITES) if self.safety_level == SafetyLevel.SL4 else None
+            crc = stm_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=self.safety_level.get_crc_size_in_bits())
             assert stm_byte_message_decoded.is_correctly_and_completely_decoded()
             # remaining  =
 
