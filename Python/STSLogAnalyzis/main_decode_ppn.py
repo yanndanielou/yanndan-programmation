@@ -13,11 +13,11 @@ def main() -> None:
 
     with logger_config.application_logger():
         all_ppn_logs_paths = file_utils.get_files_by_directory_and_file_name_mask(
-            # directory_path=r"D:\temp\2026-09-20 logs PPN we mars 26\ppn_cab1_log.tar",
-            directory_path=r"D:\temp\2026-09-20 logs PPN we mars 26",
+            directory_path=r"D:\temp\2026-09-20 logs PPN we mars 26\ppn_cab1_log.tar",
+            # directory_path=r"D:\temp\2026-09-20 logs PPN we mars 26",
             file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER,
-            # filename_pattern="*",
-            filename_pattern="*.txt",
+            filename_pattern="*",
+            # filename_pattern="*.txt",
         )
 
         for ppn_log_path in all_ppn_logs_paths:
