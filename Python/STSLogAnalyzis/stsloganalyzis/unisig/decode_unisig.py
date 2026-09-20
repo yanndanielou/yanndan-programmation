@@ -1,23 +1,21 @@
-import binascii
-import re
 from abc import ABC
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from enum import Enum, IntEnum, auto
-from typing import Optional, cast, List, Dict
+from enum import IntEnum
+from typing import cast
 
 from common import bytes_messages
-from dateutil import parser
+from logger import logger_config
 
 from stsloganalyzis.unisig import upper_layer_libraries
-
-from logger import logger_config
 
 SL4_CRC_SIZE_IN_BYTES = 6
 SL4_CRC_SIZE_IN_BITES = SL4_CRC_SIZE_IN_BYTES * bytes_messages.NUMBER_OF_BITS_IN_BYTE
 
 SL0_CRC_SIZE_IN_BYTES = 0
 SL0_CRC_SIZE_IN_BITES = SL0_CRC_SIZE_IN_BYTES * bytes_messages.NUMBER_OF_BITS_IN_BYTE
+
+STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES = 4
+STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BITS = STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES * bytes_messages.NUMBER_OF_BITS_IN_BYTE
 
 
 def compute_crc_unisig_32(data: bytes, poly: int = 0x04C11DB7, init: int = 0xFFFFFFFF, xor_out: int = 0xFFFFFFFF) -> int:
@@ -81,7 +79,7 @@ class SdnUnisigMessage(UnisigMessage):
         SL4_MULTICAST_TELEGRAM_FOR_UPPER_LAYER = int("0x8d", 16)
 
     @classmethod
-    def decode_sdn_bytes_hexa(cls, bytes_hexa: str, upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary) -> List[UnisigMessage]:
+    def decode_sdn_bytes_hexa(cls, bytes_hexa: str, upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary) -> list[UnisigMessage]:
         byte_message_decoded = bytes_messages.DecodedBytesMessage.from_hex_string(bytes_hexa)
         prefixX = byte_message_decoded.get_next_byte_as_single_int_unsigned()
         prefixY = byte_message_decoded.get_next_byte_as_single_int_unsigned()
@@ -123,7 +121,7 @@ class SdaUnisigMessage(UnisigMessage):
             return self.command_type.name[4:]
 
     @classmethod
-    def from_sda_hexa_bytes_str(cls, bytes_hexa: str, upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary) -> List[UnisigMessage]:
+    def from_sda_hexa_bytes_str(cls, bytes_hexa: str, upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary) -> list[UnisigMessage]:
         byte_message_decoded = bytes_messages.DecodedBytesMessage.from_hex_string(bytes_hexa)
         sda_header = SdaUnisigMessage.Header(byte_message_decoded)
 
@@ -279,12 +277,12 @@ class SdaAuthenticationOrAuthenticationAcknowledgementTelegram(SdaUnisigMessage)
 class SdaRunOrReadyToRunTelegram(SdaUnisigMessage):
 
     def __post_init__(self) -> None:
-        self.stl_time_stamp_ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
+        self.stl_time_stamp_ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES)
 
 
 @dataclass
 class UpperLayerStm:
-    fields_names_and_values: Dict[str, str | int]
+    fields_names_and_values: dict[str, str | int]
     bit_message_decoded: bytes_messages.DecodedBytesMessage
     size_in_bits: int
 
@@ -297,12 +295,16 @@ class UpperLayerTelegram(SdaUnisigMessage):
         def __init__(self, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> None:
             self.nid_stm = byte_message_decoded.get_next_byte_as_single_int_unsigned()
             self.l_message = byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=13)
+            self.data_without_header_size_in_bits = self.l_message - 8 - 13
+
             pass
 
     def __post_init__(self) -> None:
         self.header = SdaUnisigMessage.Header(self.byte_message_decoded)
-
         self.sda_delgate = UpperLayerTelegram.SdaDelegate(self.byte_message_decoded)
+
+        self.raw_received_crc = self.byte_message_decoded.get_and_remove_last_bits_as_single_int_unsigned(size_bits=self.safety_level.get_crc_size_in_bits())
+        self.stl_time_stamp = self.byte_message_decoded.get_and_remove_last_bytes_as_single_int_unsigned(size_bytes=STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES)
 
         # all_data_to_delegate =
 
@@ -318,7 +320,7 @@ class UpperLayerTelegram(SdaUnisigMessage):
         if packets_definitions:
 
             packet_definition = packets_definitions[0]
-            nid_content_as_bit_str = self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=self.sda_delgate.l_message)
+            nid_content_as_bit_str = self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=self.sda_delgate.data_without_header_size_in_bits)
             stm_byte_message_decoded = bytes_messages.DecodedBytesMessage.from_bit_string(nid_content_as_bit_str)
             logger_config.print_and_log_info(f"STM found:{self.sda_delgate.nid_stm}, packet length:{self.sda_delgate.l_message}")
 
@@ -343,7 +345,6 @@ class UpperLayerTelegram(SdaUnisigMessage):
                 )
             )
 
-            crc = stm_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=self.safety_level.get_crc_size_in_bits())
             assert stm_byte_message_decoded.is_correctly_and_completely_decoded()
             # remaining  =
 
