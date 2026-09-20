@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, cast, Self
+from typing import cast, Self
 
 NUMBER_OF_BITS_IN_BYTE = int(8)
 
@@ -70,11 +70,14 @@ def convert_hex_string_to_hex_bytes(hex_string: str) -> bytes:
 class DecodedBytesMessage:
     __key_to_protect_constructor = object()
 
-    def __init__(self, key: object, str_of_bits: str) -> None:
-        assert key == DecodedBytesMessage.__key_to_protect_constructor, "Class must be instanciated from classmethods"
+    def __init__(self, constructor_secret_key: object, str_of_bits: str) -> None:
+        assert constructor_secret_key == DecodedBytesMessage.__key_to_protect_constructor, "Class must be instanciated from classmethods"
         self.current_bit_index = 0
         self.str_of_bits = str_of_bits
-        self.total_length_in_bits = len(self.str_of_bits)
+
+    @property
+    def total_length_in_bits(self) -> int:
+        return len(self.str_of_bits)
 
     @classmethod
     def from_hex_string(cls, hex_string: str) -> Self:
@@ -82,7 +85,7 @@ class DecodedBytesMessage:
 
     @classmethod
     def from_bit_string(cls, str_of_bits: str) -> Self:
-        return cls(key=cls.__key_to_protect_constructor, str_of_bits=str_of_bits)
+        return cls(constructor_secret_key=cls.__key_to_protect_constructor, str_of_bits=str_of_bits)
 
     @classmethod
     def from_bytes(cls, hex_bytes: bytes) -> Self:
@@ -99,8 +102,14 @@ class DecodedBytesMessage:
         assert self.number_of_bits_remaining_to_decode >= 0, f"Too many ({-self.current_bit_index}) bits decoded!!"
         return bits_extracted
 
+    def extract_and_remove_last_next_bits_to_str_of_bit(self, number_of_bits: int) -> str:
+        bits_extracted = self.str_of_bits[-number_of_bits:]
+        self.str_of_bits = self.str_of_bits[:-number_of_bits]
+        assert self.number_of_bits_remaining_to_decode >= 0, f"Too many ({-self.current_bit_index}) bits decoded!!"
+        return bits_extracted
+
     def get_next_bits_as_ascii_char(self, number_of_chars: int) -> str:
-        all_chars: List[str] = []
+        all_chars: list[str] = []
 
         size_bits_per_char = 8
 
@@ -138,8 +147,8 @@ class DecodedBytesMessage:
         assert as_int in [0, 1], f"Unsupported bool with value {as_int}"
         return as_int == 1
 
-    def get_next_bits_as_int_table_signed_and_unsigned(self, table_dim: int, size_bits: int) -> List[DecodedIntResult]:
-        all_values: List[DecodedIntResult] = []
+    def get_next_bits_as_int_table_signed_and_unsigned(self, table_dim: int, size_bits: int) -> list[DecodedIntResult]:
+        all_values: list[DecodedIntResult] = []
 
         for _ in range(0, table_dim):
             bits_extracted = self.extract_next_bits_to_str_of_bit(size_bits)
@@ -149,6 +158,26 @@ class DecodedBytesMessage:
             all_values.append(DecodedIntResult(signed_value=field_signed_value, unsigned_value=field_unsigned_value))
 
         return all_values
+
+    def get_and_remove_last_bits_as_bitset_str(self, size_bits: int) -> str:
+        bits_extracted = self.extract_and_remove_last_next_bits_to_str_of_bit(size_bits)
+        return bits_extracted
+
+    def get_and_remove_last_bits_as_single_int_signed_and_unsigned(self, size_bits: int) -> DecodedIntResult:
+        bits_extracted = self.extract_and_remove_last_next_bits_to_str_of_bit(size_bits)
+        return convert_bits_to_signed_and_unsigned_int(bits_extracted)
+
+    def get_and_remove_last_bits_as_single_int_signed(self, size_bits: int) -> int:
+        return self.get_and_remove_last_bits_as_single_int_signed_and_unsigned(size_bits).signed_value
+
+    def get_and_remove_last_byte_as_single_int_unsigned(self) -> int:
+        return self.get_and_remove_last_bytes_as_single_int_unsigned(size_bytes=1)
+
+    def get_and_remove_last_bytes_as_single_int_unsigned(self, size_bytes: int) -> int:
+        return self.get_and_remove_last_bits_as_single_int_unsigned(size_bytes * NUMBER_OF_BITS_IN_BYTE)
+
+    def get_and_remove_last_bits_as_single_int_unsigned(self, size_bits: int) -> int:
+        return self.get_and_remove_last_bits_as_single_int_signed_and_unsigned(size_bits).unsigned_value
 
     def is_correctly_and_completely_decoded(self) -> bool:
         return self.number_of_bits_remaining_to_decode == 0
