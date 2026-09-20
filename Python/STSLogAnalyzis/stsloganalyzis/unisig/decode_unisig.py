@@ -339,7 +339,7 @@ class UpperLayerTelegram(SdaUnisigMessage):
                         logger_config.print_and_log_info(f"Not enough data for {upper_layer_decoded_stm.nid_stm} {decoded_field_name}")
                         upper_layer_decoded_stm.fields_names_and_values[decoded_field_name] = "No enough data"
 
-                # assert stm_byte_message_decoded.is_correctly_and_completely_decoded()
+                assert stm_byte_message_decoded.is_correctly_and_completely_decoded()
                 # remaining  =
             else:
                 logger_config.print_and_log_error(f"Unsupported STM {upper_layer_decoded_stm.nid_stm}")

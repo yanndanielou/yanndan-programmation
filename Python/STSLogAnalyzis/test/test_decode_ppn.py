@@ -78,6 +78,16 @@ class TestDecodeOnePpnLogLine:
             ppn_log_line.decode_sdn_or_sna()
             assert ppn_log_line.unisig_messages
 
+        def test_decode_line_with_stm175(
+            self,
+            next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary,
+        ) -> None:
+            raw_ppn_log_line = "0111001010001001000111010001110010101111000000111010100110000000000001000000011100000011100000000100000000000000011100010000100000011000100000000111011101100101100011110100011000000001000001001101100100110000010001000111010000100111"
+            ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(raw_ppn_log_line, upper_layer_decoding_library=next_unisig_58_library_fixture)
+            assert ppn_log_line
+            ppn_log_line.decode_sdn_or_sna()
+            assert ppn_log_line.unisig_messages
+
         def test_decode_line_stms_184_176_175_from_file(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
             log_file = ppn_log.ProfibusLogFile(file_full_path=r"test\resources\ppn\STMs 175 184 176.log_ppn", upper_layer_decoding_library=next_unisig_58_library_fixture)
             log_file.process()
