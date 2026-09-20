@@ -8,7 +8,7 @@ from stsloganalyzis.unisig import decode_unisig, upper_layer_libraries
 
 @pytest.fixture(scope="session", name="next_unisig_58_library_fixture")
 def next_unisig_58_library() -> upper_layer_libraries.UpperLayerDecodingLibrary:
-    ret = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(json_file_full_path=r"D:\temp\GenTel\0.0-RC12-Original_Edition\GenTel\rom\unisig_s58.json")
+    ret = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(json_file_full_path=r"D:\temp\GenTel\0.1-0-Original_Edition\GenTel\rom\unisig_s58.json")
     assert isinstance(ret, upper_layer_libraries.UpperLayerDecodingLibrary)
     return ret
 
@@ -79,7 +79,7 @@ class TestDecodeOnePpnLogLine:
         assert ppn_log_line.unisig_messages
 
     def test_decode_line_stms_184_176_175_from_file(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
-        log_file = ppn_log.ProfibusLogFile(r"test\resources\ppn\STMs 175 184 176.log_ppn")
+        log_file = ppn_log.ProfibusLogFile(file_full_path=r"test\resources\ppn\STMs 175 184 176.log_ppn", upper_layer_decoding_library=next_unisig_58_library_fixture)
         log_file.process()
         assert log_file.decoded_lines
         log_line = log_file.decoded_lines[0]
