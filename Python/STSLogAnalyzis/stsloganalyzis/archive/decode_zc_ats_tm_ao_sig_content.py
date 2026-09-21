@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
-    List,
+    list,
     Optional,
     cast,
 )
@@ -26,7 +26,7 @@ class TvdZcRelation:
 
 @dataclass
 class TvdZcLibrary:
-    all_tvd_zc_relations: List[TvdZcRelation]
+    all_tvd_zc_relations: list[TvdZcRelation]
     all_known_zc_id: set[str]
 
     def get_by_zc_name_and_tvd_number(
@@ -51,7 +51,7 @@ class ZcAtsTmAoSigDecoder:
 
     def __post_init__(self) -> None:
 
-        all_tvd_zc_relations: List[TvdZcRelation] = []
+        all_tvd_zc_relations: list[TvdZcRelation] = []
         all_known_zc_id: set[str] = set()
 
         # Read the CSV file

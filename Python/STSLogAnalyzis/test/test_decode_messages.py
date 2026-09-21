@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 
-from typing import List
+from typing import list
 
 from stsloganalyzis.archive import decode_xml_message
 from stsloganalyzis.archive import decode_message
@@ -29,7 +29,7 @@ class TestDecodeSimpleFakeMessages:
             ("01", [0, 0, 0, 0, 0, 0, 0, 1]),
         ],
     )
-    def test_message_with_only_8_bit_fields(self, hexa_content: str, bits_expected_values: List[int]) -> None:
+    def test_message_with_only_8_bit_fields(self, hexa_content: str, bits_expected_values: list[int]) -> None:
         hexa_content_as_str = hexa_content
         xml_message_decoder = decode_xml_message.XmlMessageDecoder(xml_directory_path=r"Input_for_tests\Xml")
         decoded_message = xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=996, hexadecimal_content=hexa_content_as_str)

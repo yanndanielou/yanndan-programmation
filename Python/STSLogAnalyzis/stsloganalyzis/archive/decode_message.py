@@ -1,7 +1,7 @@
 import csv
 import datetime
 from dataclasses import dataclass
-from typing import Dict, List, Optional, cast
+from typing import Optional, cast
 from warnings import deprecated
 
 from logger import logger_config
@@ -39,8 +39,8 @@ class InvariantMessage:
 class InvariantMessagesManager:
     def __init__(self, messages_list_csv_file_full_path: str) -> None:
 
-        self.all_messages: List[InvariantMessage] = []
-        self.all_messages_by_id: Dict[str, InvariantMessage] = dict()
+        self.all_messages: list[InvariantMessage] = []
+        self.all_messages_by_id: dict[str, InvariantMessage] = dict()
 
         # Read the CSV file
         with open(messages_list_csv_file_full_path, mode="r", encoding="ANSI") as file:
@@ -63,7 +63,7 @@ class DecodedMessage:
     def __init__(self, message_number: int, xml_decoded_message: decode_xml_message.DecodedXmlMessage) -> None:
         self.message_number = message_number
         self.xml_decoded_message = xml_decoded_message
-        self.decoded_fields_flat_directory: Dict[str, constants.FIELD_TYPE] = {}
+        self.decoded_fields_flat_directory: dict[str, constants.FIELD_TYPE] = {}
         self.hlf_decoded: Optional[datetime.datetime] = None
 
     def get_field_value_human_readable(self, field_name: str) -> constants.HUMAN_READABLE_FIELD_TYPE:

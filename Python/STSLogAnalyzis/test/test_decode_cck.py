@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 
-from typing import List
+from typing import list
 
 from common import file_utils
 from stsloganalyzis.cck import decode_cck

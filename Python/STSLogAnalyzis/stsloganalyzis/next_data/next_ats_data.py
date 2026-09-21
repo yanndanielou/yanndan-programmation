@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Set, Tuple
+from typing import dict, Optional, Set, tuple
 
 from stsloganalyzis.archive import (
     decode_action_set_content,
@@ -35,13 +35,13 @@ def get_line_topology(inv_conf_folder_full_path: Optional[str]) -> line_topology
     return railway_line
 
 
-def get_encoders(inv_conf_folder_full_path: Optional[str] = None) -> Tuple[line_topology.Line, decode_archive.ArchiveDecoder]:
+def get_encoders(inv_conf_folder_full_path: Optional[str] = None) -> tuple[line_topology.Line, decode_archive.ArchiveDecoder]:
 
     messages_list_csv_file_full_path = r"D:\NEXT\Data\Csv\NEXT_message.csv"
     xml_directory_path = r"D:\NEXT\Data\Xml"
 
     class NextSignedOrUnsignedTypeForIntegerFieldsManager(decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase):
-        def __init__(self, signed_integer_fields_by_message_id_and_field_name: Optional[Dict[int, Set[str]]] = None) -> None:
+        def __init__(self, signed_integer_fields_by_message_id_and_field_name: Optional[dict[int, Set[str]]] = None) -> None:
             self.signed_integer_fields_by_message_id_and_field_name = signed_integer_fields_by_message_id_and_field_name or {}
 
         def get_decoding_type_for_field(

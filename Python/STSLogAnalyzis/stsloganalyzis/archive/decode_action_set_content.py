@@ -1,4 +1,4 @@
-from typing import List, Dict, TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast
 from dataclasses import dataclass
 
 if TYPE_CHECKING:
@@ -16,8 +16,8 @@ ATS_CC_ACTION_SET_MESSAGE_ID = 192
 class DecodedActionSet(decode_specific_message_content.SpecificMessageContentDecoded):
     def __init__(self) -> None:
         super().__init__()
-        self.undecoded_bits_by_error: List[int] = []
-        self.action_set_id_with_value_true: List[str] = []
+        self.undecoded_bits_by_error: list[int] = []
+        self.action_set_id_with_value_true: list[str] = []
 
 
 @dataclass

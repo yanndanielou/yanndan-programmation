@@ -1,4 +1,4 @@
-from typing import List, cast, Self, Optional
+from typing import list, cast, Self, Optional
 from dataclasses import dataclass, field
 import json
 
@@ -8,7 +8,7 @@ from logger import logger_config
 @dataclass
 class EnumAttributesTypeDefinition:
     name: str
-    states_ordered_by_value_from_zero: List[str]
+    states_ordered_by_value_from_zero: list[str]
 
 
 @dataclass
@@ -23,18 +23,18 @@ class PacketDefinition:
     name: str
     alias: Optional[str]
     identifier: int
-    fields: List[PacketFieldDefinition]
+    fields: list[PacketFieldDefinition]
 
 
 @dataclass
 class UpperLayerDecodingLibrary:
-    enum_attributes_type_definitions: List[EnumAttributesTypeDefinition]
-    packets_definitions: List[PacketDefinition]
+    enum_attributes_type_definitions: list[EnumAttributesTypeDefinition]
+    packets_definitions: list[PacketDefinition]
 
     @classmethod
     @logger_config.stopwatch_decorator()
     def from_next_json_file_full_path(cls, json_file_full_path: str) -> Self:
-        enum_attributes_type_definitions: List[EnumAttributesTypeDefinition] = []
+        enum_attributes_type_definitions: list[EnumAttributesTypeDefinition] = []
         with open(json_file_full_path, "r") as file:
             json_data = json.load(file)
 
@@ -48,7 +48,7 @@ class UpperLayerDecodingLibrary:
 
             logger_config.print_and_log_info(f"{len(enum_attributes_type_definitions)} enum_attributes_type_definitions created")
 
-            packets_definitions: List[PacketDefinition] = []
+            packets_definitions: list[PacketDefinition] = []
 
             for packet_definition_found in json_data.get("Packets"):
                 packets_definitions.append(

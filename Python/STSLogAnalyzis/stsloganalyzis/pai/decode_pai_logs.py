@@ -4,7 +4,7 @@ import os
 from collections import Counter, OrderedDict
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Dict, List, Optional, Self, Tuple, cast, Any
+from typing import dict, list, Optional, Self, tuple, cast, Any
 
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
@@ -31,7 +31,7 @@ class TerminalTechniqueEquipmentWithAlarms:
     name: str
 
     def __post_init__(self) -> None:
-        self.alarms: List[TerminalTechniqueAlarm] = []
+        self.alarms: list[TerminalTechniqueAlarm] = []
 
 
 @dataclass
@@ -117,9 +117,9 @@ class TerminalTechniqueArchivesMaintLogBackToPast:
 class TerminalTechniqueMesdAlarmsGroup:
     library: "TerminalTechniqueArchivesMaintLibrary"
     number_of_group_in_library: int
-    alarm_lines: List["TerminalTechniqueArchivesMaintLogLine"]
+    alarm_lines: list["TerminalTechniqueArchivesMaintLogLine"]
     last_back_to_past_detected: Optional[TerminalTechniqueArchivesMaintLogBackToPast]
-    following_sahara_alarms: List[SaharaTerminalTechniqueAlarm] = field(default_factory=list)
+    following_sahara_alarms: list[SaharaTerminalTechniqueAlarm] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.previous_group = self.library.all_mesd_alarms_groups[self.number_of_group_in_library - 2] if self.library.all_mesd_alarms_groups else None
@@ -138,17 +138,17 @@ class TerminalTechniqueArchivesMaintLibrary:
     name: str
 
     def __post_init__(self) -> None:
-        self.all_processed_lines: List["TerminalTechniqueArchivesMaintLogLine"] = []
-        self.all_processed_files: List["TerminalTechniqueArchivesMaintFile"] = []
-        self.currently_opened_alarms: List[TerminalTechniqueClosableAlarm] = []
-        self.all_mesd_alarms_groups: List["TerminalTechniqueMesdAlarmsGroup"] = []
-        self.ignored_end_alarms_without_alarm_begin: List[TerminalTechniqueClosableAlarm] = []
-        self.sahara_alarms: List[SaharaTerminalTechniqueAlarm] = []
-        self.mccs_hs_alarms: List[TerminalTechniqueMccsHAlarm] = []
-        self.sessions_alarms: List[TerminalTechniqueSessionAlarm] = []
-        self.equipments_with_alarms: List[TerminalTechniqueEquipmentWithAlarms] = []
-        self.all_back_to_past_detected: List[TerminalTechniqueArchivesMaintLogBackToPast] = []
-        self.mccs_alarms_files_names_and_line_numbers: List[Tuple[str, int]] = []
+        self.all_processed_lines: list["TerminalTechniqueArchivesMaintLogLine"] = []
+        self.all_processed_files: list["TerminalTechniqueArchivesMaintFile"] = []
+        self.currently_opened_alarms: list[TerminalTechniqueClosableAlarm] = []
+        self.all_mesd_alarms_groups: list["TerminalTechniqueMesdAlarmsGroup"] = []
+        self.ignored_end_alarms_without_alarm_begin: list[TerminalTechniqueClosableAlarm] = []
+        self.sahara_alarms: list[SaharaTerminalTechniqueAlarm] = []
+        self.mccs_hs_alarms: list[TerminalTechniqueMccsHAlarm] = []
+        self.sessions_alarms: list[TerminalTechniqueSessionAlarm] = []
+        self.equipments_with_alarms: list[TerminalTechniqueEquipmentWithAlarms] = []
+        self.all_back_to_past_detected: list[TerminalTechniqueArchivesMaintLogBackToPast] = []
+        self.mccs_alarms_files_names_and_line_numbers: list[tuple[str, int]] = []
 
     def load_folder(self, folder_full_path: str) -> Self:
 
@@ -198,7 +198,7 @@ class TerminalTechniqueArchivesMaintLibrary:
         self.equipments_with_alarms.append(equipment)
         return equipment
 
-    def export_equipments_with_alarms_to_excel(self, output_folder_path: str, equipment_names_to_ignore: List[str]) -> None:
+    def export_equipments_with_alarms_to_excel(self, output_folder_path: str, equipment_names_to_ignore: list[str]) -> None:
         """
         Exporte tous les équipements et leurs alarmes dans un fichier Excel.
 
@@ -213,7 +213,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     return
 
                 # Préparer les données pour les équipements
-                equipment_data: List[Dict[str, Any]] = []
+                equipment_data: list[dict[str, Any]] = []
                 for equipment in self.equipments_with_alarms:
                     if equipment.name not in equipment_names_to_ignore:
                         for alarm in equipment.alarms:
@@ -244,7 +244,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
                 # SAHARA
                 try:
-                    sahara_data: List[Dict[str, Any]] = []
+                    sahara_data: list[dict[str, Any]] = []
                     for sahara_alarm in self.sahara_alarms:
                         sahara_data.append(
                             {
@@ -263,7 +263,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
                 # MCCS H
                 try:
-                    mccs_data: List[Dict[str, Any]] = []
+                    mccs_data: list[dict[str, Any]] = []
                     for mccs_alarm in self.mccs_hs_alarms:
                         mccs_data.append(
                             {
@@ -286,7 +286,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
                 # Back to Past
                 try:
-                    btp_data: List[Dict[str, Any]] = []
+                    btp_data: list[dict[str, Any]] = []
                     for back_to_past in self.all_back_to_past_detected:
                         duration = (back_to_past.next_line.decoded_timestamp - back_to_past.previous_line.decoded_timestamp).total_seconds()
                         btp_data.append(
@@ -313,7 +313,7 @@ class TerminalTechniqueArchivesMaintLibrary:
             except Exception as e:
                 logger_config.print_and_log_exception(e)
 
-    def plot_alarms_by_period(self, output_folder_path: str, equipment_names_to_ignore: List[str], interval_minutes: int = 10, do_show: bool = False) -> None:
+    def plot_alarms_by_period(self, output_folder_path: str, equipment_names_to_ignore: list[str], interval_minutes: int = 10, do_show: bool = False) -> None:
         """
         Génère un bar graph montrant les événements par intervalle de temps.
 
@@ -336,16 +336,16 @@ class TerminalTechniqueArchivesMaintLibrary:
                 end_time = self.all_processed_lines[-1].decoded_timestamp
 
                 # Créer des intervalles de temps
-                interval_start_times: List[datetime.datetime] = []
+                interval_start_times: list[datetime.datetime] = []
                 current_time = start_time
                 while current_time <= end_time:
                     interval_start_times.append(current_time)
                     current_time += datetime.timedelta(minutes=interval_minutes)
 
                 # Initialiser les compteurs pour chaque intervalle
-                interval_back_to_past_count: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
-                interval_sahara_count: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
-                interval_equipment_counts: Dict[Tuple[datetime.datetime, datetime.datetime], Dict[str, int]] = {}
+                interval_back_to_past_count: dict[tuple[datetime.datetime, datetime.datetime], int] = {}
+                interval_sahara_count: dict[tuple[datetime.datetime, datetime.datetime], int] = {}
+                interval_equipment_counts: dict[tuple[datetime.datetime, datetime.datetime], dict[str, int]] = {}
 
                 for interval_start in interval_start_times:
                     interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
@@ -390,7 +390,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 y_sahara = list(interval_sahara_count.values())
 
                 # Récupérer tous les noms d'équipements uniques (en ordre d'apparition)
-                equipment_names: List[str] = []
+                equipment_names: list[str] = []
                 for interval_counts in interval_equipment_counts.values():
                     for name in interval_counts.keys():
                         if name not in equipment_names:
@@ -400,9 +400,9 @@ class TerminalTechniqueArchivesMaintLibrary:
                 excel_filename = f"{self.name}_stats_alarms_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
 
                 # Préparer les données pour le DataFrame
-                excel_data: List[Dict[str, Any]] = []
+                excel_data: list[dict[str, Any]] = []
                 for (interval_begin, interval_end), back_to_past_count in interval_back_to_past_count.items():
-                    row_data: Dict[str, Any] = {
+                    row_data: dict[str, Any] = {
                         "Début Intervalle": interval_begin,
                         "Fin Intervalle": interval_end,
                         "Back to Past": back_to_past_count,
@@ -518,8 +518,8 @@ class TerminalTechniqueArchivesMaintLibrary:
             end_time = self.all_processed_lines[-1].decoded_timestamp
 
             # Créer des intervalles de temps
-            intervals: List[Tuple[datetime.datetime, datetime.datetime]] = []
-            interval_start_times: List[datetime.datetime] = []
+            intervals: list[tuple[datetime.datetime, datetime.datetime]] = []
+            interval_start_times: list[datetime.datetime] = []
             current_time = start_time
             while current_time <= end_time:
                 interval_start_time = current_time
@@ -530,7 +530,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
             logger_config.print_and_log_info(f"plot_sahara_alarms_by_period: {len(interval_start_times)} intervals of {interval_minutes} minutes between {start_time} and {end_time}")
 
-            interval_sahara_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+            interval_sahara_counts: dict[tuple[datetime.datetime, datetime.datetime], int] = Counter()
 
             for interval in intervals:
                 interval_sahara_counts[interval] = 0
@@ -553,7 +553,7 @@ class TerminalTechniqueArchivesMaintLibrary:
             excel_filename = f"{self.name}_stats_sahara_alarms_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
 
             # Préparer les données pour le DataFrame
-            excel_data: List[Dict[str, Any]] = []
+            excel_data: list[dict[str, Any]] = []
             for (interval_begin, interval_end), count in interval_sahara_counts.items():
                 excel_data.append(
                     {
@@ -632,8 +632,8 @@ class TerminalTechniqueArchivesMaintLibrary:
                 end_time = self.all_processed_lines[-1].decoded_timestamp
 
                 # Créer des intervalles de temps
-                intervals: List[Tuple[datetime.datetime, datetime.datetime]] = []
-                interval_start_times: List[datetime.datetime] = []
+                intervals: list[tuple[datetime.datetime, datetime.datetime]] = []
+                interval_start_times: list[datetime.datetime] = []
                 current_time = start_time
                 while current_time <= end_time:
                     interval_start_time = current_time
@@ -642,7 +642,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     interval_end_time = current_time
                     intervals.append((interval_start_time, interval_end_time))
 
-                interval_back_to_past_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+                interval_back_to_past_counts: dict[tuple[datetime.datetime, datetime.datetime], int] = Counter()
                 for interval in intervals:
                     interval_back_to_past_counts[interval] = 0
                 # Compter les back_to_past_detected dans chaque intervalle
@@ -662,7 +662,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 excel_filename = f"{self.name}_stats_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
 
                 # Préparer les données pour le DataFrame
-                excel_data: List[Dict[str, Any]] = []
+                excel_data: list[dict[str, Any]] = []
                 for (interval_begin, interval_end), count in interval_back_to_past_counts.items():
                     excel_data.append(
                         {
@@ -740,8 +740,8 @@ class TerminalTechniqueArchivesMaintLibrary:
                 end_time = self.all_processed_lines[-1].decoded_timestamp
 
                 # Créer des intervalles de temps
-                intervals: List[Tuple[datetime.datetime, datetime.datetime]] = []
-                interval_start_times: List[datetime.datetime] = []
+                intervals: list[tuple[datetime.datetime, datetime.datetime]] = []
+                interval_start_times: list[datetime.datetime] = []
                 current_time = start_time
                 while current_time <= end_time:
                     interval_start_time = current_time
@@ -751,9 +751,9 @@ class TerminalTechniqueArchivesMaintLibrary:
                     intervals.append((interval_start_time, interval_end_time))
 
                 # Compter les événements dans chaque intervalle
-                interval_sahara_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
-                interval_mccs_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
-                interval_back_to_past_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+                interval_sahara_counts: dict[tuple[datetime.datetime, datetime.datetime], int] = Counter()
+                interval_mccs_counts: dict[tuple[datetime.datetime, datetime.datetime], int] = Counter()
+                interval_back_to_past_counts: dict[tuple[datetime.datetime, datetime.datetime], int] = Counter()
 
                 for interval in intervals:
                     interval_sahara_counts[interval] = 0
@@ -807,7 +807,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                 excel_filename = f"{self.name}_stats_sahara_mccs_back_to_past_by_period{file_name_utils.get_file_suffix_with_current_datetime()}.xlsx"
 
                 # Préparer les données pour le DataFrame
-                excel_data: List[Dict[str, Any]] = []
+                excel_data: list[dict[str, Any]] = []
                 for (interval_begin, interval_end), sahara_count in interval_sahara_counts.items():
                     excel_data.append(
                         {
@@ -930,7 +930,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     return
 
                 # Créer une liste contenant tous les événements avec leurs timestamps
-                events: List[Tuple[datetime.datetime, str, str]] = []
+                events: list[tuple[datetime.datetime, str, str]] = []
 
                 # Ajouter les MCCS H alarms
                 for mccs_alarm in self.mccs_hs_alarms:
@@ -981,7 +981,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
         with logger_config.stopwatch_with_label(f"{self.name}: export_back_to_past_with_context_to_excel", inform_beginning=False, enable_print=False, enabled=False):
             try:
-                rows: List[Dict[str, Any]] = []
+                rows: list[dict[str, Any]] = []
                 for back_to_past in self.all_back_to_past_detected:
                     rows.append(
                         {
@@ -1029,7 +1029,7 @@ class TerminalTechniqueArchivesMaintLibrary:
 
             with logger_config.stopwatch_with_label(f"{self.name}: Créer une map pour accès rapide aux back_to_past par l'index de la ligne"):
                 # Créer une map pour accès rapide aux back_to_past par l'index de la ligne
-                back_to_past_by_previous_line_index: Dict[int, TerminalTechniqueArchivesMaintLogBackToPast] = {}
+                back_to_past_by_previous_line_index: dict[int, TerminalTechniqueArchivesMaintLogBackToPast] = {}
                 for back_to_past in self.all_back_to_past_detected:
                     for line_idx, line in enumerate(self.all_processed_lines):
                         if line is back_to_past.previous_line:
@@ -1037,7 +1037,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                             break
 
             # Préparer les données pour le DataFrame
-            excel_data: List[Dict[str, Any]] = []
+            excel_data: list[dict[str, Any]] = []
             for idx, sahara_alarm in enumerate(self.sahara_alarms):
                 # Trouver l'index de cette alarme dans all_processed_lines
                 sahara_line_idx = None
@@ -1106,7 +1106,7 @@ class TerminalTechniqueArchivesMaintLibrary:
                     return
 
                 # Préparer les données pour le DataFrame
-                excel_data: List[Dict[str, Any]] = []
+                excel_data: list[dict[str, Any]] = []
                 for group in self.all_mesd_alarms_groups:
                     excel_data.append(
                         {

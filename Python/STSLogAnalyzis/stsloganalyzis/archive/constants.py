@@ -1,4 +1,3 @@
-from typing import List
 from datetime import datetime
 
 FIELD_FULL_NAMES_TO_EXCLUDE_IN_REPORTS = [
@@ -15,4 +14,4 @@ STATE_FIELD_NAME = "State"
 
 HUMAN_READABLE_FIELD_TYPE = float | int | bool | str | datetime
 
-FIELD_TYPE = HUMAN_READABLE_FIELD_TYPE | List[int] | List[str] | List[bool]
+FIELD_TYPE = HUMAN_READABLE_FIELD_TYPE | list[int] | list[str] | list[bool]

@@ -3,7 +3,7 @@ import datetime
 import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Optional, cast
+from typing import dict, list, Optional, cast
 
 import dpkt
 from pcapng import FileScanner
@@ -26,7 +26,7 @@ class InvariantMessage:
 # Load the packet capture using the Lua dissector
 
 import pyshark
-from typing import List
+from typing import list
 
 
 class PcapDissector:

@@ -4,7 +4,7 @@ import csv
 from dataclasses import dataclass, field
 from enum import Enum, unique, StrEnum
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, cast
+from typing import dict, list, Optional, tuple, cast
 
 from logger import logger_config
 
@@ -107,7 +107,7 @@ class Segment(TopologyElement):
     def __post_init__(self) -> None:
         assert self.identifier
         assert isinstance(self.identifier, str)
-        self.tracking_blocks_in_segment: List[TrackingBlockOnSegment] = []
+        self.tracking_blocks_in_segment: list[TrackingBlockOnSegment] = []
         self.min_abscissa_exact_location = ExactLocation(self, 0)
         self.max_abscissa_exact_location = ExactLocation(self, self.length_in_cm)
 
@@ -123,9 +123,9 @@ class Segment(TopologyElement):
     def __repr__(self) -> str:
         return str(self)
 
-    def compute_consistency_errors(self) -> List[ConsistencyError]:
+    def compute_consistency_errors(self) -> list[ConsistencyError]:
 
-        consistency_errors: List[ConsistencyError] = []
+        consistency_errors: list[ConsistencyError] = []
         all_tracking_blocks_in_segment_sizes = sum([tracking_block_in_segment.length for tracking_block_in_segment in self.tracking_blocks_in_segment])
         if all_tracking_blocks_in_segment_sizes < self.length_in_cm:
             # logger_config.print_and_log_error(f"compute_consistency_errors {self.identifier} : has error", do_not_print=True)
@@ -143,7 +143,7 @@ class Segment(TopologyElement):
 
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def load_from_csv(cls, csv_file_path: str | Path) -> List["Segment"]:
+    def load_from_csv(cls, csv_file_path: str | Path) -> list["Segment"]:
         """
         Charge une liste de segments depuis un fichier CSV.
 
@@ -178,7 +178,7 @@ class Segment(TopologyElement):
     @classmethod
     def load_topology_from_csv(
         cls,
-        segments: List["Segment"],
+        segments: list["Segment"],
         relations_csv_file_path: str | Path,
     ) -> None:
         """
@@ -327,7 +327,7 @@ class ExactLocationsPath:
     destination: ExactLocation
 
     def __post_init__(self) -> None:
-        self.all_portions: List[ExactLocationsPathSegmentPortion] = []
+        self.all_portions: list[ExactLocationsPathSegmentPortion] = []
 
     @property
     def total_length_in_cm(self) -> int:
@@ -340,14 +340,14 @@ class Line:
     Représente une ligne ferroviaire complète avec tous ses composants.
     """
 
-    segments: List[Segment]
-    track_circuits: List[TrackingCircuit]
-    track_circuit_by_id: Dict[str, TrackingCircuit]
-    tracking_blocks: List[TrackingBlock]
-    switches: Dict[str, Switch]
-    virtual_cantons: List[VirtualCanton]
-    virtual_canton_by_id: Dict[str, VirtualCanton]
-    not_created_tracking_blocks_ids_without_track_circuits: List[str]
+    segments: list[Segment]
+    track_circuits: list[TrackingCircuit]
+    track_circuit_by_id: dict[str, TrackingCircuit]
+    tracking_blocks: list[TrackingBlock]
+    switches: dict[str, Switch]
+    virtual_cantons: list[VirtualCanton]
+    virtual_canton_by_id: dict[str, VirtualCanton]
+    not_created_tracking_blocks_ids_without_track_circuits: list[str]
     tracking_block_on_segments_csv_full_path: Optional[str | Path]
     virtual_canton_extremities_csv_full_path: Optional[str | Path]
 
@@ -359,17 +359,17 @@ class Line:
         for topology_element in self.segments + self.track_circuits + self.tracking_blocks:
             topology_element.set_line(self)
 
-        self.tracking_block_on_segments: List[TrackingBlockOnSegment] = []
+        self.tracking_block_on_segments: list[TrackingBlockOnSegment] = []
         if self.tracking_block_on_segments_csv_full_path is not None:
             self.tracking_block_on_segments = TrackingBlockOnSegment.load_from_csv(self.tracking_block_on_segments_csv_full_path, self)
 
-        self.virtual_cantons_extremities: List[VirtualCantonExtremity] = []
+        self.virtual_cantons_extremities: list[VirtualCantonExtremity] = []
         if self.virtual_canton_extremities_csv_full_path is not None:
             self.virtual_cantons_extremities = VirtualCantonExtremity.load_from_csv(self.virtual_canton_extremities_csv_full_path, line=self)
 
         self.virtual_cantons_on_segments = VirtualCantonOnSegment.compute_all(line=self)
 
-        self.occurences_of_not_found_tracking_block_in_segment: Dict[Tuple[Segment, int], int] = dict()
+        self.occurences_of_not_found_tracking_block_in_segment: dict[tuple[Segment, int], int] = dict()
         logger_config.print_and_log_info(repr(self))
 
         consistency_errors = self.compute_consistency_errors()
@@ -576,8 +576,8 @@ class Line:
         return cast(VirtualCanton, matches[0].virtual_canton)
 
     @logger_config.stopwatch_decorator(inform_beginning=True)
-    def compute_consistency_errors(self) -> List[ConsistencyError]:
-        consistency_errors: List[ConsistencyError] = []
+    def compute_consistency_errors(self) -> list[ConsistencyError]:
+        consistency_errors: list[ConsistencyError] = []
         for segment in self.segments:
             consistency_errors += segment.compute_consistency_errors()
         return consistency_errors
@@ -657,15 +657,15 @@ class VirtualCanton(TopologyElement):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        self.extremities: List[VirtualCantonExtremity] = []
-        self.cantons_on_segment: List[VirtualCantonOnSegment] = []
+        self.extremities: list[VirtualCantonExtremity] = []
+        self.cantons_on_segment: list[VirtualCantonOnSegment] = []
 
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def load_from_csv(
         cls,
         csv_file_path: str | Path,
-    ) -> List["VirtualCanton"]:
+    ) -> list["VirtualCanton"]:
         """
         Format du CSV:
             'CV_ID'	'NOM_PCC'	'LIBELLE'	'ZTR_ID'	'CBTC_TS_ID'	'ZMP_ID'	'NUM_CV_ZTR'	'TPS_PARCOURS'	'LONGUEUR'	'TRANSIT'	'PLACE_MAINT_ID'	'QUAI_ID'	'ZAUM_ID'
@@ -676,7 +676,7 @@ class VirtualCanton(TopologyElement):
         """
         csv_path = Path(csv_file_path)
 
-        virtual_cantons: List[VirtualCanton] = []
+        virtual_cantons: list[VirtualCanton] = []
 
         with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter=";")
@@ -709,7 +709,7 @@ class VirtualCantonExtremity:
         cls,
         csv_file_path: str | Path,
         line: "Line",
-    ) -> List["VirtualCantonExtremity"]:
+    ) -> list["VirtualCantonExtremity"]:
         """
         Format du CSV:
             'CV_ID'	'SEGMENT_ID'	'EXT_SENS_SEG'	EXT_ABS_SEG'	EXT_ABS_SEG_CM'	EXT_PK'
@@ -718,7 +718,7 @@ class VirtualCantonExtremity:
             'CV_TTEO_V1'	'SEG_010309'	'CROISSANT'	76.5	7650	2733.746
 
         """
-        extremities: List[VirtualCantonExtremity] = []
+        extremities: list[VirtualCantonExtremity] = []
         csv_path = Path(csv_file_path)
 
         with open(csv_path, "r", encoding="utf-8") as f:
@@ -763,8 +763,8 @@ class VirtualCantonOnSegment:
     def compute_all(
         cls,
         line: "Line",
-    ) -> List["VirtualCantonOnSegment"]:
-        virtual_cantons_on_segment: List["VirtualCantonOnSegment"] = []
+    ) -> list["VirtualCantonOnSegment"]:
+        virtual_cantons_on_segment: list["VirtualCantonOnSegment"] = []
 
         for i in range(0, len(line.virtual_cantons_extremities), 2):
             virtual_canton_extremity_1 = line.virtual_cantons_extremities[i]
@@ -828,7 +828,7 @@ class TrackingCircuit(TopologyElement):
     authorized_acknowledgement_rights: Optional[str]
     denied_acknowledgement_rights: Optional[str]
     virtual: bool
-    tracking_blocks: List["TrackingBlock"] = field(default_factory=list)
+    tracking_blocks: list["TrackingBlock"] = field(default_factory=list)
 
     def __str__(self) -> str:
         return self.label
@@ -838,7 +838,7 @@ class TrackingCircuit(TopologyElement):
 
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def load_from_csv(cls, csv_file_path: str | Path) -> List["TrackingCircuit"]:
+    def load_from_csv(cls, csv_file_path: str | Path) -> list["TrackingCircuit"]:
         """
         Charge une liste de circuits de detection depuis un fichier CSV.
 
@@ -919,7 +919,7 @@ class TrackingBlock(TopologyElement):
     tracking_circuit: TrackingCircuit
 
     def __post_init__(self) -> None:
-        self.tracking_blocks_in_segment: List[TrackingBlockOnSegment] = []
+        self.tracking_blocks_in_segment: list[TrackingBlockOnSegment] = []
 
     def __str__(self) -> str:
         return self.label if self.label else ""
@@ -931,9 +931,9 @@ class TrackingBlock(TopologyElement):
     def load_from_csv_raw(
         cls,
         csv_file_path: str | Path,
-        circuits_dict: Dict[str, TrackingCircuit],
+        circuits_dict: dict[str, TrackingCircuit],
         ignore_tracking_blocks_without_circuits: bool = False,
-    ) -> Tuple[List["TrackingBlock"], List[str]]:
+    ) -> tuple[list["TrackingBlock"], list[str]]:
         """
         Charge les blocs de détection depuis un fichier CSV et crée les objets TrackingBlock
         en établissant directement les associations avec les circuits.
@@ -1011,7 +1011,7 @@ class TrackingBlock(TopologyElement):
 
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def load_from_csv(cls, csv_file_path: str | Path) -> List["TrackingBlock"]:
+    def load_from_csv(cls, csv_file_path: str | Path) -> list["TrackingBlock"]:
         """
         Charge une liste de blocs de détection depuis un fichier CSV.
 
@@ -1057,7 +1057,7 @@ class Switch(TopologyElement):
     def _load_from_csv_raw(
         cls,
         csv_file_path: str | Path,
-    ) -> List["Switch"]:
+    ) -> list["Switch"]:
         """
         Charge les aiguillages depuis un fichier CSV et crée les objets Switch.
 
@@ -1105,7 +1105,7 @@ class Switch(TopologyElement):
 
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def load_from_csv(cls, csv_file_path: str | Path) -> List["Switch"]:
+    def load_from_csv(cls, csv_file_path: str | Path) -> list["Switch"]:
         """
         Charge une liste d'aiguillages depuis un fichier CSV.
 
@@ -1149,7 +1149,7 @@ class TrackingBlockOnSegment(TopologyElement):
         cls,
         csv_file_path: str | Path,
         line: "Line",
-    ) -> List["TrackingBlockOnSegment"]:
+    ) -> list["TrackingBlockOnSegment"]:
         """
         Charge une liste de relations TrackingBlock-Segment depuis un fichier CSV.
 

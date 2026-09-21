@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, List, Tuple, cast, Optional
+from typing import TYPE_CHECKING, dict, list, tuple, cast, Optional
 
 from logger import logger_config
 
@@ -18,10 +18,10 @@ if TYPE_CHECKING:
 class SpecificMessageContentDecoded:
 
     def __init__(self) -> None:
-        # self.fields_with_value: Dict[str, bool | int | str | float] = dict()
-        self.fields_with_value: Dict[str, constants.FIELD_TYPE] = dict()
+        # self.fields_with_value: dict[str, bool | int | str | float] = dict()
+        self.fields_with_value: dict[str, constants.FIELD_TYPE] = dict()
 
-    def _get_track_circuit_and_tracking_block_info(self, mal_seg_id: int, mal_offset: int, railway_line: line_topology.Line, decoded_message: "decode_message.DecodedMessage") -> Tuple[str, str]:
+    def _get_track_circuit_and_tracking_block_info(self, mal_seg_id: int, mal_offset: int, railway_line: line_topology.Line, decoded_message: "decode_message.DecodedMessage") -> tuple[str, str]:
         location_is_defined = mal_seg_id > 0
         if location_is_defined:
             tracking_block = railway_line.get_tracking_block_by_segment_and_abscissa(segment=mal_seg_id, abscissa_in_cm=mal_offset)

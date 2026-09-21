@@ -3,7 +3,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Dict, List, Optional, Self, Tuple
+from typing import dict, list, Optional, Self, tuple
 
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
@@ -21,7 +21,7 @@ LINK_STATE_CHANGE_PATTERN_STR = r".*changement d'état : (?P<old_state>.*) => (?
 LINK_STATE_CHANGE_PATTERN = re.compile(LINK_STATE_CHANGE_PATTERN_STR)
 
 
-def save_cck_mpro_lines_in_excel(trace_lines: List["CckMproTraceLine"], output_folder_path: str, excel_output_file_name_without_extension: str) -> None:
+def save_cck_mpro_lines_in_excel(trace_lines: list["CckMproTraceLine"], output_folder_path: str, excel_output_file_name_without_extension: str) -> None:
     """
     Sauvegarde une liste de CckMproTraceLine dans un fichier Excel.
 
@@ -69,7 +69,7 @@ def save_cck_mpro_lines_in_excel(trace_lines: List["CckMproTraceLine"], output_f
     logger_config.print_and_log_info(f"Total de {len(trace_lines)} lignes sauvegardées")
 
 
-def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTraceLine"], output_folder_path: str, label: str, interval_minutes: int = 10, do_show: bool = False) -> None:
+def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: list["CckMproTraceLine"], output_folder_path: str, label: str, interval_minutes: int = 10, do_show: bool = False) -> None:
     if not trace_lines:
         print("La liste des traces est vide.")
         return
@@ -82,18 +82,18 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(trace_lines: List["CckMproTrace
     end_time = trace_lines[-1].decoded_timestamp
 
     # Créer des intervalles de temps
-    interval_start_times: List[datetime.datetime] = []
+    interval_start_times: list[datetime.datetime] = []
     current_time = start_time
     while current_time <= end_time:
         interval_start_times.append(current_time)
         current_time += datetime.timedelta(minutes=interval_minutes)
 
     # Compter les éléments dans chaque intervalle
-    interval_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
+    interval_counts: dict[tuple[datetime.datetime, datetime.datetime], int] = {}
     for interval_start in interval_start_times:
         interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
         interval_counts[(interval_start, interval_end)] = 0
-    
+
     # Single pass through trace_lines instead of nested loops
     for trace in trace_lines:
         for interval_start in interval_start_times:
@@ -236,18 +236,18 @@ class CckMproChangementEtatLiaison(CckMproTraceSpecificEvent):
 @dataclass
 class CckMproTraceLibrary:
     name: str
-    all_processed_lines: List["CckMproTraceLine"] = field(default_factory=list)
-    all_processed_files: List["CckMproTraceFile"] = field(default_factory=list)
-    all_problem_enchainement_numero_protocolaire: List["CckMproProblemEnchainementNumeroProtocolaire"] = field(default_factory=list)
-    all_problem_enchainement_numero_protocolaire_per_link: Dict["CckMproLiaison", List["CckMproProblemEnchainementNumeroProtocolaire"]] = field(default_factory=dict)
-    all_changement_etats_liaisons_mpro: List["CckMproChangementEtatLiaison"] = field(default_factory=list)
-    all_changement_etats_liaisons_mpro_per_link: Dict["CckMproLiaison", List["CckMproChangementEtatLiaison"]] = field(default_factory=dict)
-    lines_per_liaison: Dict[Optional["CckMproLiaison"], List["CckMproTraceLine"]] = field(default_factory=dict)
+    all_processed_lines: list["CckMproTraceLine"] = field(default_factory=list)
+    all_processed_files: list["CckMproTraceFile"] = field(default_factory=list)
+    all_problem_enchainement_numero_protocolaire: list["CckMproProblemEnchainementNumeroProtocolaire"] = field(default_factory=list)
+    all_problem_enchainement_numero_protocolaire_per_link: dict["CckMproLiaison", list["CckMproProblemEnchainementNumeroProtocolaire"]] = field(default_factory=dict)
+    all_changement_etats_liaisons_mpro: list["CckMproChangementEtatLiaison"] = field(default_factory=list)
+    all_changement_etats_liaisons_mpro_per_link: dict["CckMproLiaison", list["CckMproChangementEtatLiaison"]] = field(default_factory=dict)
+    lines_per_liaison: dict[Optional["CckMproLiaison"], list["CckMproTraceLine"]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        self.all_temporary_loss_link: List[CckMproTemporaryLossLink] = []
-        self.all_liaisons: List[CckMproLiaison] = []
-        self.liaison_by_identifier: Dict[str, CckMproLiaison] = {}
+        self.all_temporary_loss_link: list[CckMproTemporaryLossLink] = []
+        self.all_liaisons: list[CckMproLiaison] = []
+        self.liaison_by_identifier: dict[str, CckMproLiaison] = {}
 
     def get_or_create_liaison(self, full_name: str, identifier: str) -> "CckMproLiaison":
         if identifier in self.liaison_by_identifier:
@@ -274,7 +274,7 @@ class CckMproTraceLibrary:
                             if key not in self.lines_per_liaison:
                                 self.lines_per_liaison[key] = []
                             self.lines_per_liaison[key] += value
-                        
+
                         file_count += 1
                         # Log progress every 10 files
                         if file_count % 10 == 0:
@@ -339,15 +339,15 @@ class CckMproTraceLibrary:
         end_time = self.all_processed_lines[-1].decoded_timestamp
 
         # Créer des intervalles de temps
-        interval_start_times: List[datetime.datetime] = []
+        interval_start_times: list[datetime.datetime] = []
         current_time = start_time
         while current_time <= end_time:
             interval_start_times.append(current_time)
             current_time += datetime.timedelta(minutes=interval_minutes)
 
         # Compter les éléments dans chaque intervalle
-        interval_problems_count: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
-        interval_loss_link_count: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
+        interval_problems_count: dict[tuple[datetime.datetime, datetime.datetime], int] = {}
+        interval_loss_link_count: dict[tuple[datetime.datetime, datetime.datetime], int] = {}
 
         # Initialiser les compteurs
         for interval_start in interval_start_times:
@@ -583,9 +583,9 @@ pass
 class CckMproLiaison:
     full_name: str
     identifier: str
-    all_lines: List["CckMproTraceLine"] = field(default_factory=list)
+    all_lines: list["CckMproTraceLine"] = field(default_factory=list)
 
-    __slots__ = ('full_name', 'identifier', 'all_lines', 'hash_computed')
+    __slots__ = ("full_name", "identifier", "all_lines", "hash_computed")
 
     def __post_init__(self) -> None:
         self.hash_computed = hash(self.full_name)
@@ -599,13 +599,13 @@ class CckMproTraceFile:
     parent_folder_full_path: str
     file_name: str
     library: "CckMproTraceLibrary"
-    all_processed_lines: List["CckMproTraceLine"] = field(default_factory=list)
-    all_problem_enchainement_numero_protocolaire: List["CckMproProblemEnchainementNumeroProtocolaire"] = field(default_factory=list)
-    all_changement_etats_liaisons_mpro: List["CckMproChangementEtatLiaison"] = field(default_factory=list)
+    all_processed_lines: list["CckMproTraceLine"] = field(default_factory=list)
+    all_problem_enchainement_numero_protocolaire: list["CckMproProblemEnchainementNumeroProtocolaire"] = field(default_factory=list)
+    all_changement_etats_liaisons_mpro: list["CckMproChangementEtatLiaison"] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.file_full_path = self.parent_folder_full_path + "/" + self.file_name
-        self.lines_per_liaison: Dict[Optional[CckMproLiaison], List["CckMproTraceLine"]] = {}
+        self.lines_per_liaison: dict[Optional[CckMproLiaison], list["CckMproTraceLine"]] = {}
         self._load_file()
 
     def _load_file(self) -> None:
@@ -615,23 +615,23 @@ class CckMproTraceFile:
                 for line_number, line in enumerate(file, start=1):
                     if line_number % 100000 == 0:
                         logger_config.print_and_log_info(f"Handle line {self.file_name}:#{line_number}")
-                    
+
                     processed_line = CckMproTraceLine(parent_file=self, full_raw_line=line, line_number=line_number)
-                    
+
                     # Only parse what we need immediately
                     changement = processed_line.changement_etat_liaison
                     if changement:
                         self.all_changement_etats_liaisons_mpro.append(changement)
-                    
+
                     problem = processed_line.problem_enchainement_numero_protocolaire
                     if problem:
                         self.all_problem_enchainement_numero_protocolaire.append(problem)
-                    
+
                     liaison = processed_line.liaison
                     if liaison not in self.lines_per_liaison:
                         self.lines_per_liaison[liaison] = []
                     self.lines_per_liaison[liaison].append(processed_line)
-                    
+
                     self.all_processed_lines.append(processed_line)
 
         logger_config.print_and_log_info(f"{self.file_full_path}: {len(self.all_processed_lines)} lines found")
@@ -644,8 +644,7 @@ class CckMproTraceLine:
     full_raw_line: str
     line_number: int
 
-    __slots__ = ('parent_file', 'full_raw_line', 'line_number', '_decoded_timestamp', '_liaison', '_liaison_full_name', 
-                 '_liaison_id', '_problem_enchainement', '_changement_etat', '_parsed')
+    __slots__ = ("parent_file", "full_raw_line", "line_number", "_decoded_timestamp", "_liaison", "_liaison_full_name", "_liaison_id", "_problem_enchainement", "_changement_etat", "_parsed")
 
     def __post_init__(self) -> None:
         self._parsed = False
@@ -664,7 +663,7 @@ class CckMproTraceLine:
 
         self._parsed = True
         raw_date_str = self.full_raw_line[1:23]
-        
+
         try:
             year = int(raw_date_str[:4])
             month = int(raw_date_str[5:7])
@@ -687,7 +686,7 @@ class CckMproTraceLine:
 
         if "le msg a un problème de 'enchainement numero protocolaire'" in self.full_raw_line:
             self._problem_enchainement = CckMproProblemEnchainementNumeroProtocolaire(self)
-        
+
         if "- changement d'état : " in self.full_raw_line:
             self._changement_etat = CckMproChangementEtatLiaison(self)
 
@@ -697,7 +696,7 @@ class CckMproTraceLine:
         return self._decoded_timestamp
 
     @property
-    def liaison(self) -> Optional['CckMproLiaison']:
+    def liaison(self) -> Optional["CckMproLiaison"]:
         self._parse_lazy()
         return self._liaison
 
@@ -712,11 +711,11 @@ class CckMproTraceLine:
         return self._liaison_id
 
     @property
-    def problem_enchainement_numero_protocolaire(self) -> Optional['CckMproProblemEnchainementNumeroProtocolaire']:
+    def problem_enchainement_numero_protocolaire(self) -> Optional["CckMproProblemEnchainementNumeroProtocolaire"]:
         self._parse_lazy()
         return self._problem_enchainement
 
     @property
-    def changement_etat_liaison(self) -> Optional['CckMproChangementEtatLiaison']:
+    def changement_etat_liaison(self) -> Optional["CckMproChangementEtatLiaison"]:
         self._parse_lazy()
         return self._changement_etat

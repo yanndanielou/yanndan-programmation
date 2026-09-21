@@ -6,7 +6,7 @@ import gzip
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional, cast
+from typing import list, Optional, cast
 
 from logger import logger_config
 
@@ -16,7 +16,7 @@ PERIOD_TO_DETECT_LACK_OF_LOGS = datetime.timedelta(seconds=3)  # Example period 
 @dataclass
 class CabLogs:
     log_files_directory_path: str
-    log_files_names: List[str]
+    log_files_names: list[str]
     log_files_prefix: str
     label: str = ""
     encoding: str = "utf-8"
@@ -32,15 +32,15 @@ class ProfibusLogFile:
 class ProfibusLogSession:
     cab_log: CabLogs
     log_lines: list["ProfibusLogLine"] = field(default_factory=list)
-    going_back_to_past_groups: List["GoingBackToPastGroup"] = field(default_factory=list)
-    missing_logs_events: List["MissingLogs"] = field(default_factory=list)
+    going_back_to_past_groups: list["GoingBackToPastGroup"] = field(default_factory=list)
+    missing_logs_events: list["MissingLogs"] = field(default_factory=list)
 
 
 @dataclass
 class GoingBackToPastGroup:
     approximative_present_timestamp: datetime.datetime
     approximative_past_timestamp: datetime.datetime
-    going_back_to_past_single_events: List["GoingBackToPastSingleEvent"] = field(default_factory=list)
+    going_back_to_past_single_events: list["GoingBackToPastSingleEvent"] = field(default_factory=list)
 
     def is_near_present_timestamp(self, potential_present: datetime.datetime) -> bool:
         return (potential_present - self.approximative_present_timestamp).total_seconds() < 2
@@ -60,7 +60,7 @@ class GoingBackToPastSingleEvent:
     going_back_to_past_group: GoingBackToPastGroup
     before_going_back_to_past_log_line: "ProfibusLogLine"
     after_going_back_to_past_log_line: "ProfibusLogLine"
-    log_lines_with_wrongly_past_timestamp: List["ProfibusLogLine"] = field(default_factory=list)
+    log_lines_with_wrongly_past_timestamp: list["ProfibusLogLine"] = field(default_factory=list)
 
 
 @dataclass
@@ -79,8 +79,8 @@ class ProfibusLogLine:
     log_session: ProfibusLogSession
 
 
-def read_log_file(file_path: str, cab_log: CabLogs) -> List[ProfibusLogSession]:
-    log_sessions: List[ProfibusLogSession] = []
+def read_log_file(file_path: str, cab_log: CabLogs) -> list[ProfibusLogSession]:
+    log_sessions: list[ProfibusLogSession] = []
     log_session: Optional[ProfibusLogSession] = None
     logger_config.print_and_log_info(f"read_log_file: {file_path}")
     if file_path.endswith(".gz"):
@@ -121,7 +121,7 @@ def read_log_file(file_path: str, cab_log: CabLogs) -> List[ProfibusLogSession]:
     return log_sessions
 
 
-def detect_missing_logs(all_log_sessions: List[ProfibusLogSession]) -> None:
+def detect_missing_logs(all_log_sessions: list[ProfibusLogSession]) -> None:
     if not all_log_sessions:
         logger_config.print_and_log_error("No log session found.")
         return
@@ -183,16 +183,16 @@ def detect_missing_logs(all_log_sessions: List[ProfibusLogSession]) -> None:
                 latest_timestamp_read_in_session = log_line.timestamp
 
 
-def process_all_cabs_logs(cabs_logs: List[CabLogs]) -> List[ProfibusLogSession]:
-    all_log_sessions: List[ProfibusLogSession] = []
+def process_all_cabs_logs(cabs_logs: list[CabLogs]) -> list[ProfibusLogSession]:
+    all_log_sessions: list[ProfibusLogSession] = []
     for cab_logs in cabs_logs:
         logger_config.print_and_log_info(f"Process cabs logs {cab_logs.label}")
         all_log_sessions.extend(process_all_logs(cab_logs))
     return all_log_sessions
 
 
-def process_all_logs(cab_log: CabLogs) -> List[ProfibusLogSession]:
-    all_log_sessions: List[ProfibusLogSession] = []
+def process_all_logs(cab_log: CabLogs) -> list[ProfibusLogSession]:
+    all_log_sessions: list[ProfibusLogSession] = []
 
     log_folder = cab_log.log_files_directory_path
 
@@ -229,7 +229,7 @@ def main() -> None:
             )
         ]
 
-        log_sessions: List[ProfibusLogSession] = process_all_cabs_logs(cabs_logs=cabs_logs)
+        log_sessions: list[ProfibusLogSession] = process_all_cabs_logs(cabs_logs=cabs_logs)
 
         """CabLogs(
             log_files_directory_path=r"D:\GitHub\yanndanielou-programmation\Python\ProfibusLogAnalyzis\Input\ppn_250210\ppn\cab 1B", log_files_prefix="cab", label="cab 1B", encoding="ANSI"
@@ -243,8 +243,8 @@ def main() -> None:
 
         logger_config.print_and_log_info(f"{len(log_sessions) } log sessions")
 
-        all_going_back_to_past_groups: List[GoingBackToPastGroup] = [event for session in log_sessions for event in session.going_back_to_past_groups]
-        all_missing_logs_events: List[MissingLogs] = [event for session in log_sessions for event in session.missing_logs_events]
+        all_going_back_to_past_groups: list[GoingBackToPastGroup] = [event for session in log_sessions for event in session.going_back_to_past_groups]
+        all_missing_logs_events: list[MissingLogs] = [event for session in log_sessions for event in session.missing_logs_events]
 
         logger_config.print_and_log_info(f"{len(all_going_back_to_past_groups) } GoingBackToPast events and {len(all_missing_logs_events)} MissingLogs")
 

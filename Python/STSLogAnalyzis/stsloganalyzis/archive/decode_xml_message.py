@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import ClassVar, Dict, List, Optional, cast
+from typing import ClassVar, dict, list, Optional, cast
 
 from common import bytes_messages
 from logger import logger_config
@@ -24,9 +24,9 @@ class DecodedXmlMessage:
     class XmlMessageRecordUnit:
         def __init__(self, record_macro: "DecodedXmlMessage.XmlMessageRecordMacro", index: int):
             self.record_macro = record_macro
-            self.fields: List[DecodedXmlMessage.XmlMessageFieldUnit] = []
-            self.records: List[DecodedXmlMessage.XmlMessageRecordMacro] = []
-            self.all_fields_unit_by_name: Dict[str, DecodedXmlMessage.XmlMessageFieldUnit | List[DecodedXmlMessage.XmlMessageFieldUnit]] = {}
+            self.fields: list[DecodedXmlMessage.XmlMessageFieldUnit] = []
+            self.records: list[DecodedXmlMessage.XmlMessageRecordMacro] = []
+            self.all_fields_unit_by_name: dict[str, DecodedXmlMessage.XmlMessageFieldUnit | list[DecodedXmlMessage.XmlMessageFieldUnit]] = {}
             self.index = index
             record_macro.decoded_xml_message.add_record_by_name(self)
             self.long_name = self.record_macro.identifier if self.record_macro.dim == 1 else f"{self.record_macro.identifier}_{index}"
@@ -52,7 +52,7 @@ class DecodedXmlMessage:
             self.size_bits = size_bits
             self.dim = int(raw_dim) if raw_dim else 1
             self.parent_record = parent_record
-            self.unit_fields: List[DecodedXmlMessage.XmlMessageFieldUnit] = []
+            self.unit_fields: list[DecodedXmlMessage.XmlMessageFieldUnit] = []
             self.field_name_with_record_prefix = field_name_with_record_prefix
             self.decoded_xml_message = decoded_xml_message
             self.bits_extracted: str = ""
@@ -67,7 +67,7 @@ class DecodedXmlMessage:
         ):
             self.field_macro = field_macro
             self.human_readable_value: Optional[int | bool | str] = None
-            self.value: Optional[int | bool | str | List[int] | List[bool] | List[List[bytes_messages.DecodedIntResult]]] = None
+            self.value: Optional[int | bool | str | list[int] | list[bool] | list[list[bytes_messages.DecodedIntResult]]] = None
 
             self.index = index
             field_macro.unit_fields.append(self)
@@ -90,14 +90,14 @@ class DecodedXmlMessage:
             self.value = value
 
     class XmlMessageFieldInt(XmlMessageFieldUnit):
-        def __init__(self, field_macro: "DecodedXmlMessage.XmlMessageFieldMacro", unsigned_value: int | List[int], signed_value: int | List[int], index: int = 0):
+        def __init__(self, field_macro: "DecodedXmlMessage.XmlMessageFieldMacro", unsigned_value: int | list[int], signed_value: int | list[int], index: int = 0):
             super().__init__(field_macro=field_macro, decoded_xml_message=field_macro.decoded_xml_message, index=index)
             self.value = unsigned_value
             self.unsigned_value = unsigned_value
             self.signed_value = signed_value
 
     class XmlMessageMultiDimFieldInt(XmlMessageFieldUnit):
-        def __init__(self, field_macro: "DecodedXmlMessage.XmlMessageFieldMacro", int_values: List[List[bytes_messages.DecodedIntResult]]):
+        def __init__(self, field_macro: "DecodedXmlMessage.XmlMessageFieldMacro", int_values: list[list[bytes_messages.DecodedIntResult]]):
             super().__init__(field_macro=field_macro, decoded_xml_message=field_macro.decoded_xml_message, index=0)
             self.value = int_values
             long_name_record_prefix = "" if self.field_macro.parent_record.record_macro.dim == 1 else f"{self.field_macro.parent_record.record_macro.identifier}"
@@ -112,14 +112,14 @@ class DecodedXmlMessage:
     class XmlMessageEnumeration:
         def __init__(self, raw_id: str):
             self.identifier = raw_id
-            self.values: List[DecodedXmlMessage.XmlMessageEnumerationValue] = []
+            self.values: list[DecodedXmlMessage.XmlMessageEnumerationValue] = []
 
     def __init__(self, message_number: int, hex_string: str) -> None:
         self.message_number = message_number
-        self.decoded_fields_flat_directory: Dict[str, int | bool | str | List[int] | List[str] | List[bool]] = {}
-        self.all_fields_by_name: Dict[str, DecodedXmlMessage.XmlMessageFieldUnit | List[DecodedXmlMessage.XmlMessageFieldUnit]] = {}
-        self.all_records_by_name: Dict[str, DecodedXmlMessage.XmlMessageRecordUnit | List[DecodedXmlMessage.XmlMessageRecordUnit]] = {}
-        self.not_decoded_because_error_fields_names: List[str] = []
+        self.decoded_fields_flat_directory: dict[str, int | bool | str | list[int] | list[str] | list[bool]] = {}
+        self.all_fields_by_name: dict[str, DecodedXmlMessage.XmlMessageFieldUnit | list[DecodedXmlMessage.XmlMessageFieldUnit]] = {}
+        self.all_records_by_name: dict[str, DecodedXmlMessage.XmlMessageRecordUnit | list[DecodedXmlMessage.XmlMessageRecordUnit]] = {}
+        self.not_decoded_because_error_fields_names: list[str] = []
         self.decoded_bytes_message = bytes_messages.DecodedBytesMessage.from_hex_string(hex_string=hex_string)
         self.hlf_decoded: Optional[datetime.datetime] = None
         self.root_record: Optional[DecodedXmlMessage.XmlMessageRecordMacro] = None
@@ -174,7 +174,7 @@ class XmlMessageDecoder:
     BIG_ENDIAN_BIT_SET = "BigEndianBitSet"
     BIG_ENDIAN_ASCII_CHAR = "BigEndianASCIIChar"
 
-    _parsed_xml_files_by_path: ClassVar[Dict[str, ET.Element]] = {}
+    _parsed_xml_files_by_path: ClassVar[dict[str, ET.Element]] = {}
 
     def __init__(self, xml_directory_path: str, signed_or_unsigned_type_for_integer_fields_manager: Optional[SignedOrUnsignedTypeForIntegerFieldsManagerBase] = None) -> None:
         if not signed_or_unsigned_type_for_integer_fields_manager:
@@ -182,7 +182,7 @@ class XmlMessageDecoder:
         self.signed_or_unsigned_type_for_integer_fields_manager = signed_or_unsigned_type_for_integer_fields_manager
 
         self.xml_directory_path = xml_directory_path
-        self.cached_messages_by_id: Dict[int, ET.Element] = dict()
+        self.cached_messages_by_id: dict[int, ET.Element] = dict()
         self.decoded_xml_message: Optional[DecodedXmlMessage] = None
 
     def _parse_selector(self, record: ET.Element, parent_record: DecodedXmlMessage.XmlMessageRecordUnit) -> None:

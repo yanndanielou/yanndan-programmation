@@ -2,7 +2,7 @@ import csv
 from dataclasses import dataclass
 from enum import IntEnum, auto
 from typing import (
-    List,
+    list,
     Optional,
     Self,
     cast,
@@ -29,7 +29,7 @@ class VirtualCantonZcRelation:
 
 @dataclass
 class VirtualCantonZcLibrary:
-    all_cv_zc_relations: List[VirtualCantonZcRelation]
+    all_cv_zc_relations: list[VirtualCantonZcRelation]
     all_known_zc_id: set[str]
 
     dc_cv_pas_csv_file_full_path: str
@@ -37,7 +37,7 @@ class VirtualCantonZcLibrary:
     @classmethod
     def from_csv_file(cls, dc_cv_pas_csv_file_full_path: str) -> Self:
 
-        all_cv_zc_relations: List[VirtualCantonZcRelation] = []
+        all_cv_zc_relations: list[VirtualCantonZcRelation] = []
         all_known_zc_id: set[str] = set()
 
         # Read the CSV file

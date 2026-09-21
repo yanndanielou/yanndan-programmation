@@ -1,4 +1,4 @@
-from typing import cast, Dict, Optional
+from typing import cast, dict, Optional
 
 from stsloganalyzis.topology import (
     line_topology,
@@ -15,7 +15,7 @@ def is_field_name_to_be_ignored(field_name: str) -> bool:
 
 
 def decode_one_exact_location(
-    decoded_fields_flat_directory: Dict[str, constants.FIELD_TYPE], segment_id_field_name: str, abscissa_field_name: str, railway_line: line_topology.Line
+    decoded_fields_flat_directory: dict[str, constants.FIELD_TYPE], segment_id_field_name: str, abscissa_field_name: str, railway_line: line_topology.Line
 ) -> Optional[line_topology.ExactLocation]:
 
     raw_segment_number = decoded_fields_flat_directory.get(segment_id_field_name)

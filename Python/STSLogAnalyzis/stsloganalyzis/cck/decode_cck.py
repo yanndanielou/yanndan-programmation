@@ -6,7 +6,7 @@ import re
 from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Dict, List, Optional, Self, Tuple
+from typing import dict, list, Optional, Self, tuple
 
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
@@ -24,7 +24,7 @@ LINK_STATE_CHANGE_PATTERN_STR = r".*changement d'état : (?P<old_state>.*) => (?
 LINK_STATE_CHANGE_PATTERN = re.compile(LINK_STATE_CHANGE_PATTERN_STR)
 
 
-def save_cck_mpro_lines_in_excel(library_name: str, trace_lines: List["CckMproTraceLine"], output_folder_path: str, excel_output_file_name_without_extension: str) -> None:
+def save_cck_mpro_lines_in_excel(library_name: str, trace_lines: list["CckMproTraceLine"], output_folder_path: str, excel_output_file_name_without_extension: str) -> None:
     """
     Sauvegarde une liste de CckMproTraceLine dans un fichier Excel.
 
@@ -73,7 +73,7 @@ def save_cck_mpro_lines_in_excel(library_name: str, trace_lines: List["CckMproTr
 
 
 def plot_bar_graph_list_cck_mpro_lines_by_period(
-    library_name: str, trace_lines: List["CckMproTraceLine"], output_folder_path: str, label: str, interval_minutes: int = 10, do_show: bool = False
+    library_name: str, trace_lines: list["CckMproTraceLine"], output_folder_path: str, label: str, interval_minutes: int = 10, do_show: bool = False
 ) -> None:
     if not trace_lines:
         print("La liste des traces est vide.")
@@ -87,14 +87,14 @@ def plot_bar_graph_list_cck_mpro_lines_by_period(
     end_time = trace_lines[-1].decoded_timestamp
 
     # Créer des intervalles de temps
-    interval_start_times: List[datetime.datetime] = []
+    interval_start_times: list[datetime.datetime] = []
     current_time = start_time
     while current_time <= end_time:
         interval_start_times.append(current_time)
         current_time += datetime.timedelta(minutes=interval_minutes)
 
     # Compter les éléments dans chaque intervalle
-    interval_counts: Dict[Tuple[datetime.datetime, datetime.datetime], int] = Counter()
+    interval_counts: dict[tuple[datetime.datetime, datetime.datetime], int] = Counter()
     for trace in trace_lines:
         for interval_start in interval_start_times:
             interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
@@ -239,18 +239,18 @@ class CckMproChangementEtatLiaison(CckMproTraceSpecificEvent):
 @dataclass
 class CckMproTraceLibrary:
     name: str
-    all_processed_lines: List["CckMproTraceLine"] = field(default_factory=list)
-    all_processed_files: List["CckMproTraceFile"] = field(default_factory=list)
-    all_problem_enchainement_numero_protocolaire: List["CckMproProblemEnchainementNumeroProtocolaire"] = field(default_factory=list)
-    all_problem_enchainement_numero_protocolaire_per_link: Dict["CckMproLiaison", List["CckMproProblemEnchainementNumeroProtocolaire"]] = field(default_factory=dict)
-    all_changement_etats_liaisons_mpro: List["CckMproChangementEtatLiaison"] = field(default_factory=list)
-    all_changement_etats_liaisons_mpro_per_link: Dict["CckMproLiaison", List["CckMproChangementEtatLiaison"]] = field(default_factory=dict)
-    lines_per_liaison: Dict[Optional["CckMproLiaison"], List["CckMproTraceLine"]] = field(default_factory=dict)
+    all_processed_lines: list["CckMproTraceLine"] = field(default_factory=list)
+    all_processed_files: list["CckMproTraceFile"] = field(default_factory=list)
+    all_problem_enchainement_numero_protocolaire: list["CckMproProblemEnchainementNumeroProtocolaire"] = field(default_factory=list)
+    all_problem_enchainement_numero_protocolaire_per_link: dict["CckMproLiaison", list["CckMproProblemEnchainementNumeroProtocolaire"]] = field(default_factory=dict)
+    all_changement_etats_liaisons_mpro: list["CckMproChangementEtatLiaison"] = field(default_factory=list)
+    all_changement_etats_liaisons_mpro_per_link: dict["CckMproLiaison", list["CckMproChangementEtatLiaison"]] = field(default_factory=dict)
+    lines_per_liaison: dict[Optional["CckMproLiaison"], list["CckMproTraceLine"]] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        self.all_temporary_loss_link: List[CckMproTemporaryLossLink] = []
-        self.all_liaisons: List[CckMproLiaison] = []
-        self.liaison_by_identifier: Dict[str, CckMproLiaison] = {}
+        self.all_temporary_loss_link: list[CckMproTemporaryLossLink] = []
+        self.all_liaisons: list[CckMproLiaison] = []
+        self.liaison_by_identifier: dict[str, CckMproLiaison] = {}
 
     def get_or_create_liaison(self, full_name: str, identifier: str) -> "CckMproLiaison":
         if identifier in self.liaison_by_identifier:
@@ -342,15 +342,15 @@ class CckMproTraceLibrary:
         end_time = self.all_processed_lines[-1].decoded_timestamp
 
         # Créer des intervalles de temps
-        interval_start_times: List[datetime.datetime] = []
+        interval_start_times: list[datetime.datetime] = []
         current_time = start_time
         while current_time <= end_time:
             interval_start_times.append(current_time)
             current_time += datetime.timedelta(minutes=interval_minutes)
 
         # Compter les éléments dans chaque intervalle
-        interval_problems_count: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
-        interval_loss_link_count: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
+        interval_problems_count: dict[tuple[datetime.datetime, datetime.datetime], int] = {}
+        interval_loss_link_count: dict[tuple[datetime.datetime, datetime.datetime], int] = {}
 
         # Initialiser les compteurs
         for interval_start in interval_start_times:
@@ -490,13 +490,13 @@ class CckMproTraceLibrary:
 
         start_time = self.all_processed_lines[0].decoded_timestamp
         end_time = self.all_processed_lines[-1].decoded_timestamp
-        interval_start_times: List[datetime.datetime] = []
+        interval_start_times: list[datetime.datetime] = []
         current_time = start_time
         while current_time <= end_time:
             interval_start_times.append(current_time)
             current_time += datetime.timedelta(minutes=interval_minutes)
 
-        interval_loss_link_count: Dict[Tuple[datetime.datetime, datetime.datetime], int] = {}
+        interval_loss_link_count: dict[tuple[datetime.datetime, datetime.datetime], int] = {}
         for interval_start in interval_start_times:
             interval_end = interval_start + datetime.timedelta(minutes=interval_minutes)
             interval_loss_link_count[(interval_start, interval_end)] = 0
@@ -695,7 +695,7 @@ class CckMproTraceLibrary:
 class CckMproLiaison:
     full_name: str
     identifier: str
-    all_lines: List["CckMproTraceLine"] = field(default_factory=list)
+    all_lines: list["CckMproTraceLine"] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.hash_computed = hash(self.full_name)
@@ -709,14 +709,14 @@ class CckMproTraceFile:
     parent_folder_full_path: str
     file_name: str
     library: "CckMproTraceLibrary"
-    all_processed_lines: List["CckMproTraceLine"] = field(default_factory=list)
-    all_problem_enchainement_numero_protocolaire: List["CckMproProblemEnchainementNumeroProtocolaire"] = field(default_factory=list)
-    all_changement_etats_liaisons_mpro: List["CckMproChangementEtatLiaison"] = field(default_factory=list)
+    all_processed_lines: list["CckMproTraceLine"] = field(default_factory=list)
+    all_problem_enchainement_numero_protocolaire: list["CckMproProblemEnchainementNumeroProtocolaire"] = field(default_factory=list)
+    all_changement_etats_liaisons_mpro: list["CckMproChangementEtatLiaison"] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.file_full_path = self.parent_folder_full_path + "/" + self.file_name
 
-        self.lines_per_liaison: Dict[Optional[CckMproLiaison], List["CckMproTraceLine"]] = {}
+        self.lines_per_liaison: dict[Optional[CckMproLiaison], list["CckMproTraceLine"]] = {}
         with logger_config.stopwatch_with_label(f"Open and read CCK Mpro trace file {self.file_full_path}", inform_beginning=True):
             with open(self.file_full_path, mode="r", encoding="ANSI") as file:
                 all_raw_lines = file.readlines()
