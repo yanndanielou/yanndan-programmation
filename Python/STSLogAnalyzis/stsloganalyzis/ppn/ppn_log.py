@@ -68,6 +68,8 @@ class ProfibusLogLine:
         while line.startswith("\x00"):
             line = line[1:]
 
+        line = line.strip()
+
         fields = line.split(" ")
         if len(fields) <= 4:
             print(f"-> bad line format\n{line}")

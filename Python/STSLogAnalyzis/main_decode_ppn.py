@@ -2,6 +2,7 @@ from common import file_utils
 from logger import logger_config
 
 from stsloganalyzis.ppn import ppn_log
+from stsloganalyzis.unisig import decode_unisig
 
 
 def main() -> None:
@@ -11,7 +12,7 @@ def main() -> None:
             directory_path=r"D:\temp\2026-09-20 logs PPN we mars 26\ppn_cab1_log.tar",
             # directory_path=r"D:\temp\2026-09-20 logs PPN we mars 26",
             file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER,
-            filename_pattern="*",
+            filename_pattern="profibus*",
             # filename_pattern="*.txt",
         )
 
@@ -27,6 +28,7 @@ def main() -> None:
                 decoded_line.decode_sdn_or_sna()
 
         pass
+        decode_unisig.SdaErrorsFound().log_stats()
 
 
 # Exemple d'utilisation

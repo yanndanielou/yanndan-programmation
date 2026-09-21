@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import IntEnum
 from typing import cast
 
-from common import bytes_messages
+from common import bytes_messages, singleton
 from logger import logger_config
 
 from stsloganalyzis.unisig import upper_layer_libraries
@@ -77,6 +77,23 @@ class SafetyLevel(IntEnum):
 
 class UnisigMessage(ABC):
     pass
+
+
+class SdaErrorsFound(metaclass=singleton.Singleton):
+
+    def __init__(self) -> None:
+        self._all_errors: list[str] = []
+        self._occurences_by_error_type: dict[str, list[datetime]] = {}
+
+    def add_error(self, error_full_text: str, timestamp: datetime) -> None:
+        self._all_errors.append(error_full_text)
+        if error_full_text not in self._occurences_by_error_type:
+            self._occurences_by_error_type[error_full_text] = []
+        self._occurences_by_error_type[error_full_text].append(timestamp)
+
+    def log_stats(self) -> None:
+        for error, all_timestamps in self._occurences_by_error_type.items():
+            logger_config.print_and_log_error(f"{error}: {len(all_timestamps)} occurences")
 
 
 class SdnUnisigMessage(UnisigMessage):
@@ -266,14 +283,33 @@ class SdaConnectRequestOrConfirmTelegram(SdaUnisigMessage):
         self.random_number_representing_sequence_number = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
         self.idle_cycle_timeout_in_100ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=2)
         self.configuration_data_prefix_x = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        assert self.configuration_data_prefix_x == 3
+        # assert self.configuration_data_prefix_x == 3
         self.configuration_data_prefix_y = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        assert self.configuration_data_prefix_y == 0
+        # assert self.configuration_data_prefix_y == 0
         self.configuration_data_prefix_z = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        assert self.configuration_data_prefix_z == 0
+        # assert self.configuration_data_prefix_z == 0
         dual_bus_length_in_bits = self.byte_message_decoded.number_of_bits_remaining_to_decode - self.crc_size_in_bits
-        self.dual_bus = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=dual_bus_length_in_bits)
-        self.crc = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=self.crc_size_in_bits) if self.crc_size_in_bits > 0 else None
+
+        if dual_bus_length_in_bits < 0:
+            SdaErrorsFound().add_error(
+                f"{self.telegram_name} {self.command_type} Invalid dual_bus_length_in_bits {dual_bus_length_in_bits}",
+                timestamp=self.timestamp,
+            )
+        else:
+
+            self.dual_bus = (
+                self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=dual_bus_length_in_bits)
+                if self.byte_message_decoded.number_of_bits_remaining_to_decode >= dual_bus_length_in_bits
+                else None
+            )
+
+        if self.byte_message_decoded.number_of_bits_remaining_to_decode < self.crc_size_in_bits:
+            SdaErrorsFound().add_error(
+                f"{self.telegram_name} {self.command_type} Invalid CRC, only {self.crc_size_in_bits} bits remaining",
+                timestamp=self.timestamp,
+            )
+        else:
+            self.crc = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=self.crc_size_in_bits) if self.crc_size_in_bits > 0 else None
 
 
 @dataclass
@@ -312,7 +348,7 @@ class UpperLayerTelegram(SdaUnisigMessage):
         self.header = SdaUnisigMessage.Header(self.byte_message_decoded)
 
         self.raw_received_crc = (
-            self.byte_message_decoded.get_and_remove_last_bits_as_single_int_unsigned(size_bits=self.safety_level.get_crc_size_in_bits()) if self.safety_level.get_crc_size_in_bits() else 0
+            self.byte_message_decoded.get_and_remove_last_bits_as_single_int_unsigned(size_bits=self.safety_level.get_crc_size_in_bits()) if self.safety_level.get_crc_size_in_bits() else None
         )
         self.stl_time_stamp = self.byte_message_decoded.get_and_remove_last_bytes_as_single_int_unsigned(size_bytes=STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES)
 
@@ -324,7 +360,14 @@ class UpperLayerTelegram(SdaUnisigMessage):
                 upper_layer_decoded_stm = UpperLayerStm(byte_message_decoded=self.byte_message_decoded)
                 self.upper_layer_decoded_stms.append(upper_layer_decoded_stm)
 
-                try:
+                if self.byte_message_decoded.number_of_bits_remaining_to_decode < upper_layer_decoded_stm.data_without_header_size_in_bits:
+                    SdaErrorsFound().add_error(
+                        f"NotEnoughBitsToDecodeNidContent: nid_content_length_in_bits={upper_layer_decoded_stm.data_without_header_size_in_bits}, byte_message_number_of_remaining_bits_to_decode={self.byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join(str(stm.nid_stm) for stm in self.upper_layer_decoded_stms)}",
+                        timestamp=self.timestamp,
+                    )
+                    break
+
+                else:
                     nid_content_as_bit_str = self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=upper_layer_decoded_stm.data_without_header_size_in_bits)
                     stm_byte_message_decoded = bytes_messages.DecodedBytesMessage.from_bit_string(nid_content_as_bit_str)
 
@@ -335,14 +378,14 @@ class UpperLayerTelegram(SdaUnisigMessage):
 
                         packet_definition = packets_definitions[0]
 
-                        logger_config.print_and_log_info(f"STM found:{upper_layer_decoded_stm.nid_stm}, packet length:{upper_layer_decoded_stm.l_message}", do_not_print=True)
+                        # logger_config.print_and_log_info(f"STM found:{upper_layer_decoded_stm.nid_stm}, packet length:{upper_layer_decoded_stm.l_message}", do_not_print=True)
 
                         for field_definition in packet_definition.fields:
                             decoded_field_name = field_definition.name
                             decoded_field_size_in_bits = field_definition.size_in_bits
 
                             if decoded_field_size_in_bits is None:
-                                logger_config.print_and_log_error(f"{upper_layer_decoded_stm.nid_stm} no size defined for {decoded_field_name} at {self.timestamp}", do_not_print=True)
+                                SdaErrorsFound().add_error(f"{upper_layer_decoded_stm.nid_stm} no size defined for {decoded_field_name}", self.timestamp)
                                 upper_layer_decoded_stm.fields_names_and_values[decoded_field_name] = "Error!!! No size defined"
                             else:
 
@@ -361,36 +404,31 @@ class UpperLayerTelegram(SdaUnisigMessage):
                                     logger_config.print_and_log_info(f"Not enough data for {upper_layer_decoded_stm.nid_stm} {decoded_field_name}", do_not_print=True)
                                     upper_layer_decoded_stm.fields_names_and_values[decoded_field_name] = "Error!!! No enough data"
 
-                        logger_config.print_and_log_error_if(
-                            not stm_byte_message_decoded.is_correctly_and_completely_decoded(),
-                            f"{upper_layer_decoded_stm.nid_stm}: {stm_byte_message_decoded.number_of_bits_remaining_to_decode} bits not decoded after {','.join([str(decoded_stm.nid_stm) for decoded_stm in self.upper_layer_decoded_stms])} at {self.timestamp}",
-                            do_not_print=True,
-                        )
-                        # remaining  =
+                        if stm_byte_message_decoded.number_of_bits_remaining_to_decode > 0:
+                            SdaErrorsFound().add_error(
+                                f"RemainingBitsUndecodedAtEndStmMessage number_of_undecoded_bits={stm_byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={stm_byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=stm_byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
+                                timestamp=self.timestamp,
+                            )
                     else:
                         logger_config.print_and_log_error(f"Unsupported STM {upper_layer_decoded_stm.nid_stm} at {self.timestamp}", do_not_print=True)
 
-                except (AssertionError, TypeError) as ass_err:
-                    logger_config.print_and_log_exception(
-                        ass_err, additional_text=f"Error while decoding after {','.join([str(decoded_stm.nid_stm) for decoded_stm in self.upper_layer_decoded_stms])} at {self.timestamp}"
-                    )
-                    break
             else:
-                logger_config.print_and_log_error(
-                    f"Only {self.byte_message_decoded.number_of_bits_remaining_to_decode} bits left to decode. Cannot do anything after {','.join([str(decoded_stm.nid_stm) for decoded_stm in self.upper_layer_decoded_stms])} at {self.timestamp}",
-                    do_not_print=True,
+                SdaErrorsFound().add_error(
+                    f"NotEnoughBDecodeUpperLayerStm nid_content_length_in_bits={upper_layer_decoded_stm.data_without_header_size_in_bits}, byte_message_number_of_remaining_bits_to_decode={self.byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
+                    timestamp=self.timestamp,
                 )
                 break
 
-        assert self.byte_message_decoded.number_of_bits_remaining_to_decode < 8
+        if self.byte_message_decoded.number_of_bits_remaining_to_decode >= 8:
+            SdaErrorsFound().add_error(
+                f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=self.byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
+                timestamp=self.timestamp,
+            )
+
         self.padding = (
             self.byte_message_decoded.get_next_bits_as_single_int_unsigned(self.byte_message_decoded.number_of_bits_remaining_to_decode)
             if self.byte_message_decoded.number_of_bits_remaining_to_decode > 0
             else None
-        )
-        logger_config.print_and_log_error_if(
-            not self.byte_message_decoded.is_correctly_and_completely_decoded(),
-            f"{stm_byte_message_decoded.number_of_bits_remaining_to_decode} bits not decoded after {','.join([str(decoded_stm.nid_stm) for decoded_stm in self.upper_layer_decoded_stms])} at {self.timestamp}",
         )
 
 
