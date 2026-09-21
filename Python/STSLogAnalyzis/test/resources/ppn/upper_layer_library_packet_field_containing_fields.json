@@ -1,0 +1,26 @@
+{
+	"Types": []
+},
+"Packets": [
+	{
+		"Packet": "STM-123",
+		"Alias": "Test name with fields",
+		"Id": 123,
+		"Fields": [
+			{
+				"name": "T_JD",
+				"size": 32
+			},
+			{
+				"name": "ABCD",
+				"Fields": [
+					{
+						"name": "NID_EVENT",
+						"size": 8
+					}
+				]
+			}
+		]
+	}
+]
+}
