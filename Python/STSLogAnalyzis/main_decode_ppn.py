@@ -1,10 +1,5 @@
-from logger import logger_config
-
-from stsloganalyzis.next_data import (
-    next_ats_data,
-)
-
 from common import file_utils
+from logger import logger_config
 
 from stsloganalyzis.ppn import ppn_log
 

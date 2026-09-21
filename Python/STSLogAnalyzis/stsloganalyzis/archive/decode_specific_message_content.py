@@ -1,14 +1,11 @@
-import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, dict, list, tuple, cast, Optional
+from typing import TYPE_CHECKING, cast
 
 from logger import logger_config
 
-from stsloganalyzis.topology import (
-    line_topology,
-)
 from stsloganalyzis.archive import constants, helpers
+from stsloganalyzis.topology import line_topology
 
 if TYPE_CHECKING:
     from stsloganalyzis.archive import decode_message
@@ -18,8 +15,8 @@ if TYPE_CHECKING:
 class SpecificMessageContentDecoded:
 
     def __init__(self) -> None:
-        # self.fields_with_value: dict[str, bool | int | str | float] = dict()
-        self.fields_with_value: dict[str, constants.FIELD_TYPE] = dict()
+        # self.fields_with_value: dict[str, bool | int | str | float] = {}
+        self.fields_with_value: dict[str, constants.FIELD_TYPE] = {}
 
     def _get_track_circuit_and_tracking_block_info(self, mal_seg_id: int, mal_offset: int, railway_line: line_topology.Line, decoded_message: "decode_message.DecodedMessage") -> tuple[str, str]:
         location_is_defined = mal_seg_id > 0
@@ -38,7 +35,7 @@ class SpecificMessageContentDecoded:
         location_fields_prefix: str,
         railway_line: line_topology.Line,
         location_fields_suffix: str = "",
-        label: Optional[str] = None,
+        label: str | None = None,
     ) -> None:
         if label is None:
             label = f"{location_fields_prefix}{location_fields_suffix}"
@@ -116,7 +113,7 @@ class TopologyDependentMessageDecoder(ABC):
         decoded_message: "decode_message.DecodedMessage",
         location_fields_prefix: str,
         location_fields_suffix: str = "",
-        label: Optional[str] = None,
+        label: str | None = None,
     ) -> None:
         self.specific_message_content_decoded.decode_location_to_human_readable_by_fields_common_prefix_and_suffix(
             label=label,

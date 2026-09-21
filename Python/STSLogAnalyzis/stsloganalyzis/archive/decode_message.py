@@ -1,7 +1,7 @@
 import csv
 import datetime
 from dataclasses import dataclass
-from typing import Optional, cast
+from typing import cast
 from warnings import deprecated
 
 from logger import logger_config
@@ -13,15 +13,13 @@ from stsloganalyzis.archive import (
     decode_product_topology_dependant_messages_content,
     decode_specific_message_content,
     decode_xml_message,
+    decode_zc_ats_mal_content,
     decode_zc_ats_tm_ao_sig_content,
     decode_zc_ats_tracking_status_vb_occupancy_content,
     decode_zc_ats_zc_ats_tracking_status_vb_te_content,
-    decode_zc_ats_mal_content,
 )
 from stsloganalyzis.common import hlf
-from stsloganalyzis.topology import (
-    line_topology,
-)
+from stsloganalyzis.topology import line_topology
 from stsloganalyzis.zone_controllers import virtual_canton_zc
 
 # CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR = "!!! Decoding Error !!!"
@@ -40,7 +38,7 @@ class InvariantMessagesManager:
     def __init__(self, messages_list_csv_file_full_path: str) -> None:
 
         self.all_messages: list[InvariantMessage] = []
-        self.all_messages_by_id: dict[str, InvariantMessage] = dict()
+        self.all_messages_by_id: dict[str, InvariantMessage] = {}
 
         # Read the CSV file
         with open(messages_list_csv_file_full_path, mode="r", encoding="ANSI") as file:
@@ -54,8 +52,8 @@ class InvariantMessagesManager:
                 self.all_messages.append(message)
                 self.all_messages_by_id[message_id] = message
 
-    def get_message_by_id(self, message_id: str) -> Optional[InvariantMessage]:
-        return self.all_messages_by_id[message_id] if message_id in self.all_messages_by_id else None
+    def get_message_by_id(self, message_id: str) -> InvariantMessage | None:
+        return self.all_messages_by_id.get(message_id, None)
 
 
 class DecodedMessage:
@@ -64,7 +62,7 @@ class DecodedMessage:
         self.message_number = message_number
         self.xml_decoded_message = xml_decoded_message
         self.decoded_fields_flat_directory: dict[str, constants.FIELD_TYPE] = {}
-        self.hlf_decoded: Optional[datetime.datetime] = None
+        self.hlf_decoded: datetime.datetime | None = None
 
     def get_field_value_human_readable(self, field_name: str) -> constants.HUMAN_READABLE_FIELD_TYPE:
         field_value_by_name = self.decoded_fields_flat_directory[field_name]
@@ -104,10 +102,10 @@ class MessageDecoder:
     def __init__(
         self,
         xml_message_decoder: decode_xml_message.XmlMessageDecoder,
-        action_set_content_decoder: Optional[decode_action_set_content.ActionSetContentDecoder],
-        zc_ats_tm_ao_sig_content_decoder: Optional[decode_zc_ats_tm_ao_sig_content.ZcAtsTmAoSigDecoder],
-        virtual_canton_zc_library: Optional[virtual_canton_zc.VirtualCantonZcLibrary],
-        railway_line: Optional[line_topology.Line] = None,
+        action_set_content_decoder: decode_action_set_content.ActionSetContentDecoder | None,
+        zc_ats_tm_ao_sig_content_decoder: decode_zc_ats_tm_ao_sig_content.ZcAtsTmAoSigDecoder | None,
+        virtual_canton_zc_library: virtual_canton_zc.VirtualCantonZcLibrary | None,
+        railway_line: line_topology.Line | None = None,
     ) -> None:
         self.xml_message_decoder = xml_message_decoder
         self.action_set_content_decoder = action_set_content_decoder
@@ -130,7 +128,7 @@ class MessageDecoder:
         hexadecimal_content: str,
         equipment_name: str,
         also_decode_additional_fields_in_specific_messages: bool = True,
-    ) -> Optional[DecodedMessage]:
+    ) -> DecodedMessage | None:
         xml_decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=message_number, hexadecimal_content=hexadecimal_content)
         assert xml_decoded_message
         decoded_message = None
@@ -152,7 +150,7 @@ class MessageDecoder:
         decoded_message: DecodedMessage,
         equipment_name: str,
     ) -> None:
-        decoded: Optional[decode_specific_message_content.SpecificMessageContentDecoded] = None
+        decoded: decode_specific_message_content.SpecificMessageContentDecoded | None = None
         try:
             if decoded_message.message_number == decode_action_set_content.ATS_CC_ACTION_SET_MESSAGE_ID and self.action_set_content_decoder:
                 decoded = self.action_set_content_decoder.decode(decoded_message=decoded_message)

@@ -1,6 +1,6 @@
-from typing import list, cast, Self, Optional
-from dataclasses import dataclass, field
 import json
+from dataclasses import dataclass
+from typing import Self, cast
 
 from logger import logger_config
 
@@ -14,14 +14,14 @@ class EnumAttributesTypeDefinition:
 @dataclass
 class PacketFieldDefinition:
     name: str
-    size_in_bits: int
-    enum_type_definition: Optional[EnumAttributesTypeDefinition] = None
+    size_in_bits: int | None
+    enum_type_definition: EnumAttributesTypeDefinition | None = None
 
 
 @dataclass
 class PacketDefinition:
     name: str
-    alias: Optional[str]
+    alias: str
     identifier: int
     fields: list[PacketFieldDefinition]
 
@@ -35,7 +35,7 @@ class UpperLayerDecodingLibrary:
     @logger_config.stopwatch_decorator()
     def from_next_json_file_full_path(cls, json_file_full_path: str) -> Self:
         enum_attributes_type_definitions: list[EnumAttributesTypeDefinition] = []
-        with open(json_file_full_path, "r") as file:
+        with open(json_file_full_path, "r", encoding="utf-8") as file:
             json_data = json.load(file)
 
             for type_definition_found in json_data.get("Types"):

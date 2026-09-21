@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import ClassVar, dict, list, Optional, cast
+from typing import ClassVar, cast
 
 from common import bytes_messages
 from logger import logger_config
@@ -13,7 +13,7 @@ from logger import logger_config
 class DecodedXmlMessage:
 
     class XmlMessageRecordMacro:
-        def __init__(self, raw_class: str, raw_id: str, raw_offset: str, raw_dim: Optional[str], decoded_xml_message: "DecodedXmlMessage"):
+        def __init__(self, raw_class: str, raw_id: str, raw_offset: str, raw_dim: str | None, decoded_xml_message: "DecodedXmlMessage"):
             self._class_name = raw_class
             self.identifier = raw_id
             self.offset = int(raw_offset)
@@ -45,7 +45,7 @@ class DecodedXmlMessage:
             parent_record: "DecodedXmlMessage.XmlMessageRecordUnit",
             field_name_with_record_prefix: str,
             decoded_xml_message: "DecodedXmlMessage",
-            raw_dim: Optional[int],
+            raw_dim: int | None,
         ):
             self._class_name = raw_class
             self.identifier = raw_id
@@ -66,8 +66,8 @@ class DecodedXmlMessage:
             decoded_xml_message: "DecodedXmlMessage",
         ):
             self.field_macro = field_macro
-            self.human_readable_value: Optional[int | bool | str] = None
-            self.value: Optional[int | bool | str | list[int] | list[bool] | list[list[bytes_messages.DecodedIntResult]]] = None
+            self.human_readable_value: int | bool | str | None = None
+            self.value: int | bool | str | list[int] | list[bool] | list[list[bytes_messages.DecodedIntResult]] | None = None
 
             self.index = index
             field_macro.unit_fields.append(self)
@@ -121,8 +121,8 @@ class DecodedXmlMessage:
         self.all_records_by_name: dict[str, DecodedXmlMessage.XmlMessageRecordUnit | list[DecodedXmlMessage.XmlMessageRecordUnit]] = {}
         self.not_decoded_because_error_fields_names: list[str] = []
         self.decoded_bytes_message = bytes_messages.DecodedBytesMessage.from_hex_string(hex_string=hex_string)
-        self.hlf_decoded: Optional[datetime.datetime] = None
-        self.root_record: Optional[DecodedXmlMessage.XmlMessageRecordMacro] = None
+        self.hlf_decoded: datetime.datetime | None = None
+        self.root_record: DecodedXmlMessage.XmlMessageRecordMacro | None = None
 
     def add_field_by_name(self, message_field: XmlMessageFieldUnit) -> None:
         if message_field.field_macro.identifier not in self.all_fields_by_name:
@@ -176,14 +176,14 @@ class XmlMessageDecoder:
 
     _parsed_xml_files_by_path: ClassVar[dict[str, ET.Element]] = {}
 
-    def __init__(self, xml_directory_path: str, signed_or_unsigned_type_for_integer_fields_manager: Optional[SignedOrUnsignedTypeForIntegerFieldsManagerBase] = None) -> None:
+    def __init__(self, xml_directory_path: str, signed_or_unsigned_type_for_integer_fields_manager: SignedOrUnsignedTypeForIntegerFieldsManagerBase | None = None) -> None:
         if not signed_or_unsigned_type_for_integer_fields_manager:
             signed_or_unsigned_type_for_integer_fields_manager = AlwaysUnsignedTypeForIntegerFieldsManager()
         self.signed_or_unsigned_type_for_integer_fields_manager = signed_or_unsigned_type_for_integer_fields_manager
 
         self.xml_directory_path = xml_directory_path
-        self.cached_messages_by_id: dict[int, ET.Element] = dict()
-        self.decoded_xml_message: Optional[DecodedXmlMessage] = None
+        self.cached_messages_by_id: dict[int, ET.Element] = {}
+        self.decoded_xml_message: DecodedXmlMessage | None = None
 
     def _parse_selector(self, record: ET.Element, parent_record: DecodedXmlMessage.XmlMessageRecordUnit) -> None:
 
@@ -225,7 +225,7 @@ class XmlMessageDecoder:
         field_value = self.decoded_xml_message.decoded_bytes_message.get_next_bits_as_bitset_str(size_bits=xml_decoded_field_macro.size_bits)
         self.decoded_xml_message.decoded_fields_flat_directory[xml_decoded_field_macro.field_name_with_record_prefix] = field_value
 
-        for bit_index in range(0, xml_decoded_field_macro.size_bits):
+        for bit_index in range(xml_decoded_field_macro.size_bits):
             self.decoded_xml_message.decoded_fields_flat_directory[f"{xml_decoded_field_macro.field_name_with_record_prefix}_{bit_index}"] = int(field_value[bit_index])
 
         DecodedXmlMessage.XmlMessageFieldBitfield(field_macro=xml_decoded_field_macro, value=field_value)
@@ -320,7 +320,7 @@ class XmlMessageDecoder:
             )
             self.decoded_xml_message.not_decoded_because_error_fields_names.append(raw_field_name)
 
-    def _parse_record(self, record: ET.Element, parent_record: Optional[DecodedXmlMessage.XmlMessageRecordUnit] = None) -> None:
+    def _parse_record(self, record: ET.Element, parent_record: DecodedXmlMessage.XmlMessageRecordUnit | None = None) -> None:
         """Recursively parse records to decode fields."""
         raw_class = record.get("class")
         assert raw_class
@@ -345,7 +345,7 @@ class XmlMessageDecoder:
             parent_record.records.append(xml_message_record_macro)
 
         record_dim = int(record.get("dim", 1))
-        for record_it in range(0, record_dim):
+        for record_it in range(record_dim):
 
             record_prefix = "" if record_dim == 1 else f"{record.get("id")}_{record_it}"
             xml_message_record_unit = DecodedXmlMessage.XmlMessageRecordUnit(xml_message_record_macro, index=record_it)
@@ -363,7 +363,7 @@ class XmlMessageDecoder:
                     self._parse_field(element=element, xml_message_record_unit=xml_message_record_unit, record_prefix=record_prefix)
 
     @classmethod
-    def get_xml_file_root(cls, message_number: int, xml_directory_path: str) -> Optional[ET.Element]:
+    def get_xml_file_root(cls, message_number: int, xml_directory_path: str) -> ET.Element | None:
         # Open the corresponding XML file based on message_id
         xml_file_path = os.path.join(xml_directory_path, f"MsgId{message_number}scheme.xml")
         if xml_file_path in cls._parsed_xml_files_by_path:
@@ -380,7 +380,7 @@ class XmlMessageDecoder:
             logger_config.print_and_log_error(f"File {xml_file_path} not found.")
             return None
 
-    def decode_xml_fields_in_message_hexadecimal(self, message_number: int, hexadecimal_content: str) -> Optional[DecodedXmlMessage]:
+    def decode_xml_fields_in_message_hexadecimal(self, message_number: int, hexadecimal_content: str) -> DecodedXmlMessage | None:
 
         assert isinstance(message_number, int), f"message_number is type {type(message_number)}"
         if message_number not in self.cached_messages_by_id:

@@ -701,12 +701,12 @@ class CckMproTraceLine:
         return self._liaison
 
     @property
-    def liaison_full_name(self) -> Optional[str]:
+    def liaison_full_name(self) -> str | None:
         self._parse_lazy()
         return self._liaison_full_name
 
     @property
-    def liaison_id(self) -> Optional[str]:
+    def liaison_id(self) -> str | None:
         self._parse_lazy()
         return self._liaison_id
 

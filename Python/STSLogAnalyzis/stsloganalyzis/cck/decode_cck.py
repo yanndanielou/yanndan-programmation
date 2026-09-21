@@ -482,7 +482,7 @@ class CckMproTraceLibrary:
         if do_show:
             plt.show()
 
-    def plot_loss_link_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False, maximum_link_loss_duration_to_consider_in_seconds: Optional[int] = None) -> None:
+    def plot_loss_link_by_period(self, output_folder_path: str, interval_minutes: int = 10, do_show: bool = False, maximum_link_loss_duration_to_consider_in_seconds: int | None = None) -> None:
         """Affiche uniquement les all_temporary_loss_link par intervalle de temps."""
         if not self.all_processed_lines:
             logger_config.print_and_log_info("La liste des traces est vide. Aucun fichier créé.")

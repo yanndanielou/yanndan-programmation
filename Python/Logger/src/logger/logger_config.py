@@ -61,7 +61,7 @@ class RamUsageMonitor:
 
         self.measure_now(f"{inspect.stack(0)[0].function}")
 
-    def measure_now(self, measure_label: str | None) -> "RamUsageMonitor.Measure":
+    def measure_now(self, measure_label: str | None = None) -> "RamUsageMonitor.Measure":
         current_ram_int = cast(int, psutil.Process(os.getpid()).memory_info().rss)
         new_measure = RamUsageMonitor.Measure(
             timestamp=datetime.datetime.now(),  # noqa: DTZ005

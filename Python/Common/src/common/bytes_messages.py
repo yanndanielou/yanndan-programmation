@@ -97,6 +97,7 @@ class DecodedBytesMessage:
         return self.total_length_in_bits - self.current_bit_index
 
     def extract_next_bits_to_str_of_bit(self, number_of_bits: int) -> str:
+        assert self.current_bit_index + number_of_bits <= self.total_length_in_bits, f"Try to extract {number_of_bits} but only {self.number_of_bits_remaining_to_decode} remain"
         bits_extracted = self.str_of_bits[self.current_bit_index : self.current_bit_index + number_of_bits]
         self.current_bit_index += number_of_bits
         assert self.number_of_bits_remaining_to_decode >= 0, f"Too many ({-self.current_bit_index}) bits decoded!!"

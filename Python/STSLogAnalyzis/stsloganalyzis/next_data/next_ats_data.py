@@ -1,20 +1,10 @@
-from typing import dict, Optional, Set, tuple
-
-from stsloganalyzis.archive import (
-    decode_action_set_content,
-    decode_archive,
-    decode_message,
-    decode_xml_message,
-    decode_zc_ats_tm_ao_sig_content,
-)
+from stsloganalyzis.archive import decode_action_set_content, decode_archive, decode_message, decode_xml_message, decode_zc_ats_tm_ao_sig_content
 from stsloganalyzis.common import common_filters
+from stsloganalyzis.topology import line_topology
 from stsloganalyzis.zone_controllers import virtual_canton_zc
-from stsloganalyzis.topology import (
-    line_topology,
-)
 
 
-def get_line_topology(inv_conf_folder_full_path: Optional[str]) -> line_topology.Line:
+def get_line_topology(inv_conf_folder_full_path: str | None) -> line_topology.Line:
 
     cd_cv_csv_full_path = f"{inv_conf_folder_full_path}\\dc_log\\dc_cv.csv" if inv_conf_folder_full_path else None
     dc_ext_cv_csv_full_path = f"{inv_conf_folder_full_path}\\dc_log\\dc_ext_cv.csv" if inv_conf_folder_full_path else None
@@ -35,13 +25,13 @@ def get_line_topology(inv_conf_folder_full_path: Optional[str]) -> line_topology
     return railway_line
 
 
-def get_encoders(inv_conf_folder_full_path: Optional[str] = None) -> tuple[line_topology.Line, decode_archive.ArchiveDecoder]:
+def get_encoders(inv_conf_folder_full_path: str | None = None) -> tuple[line_topology.Line, decode_archive.ArchiveDecoder]:
 
     messages_list_csv_file_full_path = r"D:\NEXT\Data\Csv\NEXT_message.csv"
     xml_directory_path = r"D:\NEXT\Data\Xml"
 
     class NextSignedOrUnsignedTypeForIntegerFieldsManager(decode_xml_message.SignedOrUnsignedTypeForIntegerFieldsManagerBase):
-        def __init__(self, signed_integer_fields_by_message_id_and_field_name: Optional[dict[int, Set[str]]] = None) -> None:
+        def __init__(self, signed_integer_fields_by_message_id_and_field_name: dict[int, set[str]] | None = None) -> None:
             self.signed_integer_fields_by_message_id_and_field_name = signed_integer_fields_by_message_id_and_field_name or {}
 
         def get_decoding_type_for_field(

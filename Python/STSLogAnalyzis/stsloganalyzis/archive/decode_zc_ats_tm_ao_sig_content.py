@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
-    list,
-    Optional,
     cast,
 )
 
@@ -33,7 +31,7 @@ class TvdZcLibrary:
         self,
         zc_identifier: str,
         num_tvd_zc_starting_0: int,
-    ) -> Optional[TvdZcRelation]:
+    ) -> TvdZcRelation | None:
 
         assert zc_identifier in self.all_known_zc_id
 

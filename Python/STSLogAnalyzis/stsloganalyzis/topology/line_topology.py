@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import csv
 from dataclasses import dataclass, field
-from enum import Enum, unique, StrEnum
+from enum import Enum, StrEnum, unique
 from pathlib import Path
-from typing import dict, list, Optional, tuple, cast
+from typing import cast
 
 from logger import logger_config
 
@@ -94,15 +94,15 @@ class Segment(TopologyElement):
     pk_abs_start: float
     pk_abs_end: float
     length_in_cm: int
-    upstream_normal: Optional["Segment"] = None
-    upstream_reverse: Optional["Segment"] = None
-    downstream_normal: Optional["Segment"] = None
-    downstream_reverse: Optional["Segment"] = None
+    upstream_normal: Segment | None = None
+    upstream_reverse: Segment | None = None
+    downstream_normal: Segment | None = None
+    downstream_reverse: Segment | None = None
 
-    upstream_normal_same_direction: Optional[bool] = None
-    upstream_reverse_same_direction: Optional[bool] = None
-    downstream_normal_same_direction: Optional[bool] = None
-    downstream_reverse_same_direction: Optional[bool] = None
+    upstream_normal_same_direction: bool | None = None
+    upstream_reverse_same_direction: bool | None = None
+    downstream_normal_same_direction: bool | None = None
+    downstream_reverse_same_direction: bool | None = None
 
     def __post_init__(self) -> None:
         assert self.identifier
@@ -143,7 +143,7 @@ class Segment(TopologyElement):
 
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def load_from_csv(cls, csv_file_path: str | Path) -> list["Segment"]:
+    def load_from_csv(cls, csv_file_path: str | Path) -> list[Segment]:
         """
         Charge une liste de segments depuis un fichier CSV.
 
@@ -178,7 +178,7 @@ class Segment(TopologyElement):
     @classmethod
     def load_topology_from_csv(
         cls,
-        segments: list["Segment"],
+        segments: list[Segment],
         relations_csv_file_path: str | Path,
     ) -> None:
         """
@@ -199,11 +199,11 @@ class Segment(TopologyElement):
 
             for row in reader:
                 # Fonction helper pour convertir les valeurs vides en None
-                def to_int_or_none(value: str) -> Optional[int]:
+                def to_int_or_none(value: str) -> int | None:
                     val = value.strip()
                     return int(val) if val and val != "" else None
 
-                def to_bool_or_none(value: str) -> Optional[bool]:
+                def to_bool_or_none(value: str) -> bool | None:
                     val = value.strip()
                     if val == "TRUE":
                         return True
@@ -273,12 +273,12 @@ class ExactLocation:
             return self.abscissa
 
     def __str__(self) -> str:
-        return f"ExactLocation [{str(self.segment)} {self.abscissa}]"
+        return f"ExactLocation [{self.segment!s} {self.abscissa}]"
 
     def __repr__(self) -> str:
         return str(self)
 
-    def get_tracking_block_id_none_if_no(self) -> Optional[str]:
+    def get_tracking_block_id_none_if_no(self) -> str | None:
         tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa_in_cm=self.abscissa)
         if tracking_block:
             return tracking_block.identifier
@@ -290,7 +290,7 @@ class ExactLocation:
             return tracking_block.identifier
         return f"No TB defined at {self.segment.identifier}/{self.abscissa}"
 
-    def get_track_circuit_id_none_if_no(self) -> Optional[str]:
+    def get_track_circuit_id_none_if_no(self) -> str | None:
         tracking_block = self.segment.line.get_tracking_block_by_segment_and_abscissa(segment=self.segment, abscissa_in_cm=self.abscissa)
         if tracking_block:
             return tracking_block.track_circuit_id
@@ -348,8 +348,8 @@ class Line:
     virtual_cantons: list[VirtualCanton]
     virtual_canton_by_id: dict[str, VirtualCanton]
     not_created_tracking_blocks_ids_without_track_circuits: list[str]
-    tracking_block_on_segments_csv_full_path: Optional[str | Path]
-    virtual_canton_extremities_csv_full_path: Optional[str | Path]
+    tracking_block_on_segments_csv_full_path: str | Path | None
+    virtual_canton_extremities_csv_full_path: str | Path | None
 
     def __post_init__(self) -> None:
         self.tracking_block_by_id = {b.identifier: b for b in self.tracking_blocks}
@@ -369,7 +369,7 @@ class Line:
 
         self.virtual_cantons_on_segments = VirtualCantonOnSegment.compute_all(line=self)
 
-        self.occurences_of_not_found_tracking_block_in_segment: dict[tuple[Segment, int], int] = dict()
+        self.occurences_of_not_found_tracking_block_in_segment: dict[tuple[Segment, int], int] = {}
         logger_config.print_and_log_info(repr(self))
 
         consistency_errors = self.compute_consistency_errors()
@@ -384,9 +384,7 @@ class Line:
             f"switches={len(self.switches)})"
         )
 
-    def get_distance_in_cm_between_to_locations(
-        self, origin: ExactLocation, destination: ExactLocation, origin_segment_direction: SegmentDirection, maximum_distance_in_cm: int = 10000
-    ) -> Optional[int]:
+    def get_distance_in_cm_between_to_locations(self, origin: ExactLocation, destination: ExactLocation, origin_segment_direction: SegmentDirection, maximum_distance_in_cm: int = 10000) -> int | None:
         # logger_config.print_and_log_info(f"Get distance between {origin} and {destination} direction {origin_segment_direction}, max distance:{maximum_distance_in_cm}")
         if maximum_distance_in_cm <= 0:
             logger_config.print_and_log_info(f"Maximum distance {maximum_distance_in_cm} reached. Path not found")
@@ -527,7 +525,7 @@ class Line:
         self,
         segment: Segment | str | int,
         abscissa_in_cm: int,
-    ) -> Optional[TrackingBlock]:
+    ) -> TrackingBlock | None:
 
         segment = self.get_segment(segment)
         matches = [relation for relation in self.tracking_block_on_segments if relation.segment == segment and relation.abs_begin <= abscissa_in_cm < relation.abs_end]
@@ -557,7 +555,7 @@ class Line:
         self,
         segment: Segment | str | int,
         abscissa_in_cm: int,
-    ) -> Optional[VirtualCanton]:
+    ) -> VirtualCanton | None:
 
         segment = self.get_segment(segment)
         matches = [
@@ -592,10 +590,10 @@ class Line:
         tracking_blocks_csv_full_path: str | Path,
         switches_csv_full_path: str | Path,
         tracking_block_on_segments_csv_full_path: str | Path,
-        virtual_canton_csv_full_path: Optional[str | Path] = None,
-        virtual_canton_extremities_csv_full_path: Optional[str | Path] = None,
+        virtual_canton_csv_full_path: str | Path | None = None,
+        virtual_canton_extremities_csv_full_path: str | Path | None = None,
         ignore_tracking_blocks_without_circuits: bool = False,
-    ) -> "Line":
+    ) -> Line:
         """
         Crée une ligne complète en chargeant les données depuis des fichiers CSV.
 
@@ -665,7 +663,7 @@ class VirtualCanton(TopologyElement):
     def load_from_csv(
         cls,
         csv_file_path: str | Path,
-    ) -> list["VirtualCanton"]:
+    ) -> list[VirtualCanton]:
         """
         Format du CSV:
             'CV_ID'	'NOM_PCC'	'LIBELLE'	'ZTR_ID'	'CBTC_TS_ID'	'ZMP_ID'	'NUM_CV_ZTR'	'TPS_PARCOURS'	'LONGUEUR'	'TRANSIT'	'PLACE_MAINT_ID'	'QUAI_ID'	'ZAUM_ID'
@@ -708,8 +706,8 @@ class VirtualCantonExtremity:
     def load_from_csv(
         cls,
         csv_file_path: str | Path,
-        line: "Line",
-    ) -> list["VirtualCantonExtremity"]:
+        line: Line,
+    ) -> list[VirtualCantonExtremity]:
         """
         Format du CSV:
             'CV_ID'	'SEGMENT_ID'	'EXT_SENS_SEG'	EXT_ABS_SEG'	EXT_ABS_SEG_CM'	EXT_PK'
@@ -762,9 +760,9 @@ class VirtualCantonOnSegment:
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
     def compute_all(
         cls,
-        line: "Line",
-    ) -> list["VirtualCantonOnSegment"]:
-        virtual_cantons_on_segment: list["VirtualCantonOnSegment"] = []
+        line: Line,
+    ) -> list[VirtualCantonOnSegment]:
+        virtual_cantons_on_segment: list[VirtualCantonOnSegment] = []
 
         for i in range(0, len(line.virtual_cantons_extremities), 2):
             virtual_canton_extremity_1 = line.virtual_cantons_extremities[i]
@@ -817,18 +815,18 @@ class TrackingCircuit(TopologyElement):
 
     label: str
     occupancy_id: str
-    direction_id: Optional[str]
+    direction_id: str | None
     default_direction: LineDirection
     zone_failure_id: str
     failure_id: str
     turnback: bool
-    steering: Optional[LineDirection]
-    extension_id: Optional[str]
-    representation: Optional[str]
-    authorized_acknowledgement_rights: Optional[str]
-    denied_acknowledgement_rights: Optional[str]
+    steering: LineDirection | None
+    extension_id: str | None
+    representation: str | None
+    authorized_acknowledgement_rights: str | None
+    denied_acknowledgement_rights: str | None
     virtual: bool
-    tracking_blocks: list["TrackingBlock"] = field(default_factory=list)
+    tracking_blocks: list[TrackingBlock] = field(default_factory=list)
 
     def __str__(self) -> str:
         return self.label
@@ -838,7 +836,7 @@ class TrackingCircuit(TopologyElement):
 
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def load_from_csv(cls, csv_file_path: str | Path) -> list["TrackingCircuit"]:
+    def load_from_csv(cls, csv_file_path: str | Path) -> list[TrackingCircuit]:
         """
         Charge une liste de circuits de detection depuis un fichier CSV.
 
@@ -857,17 +855,18 @@ class TrackingCircuit(TopologyElement):
         with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter=";")
 
+            def to_none(value: str) -> str | None:
+                return None if value.strip() == "" else value.strip()
+
             for row in reader:
                 # Fonction helper pour convertir les valeurs vides en None
-                def to_none(value: str) -> Optional[str]:
-                    return None if value.strip() == "" else value.strip()
 
                 # Fonction helper pour convertir en bool (0=False, 1=True)
                 def to_bool(value: str) -> bool:
                     return value.strip() == "1"
 
                 # Fonction helper pour convertir en Direction optionnelle
-                def to_direction(value: str) -> Optional[LineDirection]:
+                def to_direction(value: str) -> LineDirection | None:
                     val = to_none(value)
                     return LineDirection(val) if val else None
 
@@ -909,13 +908,13 @@ class TrackingBlock(TopologyElement):
         tracking_circuit: Référence vers le circuit de détection associé (obligatoire)
     """
 
-    label: Optional[str]
-    type: Optional[str]
+    label: str | None
+    type: str | None
     track_circuit_id: str
     isotropic: bool
     border: bool
-    steering: Optional[LineDirection]
-    extension_id: Optional[str]
+    steering: LineDirection | None
+    extension_id: str | None
     tracking_circuit: TrackingCircuit
 
     def __post_init__(self) -> None:
@@ -933,7 +932,7 @@ class TrackingBlock(TopologyElement):
         csv_file_path: str | Path,
         circuits_dict: dict[str, TrackingCircuit],
         ignore_tracking_blocks_without_circuits: bool = False,
-    ) -> tuple[list["TrackingBlock"], list[str]]:
+    ) -> tuple[list[TrackingBlock], list[str]]:
         """
         Charge les blocs de détection depuis un fichier CSV et crée les objets TrackingBlock
         en établissant directement les associations avec les circuits.
@@ -957,17 +956,18 @@ class TrackingBlock(TopologyElement):
         with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter=";")
 
+            def to_none(value: str) -> str | None:
+                return None if value.strip() == "" else value.strip()
+
             for row in reader:
                 # Fonction helper pour convertir les valeurs vides en None
-                def to_none(value: str) -> Optional[str]:
-                    return None if value.strip() == "" else value.strip()
 
                 # Fonction helper pour convertir en bool (0=False, 1=True)
                 def to_bool(value: str) -> bool:
                     return value.strip() == "1"
 
                 # Fonction helper pour convertir en Direction optionnelle
-                def to_direction(value: str) -> Optional[LineDirection]:
+                def to_direction(value: str) -> LineDirection | None:
                     val = to_none(value)
                     return LineDirection(val) if val else None
 
@@ -1011,7 +1011,7 @@ class TrackingBlock(TopologyElement):
 
     @classmethod
     @logger_config.stopwatch_decorator(inform_beginning=True, monitor_ram_usage=True)
-    def load_from_csv(cls, csv_file_path: str | Path) -> list["TrackingBlock"]:
+    def load_from_csv(cls, csv_file_path: str | Path) -> list[TrackingBlock]:
         """
         Charge une liste de blocs de détection depuis un fichier CSV.
 
@@ -1028,7 +1028,7 @@ class TrackingBlock(TopologyElement):
             ID;LABEL;TYPE;TRACK_CIRCUIT_ID;ISOTROPIC;BORDER;STEERING;EXTENSION_ID
         """
         # Cette méthode ne peut pas être utilisée seule car tracking_circuit est obligatoire
-        raise NotImplementedError("Utilisez Line.load_from_csv() pour charger les blocs avec leurs circuits. " "TrackingBlock.tracking_circuit est obligatoire.")
+        raise NotImplementedError("Utilisez Line.load_from_csv() pour charger les blocs avec leurs circuits. " + "TrackingBlock.tracking_circuit est obligatoire.")
 
 
 @dataclass
@@ -1046,18 +1046,18 @@ class Switch(TopologyElement):
         convergency_direction: Direction de convergence (UP, DOWN, ou None)
     """
 
-    label: Optional[str]
-    normal_id: Optional[str]
-    reverse_id: Optional[str]
-    forcing_id: Optional[str]
+    label: str | None
+    normal_id: str | None
+    reverse_id: str | None
+    forcing_id: str | None
     trailable: bool
-    convergency_direction: Optional[LineDirection]
+    convergency_direction: LineDirection | None
 
     @classmethod
     def _load_from_csv_raw(
         cls,
         csv_file_path: str | Path,
-    ) -> list["Switch"]:
+    ) -> list[Switch]:
         """
         Charge les aiguillages depuis un fichier CSV et crée les objets Switch.
 
@@ -1076,17 +1076,17 @@ class Switch(TopologyElement):
         with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f, delimiter=";")
 
+            def to_none(value: str) -> str | None:
+                return None if value.strip() == "" else value.strip()
+
             for row in reader:
                 # Fonction helper pour convertir les valeurs vides en None
-                def to_none(value: str) -> Optional[str]:
-                    return None if value.strip() == "" else value.strip()
-
                 # Fonction helper pour convertir en bool (0=False, 1=True)
                 def to_bool(value: str) -> bool:
                     return value.strip() == "1"
 
                 # Fonction helper pour convertir en Direction optionnelle
-                def to_direction(value: str) -> Optional[LineDirection]:
+                def to_direction(value: str) -> LineDirection | None:
                     val = to_none(value)
                     return LineDirection(val) if val else None
 
@@ -1148,8 +1148,8 @@ class TrackingBlockOnSegment(TopologyElement):
     def load_from_csv(
         cls,
         csv_file_path: str | Path,
-        line: "Line",
-    ) -> list["TrackingBlockOnSegment"]:
+        line: Line,
+    ) -> list[TrackingBlockOnSegment]:
         """
         Charge une liste de relations TrackingBlock-Segment depuis un fichier CSV.
 

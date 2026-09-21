@@ -1,10 +1,6 @@
-import pytest
-
-from typing import cast
-
-from stsloganalyzis.ppn import ppn_log
-from stsloganalyzis.unisig import decode_unisig, upper_layer_libraries
 from common import bytes_messages
+
+from stsloganalyzis.unisig import decode_unisig, upper_layer_libraries
 
 
 class TestUpperLayerLibrary:
