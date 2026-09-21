@@ -346,7 +346,10 @@ class UpperLayerTelegram(SdaUnisigMessage):
                             logger_config.print_and_log_info(f"Not enough data for {upper_layer_decoded_stm.nid_stm} {decoded_field_name}")
                             upper_layer_decoded_stm.fields_names_and_values[decoded_field_name] = "No enough data"
 
-                    assert stm_byte_message_decoded.is_correctly_and_completely_decoded()
+                    logger_config.print_and_log_error_if(
+                        not stm_byte_message_decoded.is_correctly_and_completely_decoded(),
+                        f"{upper_layer_decoded_stm.nid_stm}: {stm_byte_message_decoded.number_of_bits_remaining_to_decode} bits not decoded",
+                    )
                     # remaining  =
                 else:
                     logger_config.print_and_log_error(f"Unsupported STM {upper_layer_decoded_stm.nid_stm}")
@@ -360,10 +363,10 @@ class UpperLayerTelegram(SdaUnisigMessage):
             if self.byte_message_decoded.number_of_bits_remaining_to_decode > 0
             else None
         )
-        try:
-            assert self.byte_message_decoded.is_correctly_and_completely_decoded(), f"{self.byte_message_decoded.number_of_bits_remaining_to_decode}"
-        except AssertionError as ass_err:
-            logger_config.print_and_log_exception(ass_err)
+        logger_config.print_and_log_error_if(
+            not self.byte_message_decoded.is_correctly_and_completely_decoded(),
+            f"{stm_byte_message_decoded.number_of_bits_remaining_to_decode} bits not decoded after {','.join([str(decoded_stm.nid_stm) for decoded_stm in self.upper_layer_decoded_stms])}",
+        )
 
 
 @dataclass
