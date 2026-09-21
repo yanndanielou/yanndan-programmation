@@ -406,7 +406,8 @@ class UpperLayerTelegram(SdaUnisigMessage):
 
                         if stm_byte_message_decoded.number_of_bits_remaining_to_decode > 0:
                             SdaErrorsFound().add_error(
-                                f"RemainingBitsUndecodedAtEndStmMessage number_of_undecoded_bits={stm_byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={stm_byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=stm_byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
+                                # f"RemainingBitsUndecodedAtEndStmMessage number_of_undecoded_bits={stm_byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={stm_byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=stm_byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
+                                f"RemainingBitsUndecodedAtEndStmMessage number_of_undecoded_bits={stm_byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
                                 timestamp=self.timestamp,
                             )
                     else:
@@ -421,7 +422,8 @@ class UpperLayerTelegram(SdaUnisigMessage):
 
         if self.byte_message_decoded.number_of_bits_remaining_to_decode >= 8:
             SdaErrorsFound().add_error(
-                f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=self.byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
+                # f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=self.byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
+                f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
                 timestamp=self.timestamp,
             )
 
