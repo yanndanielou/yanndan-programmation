@@ -64,7 +64,7 @@ class JsonEncodersUtils(metaclass=singleton.Singleton):
                     # Create filename with chunk number
                     chunk_file_path = parent / f"{stem}_part_{chunk_number}{suffix}"
 
-                    with logger_config.stopwatch_with_label(f"Serialize {len(chunk)} in {chunk_file_path}"):
+                    with logger_config.stopwatch_with_label(f"Serialize {len(chunk)} in {chunk_file_path}"):  # noqa: SIM117
                         with open(chunk_file_path, "w", encoding="utf-8") as json_file:
                             result_json_dump = json.dumps(chunk, indent=4, cls=ListOfObjectsEncoder)
                             json_file.write(result_json_dump)
