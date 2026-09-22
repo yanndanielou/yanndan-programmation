@@ -13,7 +13,9 @@ def main() -> None:
 
     with logger_config.application_logger():
         library = ppn_log.ProfibusLogLibrary(
-            directory_path=r"D:\temp\2026-09-20 logs PPN we mars 26\ppn_cab1_log.tar",
+            # directory_path=r"D:\temp\2026-09-20 logs PPN we mars 26\ppn_cab1_log.tar",
+            directory_path=r"D:\temp\2026-09-20 logs PPN we mars 26\bugs_pae",
+            filename_pattern="*.log",
         )
         decode_unisig.SdaErrorsFound().log_stats()
 
@@ -28,13 +30,15 @@ def main() -> None:
                 OrderedDict(
                     {
                         "timestamp": interesting_stm_message.upper_layer_telegram.timestamp,
+                        "file_path": interesting_stm_message.upper_layer_telegram.file_path,
+                        "line number": interesting_stm_message.upper_layer_telegram.line_number,
                         "nid_stm": interesting_stm_message.nid_stm,
                         **{field_name: field_value for field_name, field_value in interesting_stm_message.fields_names_and_values.items()},
                     }
                 )
                 for interesting_stm_message in interesting_stm_messages
             ],
-            file_base_name=f"interesting_stm_messages: {len(interesting_stm_messages)}",
+            file_base_name=f"bugs_pae interesting_stm_messages {' '.join(str(interesting_stm_id) for interesting_stm_id in interesting_stm_ids)}",
         )
         pass
 
