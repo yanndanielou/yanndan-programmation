@@ -67,6 +67,7 @@ class SuffixFileNameByDate(Enum):
     DO_BOTH = "DO_BOTH"
 
 
+@logger_config.stopwatch_decorator(monitor_ram_usage=True)
 def save_rows_to_output_files(
     rows_as_list_dict: list[dict[str, Any]],
     file_base_name: str,
