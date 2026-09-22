@@ -75,8 +75,18 @@ class SafetyLevel(IntEnum):
         assert False
 
 
+@dataclass
 class UnisigMessage(ABC):
-    pass
+    timestamp: datetime
+    file_path: str | None
+    line_number: int | None
+
+    def __post_init__(self) -> None:
+        self.creational_and_decoding_errors: list[str] = []
+
+    def add_error(self, error: str) -> None:
+        SdaErrorsFound().add_error(error, timestamp=self.timestamp)
+        self.creational_and_decoding_errors.append(error)
 
 
 class SdaErrorsFound(metaclass=singleton.Singleton):
@@ -103,7 +113,12 @@ class SdnUnisigMessage(UnisigMessage):
         SL4_MULTICAST_TELEGRAM_FOR_UPPER_LAYER = int("0x8d", 16)
 
     @classmethod
-    def decode_sdn_bytes_hexa(cls, timestamp: datetime, bytes_hexa: str, upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary) -> list[UnisigMessage]:
+    def decode_sdn_bytes_hexa(
+        cls,
+        timestamp: datetime,
+        bytes_hexa: str,
+        upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary,
+    ) -> list[UnisigMessage]:
         byte_message_decoded = bytes_messages.DecodedBytesMessage.from_hex_string(bytes_hexa)
         prefixX = byte_message_decoded.get_next_byte_as_single_int_unsigned()
         prefixY = byte_message_decoded.get_next_byte_as_single_int_unsigned()
@@ -121,7 +136,6 @@ class SdnUnisigMessage(UnisigMessage):
 
 @dataclass
 class SdaUnisigMessage(UnisigMessage):
-    timestamp: datetime
     safety_level: SafetyLevel
     telegram_name: str
     byte_message_decoded: bytes_messages.DecodedBytesMessage
@@ -146,7 +160,14 @@ class SdaUnisigMessage(UnisigMessage):
             return self.command_type.name[4:]
 
     @classmethod
-    def from_sda_hexa_bytes_str(cls, timestamp: datetime, bytes_hexa: str, upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary) -> list[UnisigMessage]:
+    def from_sda_hexa_bytes_str(
+        cls,
+        timestamp: datetime,
+        bytes_hexa: str,
+        upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary,
+        file_path: str | None,
+        line_number: int | None,
+    ) -> list[UnisigMessage]:
         byte_message_decoded = bytes_messages.DecodedBytesMessage.from_hex_string(bytes_hexa)
         sda_header = SdaUnisigMessage.Header(byte_message_decoded)
 
@@ -161,6 +182,8 @@ class SdaUnisigMessage(UnisigMessage):
                     telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
                     lowest_order_byte_sequence_number=sda_header.lowest_order_byte_sequence_number,
+                    file_path=file_path,
+                    line_number=line_number,
                 )
             )
 
@@ -173,6 +196,8 @@ class SdaUnisigMessage(UnisigMessage):
                     telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
                     lowest_order_byte_sequence_number=sda_header.lowest_order_byte_sequence_number,
+                    file_path=file_path,
+                    line_number=line_number,
                 )
             )
         elif (
@@ -189,6 +214,8 @@ class SdaUnisigMessage(UnisigMessage):
                     telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
                     lowest_order_byte_sequence_number=sda_header.lowest_order_byte_sequence_number,
+                    file_path=file_path,
+                    line_number=line_number,
                 )
             )
         elif (
@@ -203,6 +230,8 @@ class SdaUnisigMessage(UnisigMessage):
                     telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
                     lowest_order_byte_sequence_number=sda_header.lowest_order_byte_sequence_number,
+                    file_path=file_path,
+                    line_number=line_number,
                 )
             )
         elif (
@@ -219,6 +248,8 @@ class SdaUnisigMessage(UnisigMessage):
                     telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
                     lowest_order_byte_sequence_number=sda_header.lowest_order_byte_sequence_number,
+                    file_path=file_path,
+                    line_number=line_number,
                 )
             )
         elif (
@@ -231,6 +262,8 @@ class SdaUnisigMessage(UnisigMessage):
                     telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
                     lowest_order_byte_sequence_number=sda_header.lowest_order_byte_sequence_number,
+                    file_path=file_path,
+                    line_number=line_number,
                     command_type=sda_header.command_type,
                     upper_layer_decoding_library=upper_layer_decoding_library,
                 )
@@ -269,6 +302,8 @@ class SdaUnisigMessage(UnisigMessage):
 class SdaDisconnectTelegram(SdaUnisigMessage):
 
     def __post_init__(self) -> None:
+        super().__post_init__()
+
         self.new_setup_desired = self.byte_message_decoded.get_next_bits_as_bool_0_or_1(size_bits=bytes_messages.NUMBER_OF_BITS_IN_BYTE)
         self.disconnect_reason_raw = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=bytes_messages.NUMBER_OF_BITS_IN_BYTE)
         disconnect_reason_text_length_in_bits = self.byte_message_decoded.number_of_bits_remaining_to_decode - self.crc_size_in_bits
@@ -280,6 +315,7 @@ class SdaDisconnectTelegram(SdaUnisigMessage):
 class SdaConnectRequestOrConfirmTelegram(SdaUnisigMessage):
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         self.random_number_representing_sequence_number = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
         self.idle_cycle_timeout_in_100ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=2)
         self.configuration_data_prefix_x = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
@@ -291,9 +327,8 @@ class SdaConnectRequestOrConfirmTelegram(SdaUnisigMessage):
         dual_bus_length_in_bits = self.byte_message_decoded.number_of_bits_remaining_to_decode - self.crc_size_in_bits
 
         if dual_bus_length_in_bits < 0:
-            SdaErrorsFound().add_error(
+            self.add_error(
                 f"{self.telegram_name} {self.command_type} Invalid dual_bus_length_in_bits {dual_bus_length_in_bits}",
-                timestamp=self.timestamp,
             )
         else:
 
@@ -304,9 +339,8 @@ class SdaConnectRequestOrConfirmTelegram(SdaUnisigMessage):
             )
 
         if self.byte_message_decoded.number_of_bits_remaining_to_decode < self.crc_size_in_bits:
-            SdaErrorsFound().add_error(
+            self.add_error(
                 f"{self.telegram_name} {self.command_type} Invalid CRC, only {self.crc_size_in_bits} bits remaining",
-                timestamp=self.timestamp,
             )
         else:
             self.crc = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=self.crc_size_in_bits) if self.crc_size_in_bits > 0 else None
@@ -316,6 +350,7 @@ class SdaConnectRequestOrConfirmTelegram(SdaUnisigMessage):
 class SdaAuthenticationOrAuthenticationAcknowledgementTelegram(SdaUnisigMessage):
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         self.authentication_number = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
         self.crc = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=self.crc_size_in_bits)
 
@@ -324,6 +359,7 @@ class SdaAuthenticationOrAuthenticationAcknowledgementTelegram(SdaUnisigMessage)
 class SdaRunOrReadyToRunTelegram(SdaUnisigMessage):
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         self.stl_time_stamp_ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES)
 
 
@@ -340,10 +376,10 @@ class UpperLayerStm:
         self.l_message = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS)
         self.data_without_header_size_in_bits = self.l_message - UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITES - UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS
 
+        self.creational_and_decoding_errors: list[str] = []
         if self.byte_message_decoded.number_of_bits_remaining_to_decode < self.data_without_header_size_in_bits:
-            SdaErrorsFound().add_error(
+            self.add_error(
                 f"NotEnoughBitsToDecodeNidContent for STM {self.nid_stm} nid_content_length_in_bits={self.data_without_header_size_in_bits}, byte_message_number_of_remaining_bits_to_decode={self.byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join(str(stm.nid_stm) for stm in self.upper_layer_telegram.upper_layer_decoded_stms)}",
-                timestamp=self.upper_layer_telegram.timestamp,
             )
 
         else:
@@ -364,7 +400,7 @@ class UpperLayerStm:
                     decoded_field_size_in_bits = field_definition.size_in_bits
 
                     if decoded_field_size_in_bits is None:
-                        SdaErrorsFound().add_error(f"STM {self.nid_stm} no size defined for field {decoded_field_name}", self.upper_layer_telegram.timestamp)
+                        self.add_error(f"STM {self.nid_stm} no size defined for field {decoded_field_name}")
                         self.fields_names_and_values[decoded_field_name] = "Error!!! No size defined"
                     else:
 
@@ -382,16 +418,18 @@ class UpperLayerStm:
                             self.fields_names_and_values[decoded_field_name] = "Error!!! No enough data"
 
                 if stm_byte_message_decoded.number_of_bits_remaining_to_decode > 0:
-                    SdaErrorsFound().add_error(
+                    self.add_error(
                         # f"RemainingBitsUndecodedAtEndStmMessage number_of_undecoded_bits={stm_byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={stm_byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=stm_byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
                         f"RemainingBitsUndecodedAtEndStmMessage at end of STM {self.nid_stm}. number_of_undecoded_bits={stm_byte_message_decoded.number_of_bits_remaining_to_decode}",
-                        timestamp=self.upper_layer_telegram.timestamp,
                     )
             else:
-                SdaErrorsFound().add_error(
+                self.add_error(
                     f"Unsupported STM {self.nid_stm}",
-                    timestamp=self.upper_layer_telegram.timestamp,
                 )
+
+    def add_error(self, error: str) -> None:
+        SdaErrorsFound().add_error(error, timestamp=self.upper_layer_telegram.timestamp)
+        self.creational_and_decoding_errors.append(error)
 
 
 @dataclass
@@ -399,6 +437,7 @@ class UpperLayerTelegram(SdaUnisigMessage):
     upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         self.header = SdaUnisigMessage.Header(self.byte_message_decoded)
 
         self.raw_received_crc = (
@@ -414,17 +453,15 @@ class UpperLayerTelegram(SdaUnisigMessage):
                 upper_layer_decoded_stm = UpperLayerStm(self, byte_message_decoded=self.byte_message_decoded)
                 self.upper_layer_decoded_stms.append(upper_layer_decoded_stm)
             else:
-                SdaErrorsFound().add_error(
+                self.add_error(
                     f"NotEnoughBDecodeUpperLayerStm nid_content_length_in_bits={upper_layer_decoded_stm.data_without_header_size_in_bits}, byte_message_number_of_remaining_bits_to_decode={self.byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
-                    timestamp=self.timestamp,
                 )
                 break
 
         if self.byte_message_decoded.number_of_bits_remaining_to_decode >= 8:
-            SdaErrorsFound().add_error(
+            self.add_error(
                 # f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=self.byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
                 f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
-                timestamp=self.timestamp,
             )
 
         self.padding = (
@@ -438,4 +475,5 @@ class UpperLayerTelegram(SdaUnisigMessage):
 class SdaGenericTelegram(SdaUnisigMessage):
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         self.crc = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=self.crc_size_in_bits) if self.crc_size_in_bits > 0 else None
