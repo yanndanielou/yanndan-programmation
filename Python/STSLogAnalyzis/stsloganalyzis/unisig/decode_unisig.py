@@ -329,6 +329,7 @@ class SdaRunOrReadyToRunTelegram(SdaUnisigMessage):
 
 @dataclass
 class UpperLayerStm:
+    upper_layer_telegram: "UpperLayerTelegram"
     byte_message_decoded: bytes_messages.DecodedBytesMessage
 
     def __post_init__(self) -> None:
@@ -338,6 +339,59 @@ class UpperLayerStm:
         self.nid_stm = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
         self.l_message = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS)
         self.data_without_header_size_in_bits = self.l_message - UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITES - UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS
+
+        if self.byte_message_decoded.number_of_bits_remaining_to_decode < self.data_without_header_size_in_bits:
+            SdaErrorsFound().add_error(
+                f"NotEnoughBitsToDecodeNidContent for STM {self.nid_stm} nid_content_length_in_bits={self.data_without_header_size_in_bits}, byte_message_number_of_remaining_bits_to_decode={self.byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join(str(stm.nid_stm) for stm in self.upper_layer_telegram.upper_layer_decoded_stms)}",
+                timestamp=self.upper_layer_telegram.timestamp,
+            )
+
+        else:
+            nid_content_as_bit_str = self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=self.data_without_header_size_in_bits)
+            stm_byte_message_decoded = bytes_messages.DecodedBytesMessage.from_bit_string(nid_content_as_bit_str)
+
+            packets_definitions: list[upper_layer_libraries.PacketDefinition] = [
+                packet_definition for packet_definition in self.upper_layer_telegram.upper_layer_decoding_library.packets_definitions if packet_definition.identifier == self.nid_stm
+            ]
+            if packets_definitions:
+
+                packet_definition = packets_definitions[0]
+
+                # logger_config.print_and_log_info(f"STM found:{upper_layer_decoded_stm.nid_stm}, packet length:{upper_layer_decoded_stm.l_message}", do_not_print=True)
+
+                for field_definition in packet_definition.fields:
+                    decoded_field_name = field_definition.name
+                    decoded_field_size_in_bits = field_definition.size_in_bits
+
+                    if decoded_field_size_in_bits is None:
+                        SdaErrorsFound().add_error(f"STM {self.nid_stm} no size defined for field {decoded_field_name}", self.upper_layer_telegram.timestamp)
+                        self.fields_names_and_values[decoded_field_name] = "Error!!! No size defined"
+                    else:
+
+                        if stm_byte_message_decoded.number_of_bits_remaining_to_decode >= decoded_field_size_in_bits:
+
+                            field_raw_unsigned_int_value = stm_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=decoded_field_size_in_bits)
+
+                            if field_definition.enum_type_definition:
+                                self.fields_names_and_values[decoded_field_name] = field_definition.enum_type_definition.states_ordered_by_value_from_zero[field_raw_unsigned_int_value]
+
+                            else:
+                                self.fields_names_and_values[decoded_field_name] = field_raw_unsigned_int_value
+                        else:
+                            logger_config.print_and_log_info(f"Not enough data for STM {self.nid_stm} {decoded_field_name}", do_not_print=True)
+                            self.fields_names_and_values[decoded_field_name] = "Error!!! No enough data"
+
+                if stm_byte_message_decoded.number_of_bits_remaining_to_decode > 0:
+                    SdaErrorsFound().add_error(
+                        # f"RemainingBitsUndecodedAtEndStmMessage number_of_undecoded_bits={stm_byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={stm_byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=stm_byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
+                        f"RemainingBitsUndecodedAtEndStmMessage at end of STM {self.nid_stm}. number_of_undecoded_bits={stm_byte_message_decoded.number_of_bits_remaining_to_decode}",
+                        timestamp=self.upper_layer_telegram.timestamp,
+                    )
+            else:
+                SdaErrorsFound().add_error(
+                    f"Unsupported STM {self.nid_stm}",
+                    timestamp=self.upper_layer_telegram.timestamp,
+                )
 
 
 @dataclass
@@ -357,62 +411,8 @@ class UpperLayerTelegram(SdaUnisigMessage):
         while self.byte_message_decoded.number_of_bits_remaining_to_decode > MAXIMUM_PADDING_SIZE_IN_BITS_SUBSET_58:
 
             if self.byte_message_decoded.number_of_bits_remaining_to_decode >= UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITES + UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS:
-                upper_layer_decoded_stm = UpperLayerStm(byte_message_decoded=self.byte_message_decoded)
+                upper_layer_decoded_stm = UpperLayerStm(self, byte_message_decoded=self.byte_message_decoded)
                 self.upper_layer_decoded_stms.append(upper_layer_decoded_stm)
-
-                if self.byte_message_decoded.number_of_bits_remaining_to_decode < upper_layer_decoded_stm.data_without_header_size_in_bits:
-                    SdaErrorsFound().add_error(
-                        f"NotEnoughBitsToDecodeNidContent: nid_content_length_in_bits={upper_layer_decoded_stm.data_without_header_size_in_bits}, byte_message_number_of_remaining_bits_to_decode={self.byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join(str(stm.nid_stm) for stm in self.upper_layer_decoded_stms)}",
-                        timestamp=self.timestamp,
-                    )
-                    break
-
-                else:
-                    nid_content_as_bit_str = self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=upper_layer_decoded_stm.data_without_header_size_in_bits)
-                    stm_byte_message_decoded = bytes_messages.DecodedBytesMessage.from_bit_string(nid_content_as_bit_str)
-
-                    packets_definitions: list[upper_layer_libraries.PacketDefinition] = [
-                        packet_definition for packet_definition in self.upper_layer_decoding_library.packets_definitions if packet_definition.identifier == upper_layer_decoded_stm.nid_stm
-                    ]
-                    if packets_definitions:
-
-                        packet_definition = packets_definitions[0]
-
-                        # logger_config.print_and_log_info(f"STM found:{upper_layer_decoded_stm.nid_stm}, packet length:{upper_layer_decoded_stm.l_message}", do_not_print=True)
-
-                        for field_definition in packet_definition.fields:
-                            decoded_field_name = field_definition.name
-                            decoded_field_size_in_bits = field_definition.size_in_bits
-
-                            if decoded_field_size_in_bits is None:
-                                SdaErrorsFound().add_error(f"{upper_layer_decoded_stm.nid_stm} no size defined for {decoded_field_name}", self.timestamp)
-                                upper_layer_decoded_stm.fields_names_and_values[decoded_field_name] = "Error!!! No size defined"
-                            else:
-
-                                if stm_byte_message_decoded.number_of_bits_remaining_to_decode >= decoded_field_size_in_bits:
-
-                                    field_raw_unsigned_int_value = stm_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=decoded_field_size_in_bits)
-
-                                    if field_definition.enum_type_definition:
-                                        upper_layer_decoded_stm.fields_names_and_values[decoded_field_name] = field_definition.enum_type_definition.states_ordered_by_value_from_zero[
-                                            field_raw_unsigned_int_value
-                                        ]
-
-                                    else:
-                                        upper_layer_decoded_stm.fields_names_and_values[decoded_field_name] = field_raw_unsigned_int_value
-                                else:
-                                    logger_config.print_and_log_info(f"Not enough data for {upper_layer_decoded_stm.nid_stm} {decoded_field_name}", do_not_print=True)
-                                    upper_layer_decoded_stm.fields_names_and_values[decoded_field_name] = "Error!!! No enough data"
-
-                        if stm_byte_message_decoded.number_of_bits_remaining_to_decode > 0:
-                            SdaErrorsFound().add_error(
-                                # f"RemainingBitsUndecodedAtEndStmMessage number_of_undecoded_bits={stm_byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={stm_byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=stm_byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
-                                f"RemainingBitsUndecodedAtEndStmMessage number_of_undecoded_bits={stm_byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
-                                timestamp=self.timestamp,
-                            )
-                    else:
-                        logger_config.print_and_log_error(f"Unsupported STM {upper_layer_decoded_stm.nid_stm} at {self.timestamp}", do_not_print=True)
-
             else:
                 SdaErrorsFound().add_error(
                     f"NotEnoughBDecodeUpperLayerStm nid_content_length_in_bits={upper_layer_decoded_stm.data_without_header_size_in_bits}, byte_message_number_of_remaining_bits_to_decode={self.byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",

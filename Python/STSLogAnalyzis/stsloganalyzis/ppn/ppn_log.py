@@ -5,6 +5,8 @@ from enum import Enum
 
 from logger import logger_config
 
+from common import file_utils
+
 from stsloganalyzis.unisig import decode_unisig, upper_layer_libraries
 
 
@@ -17,6 +19,65 @@ class SendingMode(Enum):
 class ServiceAccessPoint:
     number: int
     name: str
+
+
+@dataclass
+class ProfibusLogLibrary:
+    directory_path: str
+    filename_pattern: str = "profibus*"
+
+    def __post_init__(self) -> None:
+        self.all_ppn_logs_paths = file_utils.get_files_by_directory_and_file_name_mask(
+            directory_path=self.directory_path,
+            file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER,
+            filename_pattern=self.filename_pattern,
+        )
+
+        self.decoded_files: list[ProfibusLogFile] = []
+        for ppn_log_path in self.all_ppn_logs_paths:
+            decoded_file = ProfibusLogFile(
+                file_full_path=ppn_log_path,
+            )
+            self.decoded_files.append(decoded_file)
+
+        self._process_files()
+        self._decode_sdn_or_sna()
+
+        self.unisig_messages = [unisig_message for decoded_file in self.decoded_files for log_line in decoded_file.decoded_lines for unisig_message in log_line.unisig_messages]
+
+        self.all_upper_layer_telegram = [upper_layer_telegram for upper_layer_telegram in self.unisig_messages if isinstance(upper_layer_telegram, decode_unisig.UpperLayerTelegram)]
+        self.all_sl4_upper_layer_telegram = [
+            upper_layer_telegram
+            for upper_layer_telegram in self.unisig_messages
+            if isinstance(upper_layer_telegram, decode_unisig.UpperLayerTelegram)
+            and upper_layer_telegram.command_type == decode_unisig.SdaUnisigMessage.CommandTypeSubset57.SL4_TELEGRAM_FOR_UPPER_LAYER
+        ]
+        # [unisig_message for log_line in self.decoded_lines for unisig_message in log_line.unisig_messages]
+        self.all_upper_layer_stms = [stm_message for upper_layer_telegram in self.all_upper_layer_telegram for stm_message in upper_layer_telegram.upper_layer_decoded_stms]
+
+        self._print_stats()
+
+    def get_upper_layer_stms_by_stm_ids(self, allowed_stm_ids: list[int]) -> list[decode_unisig.UpperLayerStm]:
+        return [upper_layer_stm for upper_layer_stm in self.all_upper_layer_stms if upper_layer_stm.nid_stm in allowed_stm_ids]
+
+    @logger_config.stopwatch_decorator()
+    def _process_files(self) -> None:
+        for decoded_file in self.decoded_files:
+            decoded_file.process()
+
+    @logger_config.stopwatch_decorator()
+    def _decode_sdn_or_sna(self) -> None:
+        for decoded_file in self.decoded_files:
+            for line_number, decoded_line in enumerate(decoded_file.decoded_lines):
+                decoded_line.decode_sdn_or_sna()
+
+    def _print_stats(self) -> None:
+        logger_config.print_and_log_info(f"{len(self.decoded_files)} files")
+        logger_config.print_and_log_info(f"{len([log_line for log_file in self.decoded_files for log_line in log_file.decoded_lines])} lines")
+        logger_config.print_and_log_info(f"{len(self.unisig_messages)} unisig_messages")
+        logger_config.print_and_log_info(f"{len(self.all_upper_layer_telegram)} upper layer telegrams")
+        logger_config.print_and_log_info(f"{len(self.all_sl4_upper_layer_telegram)} SL4 upper layer telegrams")
+        logger_config.print_and_log_info(f"{len(self.all_upper_layer_stms)} STM messages founds")
 
 
 @dataclass
@@ -42,6 +103,10 @@ class ProfibusLogFile:
 
                 except ValueError as val_err:
                     logger_config.print_and_log_exception(val_err)
+
+    @property
+    def unisig_messages(self) -> list[decode_unisig.UnisigMessage]:
+        return [unisig_message for log_line in self.decoded_lines for unisig_message in log_line.unisig_messages]
 
 
 @dataclass
