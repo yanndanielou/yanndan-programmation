@@ -70,7 +70,7 @@ class SuffixFileNameByDate(Enum):
 def save_rows_to_output_files(
     rows_as_list_dict: list[dict[str, Any]],
     file_base_name: str,
-    output_directory_path: str,
+    output_directory_path: str = "output",
     suffix_file_name_by_date: SuffixFileNameByDate = SuffixFileNameByDate.NO,
     split_big_files: bool = True,
     chunk_size: int = 50000,
