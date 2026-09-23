@@ -143,8 +143,10 @@ class ProfibusLogFile:
 @dataclass
 class ProfibusLogLine:
     timestamp: datetime
-    source: int
-    target: int
+    source_encoded: int
+    target_encoded: int
+    source: str
+    target: str
     sequence: int
     mode: SendingMode
     length: int
@@ -155,6 +157,35 @@ class ProfibusLogLine:
 
     def __post_init__(self) -> None:
         self.unisig_messages: list[decode_unisig.UnisigMessage] = []
+
+    @staticmethod
+    def get_equipment_name_from_address(address: int) -> str:
+
+        equipment_name_dictionnary_by_sap = {
+            2: "EVC",
+            3: "JRU",
+            5: "DMI",
+            99: "STM",
+            127: "MCast",
+        }
+
+        return equipment_name_dictionnary_by_sap.get(address) or f"Unknown {address}"
+
+    @staticmethod
+    def get_function_name_from_sap(sap: int) -> str:
+        function_name_dictionnary_by_sap = {
+            2: "/JD",
+            4: "/CH 1",
+            10: "/CH 1",
+            32: "/Time",
+            33: "/STM control",
+            37: "/Train",
+            38: "/Break",
+            39: "/Odometer",
+            44: "/CH 1 derog",
+        }
+
+        return function_name_dictionnary_by_sap.get(sap) or f"Unknown {sap}"
 
     @staticmethod
     def decode_raw_log_line(
@@ -185,14 +216,30 @@ class ProfibusLogLine:
         sap_pattern = re.compile(r"\[(\d+):(\d+) (<=|=>) (\d+):(\d+)\]")
         match = sap_pattern.search(line)
         if match:
+            left_part_address = int(match.group(1))
+            left_part_sap = int(match.group(2))
+
+            right_part_address = int(match.group(4))
+            right_part_sap = int(match.group(5))
+
             if match.group(3) == "=>":
                 source = (int(match.group(1)) << 16) | int(match.group(2))
                 target = (int(match.group(4)) << 16) | int(match.group(5))
+                source_address = left_part_address
+                source_sap = left_part_address
+                target_address = right_part_address
+                target_sap = right_part_sap
             else:
                 source = (int(match.group(4)) << 16) | int(match.group(5))
                 target = (int(match.group(1)) << 16) | int(match.group(2))
+                source_address = right_part_address
+                source_sap = right_part_address
+                target_address = left_part_address
+                target_sap = left_part_sap
         else:
             source = target = 0
+            source_address = target_address = -1
+            source_sap = target_sap = -1
 
         # Extract sequence: [num:43548]
         seq_pattern = re.compile(r"\[num:(\d+)\]")
@@ -224,8 +271,10 @@ class ProfibusLogLine:
         if mode in ("SDA", "SDN"):
             return ProfibusLogLine(
                 timestamp=timestamp,
-                source=source,
-                target=target,
+                source_encoded=source,
+                target_encoded=target,
+                source=f"{source_address}/{source_sap}",
+                target=f"{target_address}/{target_sap}",
                 sequence=sequence,
                 mode=SendingMode[mode],
                 length=length,
