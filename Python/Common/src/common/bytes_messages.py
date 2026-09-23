@@ -123,6 +123,9 @@ class DecodedBytesMessage:
 
         return string_value
 
+    def get_remaining_bits_as_str_of_bit(self) -> str:
+        return self.extract_next_bits_to_str_of_bit(self.number_of_bits_remaining_to_decode) if self.number_of_bits_remaining_to_decode else ""
+
     def get_next_bits_as_bitset_str(self, size_bits: int) -> str:
         bits_extracted = self.extract_next_bits_to_str_of_bit(size_bits)
         return bits_extracted
