@@ -2,7 +2,10 @@ from abc import ABC
 from dataclasses import dataclass
 from datetime import datetime
 from enum import IntEnum
-from typing import cast
+from typing import cast, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from stsloganalyzis.ppn import ppn_log
 
 from common import bytes_messages, singleton
 from logger import logger_config
@@ -77,33 +80,13 @@ class SafetyLevel(IntEnum):
 
 @dataclass
 class UnisigMessage(ABC):
-    timestamp: datetime
-    file_path: str | None
-    line_number: int | None
+    profibus_log_line: "ppn_log.ProfibusLogLine"
 
     def __post_init__(self) -> None:
         self.creational_and_decoding_errors: list[str] = []
 
     def add_error(self, error: str) -> None:
-        SdaErrorsFound().add_error(error, timestamp=self.timestamp)
         self.creational_and_decoding_errors.append(error)
-
-
-class SdaErrorsFound(metaclass=singleton.Singleton):
-
-    def __init__(self) -> None:
-        self._all_errors: list[str] = []
-        self._occurences_by_error_type: dict[str, list[datetime]] = {}
-
-    def add_error(self, error_full_text: str, timestamp: datetime) -> None:
-        self._all_errors.append(error_full_text)
-        if error_full_text not in self._occurences_by_error_type:
-            self._occurences_by_error_type[error_full_text] = []
-        self._occurences_by_error_type[error_full_text].append(timestamp)
-
-    def log_stats(self) -> None:
-        for error, all_timestamps in self._occurences_by_error_type.items():
-            logger_config.print_and_log_error(f"{error}: {len(all_timestamps)} occurences")
 
 
 class SdnUnisigMessage(UnisigMessage):
@@ -115,7 +98,7 @@ class SdnUnisigMessage(UnisigMessage):
     @classmethod
     def decode_sdn_bytes_hexa(
         cls,
-        timestamp: datetime,
+        profibus_log_line: "ppn_log.ProfibusLogLine",
         bytes_hexa: str,
         upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary,
     ) -> list[UnisigMessage]:
@@ -162,11 +145,9 @@ class SdaUnisigMessage(UnisigMessage):
     @classmethod
     def from_sda_hexa_bytes_str(
         cls,
-        timestamp: datetime,
+        profibus_log_line: "ppn_log.ProfibusLogLine",
         bytes_hexa: str,
         upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary,
-        file_path: str | None,
-        line_number: int | None,
     ) -> list[UnisigMessage]:
         byte_message_decoded = bytes_messages.DecodedBytesMessage.from_hex_string(bytes_hexa)
         sda_header = SdaUnisigMessage.Header(byte_message_decoded)
@@ -176,28 +157,24 @@ class SdaUnisigMessage(UnisigMessage):
         if sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL0_DISCONNECT_TELEGRAM or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_DISCONNECT_TELEGRAM:
             ret.append(
                 SdaDisconnectTelegram(
-                    timestamp=timestamp,
+                    profibus_log_line=profibus_log_line,
                     command_type=sda_header.command_type,
                     safety_level=sda_header.safety_level,
                     telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
                     lowest_order_byte_sequence_number=sda_header.lowest_order_byte_sequence_number,
-                    file_path=file_path,
-                    line_number=line_number,
                 )
             )
 
         elif sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL0_IDLE_TELEGRAM or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_IDLE_TELEGRAM:
             ret.append(
                 SdaGenericTelegram(
-                    timestamp=timestamp,
+                    profibus_log_line=profibus_log_line,
                     command_type=sda_header.command_type,
                     safety_level=sda_header.safety_level,
                     telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
                     lowest_order_byte_sequence_number=sda_header.lowest_order_byte_sequence_number,
-                    file_path=file_path,
-                    line_number=line_number,
                 )
             )
         elif (
@@ -208,14 +185,12 @@ class SdaUnisigMessage(UnisigMessage):
         ):
             ret.append(
                 SdaConnectRequestOrConfirmTelegram(
-                    timestamp=timestamp,
+                    profibus_log_line=profibus_log_line,
                     command_type=sda_header.command_type,
                     safety_level=sda_header.safety_level,
                     telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
                     lowest_order_byte_sequence_number=sda_header.lowest_order_byte_sequence_number,
-                    file_path=file_path,
-                    line_number=line_number,
                 )
             )
         elif (
@@ -224,14 +199,12 @@ class SdaUnisigMessage(UnisigMessage):
         ):
             ret.append(
                 SdaConnectRequestOrConfirmTelegram(
-                    timestamp=timestamp,
+                    profibus_log_line=profibus_log_line,
                     command_type=sda_header.command_type,
                     safety_level=sda_header.safety_level,
                     telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
                     lowest_order_byte_sequence_number=sda_header.lowest_order_byte_sequence_number,
-                    file_path=file_path,
-                    line_number=line_number,
                 )
             )
         elif (
@@ -242,14 +215,12 @@ class SdaUnisigMessage(UnisigMessage):
         ):
             ret.append(
                 SdaRunOrReadyToRunTelegram(
-                    timestamp=timestamp,
+                    profibus_log_line=profibus_log_line,
                     command_type=sda_header.command_type,
                     safety_level=sda_header.safety_level,
                     telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
                     lowest_order_byte_sequence_number=sda_header.lowest_order_byte_sequence_number,
-                    file_path=file_path,
-                    line_number=line_number,
                 )
             )
         elif (
@@ -257,13 +228,11 @@ class SdaUnisigMessage(UnisigMessage):
         ):
             ret.append(
                 UpperLayerTelegram(
-                    timestamp=timestamp,
+                    profibus_log_line=profibus_log_line,
                     safety_level=sda_header.safety_level,
                     telegram_name=sda_header.telegram_name,
                     byte_message_decoded=byte_message_decoded,
                     lowest_order_byte_sequence_number=sda_header.lowest_order_byte_sequence_number,
-                    file_path=file_path,
-                    line_number=line_number,
                     command_type=sda_header.command_type,
                     upper_layer_decoding_library=upper_layer_decoding_library,
                 )
@@ -417,10 +386,12 @@ class UpperLayerStm:
                             logger_config.print_and_log_info(f"Not enough data for STM {self.nid_stm} {decoded_field_name}", do_not_print=True)
                             self.fields_names_and_values[decoded_field_name] = "Error!!! No enough data"
 
-                if stm_byte_message_decoded.number_of_bits_remaining_to_decode > 0:
+                self.remaining_undecoded_bits = stm_byte_message_decoded.get_remaining_bits_as_str_of_bit()
+                self.number_remaining_undecoded_bits = len(self.remaining_undecoded_bits)
+                if self.number_remaining_undecoded_bits > 0:
                     self.add_error(
                         # f"RemainingBitsUndecodedAtEndStmMessage number_of_undecoded_bits={stm_byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={stm_byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=stm_byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
-                        f"RemainingBitsUndecodedAtEndStmMessage at end of STM {self.nid_stm}. number_of_undecoded_bits={stm_byte_message_decoded.number_of_bits_remaining_to_decode}",
+                        f"RemainingBitsUndecodedAtEndStmMessage at end of STM {self.nid_stm}. number_of_undecoded_bits={self.number_remaining_undecoded_bits}",
                     )
             else:
                 self.add_error(
@@ -428,7 +399,6 @@ class UpperLayerStm:
                 )
 
     def add_error(self, error: str) -> None:
-        SdaErrorsFound().add_error(error, timestamp=self.upper_layer_telegram.timestamp)
         self.creational_and_decoding_errors.append(error)
 
 
@@ -454,21 +424,24 @@ class UpperLayerTelegram(SdaUnisigMessage):
                 self.upper_layer_decoded_stms.append(upper_layer_decoded_stm)
             else:
                 self.add_error(
-                    f"NotEnoughBDecodeUpperLayerStm nid_content_length_in_bits={upper_layer_decoded_stm.data_without_header_size_in_bits}, byte_message_number_of_remaining_bits_to_decode={self.byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
+                    f"NotEnoughBitsToDecodeUpperLayerStm nid_content_length_in_bits={upper_layer_decoded_stm.data_without_header_size_in_bits}, byte_message_number_of_remaining_bits_to_decode={self.byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
                 )
                 break
 
-        if self.byte_message_decoded.number_of_bits_remaining_to_decode >= 8:
-            self.add_error(
-                # f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=self.byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
-                f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
-            )
-
         self.padding = (
             self.byte_message_decoded.get_next_bits_as_single_int_unsigned(self.byte_message_decoded.number_of_bits_remaining_to_decode)
-            if self.byte_message_decoded.number_of_bits_remaining_to_decode > 0
-            else None
+            if self.byte_message_decoded.number_of_bits_remaining_to_decode > 0 and self.byte_message_decoded.number_of_bits_remaining_to_decode < 8
+            else None if self.byte_message_decoded.number_of_bits_remaining_to_decode == 0 else f"Error, too many bits ({self.byte_message_decoded.number_of_bits_remaining_to_decode}) for padding"
         )
+
+        self.remaining_undecoded_bits = self.byte_message_decoded.get_remaining_bits_as_str_of_bit()
+        self.number_remaining_undecoded_bits = len(self.remaining_undecoded_bits)
+
+        if self.number_remaining_undecoded_bits >= 8:
+            self.add_error(
+                # f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=self.byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
+                f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.number_remaining_undecoded_bits}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
+            )
 
 
 @dataclass
