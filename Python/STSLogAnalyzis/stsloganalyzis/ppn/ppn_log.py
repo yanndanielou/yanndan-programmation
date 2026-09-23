@@ -1,11 +1,11 @@
 import re
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
-from logger import logger_config
-
 from common import file_utils
+from logger import logger_config
 
 from stsloganalyzis.unisig import decode_unisig, upper_layer_libraries
 
@@ -25,8 +25,12 @@ class ServiceAccessPoint:
 class ProfibusLogLibrary:
     directory_path: str
     filename_pattern: str = "profibus*"
+    upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary | None = None
 
     def __post_init__(self) -> None:
+        if self.upper_layer_decoding_library is None:
+            self.upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(json_file_full_path=r"C:\Tools\GenTel\GenTel\rom\unisig_s58.json")
+
         self.all_ppn_logs_paths = file_utils.get_files_by_directory_and_file_name_mask(
             directory_path=self.directory_path,
             file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER,
@@ -37,6 +41,7 @@ class ProfibusLogLibrary:
         for ppn_log_path in self.all_ppn_logs_paths:
             decoded_file = ProfibusLogFile(
                 file_full_path=ppn_log_path,
+                upper_layer_decoding_library=self.upper_layer_decoding_library,
             )
             self.decoded_files.append(decoded_file)
 
@@ -55,6 +60,20 @@ class ProfibusLogLibrary:
         # [unisig_message for log_line in self.decoded_lines for unisig_message in log_line.unisig_messages]
         self.all_upper_layer_stms = [stm_message for upper_layer_telegram in self.all_upper_layer_telegram for stm_message in upper_layer_telegram.upper_layer_decoded_stms]
 
+        self.unisig_messages_errors = [error for unisig_message in self.unisig_messages for error in unisig_message.creational_and_decoding_errors]
+        self.stm_messages_errors = [error for stm_message in self.all_upper_layer_stms for error in stm_message.creational_and_decoding_errors]
+        self.all_creational_errors = self.unisig_messages_errors + self.stm_messages_errors
+
+        self.occurences_by_creational_error_type: dict[str, list[datetime]] = defaultdict(list)
+
+        for unisig_message in self.unisig_messages:
+            for error in unisig_message.creational_and_decoding_errors:
+                self.occurences_by_creational_error_type[error].append(unisig_message.profibus_log_line.timestamp)
+
+        for stm_message in self.all_upper_layer_stms:
+            for error in stm_message.creational_and_decoding_errors:
+                self.occurences_by_creational_error_type[error].append(stm_message.upper_layer_telegram.profibus_log_line.timestamp)
+
         self._print_stats()
 
     def get_upper_layer_stms_by_stm_ids(self, allowed_stm_ids: list[int]) -> list[decode_unisig.UpperLayerStm]:
@@ -68,16 +87,22 @@ class ProfibusLogLibrary:
     @logger_config.stopwatch_decorator()
     def _decode_sdn_or_sna(self) -> None:
         for decoded_file in self.decoded_files:
-            for line_number, decoded_line in enumerate(decoded_file.decoded_lines):
+            for decoded_line in decoded_file.decoded_lines:
                 decoded_line.decode_sdn_or_sna()
 
     def _print_stats(self) -> None:
+        logger_config.print_and_log_info(f"Stats of {self.directory_path}")
         logger_config.print_and_log_info(f"{len(self.decoded_files)} files")
         logger_config.print_and_log_info(f"{len([log_line for log_file in self.decoded_files for log_line in log_file.decoded_lines])} lines")
         logger_config.print_and_log_info(f"{len(self.unisig_messages)} unisig_messages")
         logger_config.print_and_log_info(f"{len(self.all_upper_layer_telegram)} upper layer telegrams")
         logger_config.print_and_log_info(f"{len(self.all_sl4_upper_layer_telegram)} SL4 upper layer telegrams")
         logger_config.print_and_log_info(f"{len(self.all_upper_layer_stms)} STM messages founds")
+
+        logger_config.print_and_log_info(f"{len(self.all_creational_errors)} creational errors")
+
+        for error, all_timestamps in self.occurences_by_creational_error_type.items():
+            logger_config.print_and_log_warning(f"{error}: {len(all_timestamps)} occurences")
 
 
 @dataclass
@@ -108,6 +133,7 @@ class ProfibusLogFile:
 
                 except ValueError as val_err:
                     logger_config.print_and_log_exception(val_err)
+                    logger_config.print_and_log_error(f"Could not decode line {line} in file {self.file_full_path}")
 
     @property
     def unisig_messages(self) -> list[decode_unisig.UnisigMessage]:
@@ -215,11 +241,9 @@ class ProfibusLogLine:
         if self.mode == SendingMode.SDA:
             try:
                 self.unisig_messages = decode_unisig.SdaUnisigMessage.from_sda_hexa_bytes_str(
-                    timestamp=self.timestamp,
+                    profibus_log_line=self,
                     bytes_hexa=self.bytes_hexa,
                     upper_layer_decoding_library=self.upper_layer_decoding_library,
-                    line_number=self.line_number,
-                    file_path=self.file_path,
                 )
             except (AssertionError, ValueError) as ass_err:
                 logger_config.print_and_log_exception(ass_err)
@@ -228,7 +252,7 @@ class ProfibusLogLine:
         else:
             try:
                 self.unisig_messages = decode_unisig.SdnUnisigMessage.decode_sdn_bytes_hexa(
-                    timestamp=self.timestamp,
+                    profibus_log_line=self,
                     bytes_hexa=self.bytes_hexa,
                     upper_layer_decoding_library=self.upper_layer_decoding_library,
                 )
