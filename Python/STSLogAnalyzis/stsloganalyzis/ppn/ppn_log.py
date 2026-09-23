@@ -1,10 +1,10 @@
 import re
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
-from common import file_utils
+from common import file_utils, reports_utils
 from logger import logger_config
 
 from stsloganalyzis.unisig import decode_unisig, upper_layer_libraries
@@ -24,6 +24,7 @@ class ServiceAccessPoint:
 @dataclass
 class ProfibusLogLibrary:
     directory_path: str
+    label: str
     filename_pattern: str = "profibus*"
     upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary | None = None
 
@@ -78,6 +79,41 @@ class ProfibusLogLibrary:
 
     def get_upper_layer_stms_by_stm_ids(self, allowed_stm_ids: list[int]) -> list[decode_unisig.UpperLayerStm]:
         return [upper_layer_stm for upper_layer_stm in self.all_upper_layer_stms if upper_layer_stm.nid_stm in allowed_stm_ids]
+
+    def save_upper_layer_stms_by_stm_ids(self, allowed_stm_ids: list[int]) -> None:
+        interesting_stm_messages = self.get_upper_layer_stms_by_stm_ids(allowed_stm_ids)
+        logger_config.print_and_log_info(f"interesting_stm_messages: {len(interesting_stm_messages)}")
+
+        reports_utils.save_rows_to_output_files(
+            rows_as_list_dict=[
+                OrderedDict(
+                    {
+                        "timestamp": interesting_stm_message.upper_layer_telegram.profibus_log_line.timestamp,
+                        "Line Source": interesting_stm_message.upper_layer_telegram.profibus_log_line.source,
+                        "Line Target": interesting_stm_message.upper_layer_telegram.profibus_log_line.target,
+                        "Line Mode": interesting_stm_message.upper_layer_telegram.profibus_log_line.mode.name,
+                        "Line length": interesting_stm_message.upper_layer_telegram.profibus_log_line.length,
+                        "file path": interesting_stm_message.upper_layer_telegram.profibus_log_line.file_path,
+                        "line number": interesting_stm_message.upper_layer_telegram.profibus_log_line.line_number,
+                        "nid stm": interesting_stm_message.nid_stm,
+                        "Number of errors": len(interesting_stm_message.creational_and_decoding_errors + interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors),
+                        "STM messages decoded in this line": ",".join([str(stm_message.nid_stm) for stm_message in interesting_stm_message.upper_layer_telegram.upper_layer_decoded_stms]),
+                        "Safe time layer timestamp": interesting_stm_message.upper_layer_telegram.stl_time_stamp,
+                        "STM message: number remaining bits to decode": interesting_stm_message.number_remaining_undecoded_bits,
+                        "STM message: remaining bits to decode": interesting_stm_message.remaining_undecoded_bits,
+                        "log line: number remaining bits to decode": interesting_stm_message.upper_layer_telegram.number_remaining_undecoded_bits,
+                        "log line: remaining bits to decode": interesting_stm_message.upper_layer_telegram.remaining_undecoded_bits,
+                        "errors": interesting_stm_message.creational_and_decoding_errors + interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors,
+                        **{field_name: field_value for field_name, field_value in interesting_stm_message.fields_names_and_values.items()},
+                    }
+                )
+                for interesting_stm_message in interesting_stm_messages
+            ],
+            file_base_name=f"{self.label} bugs_pae interesting_stm_messages {' '.join(str(interesting_stm_id) for interesting_stm_id in allowed_stm_ids)}",
+            create_csv_file=False,
+            create_txt_file=False,
+            split_big_files=False,
+        )
 
     @logger_config.stopwatch_decorator()
     def _process_files(self) -> None:
@@ -273,8 +309,8 @@ class ProfibusLogLine:
                 timestamp=timestamp,
                 source_encoded=source,
                 target_encoded=target,
-                source=f"{source_address}/{source_sap}",
-                target=f"{target_address}/{target_sap}",
+                source=f"{ProfibusLogLine.get_equipment_name_from_address(source_address)}/{ProfibusLogLine.get_function_name_from_sap(source_sap)}",
+                target=f"{ProfibusLogLine.get_equipment_name_from_address(target_address)}/{ProfibusLogLine.get_function_name_from_sap(target_sap)}",
                 sequence=sequence,
                 mode=SendingMode[mode],
                 length=length,
