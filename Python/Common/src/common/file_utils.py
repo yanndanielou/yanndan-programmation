@@ -8,15 +8,12 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime
 from enum import Enum
-from typing import List, Tuple, cast
+from pathlib import Path
 
 import natsort
 from logger import logger_config
 
 from common import file_name_utils
-
-import shutil
-from pathlib import Path
 
 
 class FileSortOrder(Enum):
@@ -25,7 +22,7 @@ class FileSortOrder(Enum):
     NO_SORTING = "timestamp"
 
 
-def get_temporary_copy_of_file(input_file_full_path: str) -> Tuple[str, str]:
+def get_temporary_copy_of_file(input_file_full_path: str) -> tuple[str, str]:
     temp_dir_path = tempfile.mkdtemp()
     logger_config.print_and_log_info(f"temporary_copy_of_file, created temp_dir:{temp_dir_path}")
     input_file_name = file_name_utils.get_file_name_with_extension_from_full_path(input_file_full_path)
@@ -83,8 +80,8 @@ def get_files_by_directory_and_file_name_mask(
     directory_path: str,
     filename_pattern: str = "*",
     file_sort_order: FileSortOrder = FileSortOrder.NO_SORTING,
-) -> List[str]:
-    files_paths: List[str] = []
+) -> list[str]:
+    files_paths: list[str] = []
     for file in os.listdir(directory_path):
         if fnmatch.fnmatch(file, filename_pattern):
             file_path = os.path.join(directory_path, file)
@@ -98,8 +95,8 @@ def get_files_by_directory_and_file_name_mask(
         return files_paths
 
 
-def get_files_modification_time(files_paths: List[str]) -> List[Tuple[str, datetime]]:
-    files_and_modified_time: List[Tuple[str, datetime]] = []
+def get_files_modification_time(files_paths: list[str]) -> list[tuple[str, datetime]]:
+    files_and_modified_time: list[tuple[str, datetime]] = []
     for file_path in files_paths:
         files_and_modified_time.append((file_path, datetime.fromtimestamp(os.path.getmtime(file_path))))
     return files_and_modified_time
