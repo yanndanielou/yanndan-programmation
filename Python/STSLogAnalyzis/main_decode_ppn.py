@@ -40,7 +40,7 @@ def main() -> None:
                             "timestamp": interesting_stm_message.upper_layer_telegram.profibus_log_line.timestamp,
                             "Line Source": interesting_stm_message.upper_layer_telegram.profibus_log_line.source,
                             "Line Target": interesting_stm_message.upper_layer_telegram.profibus_log_line.target,
-                            "Line Mode": interesting_stm_message.upper_layer_telegram.profibus_log_line.mode,
+                            "Line Mode": interesting_stm_message.upper_layer_telegram.profibus_log_line.mode.name,
                             "Line length": interesting_stm_message.upper_layer_telegram.profibus_log_line.length,
                             "file path": interesting_stm_message.upper_layer_telegram.profibus_log_line.file_path,
                             "line number": interesting_stm_message.upper_layer_telegram.profibus_log_line.line_number,
