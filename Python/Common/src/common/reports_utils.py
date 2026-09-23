@@ -95,7 +95,7 @@ def save_rows_to_output_files(
         if create_json_file:
             try:
                 json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(rows_as_list_dict, f"{file_path_without_suffix}.json", split_big_files=split_big_files, chunk_size=chunk_size)
-            except MemoryError as err:
+            except (MemoryError, AttributeError) as err:
                 logger_config.print_and_log_exception(err)
         success = False
         while not success:
