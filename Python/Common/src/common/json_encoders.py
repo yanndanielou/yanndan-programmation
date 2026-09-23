@@ -1,6 +1,7 @@
 # -*-coding:Utf-8 -*
 """json encoders"""
 
+# from types import MappingProxyType
 import json
 import textwrap
 from datetime import datetime, timedelta
@@ -21,6 +22,8 @@ class ListOfObjectsEncoder(JSONEncoder):
             return str(o)
         if isinstance(o, timedelta):
             return str(o)
+        # if isinstance(o, MappingProxyType):
+        #    return str(o)
         # return json.JSONEncoder.default(self, obj)
         return o.__dict__
 
