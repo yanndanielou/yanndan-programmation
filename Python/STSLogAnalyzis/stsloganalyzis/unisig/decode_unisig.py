@@ -350,10 +350,11 @@ class UpperLayerStm:
             self.add_error(
                 f"NotEnoughBitsToDecodeNidContent for STM {self.nid_stm} nid_content_length_in_bits={self.data_without_header_size_in_bits}, byte_message_number_of_remaining_bits_to_decode={self.byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join(str(stm.nid_stm) for stm in self.upper_layer_telegram.upper_layer_decoded_stms)}",
             )
+            self.remaining_undecoded_bits = self.byte_message_decoded.get_remaining_bits_as_str_of_bit()
 
         else:
             nid_content_as_bit_str = self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=self.data_without_header_size_in_bits)
-            stm_byte_message_decoded = bytes_messages.DecodedBytesMessage.from_bit_string(nid_content_as_bit_str)
+            stm_message_content_byte_message_decoded = bytes_messages.DecodedBytesMessage.from_bit_string(nid_content_as_bit_str)
 
             packets_definitions: list[upper_layer_libraries.PacketDefinition] = [
                 packet_definition for packet_definition in self.upper_layer_telegram.upper_layer_decoding_library.packets_definitions if packet_definition.identifier == self.nid_stm
@@ -373,9 +374,9 @@ class UpperLayerStm:
                         self.fields_names_and_values[decoded_field_name] = "Error!!! No size defined"
                     else:
 
-                        if stm_byte_message_decoded.number_of_bits_remaining_to_decode >= decoded_field_size_in_bits:
+                        if stm_message_content_byte_message_decoded.number_of_bits_remaining_to_decode >= decoded_field_size_in_bits:
 
-                            field_raw_unsigned_int_value = stm_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=decoded_field_size_in_bits)
+                            field_raw_unsigned_int_value = stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=decoded_field_size_in_bits)
 
                             if field_definition.enum_type_definition:
                                 self.fields_names_and_values[decoded_field_name] = field_definition.enum_type_definition.states_ordered_by_value_from_zero[field_raw_unsigned_int_value]
@@ -386,8 +387,7 @@ class UpperLayerStm:
                             logger_config.print_and_log_info(f"Not enough data for STM {self.nid_stm} {decoded_field_name}", do_not_print=True)
                             self.fields_names_and_values[decoded_field_name] = "Error!!! No enough data"
 
-                self.remaining_undecoded_bits = stm_byte_message_decoded.get_remaining_bits_as_str_of_bit()
-                self.number_remaining_undecoded_bits = len(self.remaining_undecoded_bits)
+                self.remaining_undecoded_bits = stm_message_content_byte_message_decoded.get_remaining_bits_as_str_of_bit()
                 if self.number_remaining_undecoded_bits > 0:
                     self.add_error(
                         # f"RemainingBitsUndecodedAtEndStmMessage number_of_undecoded_bits={stm_byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={stm_byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=stm_byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
@@ -400,6 +400,10 @@ class UpperLayerStm:
 
     def add_error(self, error: str) -> None:
         self.creational_and_decoding_errors.append(error)
+
+    @property
+    def number_remaining_undecoded_bits(self) -> int:
+        return len(self.remaining_undecoded_bits)
 
 
 @dataclass
