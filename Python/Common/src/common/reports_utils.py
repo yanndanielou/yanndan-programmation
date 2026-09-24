@@ -102,7 +102,10 @@ def save_rows_to_output_files(
             try:
                 if create_xlsx_file and len(rows_as_list_dict) < excel_utils.EXCEL_LIMIT_NUMBER_OF_LINES - 1:
                     with logger_config.stopwatch_with_label(
-                        f"Create {file_path_without_suffix}.xlsx", inform_beginning=len(rows_as_list_dict) > 10000, monitor_ram_usage=True, enable_print=len(rows_as_list_dict) > 1000
+                        f"Create {file_path_without_suffix}.xlsx ({len(rows_as_list_dict)} lines)",
+                        inform_beginning=len(rows_as_list_dict) > 10000,
+                        monitor_ram_usage=True,
+                        enable_print=len(rows_as_list_dict) > 1000,
                     ):
                         try:
                             pandas.DataFrame(rows_as_list_dict).to_excel(f"{file_path_without_suffix}.xlsx", index=False)
