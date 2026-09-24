@@ -1,6 +1,5 @@
 # Standard
 
-import urllib3
 import inspect
 import logging
 import os
@@ -12,13 +11,18 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 
 import selenium
+import urllib3
 from common import download_utils, file_utils, web_driver_utils
 
 # Other libraries
 from logger import logger_config
 
 # Third Party
-from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    TimeoutException,
+    WebDriverException,
+)
 from selenium.webdriver import ActionChains
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver.common.by import By
