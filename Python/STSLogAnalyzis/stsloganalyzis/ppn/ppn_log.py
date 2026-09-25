@@ -346,10 +346,12 @@ class ProfibusLogLine:
     def decode_sdn_or_sna(self) -> None:
         if self.mode == SendingMode.SDA:
             try:
-                self.unisig_messages = decode_unisig.SdaUnisigMessage.from_sda_hexa_bytes_str(
-                    profibus_log_line=self,
-                    bytes_hexa=self.bytes_hexa,
-                    upper_layer_decoding_library=self.upper_layer_decoding_library,
+                self.unisig_messages.append(
+                    decode_unisig.SdaUnisigMessage.from_sda_hexa_bytes_str(
+                        profibus_log_line=self,
+                        bytes_hexa=self.bytes_hexa,
+                        upper_layer_decoding_library=self.upper_layer_decoding_library,
+                    )
                 )
             except (AssertionError, ValueError) as ass_err:
                 logger_config.print_and_log_exception(ass_err)
