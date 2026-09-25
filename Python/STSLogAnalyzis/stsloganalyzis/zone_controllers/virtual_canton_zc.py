@@ -2,8 +2,6 @@ import csv
 from dataclasses import dataclass
 from enum import IntEnum, auto
 from typing import (
-    list,
-    Optional,
     Self,
     cast,
 )
@@ -68,7 +66,7 @@ class VirtualCantonZcLibrary:
         self,
         zc_identifier: str,
         num_cv_zc_starting_1: int,
-    ) -> Optional[VirtualCantonZcRelation]:
+    ) -> VirtualCantonZcRelation | None:
 
         if zc_identifier not in self.all_known_zc_id:
             zc_identifier = zc_identifier.replace(" ", "_")
