@@ -47,6 +47,8 @@ class StringFieldValueBasedFilter:
 
             ret = match if self.is_whitelist else not match
             if not ret:
+                self.rejected_count += 1
+
                 if string_value not in self.rejected_count_by_item:
                     self.rejected_count_by_item[string_value] = 0
 
