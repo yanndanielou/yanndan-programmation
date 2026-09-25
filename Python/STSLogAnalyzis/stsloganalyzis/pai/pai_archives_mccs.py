@@ -63,8 +63,12 @@ class PaiMccsArchivesLibrary:
             )
             self.decoded_files.append(decoded_file)
             if len(self.decoded_files) % 25 == 0:
+                current_time = time.perf_counter()
+                current_chunk_duration = current_time - last_chunk_timestamp if last_chunk_timestamp else None
+                since_beginning_duration = current_time - at_beginning_log_timestamp
+                progress_ratio = len(self.decoded_files) / len(self.all_logs_paths)
                 logger_config.print_and_log_info(
-                    f"{len(self.decoded_files)}/{len(self.all_logs_paths)} ({round(len(self.decoded_files)/len(self.all_logs_paths)*100,2)}%) files decoded so far ({len(self.decoded_lines)} lines in total). Elapsed: {date_time_formats.format_duration_to_string(time.perf_counter()-at_beginning_log_timestamp)} since beginning, {date_time_formats.format_duration_to_string(time.perf_counter()-last_chunk_timestamp) if last_chunk_timestamp else "NA"} since previous chunk",
+                    f"{len(self.decoded_files)}/{len(self.all_logs_paths)} ({round(progress_ratio*100,2)}%) files decoded so far ({len(self.decoded_lines)} lines in total). Elapsed: {date_time_formats.format_duration_to_string(since_beginning_duration)} since beginning, {date_time_formats.format_duration_to_string(current_chunk_duration) if last_chunk_timestamp else "NA"} since previous chunk. Total duration estimation {date_time_formats.format_duration_to_string(since_beginning_duration/progress_ratio)}",
                     print_ram_usage=True,
                 )
                 last_chunk_timestamp = time.perf_counter()
