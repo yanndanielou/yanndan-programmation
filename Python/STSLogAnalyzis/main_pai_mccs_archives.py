@@ -59,11 +59,17 @@ def main() -> None:
                 chunk_size=200000,
             )
 
-            library.create_output_with_frequencies_of_terms(
-                lines_to_use=all_timeout_pas_pai_lines,
-                frequency_between_measures=timedelta(minutes=30),
-                label="UGS timeout",
-            )
+            for frequency_minutes in [
+                30,
+                60,
+                120,
+                720,
+            ]:
+                library.create_output_with_frequencies_of_terms(
+                    lines_to_use=all_timeout_pas_pai_lines,
+                    frequency_between_measures=timedelta(minutes=frequency_minutes),
+                    label=f"UGS timeout every {frequency_minutes} minutes",
+                )
             pass
         pass
 
