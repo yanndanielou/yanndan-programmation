@@ -582,7 +582,7 @@ class ArchiveAnalyzis:
                 if sql_archive_line.date >= current_measure_begin_timestamp and sql_archive_line.date < current_measure_end_timestamp
             ]
 
-            current_row: OrderedDict[str, int | datetime] = OrderedDict(
+            current_row: OrderedDict[str, int | datetime | str] = OrderedDict(
                 {
                     "Interval begin": current_measure_begin_timestamp.replace(tzinfo=None),
                     "Interval begin (string)": current_measure_begin_timestamp.isoformat(),
