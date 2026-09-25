@@ -174,7 +174,7 @@ def print_and_log_info(to_print_and_log: str, do_not_print: bool = False, print_
 
     if print_ram_usage:
         measure = ram_usage_monitor.measure_now(measure_label=to_print_and_log)
-        to_print_and_log += f".Current ram usage: {measure.as_human_readable}"
+        to_print_and_log += f". Current ram usage: {measure.as_human_readable}"
 
     # pylint: disable=line-too-long
     if not do_not_print:
