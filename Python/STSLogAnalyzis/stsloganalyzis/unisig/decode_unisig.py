@@ -119,7 +119,7 @@ class SdnUnisigMessage(UnisigMessage):
 
 @dataclass
 class SdaUnisigMessage(UnisigMessage):
-    crc_bits: str | None
+    crc_bits_as_string: str | None
     safety_level: SafetyLevel
     telegram_name: str
     byte_message_decoded: bytes_messages.DecodedBytesMessage
@@ -157,7 +157,7 @@ class SdaUnisigMessage(UnisigMessage):
 
         if sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL0_DISCONNECT_TELEGRAM or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_DISCONNECT_TELEGRAM:
             return SdaDisconnectTelegram(
-                crc_bits=crc_string_of_bits,
+                crc_bits_as_string=crc_string_of_bits,
                 profibus_log_line=profibus_log_line,
                 command_type=sda_header.command_type,
                 safety_level=sda_header.safety_level,
@@ -168,7 +168,7 @@ class SdaUnisigMessage(UnisigMessage):
 
         elif sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL0_IDLE_TELEGRAM or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_IDLE_TELEGRAM:
             return SdaGenericTelegram(
-                crc_bits=crc_string_of_bits,
+                crc_bits_as_string=crc_string_of_bits,
                 profibus_log_line=profibus_log_line,
                 command_type=sda_header.command_type,
                 safety_level=sda_header.safety_level,
@@ -184,7 +184,7 @@ class SdaUnisigMessage(UnisigMessage):
             or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_CONNECT_CONFIRM_TELEGRAM
         ):
             return SdaConnectRequestOrConfirmTelegram(
-                crc_bits=crc_string_of_bits,
+                crc_bits_as_string=crc_string_of_bits,
                 profibus_log_line=profibus_log_line,
                 command_type=sda_header.command_type,
                 safety_level=sda_header.safety_level,
@@ -197,7 +197,7 @@ class SdaUnisigMessage(UnisigMessage):
             or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_AUTHENTICATION_ACKNOWLEDGEMENT_TELEGRAM
         ):
             return SdaAuthenticationOrAuthenticationAcknowledgementTelegram(
-                crc_bits=crc_string_of_bits,
+                crc_bits_as_string=crc_string_of_bits,
                 profibus_log_line=profibus_log_line,
                 command_type=sda_header.command_type,
                 safety_level=sda_header.safety_level,
@@ -213,7 +213,7 @@ class SdaUnisigMessage(UnisigMessage):
             or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_RUN
         ):
             return SdaRunOrReadyToRunTelegram(
-                crc_bits=crc_string_of_bits,
+                crc_bits_as_string=crc_string_of_bits,
                 profibus_log_line=profibus_log_line,
                 command_type=sda_header.command_type,
                 safety_level=sda_header.safety_level,
@@ -226,7 +226,7 @@ class SdaUnisigMessage(UnisigMessage):
             sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL0_TELEGRAM_FOR_UPPER_LAYER or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_TELEGRAM_FOR_UPPER_LAYER
         ):
             return UpperLayerTelegram(
-                crc_bits=crc_string_of_bits,
+                crc_bits_as_string=crc_string_of_bits,
                 profibus_log_line=profibus_log_line,
                 safety_level=sda_header.safety_level,
                 telegram_name=sda_header.telegram_name,

@@ -2,6 +2,8 @@ import re
 from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
 from datetime import datetime
+
+from typing import cast
 from enum import Enum
 
 from common import file_utils, reports_utils, date_time_formats, string_utils
@@ -117,7 +119,7 @@ class ProfibusLogLibrary:
                         "nid stm": interesting_stm_message.nid_stm,
                         "Number of errors": len(interesting_stm_message.creational_and_decoding_errors + interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors),
                         "STM messages decoded in this line": ",".join([str(stm_message.nid_stm) for stm_message in interesting_stm_message.upper_layer_telegram.upper_layer_decoded_stms]),
-                        "CRC": interesting_stm_message.upper_layer_telegram.raw_received_crc,
+                        "CRC": interesting_stm_message.upper_layer_telegram.crc_bits_as_string,
                         "Safe time layer timestamp (ms)": interesting_stm_message.upper_layer_telegram.stl_time_stamp,
                         "Safe time layer timestamp (human format)": date_time_formats.format_duration_to_string(interesting_stm_message.upper_layer_telegram.stl_time_stamp / 1000),
                         "STM message: number remaining bits to decode": interesting_stm_message.number_remaining_undecoded_bits,
@@ -353,6 +355,7 @@ class ProfibusLogLine:
                         upper_layer_decoding_library=self.upper_layer_decoding_library,
                     )
                 )
+                assert cast(decode_unisig.SdaUnisigMessage, self.unisig_messages[-1]).byte_message_decoded.is_correctly_and_completely_decoded
             except (AssertionError, ValueError) as ass_err:
                 logger_config.print_and_log_exception(ass_err)
                 logger_config.print_and_log_error(f"Could not decode SDA message at {self.timestamp}")
