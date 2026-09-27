@@ -10,6 +10,7 @@ class TestUpperLayerLibrary:
 
         data_to_encode = bytes_messages.convert_hex_string_to_hex_bytes("7Bh 89h 34h 53h 01h 02h 03h 04h 05h 06h 07h 08h 09h 10h")
         telegram = decode_unisig.UpperLayerTelegram(
+            profibus_log_line=None,
             safety_level=decode_unisig.SafetyLevel.SL4,
             telegram_name="",
             byte_message_decoded=bytes_messages.DecodedBytesMessage.from_hex_string("34h 53h 01h 02h 03h 04h 05h 06h 07h 08h 09h 10h"),
