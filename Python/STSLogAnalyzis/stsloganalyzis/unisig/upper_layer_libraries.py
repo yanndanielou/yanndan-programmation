@@ -16,6 +16,7 @@ class PacketFieldDefinition:
     name: str
     size_in_bits: int | None
     enum_type_definition: EnumAttributesTypeDefinition | None = None
+    fields: list["PacketFieldDefinition"] | None = None
 
 
 @dataclass
@@ -51,21 +52,31 @@ class UpperLayerDecodingLibrary:
             packets_definitions: list[PacketDefinition] = []
 
             for packet_definition_found in json_data.get("Packets"):
+                fields: list[PacketFieldDefinition] = []
+                for value_dict in packet_definition_found.get("Fields") or []:
+                    fields.append(
+                        PacketFieldDefinition(
+                            name=value_dict.get("name"),
+                            size_in_bits=value_dict.get("size"),
+                            enum_type_definition=value_dict.get("type"),
+                            fields=(
+                                [
+                                    PacketFieldDefinition(
+                                        name=value_dict_sub.get("name"),
+                                        size_in_bits=value_dict_sub.get("size"),
+                                        enum_type_definition=value_dict_sub.get("type"),
+                                    )
+                                    for value_dict_sub in value_dict.get("Fields") or []
+                                ]
+                            ),
+                        ),
+                    )
                 packets_definitions.append(
                     PacketDefinition(
                         name=packet_definition_found["Packet"],
                         alias=packet_definition_found.get("Alias"),
                         identifier=cast(int, packet_definition_found["Id"]),
-                        fields=(
-                            [
-                                PacketFieldDefinition(
-                                    name=value_dict.get("name"),
-                                    size_in_bits=value_dict.get("size"),
-                                    enum_type_definition=value_dict.get("type"),
-                                )
-                                for value_dict in packet_definition_found.get("Fields") or []
-                            ]
-                        ),
+                        fields=fields,
                     )
                 )
 
