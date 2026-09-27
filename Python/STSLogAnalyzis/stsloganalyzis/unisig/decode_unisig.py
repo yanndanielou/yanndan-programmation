@@ -1,13 +1,12 @@
 from abc import ABC
 from dataclasses import dataclass
-from datetime import datetime
 from enum import IntEnum
-from typing import cast, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from stsloganalyzis.ppn import ppn_log
 
-from common import bytes_messages, singleton
+from common import bytes_messages, date_time_formats
 from logger import logger_config
 
 from stsloganalyzis.unisig import upper_layer_libraries
@@ -81,6 +80,7 @@ class SafetyLevel(IntEnum):
 @dataclass
 class UnisigMessage(ABC):
     profibus_log_line: "ppn_log.ProfibusLogLine"
+    byte_message_decoded: bytes_messages.DecodedBytesMessage
 
     def __post_init__(self) -> None:
         self.creational_and_decoding_errors: list[str] = []
@@ -101,7 +101,7 @@ class SdnUnisigMessage(UnisigMessage):
         profibus_log_line: "ppn_log.ProfibusLogLine",
         bytes_hexa: str,
         upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary,
-    ) -> list[UnisigMessage]:
+    ) -> UnisigMessage | None:
         byte_message_decoded = bytes_messages.DecodedBytesMessage.from_hex_string(bytes_hexa)
         prefixX = byte_message_decoded.get_next_byte_as_single_int_unsigned()
         prefixY = byte_message_decoded.get_next_byte_as_single_int_unsigned()
@@ -113,8 +113,22 @@ class SdnUnisigMessage(UnisigMessage):
 
         if prefixX == int("0x03", 16) and prefixZ == 0 and prefixZ == 0:
             pass
+        else:
+            logger_config.print_and_log_warning(f"SDN: bad prefix {prefixX} {prefixY} {prefixZ}")
 
-        return []
+        return None
+
+
+@dataclass
+class SdnSafeTimeLayerStartupForMulticast(SdnUnisigMessage):
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.configuration_data_prefix_x = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        self.configuration_data_prefix_y = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        self.configuration_data_prefix_z = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        self.sender_dynamic_transfer_time = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
+        self.sender_static_transfer_time = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
 
 
 @dataclass
@@ -122,7 +136,6 @@ class SdaUnisigMessage(UnisigMessage):
     crc_bits_as_string: str | None
     safety_level: SafetyLevel
     telegram_name: str
-    byte_message_decoded: bytes_messages.DecodedBytesMessage
     lowest_order_byte_sequence_number: int
     command_type: "SdaUnisigMessage.CommandTypeSubset57"
 
@@ -284,17 +297,17 @@ class SdaConnectRequestOrConfirmTelegram(SdaUnisigMessage):
         # assert self.configuration_data_prefix_z == 0
         dual_bus_length_in_bits = self.byte_message_decoded.number_of_bits_remaining_to_decode
 
-        if dual_bus_length_in_bits < 0:
-            self.add_error(
-                f"{self.telegram_name} {self.command_type} Invalid dual_bus_length_in_bits {dual_bus_length_in_bits}",
-            )
-        else:
+        # if dual_bus_length_in_bits < 0:
+        #    self.add_error(
+        #        f"{self.telegram_name} {self.command_type} Invalid dual_bus_length_in_bits {dual_bus_length_in_bits}",
+        #    )
+        # else:
 
-            self.dual_bus = (
-                self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=dual_bus_length_in_bits)
-                if self.byte_message_decoded.number_of_bits_remaining_to_decode >= dual_bus_length_in_bits
-                else None
-            )
+        self.dual_bus = (
+            self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=dual_bus_length_in_bits)
+            if self.byte_message_decoded.number_of_bits_remaining_to_decode >= dual_bus_length_in_bits
+            else None
+        )
 
 
 @dataclass
