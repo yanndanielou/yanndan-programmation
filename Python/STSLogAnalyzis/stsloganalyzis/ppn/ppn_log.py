@@ -2,11 +2,10 @@ import re
 from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
 from datetime import datetime
-
-from typing import cast
 from enum import Enum
+from typing import cast
 
-from common import file_utils, reports_utils, date_time_formats, string_utils
+from common import date_time_formats, file_utils, reports_utils, string_utils
 from logger import logger_config
 
 from stsloganalyzis.unisig import decode_unisig, upper_layer_libraries
@@ -52,7 +51,7 @@ class ProfibusLogLibrary:
         self._process_files()
         self._decode_sdn_or_sna()
 
-        self.unisig_messages = [unisig_message for decoded_file in self.decoded_files for log_line in decoded_file.decoded_lines for unisig_message in log_line.unisig_messages]
+        self.unisig_messages = [log_line.unisig_message for decoded_file in self.decoded_files for log_line in decoded_file.decoded_lines if log_line.unisig_message is not None]
 
         self.all_upper_layer_telegram = [upper_layer_telegram for upper_layer_telegram in self.unisig_messages if isinstance(upper_layer_telegram, decode_unisig.UpperLayerTelegram)]
         self.all_sl4_upper_layer_telegram = [
@@ -120,8 +119,8 @@ class ProfibusLogLibrary:
                         "Number of errors": len(interesting_stm_message.creational_and_decoding_errors + interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors),
                         "STM messages decoded in this line": ",".join([str(stm_message.nid_stm) for stm_message in interesting_stm_message.upper_layer_telegram.upper_layer_decoded_stms]),
                         "CRC": interesting_stm_message.upper_layer_telegram.crc_bits_as_string,
-                        "Safe time layer timestamp (ms)": interesting_stm_message.upper_layer_telegram.stl_time_stamp,
-                        "Safe time layer timestamp (human format)": date_time_formats.format_duration_to_string(interesting_stm_message.upper_layer_telegram.stl_time_stamp / 1000),
+                        "Safe time layer timestamp (ms)": interesting_stm_message.upper_layer_telegram.stl_time_stamp_ms,
+                        "Safe time layer timestamp (human format)": interesting_stm_message.upper_layer_telegram.stl_time_stamp_datetime,
                         "STM message: number remaining bits to decode": interesting_stm_message.number_remaining_undecoded_bits,
                         "STM message: remaining bits to decode": interesting_stm_message.remaining_undecoded_bits,
                         "log line: number remaining bits to decode": interesting_stm_message.upper_layer_telegram.number_remaining_undecoded_bits,
@@ -198,7 +197,7 @@ class ProfibusLogFile:
 
     @property
     def unisig_messages(self) -> list[decode_unisig.UnisigMessage]:
-        return [unisig_message for log_line in self.decoded_lines for unisig_message in log_line.unisig_messages]
+        return [log_line.unisig_message for log_line in self.decoded_lines if log_line.unisig_message is not None]
 
 
 @dataclass
@@ -216,7 +215,7 @@ class ProfibusLogLine:
     line_number: int | None
 
     def __post_init__(self) -> None:
-        self.unisig_messages: list[decode_unisig.UnisigMessage] = []
+        self.unisig_message: decode_unisig.UnisigMessage | None = None
 
     @staticmethod
     def get_equipment_name_from_address(address: int) -> str:
@@ -270,7 +269,7 @@ class ProfibusLogLine:
             return None
 
         # Extract time: 1970-01-01 02:18:14:652
-        timestamp = datetime.strptime(f"{fields[0]} {fields[1]}", "%Y-%m-%d %H:%M:%S:%f")
+        timestamp = datetime.strptime(f"{fields[0]} {fields[1]}", "%Y-%m-%d %H:%M:%S:%f")  # noqa: DTZ007
 
         # Extract source and target: [99:37 <= 2:37]
         sap_pattern = re.compile(r"\[(\d+):(\d+) (<=|=>) (\d+):(\d+)\]")
@@ -326,7 +325,7 @@ class ProfibusLogLine:
         source = f"{ProfibusLogLine.get_equipment_name_from_address(source_address)}/{ProfibusLogLine.get_function_name_from_sap(source_sap)}"
         target = f"{ProfibusLogLine.get_equipment_name_from_address(target_address)}/{ProfibusLogLine.get_function_name_from_sap(target_sap)}"
 
-        interlocutors = sorted([source, target])[0] + " <=> " + sorted([source, target])[1]
+        interlocutors = min([source, target]) + " <=> " + max([source, target])
 
         if mode in ("SDA", "SDN"):
             return ProfibusLogLine(
@@ -348,21 +347,21 @@ class ProfibusLogLine:
     def decode_sdn_or_sna(self) -> None:
         if self.mode == SendingMode.SDA:
             try:
-                self.unisig_messages.append(
-                    decode_unisig.SdaUnisigMessage.from_sda_hexa_bytes_str(
-                        profibus_log_line=self,
-                        bytes_hexa=self.bytes_hexa,
-                        upper_layer_decoding_library=self.upper_layer_decoding_library,
-                    )
+                self.unisig_message = decode_unisig.SdaUnisigMessage.from_sda_hexa_bytes_str(
+                    profibus_log_line=self,
+                    bytes_hexa=self.bytes_hexa,
+                    upper_layer_decoding_library=self.upper_layer_decoding_library,
                 )
-                assert cast(decode_unisig.SdaUnisigMessage, self.unisig_messages[-1]).byte_message_decoded.is_correctly_and_completely_decoded
+
+                assert cast(decode_unisig.SdaUnisigMessage, self.unisig_message).byte_message_decoded.is_correctly_and_completely_decoded
+
             except (AssertionError, ValueError) as ass_err:
                 logger_config.print_and_log_exception(ass_err)
                 logger_config.print_and_log_error(f"Could not decode SDA message at {self.timestamp}")
 
         else:
             try:
-                self.unisig_messages = decode_unisig.SdnUnisigMessage.decode_sdn_bytes_hexa(
+                self.unisig_message = decode_unisig.SdnUnisigMessage.decode_sdn_bytes_hexa(
                     profibus_log_line=self,
                     bytes_hexa=self.bytes_hexa,
                     upper_layer_decoding_library=self.upper_layer_decoding_library,
