@@ -185,7 +185,7 @@ class SdaUnisigMessage(UnisigMessage):
             )
 
         elif sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL0_IDLE_TELEGRAM or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_IDLE_TELEGRAM:
-            return SdaUnisigMessage(
+            return SdaIdleTelegram(
                 profibus_log_line=profibus_log_line,
                 command_type=sda_header.command_type,
                 safety_level=sda_header.safety_level,
@@ -320,6 +320,8 @@ class SdaAuthenticationOrAuthenticationAcknowledgementTelegram(SdaUnisigMessage)
     def __post_init__(self) -> None:
         super().__post_init__()
         self.authentication_number = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
+        if self.safety_level == SafetyLevel.SL4:
+            self.crc = UnisigCrc(self.byte_message_decoded.extract_next_bytes_to_str_of_bit(size_bytes=SL4_CRC_SIZE_IN_BYTES))
 
 
 @dataclass
@@ -328,6 +330,15 @@ class SdaRunOrReadyToRunTelegram(SdaUnisigMessage):
     def __post_init__(self) -> None:
         super().__post_init__()
         self.stl_time_stamp_ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES)
+        if self.safety_level == SafetyLevel.SL4:
+            self.crc = UnisigCrc(self.byte_message_decoded.extract_next_bytes_to_str_of_bit(size_bytes=SL4_CRC_SIZE_IN_BYTES))
+
+
+@dataclass
+class SdaIdleTelegram(SdaUnisigMessage):
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
         if self.safety_level == SafetyLevel.SL4:
             self.crc = UnisigCrc(self.byte_message_decoded.extract_next_bytes_to_str_of_bit(size_bytes=SL4_CRC_SIZE_IN_BYTES))
 
