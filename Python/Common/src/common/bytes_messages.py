@@ -103,6 +103,9 @@ class DecodedBytesMessage:
         assert self.number_of_bits_remaining_to_decode >= 0, f"Too many ({-self.current_bit_index}) bits decoded!!"
         return bits_extracted
 
+    def extract_next_bytes_to_str_of_bit(self, size_bytes: int) -> str:
+        return self.extract_next_bits_to_str_of_bit(size_bytes * NUMBER_OF_BITS_IN_BYTE)
+
     def extract_and_remove_last_next_bits_to_str_of_bit(self, number_of_bits: int) -> str:
         bits_extracted = self.str_of_bits[-number_of_bits:]
         self.str_of_bits = self.str_of_bits[:-number_of_bits]
@@ -162,6 +165,10 @@ class DecodedBytesMessage:
             all_values.append(DecodedIntResult(signed_value=field_signed_value, unsigned_value=field_unsigned_value))
 
         return all_values
+
+    def get_and_remove_last_bytes_as_bitset_str(self, size_bytes: int) -> str:
+        bits_extracted = self.get_and_remove_last_bits_as_bitset_str(size_bytes * NUMBER_OF_BITS_IN_BYTE)
+        return bits_extracted
 
     def get_and_remove_last_bits_as_bitset_str(self, size_bits: int) -> str:
         bits_extracted = self.extract_and_remove_last_next_bits_to_str_of_bit(size_bits)

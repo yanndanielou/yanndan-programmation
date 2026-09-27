@@ -12,10 +12,9 @@ from logger import logger_config
 from stsloganalyzis.unisig import upper_layer_libraries
 
 SL4_CRC_SIZE_IN_BYTES = 6
-SL4_CRC_SIZE_IN_BITES = SL4_CRC_SIZE_IN_BYTES * bytes_messages.NUMBER_OF_BITS_IN_BYTE
 
 SL0_CRC_SIZE_IN_BYTES = 0
-SL0_CRC_SIZE_IN_BITES = SL0_CRC_SIZE_IN_BYTES * bytes_messages.NUMBER_OF_BITS_IN_BYTE
+
 
 STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES = 4
 STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BITS = STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES * bytes_messages.NUMBER_OF_BITS_IN_BYTE
@@ -69,17 +68,10 @@ class SafetyLevel(IntEnum):
     SL0 = 0
     SL4 = 4
 
-    def get_crc_size_in_bits(self) -> int:
-        if self == SafetyLevel.SL4:
-            return int(SL4_CRC_SIZE_IN_BITES)
-        elif self == SafetyLevel.SL0:
-            return int(SL0_CRC_SIZE_IN_BITES)
-        assert False
-
 
 @dataclass
 class UnisigMessage(ABC):
-    profibus_log_line: "ppn_log.ProfibusLogLine"
+    profibus_log_line: "ppn_log.ProfibusLogLine|None"
     byte_message_decoded: bytes_messages.DecodedBytesMessage
 
     def __post_init__(self) -> None:
@@ -132,12 +124,28 @@ class SdnSafeTimeLayerStartupForMulticast(SdnUnisigMessage):
 
 
 @dataclass
+class UnisigCrc:
+    crc_bits_as_string: str
+
+    def __post_init__(self) -> None:
+        pass
+
+
+@dataclass
 class SdaUnisigMessage(UnisigMessage):
-    crc_bits_as_string: str | None
     safety_level: SafetyLevel
     telegram_name: str
     lowest_order_byte_sequence_number: int
     command_type: "SdaUnisigMessage.CommandTypeSubset57"
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.stl_time_stamp_ms: int | None = None
+        self.crc: UnisigCrc | None = None
+
+    @property
+    def stl_time_stamp_datetime(self) -> str | None:
+        return date_time_formats.format_duration_to_string(self.stl_time_stamp_ms / 1000) if self.stl_time_stamp_ms else None
 
     class Header:
         def __init__(self, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> None:
@@ -165,12 +173,9 @@ class SdaUnisigMessage(UnisigMessage):
     ) -> UnisigMessage:
         byte_message_decoded = bytes_messages.DecodedBytesMessage.from_hex_string(bytes_hexa)
         sda_header = SdaUnisigMessage.Header(byte_message_decoded)
-        safety_level = sda_header.safety_level
-        crc_string_of_bits = byte_message_decoded.extract_and_remove_last_next_bits_to_str_of_bit(safety_level.get_crc_size_in_bits()) if safety_level.get_crc_size_in_bits() else None
 
         if sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL0_DISCONNECT_TELEGRAM or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_DISCONNECT_TELEGRAM:
             return SdaDisconnectTelegram(
-                crc_bits_as_string=crc_string_of_bits,
                 profibus_log_line=profibus_log_line,
                 command_type=sda_header.command_type,
                 safety_level=sda_header.safety_level,
@@ -180,8 +185,7 @@ class SdaUnisigMessage(UnisigMessage):
             )
 
         elif sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL0_IDLE_TELEGRAM or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_IDLE_TELEGRAM:
-            return SdaGenericTelegram(
-                crc_bits_as_string=crc_string_of_bits,
+            return SdaUnisigMessage(
                 profibus_log_line=profibus_log_line,
                 command_type=sda_header.command_type,
                 safety_level=sda_header.safety_level,
@@ -197,7 +201,6 @@ class SdaUnisigMessage(UnisigMessage):
             or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_CONNECT_CONFIRM_TELEGRAM
         ):
             return SdaConnectRequestOrConfirmTelegram(
-                crc_bits_as_string=crc_string_of_bits,
                 profibus_log_line=profibus_log_line,
                 command_type=sda_header.command_type,
                 safety_level=sda_header.safety_level,
@@ -210,7 +213,6 @@ class SdaUnisigMessage(UnisigMessage):
             or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_AUTHENTICATION_ACKNOWLEDGEMENT_TELEGRAM
         ):
             return SdaAuthenticationOrAuthenticationAcknowledgementTelegram(
-                crc_bits_as_string=crc_string_of_bits,
                 profibus_log_line=profibus_log_line,
                 command_type=sda_header.command_type,
                 safety_level=sda_header.safety_level,
@@ -226,7 +228,6 @@ class SdaUnisigMessage(UnisigMessage):
             or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_RUN
         ):
             return SdaRunOrReadyToRunTelegram(
-                crc_bits_as_string=crc_string_of_bits,
                 profibus_log_line=profibus_log_line,
                 command_type=sda_header.command_type,
                 safety_level=sda_header.safety_level,
@@ -239,7 +240,6 @@ class SdaUnisigMessage(UnisigMessage):
             sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL0_TELEGRAM_FOR_UPPER_LAYER or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_TELEGRAM_FOR_UPPER_LAYER
         ):
             return UpperLayerTelegram(
-                crc_bits_as_string=crc_string_of_bits,
                 profibus_log_line=profibus_log_line,
                 safety_level=sda_header.safety_level,
                 telegram_name=sda_header.telegram_name,
@@ -294,6 +294,10 @@ class SdaConnectRequestOrConfirmTelegram(SdaUnisigMessage):
         self.configuration_data_prefix_y = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
         # assert self.configuration_data_prefix_y == 0
         self.configuration_data_prefix_z = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+
+        if self.safety_level == SafetyLevel.SL4:
+            self.crc = UnisigCrc(self.byte_message_decoded.get_and_remove_last_bytes_as_bitset_str(size_bytes=SL4_CRC_SIZE_IN_BYTES))
+
         # assert self.configuration_data_prefix_z == 0
         dual_bus_length_in_bits = self.byte_message_decoded.number_of_bits_remaining_to_decode
 
@@ -324,6 +328,8 @@ class SdaRunOrReadyToRunTelegram(SdaUnisigMessage):
     def __post_init__(self) -> None:
         super().__post_init__()
         self.stl_time_stamp_ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES)
+        if self.safety_level == SafetyLevel.SL4:
+            self.crc = UnisigCrc(self.byte_message_decoded.extract_next_bytes_to_str_of_bit(size_bytes=SL4_CRC_SIZE_IN_BYTES))
 
 
 @dataclass
@@ -408,7 +414,7 @@ class UpperLayerTelegram(SdaUnisigMessage):
         super().__post_init__()
         self.header = SdaUnisigMessage.Header(self.byte_message_decoded)
 
-        self.stl_time_stamp = self.byte_message_decoded.get_and_remove_last_bytes_as_single_int_unsigned(size_bytes=STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES)
+        self.stl_time_stamp_ms = self.byte_message_decoded.get_and_remove_last_bytes_as_single_int_unsigned(size_bytes=STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES)
 
         self.upper_layer_decoded_stms: list[UpperLayerStm] = []
 
@@ -437,10 +443,3 @@ class UpperLayerTelegram(SdaUnisigMessage):
                 # f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={self.byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=self.byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
                 f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.number_remaining_undecoded_bits}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
             )
-
-
-@dataclass
-class SdaGenericTelegram(SdaUnisigMessage):
-
-    def __post_init__(self) -> None:
-        super().__post_init__()
