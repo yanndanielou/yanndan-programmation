@@ -1,18 +1,13 @@
-import csv
-import datetime
 import xml.etree.ElementTree as ET
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import dict, list, Optional, cast
+from typing import cast
 
 import dpkt
-from pcapng import FileScanner
-
 import pyshark
-import pyshark.packet.packet
 import pyshark.packet.layers
-
+import pyshark.packet.packet
 from logger import logger_config
+from pcapng import FileScanner
 
 # CONTENT_OF_FIELD_IN_CASE_OF_DECODING_ERROR = "!!! Decoding Error !!!"
 
@@ -21,12 +16,6 @@ from logger import logger_config
 class InvariantMessage:
     message_id: str
     message_number: int
-
-
-# Load the packet capture using the Lua dissector
-
-import pyshark
-from typing import list
 
 
 class PcapDissector:
