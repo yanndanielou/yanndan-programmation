@@ -4,6 +4,8 @@ import pytest
 from stsloganalyzis.ppn import ppn_log
 from stsloganalyzis.unisig import decode_unisig, upper_layer_libraries
 
+from common import bytes_messages
+
 
 @pytest.fixture(scope="session", name="next_unisig_58_library_fixture")
 def next_unisig_58_library() -> upper_layer_libraries.UpperLayerDecodingLibrary:
@@ -281,12 +283,13 @@ class TestDecodeOnePpnLogLine:
                 assert ppn_log_line.unisig_message
                 assert not ppn_log_line.unisig_message.creational_and_decoding_errors
 
-            def test_decode_line_with_stm175(
+            def test_decode_bitsets_with_only_stm175_content(
                 self,
                 next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary,
             ) -> None:
-                raw_ppn_log_line = "0111001010001001000111010001110010101111000000111010100110000000000001000000011100000011100000000100000000000000011100010000100000011000100000000111011101100101100011110100011000000001000001001101100100110000010001000111010000100111"
-                ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(raw_ppn_log_line, upper_layer_decoding_library=next_unisig_58_library_fixture)
+                stm_175_content = "0111001010001001000111010001110010101111000000111010100110000000000001000000011100000011100000000100000000000000011100010000100000011000100000000111011101100101100011110100011000000001000001001101100100110000010001000111010000100111"
+                decode_unisig.UpperLayerStm(None, byte_message_decoded=bytes_messages.DecodedBytesMessage.from_bit_string(stm_175_content))
+                ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(stm_175_content, upper_layer_decoding_library=next_unisig_58_library_fixture)
                 assert ppn_log_line
                 ppn_log_line.decode_sdn_or_sna()
                 assert ppn_log_line.unisig_message
