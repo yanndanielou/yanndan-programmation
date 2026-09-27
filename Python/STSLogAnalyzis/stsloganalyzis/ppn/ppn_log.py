@@ -53,11 +53,11 @@ class ProfibusLogLibrary:
 
         self.unisig_messages = [log_line.unisig_message for decoded_file in self.decoded_files for log_line in decoded_file.decoded_lines if log_line.unisig_message is not None]
 
-        self.all_upper_layer_telegram = [upper_layer_telegram for upper_layer_telegram in self.unisig_messages if isinstance(upper_layer_telegram, decode_unisig.UpperLayerTelegram)]
+        self.all_upper_layer_telegram = [upper_layer_telegram for upper_layer_telegram in self.unisig_messages if isinstance(upper_layer_telegram, decode_unisig.SdaForUpperLayerTelegram)]
         self.all_sl4_upper_layer_telegram = [
             upper_layer_telegram
             for upper_layer_telegram in self.unisig_messages
-            if isinstance(upper_layer_telegram, decode_unisig.UpperLayerTelegram)
+            if isinstance(upper_layer_telegram, decode_unisig.SdaForUpperLayerTelegram)
             and upper_layer_telegram.command_type == decode_unisig.SdaUnisigMessage.CommandTypeSubset57.SL4_TELEGRAM_FOR_UPPER_LAYER
         ]
         # [unisig_message for log_line in self.decoded_lines for unisig_message in log_line.unisig_messages]

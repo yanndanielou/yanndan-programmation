@@ -9,7 +9,7 @@ class TestUpperLayerLibrary:
         upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(r"test\resources\ppn\upper_layer_library_packet_field_containing_fields.json")
 
         data_to_encode = bytes_messages.convert_hex_string_to_hex_bytes("7Bh 89h 34h 53h 01h 02h 03h 04h 05h 06h 07h 08h 09h 10h")
-        telegram = decode_unisig.UpperLayerTelegram(
+        telegram = decode_unisig.SdaForUpperLayerTelegram(
             profibus_log_line=None,
             safety_level=decode_unisig.SafetyLevel.SL4,
             telegram_name="",

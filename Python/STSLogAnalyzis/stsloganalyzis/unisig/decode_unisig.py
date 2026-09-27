@@ -239,7 +239,7 @@ class SdaUnisigMessage(UnisigMessage):
         elif (
             sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL0_TELEGRAM_FOR_UPPER_LAYER or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_TELEGRAM_FOR_UPPER_LAYER
         ):
-            return UpperLayerTelegram(
+            return SdaForUpperLayerTelegram(
                 profibus_log_line=profibus_log_line,
                 safety_level=sda_header.safety_level,
                 telegram_name=sda_header.telegram_name,
@@ -345,7 +345,7 @@ class SdaIdleTelegram(SdaUnisigMessage):
 
 @dataclass
 class UpperLayerStm:
-    upper_layer_telegram: "UpperLayerTelegram"
+    upper_layer_telegram: "SdaForUpperLayerTelegram"
     byte_message_decoded: bytes_messages.DecodedBytesMessage
 
     def __post_init__(self) -> None:
@@ -418,7 +418,7 @@ class UpperLayerStm:
 
 
 @dataclass
-class UpperLayerTelegram(SdaUnisigMessage):
+class SdaForUpperLayerTelegram(SdaUnisigMessage):
     upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary
 
     def __post_init__(self) -> None:
@@ -426,6 +426,9 @@ class UpperLayerTelegram(SdaUnisigMessage):
         self.header = SdaUnisigMessage.Header(self.byte_message_decoded)
 
         self.stl_time_stamp_ms = self.byte_message_decoded.get_and_remove_last_bytes_as_single_int_unsigned(size_bytes=STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES)
+
+        if self.safety_level == SafetyLevel.SL4:
+            self.crc = UnisigCrc(self.byte_message_decoded.get_and_remove_last_bytes_as_bitset_str(size_bytes=SL4_CRC_SIZE_IN_BYTES))
 
         self.upper_layer_decoded_stms: list[UpperLayerStm] = []
 
