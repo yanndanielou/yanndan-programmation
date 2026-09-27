@@ -34,6 +34,8 @@ def format_duration_to_string(duration_in_seconds_as_float: float) -> str:
     hours, remainder = divmod(duration_in_seconds_as_int, 3600)
     minutes, seconds = divmod(remainder, 60)
 
-    result = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}.{int(milliseconds):03}"
+    days, hours_final = divmod(hours, 24)
+    result = f"{days} " if days else ""
+    result = f"{result}{int(hours_final):02}:{int(minutes):02}:{int(seconds):02}.{int(milliseconds):03}"
 
     return result
