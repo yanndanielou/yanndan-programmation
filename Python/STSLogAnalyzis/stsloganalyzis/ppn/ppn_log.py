@@ -118,6 +118,9 @@ class ProfibusLogLibrary:
                         "nid stm": interesting_stm_message.nid_stm,
                         "Number of errors (only this STM message)": len(interesting_stm_message.creational_and_decoding_errors),
                         "Number of errors (unisig message)": len(interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors),
+                        "Number of errors (STM + unisig message)": len(
+                            interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors + interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors
+                        ),
                         "STM messages decoded in this line": ",".join([str(stm_message.nid_stm) for stm_message in interesting_stm_message.upper_layer_telegram.upper_layer_decoded_stms]),
                         "CRC": interesting_stm_message.upper_layer_telegram.crc.crc_bits_as_string if interesting_stm_message.upper_layer_telegram.crc else None,
                         "Safe time layer timestamp (ms)": interesting_stm_message.upper_layer_telegram.stl_time_stamp_ms,
@@ -126,8 +129,10 @@ class ProfibusLogLibrary:
                         "STM message: remaining bits to decode": interesting_stm_message.remaining_undecoded_bits,
                         "log line: number remaining bits to decode": interesting_stm_message.upper_layer_telegram.number_remaining_undecoded_bits,
                         "log line: remaining bits to decode": interesting_stm_message.upper_layer_telegram.remaining_undecoded_bits,
-                        "STM message errors": interesting_stm_message.creational_and_decoding_errors + interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors,
-                        "Unisig message errors": interesting_stm_message.creational_and_decoding_errors + interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors,
+                        "STM message errors": interesting_stm_message.creational_and_decoding_errors,
+                        "Unisig message errors": interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors,
+                        "Amm errors (STM message + unisig message)": interesting_stm_message.creational_and_decoding_errors
+                        + interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors,
                         **{field_name: field_value for field_name, field_value in interesting_stm_message.fields_names_and_values.items()},
                     }
                 )
