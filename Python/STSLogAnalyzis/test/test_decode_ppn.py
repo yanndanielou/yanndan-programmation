@@ -220,6 +220,23 @@ class TestDecodeOnePpnLogLine:
 
             class TestNIter:
 
+                def test_decode_line_stm_183(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+                    ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
+                        line="2026-03-28 20:01:07:329 kppn 1.3.3: [99:33 => 2:33] Sending PROFIBUS message  [num:5790][rt:2455][mode:SDA][len:146] 63 89 1d 86 b7 20 38 80 cb 22 61 d4 b1 e1 d4 b6 17 10 2d 98 9a 96 98 9a 18 10 35 b6 97 b4 2e a4 c0 b0 e0 d4 81 b4 bd cc c8 1c b5 66 97 46 57 37 36 52 06 d6 17 84 18 9a 18 10 35 b6 97 b4 04 18 ac ca e4 e6 d2 de dc 40 c4 de e4 c9 15 04 14 55 f4 35 54 35 05 f5 63 13 05 f3 45 f5 03 20 94 d5 99 5c 9c da 5b db 88 1c 18 5c 98 5b 4b 88 18 9b dc 99 24 a0 82 8a be a0 82 a4 82 9a be 98 a4 be ac 70 be 60 6e 1e 01 94 64 1d 2a 00 5e d0 4d 95 17 ea",
+                        upper_layer_decoding_library=next_unisig_58_library_fixture,
+                    )
+                    assert ppn_log_line
+                    ppn_log_line.decode_sdn_or_sna()
+                    assert ppn_log_line.unisig_message
+                    assert not ppn_log_line.unisig_message.creational_and_decoding_errors
+                    assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
+                    assert ppn_log_line.unisig_message.upper_layer_decoded_stms
+                    assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 2
+                    stm_message_1833 = ppn_log_line.unisig_message.upper_layer_decoded_stms[0]
+                    assert stm_message_1833.nid_stm == 183
+                    for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
+                        assert not upper_layer_decoded_stm.creational_and_decoding_errors
+
                 def test_decode_line_stm_34(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
                     ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
                         line="2026-03-28 06:29:08:022 kppn 1.3.3: [99:4 <= 5:4] Received PROFIBUS message [num:228122][mode:SDA][len:17] 96 c9 1d 0b 22 02 18 41 c0 34 96 65 9f d2 b2 a4 01",
