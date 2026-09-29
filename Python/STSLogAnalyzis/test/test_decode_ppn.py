@@ -232,8 +232,8 @@ class TestDecodeOnePpnLogLine:
                     assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
                     assert ppn_log_line.unisig_message.upper_layer_decoded_stms
                     assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 2
-                    stm_message_1833 = ppn_log_line.unisig_message.upper_layer_decoded_stms[0]
-                    assert stm_message_1833.nid_stm == 183
+                    stm_message_183 = ppn_log_line.unisig_message.upper_layer_decoded_stms[0]
+                    assert stm_message_183.nid_stm == 183
                     for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
                         assert not upper_layer_decoded_stm.creational_and_decoding_errors
 
