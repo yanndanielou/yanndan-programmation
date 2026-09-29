@@ -300,6 +300,25 @@ class TestDecodeOnePpnLogLine:
                 for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
                     assert not upper_layer_decoded_stm.creational_and_decoding_errors
 
+            def test_decode_line_stms_38_to_handle_l_text(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+                ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
+                    line="2026-03-28 07:28:11:532 kppn 1.3.3: [99:44 => 5:44] Sending PROFIBUS message  [num:296866][rt:3095][mode:SDA][len:64] 24 c9 1d 3a 26 0d 05 c8 02 2e 4e 45 78 54 20 3a 20 4d 61 69 6e 74 65 6e 69 72 20 6c 27 69 6d 6d 6f 62 69 6c 69 73 61 74 69 6f 6e 20 65 74 20 70 61 74 69 65 6e 74 65 72 0f 00 ca 00 91 c4 da 01",
+                    upper_layer_decoding_library=next_unisig_58_library_fixture,
+                )
+                assert ppn_log_line
+                ppn_log_line.decode_sdn_or_sna()
+                assert ppn_log_line.unisig_message
+                assert not ppn_log_line.unisig_message.creational_and_decoding_errors
+                assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
+                assert ppn_log_line.unisig_message.upper_layer_decoded_stms
+                assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 2
+                stm_message_38 = ppn_log_line.unisig_message.upper_layer_decoded_stms[0]
+                assert stm_message_38.nid_stm == 38
+                stm_message_15 = ppn_log_line.unisig_message.upper_layer_decoded_stms[1]
+                assert stm_message_15.nid_stm == 15
+                for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
+                    assert not upper_layer_decoded_stm.creational_and_decoding_errors
+
             def test_decode_line_stms_184_176_175_from_file(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
                 log_file = ppn_log.ProfibusLogFile(file_full_path=r"test\resources\ppn\STMs 175 184 176.log_ppn", upper_layer_decoding_library=next_unisig_58_library_fixture)
                 log_file.process()
@@ -319,7 +338,6 @@ class TestDecodeOnePpnLogLine:
                     line="2026-06-01 18:16:17:636 kppn 1.3.3: [99:33 => 2:33] Sending PROFIBUS message [num:20600][rt:1711][mode:SDA][len:22] b1 89 1d 0a 01 01 28 20 00 78 06 50 e7 4b 22 00 59 9d 7a c8 4d b6",
                     upper_layer_decoding_library=next_unisig_58_library_fixture,
                 )
-
                 assert ppn_log_line
                 ppn_log_line.decode_sdn_or_sna()
                 assert ppn_log_line.unisig_message

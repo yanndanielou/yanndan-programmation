@@ -401,8 +401,9 @@ class UpperLayerStm:
 
             if field_definition.fields:
                 if field_definition.name == "N_ITER":
-                    number_of_iterations = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=field_definition.size_in_bits)
-                    for i in range(number_of_iterations):
+                    n_iter = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=field_definition.size_in_bits)
+                    self.fields_names_and_values[field_definition.name] = n_iter
+                    for i in range(n_iter):
                         for sub_field in field_definition.fields:
                             self.handle_packet_field_definition(
                                 upper_layer_libraries.PacketFieldDefinition(
@@ -411,7 +412,14 @@ class UpperLayerStm:
                                     enum_type_definition=sub_field.enum_type_definition,
                                 )
                             )
-                            pass
+                elif field_definition.name == "L_TEXT":
+                    l_text = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=field_definition.size_in_bits)
+                    self.fields_names_and_values[field_definition.name] = l_text
+                    for sub_field in field_definition.fields:
+                        assert sub_field.size_in_bits == bytes_messages.SIZE_BITS_PER_CHAR
+                        sub_field_string_value = self.stm_message_content_byte_message_decoded.get_next_bits_as_ascii_char(number_of_chars=l_text)
+                        self.fields_names_and_values[sub_field.name] = sub_field_string_value
+
             else:
 
                 if self.stm_message_content_byte_message_decoded.number_of_bits_remaining_to_decode >= self.decoded_field_size_in_bits:

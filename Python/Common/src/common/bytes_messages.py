@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import cast, Self
 
 NUMBER_OF_BITS_IN_BYTE = int(8)
+SIZE_BITS_PER_CHAR = 8
 
 
 @dataclass
@@ -115,11 +116,9 @@ class DecodedBytesMessage:
     def get_next_bits_as_ascii_char(self, number_of_chars: int) -> str:
         all_chars: list[str] = []
 
-        size_bits_per_char = 8
-
         for _ in range(0, number_of_chars):
-            bits_extracted = self.extract_next_bits_to_str_of_bit(size_bits_per_char)
-            current_char = convert_bits_to_ascii_char(bits_extracted, self.current_bit_index, size_bits_per_char)
+            bits_extracted = self.extract_next_bits_to_str_of_bit(SIZE_BITS_PER_CHAR)
+            current_char = convert_bits_to_ascii_char(bits_extracted, self.current_bit_index, SIZE_BITS_PER_CHAR)
             all_chars.append(current_char)
 
         string_value = "".join(cast(str, all_chars)).rstrip()
