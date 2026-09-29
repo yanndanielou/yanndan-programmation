@@ -100,6 +100,11 @@ class ProfibusLogLibrary:
                 file_base_name=string_utils.format_filename(f"{self.label} {interlocutors}"),
             )
 
+    @logger_config.stopwatch_decorator(monitor_ram_usage=True)
+    def save_all_stm_messages(self) -> None:
+        self.save_selected_stm_messages(self.all_upper_layer_stms, file_base_name=f"{self.label} all STM messages")
+
+    @logger_config.stopwatch_decorator(monitor_ram_usage=True)
     def save_selected_stm_messages(self, interesting_stm_messages: list[decode_unisig.UpperLayerStm], file_base_name: str) -> None:
         logger_config.print_and_log_info(f"save_selected_stm_messages {len(interesting_stm_messages)} STM messages to {file_base_name}")
 
