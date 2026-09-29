@@ -30,8 +30,9 @@ def main() -> None:
 
             library.save_upper_layer_stms_by_stm_ids([179, 184, 175, 176, 14, 177, 178])
             library.save_upper_layer_stms_by_stm_ids([15, 14])
-            library.save_selected_stm_messages(library.all_upper_layer_stms, file_base_name=f"{library.label} all")
-            library.save_selected_stm_messages_for_each_interlocutor()
+            library.save_selected_stm_messages(library.all_upper_layer_stms, file_base_name=f"{library.label} all STM messages")
+            library.save_all_unisig_messages()
+            library.save_stm_messages_for_each_interlocutor()
 
         pass
 
