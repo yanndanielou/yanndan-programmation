@@ -91,7 +91,7 @@ class ProfibusLogLibrary:
             file_base_name=f"{self.label} {label} stm messages {' '.join(str(interesting_stm_id) for interesting_stm_id in allowed_stm_ids)}",
         )
 
-    def save_selected_stm_messages_for_each_interlocutor(self) -> None:
+    def save_stm_messages_for_each_interlocutor(self) -> None:
         for interlocutors in self.all_interlocutors:
             self.save_selected_stm_messages(
                 interesting_stm_messages=[
