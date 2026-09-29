@@ -136,7 +136,7 @@ class ProfibusLogLibrary:
                         "log line: remaining bits to decode": interesting_stm_message.upper_layer_telegram.remaining_undecoded_bits,
                         "STM message errors": interesting_stm_message.creational_and_decoding_errors,
                         "Unisig message errors": interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors,
-                        "Amm errors (STM message + unisig message)": interesting_stm_message.creational_and_decoding_errors
+                        "All errors (STM message + unisig message)": interesting_stm_message.creational_and_decoding_errors
                         + interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors,
                         **{field_name: field_value for field_name, field_value in interesting_stm_message.fields_names_and_values.items()},
                     }
@@ -227,23 +227,24 @@ class ProfibusLogFile:
             self.upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(json_file_full_path=r"C:\Tools\GenTel\GenTel\rom\unisig_s58.json")
 
     def process(self) -> None:
-        logger_config.print_and_log_info(f"Process {self.file_full_path}")
-        with open(self.file_full_path, "r", encoding=self.encoding) as f:
-            lines = f.readlines()
-            for line_number, line in enumerate(lines):
-                try:
-                    decoded_line = ProfibusLogLine.decode_raw_log_line(
-                        line=line,
-                        upper_layer_decoding_library=self.upper_layer_decoding_library,
-                        file_path=self.file_full_path,
-                        line_number=line_number + 1,
-                    )
-                    if decoded_line is not None:
-                        self.decoded_lines.append(decoded_line)
 
-                except ValueError as val_err:
-                    logger_config.print_and_log_exception(val_err)
-                    logger_config.print_and_log_error(f"Could not decode line {line} in file {self.file_full_path}")
+        with logger_config.stopwatch_with_label(f"Process {self.file_full_path}", monitor_ram_usage=True, inform_beginning=True):
+            with open(self.file_full_path, "r", encoding=self.encoding) as f:
+                lines = f.readlines()
+                for line_number, line in enumerate(lines):
+                    try:
+                        decoded_line = ProfibusLogLine.decode_raw_log_line(
+                            line=line,
+                            upper_layer_decoding_library=self.upper_layer_decoding_library,
+                            file_path=self.file_full_path,
+                            line_number=line_number + 1,
+                        )
+                        if decoded_line is not None:
+                            self.decoded_lines.append(decoded_line)
+
+                    except ValueError as val_err:
+                        logger_config.print_and_log_exception(val_err)
+                        logger_config.print_and_log_error(f"Could not decode line {line} in file {self.file_full_path} line {line_number+1}")
 
     @property
     def unisig_messages(self) -> list[decode_unisig.UnisigMessage]:
@@ -259,7 +260,7 @@ class ProfibusLogLine:
     sequence: int
     mode: SendingMode
     length: int
-    bytes_hexa: str
+    bytes_hexa_str: str
     upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary
     file_path: str | None
     line_number: int | None
@@ -386,7 +387,7 @@ class ProfibusLogLine:
                 sequence=sequence,
                 mode=SendingMode[mode],
                 length=length,
-                bytes_hexa=bytes_hexa,
+                bytes_hexa_str=bytes_hexa,
                 upper_layer_decoding_library=upper_layer_decoding_library,
                 file_path=file_path,
                 line_number=line_number,
@@ -399,7 +400,7 @@ class ProfibusLogLine:
             try:
                 self.unisig_message = decode_unisig.SdaUnisigMessage.from_sda_hexa_bytes_str(
                     profibus_log_line=self,
-                    bytes_hexa=self.bytes_hexa,
+                    bytes_hexa_str=self.bytes_hexa_str,
                     upper_layer_decoding_library=self.upper_layer_decoding_library,
                 )
 
@@ -407,13 +408,15 @@ class ProfibusLogLine:
 
             except (AssertionError, ValueError) as ass_err:
                 logger_config.print_and_log_exception(ass_err)
-                logger_config.print_and_log_error(f"Could not decode SDA message at {self.timestamp}")
+                logger_config.print_and_log_error(
+                    f"Could not decode SDA message at {self.timestamp} between {self.interlocutors} in file {self.file_path} line {self.line_number}, bytes_hexa_str:{self.bytes_hexa_str}"
+                )
 
         else:
             try:
                 self.unisig_message = decode_unisig.SdnUnisigMessage.decode_sdn_bytes_hexa(
                     profibus_log_line=self,
-                    bytes_hexa=self.bytes_hexa,
+                    bytes_hexa=self.bytes_hexa_str,
                     upper_layer_decoding_library=self.upper_layer_decoding_library,
                 )
             except (AssertionError, ValueError) as ass_err:
