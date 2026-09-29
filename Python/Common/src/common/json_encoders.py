@@ -39,7 +39,7 @@ class JsonEncodersUtils(metaclass=singleton.Singleton):
                 first_item = True
 
                 for chunk_index, chunk_start_index in enumerate(range(0, len(list_objects), chunk_size)):
-                    with logger_config.stopwatch_with_label(f"Serialize {chunk_index} th chunk of {chunk_size} lines in {json_file_full_path}"):
+                    with logger_config.stopwatch_with_label(f"Serialize {chunk_index+1} th chunk of {chunk_size} lines in {json_file_full_path}"):
                         chunk = list_objects[chunk_start_index : chunk_start_index + chunk_size]
 
                         for item in chunk:
