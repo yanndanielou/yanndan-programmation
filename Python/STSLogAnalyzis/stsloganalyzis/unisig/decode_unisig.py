@@ -390,36 +390,37 @@ class UpperLayerStm:
                     f"Unsupported STM {self.nid_stm}",
                 )
 
-    def handle_packet_field_definition(self, field_definition: upper_layer_libraries.PacketFieldDefinition) -> None:
+    def handle_packet_field_definition(self, field_definition: upper_layer_libraries.PacketFieldDefinition, prefix: str = "") -> None:
         decoded_field_name = field_definition.name
         self.decoded_field_size_in_bits = field_definition.size_in_bits
 
         if self.decoded_field_size_in_bits is None:
             self.add_error(f"STM {self.nid_stm} no size defined for field {decoded_field_name}")
-            self.fields_names_and_values[decoded_field_name] = "Error!!! No size defined"
+            self.add_field(prefix + decoded_field_name, "Error!!! No size defined")
         else:
 
             if field_definition.fields:
                 if field_definition.name == "N_ITER":
                     n_iter = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=field_definition.size_in_bits)
-                    self.fields_names_and_values[field_definition.name] = n_iter
+                    self.add_field(prefix + field_definition.name, n_iter)
                     for i in range(n_iter):
                         for sub_field in field_definition.fields:
                             self.handle_packet_field_definition(
                                 upper_layer_libraries.PacketFieldDefinition(
-                                    name=f"{sub_field.name}_{i}",
+                                    name=f"{sub_field.name}",
                                     size_in_bits=sub_field.size_in_bits,
                                     enum_type_definition=sub_field.enum_type_definition,
                                     fields=sub_field.fields,
-                                )
+                                ),
+                                prefix=f"{prefix}N_ITER_{i}_",
                             )
                 elif field_definition.name.startswith(("L_TEXT", "L_CAPTION")):
                     text_length = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=field_definition.size_in_bits)
-                    self.fields_names_and_values[field_definition.name] = text_length
+                    self.add_field(prefix + field_definition.name, text_length)
                     for sub_field in field_definition.fields:
                         assert sub_field.size_in_bits == bytes_messages.SIZE_BITS_PER_CHAR
                         sub_field_string_value = self.stm_message_content_byte_message_decoded.get_next_bits_as_ascii_char(number_of_chars=text_length)
-                        self.fields_names_and_values[sub_field.name] = sub_field_string_value
+                        self.add_field(prefix + sub_field.name, sub_field_string_value)
 
             else:
 
@@ -428,13 +429,12 @@ class UpperLayerStm:
                     field_raw_unsigned_int_value = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=self.decoded_field_size_in_bits)
 
                     if field_definition.enum_type_definition:
-                        self.fields_names_and_values[decoded_field_name] = field_definition.enum_type_definition.states_ordered_by_value_from_zero[field_raw_unsigned_int_value]
-
+                        self.add_field(prefix + decoded_field_name, field_definition.enum_type_definition.states_ordered_by_value_from_zero[field_raw_unsigned_int_value])
                     else:
-                        self.fields_names_and_values[decoded_field_name] = field_raw_unsigned_int_value
+                        self.add_field(prefix + decoded_field_name, field_raw_unsigned_int_value)
                 else:
                     logger_config.print_and_log_info(f"Not enough data for STM {self.nid_stm} {decoded_field_name}", do_not_print=True)
-                    self.fields_names_and_values[decoded_field_name] = "Error!!! No enough data"
+                    self.add_field(prefix + decoded_field_name, "Error!!! No enough data")
 
     def add_error(self, error: str) -> None:
         self.creational_and_decoding_errors.append(error)
@@ -442,6 +442,10 @@ class UpperLayerStm:
     @property
     def number_remaining_undecoded_bits(self) -> int:
         return len(self.remaining_undecoded_bits)
+
+    def add_field(self, field_name: str, value: str | int) -> None:
+        assert field_name not in self.fields_names_and_values
+        self.fields_names_and_values[field_name] = value
 
 
 @dataclass
