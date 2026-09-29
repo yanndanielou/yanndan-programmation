@@ -6,6 +6,7 @@ from common import reports_utils
 from logger import logger_config
 
 from stsloganalyzis.ppn import ppn_log
+from stsloganalyzis.unisig import decode_unisig
 
 
 def main() -> None:
@@ -26,6 +27,13 @@ def main() -> None:
             library = ppn_log.ProfibusLogLibrary(
                 directory_path=root_path + "\\" + child_directory,
                 label=child_directory,
+            )
+
+            library.save_selected_unisig_messages(
+                file_base_name=f"{library.label} SDA messages with timestamp",
+                selected_unisig_messages=[
+                    unisig_message for unisig_message in library.all_unisig_messages if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) and unisig_message.stl_time_stamp_ms is not None
+                ],
             )
 
             library.save_upper_layer_stms_by_stm_ids([179, 184, 175, 176, 14, 177, 178])

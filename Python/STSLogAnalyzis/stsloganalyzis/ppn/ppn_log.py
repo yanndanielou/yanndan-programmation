@@ -51,19 +51,19 @@ class ProfibusLogLibrary:
         self._process_files()
         self._decode_sdn_or_sna()
 
-        self.unisig_messages = [log_line.unisig_message for decoded_file in self.decoded_files for log_line in decoded_file.decoded_lines if log_line.unisig_message is not None]
+        self.all_unisig_messages = [log_line.unisig_message for decoded_file in self.decoded_files for log_line in decoded_file.decoded_lines if log_line.unisig_message is not None]
 
-        self.all_upper_layer_telegram = [upper_layer_telegram for upper_layer_telegram in self.unisig_messages if isinstance(upper_layer_telegram, decode_unisig.SdaForUpperLayerTelegram)]
+        self.all_upper_layer_telegram = [upper_layer_telegram for upper_layer_telegram in self.all_unisig_messages if isinstance(upper_layer_telegram, decode_unisig.SdaForUpperLayerTelegram)]
         self.all_sl4_upper_layer_telegram = [
             upper_layer_telegram
-            for upper_layer_telegram in self.unisig_messages
+            for upper_layer_telegram in self.all_unisig_messages
             if isinstance(upper_layer_telegram, decode_unisig.SdaForUpperLayerTelegram)
             and upper_layer_telegram.command_type == decode_unisig.SdaUnisigMessage.CommandTypeSubset57.SL4_TELEGRAM_FOR_UPPER_LAYER
         ]
         # [unisig_message for log_line in self.decoded_lines for unisig_message in log_line.unisig_messages]
         self.all_upper_layer_stms = [stm_message for upper_layer_telegram in self.all_upper_layer_telegram for stm_message in upper_layer_telegram.upper_layer_decoded_stms]
 
-        self.unisig_messages_errors = [error for unisig_message in self.unisig_messages for error in unisig_message.creational_and_decoding_errors]
+        self.unisig_messages_errors = [error for unisig_message in self.all_unisig_messages for error in unisig_message.creational_and_decoding_errors]
         self.stm_messages_errors = [error for stm_message in self.all_upper_layer_stms for error in stm_message.creational_and_decoding_errors]
         self.all_creational_errors = self.unisig_messages_errors + self.stm_messages_errors
 
@@ -71,7 +71,7 @@ class ProfibusLogLibrary:
 
         self.occurences_by_creational_error_type: dict[str, list[datetime | None]] = defaultdict(list)
 
-        for unisig_message in self.unisig_messages:
+        for unisig_message in self.all_unisig_messages:
             for error in unisig_message.creational_and_decoding_errors:
                 self.occurences_by_creational_error_type[error].append(unisig_message.profibus_log_line.timestamp if unisig_message.profibus_log_line else None)
 
@@ -151,7 +151,14 @@ class ProfibusLogLibrary:
         )
 
     def save_all_unisig_messages(self) -> None:
-        logger_config.print_and_log_info(f"save_selected_stm_messages {len(self.unisig_messages)} unisig messages")
+        logger_config.print_and_log_info(f"save_all_unisig_messages {len(self.all_unisig_messages)} unisig messages")
+        self.save_selected_unisig_messages(
+            selected_unisig_messages=self.all_unisig_messages,
+            file_base_name=f"{self.label} all unisig messages",
+        )
+
+    def save_selected_unisig_messages(self, selected_unisig_messages: list[decode_unisig.UnisigMessage], file_base_name: str) -> None:
+        logger_config.print_and_log_info(f"save_selected_unisig_messages {len(self.all_unisig_messages)} unisig messages")
 
         reports_utils.save_rows_to_output_files(
             rows_as_list_dict=[
@@ -172,9 +179,9 @@ class ProfibusLogLibrary:
                         "errors": unisig_message.creational_and_decoding_errors,
                     }
                 )
-                for unisig_message in self.unisig_messages
+                for unisig_message in selected_unisig_messages
             ],
-            file_base_name=f"{self.label} all unisig messages",
+            file_base_name=file_base_name,
             create_csv_file=False,
             create_txt_file=False,
             split_big_files=False,
@@ -197,7 +204,7 @@ class ProfibusLogLibrary:
         logger_config.print_and_log_info(f"Stats of {self.directory_path}")
         logger_config.print_and_log_info(f"{len(self.decoded_files)} files")
         logger_config.print_and_log_info(f"{len([log_line for log_file in self.decoded_files for log_line in log_file.decoded_lines])} lines")
-        logger_config.print_and_log_info(f"{len(self.unisig_messages)} unisig_messages")
+        logger_config.print_and_log_info(f"{len(self.all_unisig_messages)} unisig_messages")
         logger_config.print_and_log_info(f"{len(self.all_upper_layer_telegram)} upper layer telegrams")
         logger_config.print_and_log_info(f"{len(self.all_sl4_upper_layer_telegram)} SL4 upper layer telegrams")
         logger_config.print_and_log_info(f"{len(self.all_upper_layer_stms)} STM messages founds")
