@@ -100,6 +100,9 @@ def save_rows_to_output_files(
         success = False
         while not success:
             try:
+                with logger_config.stopwatch_with_label(f"Create dataframe from {len(rows_as_list_dict)} rows", monitor_ram_usage=True):
+                    rows_as_dataframe = pandas.DataFrame(rows_as_list_dict)
+
                 if create_xlsx_file and len(rows_as_list_dict) < excel_utils.EXCEL_LIMIT_NUMBER_OF_LINES - 1:
                     with logger_config.stopwatch_with_label(
                         f"Create {file_path_without_suffix}.xlsx ({len(rows_as_list_dict)} lines)",
@@ -108,21 +111,21 @@ def save_rows_to_output_files(
                         enable_print=len(rows_as_list_dict) > 1000,
                     ):
                         try:
-                            pandas.DataFrame(rows_as_list_dict).to_excel(f"{file_path_without_suffix}.xlsx", index=False)
+                            rows_as_dataframe.to_excel(f"{file_path_without_suffix}.xlsx", index=False)
                         except numpy._core._exceptions._ArrayMemoryError as arr_err:
                             logger_config.print_and_log_exception(arr_err)
 
                 if create_csv_file:
                     with logger_config.stopwatch_with_label(f"Create {file_path_without_suffix}.csv", inform_beginning=True, monitor_ram_usage=True):
                         try:
-                            pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.csv", index=False, sep=";")
+                            rows_as_dataframe.to_csv(f"{file_path_without_suffix}.csv", index=False, sep=";")
                         except numpy._core._exceptions._ArrayMemoryError as arr_err:
                             logger_config.print_and_log_exception(arr_err)
 
                 if create_txt_file:
                     with logger_config.stopwatch_with_label(f"Create {file_path_without_suffix}.txt", inform_beginning=True, monitor_ram_usage=True):
                         try:
-                            pandas.DataFrame(rows_as_list_dict).to_csv(f"{file_path_without_suffix}.txt", index=False, sep="\t")
+                            rows_as_dataframe.to_csv(f"{file_path_without_suffix}.txt", index=False, sep="\t")
                         except numpy._core._exceptions._ArrayMemoryError as arr_err:
                             logger_config.print_and_log_exception(arr_err)
                 # _write_xlsx_file(rows_as_list_dict, f"{file_path_without_suffix}.xlsx")
