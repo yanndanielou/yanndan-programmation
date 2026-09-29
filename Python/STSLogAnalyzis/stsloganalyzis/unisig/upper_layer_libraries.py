@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from typing import Self, cast, Any
+from typing import Self, cast
 
 from logger import logger_config
 
@@ -12,11 +12,20 @@ class EnumAttributesTypeDefinition:
 
 
 @dataclass
+class PacketVariantDefinition:
+    name: str
+    trigger_variable_name: str
+    trigger_variable_value: int
+    fields: list["PacketFieldDefinition"] | None = None
+
+
+@dataclass
 class PacketFieldDefinition:
     name: str
     size_in_bits: int | None
     enum_type_definition: EnumAttributesTypeDefinition | None = None
     fields: list["PacketFieldDefinition"] | None = None
+    variants: list[PacketVariantDefinition] | None = None
 
 
 @dataclass
@@ -33,13 +42,40 @@ class UpperLayerDecodingLibrary:
     packets_definitions: list[PacketDefinition]
 
     @staticmethod
-    def create_packet_field_definition(value_dict: Any) -> PacketFieldDefinition:
+    def create_variant_definition(value_dict: dict) -> PacketVariantDefinition:
+
+        variables_found = [(variable_key, variable_value) for (variable_key, variable_value) in value_dict.items() if variable_key not in ["name", "Fields"]]
+        assert variables_found
+        assert len(variables_found) == 1
+
+        variable_found = variables_found[0]
+
+        trigger_variable_name = variable_found[0]
+        trigger_variable_value = variable_found[1]
+        assert isinstance(trigger_variable_value, int)
+
+        name = value_dict.get("name")
+        assert isinstance(name, str)
+
+        return PacketVariantDefinition(
+            name=name,
+            trigger_variable_name=trigger_variable_name,
+            trigger_variable_value=trigger_variable_value,
+            fields=([UpperLayerDecodingLibrary.create_packet_field_definition(value_dict_sub) for value_dict_sub in value_dict.get("Fields") or []]),
+        )
+
+    @staticmethod
+    def create_packet_field_definition(value_dict: dict) -> PacketFieldDefinition:
+
+        name = value_dict.get("name")
+        assert isinstance(name, str)
 
         return PacketFieldDefinition(
-            name=value_dict.get("name"),
+            name=name,
             size_in_bits=value_dict.get("size"),
             enum_type_definition=value_dict.get("type"),
             fields=([UpperLayerDecodingLibrary.create_packet_field_definition(value_dict_sub) for value_dict_sub in value_dict.get("Fields") or []]),
+            variants=([UpperLayerDecodingLibrary.create_variant_definition(variant_dict) for variant_dict in value_dict.get("Variants") or []]),
         )
 
     @classmethod
