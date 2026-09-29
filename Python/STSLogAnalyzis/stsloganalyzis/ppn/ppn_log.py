@@ -121,6 +121,8 @@ class ProfibusLogLibrary:
                         "file path": interesting_stm_message.upper_layer_telegram.profibus_log_line.file_path if interesting_stm_message.upper_layer_telegram.profibus_log_line else None,
                         "line number": interesting_stm_message.upper_layer_telegram.profibus_log_line.line_number if interesting_stm_message.upper_layer_telegram.profibus_log_line else None,
                         "nid stm": interesting_stm_message.nid_stm,
+                        "stm l_message": interesting_stm_message.l_message,
+                        "stm data_without_header_size_in_bits": interesting_stm_message.data_without_header_size_in_bits,
                         "Number of errors (only this STM message)": len(interesting_stm_message.creational_and_decoding_errors),
                         "Number of errors (unisig message)": len(interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors),
                         "Number of errors (STM + unisig message)": len(
@@ -158,35 +160,35 @@ class ProfibusLogLibrary:
         )
 
     def save_selected_unisig_messages(self, selected_unisig_messages: list[decode_unisig.UnisigMessage], file_base_name: str) -> None:
-        logger_config.print_and_log_info(f"save_selected_unisig_messages {len(self.all_unisig_messages)} unisig messages")
+        with logger_config.stopwatch_with_label(f"save_selected_unisig_messages {len(self.all_unisig_messages)} unisig messages", monitor_ram_usage=True, inform_beginning=True):
 
-        reports_utils.save_rows_to_output_files(
-            rows_as_list_dict=[
-                OrderedDict(
-                    {
-                        "timestamp": unisig_message.profibus_log_line.timestamp if unisig_message.profibus_log_line else None,
-                        "Line Source": unisig_message.profibus_log_line.source if unisig_message.profibus_log_line else None,
-                        "Line Target": unisig_message.profibus_log_line.target if unisig_message.profibus_log_line else None,
-                        "interlocutors": unisig_message.profibus_log_line.interlocutors if unisig_message.profibus_log_line else None,
-                        "Line Mode": unisig_message.profibus_log_line.mode.name if unisig_message.profibus_log_line else None,
-                        "Line length": unisig_message.profibus_log_line.length if unisig_message.profibus_log_line else None,
-                        "file path": unisig_message.profibus_log_line.file_path if unisig_message.profibus_log_line else None,
-                        "line number": unisig_message.profibus_log_line.line_number if unisig_message.profibus_log_line else None,
-                        "Number of errors": len(unisig_message.creational_and_decoding_errors),
-                        "CRC": unisig_message.crc.crc_bits_as_string if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) and unisig_message.crc else None,
-                        "Safe time layer timestamp (ms)": unisig_message.stl_time_stamp_ms if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) else None,
-                        "Safe time layer timestamp (human format)": unisig_message.stl_time_stamp_datetime if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) else None,
-                        "errors": unisig_message.creational_and_decoding_errors,
-                    }
-                )
-                for unisig_message in selected_unisig_messages
-            ],
-            file_base_name=file_base_name,
-            create_csv_file=False,
-            create_txt_file=False,
-            split_big_files=False,
-            chunk_size=200000,
-        )
+            reports_utils.save_rows_to_output_files(
+                rows_as_list_dict=[
+                    OrderedDict(
+                        {
+                            "timestamp": unisig_message.profibus_log_line.timestamp if unisig_message.profibus_log_line else None,
+                            "Line Source": unisig_message.profibus_log_line.source if unisig_message.profibus_log_line else None,
+                            "Line Target": unisig_message.profibus_log_line.target if unisig_message.profibus_log_line else None,
+                            "interlocutors": unisig_message.profibus_log_line.interlocutors if unisig_message.profibus_log_line else None,
+                            "Line Mode": unisig_message.profibus_log_line.mode.name if unisig_message.profibus_log_line else None,
+                            "Line length": unisig_message.profibus_log_line.length if unisig_message.profibus_log_line else None,
+                            "file path": unisig_message.profibus_log_line.file_path if unisig_message.profibus_log_line else None,
+                            "line number": unisig_message.profibus_log_line.line_number if unisig_message.profibus_log_line else None,
+                            "Number of errors": len(unisig_message.creational_and_decoding_errors),
+                            "CRC": unisig_message.crc.crc_bits_as_string if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) and unisig_message.crc else None,
+                            "Safe time layer timestamp (ms)": unisig_message.stl_time_stamp_ms if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) else None,
+                            "Safe time layer timestamp (human format)": unisig_message.stl_time_stamp_datetime if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) else None,
+                            "errors": unisig_message.creational_and_decoding_errors,
+                        }
+                    )
+                    for unisig_message in selected_unisig_messages
+                ],
+                file_base_name=file_base_name,
+                create_csv_file=False,
+                create_txt_file=False,
+                split_big_files=False,
+                chunk_size=200000,
+            )
 
     @logger_config.stopwatch_decorator()
     def _process_files(self) -> None:
