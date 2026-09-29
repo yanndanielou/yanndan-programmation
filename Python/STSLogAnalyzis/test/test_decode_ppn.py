@@ -295,6 +295,23 @@ class TestDecodeOnePpnLogLine:
                     for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
                         assert not upper_layer_decoded_stm.creational_and_decoding_errors
 
+            class TestStm161ForJru:
+
+                def test_decode_161_no_error(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+                    ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
+                        line="2026-03-28 18:17:17:722 kppn 1.3.3: [99:2 => 3:2] Sending PROFIBUS message  [num:25130][rt:1763][mode:SDA][len:102] 7a c9 1d 5e a1 16 28 21 20 dd da 88 70 51 34 7c 92 45 01 08 61 83 00 7d 40 00 00 02 00 a0 00 00 00 00 00 06 c7 06 26 06 a6 26 e9 80 00 00 00 00 68 0e 8e d4 21 45 04 24 1b bb 21 14 30 40 00 00 00 11 53 d3 11 40 02 3e e0 18 f0 1a 88 17 92 02 18 2f 51 55 b0 00 00 f8 00 09 21 80 00 78 06 50 9a 12 bb 1b 24 04",
+                        upper_layer_decoding_library=next_unisig_58_library_fixture,
+                    )
+                    assert ppn_log_line
+                    ppn_log_line.decode_sdn_or_sna()
+                    assert ppn_log_line.unisig_message
+                    assert not ppn_log_line.unisig_message.creational_and_decoding_errors
+                    assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
+                    assert ppn_log_line.unisig_message.upper_layer_decoded_stms
+                    assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 2
+                    for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
+                        assert not upper_layer_decoded_stm.creational_and_decoding_errors
+
             class TestBasicStmMessages:
 
                 @pytest.mark.parametrize(
