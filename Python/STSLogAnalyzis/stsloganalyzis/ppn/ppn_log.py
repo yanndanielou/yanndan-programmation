@@ -88,7 +88,7 @@ class ProfibusLogLibrary:
         interesting_stm_messages = self.get_upper_layer_stms_by_stm_ids(allowed_stm_ids)
         self.save_selected_stm_messages(
             interesting_stm_messages,
-            file_base_name=f"{self.label} {label} interesting_stm_messages {' '.join(str(interesting_stm_id) for interesting_stm_id in allowed_stm_ids)}",
+            file_base_name=f"{self.label} {label} stm messages {' '.join(str(interesting_stm_id) for interesting_stm_id in allowed_stm_ids)}",
         )
 
     def save_selected_stm_messages_for_each_interlocutor(self) -> None:
@@ -107,18 +107,18 @@ class ProfibusLogLibrary:
             rows_as_list_dict=[
                 OrderedDict(
                     {
-                        "timestamp": interesting_stm_message.upper_layer_telegram.profibus_log_line.timestamp,
-                        "Line Source": interesting_stm_message.upper_layer_telegram.profibus_log_line.source,
-                        "Line Target": interesting_stm_message.upper_layer_telegram.profibus_log_line.target,
-                        "interlocutors": interesting_stm_message.upper_layer_telegram.profibus_log_line.interlocutors,
-                        "Line Mode": interesting_stm_message.upper_layer_telegram.profibus_log_line.mode.name,
-                        "Line length": interesting_stm_message.upper_layer_telegram.profibus_log_line.length,
-                        "file path": interesting_stm_message.upper_layer_telegram.profibus_log_line.file_path,
-                        "line number": interesting_stm_message.upper_layer_telegram.profibus_log_line.line_number,
+                        "timestamp": interesting_stm_message.upper_layer_telegram.profibus_log_line.timestamp if interesting_stm_message.upper_layer_telegram.profibus_log_line else None,
+                        "Line Source": interesting_stm_message.upper_layer_telegram.profibus_log_line.source if interesting_stm_message.upper_layer_telegram.profibus_log_line else None,
+                        "Line Target": interesting_stm_message.upper_layer_telegram.profibus_log_line.target if interesting_stm_message.upper_layer_telegram.profibus_log_line else None,
+                        "interlocutors": interesting_stm_message.upper_layer_telegram.profibus_log_line.interlocutors if interesting_stm_message.upper_layer_telegram.profibus_log_line else None,
+                        "Line Mode": interesting_stm_message.upper_layer_telegram.profibus_log_line.mode.name if interesting_stm_message.upper_layer_telegram.profibus_log_line else None,
+                        "Line length": interesting_stm_message.upper_layer_telegram.profibus_log_line.length if interesting_stm_message.upper_layer_telegram.profibus_log_line else None,
+                        "file path": interesting_stm_message.upper_layer_telegram.profibus_log_line.file_path if interesting_stm_message.upper_layer_telegram.profibus_log_line else None,
+                        "line number": interesting_stm_message.upper_layer_telegram.profibus_log_line.line_number if interesting_stm_message.upper_layer_telegram.profibus_log_line else None,
                         "nid stm": interesting_stm_message.nid_stm,
                         "Number of errors": len(interesting_stm_message.creational_and_decoding_errors + interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors),
                         "STM messages decoded in this line": ",".join([str(stm_message.nid_stm) for stm_message in interesting_stm_message.upper_layer_telegram.upper_layer_decoded_stms]),
-                        "CRC": interesting_stm_message.upper_layer_telegram.crc_bits_as_string,
+                        "CRC": interesting_stm_message.upper_layer_telegram.crc.crc_bits_as_string if interesting_stm_message.upper_layer_telegram.crc else None,
                         "Safe time layer timestamp (ms)": interesting_stm_message.upper_layer_telegram.stl_time_stamp_ms,
                         "Safe time layer timestamp (human format)": interesting_stm_message.upper_layer_telegram.stl_time_stamp_datetime,
                         "STM message: number remaining bits to decode": interesting_stm_message.number_remaining_undecoded_bits,
@@ -132,6 +132,37 @@ class ProfibusLogLibrary:
                 for interesting_stm_message in interesting_stm_messages
             ],
             file_base_name=file_base_name,
+            create_csv_file=False,
+            create_txt_file=False,
+            split_big_files=False,
+            chunk_size=200000,
+        )
+
+    def save_all_unisig_messages(self) -> None:
+        logger_config.print_and_log_info(f"save_selected_stm_messages {len(self.unisig_messages)} unisig messages")
+
+        reports_utils.save_rows_to_output_files(
+            rows_as_list_dict=[
+                OrderedDict(
+                    {
+                        "timestamp": unisig_message.profibus_log_line.timestamp if unisig_message.profibus_log_line else None,
+                        "Line Source": unisig_message.profibus_log_line.source if unisig_message.profibus_log_line else None,
+                        "Line Target": unisig_message.profibus_log_line.target if unisig_message.profibus_log_line else None,
+                        "interlocutors": unisig_message.profibus_log_line.interlocutors if unisig_message.profibus_log_line else None,
+                        "Line Mode": unisig_message.profibus_log_line.mode.name if unisig_message.profibus_log_line else None,
+                        "Line length": unisig_message.profibus_log_line.length if unisig_message.profibus_log_line else None,
+                        "file path": unisig_message.profibus_log_line.file_path if unisig_message.profibus_log_line else None,
+                        "line number": unisig_message.profibus_log_line.line_number if unisig_message.profibus_log_line else None,
+                        "Number of errors": len(unisig_message.creational_and_decoding_errors),
+                        "CRC": unisig_message.crc.crc_bits_as_string if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) and unisig_message.crc else None,
+                        "Safe time layer timestamp (ms)": unisig_message.stl_time_stamp_ms if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) else None,
+                        "Safe time layer timestamp (human format)": unisig_message.stl_time_stamp_datetime if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) else None,
+                        "errors": unisig_message.creational_and_decoding_errors,
+                    }
+                )
+                for unisig_message in self.unisig_messages
+            ],
+            file_base_name=f"{self.label} all unisig messages",
             create_csv_file=False,
             create_txt_file=False,
             split_big_files=False,
