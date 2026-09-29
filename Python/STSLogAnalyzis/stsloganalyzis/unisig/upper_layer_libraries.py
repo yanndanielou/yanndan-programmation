@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass
-from typing import Self, cast
+from typing import Self, cast, Any
 
 from logger import logger_config
 
@@ -32,6 +32,16 @@ class UpperLayerDecodingLibrary:
     enum_attributes_type_definitions: list[EnumAttributesTypeDefinition]
     packets_definitions: list[PacketDefinition]
 
+    @staticmethod
+    def create_packet_field_definition(value_dict: Any) -> PacketFieldDefinition:
+
+        return PacketFieldDefinition(
+            name=value_dict.get("name"),
+            size_in_bits=value_dict.get("size"),
+            enum_type_definition=value_dict.get("type"),
+            fields=([UpperLayerDecodingLibrary.create_packet_field_definition(value_dict_sub) for value_dict_sub in value_dict.get("Fields") or []]),
+        )
+
     @classmethod
     @logger_config.stopwatch_decorator()
     def from_next_json_file_full_path(cls, json_file_full_path: str) -> Self:
@@ -54,23 +64,7 @@ class UpperLayerDecodingLibrary:
             for packet_definition_found in json_data.get("Packets"):
                 fields: list[PacketFieldDefinition] = []
                 for value_dict in packet_definition_found.get("Fields") or []:
-                    fields.append(
-                        PacketFieldDefinition(
-                            name=value_dict.get("name"),
-                            size_in_bits=value_dict.get("size"),
-                            enum_type_definition=value_dict.get("type"),
-                            fields=(
-                                [
-                                    PacketFieldDefinition(
-                                        name=value_dict_sub.get("name"),
-                                        size_in_bits=value_dict_sub.get("size"),
-                                        enum_type_definition=value_dict_sub.get("type"),
-                                    )
-                                    for value_dict_sub in value_dict.get("Fields") or []
-                                ]
-                            ),
-                        ),
-                    )
+                    fields.append(UpperLayerDecodingLibrary.create_packet_field_definition(value_dict))
                 packets_definitions.append(
                     PacketDefinition(
                         name=packet_definition_found["Packet"],

@@ -410,14 +410,15 @@ class UpperLayerStm:
                                     name=f"{sub_field.name}_{i}",
                                     size_in_bits=sub_field.size_in_bits,
                                     enum_type_definition=sub_field.enum_type_definition,
+                                    fields=sub_field.fields,
                                 )
                             )
-                elif field_definition.name == "L_TEXT":
-                    l_text = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=field_definition.size_in_bits)
-                    self.fields_names_and_values[field_definition.name] = l_text
+                elif field_definition.name.startswith(("L_TEXT", "L_CAPTION")):
+                    text_length = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=field_definition.size_in_bits)
+                    self.fields_names_and_values[field_definition.name] = text_length
                     for sub_field in field_definition.fields:
                         assert sub_field.size_in_bits == bytes_messages.SIZE_BITS_PER_CHAR
-                        sub_field_string_value = self.stm_message_content_byte_message_decoded.get_next_bits_as_ascii_char(number_of_chars=l_text)
+                        sub_field_string_value = self.stm_message_content_byte_message_decoded.get_next_bits_as_ascii_char(number_of_chars=text_length)
                         self.fields_names_and_values[sub_field.name] = sub_field_string_value
 
             else:
