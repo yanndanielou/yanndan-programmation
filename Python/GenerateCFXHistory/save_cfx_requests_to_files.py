@@ -10,7 +10,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import Enum, auto
 
-import selenium
 import urllib3
 from common import download_utils, file_utils, web_driver_utils
 
@@ -23,8 +22,8 @@ from selenium.common.exceptions import (
     TimeoutException,
     WebDriverException,
 )
-from selenium.webdriver import ActionChains
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
