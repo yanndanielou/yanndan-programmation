@@ -168,10 +168,10 @@ class SdaUnisigMessage(UnisigMessage):
     def from_sda_hexa_bytes_str(
         cls,
         profibus_log_line: "ppn_log.ProfibusLogLine",
-        bytes_hexa: str,
+        bytes_hexa_str: str,
         upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary,
     ) -> UnisigMessage:
-        byte_message_decoded = bytes_messages.DecodedBytesMessage.from_hex_string(bytes_hexa)
+        byte_message_decoded = bytes_messages.DecodedBytesMessage.from_hex_string(bytes_hexa_str)
         sda_header = SdaUnisigMessage.Header(byte_message_decoded)
 
         if sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL0_DISCONNECT_TELEGRAM or sda_header.command_type == SdaUnisigMessage.CommandTypeSubset57.SL4_DISCONNECT_TELEGRAM:
@@ -414,7 +414,7 @@ class UpperLayerStm:
                                 ),
                                 prefix=f"{prefix}N_ITER_{i}_",
                             )
-                elif field_definition.name.startswith(("L_TEXT", "L_CAPTION")):
+                elif field_definition.name.startswith(("L_TEXT", "L_CAPTION", "L_VALUE")):
                     text_length = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=field_definition.size_in_bits)
                     self.add_field(prefix + field_definition.name, text_length)
                     for sub_field in field_definition.fields:
