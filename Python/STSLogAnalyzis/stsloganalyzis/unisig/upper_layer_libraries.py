@@ -16,7 +16,20 @@ class PacketVariantDefinition:
     name: str
     trigger_variable_name: str
     trigger_variable_value: int
-    fields: list["PacketFieldDefinition"] | None = None
+    alias: str | None
+    fields_or_variants: list["PacketFieldDefinition|PacketVariantsDefinition"]
+
+
+@dataclass
+class PacketVariantsDefinition:
+    variants: list["PacketVariantDefinition"]
+
+    @property
+    def trigger_variable_name(self) -> str:
+        found = list({variant.trigger_variable_name for variant in self.variants})
+        assert found
+        assert len(found) == 1
+        return found[0]
 
 
 @dataclass
@@ -24,8 +37,7 @@ class PacketFieldDefinition:
     name: str
     size_in_bits: int | None
     enum_type_definition: EnumAttributesTypeDefinition | None = None
-    fields: list["PacketFieldDefinition"] | None = None
-    variants: list[PacketVariantDefinition] | None = None
+    fields_or_variants: list["PacketFieldDefinition|PacketVariantsDefinition"] | None = None
 
 
 @dataclass
@@ -42,9 +54,39 @@ class UpperLayerDecodingLibrary:
     packets_definitions: list[PacketDefinition]
 
     @staticmethod
+    def create_fields_or_variants_definition(values_dicts: list[dict]) -> list[PacketVariantsDefinition | PacketFieldDefinition]:
+        ret: list[PacketVariantsDefinition | PacketFieldDefinition] = []
+        for value_dict in values_dicts:
+            name = value_dict.get("name")
+            variants = value_dict.get("Variants")
+
+            if name is not None:
+                ret.append(UpperLayerDecodingLibrary.create_packet_field_definition(value_dict))
+            elif variants is not None:
+                ret.append(UpperLayerDecodingLibrary.create_variants_definition(value_dict))
+
+        assert ret
+        return ret
+
+    @staticmethod
+    def create_variants_definition(value_dict: dict) -> PacketVariantsDefinition:
+        variants_definitions = value_dict.get("Variants")
+        packet_variant_definitions: list[PacketVariantDefinition] = []
+        for variant_definition in variants_definitions:
+            packet_variant_definition = UpperLayerDecodingLibrary.create_variant_definition(value_dict=variant_definition)
+            packet_variant_definitions.append(packet_variant_definition)
+            pass
+
+        assert packet_variant_definitions
+        return PacketVariantsDefinition(packet_variant_definitions)
+
+    @staticmethod
     def create_variant_definition(value_dict: dict) -> PacketVariantDefinition:
 
-        variables_found = [(variable_key, variable_value) for (variable_key, variable_value) in value_dict.items() if variable_key not in ["name", "Fields"]]
+        variables_found = [(variable_key, variable_value) for (variable_key, variable_value) in value_dict.items() if variable_key not in ["name", "Fields", "Alias"]]
+
+        alias = value_dict.get("Alias")
+
         assert variables_found
         assert len(variables_found) == 1
 
@@ -61,7 +103,8 @@ class UpperLayerDecodingLibrary:
             name=name,
             trigger_variable_name=trigger_variable_name,
             trigger_variable_value=trigger_variable_value,
-            fields=([UpperLayerDecodingLibrary.create_packet_field_definition(value_dict_sub) for value_dict_sub in value_dict.get("Fields") or []]),
+            fields_or_variants=UpperLayerDecodingLibrary.create_fields_or_variants_definition(value_dict.get("Fields")) if value_dict.get("Fields") else [],
+            alias=alias,
         )
 
     @staticmethod
@@ -74,8 +117,7 @@ class UpperLayerDecodingLibrary:
             name=name,
             size_in_bits=value_dict.get("size"),
             enum_type_definition=value_dict.get("type"),
-            fields=([UpperLayerDecodingLibrary.create_packet_field_definition(value_dict_sub) for value_dict_sub in value_dict.get("Fields") or []]),
-            variants=([UpperLayerDecodingLibrary.create_variant_definition(variant_dict) for variant_dict in value_dict.get("Variants") or []]),
+            fields_or_variants=UpperLayerDecodingLibrary.create_fields_or_variants_definition(value_dict.get("Fields")) if value_dict.get("Fields") else [],
         )
 
     @classmethod
