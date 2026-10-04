@@ -45,5 +45,6 @@
         "editor.tabSize": 4,
         "editor.insertSpaces": true,
         "editor.defaultFormatter": "ms-python.black-formatter" // Configurer Black comme formateur de code
-    }
+    },
+    "python-envs.defaultEnvManager": "ms-python.python:system"
 }

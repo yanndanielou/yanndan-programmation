@@ -45,5 +45,6 @@
         "editor.insertSpaces": true,
         "editor.defaultFormatter": "ms-python.black-formatter", // Configurer Black comme formateur de code
         "editor.formatOnSave": true,
-    }
+    },
+    "python-envs.defaultEnvManager": "ms-python.python:system"
 }
