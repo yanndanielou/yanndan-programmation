@@ -447,6 +447,24 @@ class TestDecodeOnePpnLogLine:
                     for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
                         assert not upper_layer_decoded_stm.creational_and_decoding_errors
 
+                def test_decode_stm_message_47(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+                    ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
+                        line="2026-03-29 01:18:03:916 kppn 1.3.3: [99:33 <= 2:33] Received PROFIBUS message [num:1492][mode:SDA][len:48] d5 89 1d 24 01 01 28 20 00 10 17 41 81 40 18 0c 06 0a 05 02 81 40 48 42 14 1c 02 c1 f0 0c 01 e0 12 b3 39 17 80 59 6b 11 4c 01 5d 0e 25 b1 e6 13",
+                        upper_layer_decoding_library=next_unisig_58_library_fixture,
+                    )
+                    assert ppn_log_line
+                    ppn_log_line.decode_sdn_or_sda()
+                    assert ppn_log_line.unisig_message
+                    assert not ppn_log_line.unisig_message.creational_and_decoding_errors
+                    assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
+                    assert ppn_log_line.unisig_message.upper_layer_decoded_stms
+                    assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 7
+                    stm_message_47 = ppn_log_line.unisig_message.upper_layer_decoded_stms[6]
+                    assert stm_message_47.nid_stm == 47
+                    assert not stm_message_47.creational_and_decoding_errors
+                    for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
+                        assert not upper_layer_decoded_stm.creational_and_decoding_errors
+
                 def test_decode_line_with_stm15_and_stm1(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
                     ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
                         line="2026-06-01 18:16:17:636 kppn 1.3.3: [99:33 => 2:33] Sending PROFIBUS message [num:20600][rt:1711][mode:SDA][len:22] b1 89 1d 0a 01 01 28 20 00 78 06 50 e7 4b 22 00 59 9d 7a c8 4d b6",

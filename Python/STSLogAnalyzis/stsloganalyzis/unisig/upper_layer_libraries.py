@@ -45,7 +45,7 @@ class PacketDefinition:
     name: str
     alias: str
     identifier: int
-    fields: list[PacketFieldDefinition]
+    fields_or_variants: list[PacketVariantsDefinition | PacketFieldDefinition]
 
 
 @dataclass
@@ -140,15 +140,16 @@ class UpperLayerDecodingLibrary:
             packets_definitions: list[PacketDefinition] = []
 
             for packet_definition_found in json_data.get("Packets"):
-                fields: list[PacketFieldDefinition] = []
-                for value_dict in packet_definition_found.get("Fields") or []:
-                    fields.append(UpperLayerDecodingLibrary.create_packet_field_definition(value_dict))
+
+                fields_or_variants = UpperLayerDecodingLibrary.create_fields_or_variants_definition(packet_definition_found.get("Fields")) if packet_definition_found.get("Fields") else []
+                # for value_dict in packet_definition_found.get("Fields") or []:
+                #    fields.append(UpperLayerDecodingLibrary.create_packet_field_definition(value_dict))
                 packets_definitions.append(
                     PacketDefinition(
                         name=packet_definition_found["Packet"],
                         alias=packet_definition_found.get("Alias"),
                         identifier=cast(int, packet_definition_found["Id"]),
-                        fields=fields,
+                        fields_or_variants=fields_or_variants,
                     )
                 )
 

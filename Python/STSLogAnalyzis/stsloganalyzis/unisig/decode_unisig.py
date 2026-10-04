@@ -428,7 +428,7 @@ class UpperLayerStm:
 
                 # logger_config.print_and_log_info(f"STM found:{upper_layer_decoded_stm.nid_stm}, packet length:{upper_layer_decoded_stm.l_message}", do_not_print=True)
 
-                for field_definition in packet_definition.fields:
+                for field_definition in packet_definition.fields_or_variants:
                     self.handle_packet_field_or_variants_definition(field_definition)
 
                 self.remaining_undecoded_bits = self.stm_message_content_byte_message_decoded.get_remaining_bits_as_str_of_bit()
@@ -452,56 +452,55 @@ class UpperLayerStm:
     def handle_variants_field(self, variants_definition: upper_layer_libraries.PacketVariantsDefinition, prefix: str = "") -> None:
         prefix_with_space = f"{prefix} " if prefix else ""
 
-        if variants_definition.trigger_variable_name == "NID_STMEVENT":
-            variant_trigger_value = self.fields_names_and_values[variants_definition.trigger_variable_name]
-            pass
-        elif variants_definition.trigger_variable_name == "NID_EVENT":
+        if variants_definition.trigger_variable_name == "NID_EVENT":
             variant_trigger_value = self.stm_message_content_byte_message_decoded.get_next_byte_as_single_int_unsigned()
             self.add_field(field_name=prefix_with_space + "NID_EVENT", value=variant_trigger_value)
             l_event = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=10)
             self.add_field(field_name=prefix_with_space + "L_EVENT", value=l_event)
+        else:
+            variant_trigger_value = self.fields_names_and_values[variants_definition.trigger_variable_name]
         trigger_variable_name = variants_definition.trigger_variable_name
 
         variants_matching_trigger = [variant for variant in variants_definition.variants if variant.trigger_variable_value == variant_trigger_value]
 
-        assert variants_matching_trigger
+        if variants_matching_trigger:
 
-        if len(variants_matching_trigger) > 1 and variants_definition.trigger_variable_name == "NID_STMEVENT" and self.fields_names_and_values[variants_definition.trigger_variable_name] == 2:
-            all_variants_definitions_with_same_field = [
-                variant
-                for variant in variants_matching_trigger
-                if isinstance(variant.fields_or_variants[0], upper_layer_libraries.PacketFieldDefinition)
-                and variant.fields_or_variants[0].name == "NID_STMPACKET"
-                and variant.fields_or_variants[0].size_in_bits is None
-            ]
-            if len(all_variants_definitions_with_same_field) == len(variants_matching_trigger):
-                assert isinstance(variants_matching_trigger[0].fields_or_variants[0], upper_layer_libraries.PacketFieldDefinition)
-                self.handle_packet_field(
-                    field_definition=upper_layer_libraries.PacketFieldDefinition(
-                        name=variants_matching_trigger[0].fields_or_variants[0].name,
-                        size_in_bits=8,
-                    ),
-                    prefix=prefix,
-                )
-                stm_packet = self.get_field_int_value_or_assert("NID_STMPACKET")
-                variants_matching_trigger = [variant for variant in variants_definition.variants if variant.name == f"STM-{stm_packet}"]
-                # variants_matching_trigger[0].fields_or_variants[0].name,
+            if len(variants_matching_trigger) > 1 and variants_definition.trigger_variable_name == "NID_STMEVENT" and self.fields_names_and_values[variants_definition.trigger_variable_name] == 2:
+                all_variants_definitions_with_same_field = [
+                    variant
+                    for variant in variants_matching_trigger
+                    if isinstance(variant.fields_or_variants[0], upper_layer_libraries.PacketFieldDefinition)
+                    and variant.fields_or_variants[0].name == "NID_STMPACKET"
+                    and variant.fields_or_variants[0].size_in_bits is None
+                ]
+                if len(all_variants_definitions_with_same_field) == len(variants_matching_trigger):
+                    assert isinstance(variants_matching_trigger[0].fields_or_variants[0], upper_layer_libraries.PacketFieldDefinition)
+                    self.handle_packet_field(
+                        field_definition=upper_layer_libraries.PacketFieldDefinition(
+                            name=variants_matching_trigger[0].fields_or_variants[0].name,
+                            size_in_bits=8,
+                        ),
+                        prefix=prefix,
+                    )
+                    stm_packet = self.get_field_int_value_or_assert("NID_STMPACKET")
+                    variants_matching_trigger = [variant for variant in variants_definition.variants if variant.name == f"STM-{stm_packet}"]
+                    # variants_matching_trigger[0].fields_or_variants[0].name,
+                    pass
+
                 pass
 
-            pass
-
-        assert len(variants_matching_trigger) == 1, f"STM {self.nid_stm}: too many {len(variants_matching_trigger)} variants match {trigger_variable_name}"
-        # assert logger_config.print_and_log_error_if(
-        #    len(variants_matching_trigger) > 1,
-        #    f"STM {self.nid_stm}: too many {len(variants_matching_trigger)} variants match {trigger_variable_name}",
-        # )
-        variant_matching_trigger = variants_matching_trigger[0]
-        self.add_field(f"Variant {trigger_variable_name} name", variant_matching_trigger.name)
-        self.add_field(f"Variant {trigger_variable_name} alias", variant_matching_trigger.alias)
-        for field_or_variants in variant_matching_trigger.fields_or_variants:
-            self.handle_packet_field_or_variants_definition(
-                field_or_variants, prefix=f"{prefix_with_space}{variant_matching_trigger.name} {variant_matching_trigger.alias if variant_matching_trigger.alias else ''}"
-            )
+            assert len(variants_matching_trigger) == 1, f"STM {self.nid_stm}: too many {len(variants_matching_trigger)} variants match {trigger_variable_name}"
+            # assert logger_config.print_and_log_error_if(
+            #    len(variants_matching_trigger) > 1,
+            #    f"STM {self.nid_stm}: too many {len(variants_matching_trigger)} variants match {trigger_variable_name}",
+            # )
+            variant_matching_trigger = variants_matching_trigger[0]
+            self.add_field(f"Variant {trigger_variable_name} name", variant_matching_trigger.name)
+            self.add_field(f"Variant {trigger_variable_name} alias", variant_matching_trigger.alias)
+            for field_or_variants in variant_matching_trigger.fields_or_variants:
+                self.handle_packet_field_or_variants_definition(
+                    field_or_variants, prefix=f"{prefix_with_space}{variant_matching_trigger.name} {variant_matching_trigger.alias if variant_matching_trigger.alias else ''}"
+                )
 
     def handle_packet_field(self, field_definition: upper_layer_libraries.PacketFieldDefinition, prefix: str = "") -> None:
         prefix_with_space = f"{prefix} " if prefix else ""
