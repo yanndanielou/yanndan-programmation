@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 from typing import cast
 
-from common import date_time_formats, file_utils, reports_utils, string_utils
+from common import file_utils, reports_utils, string_utils
 from logger import logger_config
 
 from stsloganalyzis.unisig import decode_unisig, upper_layer_libraries
@@ -95,10 +95,16 @@ class ProfibusLogLibrary:
         for interlocutors in self.all_interlocutors:
             self.save_selected_stm_messages(
                 interesting_stm_messages=[
-                    interesting_stm_message for interesting_stm_message in self.all_upper_layer_stms if interesting_stm_message.upper_layer_telegram.profibus_log_line.interlocutors == interlocutors
+                    interesting_stm_message
+                    for interesting_stm_message in self.all_upper_layer_stms
+                    if interesting_stm_message.upper_layer_telegram.profibus_log_line and interesting_stm_message.upper_layer_telegram.profibus_log_line.interlocutors == interlocutors
                 ],
                 file_base_name=string_utils.format_filename(f"{self.label} {interlocutors}"),
             )
+
+    @logger_config.stopwatch_decorator(monitor_ram_usage=True)
+    def save_all_stm_messages_with_errors(self) -> None:
+        self.save_selected_stm_messages(self.all_upper_layer_stms, file_base_name=f"{self.label} all STM messages")
 
     @logger_config.stopwatch_decorator(monitor_ram_usage=True)
     def save_all_stm_messages(self) -> None:
@@ -311,8 +317,7 @@ class ProfibusLogLine:
                 json_file_full_path=r"D:\temp\GenTel\0.1-0-Original_Edition\GenTel\rom\unisig_s58.json"
             )
 
-        while line.startswith("\x00"):
-            line = line[1:]
+        line = line.lstrip("\x00")
 
         line = line.strip()
 
