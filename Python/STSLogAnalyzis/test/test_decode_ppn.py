@@ -493,38 +493,49 @@ class TestDecodeOnePpnLogLine:
                     for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
                         assert not upper_layer_decoded_stm.creational_and_decoding_errors
 
-        class TestSdn:
-            def test_decode_line_with_stm1_and_stm8(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
-                ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
-                    line="2026-05-28 12:37:16:645 kppn 1.3.3: [127:39 <= 2:39] Received PROFIBUS message [num:39003][mode:SDN][len:51] 03 00 00 8d 40 08 00 00 ff 21 01 01 28 20 00 40 33 40 02 3b 8d c0 00 00 00 00 00 00 00 1d 36 80 00 1c 42 c0 00 1b a4 82 bf 6a ee 08 00 e9 df a7 f2 8d 66",
-                    upper_layer_decoding_library=next_unisig_58_library_fixture,
-                )
+    class TestSdn:
+        def test_decode_sync_and_reference_time(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+            ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
+                line="2026-03-29 12:11:15:679 kppn 1.3.3: [127:32 <= 2:32] Received PROFIBUS message [num:1702][mode:SDN][len:25] 03 00 00 a1 33 02 00 00 03 00 00 33 02 00 00 07 54 03 00 72 fd a4 61 cb 1b",
+                upper_layer_decoding_library=next_unisig_58_library_fixture,
+            )
 
-                assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sda()
-                assert ppn_log_line.unisig_message
-                assert not ppn_log_line.unisig_message.creational_and_decoding_errors
-                assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
-                assert ppn_log_line.unisig_message.upper_layer_decoded_stms
-                assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 1
-                for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
-                    assert not upper_layer_decoded_stm.creational_and_decoding_errors
+            assert ppn_log_line
+            ppn_log_line.decode_sdn_or_sda()
+            assert ppn_log_line.unisig_message
+            assert not ppn_log_line.unisig_message.creational_and_decoding_errors
 
-            def test_decode_line_with_stm8_and_stm1(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
-                ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
-                    line="2026-06-01 17:58:12:336 kppn 1.3.3: [127:39 <= 2:39] Received PROFIBUS message [num:105421][mode:SDN][len:51] 03 00 00 8d c6 0f 00 00 ff 21 01 01 28 20 00 40 33 40 04 46 ec c0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 bf f7 1b 11 00 37 02 7f 75 9b 87",
-                    upper_layer_decoding_library=next_unisig_58_library_fixture,
-                )
+        def test_decode_line_with_stm1_and_stm8(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+            ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
+                line="2026-05-28 12:37:16:645 kppn 1.3.3: [127:39 <= 2:39] Received PROFIBUS message [num:39003][mode:SDN][len:51] 03 00 00 8d 40 08 00 00 ff 21 01 01 28 20 00 40 33 40 02 3b 8d c0 00 00 00 00 00 00 00 1d 36 80 00 1c 42 c0 00 1b a4 82 bf 6a ee 08 00 e9 df a7 f2 8d 66",
+                upper_layer_decoding_library=next_unisig_58_library_fixture,
+            )
 
-                assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sda()
-                assert ppn_log_line.unisig_message
-                assert not ppn_log_line.unisig_message.creational_and_decoding_errors
-                assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
-                assert ppn_log_line.unisig_message.upper_layer_decoded_stms
-                assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 1
-                for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
-                    assert not upper_layer_decoded_stm.creational_and_decoding_errors
+            assert ppn_log_line
+            ppn_log_line.decode_sdn_or_sda()
+            assert ppn_log_line.unisig_message
+            assert not ppn_log_line.unisig_message.creational_and_decoding_errors
+            assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
+            assert ppn_log_line.unisig_message.upper_layer_decoded_stms
+            assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 1
+            for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
+                assert not upper_layer_decoded_stm.creational_and_decoding_errors
+
+        def test_decode_line_with_stm8_and_stm1(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+            ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
+                line="2026-06-01 17:58:12:336 kppn 1.3.3: [127:39 <= 2:39] Received PROFIBUS message [num:105421][mode:SDN][len:51] 03 00 00 8d c6 0f 00 00 ff 21 01 01 28 20 00 40 33 40 04 46 ec c0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02 bf f7 1b 11 00 37 02 7f 75 9b 87",
+                upper_layer_decoding_library=next_unisig_58_library_fixture,
+            )
+
+            assert ppn_log_line
+            ppn_log_line.decode_sdn_or_sda()
+            assert ppn_log_line.unisig_message
+            assert not ppn_log_line.unisig_message.creational_and_decoding_errors
+            assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
+            assert ppn_log_line.unisig_message.upper_layer_decoded_stms
+            assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 1
+            for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
+                assert not upper_layer_decoded_stm.creational_and_decoding_errors
 
 
 class TestNextUnisigS58Library:
