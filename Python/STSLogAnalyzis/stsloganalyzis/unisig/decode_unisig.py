@@ -161,8 +161,11 @@ class SdnSyncAndReferenceTime(SdnUnisigMessage):
     def __post_init__(self) -> None:
         super().__post_init__()
         self.configuration_data_prefix_x = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        assert self.configuration_data_prefix_x == 3
         self.configuration_data_prefix_y = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        assert self.configuration_data_prefix_y == 0
         self.configuration_data_prefix_z = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        assert self.configuration_data_prefix_z == 0
         self.reference_sync_n = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
         self.reference_time_n_minus_1_ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
         self.reference_time_n_minus_1 = date_time_formats.format_duration_to_string(self.reference_time_n_minus_1_ms / 1000)
