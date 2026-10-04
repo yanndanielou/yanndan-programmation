@@ -41,7 +41,7 @@ def decode_also_fields_as_date_with_tts(upper_layer_stm: "decode_unisig.UpperLay
         as_datetime = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=seconds, microsecond=tts * 10000)  # noqa: DTZ001
         upper_layer_stm.add_field(field_to_create_name, as_datetime)
     except ValueError as exc:
-        error_text = f"Could not create date {field_radical}. {exc.args[0]}"
+        error_text = f"STM {upper_layer_stm.nid_stm} Could not create date {field_radical}. {exc.args[0]}"
         upper_layer_stm.add_field(field_to_create_name, error_text)
         upper_layer_stm.add_error(error_text)
 
