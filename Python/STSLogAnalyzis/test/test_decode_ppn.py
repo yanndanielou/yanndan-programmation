@@ -383,6 +383,7 @@ class TestDecodeOnePpnLogLine:
                     "raw_ppn_log_line",
                     [
                         "2026-03-28 18:21:04:919 kppn 1.3.3: [99:2 => 3:2] Sending PROFIBUS message  [num:25736][rt:1273][mode:SDA][len:102] 06 c9 1d 5e a1 16 28 21 3a e4 72 88 70 51 34 7c 92 b5 89 08 62 07 00 01 40 00 40 00 80 00 00 00 00 00 00 06 c7 06 26 06 a6 26 e9 80 00 00 00 00 68 0b 0e d4 21 45 04 27 5c 8e 21 14 30 40 00 00 00 11 53 d3 11 40 01 ff e0 00 00 00 f0 00 02 02 18 2f 55 7b 40 00 02 a8 03 c8 1f 50 00 78 06 50 cb 85 8e 5c 27 04",
+                        "2026-03-29 12:11:15:745 kppn 1.3.3: [99:2 => 3:2] Sending PROFIBUS message  [num:28][rt:1146][mode:SDA][len:77] 2c c9 1d 45 a1 0f e8 00 1a ac 21 c0 70 38 34 7d 61 6f 01 ff ff ff ff ff 5f ff ff ff ff c0 00 00 00 00 00 06 e6 c6 06 c6 06 86 49 a0 00 00 00 00 68 0b 0e d6 20 74 00 00 00 07 ff e0 ff ff fc ff ff ff fc 00 78 06 48 49 97 84 55 03 00",
                     ],
                 )
                 def test_decode_line_with_stm_to_ensure_crashs_are_resolved(
