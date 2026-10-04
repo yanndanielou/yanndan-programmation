@@ -27,16 +27,23 @@ def decode_also_fields_as_date_with_tts(upper_layer_stm: "decode_unisig.UpperLay
     field_radical = matched_regex.group(1)
     assert isinstance(field_radical, str)
 
-    year = upper_layer_stm.get_field_int_value_or_assert(field_radical + "YEAR") + 2000
-    month = upper_layer_stm.get_field_int_value_or_assert(field_radical + "MONTH")
-    day = upper_layer_stm.get_field_int_value_or_assert(field_radical + "DAY")
-    hour = upper_layer_stm.get_field_int_value_or_assert(field_radical + "HOUR")
-    minute = upper_layer_stm.get_field_int_value_or_assert(field_radical + "MINUTES")
-    seconds = upper_layer_stm.get_field_int_value_or_assert(field_radical + "SECONDS")
-    tts = upper_layer_stm.get_field_int_value_or_assert(date_tts_field_name)
+    field_to_create_name = field_radical + "date"
 
-    as_datetime = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=seconds, microsecond=tts * 10000)  # noqa: DTZ001
-    upper_layer_stm.add_field(field_radical + "date", as_datetime)
+    try:
+        year = upper_layer_stm.get_field_int_value_or_assert(field_radical + "YEAR") + 2000
+        month = upper_layer_stm.get_field_int_value_or_assert(field_radical + "MONTH")
+        day = upper_layer_stm.get_field_int_value_or_assert(field_radical + "DAY")
+        hour = upper_layer_stm.get_field_int_value_or_assert(field_radical + "HOUR")
+        minute = upper_layer_stm.get_field_int_value_or_assert(field_radical + "MINUTES")
+        seconds = upper_layer_stm.get_field_int_value_or_assert(field_radical + "SECONDS")
+        tts = upper_layer_stm.get_field_int_value_or_assert(date_tts_field_name)
+
+        as_datetime = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=seconds, microsecond=tts * 10000)  # noqa: DTZ001
+        upper_layer_stm.add_field(field_to_create_name, as_datetime)
+    except ValueError as exc:
+        error_text = f"Could not create date {field_radical}. {exc.args[0]}"
+        upper_layer_stm.add_field(field_to_create_name, error_text)
+        upper_layer_stm.add_error(error_text)
 
 
 def decode_also_fields_as_string(upper_layer_stm: "decode_unisig.UpperLayerStm", last_character_field_name: str) -> None:
