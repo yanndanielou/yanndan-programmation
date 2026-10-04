@@ -224,8 +224,11 @@ class ProfibusLogLibrary:
 
         logger_config.print_and_log_info(f"{len(self.all_creational_errors)} creational errors")
 
-        for error, all_timestamps in self.occurences_by_creational_error_type.items():
-            logger_config.print_and_log_warning(f"{error}: {len(all_timestamps)} occurences")
+        number_of_types_of_errors = len(self.occurences_by_creational_error_type.items)
+        logger_config.print_and_log_error_if(number_of_types_of_errors, f"{number_of_types_of_errors}: types of errors")
+
+        number_of_errors_occurences = sum(self.occurences_by_creational_error_type.values)
+        logger_config.print_and_log_error_if(number_of_errors_occurences, f"{number_of_errors_occurences}: errors occurences")
 
         self.save_errors()
 
