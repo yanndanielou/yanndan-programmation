@@ -31,7 +31,9 @@ class ProfibusLogLibrary:
 
     def __post_init__(self) -> None:
         if self.upper_layer_decoding_library is None:
-            self.upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(json_file_full_path=r"C:\Tools\GenTel\GenTel\rom\unisig_s58.json")
+            self.upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(
+                json_file_full_path=r"D:\temp\GenTel\0.1-0-Original_Edition\GenTel\rom\unisig_s58.json"
+            )
 
         self.all_ppn_logs_paths = file_utils.get_files_by_directory_and_file_name_mask(
             directory_path=self.directory_path,
@@ -104,7 +106,10 @@ class ProfibusLogLibrary:
 
     @logger_config.stopwatch_decorator(monitor_ram_usage=True)
     def save_all_stm_messages_with_errors(self) -> None:
-        self.save_selected_stm_messages(self.all_upper_layer_stms, file_base_name=f"{self.label} all STM messages")
+        self.save_selected_stm_messages(
+            [stm_message for stm_message in self.all_upper_layer_stms if stm_message.creational_and_decoding_errors or stm_message.upper_layer_telegram.creational_and_decoding_errors],
+            file_base_name=f"{self.label} all STM messages with errors",
+        )
 
     @logger_config.stopwatch_decorator(monitor_ram_usage=True)
     def save_all_stm_messages(self) -> None:
@@ -222,6 +227,27 @@ class ProfibusLogLibrary:
         for error, all_timestamps in self.occurences_by_creational_error_type.items():
             logger_config.print_and_log_warning(f"{error}: {len(all_timestamps)} occurences")
 
+        self.save_errors()
+
+    @logger_config.stopwatch_decorator
+    def save_errors(self) -> None:
+
+        reports_utils.save_rows_to_output_files(
+            rows_as_list_dict=[
+                OrderedDict(
+                    {
+                        "Error": error,
+                        "Number occurences": len(all_timestamps),
+                    }
+                )
+                for error, all_timestamps in self.occurences_by_creational_error_type.items()
+            ],
+            file_base_name=f"{self.label} all errors",
+            create_csv_file=False,
+            create_txt_file=False,
+            split_big_files=False,
+        )
+
 
 @dataclass
 class ProfibusLogFile:
@@ -232,27 +258,28 @@ class ProfibusLogFile:
     def __post_init__(self) -> None:
         self.decoded_lines: list[ProfibusLogLine] = []
         if self.upper_layer_decoding_library is None:
-            self.upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(json_file_full_path=r"C:\Tools\GenTel\GenTel\rom\unisig_s58.json")
+            self.upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(
+                json_file_full_path=r"D:\temp\GenTel\0.1-0-Original_Edition\GenTel\rom\unisig_s58.json"
+            )
 
     def process(self) -> None:
 
-        with logger_config.stopwatch_with_label(f"Process {self.file_full_path}", monitor_ram_usage=True, inform_beginning=True):
-            with open(self.file_full_path, "r", encoding=self.encoding) as f:
-                lines = f.readlines()
-                for line_number, line in enumerate(lines):
-                    try:
-                        decoded_line = ProfibusLogLine.decode_raw_log_line(
-                            line=line,
-                            upper_layer_decoding_library=self.upper_layer_decoding_library,
-                            file_path=self.file_full_path,
-                            line_number=line_number + 1,
-                        )
-                        if decoded_line is not None:
-                            self.decoded_lines.append(decoded_line)
+        with logger_config.stopwatch_with_label(f"Process {self.file_full_path}", monitor_ram_usage=True, inform_beginning=True) and open(self.file_full_path, "r", encoding=self.encoding) as f:
+            lines = f.readlines()
+            for line_number, line in enumerate(lines):
+                try:
+                    decoded_line = ProfibusLogLine.decode_raw_log_line(
+                        line=line,
+                        upper_layer_decoding_library=self.upper_layer_decoding_library,
+                        file_path=self.file_full_path,
+                        line_number=line_number + 1,
+                    )
+                    if decoded_line is not None:
+                        self.decoded_lines.append(decoded_line)
 
-                    except ValueError as val_err:
-                        logger_config.print_and_log_exception(val_err)
-                        logger_config.print_and_log_error(f"Could not decode line {line} in file {self.file_full_path} line {line_number+1}")
+                except ValueError as val_err:
+                    logger_config.print_and_log_exception(val_err)
+                    logger_config.print_and_log_error(f"Could not decode line {line} in file {self.file_full_path} line {line_number+1}")
 
     @property
     def unisig_messages(self) -> list[decode_unisig.UnisigMessage]:
