@@ -29,6 +29,11 @@ def main() -> None:
                 label=child_directory,
             )
 
+            library.save_all_stm_messages_with_errors()
+
+            library.save_upper_layer_stms_by_stm_ids([161])
+            library.save_upper_layer_stms_by_stm_ids([178])
+
             library.save_selected_unisig_messages(
                 file_base_name=f"{library.label} SDA messages with timestamp",
                 selected_unisig_messages=[
