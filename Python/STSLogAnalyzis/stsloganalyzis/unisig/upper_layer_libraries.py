@@ -121,7 +121,7 @@ class UpperLayerDecodingLibrary:
         )
 
     @classmethod
-    @logger_config.stopwatch_decorator()
+    @logger_config.stopwatch_decorator(monitor_ram_usage=True)
     def from_next_json_file_full_path(cls, json_file_full_path: str) -> Self:
         enum_attributes_type_definitions: list[EnumAttributesTypeDefinition] = []
         with open(json_file_full_path, "r", encoding="utf-8") as file:
