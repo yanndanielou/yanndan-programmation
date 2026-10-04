@@ -96,8 +96,11 @@ class SdnUnisigMessage(UnisigMessage):
         def __init__(self, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> None:
 
             self.prefixX = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            assert self.prefixX == 3
             self.prefixY = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            assert self.prefixY == 0
             self.prefixZ = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            assert self.prefixZ == 0
             self.command_number = byte_message_decoded.get_next_byte_as_single_int_unsigned()
             self.sequence_number_low_word_low_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
             self.sequence_number_low_word_high_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
