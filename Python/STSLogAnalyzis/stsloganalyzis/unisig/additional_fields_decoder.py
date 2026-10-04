@@ -31,7 +31,7 @@ def decode_also_fields_as_date_with_tts(upper_layer_stm: "decode_unisig.UpperLay
     month = upper_layer_stm.get_field_int_value_or_assert(field_radical + "MONTH")
     day = upper_layer_stm.get_field_int_value_or_assert(field_radical + "DAY")
     hour = upper_layer_stm.get_field_int_value_or_assert(field_radical + "HOUR")
-    minute = upper_layer_stm.get_field_int_value_or_assert(field_radical + "MINUTE")
+    minute = upper_layer_stm.get_field_int_value_or_assert(field_radical + "MINUTES")
     seconds = upper_layer_stm.get_field_int_value_or_assert(field_radical + "SECONDS")
     tts = upper_layer_stm.get_field_int_value_or_assert(date_tts_field_name)
 
