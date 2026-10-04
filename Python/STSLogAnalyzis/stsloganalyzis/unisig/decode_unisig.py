@@ -82,11 +82,39 @@ class UnisigMessage(ABC):
         self.creational_and_decoding_errors.append(error)
 
 
+@dataclass
 class SdnUnisigMessage(UnisigMessage):
-    class CommandType(IntEnum):
+
+    header: "SdnUnisigMessage.Header"
+
+    class CommandTypeSubset56(IntEnum):
         SL4_SYNC_AND_REFERENCE_TIME = int("0xa1", 16)
         SL4_SAFE_TIME_LAYER_STARTUP = int("0xa4", 16)
         SL4_MULTICAST_TELEGRAM_FOR_UPPER_LAYER = int("0x8d", 16)
+
+    class Header:
+        def __init__(self, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> None:
+
+            self.prefixX = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            self.prefixY = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            self.prefixZ = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            self.command_number = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            self.sequence_number_low_word_low_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            self.sequence_number_low_word_high_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            self.sequence_number_high_word_low_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            self.sequence_number_high_word_high_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+
+        @property
+        def command_type(self) -> "SdnUnisigMessage.CommandTypeSubset56":
+            return SdnUnisigMessage.CommandTypeSubset56(self.command_number)
+
+        @property
+        def safety_level(self) -> SafetyLevel:
+            return SafetyLevel[self.command_type.name[:3]]
+
+        @property
+        def telegram_name(self) -> str:
+            return self.command_type.name[4:]
 
     @classmethod
     def decode_sdn_bytes_hexa(
@@ -96,18 +124,21 @@ class SdnUnisigMessage(UnisigMessage):
         upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary,
     ) -> UnisigMessage | None:
         byte_message_decoded = bytes_messages.DecodedBytesMessage.from_hex_string(bytes_hexa)
-        prefixX = byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        prefixY = byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        prefixZ = byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        command = byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        sequenceNumber = byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
-        nid_stm = byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        l_message = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        header = SdnUnisigMessage.Header(byte_message_decoded)
 
-        if prefixX == int("0x03", 16) and prefixZ == 0 and prefixZ == 0:
-            pass
+        if header.prefixX == int("0x03", 16) and header.prefixZ == 0 and header.prefixZ == 0:
+            if header.command_type == SdnUnisigMessage.CommandTypeSubset56.SL4_SYNC_AND_REFERENCE_TIME:
+                return SdnSyncAndReferenceTime(
+                    profibus_log_line=profibus_log_line,
+                    byte_message_decoded=byte_message_decoded,
+                    header=header,
+                )
+
+            nid_stm = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            l_message = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+
         else:
-            logger_config.print_and_log_warning(f"SDN: bad prefix {prefixX} {prefixY} {prefixZ}")
+            logger_config.print_and_log_warning(f"SDN: bad prefix {header.prefixX} {header.prefixY} {header.prefixZ}")
 
         return None
 
@@ -122,6 +153,20 @@ class SdnSafeTimeLayerStartupForMulticast(SdnUnisigMessage):
         self.configuration_data_prefix_z = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
         self.sender_dynamic_transfer_time = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
         self.sender_static_transfer_time = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
+
+
+@dataclass
+class SdnSyncAndReferenceTime(SdnUnisigMessage):
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.configuration_data_prefix_x = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        self.configuration_data_prefix_y = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        self.configuration_data_prefix_z = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        self.reference_sync_n = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
+        self.reference_time_n_minus_1_ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
+        self.reference_time_n_minus_1 = date_time_formats.format_duration_to_string(self.reference_time_n_minus_1_ms / 1000)
+        pass
 
 
 @dataclass
