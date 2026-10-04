@@ -384,7 +384,7 @@ class UpperLayerStm:
                 if self.number_remaining_undecoded_bits > 0:
                     self.add_error(
                         # f"RemainingBitsUndecodedAtEndStmMessage number_of_undecoded_bits={stm_byte_message_decoded.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={stm_byte_message_decoded.extract_next_bits_to_str_of_bit(number_of_bits=stm_byte_message_decoded.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
-                        f"RemainingBitsUndecodedAtEndStmMessage at end of STM {self.nid_stm}. number_of_undecoded_bits={self.number_remaining_undecoded_bits}",
+                        f"RemainingBitsUndecodedAtEndStmMessage at end of STM {self.nid_stm}. number_of_undecoded_bits={self.number_remaining_undecoded_bits}. remaining_undecoded_bits:{self.remaining_undecoded_bits}",
                     )
             else:
                 self.add_error(
