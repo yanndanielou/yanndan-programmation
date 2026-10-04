@@ -414,17 +414,43 @@ class UpperLayerStm:
         variants_matching_trigger = [variant for variant in variants_definition.variants if variant.trigger_variable_value == variant_trigger_value]
 
         assert variants_matching_trigger
-        logger_config.print_and_log_error_if(
-            len(variants_matching_trigger) > 1,
-            f"Too many {len(variants_matching_trigger)} variants match {trigger_variable_name}",
-        )
-        for variant_matching_trigger in [variants_matching_trigger[0]]:
-            self.add_field(f"Variant {trigger_variable_name} name", variant_matching_trigger.name)
-            self.add_field(f"Variant {trigger_variable_name} alias", variant_matching_trigger.alias)
-            for field_or_variants in variant_matching_trigger.fields_or_variants:
-                self.handle_packet_field_or_variants_definition(
-                    field_or_variants, prefix=f"{prefix_with_space}{variant_matching_trigger.name} {variant_matching_trigger.alias if variant_matching_trigger.alias else ''}"
+
+        if len(variants_matching_trigger) > 1 and variants_definition.trigger_variable_name == "NID_STMEVENT" and self.fields_names_and_values[variants_definition.trigger_variable_name] == 2:
+            all_variants_definitions_with_same_field = [
+                variant
+                for variant in variants_matching_trigger
+                if isinstance(variant.fields_or_variants[0], upper_layer_libraries.PacketFieldDefinition)
+                and variant.fields_or_variants[0].name == "NID_STMPACKET"
+                and variant.fields_or_variants[0].size_in_bits is None
+            ]
+            if len(all_variants_definitions_with_same_field) == len(variants_matching_trigger):
+                assert isinstance(variants_matching_trigger[0].fields_or_variants[0], upper_layer_libraries.PacketFieldDefinition)
+                self.handle_packet_field(
+                    field_definition=upper_layer_libraries.PacketFieldDefinition(
+                        name=variants_matching_trigger[0].fields_or_variants[0].name,
+                        size_in_bits=8,
+                    ),
+                    prefix=prefix,
                 )
+                stm_packet = self.get_field_int_value_or_assert("NID_STMPACKET")
+                variants_matching_trigger = [variant for variant in variants_definition.variants if variant.name == f"STM-{stm_packet}"]
+                # variants_matching_trigger[0].fields_or_variants[0].name,
+                pass
+
+            pass
+
+        assert len(variants_matching_trigger) == 1, f"STM {self.nid_stm}: too many {len(variants_matching_trigger)} variants match {trigger_variable_name}"
+        # assert logger_config.print_and_log_error_if(
+        #    len(variants_matching_trigger) > 1,
+        #    f"STM {self.nid_stm}: too many {len(variants_matching_trigger)} variants match {trigger_variable_name}",
+        # )
+        variant_matching_trigger = variants_matching_trigger[0]
+        self.add_field(f"Variant {trigger_variable_name} name", variant_matching_trigger.name)
+        self.add_field(f"Variant {trigger_variable_name} alias", variant_matching_trigger.alias)
+        for field_or_variants in variant_matching_trigger.fields_or_variants:
+            self.handle_packet_field_or_variants_definition(
+                field_or_variants, prefix=f"{prefix_with_space}{variant_matching_trigger.name} {variant_matching_trigger.alias if variant_matching_trigger.alias else ''}"
+            )
 
     def handle_packet_field(self, field_definition: upper_layer_libraries.PacketFieldDefinition, prefix: str = "") -> None:
         prefix_with_space = f"{prefix} " if prefix else ""
@@ -473,12 +499,7 @@ class UpperLayerStm:
         else:
             if decoded_field_size_in_bits is None:
 
-                if decoded_field_name == "NID_STMPACKET":
-                    nid_stmpacket = self.stm_message_content_byte_message_decoded.get_next_byte_as_single_int_unsigned()
-                    self.add_error(f"STM {self.nid_stm} no size defined for field {decoded_field_name}. Use {nid_stmpacket}")
-                    self.add_field(prefix_with_space + decoded_field_name, f"Error!!! No size defined. Use {nid_stmpacket}")
-
-                else:
+                if decoded_field_name != "NID_STMPACKET":
                     self.add_error(f"STM {self.nid_stm} no size defined for field {decoded_field_name}")
                     self.add_field(decoded_field_name, "Error!!! No size defined")
                     self.add_field(prefix_with_space + decoded_field_name, "Error!!! No size defined")
