@@ -595,10 +595,10 @@ class ArchiveAnalyzis:
 
                 for sql_archive_line_in_measure_interval_matching_group in all_sql_archive_lines_in_measure_interval_matching_group:
                     group.remaining_matching_lines_to_process.remove(sql_archive_line_in_measure_interval_matching_group)
-                    pass
                 current_row[f"{group.label} count"] = len(all_sql_archive_lines_in_measure_interval_matching_group)
 
             rows_as_list_dict.append(current_row)
+            logger_config.print_and_log_info_if(len(rows_as_list_dict) % 1000 == 0, f"{len(rows_as_list_dict)} lines created")
 
             current_measure_begin_timestamp = current_measure_end_timestamp
 
