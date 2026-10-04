@@ -464,9 +464,10 @@ class UpperLayerStm:
                 self.add_field(prefix_with_space + field_definition.name, n_iter)
 
                 if self.nid_stm == 161:
-                    logger_config.print_and_log_info(
-                        f"Ignore fields {','.join([sub_field.name for sub_field in field_definition.fields_or_variants if isinstance(sub_field,upper_layer_libraries.PacketFieldDefinition)])} in STM {self.nid_stm} under {field_definition.name}"
-                    )
+                    pass
+                    # logger_config.print_and_log_debug(
+                    #    f"Ignore fields {','.join([sub_field.name for sub_field in field_definition.fields_or_variants if isinstance(sub_field,upper_layer_libraries.PacketFieldDefinition)])} in STM {self.nid_stm} under {field_definition.name}"
+                    # )
                 else:
                     for i in range(n_iter):
                         for sub_field in field_definition.fields_or_variants:
