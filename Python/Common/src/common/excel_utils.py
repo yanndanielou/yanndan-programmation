@@ -42,22 +42,22 @@ XL_SAVE_CONFLICT_RESOLUTION_XL_USER_RESOLUTION = 1  # Une boîte de dialogue dem
 
 
 def convert_xlsx_file_to_xls_with_win32com_dispatch(xlsx_file_full_path: str) -> str:
-    with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls: {xlsx_file_full_path}"):
+    with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls: {xlsx_file_full_path}", monitor_ram_usage=True):
         xls_output_file_path = xlsx_file_full_path[:-1]
-        with logger_config.stopwatch_with_label("convert_xlsx_file_to_xls: open excel application"):
+        with logger_config.stopwatch_with_label("convert_xlsx_file_to_xls: open excel application", monitor_ram_usage=True):
             xl = Dispatch("Excel.Application")
 
         xl.DisplayAlerts = False
 
-        with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls: open {xlsx_file_full_path}"):
+        with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls: open {xlsx_file_full_path}", monitor_ram_usage=True):
             wb = xl.Workbooks.Add(xlsx_file_full_path)
 
         wb.CheckCompatibility = False
         wb.DoNotPromptForConvert = True
 
-        with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls: save {xls_output_file_path}"):
+        with logger_config.stopwatch_with_label(f"convert_xlsx_file_to_xls: save {xls_output_file_path}", monitor_ram_usage=True):
             wb.SaveAs(xls_output_file_path, FileFormat=EXCEL_8_XLS_FORMAT_XL_FILE_FORMAT_VALUE)
-        with logger_config.stopwatch_with_label("convert_xlsx_file_to_xls: quit excel"):
+        with logger_config.stopwatch_with_label("convert_xlsx_file_to_xls: quit excel", monitor_ram_usage=True):
             xl.Quit()
         return xls_output_file_path
 
@@ -213,7 +213,7 @@ class XlWingsRemoveTabsOperation(XlWingOperationBase):
 
     @staticmethod
     def remove_tabs_with_xlwings(workbook_dml: xlwings.Book, sheets_to_keep_names: list[str]) -> None:
-        with logger_config.stopwatch_with_label(f"remove_tabs_with_xlwings , sheets_to_keep_names:{sheets_to_keep_names}", inform_beginning=True):
+        with logger_config.stopwatch_with_label(f"remove_tabs_with_xlwings , sheets_to_keep_names:{sheets_to_keep_names}", inform_beginning=True, monitor_ram_usage=True):
 
             sheets_names = workbook_dml.sheet_names
             number_of_initial_sheets_names = len(sheets_names)
@@ -755,13 +755,13 @@ def copy_and_paste_excel_content_with_format_with_win32(
         if not os.path.exists(temp_file_full_path):
             raise FileNotFoundError(f"The file '{temp_file_full_path}' does not exist.")
 
-        with logger_config.stopwatch_with_label("Initialize Excel application (using COM)"):
+        with logger_config.stopwatch_with_label("Initialize Excel application (using COM)", monitor_ram_usage=True):
             excel_app = gencache.EnsureDispatch("Excel.Application")
             excel_app.Visible = excel_visibility  # Make sure Excel doesn't open a UI window
 
         try:
 
-            with logger_config.stopwatch_with_label(f"Open the input workbook {input_excel_file_path}", inform_beginning=True):
+            with logger_config.stopwatch_with_label(f"Open the input workbook {input_excel_file_path}", inform_beginning=True, monitor_ram_usage=True):
                 wb_input = excel_app.Workbooks.Open(input_excel_file_path)
 
             with logger_config.stopwatch_with_label("Check if the sheet name exists in the input workbook"):
@@ -773,7 +773,7 @@ def copy_and_paste_excel_content_with_format_with_win32(
             with logger_config.stopwatch_with_label("Add a new workbook for the output"):
                 wb_output = excel_app.Workbooks.Add()
 
-            with logger_config.stopwatch_with_label("Copy the sheet from the input workbook to the new workbook", inform_beginning=True):
+            with logger_config.stopwatch_with_label("Copy the sheet from the input workbook to the new workbook", inform_beginning=True, monitor_ram_usage=True):
                 sheet_input.Copy(Before=wb_output.Sheets(1))
 
             # Get the copied sheet (will always be the first sheet in the new workbook)
@@ -782,27 +782,27 @@ def copy_and_paste_excel_content_with_format_with_win32(
             # logger_config.print_and_log_info(f"sheet_input.UsedRange:{sheet_input.UsedRange}")
             # logger_config.print_and_log_info(f"sheet_copied.UsedRange:{sheet_copied.UsedRange}")
             if replace_formulas_by_value:
-                with logger_config.stopwatch_with_label("Remove formulas by pasting values only", inform_beginning=True):
+                with logger_config.stopwatch_with_label("Remove formulas by pasting values only", inform_beginning=True, monitor_ram_usage=True):
                     # sheet_copied.UsedRange.Value = sheet_copied.UsedRange.Value
                     sheet_copied.UsedRange.Value = sheet_input.UsedRange.Value
 
-            with logger_config.stopwatch_with_label(f"Save output workbook {output_excel_file_path}", inform_beginning=True):
+            with logger_config.stopwatch_with_label(f"Save output workbook {output_excel_file_path}", inform_beginning=True, monitor_ram_usage=True):
                 wb_output.SaveAs(
                     Filename=output_excel_file_path,
                     FileFormat=EXCEL_WORKBOOK_DEFAULT_XLSX_FORMAT_XL_FILE_FORMAT_VALUE,
                     ConflictResolution=XL_SAVE_CONFLICT_RESOLUTION_XL_LOCAL_SESSION_CHANGES,
                 )
 
-            with logger_config.stopwatch_with_label(f"Close output workbook {output_excel_file_path}"):
+            with logger_config.stopwatch_with_label(f"Close output workbook {output_excel_file_path}, monitor_ram_usage=True"):
                 wb_output.Close()  # Close the output workbook
 
             print(f"Excel sheet '{sheet_name}' was successfully copied and saved to '{output_excel_file_path}'.")
         finally:
             # Close the input workbook and quit the Excel application
-            with logger_config.stopwatch_with_label(f"Close input workbook {temp_file_full_path}"):
+            with logger_config.stopwatch_with_label(f"Close input workbook {temp_file_full_path}", monitor_ram_usage=True):
                 wb_input.Close(SaveChanges=False)
 
-            with logger_config.stopwatch_with_label("Quit Excel app"):
+            with logger_config.stopwatch_with_label("Quit Excel app", monitor_ram_usage=True):
                 excel_app.Quit()
 
         return output_excel_file_path
