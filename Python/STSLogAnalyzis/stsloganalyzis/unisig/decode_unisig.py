@@ -23,7 +23,7 @@ STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BITS = STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYT
 MAXIMUM_PADDING_SIZE_IN_BITS_SUBSET_58 = 7
 
 UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BYTES = 1
-UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITES = UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BYTES * bytes_messages.NUMBER_OF_BITS_IN_BYTE
+UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITS = UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BYTES * bytes_messages.NUMBER_OF_BITS_IN_BYTE
 UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS = 13
 
 
@@ -355,7 +355,7 @@ class UpperLayerStm:
 
         self.nid_stm = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
         self.l_message = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS)
-        self.data_without_header_size_in_bits = self.l_message - UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITES - UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS
+        self.data_without_header_size_in_bits = self.l_message - UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITS - UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS
 
         self.creational_and_decoding_errors: list[str] = []
         if self.byte_message_decoded.number_of_bits_remaining_to_decode < self.data_without_header_size_in_bits:
@@ -514,7 +514,9 @@ class UpperLayerStm:
                 else:
                     self.add_field(prefix_with_space + decoded_field_name, field_raw_unsigned_int_value)
             else:
-                logger_config.print_and_log_info(f"Not enough data for STM {self.nid_stm} {decoded_field_name}", do_not_print=True)
+                self.add_error(
+                    f"Not enough data for STM {self.nid_stm} {decoded_field_name}. {self.stm_message_content_byte_message_decoded.number_of_bits_remaining_to_decode} bits remaining, decoded_field_size_in_bits:{decoded_field_size_in_bits}"
+                )
                 self.add_field(prefix + decoded_field_name, "Error!!! No enough data")
 
     def handle_packet_field_or_variants_definition(
@@ -558,7 +560,7 @@ class SdaForUpperLayerTelegram(SdaUnisigMessage):
 
         while self.byte_message_decoded.number_of_bits_remaining_to_decode > MAXIMUM_PADDING_SIZE_IN_BITS_SUBSET_58:
 
-            if self.byte_message_decoded.number_of_bits_remaining_to_decode >= UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITES + UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS:
+            if self.byte_message_decoded.number_of_bits_remaining_to_decode >= UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITS + UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS:
                 upper_layer_decoded_stm = UpperLayerStm(self, byte_message_decoded=self.byte_message_decoded)
                 self.upper_layer_decoded_stms.append(upper_layer_decoded_stm)
             else:

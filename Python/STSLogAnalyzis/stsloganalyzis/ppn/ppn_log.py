@@ -51,7 +51,7 @@ class ProfibusLogLibrary:
             self.decoded_files.append(decoded_file)
 
         self._process_files()
-        self._decode_sdn_or_sna()
+        self._decode_sdn_or_sda()
 
         self.all_unisig_messages = [log_line.unisig_message for decoded_file in self.decoded_files for log_line in decoded_file.decoded_lines if log_line.unisig_message is not None]
 
@@ -82,6 +82,8 @@ class ProfibusLogLibrary:
                 self.occurences_by_creational_error_type[error].append(stm_message.upper_layer_telegram.profibus_log_line.timestamp if stm_message.upper_layer_telegram.profibus_log_line else None)
 
         self._print_stats()
+
+        self.save_errors()
 
     def get_upper_layer_stms_by_stm_ids(self, allowed_stm_ids: list[int]) -> list[decode_unisig.UpperLayerStm]:
         return [upper_layer_stm for upper_layer_stm in self.all_upper_layer_stms if upper_layer_stm.nid_stm in allowed_stm_ids]
@@ -204,14 +206,16 @@ class ProfibusLogLibrary:
     @logger_config.stopwatch_decorator()
     def _process_files(self) -> None:
         for decoded_file in self.decoded_files:
-            decoded_file.process()
-            self.decoded_lines += decoded_file.decoded_lines
+            with logger_config.stopwatch_with_label(f"Process {decoded_file.file_full_path}", monitor_ram_usage=True):
+                decoded_file.process()
+                self.decoded_lines += decoded_file.decoded_lines
 
     @logger_config.stopwatch_decorator()
-    def _decode_sdn_or_sna(self) -> None:
+    def _decode_sdn_or_sda(self) -> None:
         for decoded_file in self.decoded_files:
-            for decoded_line in decoded_file.decoded_lines:
-                decoded_line.decode_sdn_or_sna()
+            with logger_config.stopwatch_with_label(f"Decode SDN or SDA of {decoded_file.file_full_path}", monitor_ram_usage=True):
+                for decoded_line in decoded_file.decoded_lines:
+                    decoded_line.decode_sdn_or_sda()
 
     def _print_stats(self) -> None:
         logger_config.print_and_log_info(f"Stats of {self.directory_path}")
@@ -224,15 +228,13 @@ class ProfibusLogLibrary:
 
         logger_config.print_and_log_info(f"{len(self.all_creational_errors)} creational errors")
 
-        number_of_types_of_errors = len(self.occurences_by_creational_error_type.items)
+        number_of_types_of_errors = len(self.occurences_by_creational_error_type.items())
         logger_config.print_and_log_error_if(number_of_types_of_errors, f"{number_of_types_of_errors}: types of errors")
 
-        number_of_errors_occurences = sum(self.occurences_by_creational_error_type.values)
+        number_of_errors_occurences = sum([len(values) for values in self.occurences_by_creational_error_type.values()])
         logger_config.print_and_log_error_if(number_of_errors_occurences, f"{number_of_errors_occurences}: errors occurences")
 
-        self.save_errors()
-
-    @logger_config.stopwatch_decorator
+    @logger_config.stopwatch_decorator(monitor_ram_usage=True)
     def save_errors(self) -> None:
 
         reports_utils.save_rows_to_output_files(
@@ -432,7 +434,7 @@ class ProfibusLogLine:
         else:
             return None
 
-    def decode_sdn_or_sna(self) -> None:
+    def decode_sdn_or_sda(self) -> None:
         if self.mode == SendingMode.SDA:
             try:
                 self.unisig_message = decode_unisig.SdaUnisigMessage.from_sda_hexa_bytes_str(

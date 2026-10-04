@@ -26,7 +26,7 @@ class TestDecodeOnePpnLogLine:
                     upper_layer_decoding_library=None,
                 )
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaConnectRequestOrConfirmTelegram)
@@ -41,7 +41,7 @@ class TestDecodeOnePpnLogLine:
                     upper_layer_decoding_library=None,
                 )
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaConnectRequestOrConfirmTelegram)
@@ -58,7 +58,7 @@ class TestDecodeOnePpnLogLine:
                     upper_layer_decoding_library=None,
                 )
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaConnectRequestOrConfirmTelegram)
@@ -73,7 +73,7 @@ class TestDecodeOnePpnLogLine:
                     upper_layer_decoding_library=None,
                 )
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaConnectRequestOrConfirmTelegram)
@@ -90,7 +90,7 @@ class TestDecodeOnePpnLogLine:
                     upper_layer_decoding_library=None,
                 )
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
@@ -105,7 +105,7 @@ class TestDecodeOnePpnLogLine:
                     upper_layer_decoding_library=None,
                 )
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
@@ -121,7 +121,7 @@ class TestDecodeOnePpnLogLine:
                     upper_layer_decoding_library=None,
                 )
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
@@ -136,7 +136,7 @@ class TestDecodeOnePpnLogLine:
                     upper_layer_decoding_library=None,
                 )
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
@@ -152,7 +152,7 @@ class TestDecodeOnePpnLogLine:
                     upper_layer_decoding_library=None,
                 )
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
@@ -165,7 +165,7 @@ class TestDecodeOnePpnLogLine:
                     upper_layer_decoding_library=None,
                 )
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
@@ -179,7 +179,7 @@ class TestDecodeOnePpnLogLine:
                     upper_layer_decoding_library=None,
                 )
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaAuthenticationOrAuthenticationAcknowledgementTelegram)
@@ -194,7 +194,7 @@ class TestDecodeOnePpnLogLine:
                     upper_layer_decoding_library=next_unisig_58_library_fixture,
                 )
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaDisconnectTelegram)
@@ -208,7 +208,7 @@ class TestDecodeOnePpnLogLine:
                     upper_layer_decoding_library=next_unisig_58_library_fixture,
                 )
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaDisconnectTelegram)
@@ -226,7 +226,7 @@ class TestDecodeOnePpnLogLine:
                         upper_layer_decoding_library=next_unisig_58_library_fixture,
                     )
                     assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
                     assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
@@ -243,7 +243,7 @@ class TestDecodeOnePpnLogLine:
                         upper_layer_decoding_library=next_unisig_58_library_fixture,
                     )
                     assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
                     assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
@@ -260,7 +260,7 @@ class TestDecodeOnePpnLogLine:
                         upper_layer_decoding_library=next_unisig_58_library_fixture,
                     )
                     assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
                     assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
@@ -282,7 +282,7 @@ class TestDecodeOnePpnLogLine:
                         upper_layer_decoding_library=next_unisig_58_library_fixture,
                     )
                     assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
                     assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
@@ -303,7 +303,7 @@ class TestDecodeOnePpnLogLine:
                         upper_layer_decoding_library=next_unisig_58_library_fixture,
                     )
                     assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
                     assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
                     assert ppn_log_line.unisig_message.upper_layer_decoded_stms
@@ -323,7 +323,7 @@ class TestDecodeOnePpnLogLine:
                         upper_layer_decoding_library=next_unisig_58_library_fixture,
                     )
                     assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
                     assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
@@ -347,7 +347,7 @@ class TestDecodeOnePpnLogLine:
                 ) -> None:
                     ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(raw_ppn_log_line, upper_layer_decoding_library=next_unisig_58_library_fixture)
                     assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
                     assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
@@ -370,7 +370,7 @@ class TestDecodeOnePpnLogLine:
                 ) -> None:
                     ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(raw_ppn_log_line, upper_layer_decoding_library=next_unisig_58_library_fixture)
                     assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
                     assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
@@ -393,7 +393,7 @@ class TestDecodeOnePpnLogLine:
                 ) -> None:
                     ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(raw_ppn_log_line, upper_layer_decoding_library=next_unisig_58_library_fixture)
                     assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
 
                 @pytest.mark.parametrize(
@@ -412,7 +412,7 @@ class TestDecodeOnePpnLogLine:
                 ) -> None:
                     ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(raw_ppn_log_line, upper_layer_decoding_library=next_unisig_58_library_fixture)
                     assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
 
@@ -424,7 +424,7 @@ class TestDecodeOnePpnLogLine:
                     decode_unisig.UpperLayerStm(None, byte_message_decoded=bytes_messages.DecodedBytesMessage.from_bit_string(stm_175_content))
                     ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(stm_175_content, upper_layer_decoding_library=next_unisig_58_library_fixture)
                     assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
                     assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
@@ -438,7 +438,7 @@ class TestDecodeOnePpnLogLine:
                     log_file.process()
                     assert log_file.decoded_lines
                     ppn_log_line = log_file.decoded_lines[0]
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
                     assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
@@ -453,7 +453,7 @@ class TestDecodeOnePpnLogLine:
                         upper_layer_decoding_library=next_unisig_58_library_fixture,
                     )
                     assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
                     assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
@@ -469,7 +469,7 @@ class TestDecodeOnePpnLogLine:
                     )
 
                     assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
                     assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
@@ -484,7 +484,7 @@ class TestDecodeOnePpnLogLine:
                         upper_layer_decoding_library=next_unisig_58_library_fixture,
                     )
                     assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sna()
+                    ppn_log_line.decode_sdn_or_sda()
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
                     assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
@@ -501,7 +501,7 @@ class TestDecodeOnePpnLogLine:
                 )
 
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 assert ppn_log_line.unisig_message
                 assert not ppn_log_line.unisig_message.creational_and_decoding_errors
                 assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
@@ -517,7 +517,7 @@ class TestDecodeOnePpnLogLine:
                 )
 
                 assert ppn_log_line
-                ppn_log_line.decode_sdn_or_sna()
+                ppn_log_line.decode_sdn_or_sda()
                 assert ppn_log_line.unisig_message
                 assert not ppn_log_line.unisig_message.creational_and_decoding_errors
                 assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
