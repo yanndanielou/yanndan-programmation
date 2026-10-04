@@ -382,6 +382,22 @@ class TestDecodeOnePpnLogLine:
                 @pytest.mark.parametrize(
                     "raw_ppn_log_line",
                     [
+                        "2026-03-28 18:21:04:919 kppn 1.3.3: [99:2 => 3:2] Sending PROFIBUS message  [num:25736][rt:1273][mode:SDA][len:102] 06 c9 1d 5e a1 16 28 21 3a e4 72 88 70 51 34 7c 92 b5 89 08 62 07 00 01 40 00 40 00 80 00 00 00 00 00 00 06 c7 06 26 06 a6 26 e9 80 00 00 00 00 68 0b 0e d4 21 45 04 27 5c 8e 21 14 30 40 00 00 00 11 53 d3 11 40 01 ff e0 00 00 00 f0 00 02 02 18 2f 55 7b 40 00 02 a8 03 c8 1f 50 00 78 06 50 cb 85 8e 5c 27 04",
+                    ],
+                )
+                def test_decode_line_with_stm_to_ensure_crashs_are_resolved(
+                    self,
+                    raw_ppn_log_line: str,
+                    next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary,
+                ) -> None:
+                    ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(raw_ppn_log_line, upper_layer_decoding_library=next_unisig_58_library_fixture)
+                    assert ppn_log_line
+                    ppn_log_line.decode_sdn_or_sna()
+                    assert ppn_log_line.unisig_message
+
+                @pytest.mark.parametrize(
+                    "raw_ppn_log_line",
+                    [
                         "2025-11-02 03:14:06:508 kppn 1.3.3: [99:33 <= 2:33] Received PROFIBUS message [num:47967][mode:SDA][len:18] 4c 89 1d 06 0e 00 cc 7f ff 1a d8 00 67 e2 63 48 c4 9b",
                         "2025-09-28 01:37:13:841 kppn 1.3.3: [99:33 <= 2:33] Received PROFIBUS message [num:55373][mode:SDA][len:18] 21 89 1d 06 0e 00 cc 7f 58 19 50 00 df f7 6c 1e 1d 4f",
                         "2026-03-29 23:33:14:389 kppn 1.3.3: [99:33 <= 2:33] Received PROFIBUS message [num:22933][mode:SDA][len:18] cc 89 1d 06 0e 00 cc 7f c4 86 18 00 d4 fa 89 85 2a ed",
