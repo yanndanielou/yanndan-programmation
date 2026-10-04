@@ -1,3 +1,4 @@
+import datetime
 from abc import ABC
 from dataclasses import dataclass
 from enum import IntEnum
@@ -9,7 +10,7 @@ if TYPE_CHECKING:
 from common import bytes_messages, date_time_formats
 from logger import logger_config
 
-from stsloganalyzis.unisig import upper_layer_libraries
+from stsloganalyzis.unisig import additional_fields_decoder, upper_layer_libraries
 
 SL4_CRC_SIZE_IN_BYTES = 6
 
@@ -350,7 +351,7 @@ class UpperLayerStm:
 
     def __post_init__(self) -> None:
 
-        self.fields_names_and_values: dict[str, str | int | None] = {}
+        self.fields_names_and_values: dict[str, str | datetime.datetime | int | None] = {}
 
         self.nid_stm = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
         self.l_message = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS)
@@ -390,14 +391,27 @@ class UpperLayerStm:
                     f"Unsupported STM {self.nid_stm}",
                 )
 
+    def get_field_int_value_or_assert(self, field_name: str) -> int:
+        assert field_name in self.fields_names_and_values
+        raw_value = self.fields_names_and_values[field_name]
+        assert raw_value is not None
+        assert isinstance(raw_value, int)
+        return raw_value
+
     def handle_variants_field(self, variants_definition: upper_layer_libraries.PacketVariantsDefinition, prefix: str = "") -> None:
+        prefix_with_space = f"{prefix} " if prefix else ""
+
+        if variants_definition.trigger_variable_name == "NID_STMEVENT":
+            variant_trigger_value = self.fields_names_and_values[variants_definition.trigger_variable_name]
+            pass
+        elif variants_definition.trigger_variable_name == "NID_EVENT":
+            variant_trigger_value = self.stm_message_content_byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            self.add_field(field_name=prefix_with_space + "NID_EVENT", value=variant_trigger_value)
+            l_event = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=10)
+            self.add_field(field_name=prefix_with_space + "L_EVENT", value=l_event)
         trigger_variable_name = variants_definition.trigger_variable_name
 
-        variants_matching_trigger = [
-            variant
-            for variant in variants_definition.variants
-            if variant.trigger_variable_name == trigger_variable_name and variant.trigger_variable_value == self.fields_names_and_values[variant.trigger_variable_name]
-        ]
+        variants_matching_trigger = [variant for variant in variants_definition.variants if variant.trigger_variable_value == variant_trigger_value]
 
         assert variants_matching_trigger
         logger_config.print_and_log_error_if(
@@ -408,9 +422,12 @@ class UpperLayerStm:
             self.add_field(f"Variant {trigger_variable_name} name", variant_matching_trigger.name)
             self.add_field(f"Variant {trigger_variable_name} alias", variant_matching_trigger.alias)
             for field_or_variants in variant_matching_trigger.fields_or_variants:
-                self.handle_packet_field_or_variants_definition(field_or_variants, prefix=f"{prefix} {variant_matching_trigger.name} {variant_matching_trigger.alias + ' ' or ''}")
+                self.handle_packet_field_or_variants_definition(
+                    field_or_variants, prefix=f"{prefix_with_space}{variant_matching_trigger.name} {variant_matching_trigger.alias if variant_matching_trigger.alias else ''}"
+                )
 
     def handle_packet_field(self, field_definition: upper_layer_libraries.PacketFieldDefinition, prefix: str = "") -> None:
+        prefix_with_space = f"{prefix} " if prefix else ""
 
         decoded_field_name = field_definition.name
         decoded_field_size_in_bits = field_definition.size_in_bits
@@ -418,7 +435,7 @@ class UpperLayerStm:
         if field_definition.fields_or_variants:
             if field_definition.name == "N_ITER":
                 n_iter = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=field_definition.size_in_bits)
-                self.add_field(prefix + field_definition.name, n_iter)
+                self.add_field(prefix_with_space + field_definition.name, n_iter)
 
                 if self.nid_stm == 161:
                     logger_config.print_and_log_info(
@@ -435,16 +452,16 @@ class UpperLayerStm:
                                     enum_type_definition=sub_field.enum_type_definition,
                                     fields_or_variants=sub_field.fields_or_variants,
                                 ),
-                                prefix=f"{prefix}N_ITER_{i}_",
+                                prefix=f"{prefix_with_space}N_ITER_{i}_",
                             )
             elif field_definition.name.startswith(("L_TEXT", "L_CAPTION", "L_VALUE")):
                 text_length = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=field_definition.size_in_bits)
-                self.add_field(prefix + field_definition.name, text_length)
+                self.add_field(prefix_with_space + field_definition.name, text_length)
                 for sub_field in field_definition.fields_or_variants:
                     assert isinstance(sub_field, upper_layer_libraries.PacketFieldDefinition)
                     assert sub_field.size_in_bits == bytes_messages.SIZE_BITS_PER_CHAR
                     sub_field_string_value = self.stm_message_content_byte_message_decoded.get_next_bits_as_ascii_char(number_of_chars=text_length)
-                    self.add_field(prefix + sub_field.name, sub_field_string_value)
+                    self.add_field(prefix_with_space + sub_field.name, sub_field_string_value)
 
             else:
 
@@ -459,21 +476,21 @@ class UpperLayerStm:
                 if decoded_field_name == "NID_STMPACKET":
                     nid_stmpacket = self.stm_message_content_byte_message_decoded.get_next_byte_as_single_int_unsigned()
                     self.add_error(f"STM {self.nid_stm} no size defined for field {decoded_field_name}. Use {nid_stmpacket}")
-                    self.add_field(prefix + decoded_field_name, f"Error!!! No size defined. Use {nid_stmpacket}")
+                    self.add_field(prefix_with_space + decoded_field_name, f"Error!!! No size defined. Use {nid_stmpacket}")
 
                 else:
                     self.add_error(f"STM {self.nid_stm} no size defined for field {decoded_field_name}")
-                    self.fields_names_and_values[decoded_field_name] = "Error!!! No size defined"
-                    self.add_field(prefix + decoded_field_name, "Error!!! No size defined")
+                    self.add_field(decoded_field_name, "Error!!! No size defined")
+                    self.add_field(prefix_with_space + decoded_field_name, "Error!!! No size defined")
 
             elif self.stm_message_content_byte_message_decoded.number_of_bits_remaining_to_decode >= decoded_field_size_in_bits:
 
                 field_raw_unsigned_int_value = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=decoded_field_size_in_bits)
 
                 if field_definition.enum_type_definition:
-                    self.add_field(prefix + decoded_field_name, field_definition.enum_type_definition.states_ordered_by_value_from_zero[field_raw_unsigned_int_value])
+                    self.add_field(prefix_with_space + decoded_field_name, field_definition.enum_type_definition.states_ordered_by_value_from_zero[field_raw_unsigned_int_value])
                 else:
-                    self.add_field(prefix + decoded_field_name, field_raw_unsigned_int_value)
+                    self.add_field(prefix_with_space + decoded_field_name, field_raw_unsigned_int_value)
             else:
                 logger_config.print_and_log_info(f"Not enough data for STM {self.nid_stm} {decoded_field_name}", do_not_print=True)
                 self.add_field(prefix + decoded_field_name, "Error!!! No enough data")
@@ -496,9 +513,10 @@ class UpperLayerStm:
     def number_remaining_undecoded_bits(self) -> int:
         return len(self.remaining_undecoded_bits)
 
-    def add_field(self, field_name: str, value: str | int | None) -> None:
+    def add_field(self, field_name: str, value: str | datetime.datetime | int | None) -> None:
         assert field_name not in self.fields_names_and_values, f"{field_name} is already defined with value {self.fields_names_and_values[field_name]}. Cannot set value {value}"
         self.fields_names_and_values[field_name] = value
+        additional_fields_decoder.manual_additional_fields_decoding(self, field_name)
 
 
 @dataclass
