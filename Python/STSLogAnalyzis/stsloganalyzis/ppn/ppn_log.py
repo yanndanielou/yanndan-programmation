@@ -296,6 +296,9 @@ class ProfibusLogLibrary:
         for decoded_file in self.decoded_files:
             with logger_config.stopwatch_with_label(f"Decode SDN or SDA for {len(decoded_file.decoded_lines)} lines of {decoded_file.file_full_path}", monitor_ram_usage=True):
                 for decoded_line in decoded_file.decoded_lines:
+                    logger_config.print_and_log_info_if(
+                        decoded_line.line_number % 50000 == 0, f"{decoded_line.line_number} lines decoded SDA/SDN in {decoded_file.file_full_path}", print_ram_usage=True
+                    )
                     decoded_line.decode_sdn_or_sda()
 
     def _print_stats(self) -> None:

@@ -157,10 +157,16 @@ def print_and_log_critical_and_kill(to_print_and_log: str) -> None:
     sys.exit()
 
 
-def print_and_log_info_if(condition: bool, to_print_and_log: str, do_not_print: bool = False) -> None:
+def print_and_log_info_if(
+    condition: bool, to_print_and_log: str, do_not_print: bool = False, print_ram_usage: bool = False
+) -> None:
     """Print in standard output and log in file as info level"""
     if condition:
         log_timestamp = time.asctime(time.localtime(time.time()))
+
+        if print_ram_usage:
+            measure = ram_usage_monitor.measure_now(measure_label=to_print_and_log)
+            to_print_and_log += f". Current ram usage: {measure.as_human_readable}"
 
         # pylint: disable=line-too-long
         if not do_not_print:
