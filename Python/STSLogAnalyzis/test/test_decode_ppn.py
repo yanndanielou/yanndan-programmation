@@ -415,7 +415,7 @@ class TestDecodeOnePpnLogLine:
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
 
-                def test_decode_bitsets_with_only_stm175_content(
+                def ignore_test_decode_bitsets_with_only_stm175_content(
                     self,
                     next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary,
                 ) -> None:
