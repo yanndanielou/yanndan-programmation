@@ -31,7 +31,7 @@ class TestDecodeOnePpnLogLine:
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaConnectRequestOrConfirmTelegram)
                 assert not unisig_message.creational_and_decoding_errors
-                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded()
+                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
                 assert unisig_message.crc is None
 
             def test_decode_one_sl4(self) -> None:
@@ -45,7 +45,7 @@ class TestDecodeOnePpnLogLine:
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaConnectRequestOrConfirmTelegram)
-                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded()
+                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
                 assert not unisig_message.creational_and_decoding_errors
                 # assert unisig_message.stl_time_stamp_ms is not None
                 assert unisig_message.crc is not None
@@ -63,7 +63,7 @@ class TestDecodeOnePpnLogLine:
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaConnectRequestOrConfirmTelegram)
                 assert not unisig_message.creational_and_decoding_errors
-                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded()
+                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
                 assert unisig_message.crc is None
 
             def test_decode_one_sl4(self) -> None:
@@ -77,7 +77,7 @@ class TestDecodeOnePpnLogLine:
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaConnectRequestOrConfirmTelegram)
-                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded()
+                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
                 assert not unisig_message.creational_and_decoding_errors
                 # assert unisig_message.stl_time_stamp_ms is not None
                 assert unisig_message.crc is not None
@@ -95,8 +95,8 @@ class TestDecodeOnePpnLogLine:
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
                 assert not unisig_message.creational_and_decoding_errors
-                assert unisig_message.stl_time_stamp_ms is not None
-                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded()
+                assert unisig_message.stl_time_stamp is not None
+                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
 
             def test_decode_one_sl4(self) -> None:
 
@@ -110,8 +110,8 @@ class TestDecodeOnePpnLogLine:
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
                 assert not unisig_message.creational_and_decoding_errors
-                assert unisig_message.stl_time_stamp_ms is not None
-                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded()
+                assert unisig_message.stl_time_stamp is not None
+                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
 
         class TestRunTelegram:
             def test_decode_one_sl0(self) -> None:
@@ -126,8 +126,8 @@ class TestDecodeOnePpnLogLine:
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
                 assert not unisig_message.creational_and_decoding_errors
-                assert unisig_message.stl_time_stamp_ms is not None
-                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded()
+                assert unisig_message.stl_time_stamp is not None
+                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
 
             def test_decode_one_sl4(self) -> None:
 
@@ -141,9 +141,8 @@ class TestDecodeOnePpnLogLine:
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
                 assert not unisig_message.creational_and_decoding_errors
-                assert unisig_message.stl_time_stamp_ms is not None
-                assert unisig_message.stl_time_stamp_datetime is not None
-                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded()
+                assert unisig_message.stl_time_stamp is not None
+                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
 
         class TestIdleTelegram:
             def test_decode_one_sl0(self) -> None:
@@ -157,7 +156,7 @@ class TestDecodeOnePpnLogLine:
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
                 assert not unisig_message.creational_and_decoding_errors
-                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded()
+                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
 
             def test_decode_one_sl4(self) -> None:
                 ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
@@ -170,7 +169,7 @@ class TestDecodeOnePpnLogLine:
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
                 assert not unisig_message.creational_and_decoding_errors
-                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded()
+                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
 
         class TestAuthenticationTelegram:
             def test_decode_one_sl4(self) -> None:
@@ -184,7 +183,7 @@ class TestDecodeOnePpnLogLine:
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaAuthenticationOrAuthenticationAcknowledgementTelegram)
                 assert not unisig_message.creational_and_decoding_errors
-                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded()
+                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
 
         class TestDisconnect:
             def test_decode_one_disconnect_sl0(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
@@ -199,7 +198,7 @@ class TestDecodeOnePpnLogLine:
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaDisconnectTelegram)
                 assert not unisig_message.creational_and_decoding_errors
-                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded()
+                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
                 print(unisig_message.disconnect_reason_text)
 
             def test_decode_one_disconnect_sl4(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
@@ -213,7 +212,7 @@ class TestDecodeOnePpnLogLine:
                 assert unisig_message
                 assert isinstance(unisig_message, decode_unisig.SdaDisconnectTelegram)
                 assert not unisig_message.creational_and_decoding_errors
-                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded()
+                assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
                 print(unisig_message.disconnect_reason_text)
 
         class TestStmMessagesInUpperLayer:
@@ -514,14 +513,30 @@ class TestDecodeOnePpnLogLine:
     class TestSdn:
         def test_decode_sync_and_reference_time(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
             ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
-                line="2026-03-29 12:11:15:679 kppn 1.3.3: [127:32 <= 2:32] Received PROFIBUS message [num:1702][mode:SDN][len:25] 03 00 00 a1 33 02 00 00 03 00 00 33 02 00 00 07 54 03 00 72 fd a4 61 cb 1b",
+                line="2026-03-28 18:17:17:032 kppn 1.3.3: [127:32 <= 2:32] Received PROFIBUS message [num:129555][mode:SDN][len:25] 03 00 00 a1 b9 dd 02 00 03 00 00 b9 dd 02 00 04 16 24 04 19 ae 91 f6 50 69",
                 upper_layer_decoding_library=next_unisig_58_library_fixture,
             )
-
             assert ppn_log_line
             ppn_log_line.decode_sdn_or_sda()
             assert ppn_log_line.unisig_message
             assert not ppn_log_line.unisig_message.creational_and_decoding_errors
+            assert ppn_log_line.unisig_message
+            assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdnSyncAndReferenceTimeMulticastMessage)
+            assert ppn_log_line.unisig_message.reference_time_n_minus_1_utc.human_format == "19:17:53.796"
+
+        def test_decode_safe_time_layer_startup(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+            ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
+                line="2026-03-29 22:17:07:522 kppn 1.3.3: [127:39 <= 2:39] Received PROFIBUS message [num:169549][mode:SDN][len:25] 03 00 00 a4 15 a5 00 00 03 00 00 e8 03 00 00 05 00 00 00 41 2d 1a 84 c5 12",
+                upper_layer_decoding_library=next_unisig_58_library_fixture,
+            )
+            assert ppn_log_line
+            ppn_log_line.decode_sdn_or_sda()
+            assert ppn_log_line.unisig_message
+            assert not ppn_log_line.unisig_message.creational_and_decoding_errors
+            assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdnSafeTimeLayerStartupForMulticast)
+            assert ppn_log_line.unisig_message.sender_dynamic_transfer_time.human_format
+            assert ppn_log_line.unisig_message.sender_static_transfer_time.human_format
+            pass
 
         def test_decode_line_with_stm1_and_stm8(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
             ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
@@ -533,7 +548,7 @@ class TestDecodeOnePpnLogLine:
             ppn_log_line.decode_sdn_or_sda()
             assert ppn_log_line.unisig_message
             assert not ppn_log_line.unisig_message.creational_and_decoding_errors
-            assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
+            assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdnApplicationDataMulticastForUpperLayerTelegram)
             assert ppn_log_line.unisig_message.upper_layer_decoded_stms
             assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 1
             for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
@@ -549,7 +564,7 @@ class TestDecodeOnePpnLogLine:
             ppn_log_line.decode_sdn_or_sda()
             assert ppn_log_line.unisig_message
             assert not ppn_log_line.unisig_message.creational_and_decoding_errors
-            assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
+            assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdnApplicationDataMulticastForUpperLayerTelegram)
             assert ppn_log_line.unisig_message.upper_layer_decoded_stms
             assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 1
             for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:

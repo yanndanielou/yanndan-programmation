@@ -32,7 +32,7 @@ class TestDecodeSimpleFakeMessages:
         decoded_message = xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=996, hexadecimal_content=hexa_content_as_str)
         assert decoded_message
         assert not decoded_message.not_decoded_because_error_fields_names
-        assert decoded_message.is_correctly_and_completely_decoded()
+        assert decoded_message.is_correctly_and_completely_decoded
         for i in range(0, 8):
             assert decoded_message.decoded_fields_flat_directory[f"TheBitField{i}"] == bits_expected_values[i], f"failed for i:{i}"
 
@@ -43,7 +43,7 @@ class TestDecodeSimpleFakeMessages:
         decoded_message = xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=999, hexadecimal_content=hexa_content_as_str)
         assert decoded_message
         assert not decoded_message.not_decoded_because_error_fields_names
-        assert decoded_message.is_correctly_and_completely_decoded()
+        assert decoded_message.is_correctly_and_completely_decoded
         assert decoded_message.decoded_fields_flat_directory["TheOnlyField"] == int_expected_value
 
     @pytest.mark.parametrize("hexa_content, first_field_int_expected_value,second_field_int_expected_value", [("01 02", 1, 2), ("00 00", 0, 0), ("04 03", 4, 3)])
@@ -53,7 +53,7 @@ class TestDecodeSimpleFakeMessages:
         decoded_message = xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=998, hexadecimal_content=hexa_content_as_str)
         assert decoded_message
         assert not decoded_message.not_decoded_because_error_fields_names
-        assert decoded_message.is_correctly_and_completely_decoded()
+        assert decoded_message.is_correctly_and_completely_decoded
         assert decoded_message.decoded_fields_flat_directory["TheFirstField"] == first_field_int_expected_value
         assert decoded_message.decoded_fields_flat_directory["TheSecondField"] == second_field_int_expected_value
 
@@ -63,7 +63,7 @@ class TestDecodeSimpleFakeMessages:
         xml_message_decoder = decode_xml_message.XmlMessageDecoder(xml_directory_path=r"Input_for_tests\Xml")
         decoded_message = xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=997, hexadecimal_content=hexa_content_as_str)
         assert decoded_message
-        assert decoded_message.is_correctly_and_completely_decoded()
+        assert decoded_message.is_correctly_and_completely_decoded
         assert not decoded_message.not_decoded_because_error_fields_names
         assert decoded_message.decoded_fields_flat_directory["TheStringField"] == expected_value
 
@@ -82,13 +82,13 @@ class TestDecodeCbtcMessage205withRecordWithDimension:
     def test_message_is_completely_read(self) -> None:
         decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=205, hexadecimal_content=self.message_205_hexa_content_as_str)
         assert decoded_message
-        assert decoded_message.is_correctly_and_completely_decoded()
+        assert decoded_message.is_correctly_and_completely_decoded
 
     def test_fields_after_record_are_correctly_read_without_decalage(self) -> None:
         decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=205, hexadecimal_content=self.message_205_hexa_content_as_str)
         assert decoded_message
         assert not decoded_message.not_decoded_because_error_fields_names
-        assert decoded_message.is_correctly_and_completely_decoded()
+        assert decoded_message.is_correctly_and_completely_decoded
         assert decoded_message.decoded_fields_flat_directory["UtoTrainReversingMode"] == 4
         assert decoded_message.decoded_fields_flat_directory["TimeOffset"] == 72000
 
@@ -96,7 +96,7 @@ class TestDecodeCbtcMessage205withRecordWithDimension:
         decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=205, hexadecimal_content=self.message_205_hexa_content_as_str)
         assert decoded_message
         assert not decoded_message.not_decoded_because_error_fields_names
-        assert decoded_message.is_correctly_and_completely_decoded()
+        assert decoded_message.is_correctly_and_completely_decoded
         assert decoded_message.decoded_fields_flat_directory["TvdOpData_0_TvdArb"] == 0
         assert decoded_message.decoded_fields_flat_directory["TvdOpData_0_TvdVirtualVacant"] == 1
         assert decoded_message.decoded_fields_flat_directory["TvdOpData_1_TvdArb"] == 0
@@ -106,7 +106,7 @@ class TestDecodeCbtcMessage205withRecordWithDimension:
         decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=205, hexadecimal_content=self.message_205_hexa_content_as_str)
         assert decoded_message
         assert not decoded_message.not_decoded_because_error_fields_names
-        assert decoded_message.is_correctly_and_completely_decoded()
+        assert decoded_message.is_correctly_and_completely_decoded
         assert isinstance(decoded_message.all_fields_by_name["TvdArb"], list)
         assert decoded_message.all_fields_by_name["TvdArb"]
         assert len(decoded_message.all_fields_by_name["TvdArb"]) == 250
@@ -119,7 +119,7 @@ class TestDecodeCbtcMessage205withRecordWithDimension:
         decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=205, hexadecimal_content=self.message_205_hexa_content_as_str)
         assert decoded_message
         assert not decoded_message.not_decoded_because_error_fields_names
-        assert decoded_message.is_correctly_and_completely_decoded()
+        assert decoded_message.is_correctly_and_completely_decoded
         assert isinstance(decoded_message.all_records_by_name["TvdOpData"], list)
         assert decoded_message.all_records_by_name["TvdOpData"]
         assert len(decoded_message.all_records_by_name["TvdOpData"]) == 250
@@ -142,13 +142,13 @@ class TestDecodeCbtcMessage210withRecordWithDimension:
     def test_message_is_completely_read(self) -> None:
         decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=210, hexadecimal_content=self.message_210_hexa_content_as_str)
         assert decoded_message
-        assert decoded_message.is_correctly_and_completely_decoded()
+        assert decoded_message.is_correctly_and_completely_decoded
 
     def test_fields_after_record_are_correctly_read_without_decalage(self) -> None:
         decoded_message = self.xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=210, hexadecimal_content=self.message_210_hexa_content_as_str)
         assert decoded_message
         assert not decoded_message.not_decoded_because_error_fields_names
-        assert decoded_message.is_correctly_and_completely_decoded()
+        assert decoded_message.is_correctly_and_completely_decoded
         assert decoded_message.decoded_fields_flat_directory["TimeOffset"] == 72000
 
 

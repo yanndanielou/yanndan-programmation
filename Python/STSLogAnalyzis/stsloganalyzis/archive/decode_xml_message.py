@@ -148,7 +148,7 @@ class DecodedXmlMessage:
         if self.not_decoded_because_error_fields_names:
             return False
 
-        return cast(bool, self.decoded_bytes_message.is_correctly_and_completely_decoded())
+        return cast(bool, self.decoded_bytes_message.is_correctly_and_completely_decoded)
 
 
 class SignedOrUnsignedTypeForIntegerFieldsManagerBase(ABC):
