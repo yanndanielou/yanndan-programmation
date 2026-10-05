@@ -524,7 +524,11 @@ class ProfibusLogLine:
                     upper_layer_decoding_library=self.upper_layer_decoding_library,
                 )
 
-                assert cast(decode_unisig.SdaUnisigMessage, self.unisig_message).byte_message_decoded.is_correctly_and_completely_decoded
+                assert cast(
+                    decode_unisig.SdaUnisigMessage, self.unisig_message
+                ).byte_message_decoded.is_correctly_and_completely_decoded, (
+                    f"Line is not completely decoded, {len(cast(decode_unisig.SdaUnisigMessage, self.unisig_message).byte_message_decoded)} bits remaining"
+                )
 
             except (AssertionError, ValueError) as ass_err:
                 logger_config.print_and_log_exception(ass_err)
