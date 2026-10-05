@@ -76,3 +76,57 @@ class TestDecodeMessageFromBothEnds:
     def test_decoding_mulitple_bytes_at_right(self) -> None:
         decoded_message = bytes_messages.DecodedBytesMessage.from_hex_string("03h 01h C1h 6Ah 30h")
         assert decoded_message.get_and_remove_last_bytes_as_single_int_unsigned(size_bytes=3) == 12675632
+
+
+class TestConstructors:
+    @pytest.mark.parametrize(
+        "bit_string,content_as_unsigned_int",
+        [
+            ("01", 1),
+            ("1000", 8),
+            ("0010 0101 0101 0110", 9558),
+        ],
+    )
+    def test_create_from_bit_strings(
+        self,
+        bit_string: str,
+        content_as_unsigned_int: int,
+    ) -> None:
+        decoded_message = bytes_messages.DecodedBytesMessage.from_bit_string(bit_string)
+        remaining_bits_as_unsigned_int = decoded_message.get_remaining_bits_as_unsigned_int()
+        assert remaining_bits_as_unsigned_int == content_as_unsigned_int
+
+    @pytest.mark.parametrize(
+        "hex_string,content_as_unsigned_int",
+        [
+            ("01", 1),
+            ("A0", 160),
+            ("0xab", 171),
+            ("0xAB", 171),
+        ],
+    )
+    def test_create_from_hex_strings(
+        self,
+        hex_string: str,
+        content_as_unsigned_int: int,
+    ) -> None:
+        decoded_message = bytes_messages.DecodedBytesMessage.from_hex_string(hex_string)
+        remaining_bits_as_unsigned_int = decoded_message.get_remaining_bits_as_unsigned_int()
+        assert remaining_bits_as_unsigned_int == content_as_unsigned_int
+
+    @pytest.mark.parametrize(
+        "bytes_as_list_int,content_as_unsigned_int",
+        [
+            ([0, 1], 1),
+            ([1, 0], 256),
+            ([1, 1], 257),
+        ],
+    )
+    def test_create_from_bytes_as_list_int(
+        self,
+        bytes_as_list_int: list[int],
+        content_as_unsigned_int: int,
+    ) -> None:
+        decoded_message = bytes_messages.DecodedBytesMessage.from_bytes_as_list_int(bytes_as_list_int)
+        remaining_bits_as_unsigned_int = decoded_message.get_remaining_bits_as_unsigned_int()
+        assert remaining_bits_as_unsigned_int == content_as_unsigned_int

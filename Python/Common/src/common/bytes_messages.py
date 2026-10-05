@@ -56,6 +56,7 @@ def convert_bits_to_unsigned_int(combined_bits: str) -> int:
 def convert_bits_to_signed_int(combined_bits: str) -> int:
     # Extract the substring of the combined bits and convert to a signed integer
     number_of_bits = len(combined_bits)
+
     value = int(combined_bits, 2)
     if value >= (1 << (number_of_bits - 1)):
         value -= 1 << number_of_bits
@@ -63,7 +64,7 @@ def convert_bits_to_signed_int(combined_bits: str) -> int:
 
 
 def convert_hex_string_to_hex_bytes(hex_string: str) -> bytes:
-    valid_hex_string = hex_string.replace("h", "").replace(" ", "")
+    valid_hex_string = hex_string.replace("0x", "").replace("h", "").replace(" ", "")
     hex_bytes = bytes.fromhex(valid_hex_string)
     return hex_bytes
 
@@ -86,12 +87,28 @@ class DecodedBytesMessage:
 
     @classmethod
     def from_bit_string(cls, str_of_bits: str) -> Self:
+        str_of_bits = str_of_bits.replace(" ", "")
         return cls(constructor_secret_key=cls.__key_to_protect_constructor, str_of_bits=str_of_bits)
 
     @classmethod
     def from_bytes(cls, hex_bytes: bytes) -> Self:
         str_of_bit = convert_bytes_to_to_str_of_bit(hex_bytes)
         return cls.from_bit_string(str_of_bit)
+
+    @classmethod
+    def from_bytes_as_list_int(cls, bytes_as_list_int: list[int]) -> Self:
+        hex_string = ""
+        for byte_as_int in bytes_as_list_int:
+            if hex_string != "":
+                hex_string += " "
+
+            byte_as_hex = hex(byte_as_int)
+            byte_as_hex_without_prefix = byte_as_hex.replace("0x", "")
+            if len(byte_as_hex_without_prefix) == 1:
+                byte_as_hex_without_prefix = "0" + byte_as_hex_without_prefix
+            hex_string += "0x" + byte_as_hex_without_prefix
+
+        return cls.from_hex_string(hex_string)
 
     @property
     def number_of_bits_remaining_to_decode(self) -> int:
@@ -127,6 +144,9 @@ class DecodedBytesMessage:
 
     def get_remaining_bits_as_str_of_bit(self) -> str:
         return self.extract_next_bits_to_str_of_bit(self.number_of_bits_remaining_to_decode) if self.number_of_bits_remaining_to_decode else ""
+
+    def get_remaining_bits_as_unsigned_int(self) -> int:
+        return self.get_next_bits_as_single_int_unsigned(size_bits=self.number_of_bits_remaining_to_decode)
 
     def get_next_bits_as_bitset_str(self, size_bits: int) -> str:
         bits_extracted = self.extract_next_bits_to_str_of_bit(size_bits)
@@ -189,5 +209,6 @@ class DecodedBytesMessage:
     def get_and_remove_last_bits_as_single_int_unsigned(self, size_bits: int) -> int:
         return self.get_and_remove_last_bits_as_single_int_signed_and_unsigned(size_bits).unsigned_value
 
+    @property
     def is_correctly_and_completely_decoded(self) -> bool:
         return self.number_of_bits_remaining_to_decode == 0
