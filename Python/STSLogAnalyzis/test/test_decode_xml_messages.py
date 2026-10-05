@@ -26,7 +26,7 @@ def test_decode_message_210()->None:
     decoded_message = xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=210, hexadecimal_content=hexa_content_as_str) 
     assert decoded_message
     assert decoded_message.decoded_bytes_message 
-    assert decoded_message.decoded_bytes_message.is_correctly_and_completely_decoded(), f"{decoded_message.decoded_bytes_message.number_of_bits_remaining_to_decode} remaing bits to decode"
+    assert decoded_message.decoded_bytes_message.is_correctly_and_completely_decoded, f"{decoded_message.decoded_bytes_message.number_of_bits_remaining_to_decode} remaing bits to decode"
     assert decoded_message
     assert "VBOccupancyTrain_0"  in  decoded_message.decoded_fields_flat_directory
     assert "VBOccupancyTrain_1"  in  decoded_message.decoded_fields_flat_directory
@@ -39,7 +39,7 @@ def test_decode_message_38_bitset()->None:
     decoded_message = xml_message_decoder.decode_xml_fields_in_message_hexadecimal(message_number=38, hexadecimal_content=hexa_content_as_str) 
     assert decoded_message
     assert decoded_message.decoded_bytes_message 
-    assert decoded_message.decoded_bytes_message.is_correctly_and_completely_decoded(), f"{decoded_message.decoded_bytes_message.number_of_bits_remaining_to_decode} remaing bits to decode"
+    assert decoded_message.decoded_bytes_message.is_correctly_and_completely_decoded, f"{decoded_message.decoded_bytes_message.number_of_bits_remaining_to_decode} remaing bits to decode"
     assert decoded_message
     assert "SignalLightReq"  in  decoded_message.decoded_fields_flat_directory
     assert decoded_message.decoded_fields_flat_directory["SignalLightReq_0"]  ==0 
