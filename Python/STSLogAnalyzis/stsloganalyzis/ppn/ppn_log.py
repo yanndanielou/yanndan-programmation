@@ -232,7 +232,6 @@ class ProfibusLogLibrary:
                         "sender_static_transfer_time": sdn_safe_time_layer_startup_message.sender_static_transfer_time.human_format,
                         "remaining_undecoded_bits": sdn_safe_time_layer_startup_message.remaining_undecoded_bits,
                         "number_remaining_undecoded_bits": sdn_safe_time_layer_startup_message.number_remaining_undecoded_bits,
-                        "reference_time_n_minus_1_bytes_reordered_in_ms": sdn_safe_time_layer_startup_message.reference_time_n_minus_1_utc.in_ms,
                         "Number of errors (unisig message)": len(sdn_safe_time_layer_startup_message.creational_and_decoding_errors),
                         "CRC": sdn_safe_time_layer_startup_message.crc.crc_bits_as_string if sdn_safe_time_layer_startup_message.crc else None,
                     }
