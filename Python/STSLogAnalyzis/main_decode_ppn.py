@@ -29,6 +29,7 @@ def main() -> None:
                 label=child_directory,
             )
 
+            library.save_sdn_safe_time_layer_startup_messages()
             library.save_sdn_sync_and_reference_time_messages()
             library.save_all_stm_messages_with_errors()
 

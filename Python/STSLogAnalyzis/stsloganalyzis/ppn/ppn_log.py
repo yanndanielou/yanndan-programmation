@@ -71,6 +71,12 @@ class ProfibusLogLibrary:
             if isinstance(sync_and_reference_time_message, decode_unisig.SdnSyncAndReferenceTimeMulticastMessage)
         ]
 
+        self.sdn_safe_time_layer_startup_messages = [
+            sync_and_reference_time_message
+            for sync_and_reference_time_message in self.all_unisig_messages
+            if isinstance(sync_and_reference_time_message, decode_unisig.SdnSafeTimeLayerStartupForMulticast)
+        ]
+
         self.unisig_messages_errors = [error for unisig_message in self.all_unisig_messages for error in unisig_message.creational_and_decoding_errors]
         self.stm_messages_errors = [error for stm_message in self.all_upper_layer_stms for error in stm_message.creational_and_decoding_errors]
         self.all_creational_errors = self.unisig_messages_errors + self.stm_messages_errors
@@ -196,6 +202,42 @@ class ProfibusLogLibrary:
                     }
                 )
                 for sdn_sync_and_reference_time_message in self.sdn_sync_and_reference_time_messages
+            ],
+            file_base_name=f"{self.label} all sdn_sync_and_reference_time_messages",
+            create_csv_file=False,
+            create_txt_file=False,
+            split_big_files=False,
+            chunk_size=200000,
+        )
+
+    @logger_config.stopwatch_decorator(monitor_ram_usage=True)
+    def save_sdn_safe_time_layer_startup_messages(self) -> None:
+
+        reports_utils.save_rows_to_output_files(
+            rows_as_list_dict=[
+                OrderedDict(
+                    {
+                        "timestamp": sdn_safe_time_layer_startup_message.profibus_log_line.timestamp if sdn_safe_time_layer_startup_message.profibus_log_line else None,
+                        "Line Source": sdn_safe_time_layer_startup_message.profibus_log_line.source if sdn_safe_time_layer_startup_message.profibus_log_line else None,
+                        "Line Target": sdn_safe_time_layer_startup_message.profibus_log_line.target if sdn_safe_time_layer_startup_message.profibus_log_line else None,
+                        "interlocutors": sdn_safe_time_layer_startup_message.profibus_log_line.interlocutors if sdn_safe_time_layer_startup_message.profibus_log_line else None,
+                        "Line length": sdn_safe_time_layer_startup_message.profibus_log_line.length if sdn_safe_time_layer_startup_message.profibus_log_line else None,
+                        "file path": sdn_safe_time_layer_startup_message.profibus_log_line.file_path if sdn_safe_time_layer_startup_message.profibus_log_line else None,
+                        "line number": sdn_safe_time_layer_startup_message.profibus_log_line.line_number if sdn_safe_time_layer_startup_message.profibus_log_line else None,
+                        "header sequence_number": sdn_safe_time_layer_startup_message.header.sequence_number,
+                        "configuration_data_prefix_x": sdn_safe_time_layer_startup_message.configuration_data_prefix_x,
+                        "configuration_data_prefix_y": sdn_safe_time_layer_startup_message.configuration_data_prefix_y,
+                        "configuration_data_prefix_z": sdn_safe_time_layer_startup_message.configuration_data_prefix_z,
+                        "sender_dynamic_transfer_time": sdn_safe_time_layer_startup_message.sender_dynamic_transfer_time.human_format,
+                        "sender_static_transfer_time": sdn_safe_time_layer_startup_message.sender_static_transfer_time.human_format,
+                        "remaining_undecoded_bits": sdn_safe_time_layer_startup_message.remaining_undecoded_bits,
+                        "number_remaining_undecoded_bits": sdn_safe_time_layer_startup_message.number_remaining_undecoded_bits,
+                        "reference_time_n_minus_1_bytes_reordered_in_ms": sdn_safe_time_layer_startup_message.reference_time_n_minus_1_utc.in_ms,
+                        "Number of errors (unisig message)": len(sdn_safe_time_layer_startup_message.creational_and_decoding_errors),
+                        "CRC": sdn_safe_time_layer_startup_message.crc.crc_bits_as_string if sdn_safe_time_layer_startup_message.crc else None,
+                    }
+                )
+                for sdn_safe_time_layer_startup_message in self.sdn_safe_time_layer_startup_messages
             ],
             file_base_name=f"{self.label} all sdn_sync_and_reference_time_messages",
             create_csv_file=False,
