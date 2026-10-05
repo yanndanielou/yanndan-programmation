@@ -77,6 +77,7 @@ class UnisigMessage(ABC):
 
     def __post_init__(self) -> None:
         self.creational_and_decoding_errors: list[str] = []
+        self.crc: UnisigCrc | None = None
 
     def add_error(self, error: str) -> None:
         self.creational_and_decoding_errors.append(error)
@@ -90,7 +91,7 @@ class SdnUnisigMessage(UnisigMessage):
     class CommandTypeSubset56(IntEnum):
         SL4_SYNC_AND_REFERENCE_TIME = int("0xa1", 16)
         SL4_SAFE_TIME_LAYER_STARTUP = int("0xa4", 16)
-        SL4_MULTICAST_TELEGRAM_FOR_UPPER_LAYER = int("0x8d", 16)
+        SL4_APPLICATION_DATA_MULTICAST_TELEGRAM_FOR_UPPER_LAYER = int("0x8d", 16)
 
     class Header:
         def __init__(self, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> None:
@@ -102,10 +103,7 @@ class SdnUnisigMessage(UnisigMessage):
             self.prefixZ = byte_message_decoded.get_next_byte_as_single_int_unsigned()
             assert self.prefixZ == 0
             self.command_number = byte_message_decoded.get_next_byte_as_single_int_unsigned()
-            self.sequence_number_low_word_low_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
-            self.sequence_number_low_word_high_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
-            self.sequence_number_high_word_low_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
-            self.sequence_number_high_word_high_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+            self.sequence_number = Unisig32BitsIntWithUnisigBytesOrder(byte_message_decoded)
 
         @property
         def command_type(self) -> "SdnUnisigMessage.CommandTypeSubset56":
@@ -131,7 +129,20 @@ class SdnUnisigMessage(UnisigMessage):
 
         if header.prefixX == int("0x03", 16) and header.prefixZ == 0 and header.prefixZ == 0:
             if header.command_type == SdnUnisigMessage.CommandTypeSubset56.SL4_SYNC_AND_REFERENCE_TIME:
-                return SdnSyncAndReferenceTime(
+                return SdnSyncAndReferenceTimeMulticastMessage(
+                    profibus_log_line=profibus_log_line,
+                    byte_message_decoded=byte_message_decoded,
+                    header=header,
+                )
+            if header.command_type == SdnUnisigMessage.CommandTypeSubset56.SL4_SAFE_TIME_LAYER_STARTUP:
+                return SdnSafeTimeLayerStartupForMulticast(
+                    profibus_log_line=profibus_log_line,
+                    byte_message_decoded=byte_message_decoded,
+                    header=header,
+                )
+
+            if header.command_type == SdnUnisigMessage.CommandTypeSubset56.SL4_APPLICATION_DATA_MULTICAST_TELEGRAM_FOR_UPPER_LAYER:
+                return SdnApplicationDataMulticastForUpperLayerTelegram(
                     profibus_log_line=profibus_log_line,
                     byte_message_decoded=byte_message_decoded,
                     header=header,
@@ -154,12 +165,27 @@ class SdnSafeTimeLayerStartupForMulticast(SdnUnisigMessage):
         self.configuration_data_prefix_x = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
         self.configuration_data_prefix_y = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
         self.configuration_data_prefix_z = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        self.sender_dynamic_transfer_time = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
-        self.sender_static_transfer_time = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
+        self.sender_dynamic_transfer_time = UnisigTimeStamp(self.byte_message_decoded)
+        self.sender_static_transfer_time = UnisigTimeStamp(self.byte_message_decoded)
+        self.remaining_undecoded_bits = self.byte_message_decoded.get_remaining_bits_as_str_of_bit()
+        self.number_remaining_undecoded_bits = len(self.remaining_undecoded_bits)
+        # assert self.byte_message_decoded.is_correctly_and_completely_decoded
+        pass
 
 
 @dataclass
-class SdnSyncAndReferenceTime(SdnUnisigMessage):
+class SdnApplicationDataMulticastForUpperLayerTelegram(SdnUnisigMessage):
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.remaining_undecoded_bits = self.byte_message_decoded.get_remaining_bits_as_str_of_bit()
+        self.number_remaining_undecoded_bits = len(self.remaining_undecoded_bits)
+        # assert self.byte_message_decoded.is_correctly_and_completely_decoded
+        pass
+
+
+@dataclass
+class SdnSyncAndReferenceTimeMulticastMessage(SdnUnisigMessage):
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -169,10 +195,51 @@ class SdnSyncAndReferenceTime(SdnUnisigMessage):
         assert self.configuration_data_prefix_y == 0
         self.configuration_data_prefix_z = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
         assert self.configuration_data_prefix_z == 0
-        self.reference_sync_n = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
-        self.reference_time_n_minus_1_ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=4)
-        self.reference_time_n_minus_1 = date_time_formats.format_duration_to_string(self.reference_time_n_minus_1_ms / 1000)
+
+        # self.reference_sync_bits_extracted = self.byte_message_decoded.extract_next_bytes_to_str_of_bit(size_bytes=4)
+        # self.reference_sync_n = bytes_messages.convert_bits_to_unsigned_int(self.reference_sync_bits_extracted)
+
+        self.reference_sync_n = Unisig32BitsIntWithUnisigBytesOrder(self.byte_message_decoded).value_in_human_format
+        # bytes_messages.DecodedBytesMessage.from_bit_string(self.reference_sync_bits_extracted)
+        # self.reference_sync_n_byte_1_of_4 = reference_sync_n_bytes_message.get_next_byte_as_single_int_unsigned()
+        # self.reference_sync_n_byte_2_of_4 = reference_sync_n_bytes_message.get_next_byte_as_single_int_unsigned()
+        # self.reference_sync_n_byte_3_of_4 = reference_sync_n_bytes_message.get_next_byte_as_single_int_unsigned()
+        # self.reference_sync_n_byte_4_of_4 = reference_sync_n_bytes_message.get_next_byte_as_single_int_unsigned()
+        # assert reference_sync_n_bytes_message.is_correctly_and_completely_decoded
+
+        self.reference_time_n_minus_1_utc = UnisigTimeStamp(self.byte_message_decoded)
+        # reference_time_n_minus_1_ms_bits_extracted_initial_bytes_order = self.byte_message_decoded.extract_next_bytes_to_str_of_bit(size_bytes=4)
+
+        # reference_time_n_minus_1_ms_bytes_message = bytes_messages.DecodedBytesMessage.from_bit_string(reference_time_n_minus_1_ms_bits_extracted_initial_bytes_order)
+        # reference_time_n_minus_1_ms_byte_1_of_4 = reference_time_n_minus_1_ms_bytes_message.get_next_byte_as_single_int_unsigned()
+        # reference_time_n_minus_1_ms_byte_2_of_4 = reference_time_n_minus_1_ms_bytes_message.get_next_byte_as_single_int_unsigned()
+        # reference_time_n_minus_1_ms_byte_3_of_4 = reference_time_n_minus_1_ms_bytes_message.get_next_byte_as_single_int_unsigned()
+        # reference_time_n_minus_1_ms_byte_4_of_4 = reference_time_n_minus_1_ms_bytes_message.get_next_byte_as_single_int_unsigned()
+
+        # self.reference_time_n_minus_1_bytes_reordered_in_ms = bytes_messages.DecodedBytesMessage.from_bytes_as_list_int(
+        #    [reference_time_n_minus_1_ms_byte_4_of_4, reference_time_n_minus_1_ms_byte_3_of_4, reference_time_n_minus_1_ms_byte_2_of_4, reference_time_n_minus_1_ms_byte_1_of_4]
+        # ).get_remaining_bits_as_unsigned_int()
+        # self.reference_time_n_minus_1_bytes_reordered = date_time_formats.format_duration_to_string(self.reference_time_n_minus_1_bytes_reordered_in_ms / 1000)
+        # assert reference_time_n_minus_1_ms_bytes_message.is_correctly_and_completely_decoded
+
+        self.crc = UnisigCrc(self.byte_message_decoded.get_and_remove_last_bytes_as_bitset_str(size_bytes=SL4_CRC_SIZE_IN_BYTES))
+        assert self.byte_message_decoded.is_correctly_and_completely_decoded
         pass
+
+
+@dataclass
+class Unisig32BitsIntWithUnisigBytesOrder:
+
+    def __init__(self, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> None:
+
+        low_word_low_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        low_word_high_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        high_word_low_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        high_word_high_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+
+        self.value_in_human_format = bytes_messages.DecodedBytesMessage.from_bytes_as_list_int(
+            [high_word_high_byte, high_word_low_byte, low_word_high_byte, low_word_low_byte]
+        ).get_remaining_bits_as_unsigned_int()
 
 
 @dataclass
@@ -181,6 +248,14 @@ class UnisigCrc:
 
     def __post_init__(self) -> None:
         pass
+
+
+class UnisigTimeStamp:
+
+    def __init__(self, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> None:
+
+        self.in_ms = Unisig32BitsIntWithUnisigBytesOrder(byte_message_decoded).value_in_human_format
+        self.human_format = date_time_formats.format_duration_to_string(self.in_ms / 1000)
 
 
 @dataclass
@@ -192,12 +267,7 @@ class SdaUnisigMessage(UnisigMessage):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        self.stl_time_stamp_ms: int | None = None
-        self.crc: UnisigCrc | None = None
-
-    @property
-    def stl_time_stamp_datetime(self) -> str | None:
-        return date_time_formats.format_duration_to_string(self.stl_time_stamp_ms / 1000) if self.stl_time_stamp_ms else None
+        self.stl_time_stamp: UnisigTimeStamp | None = None
 
     class Header:
         def __init__(self, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> None:
@@ -381,7 +451,7 @@ class SdaRunOrReadyToRunTelegram(SdaUnisigMessage):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        self.stl_time_stamp_ms = self.byte_message_decoded.get_next_bytes_as_single_int_unsigned(size_bytes=STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES)
+        self.stl_time_stamp = UnisigTimeStamp(self.byte_message_decoded)
         if self.safety_level == SafetyLevel.SL4:
             self.crc = UnisigCrc(self.byte_message_decoded.extract_next_bytes_to_str_of_bit(size_bytes=SL4_CRC_SIZE_IN_BYTES))
 
@@ -601,7 +671,7 @@ class SdaForUpperLayerTelegram(SdaUnisigMessage):
         super().__post_init__()
         self.header = SdaUnisigMessage.Header(self.byte_message_decoded)
 
-        self.stl_time_stamp_ms = self.byte_message_decoded.get_and_remove_last_bytes_as_single_int_unsigned(size_bytes=STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BYTES)
+        self.stl_time_stamp = UnisigTimeStamp(self.byte_message_decoded)
 
         if self.safety_level == SafetyLevel.SL4:
             self.crc = UnisigCrc(self.byte_message_decoded.get_and_remove_last_bytes_as_bitset_str(size_bytes=SL4_CRC_SIZE_IN_BYTES))
