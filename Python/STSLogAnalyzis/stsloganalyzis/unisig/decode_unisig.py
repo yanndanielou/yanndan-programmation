@@ -165,8 +165,8 @@ class SdnSafeTimeLayerStartupForMulticast(SdnUnisigMessage):
         self.configuration_data_prefix_x = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
         self.configuration_data_prefix_y = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
         self.configuration_data_prefix_z = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        self.sender_dynamic_transfer_time = UnisigTimeStamp(self.byte_message_decoded)
-        self.sender_static_transfer_time = UnisigTimeStamp(self.byte_message_decoded)
+        self.sender_dynamic_transfer_time = UnisigTimeStamp.from_next_bytes_in_byte_message_decoded(self.byte_message_decoded)
+        self.sender_static_transfer_time = UnisigTimeStamp.from_next_bytes_in_byte_message_decoded(self.byte_message_decoded)
         self.remaining_undecoded_bits = self.byte_message_decoded.get_remaining_bits_as_str_of_bit()
         self.number_remaining_undecoded_bits = len(self.remaining_undecoded_bits)
         # assert self.byte_message_decoded.is_correctly_and_completely_decoded
@@ -207,7 +207,7 @@ class SdnSyncAndReferenceTimeMulticastMessage(SdnUnisigMessage):
         # self.reference_sync_n_byte_4_of_4 = reference_sync_n_bytes_message.get_next_byte_as_single_int_unsigned()
         # assert reference_sync_n_bytes_message.is_correctly_and_completely_decoded
 
-        self.reference_time_n_minus_1_utc = UnisigTimeStamp(self.byte_message_decoded)
+        self.reference_time_n_minus_1_utc = UnisigTimeStamp.from_next_bytes_in_byte_message_decoded(self.byte_message_decoded)
         # reference_time_n_minus_1_ms_bits_extracted_initial_bytes_order = self.byte_message_decoded.extract_next_bytes_to_str_of_bit(size_bytes=4)
 
         # reference_time_n_minus_1_ms_bytes_message = bytes_messages.DecodedBytesMessage.from_bit_string(reference_time_n_minus_1_ms_bits_extracted_initial_bytes_order)
@@ -250,12 +250,26 @@ class UnisigCrc:
         pass
 
 
+@dataclass
 class UnisigTimeStamp:
 
-    def __init__(self, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> None:
+    in_ms: int
 
-        self.in_ms = Unisig32BitsIntWithUnisigBytesOrder(byte_message_decoded).value_in_human_format
+    def __post_init__(self) -> None:
         self.human_format = date_time_formats.format_duration_to_string(self.in_ms / 1000)
+
+    @classmethod
+    def from_next_bytes_in_byte_message_decoded(cls, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> "UnisigTimeStamp":
+        in_ms = Unisig32BitsIntWithUnisigBytesOrder(byte_message_decoded).value_in_human_format
+        return UnisigTimeStamp(in_ms)
+
+    @classmethod
+    def from_last_bytes_in_byte_message_decoded(cls, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> "UnisigTimeStamp":
+        byte_message_extracted = bytes_messages.DecodedBytesMessage.from_bit_string(
+            byte_message_decoded.extract_and_remove_last_next_bits_to_str_of_bit(number_of_bits=STL_TIME_STAMP_SUBSET_56_LENGTH_IN_BITS)
+        )
+        in_ms = Unisig32BitsIntWithUnisigBytesOrder(byte_message_extracted).value_in_human_format
+        return UnisigTimeStamp(in_ms)
 
 
 @dataclass
@@ -451,7 +465,7 @@ class SdaRunOrReadyToRunTelegram(SdaUnisigMessage):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        self.stl_time_stamp = UnisigTimeStamp(self.byte_message_decoded)
+        self.stl_time_stamp = UnisigTimeStamp.from_next_bytes_in_byte_message_decoded(self.byte_message_decoded)
         if self.safety_level == SafetyLevel.SL4:
             self.crc = UnisigCrc(self.byte_message_decoded.extract_next_bytes_to_str_of_bit(size_bytes=SL4_CRC_SIZE_IN_BYTES))
 
@@ -679,7 +693,7 @@ class SdaForUpperLayerTelegram(SdaUnisigMessage):
         super().__post_init__()
         self.header = SdaUnisigMessage.Header(self.byte_message_decoded)
 
-        self.stl_time_stamp = UnisigTimeStamp(self.byte_message_decoded)
+        self.stl_time_stamp = UnisigTimeStamp.from_last_bytes_in_byte_message_decoded(self.byte_message_decoded)
 
         if self.safety_level == SafetyLevel.SL4:
             self.crc = UnisigCrc(self.byte_message_decoded.get_and_remove_last_bytes_as_bitset_str(size_bytes=SL4_CRC_SIZE_IN_BYTES))
