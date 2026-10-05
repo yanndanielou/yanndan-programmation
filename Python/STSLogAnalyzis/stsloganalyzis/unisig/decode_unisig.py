@@ -607,7 +607,15 @@ class UpperLayerStm:
                 for sub_field in field_definition.fields_or_variants:
                     assert isinstance(sub_field, upper_layer_libraries.PacketFieldDefinition)
                     assert sub_field.size_in_bits == bytes_messages.SIZE_BITS_PER_CHAR
-                    sub_field_string_value = self.stm_message_content_byte_message_decoded.get_next_bits_as_ascii_char(number_of_chars=text_length)
+
+                    if self.stm_message_content_byte_message_decoded.number_of_bits_remaining_to_decode < text_length * bytes_messages.NUMBER_OF_BITS_IN_BYTE:
+                        self.add_error(
+                            f"Not enough remaining bits {self.stm_message_content_byte_message_decoded.number_of_bits_remaining_to_decode} to decode text {sub_field.name} of {text_length} characters (requiring {text_length*bytes_messages.NUMBER_OF_BITS_IN_BYTE}) bits"
+                        )
+                        sub_field_string_value = "Not enough bits"
+                    else:
+                        sub_field_string_value = self.stm_message_content_byte_message_decoded.get_next_bits_as_ascii_char(number_of_chars=text_length)
+
                     self.add_field(prefix_with_space + sub_field.name, sub_field_string_value)
 
             else:
@@ -683,6 +691,7 @@ class SdaForUpperLayerTelegram(SdaUnisigMessage):
             if self.byte_message_decoded.number_of_bits_remaining_to_decode >= UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITS + UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS:
                 upper_layer_decoded_stm = UpperLayerStm(self, byte_message_decoded=self.byte_message_decoded)
                 self.upper_layer_decoded_stms.append(upper_layer_decoded_stm)
+                assert len(self.upper_layer_decoded_stms) < 100
             else:
                 self.add_error(
                     f"NotEnoughBitsToDecodeUpperLayerStm nid_content_length_in_bits={upper_layer_decoded_stm.data_without_header_size_in_bits}, byte_message_number_of_remaining_bits_to_decode={self.byte_message_decoded.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
