@@ -1,8 +1,5 @@
-import os
-from collections import OrderedDict
-from itertools import chain
+# import os
 
-from common import reports_utils
 from logger import logger_config
 
 from stsloganalyzis.ppn import ppn_log
@@ -49,8 +46,6 @@ def main() -> None:
             library.save_all_stm_messages()
             library.save_all_unisig_messages()
             library.save_stm_messages_for_each_interlocutor()
-
-        pass
 
 
 # Exemple d'utilisation
