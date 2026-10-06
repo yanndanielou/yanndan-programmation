@@ -995,18 +995,12 @@ void afficher_hexa(string s, unsigned char Tab[8]) {
     cout << s;
     printf("16#%x_%x#, 16#%x_%x#, 16#%x_%x#, 16#%x_%x#\n", Tab[0], Tab[1], Tab[2], Tab[3], Tab[4], Tab[5], Tab[6], Tab[7]);
 }
-void afficher_hexa_inverse(string s, unsigned char Tab[8]) {
-    cout << s;
-    printf("%x %x %x %x %x %x %x %x\n", Tab[7], Tab[6], Tab[5], Tab[4], Tab[3], Tab[2], Tab[1], Tab[0]);
-}
+
 
 void calcul_MAC_4Blocks(
             unsigned char Block1[8], unsigned char Block2[8], unsigned char Block3[8], unsigned char Block4[8],
             unsigned char k1[8], unsigned char k2[8], unsigned char k3[8], unsigned char Output[8])
 {
-    /*afficher_64bits("Clef de session 1 (Ks1) = ", k1);
-    afficher_64bits("Clef de session 1 (Ks2) = ", k2);
-    afficher_64bits("Clef de session 1 (Ks3) = ", k3);*/
     //----- Step 1 -----
     cout << "CALCUL de MAC à 4 blocs" << endl;
     //cout << endl << endl << "ETAPE_1" << endl << endl;
