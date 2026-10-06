@@ -184,14 +184,6 @@ public:
 		}
 	}
 
-	Redond somme_Fi(int i) const {
-		Redond sum(0, 0);
-		if (i < 0 || i>15) return sum;
-		return Somme_Fi[i];
-	}
-
-	Redond get_deux_p32() { return Redond(this->deux_p32); }
-	Redond moins_rk() { return Redond(moinsRk); }
 
 	Redond tau_i(int i) {
 		Redond tau(tau0);
@@ -219,56 +211,7 @@ public:
 		return r;
 	}
 
-	/*
-	Redond calculer_redond_MAC_N14(unsigned char MAC[8], int marker, bool is_connection1) {
 
-		Redond r(0, 0);
-
-		for (int i = 0; i < 8; i++) {
-			Redond r_temp(MAC[7-i], MAC[7-i]);
-
-			r_temp.multiplier(tau_i(i));
-			r.ajouter(r_temp);
-		}
-		Redond r_temp(marker, marker);
-		r_temp.multiplier(tau_i(8));
-		r.ajouter(r_temp);
-		r.multiplier(moinsRk);
-
-		Redond compensation = this->Somme_Fi[15];
-		compensation.multiplier(moinsRk);
-		Redond Bx14_corr;
-		if (is_connection1) { Bx14_corr = Redond(Bx14_cnx1); }
-		else { Bx14_corr = Redond(Bx14_cnx2); }
-		cout << "Bx_MAC_14 =";Bx14_corr.afficher();cout << endl;
-		Bx14_corr.ajouter(compensation);
-		cout << "Bx_MAC_14 compensé =";Bx14_corr.afficher();cout << endl;
-		r.ajouter(Bx14_corr);
-
-		return r;
-	}
-	*/
-
-	Redond calculer_redond_MAC(unsigned char MAC[8], int marker, short int id_connection, short int N_Value) {
-		Redond r(0, 0);
-
-		for (int i = 0; i < 8; i++) {
-			Redond r_temp(MAC[7 - i], MAC[7 - i]);
-
-			r_temp.multiplier(tau_i(i));
-			r.ajouter(r_temp);
-		}
-		Redond r_temp(marker, marker);
-		r_temp.multiplier(tau_i(8));
-		r.ajouter(r_temp);
-		r.multiplier(moinsRk);
-
-		Redond Bx_MAC = calcul_Bx_N_non_brouille(id_connection, N_Value);
-		//cout << "Bx_MAC=";Bx_MAC.afficher();cout << endl;
-		r.ajouter(Bx_MAC);
-
-		return r;
-	}
 };
 
 //------------------------------------------------------------------------------------
