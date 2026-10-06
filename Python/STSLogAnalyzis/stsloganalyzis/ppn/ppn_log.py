@@ -154,6 +154,7 @@ class ProfibusLogLibrary:
                             interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors + interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors
                         ),
                         "STM messages decoded in this line": ",".join([str(stm_message.nid_stm) for stm_message in interesting_stm_message.upper_layer_telegram.upper_layer_decoded_stms]),
+                        "lowest_order_byte_sequence_number": interesting_stm_message.upper_layer_telegram.lowest_order_byte_sequence_number,
                         "CRC": interesting_stm_message.upper_layer_telegram.crc.crc_bits_as_string if interesting_stm_message.upper_layer_telegram.crc else None,
                         "Safe time layer timestamp (ms)": interesting_stm_message.upper_layer_telegram.stl_time_stamp.in_ms if interesting_stm_message.upper_layer_telegram.stl_time_stamp else None,
                         "Safe time layer timestamp (human_format)": (
@@ -268,9 +269,14 @@ class ProfibusLogLibrary:
                             "file path": unisig_message.profibus_log_line.file_path if unisig_message.profibus_log_line else None,
                             "line number": unisig_message.profibus_log_line.line_number if unisig_message.profibus_log_line else None,
                             "Number of errors": len(unisig_message.creational_and_decoding_errors),
+                            "lowest_order_byte_sequence_number": unisig_message.lowest_order_byte_sequence_number if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) else None,
                             "CRC": unisig_message.crc.crc_bits_as_string if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) and unisig_message.crc else None,
-                            "Safe time layer timestamp (ms)": unisig_message.stl_time_stamp.in_ms if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) else None,
-                            "Safe time layer timestamp (human_format)": unisig_message.stl_time_stamp.human_format if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) else None,
+                            "Safe time layer timestamp (ms)": (
+                                unisig_message.stl_time_stamp.in_ms if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) and unisig_message.stl_time_stamp else None
+                            ),
+                            "Safe time layer timestamp (human_format)": (
+                                unisig_message.stl_time_stamp.human_format if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) and unisig_message.stl_time_stamp else None
+                            ),
                             "errors": unisig_message.creational_and_decoding_errors,
                         }
                     )
@@ -296,7 +302,7 @@ class ProfibusLogLibrary:
             with logger_config.stopwatch_with_label(f"Decode SDN or SDA for {len(decoded_file.decoded_lines)} lines of {decoded_file.file_full_path}", monitor_ram_usage=True):
                 for decoded_line in decoded_file.decoded_lines:
                     logger_config.print_and_log_info_if(
-                        decoded_line.line_number % 50000 == 0, f"{decoded_line.line_number} lines decoded SDA/SDN in {decoded_file.file_full_path}", print_ram_usage=True
+                        decoded_line.line_number and decoded_line.line_number % 50000 == 0, f"{decoded_line.line_number} lines decoded SDA/SDN in {decoded_file.file_full_path}", print_ram_usage=True
                     )
                     decoded_line.decode_sdn_or_sda()
 

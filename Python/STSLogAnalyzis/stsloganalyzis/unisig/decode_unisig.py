@@ -163,10 +163,14 @@ class SdnSafeTimeLayerStartupForMulticast(SdnUnisigMessage):
     def __post_init__(self) -> None:
         super().__post_init__()
         self.configuration_data_prefix_x = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        assert self.configuration_data_prefix_x == 3
         self.configuration_data_prefix_y = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        assert self.configuration_data_prefix_y == 0
         self.configuration_data_prefix_z = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        assert self.configuration_data_prefix_z == 0
         self.sender_dynamic_transfer_time = UnisigTimeStamp.from_next_bytes_in_byte_message_decoded(self.byte_message_decoded)
         self.sender_static_transfer_time = UnisigTimeStamp.from_next_bytes_in_byte_message_decoded(self.byte_message_decoded)
+        # self.timestamp = UnisigTimeStamp.from_last_bytes_in_byte_message_decoded(self.byte_message_decoded)
         self.remaining_undecoded_bits = self.byte_message_decoded.get_remaining_bits_as_str_of_bit()
         self.number_remaining_undecoded_bits = len(self.remaining_undecoded_bits)
         # assert self.byte_message_decoded.is_correctly_and_completely_decoded
@@ -196,31 +200,9 @@ class SdnSyncAndReferenceTimeMulticastMessage(SdnUnisigMessage):
         self.configuration_data_prefix_z = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
         assert self.configuration_data_prefix_z == 0
 
-        # self.reference_sync_bits_extracted = self.byte_message_decoded.extract_next_bytes_to_str_of_bit(size_bytes=4)
-        # self.reference_sync_n = bytes_messages.convert_bits_to_unsigned_int(self.reference_sync_bits_extracted)
-
         self.reference_sync_n = Unisig32BitsIntWithUnisigBytesOrder(self.byte_message_decoded).value_in_human_format
-        # bytes_messages.DecodedBytesMessage.from_bit_string(self.reference_sync_bits_extracted)
-        # self.reference_sync_n_byte_1_of_4 = reference_sync_n_bytes_message.get_next_byte_as_single_int_unsigned()
-        # self.reference_sync_n_byte_2_of_4 = reference_sync_n_bytes_message.get_next_byte_as_single_int_unsigned()
-        # self.reference_sync_n_byte_3_of_4 = reference_sync_n_bytes_message.get_next_byte_as_single_int_unsigned()
-        # self.reference_sync_n_byte_4_of_4 = reference_sync_n_bytes_message.get_next_byte_as_single_int_unsigned()
-        # assert reference_sync_n_bytes_message.is_correctly_and_completely_decoded
 
         self.reference_time_n_minus_1_utc = UnisigTimeStamp.from_next_bytes_in_byte_message_decoded(self.byte_message_decoded)
-        # reference_time_n_minus_1_ms_bits_extracted_initial_bytes_order = self.byte_message_decoded.extract_next_bytes_to_str_of_bit(size_bytes=4)
-
-        # reference_time_n_minus_1_ms_bytes_message = bytes_messages.DecodedBytesMessage.from_bit_string(reference_time_n_minus_1_ms_bits_extracted_initial_bytes_order)
-        # reference_time_n_minus_1_ms_byte_1_of_4 = reference_time_n_minus_1_ms_bytes_message.get_next_byte_as_single_int_unsigned()
-        # reference_time_n_minus_1_ms_byte_2_of_4 = reference_time_n_minus_1_ms_bytes_message.get_next_byte_as_single_int_unsigned()
-        # reference_time_n_minus_1_ms_byte_3_of_4 = reference_time_n_minus_1_ms_bytes_message.get_next_byte_as_single_int_unsigned()
-        # reference_time_n_minus_1_ms_byte_4_of_4 = reference_time_n_minus_1_ms_bytes_message.get_next_byte_as_single_int_unsigned()
-
-        # self.reference_time_n_minus_1_bytes_reordered_in_ms = bytes_messages.DecodedBytesMessage.from_bytes_as_list_int(
-        #    [reference_time_n_minus_1_ms_byte_4_of_4, reference_time_n_minus_1_ms_byte_3_of_4, reference_time_n_minus_1_ms_byte_2_of_4, reference_time_n_minus_1_ms_byte_1_of_4]
-        # ).get_remaining_bits_as_unsigned_int()
-        # self.reference_time_n_minus_1_bytes_reordered = date_time_formats.format_duration_to_string(self.reference_time_n_minus_1_bytes_reordered_in_ms / 1000)
-        # assert reference_time_n_minus_1_ms_bytes_message.is_correctly_and_completely_decoded
 
         self.crc = UnisigCrc(self.byte_message_decoded.get_and_remove_last_bytes_as_bitset_str(size_bytes=SL4_CRC_SIZE_IN_BYTES))
         assert self.byte_message_decoded.is_correctly_and_completely_decoded
@@ -276,8 +258,8 @@ class UnisigTimeStamp:
 class SdaUnisigMessage(UnisigMessage):
     safety_level: SafetyLevel
     telegram_name: str
-    lowest_order_byte_sequence_number: int
     command_type: "SdaUnisigMessage.CommandTypeSubset57"
+    lowest_order_byte_sequence_number: int
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -527,7 +509,7 @@ class UpperLayerStm:
                 )
 
     def get_field_int_value_or_assert(self, field_name: str) -> int:
-        assert field_name in self.fields_names_and_values
+        assert field_name in self.fields_names_and_values, f"STM {self.nid_stm}. Field {field_name} not found in {' ' .join(self.fields_names_and_values)}"
         raw_value = self.fields_names_and_values[field_name]
         assert raw_value is not None
         assert isinstance(raw_value, int)
