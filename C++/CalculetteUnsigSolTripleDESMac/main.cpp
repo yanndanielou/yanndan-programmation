@@ -1044,6 +1044,7 @@ void calcul_MAC_single_Block(unsigned char Block[8], unsigned char k1[8], unsign
     DES_ENC(Output, Output, (unsigned char*)k3);
     //afficher_64bits("Apres cryptage par Ks3 ==> ", Output);
     printf("CBC-MAC         = %x %x %x %x %x %x %x %x\n", Output[0], Output[1], Output[2], Output[3], Output[4], Output[5], Output[6], Output[7]);
+    int pause = 0;
 }
 
 void calcul_MAC_3Blocks(
@@ -1091,6 +1092,7 @@ void calcul_MAC_3Blocks(
     DES_ENC(Output, Output, (unsigned char*)k3);
     afficher_64bits("Apres cryptage par Ks3 ==> ", Output);
     printf("CBC-MAC         = %x %x %x %x %x %x %x %x\n", Output[0], Output[1], Output[2], Output[3], Output[4], Output[5], Output[6], Output[7]);
+    int pause = 0;
 
 }
 
@@ -1151,6 +1153,7 @@ void calcul_MAC_4Blocks(
     DES_ENC(Output, Output, (unsigned char*)k3);
     afficher_64bits("Apres cryptage par Ks3 ==> ", Output);
     printf("CBC-MAC         = %x %x %x %x %x %x %x %x\n", Output[0], Output[1], Output[2], Output[3], Output[4], Output[5], Output[6], Output[7]);
+    int pause = 0;
 
 }
 
@@ -1175,6 +1178,7 @@ void calcul_MAC_n_Blocks(int n, unsigned char Blocks[], unsigned char k1[8], uns
     DES_ENC(Output, Output, (unsigned char*)k3);
     if (verbose) afficher_64bits("Apres cryptage par Ks3 ==> ", Output);
     printf("CBC-MAC         = %x %x %x %x %x %x %x %x\n", Output[0], Output[1], Output[2], Output[3], Output[4], Output[5], Output[6], Output[7]);
+    int pause = 0;
 }
 
 class Connection_U98 {
@@ -1404,44 +1408,30 @@ int main(int argc, char* argv[]) {
     int etcsid_repondeur = 2130066; // 20 80 92
 
     Connection_U98 connexion_ZcB_PAI75(Key1_TE, Key2_TE, Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, true); // false => cnx2, true=cnx1
-    Connection_U98 connexion_ZcB_PAI81(Key1_TE, Key2_TE, Key3_TE, 2129965, 2129963, 192, false); // false => cnx2, true=cnx1
+    //Connection_U98 connexion_ZcB_PAI81(Key1_TE, Key2_TE, Key3_TE, 2129965, 2129963, 192, false); // false => cnx2, true=cnx1
     connexion_ZcB_PAI75.start_session(RandomA_wshark, RandomB_wshark);
-    connexion_ZcB_PAI81.start_session(RandomA_v1, RandomB_v1);
+    //connexion_ZcB_PAI81.start_session(RandomA_v1, RandomB_v1);
     unsigned char MAC_AU2_cnx1[8];
-    unsigned char MAC_AU2_cnx2[8];
+    //unsigned char MAC_AU2_cnx2[8];
     connexion_ZcB_PAI75.compute_input_MAC_AU2(MAC_AU2_cnx1);
-    connexion_ZcB_PAI81.compute_input_MAC_AU2(MAC_AU2_cnx2);
     afficher_64bits(" MAC AU2 cnx1 --> ", MAC_AU2_cnx1);
-    afficher_64bits(" MAC AU2 cnx2 --> ", MAC_AU2_cnx2);
 
 
-    cout << endl; // Calcul à 1 bloc 
-    unsigned char block_01[8] = { 0x0b,0,0, 0 ,0x64,0,0,0 };  // Remplir_Key (Valeur_Data, 16#608c#, 16#75d7#, 16#03a4#, 16#1d1f#);
-    afficher_hexa_inverse("** DATA inverse :", block_01);
-    connexion_ZcB_PAI75.compute_Mac_n_Blocks(1, block_01, Output);
-    connexion_ZcB_PAI81.compute_Mac_n_Blocks(1, block_01, Output);
 
-    cout << endl; // Calcul à 2 blocs
-    unsigned char blocks_02[16] = { 0,27,32,128,45,197,32,128,    // Remplir_1_Data (Data(Connection_Id), L_Ind_Data, 16#001B#, 16#2080#, 16#2DC5#, 16#2080#);
-                                  43,1,10,245,100,49,88,77 };     // Remplir_1_Data (Data(Connection_Id), L_Ind_Data, 16#2B01#, 16#0AF5#, 16#6431#, 16#584D#);
-    connexion_ZcB_PAI75.compute_Mac_n_Blocks(2, blocks_02, Output);
-    connexion_ZcB_PAI81.compute_Mac_n_Blocks(2, blocks_02, Output);
-    cout << "-----------------------------" << endl << endl;
-
-    cout << endl; // Calcul à 3 blocs    
-    
-    cout << "++++ Calcul à 3 blocs" << endl;
-
-    unsigned char blocks_03[24] = { 0x00, 0x13, 0x20, 0x80, 0x92, 0x0a, 0x03, 0x3d,
+    cout << endl; // Calcul à 3 blocs
+    cout << "++++ Compute Frame 116789, expected MAC 69 4c b0 e5 63 c6 d4 2c" << endl;
+    unsigned char blocks_03[24] = {
+        0x00, 0x13, 0x20, 0x80, 0x92, 0x0a, 0x03, 0x3d,
         0xc2, 0x00, 0x05, 0xca, 0xac, 0x00, 0x16, 0x02,
-        0x42, 0x00, 0x05, 0xca, 0xac, 0x00, 0x00, 0x00
-                                    };     
-    afficher_hexa_inverse("** DATA inverse :", blocks_03); 
+        0x42, 0x00, 0x05, 0xca, 0xac, 0x00, 0x00, 0x00, };
+
     connexion_ZcB_PAI75.compute_Mac_n_Blocks(3, blocks_03, Output);
     cout << "-----------------------------" << endl << endl;
 
+
+
     cout << endl; // Calcul à 4 blocs
-    cout << "++++ Calcul à 4 blocs" << endl;
+    cout << "Compute Frame 116756, expected MAC: e2 4f 14 ea f4 65 99 54, calcul à 4 blocs" << endl;
     unsigned char blocks_04[32] = {
             0x00, 0x17, 0x20, 0x80, 0x94, 0x0b, 0x02, 0x00,
             0x00, 0x00, 0x16, 0x02, 0x42, 0x00, 0x05, 0xca,
@@ -1452,6 +1442,7 @@ int main(int argc, char* argv[]) {
     cout << "-----------------------------" << endl << endl;
 
 
+    return 0;
     for (int i = 0;i < 8;i++)
     {
         RandomA[i] = RandomA_v2[i];
@@ -1673,12 +1664,13 @@ int main(int argc, char* argv[]) {
     Redond mac_redond = constantes_PSC.calculer_redond_MAC(Output, marker, 0, 4);
     cout << " Redondance cnx1 avec marker=" << marker << " ==> C1=" << mac_redond.C1() << " -- C2=" << mac_redond.C2() << endl;
 
+    /*
     cout << endl;
     marker++;
     connexion_ZcB_PAI81.compute_Mac_n_Blocks(4, the_blocks, Output);
     mac_redond = constantes_PSC.calculer_redond_MAC(Output, marker, 1, 4);
     cout << " Redondance cnx2 avec marker=" << marker << " ==> C1=" << mac_redond.C1() << " -- C2=" << mac_redond.C2() << endl;
-
+    */
     unsigned char block1[8] = { 0,27,32,128,45,197,32,128 };
     unsigned char block2[8] = { 43,1,107,67,49,193,218,222 };
     unsigned char block3[8] = { 70,156,188,211,91,242,83,7 };
@@ -1814,8 +1806,8 @@ int main(int argc, char* argv[]) {
     calcul_MAC_n_Blocks(14, MAC_INPUT_PIPC_CMD, Ks1, Ks2, Ks3, Output);
     cout << "recalcul avec methode objet (cnx1) :" << endl;
     connexion_ZcB_PAI75.compute_Mac_n_Blocks(14, MAC_INPUT_PIPC_CMD, Output);
-    cout << "recalcul avec methode objet (cnx2) :" << endl;
-    connexion_ZcB_PAI81.compute_Mac_n_Blocks(14, MAC_INPUT_PIPC_CMD, Output);
+    ////cout << "recalcul avec methode objet (cnx2) :" << endl;
+    //connexion_ZcB_PAI81.compute_Mac_n_Blocks(14, MAC_INPUT_PIPC_CMD, Output);
 
     marker = 274;
     mac_redond = constantes_PSC.calculer_redond_MAC(Output, marker, 0, 14);
