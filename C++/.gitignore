@@ -20,5 +20,11 @@ DocumentLayout.backup.json
 Solution.VC.db
 *.obj
 *.exe.recipe
+*.wsuo
+*.db-shm
+/.vs/*
+.vs
+
+
 
 
