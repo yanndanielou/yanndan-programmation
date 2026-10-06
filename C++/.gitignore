@@ -14,4 +14,11 @@
 *.vsidx
 *.ipch
 *.tlog
+Browse.VC.db
+DocumentLayout.json
+DocumentLayout.backup.json
+Solution.VC.db
+*.obj
+*.exe.recipe
+
 
