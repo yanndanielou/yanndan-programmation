@@ -117,8 +117,8 @@ public:
 	}
 };
 
-const Redond Bx14_cnx1(1762325, 8853225); // lu à la ligne 14 de sec_gen_cst_es_tfh_fem_3des_res_connection_1.car
-const Redond Bx14_cnx2(5980613, 5938493); // lu à la ligne 14 sec_gen_cst_es_tfh_fem_3des_res_connection_2.car
+const Redond Bx14_cnx1(1762325, 8853225); // lu Ã  la ligne 14 de sec_gen_cst_es_tfh_fem_3des_res_connection_1.car
+const Redond Bx14_cnx2(5980613, 5938493); // lu Ã  la ligne 14 sec_gen_cst_es_tfh_fem_3des_res_connection_2.car
 
 
 class const_PSC {
@@ -161,7 +161,7 @@ private:
 			return Redond(0, 0);
 		}
 		if (N_value < 0 or N_value>16) {
-			cout << "Erreur : mauvaise valeur pour N : " << N_value << " (valeurs possibles : 1 à 16)" << endl;
+			cout << "Erreur : mauvaise valeur pour N : " << N_value << " (valeurs possibles : 1 Ã  16)" << endl;
 			return Redond(0, 0);
 		}
 
@@ -183,7 +183,7 @@ private:
 		calcul2.inverser(); // 1 / [ 2**(32*8) * 4181 ]
 		//cout << "calcul2 = "; calcul2.afficher();cout << endl;
 		// NB : BxKs3 = BxK3  / [ 2**(32*8) * 4181 ]
-		// On cherche à calculer BxKs3 / [ 2**(32*8) * 4181 ]
+		// On cherche Ã  calculer BxKs3 / [ 2**(32*8) * 4181 ]
 		calcul2.multiplier(calcul2); // 1 / [ 2**(32*8) * 4181 ] * [ 2**(32*8) * 4181 ]
 		//cout << "calcul2 = "; calcul2.afficher();cout << endl;
 		calcul2.multiplier(BxK3); // BxKs3 / [ 2**(32*8) * 4181 ]
@@ -201,8 +201,8 @@ public:
 
 		moinsRk = Redond(2726071, 6444477);
 		tau0 = Redond (4691298, 10686154);
-		deux_p32 = Redond(1779129, 11171346); // 2**32 (valeur précalculée)
-		deux_p196 = Redond(280108, 10053949); // 2**(32*8) (valeur précalculée)
+		deux_p32 = Redond(1779129, 11171346); // 2**32 (valeur prÃ©calculÃ©e)
+		deux_p196 = Redond(280108, 10053949); // 2**(32*8) (valeur prÃ©calculÃ©e)
 
 		Redond sum_F(0,0);
 		for (int i = 0; i < 16; i++) {
@@ -270,7 +270,7 @@ public:
 		else { Bx14_corr = Redond(Bx14_cnx2); }
 		cout << "Bx_MAC_14 =";Bx14_corr.afficher();cout << endl;
 		Bx14_corr.ajouter(compensation);
-		cout << "Bx_MAC_14 compensé =";Bx14_corr.afficher();cout << endl;
+		cout << "Bx_MAC_14 compensÃ© =";Bx14_corr.afficher();cout << endl;
 		r.ajouter(Bx14_corr);
 
 		return r;
@@ -1053,7 +1053,7 @@ void calcul_MAC_3Blocks(
 {
 
     //----- Step 1 -----
-    cout << "CALCUL de MAC à 3 blocs";
+    cout << "CALCUL de MAC Ã  3 blocs";
     cout << endl << endl;
     DES_ENC(Block1, Output, (unsigned char*)k1);
     afficher_64bits("message block 1 : ", Block1);
@@ -1104,7 +1104,7 @@ void calcul_MAC_4Blocks(
     afficher_64bits("Clef de session 1 (Ks2) = ", k2);
     afficher_64bits("Clef de session 1 (Ks3) = ", k3);*/
     //----- Step 1 -----
-    cout << "CALCUL de MAC à 4 blocs" << endl;
+    cout << "CALCUL de MAC Ã  4 blocs" << endl;
     //cout << endl << endl << "ETAPE_1" << endl << endl;
     DES_ENC(Block1, Output, (unsigned char*)k1);
     afficher_64bits("message block 1 : ", Block1);
@@ -1331,7 +1331,7 @@ class Connection_U98 {
         }
 
         void compute_Mac_n_Blocks(int nb_bloks, unsigned char Blocks[], unsigned char Output[8]) {
-            cout << "CALCUL de MAC à N blocs avec N="<<nb_bloks;
+            cout << "CALCUL de MAC Ã  N blocs avec N="<<nb_bloks;
             if (is_connnection1) { cout << " pour connection 1"; } else { cout << " pour connection 2"; }
             cout << endl;
 
@@ -1354,7 +1354,7 @@ int main(int argc, char* argv[]) {
     unsigned char Key2_TFC[8] = {120,157,92,231,187,28,163,183}; // Remplir_Key (Key_2 (Connection_Id), 16#789d#, 16#5ce7#, 16#bb1c#, 16#a3b7#);
     unsigned char Key3_TFC[8] = {13,47,174,160,14,186,166,250};  // Remplir_Key (Key_3 (Connection_Id), 16#0d2f#, 16#aea0#, 16#0eba#, 16#a6fa#);
 
-    unsigned char Key1_TFH[8] = { 32,33,34,35,36,37,38,39 }; // début de Unisig_98_as.Prepare_Key(LOCAL_ETCS_ID=>13, REMOTE_ETCS_ID=>19)
+    unsigned char Key1_TFH[8] = { 32,33,34,35,36,37,38,39 }; // dÃ©but de Unisig_98_as.Prepare_Key(LOCAL_ETCS_ID=>13, REMOTE_ETCS_ID=>19)
     unsigned char Key2_TFH[8] = { 40,41,42,43,44,45,46,47 }; // milieu de Unisig_98_as.Prepare_Key(LOCAL_ETCS_ID=>13, REMOTE_ETCS_ID=>19)
     unsigned char Key3_TFH[8] = { 48,49,50,51,52,53,54,55 }; // fin de Unisig_98_as.Prepare_Key(LOCAL_ETCS_ID=>13, REMOTE_ETCS_ID=>19)
 
@@ -1413,12 +1413,13 @@ int main(int argc, char* argv[]) {
     //connexion_ZcB_PAI81.start_session(RandomA_v1, RandomB_v1);
     unsigned char MAC_AU2_cnx1[8];
     //unsigned char MAC_AU2_cnx2[8];
+    cout << "Compute AU2. Expected MAC: 35 f7 fa 7a 7b 6a d3 75" << endl;
     connexion_ZcB_PAI75.compute_input_MAC_AU2(MAC_AU2_cnx1);
     afficher_64bits(" MAC AU2 cnx1 --> ", MAC_AU2_cnx1);
 
 
 
-    cout << endl; // Calcul à 3 blocs
+    cout << endl; // Calcul Ã  3 blocs
     cout << "++++ Compute Frame 116789, expected MAC 69 4c b0 e5 63 c6 d4 2c" << endl;
     unsigned char blocks_03[24] = {
         0x00, 0x13, 0x20, 0x80, 0x92, 0x0a, 0x03, 0x3d,
@@ -1430,8 +1431,8 @@ int main(int argc, char* argv[]) {
 
 
 
-    cout << endl; // Calcul à 4 blocs
-    cout << "Compute Frame 116756, expected MAC: e2 4f 14 ea f4 65 99 54, calcul à 4 blocs" << endl;
+    cout << endl; // Calcul Ã  4 blocs
+    cout << "Compute Frame 116756, expected MAC: e2 4f 14 ea f4 65 99 54, calcul Ã  4 blocs" << endl;
     unsigned char blocks_04[32] = {
             0x00, 0x17, 0x20, 0x80, 0x94, 0x0b, 0x02, 0x00,
             0x00, 0x00, 0x16, 0x02, 0x42, 0x00, 0x05, 0xca,
@@ -1442,7 +1443,7 @@ int main(int argc, char* argv[]) {
     cout << "-----------------------------" << endl << endl;
 
 
-    return 0;
+
     for (int i = 0;i < 8;i++)
     {
         RandomA[i] = RandomA_v2[i];
@@ -1523,7 +1524,7 @@ int main(int argc, char* argv[]) {
 
     // ---------------------------------------------------------------------------------------
     //cout << "Calcul de Ks1" << endl << endl;
-    //afficher_64bits("Départ : RA_L | RB_L = ", RA_L_RB_L);
+    //afficher_64bits("DÃ©part : RA_L | RB_L = ", RA_L_RB_L);
     DES_ENC(RA_L_RB_L, Output, Key1);
     //afficher_64bits("chiffrement par K1 => ", Output);
     DES_DEC(Output, Output, Key2);
@@ -1624,7 +1625,7 @@ int main(int argc, char* argv[]) {
     // ---------------------------------------------------------------------------------------
 
 
-    cout << endl << endl << "CALCUL du MAC à 1 bloc" << endl;
+    cout << endl << endl << "CALCUL du MAC Ã  1 bloc" << endl;
     afficher_hexa_inverse("DATA inverse :", custom_block);
     calcul_MAC_single_Block(custom_block, Ks1, Ks2, Ks3, Output);
 
@@ -1677,7 +1678,7 @@ int main(int argc, char* argv[]) {
     unsigned char block4[8] = { 142,31,32,128,45,0,0,0 };
 
     /*
-    cout << endl << endl << "CALCUL d'un MAC à 4 blocs" << endl;
+    cout << endl << endl << "CALCUL d'un MAC Ã  4 blocs" << endl;
     afficher_64bits("donnees bloc1 pour op_3des_hard : ", block1);
     afficher_64bits("donnees bloc2 pour op_3des_hard : ", block2);
     afficher_64bits("donnees bloc3 pour op_3des_hard : ", block3);
@@ -1743,7 +1744,7 @@ int main(int argc, char* argv[]) {
     cout << endl << endl << "CALCUL du MAC de Keep_Alive" << endl;
     calcul_MAC_3Blocks(KA_block1, KA_block2, KA_block3, Ks1, Ks2, Ks3, Output);
 
-    cout << endl << endl << "CALCUL du MAC de Keep_Alive par une autre méthode" << endl;
+    cout << endl << endl << "CALCUL du MAC de Keep_Alive par une autre mÃ©thode" << endl;
     unsigned char MAC_INPUT_KEEP_ALIVE[24];
     for (int i = 0; i < 8; i++) MAC_INPUT_KEEP_ALIVE[i] = KA_block1[i];
     for (int i = 0; i < 8; i++) MAC_INPUT_KEEP_ALIVE[i + 8] = KA_block2[i];
@@ -1791,7 +1792,7 @@ int main(int argc, char* argv[]) {
      calcul_MAC_4Blocks(SaPDUBlock1, SaPDUBlock2, SaPDUBlock3, SaPDUBlock4, Ks1, Ks2, Ks3, Output);*/
 
 
-    cout << endl << endl << "CALCUL du MAC d'un message à N=14 blocks" << endl;
+    cout << endl << endl << "CALCUL du MAC d'un message Ã  N=14 blocks" << endl;
     afficher_hexa("bloc1 (msg2) = ", SaPDUBlock1_2);
     afficher_hexa("bloc2 (msg2) = ", SaPDUBlock2_2);
     afficher_hexa("bloc3 (msg2) = ", SaPDUBlock3_2);
