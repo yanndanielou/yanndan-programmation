@@ -1,3 +1,4 @@
+
 #include "kmac_keys.h"
 #include <stdio.h>
 #include <iostream>
@@ -127,11 +128,11 @@ private:
 	};
 
 	const Redond calcul_Bx_N_non_brouille(int id_connection, short int N_value) {
-		if (id_connection < 0 or id_connection>1) {
+		if (id_connection < 0 || id_connection>1) {
 			cout << "Erreur : mauvais id_connection : " << id_connection << " (valeur attendue : 0 ou 1)" << endl;
 			return Redond(0, 0);
 		}
-		if (N_value < 0 or N_value>16) {
+		if (N_value < 0 || N_value>16) {
 			cout << "Erreur : mauvaise valeur pour N : " << N_value << " (valeurs possibles : 1 à 16)" << endl;
 			return Redond(0, 0);
 		}
@@ -185,7 +186,7 @@ public:
 
 	Redond somme_Fi(int i) const {
 		Redond sum(0, 0);
-		if (i < 0 or i>15) return sum;
+		if (i < 0 || i>15) return sum;
 		return Somme_Fi[i];
 	}
 
@@ -997,74 +998,6 @@ void afficher_hexa(string s, unsigned char Tab[8]) {
 void afficher_hexa_inverse(string s, unsigned char Tab[8]) {
     cout << s;
     printf("%x %x %x %x %x %x %x %x\n", Tab[7], Tab[6], Tab[5], Tab[4], Tab[3], Tab[2], Tab[1], Tab[0]);
-}
-
-void calcul_MAC_single_Block(unsigned char Block[8], unsigned char k1[8], unsigned char k2[8], unsigned char k3[8], unsigned char Output[8]) {
-    //----- Step 1 -----
-    //cout << endl << endl << "ETAPE_1" << endl << endl;
-    DES_ENC(Block, Output, (unsigned char*)k1);
-    afficher_64bits("message block 1 : ", Block);
-    //afficher_64bits("Clef de session 1 (Ks1) = ", k1);
-    //afficher_64bits("Apres cryptage par Ks1 ==> ", Output);
-    //----- Step 2 -----
-    //cout << endl << endl << "ETAPE_2" << endl << endl;
-    DES_DEC(Output, Output, (unsigned char*)k2);
-    //afficher_64bits("Apres decryptage par Ks2 ==> ", Output);
-    //----- Step 3 -----
-    //cout << endl << endl << "ETAPE_3" << endl << endl;
-    DES_ENC(Output, Output, (unsigned char*)k3);
-    //afficher_64bits("Apres cryptage par Ks3 ==> ", Output);
-    printf("CBC-MAC         = %x %x %x %x %x %x %x %x\n", Output[0], Output[1], Output[2], Output[3], Output[4], Output[5], Output[6], Output[7]);
-    int pause = 0;
-}
-
-void calcul_MAC_3Blocks(
-    unsigned char Block1[8], unsigned char Block2[8], unsigned char Block3[8],
-    unsigned char k1[8], unsigned char k2[8], unsigned char k3[8], unsigned char Output[8])
-{
-
-    //----- Step 1 -----
-    cout << "CALCUL de MAC à 3 blocs";
-    cout << endl << endl;
-    DES_ENC(Block1, Output, (unsigned char*)k1);
-    afficher_64bits("message block 1 : ", Block1);
-    afficher_64bits("Clef de session 1 (Ks1) = ", k1);
-    afficher_64bits("Apres cryptage par Ks1 ==> ", Output);
-
-    //----- Step 2 -----
-    cout << endl << endl;
-    afficher_64bits("message block 2 : ", Block2);
-    XOR_Byte2Byte(&Block2[0], &Output[0], 8);
-    afficher_64bits("Apres XOR avec le block 2 ==> ", Output);
-
-    //----- Step 3 -----
-    cout << endl << endl;
-    DES_ENC(Output, Output, (unsigned char*)k1);
-    afficher_64bits("Apres cryptage par Ks1 ==> ", Output);
-
-    //----- Step 4 -----
-    cout << endl << endl;
-    afficher_64bits("message block 3 : ", Block3);
-    XOR_Byte2Byte(&Block3[0], &Output[0], 8);
-    afficher_64bits("Apres XOR avec le block 3 ==> ", Output);
-
-    //----- Step 5 -----
-    cout << endl << endl;
-    DES_ENC(Output, Output, (unsigned char*)k1);
-    afficher_64bits("Apres cryptage par Ks1 ==> ", Output);
-
-    //----- Step 6 -----
-    cout << endl << endl;
-    DES_DEC(Output, Output, (unsigned char*)k2);
-    afficher_64bits("Apres decryptage par Ks2 ==> ", Output);
-
-    //----- Step 7 -----
-    cout << endl << endl;
-    DES_ENC(Output, Output, (unsigned char*)k3);
-    afficher_64bits("Apres cryptage par Ks3 ==> ", Output);
-    printf("CBC-MAC         = %x %x %x %x %x %x %x %x\n", Output[0], Output[1], Output[2], Output[3], Output[4], Output[5], Output[6], Output[7]);
-    int pause = 0;
-
 }
 
 void calcul_MAC_4Blocks(
