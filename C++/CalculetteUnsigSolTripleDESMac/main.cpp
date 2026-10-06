@@ -6,35 +6,6 @@ using namespace std;
 
 //------------------------------------------------------------------------------------
 
-long long Calculer_PGCD(long long a, long long b) {
-	long long U_prec, U, V_prec, V, X, X_prec, Y, Y_prec, new_U, new_V;
-
-	U_prec = 1;
-	U = 0;
-	V_prec = 0;
-	V = 1;
-
-	X = a;
-	Y = b;
-
-	while (Y != 0) {
-		X_prec = X;
-		Y_prec = Y;
-
-		X = Y_prec;
-		Y = X_prec % Y_prec;
-		new_U = U_prec - U * (X_prec / Y_prec);
-		new_V = V_prec - V * (X_prec / Y_prec);
-
-		U_prec = U;
-		V_prec = V;
-		U = new_U;
-		V = new_V;
-	}
-
-	return X;
-}
-
 long long Calculer_inverse_modulo(long long a, long long p) {
 	long long U_prec, U, V_prec, V, X, X_Prec, Y, Y_prec, new_U, new_V;
 	U_prec = 1;
@@ -1343,33 +1314,9 @@ class Connection_U98 {
 int main(int argc, char* argv[]) {
 
     // AU2 message
-    // exemple : G_MAC_INPUT_AU2 =  0  27  0  0  13  37  0  0  19  1  127  89  16  165  38  245  22  222   14   91  129  123  38  112  172   6  0  0  13  0  0  0
-    unsigned char MessageBlock1[8] = { 0,  27,  32,  64,  42,  37,  32,  64 };
-    unsigned char MessageBlock2[8] = { 45,   1,  10, 245, 100,  49,  88,  77 };
-    unsigned char MessageBlock3[8] = { 235,  51, 222, 248, 180, 220, 104, 198 };
-    unsigned char MessageBlock4[8] = { 55, 162,  32,  64,  42,   0,   0,   0 };
     unsigned char Output[8];
 
-    unsigned char Key1_TFC[8] = { 78,14,189,169,77,10,158,120 };   // Remplir_Key (Key_1 (Connection_Id), 16#4e0e#, 16#bda9#, 16#4d0a#, 16#9e78#);
-    unsigned char Key2_TFC[8] = { 120,157,92,231,187,28,163,183 }; // Remplir_Key (Key_2 (Connection_Id), 16#789d#, 16#5ce7#, 16#bb1c#, 16#a3b7#);
-    unsigned char Key3_TFC[8] = { 13,47,174,160,14,186,166,250 };  // Remplir_Key (Key_3 (Connection_Id), 16#0d2f#, 16#aea0#, 16#0eba#, 16#a6fa#);
 
-    unsigned char Key1_TFH[8] = { 32,33,34,35,36,37,38,39 }; // début de Unisig_98_as.Prepare_Key(LOCAL_ETCS_ID=>13, REMOTE_ETCS_ID=>19)
-    unsigned char Key2_TFH[8] = { 40,41,42,43,44,45,46,47 }; // milieu de Unisig_98_as.Prepare_Key(LOCAL_ETCS_ID=>13, REMOTE_ETCS_ID=>19)
-    unsigned char Key3_TFH[8] = { 48,49,50,51,52,53,54,55 }; // fin de Unisig_98_as.Prepare_Key(LOCAL_ETCS_ID=>13, REMOTE_ETCS_ID=>19)
-
-    unsigned char Key1[8];
-    unsigned char Key2[8];
-    unsigned char Key3[8];
-
-
-
-
-    for (int i = 0; i < 8; i++) {
-        Key1[i] = Key1_TE[i];
-        Key2[i] = Key2_TE[i];
-        Key3[i] = Key3_TE[i];
-    }
     unsigned char Initiator_Etcs_Id[3] = { 32, 128, 45 }; // 44 = ZC_02[A] // 45 = ZC_02[B]
     unsigned char Responder_Etcs_Id[3] = { 32, 128, 43 }; // 42=PAI_75 // 43=PAI_81
 
@@ -1382,16 +1329,11 @@ int main(int argc, char* argv[]) {
     int etcsid_repondeur = 2130066; // 20 80 92
 
     Connection_U98 connexion_ZcB_PAI75(Key1_TE, Key2_TE, Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, true); // false => cnx2, true=cnx1
-    //Connection_U98 connexion_ZcB_PAI81(Key1_TE, Key2_TE, Key3_TE, 2129965, 2129963, 192, false); // false => cnx2, true=cnx1
     connexion_ZcB_PAI75.start_session(RandomA_wshark, RandomB_wshark);
-    //connexion_ZcB_PAI81.start_session(RandomA_v1, RandomB_v1);
     unsigned char MAC_AU2_cnx1[8];
-    //unsigned char MAC_AU2_cnx2[8];
     cout << "Compute AU2. Expected MAC: 35 f7 fa 7a 7b 6a d3 75" << endl;
     connexion_ZcB_PAI75.compute_input_MAC_AU2(MAC_AU2_cnx1);
     afficher_64bits(" MAC AU2 cnx1 --> ", MAC_AU2_cnx1);
-
-
 
     cout << endl; // Calcul à 3 blocs
     cout << "++++ Compute Frame 116789, expected MAC 69 4c b0 e5 63 c6 d4 2c" << endl;
