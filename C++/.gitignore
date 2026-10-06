@@ -11,4 +11,7 @@
 *.dev
 *.idb
 *.res
+*.vsidx
+*.ipch
+*.tlog
 
