@@ -24,6 +24,8 @@ Solution.VC.db
 *.db-shm
 /.vs/*
 .vs
+debug
+
 
 
 
