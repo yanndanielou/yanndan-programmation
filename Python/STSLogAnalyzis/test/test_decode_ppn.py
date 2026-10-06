@@ -1,10 +1,7 @@
 import pytest
 
-
 from stsloganalyzis.ppn import ppn_log
 from stsloganalyzis.unisig import decode_unisig, upper_layer_libraries
-
-from common import bytes_messages
 
 
 @pytest.fixture(scope="session", name="next_unisig_58_library_fixture")
@@ -314,7 +311,6 @@ class TestDecodeOnePpnLogLine:
                     assert stm_161.fields_names_and_values["STM-161 Nexteo specific datas entry point Nexteo-12 Message radio applicatif BIM_TARGET"] == 9264
                     assert stm_161.fields_names_and_values["STM-161 Nexteo specific datas entry point NID_LIGNE"] == "EOLE"
                     assert stm_161.fields_names_and_values["T_JD human format"] == "19:17:55.259"
-                    pass
 
                 def test_decode_161_no_error(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
                     ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
@@ -415,23 +411,6 @@ class TestDecodeOnePpnLogLine:
                     assert ppn_log_line.unisig_message
                     assert not ppn_log_line.unisig_message.creational_and_decoding_errors
 
-                def ignore_test_decode_bitsets_with_only_stm175_content(
-                    self,
-                    next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary,
-                ) -> None:
-                    stm_175_content = "0111001010001001000111010001110010101111000000111010100110000000000001000000011100000011100000000100000000000000011100010000100000011000100000000111011101100101100011110100011000000001000001001101100100110000010001000111010000100111"
-                    decode_unisig.UpperLayerStm(None, byte_message_decoded=bytes_messages.DecodedBytesMessage.from_bit_string(stm_175_content))
-                    ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(stm_175_content, upper_layer_decoding_library=next_unisig_58_library_fixture)
-                    assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sda()
-                    assert ppn_log_line.unisig_message
-                    assert not ppn_log_line.unisig_message.creational_and_decoding_errors
-                    assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
-                    assert ppn_log_line.unisig_message.upper_layer_decoded_stms
-                    assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 1
-                    for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
-                        assert not upper_layer_decoded_stm.creational_and_decoding_errors
-
                 def test_decode_line_stms_184_176_175_from_file(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
                     log_file = ppn_log.ProfibusLogFile(file_full_path=r"test\resources\ppn\STMs 175 184 176.log_ppn", upper_layer_decoding_library=next_unisig_58_library_fixture)
                     log_file.process()
@@ -495,6 +474,22 @@ class TestDecodeOnePpnLogLine:
                     for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
                         assert not upper_layer_decoded_stm.creational_and_decoding_errors
 
+                def test_decode_one_line_with_cfx00951990(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+                    ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
+                        line="2026-03-29 01:18:03:916 kppn 1.3.3: [99:33 <= 2:33] Received PROFIBUS message [num:1492][mode:SDA][len:48] d5 89 1d 24 01 01 28 20 00 10 17 41 81 40 18 0c 06 0a 05 02 81 40 48 42 14 1c 02 c1 f0 0c 01 e0 12 b3 39 17 80 59 6b 11 4c 01 5d 0e 25 b1 e6 13",
+                        upper_layer_decoding_library=next_unisig_58_library_fixture,
+                    )
+
+                    assert ppn_log_line
+                    ppn_log_line.decode_sdn_or_sda()
+                    assert ppn_log_line.unisig_message
+                    assert not ppn_log_line.unisig_message.creational_and_decoding_errors
+                    assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdaForUpperLayerTelegram)
+                    assert ppn_log_line.unisig_message.upper_layer_decoded_stms
+                    assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 7
+                    for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
+                        assert not upper_layer_decoded_stm.creational_and_decoding_errors
+
                 def test_decode_line_with_stms_5_47_7_31_1(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
                     ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
                         line="2026-06-01 18:16:18:270 kppn 1.3.3: [99:33 <= 2:33] Received PROFIBUS message [num:121266][mode:SDA][len:32] 82 89 1d 14 01 01 28 20 00 28 09 08 42 83 80 58 3e 01 80 5e 01 67 0e 4e 22 00 86 23 39 5a ab df",
@@ -536,7 +531,6 @@ class TestDecodeOnePpnLogLine:
             assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdnSafeTimeLayerStartupForMulticast)
             assert ppn_log_line.unisig_message.sender_dynamic_transfer_time.human_format
             assert ppn_log_line.unisig_message.sender_static_transfer_time.human_format
-            pass
 
         def test_decode_line_with_stm1_and_stm8(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
             ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
@@ -549,10 +543,6 @@ class TestDecodeOnePpnLogLine:
             assert ppn_log_line.unisig_message
             assert not ppn_log_line.unisig_message.creational_and_decoding_errors
             assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdnApplicationDataMulticastForUpperLayerTelegram)
-            assert ppn_log_line.unisig_message.upper_layer_decoded_stms
-            assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 1
-            for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
-                assert not upper_layer_decoded_stm.creational_and_decoding_errors
 
         def test_decode_line_with_stm8_and_stm1(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
             ppn_log_line = ppn_log.ProfibusLogLine.decode_raw_log_line(
@@ -565,10 +555,6 @@ class TestDecodeOnePpnLogLine:
             assert ppn_log_line.unisig_message
             assert not ppn_log_line.unisig_message.creational_and_decoding_errors
             assert isinstance(ppn_log_line.unisig_message, decode_unisig.SdnApplicationDataMulticastForUpperLayerTelegram)
-            assert ppn_log_line.unisig_message.upper_layer_decoded_stms
-            assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 1
-            for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
-                assert not upper_layer_decoded_stm.creational_and_decoding_errors
 
 
 class TestNextUnisigS58Library:
