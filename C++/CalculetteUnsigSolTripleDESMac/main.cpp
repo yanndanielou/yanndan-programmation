@@ -1363,18 +1363,6 @@ int main(int argc, char* argv[]) {
     unsigned char Key3[8];
 
 
-    /*
-    for (int i = 0;i < 8;i++) {
-        Key1[i] = Key1_TFH[i];
-        Key2[i] = Key2_TFH[i];
-        Key3[i] = Key3_TFH[i];
-    }
-    unsigned char Initiator_Etcs_Id[3] = { 0,0,13 }; // ZC
-    unsigned char Responder_Etcs_Id[3] = { 0,0,19 }; // PAI CNX1
-
-    unsigned char RandomA[8] = { 127,  89,  16, 165,  38, 245, 22, 222 }; // RA = RA_L | RA_R
-    unsigned char RandomB[8] = { 242, 163, 212, 147, 132, 245, 59,  26 }; // RB = RB_L | RB_R
-    */
 
 
     for (int i = 0; i < 8; i++) {
