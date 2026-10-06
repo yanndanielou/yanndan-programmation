@@ -1,3 +1,4 @@
+#include "kmac_keys.h"
 #include <stdio.h>
 #include <iostream>
 using namespace std;
@@ -1345,10 +1346,6 @@ int main(int argc, char* argv[]) {
     unsigned char MessageBlock4[8] = {  55, 162,  32,  64,  42,   0,   0,   0 };
     unsigned char Output[8];
 
-    unsigned char Key1_TE[8] = {80,73,80,67,50,48,48,54}; // PIPC2006  // Remplir_Key (Key_1 (Id_cnx1/2), 16#5049#, 16#5043#, 16#3230#, 16#3036#);
-    unsigned char Key2_TE[8] = {83,69,73,95,50,48,48,54}; // SEI_2006  // Remplir_Key (Key_2 (Id_Cnx1/2), 16#5345#, 16#495F#, 16#3230#, 16#3036#);
-    unsigned char Key3_TE[8] = {83,76,79,75,50,48,48,54}; // SLOK2006  // Remplir_Key (Key_3 (Id_Cnx1/2), 16#534C#, 16#4F4B#, 16#3230#, 16#3036#);
-
     unsigned char Key1_TFC[8] = {78,14,189,169,77,10,158,120};   // Remplir_Key (Key_1 (Connection_Id), 16#4e0e#, 16#bda9#, 16#4d0a#, 16#9e78#);
     unsigned char Key2_TFC[8] = {120,157,92,231,187,28,163,183}; // Remplir_Key (Key_2 (Connection_Id), 16#789d#, 16#5ce7#, 16#bb1c#, 16#a3b7#);
     unsigned char Key3_TFC[8] = {13,47,174,160,14,186,166,250};  // Remplir_Key (Key_3 (Connection_Id), 16#0d2f#, 16#aea0#, 16#0eba#, 16#a6fa#);
@@ -1844,12 +1841,3 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-
-// Pour les layer_tests :
-//
-//
-//
-// Dans les invariants :
-// Ks1 = 248 72 66 232 81 122 23 77
-// Ks2 = 50 162 130 112 34 87 93 142
-// Ks3 = 51 189 46 76 159 27 107 95
