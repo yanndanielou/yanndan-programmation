@@ -1,0 +1,1855 @@
+#include <stdio.h>
+#include <iostream>
+using namespace std;
+
+
+//------------------------------------------------------------------------------------
+
+long long Calculer_PGCD(long long a, long long b) {
+	long long U_prec, U, V_prec, V, X, X_prec, Y, Y_prec, new_U, new_V;
+
+	U_prec = 1;
+	U = 0;
+	V_prec = 0;
+	V = 1;
+
+	X = a;
+	Y = b;
+
+	while (Y != 0) {
+		X_prec = X;
+		Y_prec = Y;
+
+		X = Y_prec;
+		Y = X_prec % Y_prec;
+		new_U = U_prec - U * (X_prec / Y_prec);
+		new_V = V_prec - V * (X_prec / Y_prec);
+
+		U_prec = U;
+		V_prec = V;
+		U = new_U;
+		V = new_V;
+	}
+
+	return X;
+}
+
+long long Calculer_inverse_modulo(long long a, long long p) {
+	long long U_prec, U, V_prec, V, X, X_Prec, Y, Y_prec, new_U, new_V;
+	U_prec = 1;
+	U = 0;
+	V_prec = 0;
+	V = 1;
+
+	X = a;
+	Y = p;
+
+	while (Y != 0) {
+		X_Prec = X;
+		Y_prec = Y;
+
+		X = Y_prec;
+		Y = X_Prec %  Y_prec;
+		new_U = U_prec - U * (X_Prec / Y_prec);
+		new_V = V_prec - V * (X_Prec / Y_prec);
+
+		U_prec = U;
+		V_prec = V;
+		U = new_U;
+		V = new_V;
+	}
+
+	if (X == 1) {
+		return U_prec;
+	}
+	else { return 0; }
+}
+
+const int A1 = 12970357;
+const int A2 = 12239417;
+
+class Redond {
+private:
+	long long _c1;
+	long long _c2;
+
+	void recadrer() {
+		_c1 = _c1 % A1;
+		if (_c1 < 0) _c1 += A1;
+
+		_c2 = _c2 % A2;
+		if (_c2 < 0) _c2 += A2;
+	}
+
+public:
+	Redond() { _c1 = 0; _c2 = 0; }
+	Redond(long long c1, long long c2)
+	{
+		_c1 = c1;
+		_c2 = c2;
+		this->recadrer();
+	}
+
+	long long C1() const { return (this->_c1); }
+	long long C2() const { return (this->_c2); }
+
+	void afficher() {
+		cout << "(" << this->_c1 << " , " << this->_c2 << " )";
+	}
+
+	void ajouter(Redond r) {
+		_c1 += r.C1();
+		_c2 += r.C2();
+		this->recadrer();
+	}
+
+	void multiplier(Redond r) {
+		_c1 *= r.C1();
+		_c2 *= r.C2();
+		this->recadrer();
+	}
+
+	void inverser() {
+		_c1 = Calculer_inverse_modulo(_c1, A1);
+		_c2 = Calculer_inverse_modulo(_c2, A2);
+		this->recadrer();
+	}
+};
+
+const Redond Bx14_cnx1(1762325, 8853225); // lu à la ligne 14 de sec_gen_cst_es_tfh_fem_3des_res_connection_1.car
+const Redond Bx14_cnx2(5980613, 5938493); // lu à la ligne 14 sec_gen_cst_es_tfh_fem_3des_res_connection_2.car
+
+
+class const_PSC {
+
+private:
+	Redond Somme_Fi[16];
+	Redond Fi[16];
+	const long long Fi_A1[16]{ 8963117,11615768,8834825,4229672,5015549,8741366,4176911,3182013,8674420,9502541,4591249,2936130,10821750,4640236,11498060,7126637 };
+	const long long Fi_A2[16]{ 9019133,6729379,1155050,4779184,7436604,9339690,1053442,5442112,9016832,11911906,9959282,3503273,8194484,9060941,8337535,5940019 };
+	Redond moinsRk;//(2726071, 6444477);
+	Redond tau0;//(4691298, 10686154);
+	Redond deux_p32; // 2**32 = (1779129, 11171346);
+	Redond deux_p196; // 2**(32*8) = (208108, 10053949)
+	const Redond unisig_98_hard[20] = {
+				Redond(3035900, 8152819),		// indice :  0
+				Redond(11284085, 7686153),		// indice :  1
+				  Redond(5454991, 51769),		// indice :  2
+				  Redond(3885828, 8486416),		// indice :  3
+				  Redond(7671359, 4549372),		// indice :  4
+				  Redond(8782678, 8649429),		// indice :  5
+				  Redond(6826558, 6742661),		// indice :  6
+				  Redond(2895994, 9987983),		// indice :  7
+				 Redond(10725748, 7033477),		// indice :  8
+				   Redond(730811, 5567194),		// indice :  9
+				 Redond(12151965, 1447932),		// indice :  10
+				  Redond(7339716, 6245186),		// indice :  11
+				 Redond(11290486, 6632403),		// indice :  12
+				  Redond(2398841, 2843654),		// indice :  13
+				 Redond(11929462, 2392309),		// indice :  14
+				 Redond(11285806, 8701977),		// indice :  15
+				  Redond(2023425, 5531246),		// indice :  16
+				  Redond(8664429, 1183804),		// indice :  17
+				  Redond(7739424, 8700726),		// indice :  18
+				  Redond(1050582, 459863)		// indice :  19
+	};
+
+	const Redond calcul_Bx_N_non_brouille(int id_connection, short int N_value) {
+		if (id_connection < 0 or id_connection>1) {
+			cout << "Erreur : mauvais id_connection : " << id_connection << " (valeur attendue : 0 ou 1)" << endl;
+			return Redond(0, 0);
+		}
+		if (N_value < 0 or N_value>16) {
+			cout << "Erreur : mauvaise valeur pour N : " << N_value << " (valeurs possibles : 1 à 16)" << endl;
+			return Redond(0, 0);
+		}
+
+		Redond Bxres = Unisig_98_Hard(7); // voir DSL de Sec_Gen_Cst_Es
+		Redond BxK3 = Unisig_98_Hard(0 + 10 * id_connection); // id_connection=0 => connection 1, utiliser l'indice 0, sinon connection 1 => utiliser l'indice 10
+		// Bx_in est un alias pour Bxd
+		Redond Bxd = Unisig_98_Hard(6 + 10 * id_connection); // id_connection=0 => connection 1, utiliser l'indice 6, sinon connection 1 => utiliser l'indice 16
+
+		Redond calcul1 = Redond(1, 1);
+		for (int i = 1;i <= N_value + 2;i++) calcul1.multiplier(deux_p196); // 2**(32*8*(N+2))
+		calcul1.inverser();// 1/ [ 2**(32*8*(N+2)) ]
+		calcul1.multiplier(Bxd); // Bx_d / [ 2**(32*8*(N+2)) ]
+		//cout << "Bx_in/[2^(32*8*(" << N_value << "+2))] = "; calcul1.afficher();cout << endl;
+
+		Redond calcul2 = deux_p196; // 2**(32*8)
+		//cout << "calcul2 = "; calcul2.afficher();cout << endl;
+		calcul2.multiplier(Redond(4181, 4181)); // 2**(32*8) * 4181
+		//cout << "calcul2 = "; calcul2.afficher();cout << endl;
+		calcul2.inverser(); // 1 / [ 2**(32*8) * 4181 ]
+		//cout << "calcul2 = "; calcul2.afficher();cout << endl;
+		// NB : BxKs3 = BxK3  / [ 2**(32*8) * 4181 ]
+		// On cherche à calculer BxKs3 / [ 2**(32*8) * 4181 ]
+		calcul2.multiplier(calcul2); // 1 / [ 2**(32*8) * 4181 ] * [ 2**(32*8) * 4181 ]
+		//cout << "calcul2 = "; calcul2.afficher();cout << endl;
+		calcul2.multiplier(BxK3); // BxKs3 / [ 2**(32*8) * 4181 ]
+		//cout << "calcul2 = "; calcul2.afficher();cout << endl;
+
+		Redond result = Bxres;
+		result.ajouter(calcul1);
+		result.ajouter(calcul2);
+
+		return result;
+	}
+
+public:
+	const_PSC() {
+
+		moinsRk = Redond(2726071, 6444477);
+		tau0 = Redond (4691298, 10686154);
+		deux_p32 = Redond(1779129, 11171346); // 2**32 (valeur précalculée)
+		deux_p196 = Redond(280108, 10053949); // 2**(32*8) (valeur précalculée)
+
+		Redond sum_F(0,0);
+		for (int i = 0; i < 16; i++) {
+			Fi[i] = Redond(Fi_A1[i], Fi_A2[i]);
+			sum_F.ajouter(Fi[i]);
+			Somme_Fi[i] = sum_F;
+		}
+	}
+
+	Redond somme_Fi(int i) const {
+		Redond sum(0, 0);
+		if (i < 0 or i>15) return sum;
+		return Somme_Fi[i];
+	}
+
+	Redond get_deux_p32() { return Redond(this->deux_p32); }
+	Redond moins_rk() { return Redond(moinsRk); }
+
+	Redond tau_i(int i) {
+		Redond tau(tau0);
+		for (int x = 1; x <= i; x++) {
+			tau.multiplier(this->deux_p32);
+		}
+		return tau;
+	}
+	Redond Unisig_98_Hard(int indice) {
+		if (0<= indice <20) return unisig_98_hard[indice];
+		cout << endl << "erreur d'indice !!" << endl;
+		return Redond(0, 0);
+	}
+
+	Redond calculer_redond_tableau8(unsigned char Tab[8], Redond Bx_Tab, bool reverse=false) {
+		Redond r = Bx_Tab;
+		int j;
+		for (int i = 0; i < 8; i++) {
+			if (reverse) { j = 7 - i; } else { j = i; }
+			Redond r_temp(Tab[j], Tab[j]);
+			r_temp.multiplier(tau_i(i)); // c'est bien i est pas j
+			r_temp.multiplier(moinsRk);
+			r.ajouter(r_temp);
+		}
+		return r;
+	}
+
+	/*
+	Redond calculer_redond_MAC_N14(unsigned char MAC[8], int marker, bool is_connection1) {
+
+		Redond r(0, 0);
+
+		for (int i = 0; i < 8; i++) {
+			Redond r_temp(MAC[7-i], MAC[7-i]);
+
+			r_temp.multiplier(tau_i(i));
+			r.ajouter(r_temp);
+		}
+		Redond r_temp(marker, marker);
+		r_temp.multiplier(tau_i(8));
+		r.ajouter(r_temp);
+		r.multiplier(moinsRk);
+
+		Redond compensation = this->Somme_Fi[15];
+		compensation.multiplier(moinsRk);
+		Redond Bx14_corr;
+		if (is_connection1) { Bx14_corr = Redond(Bx14_cnx1); }
+		else { Bx14_corr = Redond(Bx14_cnx2); }
+		cout << "Bx_MAC_14 =";Bx14_corr.afficher();cout << endl;
+		Bx14_corr.ajouter(compensation);
+		cout << "Bx_MAC_14 compensé =";Bx14_corr.afficher();cout << endl;
+		r.ajouter(Bx14_corr);
+
+		return r;
+	}
+	*/
+
+	Redond calculer_redond_MAC(unsigned char MAC[8], int marker, short int id_connection, short int N_Value) {
+		Redond r(0, 0);
+
+		for (int i = 0; i < 8; i++) {
+			Redond r_temp(MAC[7 - i], MAC[7 - i]);
+
+			r_temp.multiplier(tau_i(i));
+			r.ajouter(r_temp);
+		}
+		Redond r_temp(marker, marker);
+		r_temp.multiplier(tau_i(8));
+		r.ajouter(r_temp);
+		r.multiplier(moinsRk);
+
+		Redond Bx_MAC = calcul_Bx_N_non_brouille(id_connection, N_Value);
+		//cout << "Bx_MAC=";Bx_MAC.afficher();cout << endl;
+		r.ajouter(Bx_MAC);
+
+		return r;
+	}
+};
+
+//------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+//------------------------------------------------------------------------------------
+const unsigned char SBOX_1[4][16] = {
+                                    {14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7},
+                                    {0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8},
+                                    {4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0},
+                                    {15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13}
+};
+const unsigned char SBOX_2[4][16] = {
+                                    {15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10},
+                                    {3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5},
+                                    {0, 14, 7, 11, 10, 4, 13, 1, 5, 8, 12, 6, 9, 3, 2, 15},
+                                    {13, 8, 10, 1, 3, 15, 4, 2, 11, 6, 7, 12, 0, 5, 14, 9}
+};
+const unsigned char SBOX_3[4][16] = {
+                                    {10, 0, 9, 14, 6, 3, 15, 5, 1, 13, 12, 7, 11, 4, 2, 8},
+                                    {13, 7, 0, 9, 3, 4, 6, 10, 2, 8, 5, 14, 12, 11, 15, 1},
+                                    {13, 6, 4, 9, 8, 15, 3, 0, 11, 1, 2, 12, 5, 10, 14, 7},
+                                    {1, 10, 13, 0, 6, 9, 8, 7, 4, 15, 14, 3, 11, 5, 2, 12}
+};
+const unsigned char SBOX_4[4][16] = {
+                                    {7, 13, 14, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15},
+                                    {13, 8, 11, 5, 6, 15, 0, 3, 4, 7, 2, 12, 1, 10, 14, 9},
+                                    {10, 6, 9, 0, 12, 11, 7, 13, 15, 1, 3, 14, 5, 2, 8, 4},
+                                    {3, 15, 0, 6, 10, 1, 13, 8, 9, 4, 5, 11, 12, 7, 2, 14}
+};
+const unsigned char SBOX_5[4][16] = {
+                                    {2, 12, 4, 1, 7, 10, 11, 6, 8, 5, 3, 15, 13, 0, 14, 9},
+                                    {14, 11, 2, 12, 4, 7, 13, 1, 5, 0, 15, 10, 3, 9, 8, 6},
+                                    {4, 2, 1, 11, 10, 13, 7, 8, 15, 9, 12, 5, 6, 3, 0, 14},
+                                    {11, 8, 12, 7, 1, 14, 2, 13, 6, 15, 0, 9, 10, 4, 5, 3}
+};
+const unsigned char SBOX_6[4][16] = {
+                                    {12, 1, 10, 15, 9, 2, 6, 8, 0, 13, 3, 4, 14, 7, 5, 11},
+                                    {10, 15, 4, 2, 7, 12, 9, 5, 6, 1, 13, 14, 0, 11, 3, 8},
+                                    {9, 14, 15, 5, 2, 8, 12, 3, 7, 0, 4, 10, 1, 13, 11, 6},
+                                    {4, 3, 2, 12, 9, 5, 15, 10, 11, 14, 1, 7, 6, 0, 8, 13}
+};
+const unsigned char SBOX_7[4][16] = {
+                                    {4, 11, 2, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1},
+                                    {13, 0, 11, 7, 4, 9, 1, 10, 14, 3, 5, 12, 2, 15, 8, 6},
+                                    {1, 4, 11, 13, 12, 3, 7, 14, 10, 15, 6, 8, 0, 5, 9, 2},
+                                    {6, 11, 13, 8, 1, 4, 10, 7, 9, 5, 0, 15, 14, 2, 3, 12}
+};
+const unsigned char SBOX_8[4][16] = {
+                                    {13, 2, 8, 4, 6, 15, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7},
+                                    {1, 15, 13, 8, 10, 3, 7, 4, 12, 5, 6, 11, 0, 14, 9, 2},
+                                    {7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8},
+                                    {2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11}
+};
+
+
+//------------------------------------------------------------------------------------
+void MEMORY_Copy(unsigned char* Target, unsigned char* Source, unsigned short size)
+{
+    while (size-- != 0)
+        *Target++ = *Source++;
+}
+
+
+//------------------------------------------------------------------------------------
+void DES_Permuted_Choice_1(unsigned char* Key_In, unsigned char* Permuted_Choice_1)
+{
+    Permuted_Choice_1[0] = (Key_In[7] & 0x80) |
+        ((Key_In[6] & 0x80) >> 1) |
+        ((Key_In[5] & 0x80) >> 2) |
+        ((Key_In[4] & 0x80) >> 3) |
+        ((Key_In[3] & 0x80) >> 4) |
+        ((Key_In[2] & 0x80) >> 5) |
+        ((Key_In[1] & 0x80) >> 6);
+
+    Permuted_Choice_1[1] = (Key_In[0] & 0x80) |
+        (Key_In[7] & 0x40) |
+        ((Key_In[6] & 0x40) >> 1) |
+        ((Key_In[5] & 0x40) >> 2) |
+        ((Key_In[4] & 0x40) >> 3) |
+        ((Key_In[3] & 0x40) >> 4) |
+        ((Key_In[2] & 0x40) >> 5);
+
+    Permuted_Choice_1[2] = ((Key_In[1] & 0x40) << 1) |
+        (Key_In[0] & 0x40) |
+        (Key_In[7] & 0x20) |
+        ((Key_In[6] & 0x20) >> 1) |
+        ((Key_In[5] & 0x20) >> 2) |
+        ((Key_In[4] & 0x20) >> 3) |
+        ((Key_In[3] & 0x20) >> 4);
+
+    Permuted_Choice_1[3] = ((Key_In[2] & 0x20) << 2) |
+        ((Key_In[1] & 0x20) << 1) |
+        (Key_In[0] & 0x20) |
+        (Key_In[7] & 0x10) |
+        ((Key_In[6] & 0x10) >> 1) |
+        ((Key_In[5] & 0x10) >> 2) |
+        ((Key_In[4] & 0x10) >> 3);
+
+    Permuted_Choice_1[4] = ((Key_In[7] & 0x02) << 6) |
+        ((Key_In[6] & 0x02) << 5) |
+        ((Key_In[5] & 0x02) << 4) |
+        ((Key_In[4] & 0x02) << 3) |
+        ((Key_In[3] & 0x02) << 2) |
+        ((Key_In[2] & 0x02) << 1) |
+        (Key_In[1] & 0x02);
+
+    Permuted_Choice_1[5] = ((Key_In[0] & 0x02) << 6) |
+        ((Key_In[7] & 0x04) << 4) |
+        ((Key_In[6] & 0x04) << 3) |
+        ((Key_In[5] & 0x04) << 2) |
+        ((Key_In[4] & 0x04) << 1) |
+        (Key_In[3] & 0x04) |
+        ((Key_In[2] & 0x04) >> 1);
+
+    Permuted_Choice_1[6] = ((Key_In[1] & 0x04) << 5) |
+        ((Key_In[0] & 0x04) << 4) |
+        ((Key_In[7] & 0x08) << 2) |
+        ((Key_In[6] & 0x08) << 1) |
+        (Key_In[5] & 0x08) |
+        ((Key_In[4] & 0x08) >> 1) |
+        ((Key_In[3] & 0x08) >> 2);
+
+    Permuted_Choice_1[7] = ((Key_In[2] & 0x08) << 4) |
+        ((Key_In[1] & 0x08) << 3) |
+        ((Key_In[0] & 0x08) << 2) |
+        (Key_In[3] & 0x10) |
+        ((Key_In[2] & 0x10) >> 1) |
+        ((Key_In[1] & 0x10) >> 2) |
+        ((Key_In[0] & 0x10) >> 3);
+}
+
+
+//------------------------------------------------------------------------------------
+void DES_Left_Shift(unsigned char* DES_Shift_In)
+{
+    unsigned char Shift_Temp0, Shift_Temp1, Shift_Temp2, Shift_Temp3;
+    // Shift C0
+    if (DES_Shift_In[3] & 0x80) Shift_Temp3 = 0x02;
+    else Shift_Temp3 = 0x00;
+    if (DES_Shift_In[2] & 0x80) Shift_Temp2 = 0x02;
+    else Shift_Temp2 = 0x00;
+    if (DES_Shift_In[1] & 0x80) Shift_Temp1 = 0x02;
+    else Shift_Temp1 = 0x00;
+    if (DES_Shift_In[0] & 0x80) Shift_Temp0 = 0x02;
+    else Shift_Temp0 = 0x00;
+
+    DES_Shift_In[3] <<= 1;
+    DES_Shift_In[2] <<= 1;
+    DES_Shift_In[1] <<= 1;
+    DES_Shift_In[0] <<= 1;
+
+    DES_Shift_In[0] |= Shift_Temp1;
+    DES_Shift_In[1] |= Shift_Temp2;
+    DES_Shift_In[2] |= Shift_Temp3;
+    DES_Shift_In[3] |= Shift_Temp0;
+
+    // Shift L0
+    if (DES_Shift_In[7] & 0x80) Shift_Temp3 = 0x02;
+    else Shift_Temp3 = 0x00;
+    if (DES_Shift_In[6] & 0x80) Shift_Temp2 = 0x02;
+    else Shift_Temp2 = 0x00;
+    if (DES_Shift_In[5] & 0x80) Shift_Temp1 = 0x02;
+    else Shift_Temp1 = 0x00;
+    if (DES_Shift_In[4] & 0x80) Shift_Temp0 = 0x02;
+    else Shift_Temp0 = 0x00;
+
+    DES_Shift_In[7] <<= 1;
+    DES_Shift_In[6] <<= 1;
+    DES_Shift_In[5] <<= 1;
+    DES_Shift_In[4] <<= 1;
+
+    DES_Shift_In[4] |= Shift_Temp1;
+    DES_Shift_In[5] |= Shift_Temp2;
+    DES_Shift_In[6] |= Shift_Temp3;
+    DES_Shift_In[7] |= Shift_Temp0;
+}
+
+//------------------------------------------------------------------------------------
+void DES_Permuted_Choice_2(unsigned char* Key_In, unsigned char* Permuted_Choice_2)
+{
+    Permuted_Choice_2[0] = ((Key_In[1] & 0x02) << 6) |
+        ((Key_In[2] & 0x20) << 1) |
+        ((Key_In[1] & 0x10) << 1) |
+        ((Key_In[3] & 0x20) >> 1) |
+        ((Key_In[0] & 0x80) >> 4) |
+        ((Key_In[0] & 0x08) >> 1);
+
+    Permuted_Choice_2[1] = ((Key_In[0] & 0x20) << 2) |
+        ((Key_In[3] & 0x03) << 5) |
+        ((Key_In[2] & 0x80) >> 2) |
+        ((Key_In[0] & 0x04) << 2) |
+        ((Key_In[2] & 0x02) << 2) |
+        ((Key_In[1] & 0x20) >> 3);
+
+    Permuted_Choice_2[2] = ((Key_In[3] & 0x40) << 1) |
+        ((Key_In[2] & 0x08) << 3) |
+        ((Key_In[1] & 0x08) << 2) |
+        (Key_In[0] & 0x10) |
+        (Key_In[3] & 0x08) |
+        ((Key_In[1] & 0x80) >> 5);
+
+    Permuted_Choice_2[3] = ((Key_In[2] & 0x40) << 1) |
+        ((Key_In[0] & 0x02) << 5) |
+        ((Key_In[3] & 0x04) << 3) |
+        ((Key_In[2] & 0x04) << 2) |
+        ((Key_In[1] & 0x04) << 1) |
+        ((Key_In[0] & 0x40) >> 4);
+
+    Permuted_Choice_2[4] = ((Key_In[5] & 0x04) << 5) |
+        ((Key_In[7] & 0x20) << 1) |
+        (Key_In[4] & 0x20) |
+        ((Key_In[5] & 0x40) >> 2) |
+        (Key_In[6] & 0x08) |
+        (Key_In[7] & 0x04);
+
+    Permuted_Choice_2[5] = ((Key_In[4] & 0x40) << 1) |
+        ((Key_In[5] & 0x08) << 3) |
+        ((Key_In[7] & 0x40) >> 1) |
+        ((Key_In[6] & 0x20) >> 1) |
+        (Key_In[4] & 0x08) |
+        (Key_In[6] & 0x04);
+
+    Permuted_Choice_2[6] = ((Key_In[6] & 0x40) << 1) |
+        ((Key_In[6] & 0x02) << 5) |
+        ((Key_In[5] & 0x10) << 1) |
+        ((Key_In[7] & 0x02) << 3) |
+        ((Key_In[4] & 0x04) << 1) |
+        ((Key_In[7] & 0x10) >> 2);
+
+    Permuted_Choice_2[7] = ((Key_In[6] & 0x10) << 3) |
+        ((Key_In[5] & 0x02) << 5) |
+        ((Key_In[7] & 0x80) >> 2) |
+        ((Key_In[5] & 0x80) >> 3) |
+        ((Key_In[4] & 0x80) >> 4) |
+        ((Key_In[4] & 0x10) >> 2);
+}
+
+////------------------------------------------------------------------------------------
+//void DES_Key_Schedule(unsigned char * Permuted_Choice_1, unsigned char * Key_Out, unsigned char Key_Index)
+//  {
+//  DES_Left_Shift((unsigned char *)&Permuted_Choice_1[0]);
+//  if ((Key_Index != 1) && (Key_Index != 2) && (Key_Index != 9) && (Key_Index != 16))
+//    DES_Left_Shift((unsigned char *)&Permuted_Choice_1[0]);
+//  DES_Permuted_Choice_2((unsigned char *)&Permuted_Choice_1[0], Key_Out);
+//  }
+
+//------------------------------------------------------------------------------------
+void DES_Initial_Permutation(unsigned char* Input, unsigned char* Output)
+{
+    Output[0] = ((Input[7] & 0x40) << 1) |
+        (Input[6] & 0x40) |
+        ((Input[5] & 0x40) >> 1) |
+        ((Input[4] & 0x40) >> 2) |
+        ((Input[3] & 0x40) >> 3) |
+        ((Input[2] & 0x40) >> 4) |
+        ((Input[1] & 0x40) >> 5) |
+        ((Input[0] & 0x40) >> 6);
+
+    Output[1] = ((Input[7] & 0x10) << 3) |
+        ((Input[6] & 0x10) << 2) |
+        ((Input[5] & 0x10) << 1) |
+        (Input[4] & 0x10) |
+        ((Input[3] & 0x10) >> 1) |
+        ((Input[2] & 0x10) >> 2) |
+        ((Input[1] & 0x10) >> 3) |
+        ((Input[0] & 0x10) >> 4);
+
+    Output[2] = ((Input[7] & 0x04) << 5) |
+        ((Input[6] & 0x04) << 4) |
+        ((Input[5] & 0x04) << 3) |
+        ((Input[4] & 0x04) << 2) |
+        ((Input[3] & 0x04) << 1) |
+        (Input[2] & 0x04) |
+        ((Input[1] & 0x04) >> 1) |
+        ((Input[0] & 0x04) >> 2);
+
+    Output[3] = ((Input[7] & 0x01) << 7) |
+        ((Input[6] & 0x01) << 6) |
+        ((Input[5] & 0x01) << 5) |
+        ((Input[4] & 0x01) << 4) |
+        ((Input[3] & 0x01) << 3) |
+        ((Input[2] & 0x01) << 2) |
+        ((Input[1] & 0x01) << 1) |
+        (Input[0] & 0x01);
+
+    Output[4] = (Input[7] & 0x80) |
+        ((Input[6] & 0x80) >> 1) |
+        ((Input[5] & 0x80) >> 2) |
+        ((Input[4] & 0x80) >> 3) |
+        ((Input[3] & 0x80) >> 4) |
+        ((Input[2] & 0x80) >> 5) |
+        ((Input[1] & 0x80) >> 6) |
+        ((Input[0] & 0x80) >> 7);
+
+    Output[5] = ((Input[7] & 0x20) << 2) |
+        ((Input[6] & 0x20) << 1) |
+        (Input[5] & 0x20) |
+        ((Input[4] & 0x20) >> 1) |
+        ((Input[3] & 0x20) >> 2) |
+        ((Input[2] & 0x20) >> 3) |
+        ((Input[1] & 0x20) >> 4) |
+        ((Input[0] & 0x20) >> 5);
+
+    Output[6] = ((Input[7] & 0x08) << 4) |
+        ((Input[6] & 0x08) << 3) |
+        ((Input[5] & 0x08) << 2) |
+        ((Input[4] & 0x08) << 1) |
+        (Input[3] & 0x08) |
+        ((Input[2] & 0x08) >> 1) |
+        ((Input[1] & 0x08) >> 2) |
+        ((Input[0] & 0x08) >> 3);
+
+    Output[7] = ((Input[7] & 0x02) << 6) |
+        ((Input[6] & 0x02) << 5) |
+        ((Input[5] & 0x02) << 4) |
+        ((Input[4] & 0x02) << 3) |
+        ((Input[3] & 0x02) << 2) |
+        ((Input[2] & 0x02) << 1) |
+        (Input[1] & 0x02) |
+        ((Input[0] & 0x02) >> 1);
+}
+
+//------------------------------------------------------------------------------------
+void DES_Inverse_Initial_Permutation(unsigned char* Input, unsigned char* Output)
+{
+    Output[0] = ((Input[4] & 0x01) << 7) |
+        ((Input[0] & 0x01) << 6) |
+        ((Input[5] & 0x01) << 5) |
+        ((Input[1] & 0x01) << 4) |
+        ((Input[6] & 0x01) << 3) |
+        ((Input[2] & 0x01) << 2) |
+        ((Input[7] & 0x01) << 1) |
+        (Input[3] & 0x01);
+
+    Output[1] = ((Input[4] & 0x02) << 6) |
+        ((Input[0] & 0x02) << 5) |
+        ((Input[5] & 0x02) << 4) |
+        ((Input[1] & 0x02) << 3) |
+        ((Input[6] & 0x02) << 2) |
+        ((Input[2] & 0x02) << 1) |
+        (Input[7] & 0x02) |
+        ((Input[3] & 0x02) >> 1);
+
+    Output[2] = ((Input[4] & 0x04) << 5) |
+        ((Input[0] & 0x04) << 4) |
+        ((Input[5] & 0x04) << 3) |
+        ((Input[1] & 0x04) << 2) |
+        ((Input[6] & 0x04) << 1) |
+        (Input[2] & 0x04) |
+        ((Input[7] & 0x04) >> 1) |
+        ((Input[3] & 0x04) >> 2);
+
+    Output[3] = ((Input[4] & 0x08) << 4) |
+        ((Input[0] & 0x08) << 3) |
+        ((Input[5] & 0x08) << 2) |
+        ((Input[1] & 0x08) << 1) |
+        (Input[6] & 0x08) |
+        ((Input[2] & 0x08) >> 1) |
+        ((Input[7] & 0x08) >> 2) |
+        ((Input[3] & 0x08) >> 3);
+
+    Output[4] = ((Input[4] & 0x10) << 3) |
+        ((Input[0] & 0x10) << 2) |
+        ((Input[5] & 0x10) << 1) |
+        (Input[1] & 0x10) |
+        ((Input[6] & 0x10) >> 1) |
+        ((Input[2] & 0x10) >> 2) |
+        ((Input[7] & 0x10) >> 3) |
+        ((Input[3] & 0x10) >> 4);
+
+    Output[5] = ((Input[4] & 0x20) << 2) |
+        ((Input[0] & 0x20) << 1) |
+        (Input[5] & 0x20) |
+        ((Input[1] & 0x20) >> 1) |
+        ((Input[6] & 0x20) >> 2) |
+        ((Input[2] & 0x20) >> 3) |
+        ((Input[7] & 0x20) >> 4) |
+        ((Input[3] & 0x20) >> 5);
+
+    Output[6] = ((Input[4] & 0x40) << 1) |
+        (Input[0] & 0x40) |
+        ((Input[5] & 0x40) >> 1) |
+        ((Input[1] & 0x40) >> 2) |
+        ((Input[6] & 0x40) >> 3) |
+        ((Input[2] & 0x40) >> 4) |
+        ((Input[7] & 0x40) >> 5) |
+        ((Input[3] & 0x40) >> 6);
+
+    Output[7] = (Input[4] & 0x80) |
+        ((Input[0] & 0x80) >> 1) |
+        ((Input[5] & 0x80) >> 2) |
+        ((Input[1] & 0x80) >> 3) |
+        ((Input[6] & 0x80) >> 4) |
+        ((Input[2] & 0x80) >> 5) |
+        ((Input[7] & 0x80) >> 6) |
+        ((Input[3] & 0x80) >> 7);
+}
+
+
+//------------------------------------------------------------------------------------
+void DES_Function_P(unsigned char* Input, unsigned char* Output)
+{
+    Output[0] = ((Input[1] & 0x01) << 7) |
+        ((Input[0] & 0x02) << 5) |
+        ((Input[2] & 0x18) << 1) |
+        (Input[3] & 0x08) |
+        ((Input[1] & 0x10) >> 2) |
+        ((Input[3] & 0x10) >> 3) |
+        ((Input[2] & 0x80) >> 7);
+
+    Output[1] = (Input[0] & 0x80) |
+        ((Input[1] & 0x02) << 5) |
+        ((Input[2] & 0x02) << 4) |
+        ((Input[3] & 0x40) >> 2) |
+        (Input[0] & 0x08) |
+        ((Input[2] & 0x40) >> 4) |
+        (Input[3] & 0x02) |
+        ((Input[1] & 0x40) >> 6);
+
+    Output[2] = ((Input[0] & 0x40) << 1) |
+        ((Input[0] & 0x01) << 6) |
+        ((Input[2] & 0x01) << 5) |
+        ((Input[1] & 0x04) << 2) |
+        ((Input[3] & 0x01) << 3) |
+        ((Input[3] & 0x20) >> 3) |
+        ((Input[0] & 0x20) >> 4) |
+        ((Input[1] & 0x80) >> 7);
+
+    Output[3] = ((Input[2] & 0x20) << 2) |
+        ((Input[1] & 0x08) << 3) |
+        ((Input[3] & 0x04) << 3) |
+        ((Input[0] & 0x04) << 2) |
+        ((Input[2] & 0x04) << 1) |
+        ((Input[1] & 0x20) >> 3) |
+        ((Input[0] & 0x10) >> 3) |
+        ((Input[3] & 0x80) >> 7);
+}
+
+
+//------------------------------------------------------------------------------------
+void DES_Function_E(unsigned char* Input, unsigned char* Output)
+{
+    Output[0] = ((Input[0] >> 1) & 0x7C) | ((Input[3] & 0x01) << 7);
+    Output[1] = ((Input[0] << 3) & 0xF8) | ((Input[1] & 0x80) >> 5);
+    Output[2] = ((Input[1] >> 1) & 0x7C) | ((Input[0] & 0x01) << 7);
+    Output[3] = ((Input[1] << 3) & 0xF8) | ((Input[2] & 0x80) >> 5);
+    Output[4] = ((Input[2] >> 1) & 0x7C) | ((Input[1] & 0x01) << 7);
+    Output[5] = ((Input[2] << 3) & 0xF8) | ((Input[3] & 0x80) >> 5);
+    Output[6] = ((Input[3] >> 1) & 0x7C) | ((Input[2] & 0x01) << 7);
+    Output[7] = ((Input[3] << 3) & 0xF8) | ((Input[0] & 0x80) >> 5);
+}
+
+//------------------------------------------------------------------------------------
+void DES_Function_XOR(unsigned char* XOR_1, unsigned char* XOR_2)
+{
+    unsigned char I;
+
+    for (I = 0; I < 4; I++)
+        XOR_1[I] ^= XOR_2[I];
+}
+
+//------------------------------------------------------------------------------------
+unsigned char DES_SBox(unsigned char Raw, unsigned char Column, unsigned char Box_Number)
+{
+    switch (Box_Number)
+    {
+    case 1:
+        return SBOX_1[Raw][Column];
+    case 2:
+        return SBOX_2[Raw][Column];
+    case 3:
+        return SBOX_3[Raw][Column];
+    case 4:
+        return SBOX_4[Raw][Column];
+    case 5:
+        return SBOX_5[Raw][Column];
+    case 6:
+        return SBOX_6[Raw][Column];
+    case 7:
+        return SBOX_7[Raw][Column];
+    case 8:
+        return SBOX_8[Raw][Column];
+    }
+
+    return 0;
+}
+
+//------------------------------------------------------------------------------------
+void DES_Function_F(unsigned char* DES_Buffer, unsigned char* Key)
+{
+    unsigned char F_Temp[8];
+    unsigned char I;
+
+    DES_Function_E(DES_Buffer, (unsigned char*)&F_Temp[0]);
+    DES_Function_XOR((unsigned char*)&F_Temp[0], Key);
+    DES_Function_XOR((unsigned char*)&F_Temp[4], Key + 4);
+    unsigned char Raw, Column;
+
+    for (I = 1; I <= 8; I++)
+    {
+        Raw = ((F_Temp[I - 1] & 0x04) >> 2) | ((F_Temp[I - 1] & 0x80) >> 6);
+        Column = ((F_Temp[I - 1] & 0x78) >> 3);
+        F_Temp[I - 1] = DES_SBox(Raw, Column, I);
+    }
+
+    // Convert 8 x 1 nIbble (ex. 0x010F0A050407010E)
+    // Into 4 x 2 NIbble (ex. 1FA5471E)
+    for (I = 0; I < 4; I++)
+    {
+        F_Temp[2 * I] <<= 4;
+        F_Temp[2 * I] |= F_Temp[(2 * I) + 1];
+    }
+
+    F_Temp[1] = F_Temp[2];
+    F_Temp[2] = F_Temp[4];
+    F_Temp[3] = F_Temp[6];
+
+    DES_Function_P((unsigned char*)&F_Temp[0], DES_Buffer);
+}
+
+
+//------------------------------------------------------------------------------------
+void DES_Key_Scheduling(unsigned char* Key, unsigned char* Key_Schedule_1, unsigned char* Key_Schedule_2)
+{
+    unsigned char Permuted_Choice_1[8];
+    unsigned char Key_Index = 1;
+
+    DES_Permuted_Choice_1(Key, (unsigned char*)&Permuted_Choice_1[0]);
+
+    do
+    {
+        DES_Left_Shift((unsigned char*)&Permuted_Choice_1[0]);
+        if ((Key_Index != 1) && (Key_Index != 2)) DES_Left_Shift((unsigned char*)&Permuted_Choice_1[0]);
+        DES_Permuted_Choice_2((unsigned char*)&Permuted_Choice_1[0], Key_Schedule_1);
+        Key_Schedule_1 += 8;
+    } while (++Key_Index <= 8);
+
+    do
+    {
+        DES_Left_Shift((unsigned char*)&Permuted_Choice_1[0]);
+        if ((Key_Index != 9) && (Key_Index != 16)) DES_Left_Shift((unsigned char*)&Permuted_Choice_1[0]);
+        DES_Permuted_Choice_2((unsigned char*)&Permuted_Choice_1[0], Key_Schedule_2);
+        Key_Schedule_2 += 8;
+    } while (++Key_Index <= 16);
+}
+
+
+//------------------------------------------------------------------------------------
+void DES_Round_ENC(unsigned char* DES_Buffer, unsigned char* Key_Schedule_1, unsigned char* Key_Schedule_2)
+{
+    unsigned char DES_Buffer_Left[4];
+    unsigned char DES_Buffer_Right[4];
+    unsigned char DES_Buffer_Temp1[4];
+    unsigned char DES_Buffer_Temp2[4];
+    unsigned char Round_Key[8];
+    unsigned char I;
+
+    // Split DES Input buffer into 2 x 4 bytes words L0 and R0 5including first swap)
+    MEMORY_Copy((unsigned char*)&DES_Buffer_Left[0], DES_Buffer, 4);
+    MEMORY_Copy((unsigned char*)&DES_Buffer_Right[0], DES_Buffer + 4, 4);
+
+    for (I = 1; I <= 8; I++)
+    {
+        // For each of the 16 rounds:
+        // Key Scheduling
+        MEMORY_Copy((unsigned char*)&Round_Key[0], Key_Schedule_1, 8);
+        Key_Schedule_1 += 8;
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Temp1[0], (unsigned char*)&DES_Buffer_Left[0], 4);
+        // L_n+1 = R_n
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Left[0], (unsigned char*)&DES_Buffer_Right[0], 4);
+        // R_n+1 = L_n + f(R_n, K_n+1)
+        // F(R.K)
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Temp2[0], (unsigned char*)&DES_Buffer_Right[0], 4);
+        DES_Function_F((unsigned char*)&DES_Buffer_Temp2[0], (unsigned char*)&Round_Key[0]);
+        DES_Function_XOR((unsigned char*)&DES_Buffer_Temp1[0], (unsigned char*)&DES_Buffer_Temp2[0]);
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Right[0], (unsigned char*)&DES_Buffer_Temp1[0], 4);
+    }
+
+    for (I = 1; I <= 8; I++)
+    {
+        // For each of the 16 rounds:
+        // Key Scheduling
+        MEMORY_Copy((unsigned char*)&Round_Key[0], Key_Schedule_2, 8);
+        Key_Schedule_2 += 8;
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Temp1[0], (unsigned char*)&DES_Buffer_Left[0], 4);
+        // L_n+1 = R_n
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Left[0], (unsigned char*)&DES_Buffer_Right[0], 4);
+        // R_n+1 = L_n + f(R_n, K_n+1)
+        // F(R.K)
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Temp2[0], (unsigned char*)&DES_Buffer_Right[0], 4);
+        DES_Function_F((unsigned char*)&DES_Buffer_Temp2[0], (unsigned char*)&Round_Key[0]);
+        DES_Function_XOR((unsigned char*)&DES_Buffer_Temp1[0], (unsigned char*)&DES_Buffer_Temp2[0]);
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Right[0], (unsigned char*)&DES_Buffer_Temp1[0], 4);
+    }
+
+    MEMORY_Copy(DES_Buffer, (unsigned char*)&DES_Buffer_Left[0], 4);
+    MEMORY_Copy(DES_Buffer + 4, (unsigned char*)&DES_Buffer_Right[0], 4);
+}
+
+
+//------------------------------------------------------------------------------------
+void DES_Round_DEC(unsigned char* DES_Buffer, unsigned char* Key_Schedule_1, unsigned char* Key_Schedule_2)
+{
+    unsigned char DES_Buffer_Left[4];
+    unsigned char DES_Buffer_Right[4];
+    unsigned char DES_Buffer_Temp1[4];
+    unsigned char DES_Buffer_Temp2[4];
+    unsigned char Round_Key[8];
+    unsigned char I;
+
+
+    // Split DES Input buffer into 2 x 4 bytes words L0 and R0
+    MEMORY_Copy((unsigned char*)&DES_Buffer_Left[0], DES_Buffer + 4, 4);
+    MEMORY_Copy((unsigned char*)&DES_Buffer_Right[0], DES_Buffer, 4);
+
+    Key_Schedule_2 += 56;
+    Key_Schedule_1 += 56;
+
+    for (I = 1; I <= 8; I++)
+    {
+        // For each of the 16 rounds:
+        // Key Scheduling
+        MEMORY_Copy((unsigned char*)&Round_Key[0], Key_Schedule_2, 8);
+        Key_Schedule_2 -= 8;
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Temp1[0], (unsigned char*)&DES_Buffer_Right[0], 4);
+        // R_n-1 = L_n
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Right[0], (unsigned char*)&DES_Buffer_Left[0], 4);
+        // L_n-1 = R_n + f(L_n, K_n)
+        // F(R.K)
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Temp2[0], (unsigned char*)&DES_Buffer_Left[0], 4);
+        DES_Function_F((unsigned char*)&DES_Buffer_Temp2[0], (unsigned char*)&Round_Key[0]);
+        DES_Function_XOR((unsigned char*)&DES_Buffer_Temp1[0], (unsigned char*)&DES_Buffer_Temp2[0]);
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Left[0], (unsigned char*)&DES_Buffer_Temp1[0], 4);
+    }
+
+    for (I = 1; I <= 8; I++)
+    {
+        // For each of the 16 rounds:
+        // Key Scheduling
+        MEMORY_Copy((unsigned char*)&Round_Key[0], Key_Schedule_1, 8);
+        Key_Schedule_1 -= 8;
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Temp1[0], (unsigned char*)&DES_Buffer_Right[0], 4);
+        // R_n-1 = L_n
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Right[0], (unsigned char*)&DES_Buffer_Left[0], 4);
+        // L_n-1 = R_n + f(L_n, K_n)
+        // F(R.K)
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Temp2[0], (unsigned char*)&DES_Buffer_Left[0], 4);
+        DES_Function_F((unsigned char*)&DES_Buffer_Temp2[0], (unsigned char*)&Round_Key[0]);
+        DES_Function_XOR((unsigned char*)&DES_Buffer_Temp1[0], (unsigned char*)&DES_Buffer_Temp2[0]);
+        MEMORY_Copy((unsigned char*)&DES_Buffer_Left[0], (unsigned char*)&DES_Buffer_Temp1[0], 4);
+    }
+
+    MEMORY_Copy(DES_Buffer, (unsigned char*)&DES_Buffer_Left[0], 4);
+    MEMORY_Copy(DES_Buffer + 4, (unsigned char*)&DES_Buffer_Right[0], 4);
+}
+
+
+
+//------------------------------------------------------------------------------------
+void XOR_Byte2Byte(unsigned char* Source, unsigned char* Dest, unsigned char SzData)
+{
+    unsigned char I;
+
+    for (I = 0; I < SzData; I++)
+    {
+        Dest[I] ^= Source[I];
+    }
+}
+
+//------------------------------------------------------------------------------------
+void DES_DEC(unsigned char* Input, unsigned char* Output, unsigned char* Key)
+{
+    unsigned char DES_Work_Buffer[8];
+    unsigned char Key_Schedule_1[8][8];
+    unsigned char Key_Schedule_2[8][8];
+
+    //----- Key Scheduling -----
+    DES_Key_Scheduling(Key, (unsigned char*)&Key_Schedule_1[0][0], (unsigned char*)&Key_Schedule_2[0][0]);
+
+    DES_Initial_Permutation(Input, (unsigned char*)&DES_Work_Buffer[0]);
+    DES_Round_DEC((unsigned char*)&DES_Work_Buffer[0], (unsigned char*)&Key_Schedule_1[0][0], (unsigned char*)&Key_Schedule_2[0][0]);
+    DES_Inverse_Initial_Permutation((unsigned char*)&DES_Work_Buffer[0], Output);
+}
+
+
+//------------------------------------------------------------------------------------
+void DES_ENC(unsigned char* Input, unsigned char* Output, unsigned char* Key)
+{
+    unsigned char DES_Work_Buffer[8];
+    unsigned char Key_Schedule_1[8][8];
+    unsigned char Key_Schedule_2[8][8];
+    unsigned char DES_Temp[4];
+
+    //----- Initial Permutation -----
+    DES_Initial_Permutation(Input, (unsigned char*)&DES_Work_Buffer[0]);
+
+    //----- Key Scheduling -----
+    DES_Key_Scheduling(Key, (unsigned char*)&Key_Schedule_1[0][0], (unsigned char*)&Key_Schedule_2[0][0]);
+
+    DES_Round_ENC((unsigned char*)&DES_Work_Buffer[0], (unsigned char*)&Key_Schedule_1[0][0], (unsigned char*)&Key_Schedule_2[0][0]);
+    // Swap R16 and L16
+    MEMORY_Copy((unsigned char*)&DES_Temp[0], (unsigned char*)&DES_Work_Buffer[0], 4);
+    MEMORY_Copy((unsigned char*)&DES_Work_Buffer[0], (unsigned char*)&DES_Work_Buffer[4], 4);
+    MEMORY_Copy((unsigned char*)&DES_Work_Buffer[4], (unsigned char*)&DES_Temp[0], 4);
+
+    DES_Inverse_Initial_Permutation((unsigned char*)&DES_Work_Buffer[0], Output);
+}
+
+void afficher_64bits(string s, unsigned char Tab[8]) {
+    cout << s;
+    for (int i = 0; i < 8; i++) cout << (int)Tab[i] << " ";
+    cout << endl;
+}
+
+void afficher_hexa(string s, unsigned char Tab[8]) {
+    cout << s;
+    printf("16#%x_%x#, 16#%x_%x#, 16#%x_%x#, 16#%x_%x#\n", Tab[0], Tab[1], Tab[2], Tab[3], Tab[4], Tab[5], Tab[6], Tab[7]);
+}
+void afficher_hexa_inverse(string s, unsigned char Tab[8]) {
+    cout << s;
+    printf("%x %x %x %x %x %x %x %x\n", Tab[7], Tab[6], Tab[5], Tab[4], Tab[3], Tab[2], Tab[1], Tab[0]);
+}
+
+void calcul_MAC_single_Block(unsigned char Block[8], unsigned char k1[8], unsigned char k2[8], unsigned char k3[8], unsigned char Output[8]) {
+    //----- Step 1 -----
+    //cout << endl << endl << "ETAPE_1" << endl << endl;
+    DES_ENC(Block, Output, (unsigned char*)k1);
+    afficher_64bits("message block 1 : ", Block);
+    //afficher_64bits("Clef de session 1 (Ks1) = ", k1);
+    //afficher_64bits("Apres cryptage par Ks1 ==> ", Output);
+    //----- Step 2 -----
+    //cout << endl << endl << "ETAPE_2" << endl << endl;
+    DES_DEC(Output, Output, (unsigned char*)k2);
+    //afficher_64bits("Apres decryptage par Ks2 ==> ", Output);
+    //----- Step 3 -----
+    //cout << endl << endl << "ETAPE_3" << endl << endl;
+    DES_ENC(Output, Output, (unsigned char*)k3);
+    //afficher_64bits("Apres cryptage par Ks3 ==> ", Output);
+    printf("CBC-MAC         = %x %x %x %x %x %x %x %x\n", Output[0], Output[1], Output[2], Output[3], Output[4], Output[5], Output[6], Output[7]);
+}
+
+void calcul_MAC_3Blocks(
+    unsigned char Block1[8], unsigned char Block2[8], unsigned char Block3[8],
+    unsigned char k1[8], unsigned char k2[8], unsigned char k3[8], unsigned char Output[8])
+{
+
+    //----- Step 1 -----
+    cout << "CALCUL de MAC à 3 blocs";
+    cout << endl << endl;
+    DES_ENC(Block1, Output, (unsigned char*)k1);
+    afficher_64bits("message block 1 : ", Block1);
+    afficher_64bits("Clef de session 1 (Ks1) = ", k1);
+    afficher_64bits("Apres cryptage par Ks1 ==> ", Output);
+
+    //----- Step 2 -----
+    cout << endl << endl;
+    afficher_64bits("message block 2 : ", Block2);
+    XOR_Byte2Byte(&Block2[0], &Output[0], 8);
+    afficher_64bits("Apres XOR avec le block 2 ==> ", Output);
+
+    //----- Step 3 -----
+    cout << endl << endl;
+    DES_ENC(Output, Output, (unsigned char*)k1);
+    afficher_64bits("Apres cryptage par Ks1 ==> ", Output);
+
+    //----- Step 4 -----
+    cout << endl << endl;
+    afficher_64bits("message block 3 : ", Block3);
+    XOR_Byte2Byte(&Block3[0], &Output[0], 8);
+    afficher_64bits("Apres XOR avec le block 3 ==> ", Output);
+
+    //----- Step 5 -----
+    cout << endl << endl;
+    DES_ENC(Output, Output, (unsigned char*)k1);
+    afficher_64bits("Apres cryptage par Ks1 ==> ", Output);
+
+    //----- Step 6 -----
+    cout << endl << endl;
+    DES_DEC(Output, Output, (unsigned char*)k2);
+    afficher_64bits("Apres decryptage par Ks2 ==> ", Output);
+
+    //----- Step 7 -----
+    cout << endl << endl;
+    DES_ENC(Output, Output, (unsigned char*)k3);
+    afficher_64bits("Apres cryptage par Ks3 ==> ", Output);
+    printf("CBC-MAC         = %x %x %x %x %x %x %x %x\n", Output[0], Output[1], Output[2], Output[3], Output[4], Output[5], Output[6], Output[7]);
+
+}
+
+void calcul_MAC_4Blocks(
+            unsigned char Block1[8], unsigned char Block2[8], unsigned char Block3[8], unsigned char Block4[8],
+            unsigned char k1[8], unsigned char k2[8], unsigned char k3[8], unsigned char Output[8])
+{
+    /*afficher_64bits("Clef de session 1 (Ks1) = ", k1);
+    afficher_64bits("Clef de session 1 (Ks2) = ", k2);
+    afficher_64bits("Clef de session 1 (Ks3) = ", k3);*/
+    //----- Step 1 -----
+    cout << "CALCUL de MAC à 4 blocs" << endl;
+    //cout << endl << endl << "ETAPE_1" << endl << endl;
+    DES_ENC(Block1, Output, (unsigned char*)k1);
+    afficher_64bits("message block 1 : ", Block1);
+    //afficher_64bits("Apres cryptage par Ks1 ==> ", Output);
+
+    //----- Step 2 -----
+    //cout << endl << endl << "ETAPE_2" << endl << endl;
+    afficher_64bits("message block 2 : ", Block2);
+    XOR_Byte2Byte(&Block2[0], &Output[0], 8);
+    //afficher_64bits("Apres XOR avec le block 2 ==> ", Output);
+
+    //----- Step 3 -----
+    //cout << endl << endl << "ETAPE_3" << endl << endl;
+    DES_ENC(Output, Output, (unsigned char*)k1);
+    //afficher_64bits("Apres cryptage par Ks1 ==> ", Output);
+
+    //----- Step 4 -----
+    //cout << endl << endl << "ETAPE_4" << endl << endl;
+    afficher_64bits("message block 3 : ", Block3);
+    XOR_Byte2Byte(&Block3[0], &Output[0], 8);
+    //afficher_64bits("Apres XOR avec le block 3 ==> ", Output);
+
+    //----- Step 5 -----
+    //cout << endl << endl << "ETAPE_5" << endl << endl;
+    DES_ENC(Output, Output, (unsigned char*)k1);
+    //afficher_64bits("Apres cryptage par Ks1 ==> ", Output);
+
+    //----- Step 6 -----
+    //cout << endl << endl << "ETAPE_6" << endl << endl;
+    afficher_64bits("message block 4 : ", Block4);
+    XOR_Byte2Byte(&Block4[0], &Output[0], 8);
+    //afficher_64bits("Apres XOR avec le block 4 ==> ", Output);
+
+    //----- Step 7 -----
+    //cout << endl << endl << "ETAPE_7" << endl << endl;
+    DES_ENC(Output, Output, (unsigned char*)k1);
+    //afficher_64bits("Apres cryptage par Ks1 ==> ", Output);
+
+    //----- Step 8 -----
+    //cout << endl << endl << "ETAPE_8" << endl << endl;
+    DES_DEC(Output, Output, (unsigned char*)k2);
+    //afficher_64bits("Apres decryptage par Ks2 ==> ", Output);
+
+    //----- Step 9 -----
+    //cout << endl << endl << "ETAPE_9" << endl << endl;
+    DES_ENC(Output, Output, (unsigned char*)k3);
+    afficher_64bits("Apres cryptage par Ks3 ==> ", Output);
+    printf("CBC-MAC         = %x %x %x %x %x %x %x %x\n", Output[0], Output[1], Output[2], Output[3], Output[4], Output[5], Output[6], Output[7]);
+
+}
+
+void calcul_MAC_n_Blocks(int n, unsigned char Blocks[], unsigned char k1[8], unsigned char k2[8], unsigned char k3[8], unsigned char Output[8], bool verbose=false) {
+    unsigned char current_block[8];
+    int byte_index = 0;
+    for (int i = 0; i < n;i++) {
+        for (int j = 0; j < 8; j++) {
+            current_block[j] = Blocks[byte_index++];
+        }
+        if (verbose) afficher_64bits("current message block : ", current_block);
+        if (i > 0) {
+            XOR_Byte2Byte(current_block, Output, 8);
+            if (verbose) afficher_64bits("Apres XOR avec le block precedent ==> ", Output);
+            DES_ENC(Output, Output, (unsigned char*)k1);
+        }
+        else { DES_ENC(current_block, Output, (unsigned char*)k1); }
+        if (verbose) afficher_64bits("Apres cryptage par Ks1 ==> ", Output);
+    }
+    DES_DEC(Output, Output, (unsigned char*)k2);
+    if (verbose) afficher_64bits("Apres decryptage par Ks2 ==> ", Output);
+    DES_ENC(Output, Output, (unsigned char*)k3);
+    if (verbose) afficher_64bits("Apres cryptage par Ks3 ==> ", Output);
+    printf("CBC-MAC         = %x %x %x %x %x %x %x %x\n", Output[0], Output[1], Output[2], Output[3], Output[4], Output[5], Output[6], Output[7]);
+}
+
+class Connection_U98 {
+    private:
+        const_PSC cst_PSC;
+        unsigned char Key1[8];
+        unsigned char Key2[8];
+        unsigned char Key3[8];
+
+        unsigned char Ks1[8] = { 0,0,0,0, 0,0,0,0 };
+        unsigned char Ks2[8] = { 0,0,0,0, 0,0,0,0 };
+        unsigned char Ks3[8] = { 0,0,0,0, 0,0,0,0 };
+
+        int initiator_etcs_id=0;
+        int responder_etcs_id=0;
+        int responder_type = 192;
+
+        bool is_connnection1;
+
+        unsigned char RandomA[8] = { 0,0,0,0, 0,0,0,0 };
+        unsigned char RandomB[8] = { 0,0,0,0, 0,0,0,0 };
+
+        void compute_session_key(unsigned char random_number[8], unsigned char session_key[8], bool reverse)  {
+            if (reverse) {
+                DES_ENC(random_number, session_key, this->Key3);
+                DES_DEC(session_key, session_key, this->Key2);
+                DES_ENC(session_key, session_key, this->Key1);
+            }
+            else {
+                DES_ENC(random_number, session_key, this->Key1);
+                DES_DEC(session_key, session_key, this->Key2);
+                DES_ENC(session_key, session_key, this->Key3);
+            }
+        }
+
+    public:
+        Connection_U98(unsigned char K1[8], unsigned char K2[8], unsigned char K3[8], int initiator, int responder, int resp_type = 192, bool is_cnx1=true) {
+            for (int i = 0; i < 8; i++) {
+                Key1[i] = K1[i];
+                Key2[i] = K2[i];
+                Key3[i] = K3[i];
+            }
+            initiator_etcs_id = initiator;
+            responder_etcs_id = responder;
+            responder_type = resp_type;
+            is_connnection1 = is_cnx1;
+        }
+
+        void start_session(unsigned char RA[8], unsigned char RB[8]) {
+            unsigned char RA_L_RB_L[8];
+            unsigned char RA_R_RB_R[8];
+
+            for (int i = 0;i < 4;i++) {
+                this->RandomA[i] = RA[i];
+                this->RandomB[i] = RB[i];
+                RA_L_RB_L[i] = RA[i];
+                RA_L_RB_L[i + 4] = RB[i];
+
+                this->RandomA[i + 4] = RA[i + 4];
+                this->RandomB[i + 4] = RB[i + 4];
+                RA_R_RB_R[i] = RA[i + 4];
+                RA_R_RB_R[i + 4] = RB[i + 4];
+            }
+
+            this->compute_session_key(RA_L_RB_L, this->Ks1, false);
+            this->compute_session_key(RA_R_RB_R, this->Ks2, false);
+            this->compute_session_key(RA_L_RB_L, this->Ks3, true);
+
+
+
+            Redond Bx_r;
+            if (is_connnection1) {
+                cout << "Connection numero 1 :" << endl;
+                Bx_r = cst_PSC.Unisig_98_Hard(3);
+            } else {
+                cout << "Connection numero 2 :" << endl;
+                Bx_r = cst_PSC.Unisig_98_Hard(13);
+            }
+            cout << endl;
+            afficher_64bits("Session Key1        : ", Ks1);
+            afficher_64bits("Session Key2        : ", Ks2);
+            afficher_64bits("Session Key3        : ", Ks3);
+            cout << endl;
+
+            Redond r1_redond = cst_PSC.calculer_redond_tableau8(RA_L_RB_L, Bx_r, true);
+            Redond r2_redond = cst_PSC.calculer_redond_tableau8(RA_R_RB_R, Bx_r, true);
+
+            afficher_hexa("Random number 1 :", RA_L_RB_L);
+            cout << " Redond Random1 = "; r1_redond.afficher(); cout << endl;
+            afficher_hexa("Random number 2 :", RA_R_RB_R);
+            cout << " Redond Random2 = "; r2_redond.afficher(); cout << endl;
+            afficher_hexa("Random number 3 :", RA_L_RB_L); // r3 = r1
+            cout << " Redond Random3 = "; r1_redond.afficher(); cout << endl; // r3 = r1
+            cout << endl << "connection etablie ..." << endl << endl;
+        }
+
+        void compute_input_MAC_AU2(unsigned char output[8]) {
+
+            cout << "computing G_INPUT_MAC_AU2 ";
+            if (is_connnection1) { cout << "for connection 1"; }
+            else { cout << "for connection 2"; }
+            cout << " ..." << endl;
+
+            unsigned char AU2_bloc1[8] = { 0,0,0,0, 0,0,0,0 };
+            unsigned char AU2_bloc2[8] = { 0,0,0,0, 0,0,0,0 };
+            unsigned char AU2_bloc3[8] = { 0,0,0,0, 0,0,0,0 };
+            unsigned char AU2_bloc4[8] = { 0,0,0,0, 0,0,0,0 };
+
+            unsigned char Initiator_Etcs_Id[3];
+            unsigned char Responder_Etcs_Id[3];
+
+            int remaining_value1 = this->initiator_etcs_id;
+            int remaining_value2 = this->responder_etcs_id;
+            for (int i = 0; i < 3; i++) {
+                Initiator_Etcs_Id[2-i] = remaining_value1 % 256;
+                remaining_value1 = remaining_value1 / 256;
+                Responder_Etcs_Id[2-i] = remaining_value2 % 256;
+                remaining_value2 = remaining_value2 / 256;
+            }
+
+            // Creation de G_MAC_INPUT_AU2
+            AU2_bloc1[0] = 0;
+            AU2_bloc1[1] = 27; // longueur
+            for (int i = 0; i < 3; i++) AU2_bloc1[i + 2] = Initiator_Etcs_Id[i]; // DA
+            AU2_bloc1[5] = this->responder_type + 5; // ETY + MTI + DF // ETY = 1*(2^5) (TFH) ou 6*(2^5) (TE) , MTY=2*(2^1), DF=1
+            for (int i = 0; i < 3; i++) { // SA
+                if (i + 6 < 8) { AU2_bloc1[i + 6] = Responder_Etcs_Id[i]; }
+                else { AU2_bloc2[i - 2] = Responder_Etcs_Id[i]; }
+            }
+            AU2_bloc2[1] = 1;
+            for (int i = 0; i < 8; i++) { // RA
+                if (i + 2 < 8) { AU2_bloc2[i + 2] = RandomA[i]; }
+                else { AU2_bloc3[i - 6] = RandomA[i]; }
+            }
+            for (int i = 0; i < 8; i++) { // RB
+                if (i + 2 < 8) { AU2_bloc3[i + 2] = RandomB[i]; }
+                else { AU2_bloc4[i - 6] = RandomB[i]; }
+            }
+            for (int i = 0; i < 3; i++) AU2_bloc4[i + 2] = Initiator_Etcs_Id[i]; // DA (=B)
+            for (int i = 5; i < 8; i++) AU2_bloc4[i] = 0; // padding
+            // fin de la creation de G_MAC_INPUT_AU2
+
+            afficher_64bits("bloc1 (msg AU2) = ", AU2_bloc1);
+            afficher_64bits("bloc2 (msg AU2) = ", AU2_bloc2);
+            afficher_64bits("bloc3 (msg AU2) = ", AU2_bloc3);
+            afficher_64bits("bloc4 (msg AU2) = ", AU2_bloc4);
+
+            calcul_MAC_4Blocks(AU2_bloc1, AU2_bloc2, AU2_bloc3, AU2_bloc4, this->Ks1, this->Ks2, this->Ks3, output);
+            cout << endl;
+        }
+
+        void compute_Mac_n_Blocks(int nb_bloks, unsigned char Blocks[], unsigned char Output[8]) {
+            cout << "CALCUL de MAC à N blocs avec N="<<nb_bloks;
+            if (is_connnection1) { cout << " pour connection 1"; } else { cout << " pour connection 2"; }
+            cout << endl;
+
+            calcul_MAC_n_Blocks(nb_bloks, Blocks, this->Ks1, this->Ks2, this->Ks3, Output);
+        }
+};
+
+//------------------------------------------------------------------------------------
+int main(int argc, char* argv[]) {
+
+    // AU2 message
+    // exemple : G_MAC_INPUT_AU2 =  0  27  0  0  13  37  0  0  19  1  127  89  16  165  38  245  22  222   14   91  129  123  38  112  172   6  0  0  13  0  0  0
+    unsigned char MessageBlock1[8] = {   0,  27,  32,  64,  42,  37,  32,  64 };
+    unsigned char MessageBlock2[8] = {  45,   1,  10, 245, 100,  49,  88,  77 };
+    unsigned char MessageBlock3[8] = { 235,  51, 222, 248, 180, 220, 104, 198 };
+    unsigned char MessageBlock4[8] = {  55, 162,  32,  64,  42,   0,   0,   0 };
+    unsigned char Output[8];
+
+    unsigned char Key1_TE[8] = {80,73,80,67,50,48,48,54}; // PIPC2006  // Remplir_Key (Key_1 (Id_cnx1/2), 16#5049#, 16#5043#, 16#3230#, 16#3036#);
+    unsigned char Key2_TE[8] = {83,69,73,95,50,48,48,54}; // SEI_2006  // Remplir_Key (Key_2 (Id_Cnx1/2), 16#5345#, 16#495F#, 16#3230#, 16#3036#);
+    unsigned char Key3_TE[8] = {83,76,79,75,50,48,48,54}; // SLOK2006  // Remplir_Key (Key_3 (Id_Cnx1/2), 16#534C#, 16#4F4B#, 16#3230#, 16#3036#);
+
+    unsigned char Key1_TFC[8] = {78,14,189,169,77,10,158,120};   // Remplir_Key (Key_1 (Connection_Id), 16#4e0e#, 16#bda9#, 16#4d0a#, 16#9e78#);
+    unsigned char Key2_TFC[8] = {120,157,92,231,187,28,163,183}; // Remplir_Key (Key_2 (Connection_Id), 16#789d#, 16#5ce7#, 16#bb1c#, 16#a3b7#);
+    unsigned char Key3_TFC[8] = {13,47,174,160,14,186,166,250};  // Remplir_Key (Key_3 (Connection_Id), 16#0d2f#, 16#aea0#, 16#0eba#, 16#a6fa#);
+
+    unsigned char Key1_TFH[8] = { 32,33,34,35,36,37,38,39 }; // début de Unisig_98_as.Prepare_Key(LOCAL_ETCS_ID=>13, REMOTE_ETCS_ID=>19)
+    unsigned char Key2_TFH[8] = { 40,41,42,43,44,45,46,47 }; // milieu de Unisig_98_as.Prepare_Key(LOCAL_ETCS_ID=>13, REMOTE_ETCS_ID=>19)
+    unsigned char Key3_TFH[8] = { 48,49,50,51,52,53,54,55 }; // fin de Unisig_98_as.Prepare_Key(LOCAL_ETCS_ID=>13, REMOTE_ETCS_ID=>19)
+
+    unsigned char Key1[8];
+    unsigned char Key2[8];
+    unsigned char Key3[8];
+
+
+    /*
+    for (int i = 0;i < 8;i++) {
+        Key1[i] = Key1_TFH[i];
+        Key2[i] = Key2_TFH[i];
+        Key3[i] = Key3_TFH[i];
+    }
+    unsigned char Initiator_Etcs_Id[3] = { 0,0,13 }; // ZC
+    unsigned char Responder_Etcs_Id[3] = { 0,0,19 }; // PAI CNX1
+
+    unsigned char RandomA[8] = { 127,  89,  16, 165,  38, 245, 22, 222 }; // RA = RA_L | RA_R
+    unsigned char RandomB[8] = { 242, 163, 212, 147, 132, 245, 59,  26 }; // RB = RB_L | RB_R
+    */
+
+
+    for (int i = 0;i < 8;i++) {
+        Key1[i] = Key1_TE[i];
+        Key2[i] = Key2_TE[i];
+        Key3[i] = Key3_TE[i];
+    }
+    unsigned char Initiator_Etcs_Id[3] = {32, 128, 45}; // 44 = ZC_02[A] // 45 = ZC_02[B]
+    unsigned char Responder_Etcs_Id[3] = {32, 128, 43}; // 42=PAI_75 // 43=PAI_81
+
+    unsigned char RandomA[8];
+    unsigned char RandomB[8];
+
+    unsigned char RandomA_v1[8] = { 0x0c, 0x72, 0x2a ,0x73, 0x79 ,0x63,0x52,0xc3 };           // RA_L | RA_R
+    unsigned char RandomB_v1[8] = { 0x35, 0x2b, 0xa6, 0x98, 0x44, 0xc6, 0x60 , 0x6d    };          // RB_L | RB_R
+
+    unsigned char RandomA_v2[8] = { 107, 67, 49, 193, 218, 222, 70, 156 };   // RA_L | RA_R
+    unsigned char RandomB_v2_cnx1[8] = { 250, 22, 250, 40, 236,188,218,101 };     // RB_L | RB_R
+    unsigned char RandomB_v2_cnx2[8] = { 188, 211, 91, 242, 83, 7, 142, 31 };     // RB_L | RB_R
+
+    unsigned char RandomA_v3[8] = { 10,245,100,49,88,77,235,51 };            // RA_L | RA_R
+    unsigned char RandomB_v3[8] = { 8,108,122,205,190,26,172,27 };           // RB_L | RB_R
+
+
+    unsigned char RandomA_wshark[8] = { 0x41, 0xb2, 0xf3, 0xe2, 0x4b, 0xa9, 0x9c, 0x20 };          // RA_L | RA_R
+    unsigned char RandomB_wshark[8] = { 0x37, 0x59, 0x47, 0xaa, 0xa4, 0xbf, 0x44, 0x97 };          // RB_L | RB_R
+
+
+    cout << " Test de la classe connection_U98 : " << endl << endl;
+    int etcsid_initiateur = 2130068; // 20 80 94
+    int etcsid_repondeur = 2130066; // 20 80 92
+
+    Connection_U98 connexion_ZcB_PAI75(Key1_TE, Key2_TE, Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, true); // false => cnx2, true=cnx1
+    Connection_U98 connexion_ZcB_PAI81(Key1_TE, Key2_TE, Key3_TE, 2129965, 2129963, 192, false); // false => cnx2, true=cnx1
+    connexion_ZcB_PAI75.start_session(RandomA_wshark, RandomB_wshark);
+    connexion_ZcB_PAI81.start_session(RandomA_v1, RandomB_v1);
+    unsigned char MAC_AU2_cnx1[8];
+    unsigned char MAC_AU2_cnx2[8];
+    connexion_ZcB_PAI75.compute_input_MAC_AU2(MAC_AU2_cnx1);
+    connexion_ZcB_PAI81.compute_input_MAC_AU2(MAC_AU2_cnx2);
+    afficher_64bits(" MAC AU2 cnx1 --> ", MAC_AU2_cnx1);
+    afficher_64bits(" MAC AU2 cnx2 --> ", MAC_AU2_cnx2);
+
+
+    cout << endl; // Calcul à 1 bloc 
+    unsigned char block_01[8] = { 0x0b,0,0, 0 ,0x64,0,0,0 };  // Remplir_Key (Valeur_Data, 16#608c#, 16#75d7#, 16#03a4#, 16#1d1f#);
+    afficher_hexa_inverse("** DATA inverse :", block_01);
+    connexion_ZcB_PAI75.compute_Mac_n_Blocks(1, block_01, Output);
+    connexion_ZcB_PAI81.compute_Mac_n_Blocks(1, block_01, Output);
+
+    cout << endl; // Calcul à 2 blocs
+    unsigned char blocks_02[16] = { 0,27,32,128,45,197,32,128,    // Remplir_1_Data (Data(Connection_Id), L_Ind_Data, 16#001B#, 16#2080#, 16#2DC5#, 16#2080#);
+                                  43,1,10,245,100,49,88,77 };     // Remplir_1_Data (Data(Connection_Id), L_Ind_Data, 16#2B01#, 16#0AF5#, 16#6431#, 16#584D#);
+    connexion_ZcB_PAI75.compute_Mac_n_Blocks(2, blocks_02, Output);
+    connexion_ZcB_PAI81.compute_Mac_n_Blocks(2, blocks_02, Output);
+    cout << "-----------------------------" << endl << endl;
+
+    cout << endl; // Calcul à 3 blocs    
+    
+    cout << "++++ Calcul à 3 blocs" << endl;
+
+    unsigned char blocks_03[24] = { 0x00, 0x13, 0x20, 0x80, 0x92, 0x0a, 0x03, 0x3d,
+        0xc2, 0x00, 0x05, 0xca, 0xac, 0x00, 0x16, 0x02,
+        0x42, 0x00, 0x05, 0xca, 0xac, 0x00, 0x00, 0x00
+                                    };     
+    afficher_hexa_inverse("** DATA inverse :", blocks_03); 
+    connexion_ZcB_PAI75.compute_Mac_n_Blocks(3, blocks_03, Output);
+    cout << "-----------------------------" << endl << endl;
+
+    cout << endl; // Calcul à 4 blocs
+    cout << "++++ Calcul à 4 blocs" << endl;
+    unsigned char blocks_04[32] = {
+            0x00, 0x17, 0x20, 0x80, 0x94, 0x0b, 0x02, 0x00,
+            0x00, 0x00, 0x16, 0x02, 0x42, 0x00, 0x05, 0xca,
+            0x64, 0x00, 0x16, 0x02, 0x42, 0x00, 0x00, 0x00,
+            0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+    connexion_ZcB_PAI75.compute_Mac_n_Blocks(4, blocks_04, Output);
+    cout << "-----------------------------" << endl << endl;
+
+
+    for (int i = 0;i < 8;i++)
+    {
+        RandomA[i] = RandomA_v2[i];
+        RandomB[i] = RandomB_v2_cnx2[i];
+    }
+
+    // Creation de G_MAC_INPUT_AU2
+    MessageBlock1[0] = 0;
+    MessageBlock1[1] = 27; // longueur
+    for (int i = 0; i < 3; i++) MessageBlock1[i + 2] = Initiator_Etcs_Id[i]; // DA
+    MessageBlock1[5] = 192 /*32*/ + 5; // ETY + MTI + DF // ETY = 1*(2^5) (TFH) ou 6*(2^5) (TE) , MTY=2*(2^1), DF=1
+    for (int i = 0; i < 3; i++) { // SA
+        if (i + 6 < 8) { MessageBlock1[i + 6] = Responder_Etcs_Id[i]; }
+        else { MessageBlock2[i - 2] = Responder_Etcs_Id[i]; }
+    }
+    MessageBlock2[1] = 1;
+    for (int i = 0; i < 8; i++) { // RA
+        if (i + 2 < 8) { MessageBlock2[i + 2] = RandomA[i]; }
+        else { MessageBlock3[i - 6] = RandomA[i]; }
+    }
+    for (int i = 0; i < 8; i++) { // RB
+        if (i + 2 < 8) { MessageBlock3[i + 2] = RandomB[i]; }
+        else { MessageBlock4[i - 6] = RandomB[i]; }
+    }
+    for (int i = 0; i < 3; i++) MessageBlock4[i + 2] = Initiator_Etcs_Id[i]; // DA (=B)
+    for (int i = 5; i < 8; i++) MessageBlock4[i] = 0; // padding
+    // fin de la creation de G_MAC_INPUT_AU2
+
+
+    unsigned char RA_L_RB_L[8];
+    unsigned char RA_R_RB_R[8];
+
+    unsigned char Ks1[8];
+    unsigned char Ks2[8];
+    unsigned char Ks3[8];
+
+    // Calcul de RA_L_RB_L et de RA_R_RB_R
+
+    for (int i = 0;i < 4;i++) {
+        RA_L_RB_L[i] = RandomA[i];
+        RA_L_RB_L[i + 4] = RandomB[i];
+
+        RA_R_RB_R[i] = RandomA[i + 4];
+        RA_R_RB_R[i + 4] = RandomB[i + 4];
+    }
+
+    /*printf("DES key K1      : %c %c %c %c %c %c %c %c\n",
+        Key1[0], Key1[1], Key1[2], Key1[3], Key1[4], Key1[5], Key1[6], Key1[7]);
+    printf("DES key K2      : %c %c %c %c %c %c %c %c\n",
+        Key2[0], Key2[1], Key2[2], Key2[3], Key2[4], Key2[5], Key2[6], Key2[7]);
+    printf("DES key K3      : %c %c %c %c %c %c %c %c\n",
+        Key3[0], Key3[1], Key3[2], Key3[3], Key3[4], Key3[5], Key3[6], Key3[7]);*/
+
+    afficher_64bits("DES Key1        : ", Key1);
+    afficher_64bits("DES Key2        : ", Key2);
+    afficher_64bits("DES Key3        : ", Key3);
+
+
+    //printf("Random Number A : %d %d %d %d %d %d %d %d\n",RandomA[0],RandomA[1],RandomA[2],RandomA[3],RandomA[4],RandomA[5],RandomA[6],RandomA[7]);
+    afficher_64bits("Random Number A : ", RandomA);
+    //printf("Random Number B : %d %d %d %d %d %d %d %d\n",RandomB[0],RandomB[1],RandomB[2],RandomB[3],RandomB[4],RandomB[5],RandomB[6],RandomB[7]);
+    afficher_64bits("Random Number B : ", RandomB);
+
+    const_PSC constantes_PSC;
+    afficher_64bits("RA_L | RB_L : ", RA_L_RB_L);
+    afficher_64bits("RA_R | RB_R : ", RA_R_RB_R);
+    cout << endl;
+    afficher_hexa("Random1 pour TFC :", RA_L_RB_L);
+    Redond r1_redond = constantes_PSC.calculer_redond_tableau8(RA_L_RB_L, constantes_PSC.Unisig_98_Hard(13), true);
+    cout << " Redond Random1 = (" << r1_redond.C1() << " , " << r1_redond.C2() << " )" << endl;
+    afficher_hexa("Random2 pour TFC :", RA_R_RB_R);
+    Redond r2_redond = constantes_PSC.calculer_redond_tableau8(RA_R_RB_R, constantes_PSC.Unisig_98_Hard(13), true);
+    cout << " Redond Random2 = "; r2_redond.afficher(); cout << endl;
+    afficher_hexa("Random3 pour TFC :", RA_L_RB_L);
+    Redond r3_redond = constantes_PSC.calculer_redond_tableau8(RA_L_RB_L, constantes_PSC.Unisig_98_Hard(13), true);
+    cout << " Redond Random3 = "; r3_redond.afficher(); cout << endl;
+    cout << endl << endl;
+
+    // ---------------------------------------------------------------------------------------
+    //cout << "Calcul de Ks1" << endl << endl;
+    //afficher_64bits("Départ : RA_L | RB_L = ", RA_L_RB_L);
+    DES_ENC(RA_L_RB_L, Output, Key1);
+    //afficher_64bits("chiffrement par K1 => ", Output);
+    DES_DEC(Output, Output, Key2);
+    //afficher_64bits("dechiffrement par K2 => ", Output);
+    DES_ENC(Output, Ks1, Key3);
+    //afficher_64bits("chiffrement par K3 => ", Ks1);
+    // ---------------------------------------------------------------------------------------
+    //cout << endl << endl;
+    //cout << "Calcul de Ks2" << endl << endl;
+    //afficher_64bits("Depart : RA_R | RB_R = ", RA_R_RB_R);
+    DES_ENC(RA_R_RB_R, Output, (unsigned char*)Key1);
+    //afficher_64bits("apres chiffrement par K1   :  ", Output);
+    DES_DEC(Output, Output, (unsigned char*)Key2);
+    //afficher_64bits("apres dechiffrement par K2 : ", Output);
+    DES_ENC(Output, Ks2, (unsigned char*)Key3);
+    //afficher_64bits("apres chiffrement par K3   : ", Ks2);
+    // ---------------------------------------------------------------------------------------
+    //cout << endl << endl;
+    //cout << "Calcul de Ks3" << endl << endl;
+    //afficher_64bits("Depart : RA_L | RB_L = ", RA_L_RB_L);
+    DES_ENC(RA_L_RB_L, Output, (unsigned char*)Key3);
+    //afficher_64bits("chiffrement par K3 => ", Output);
+    DES_DEC(Output, Output, (unsigned char*)Key2);
+    //afficher_64bits("dechiffrement par K2 => ", Output);
+    DES_ENC(Output, Ks3, (unsigned char*)Key1);
+    //afficher_64bits("chiffrement par K1 => ", Ks3);
+
+    /*
+    cout << endl << "2eme calcul de Ks3" << endl;
+    calcul_MAC_single_Block(RA_L_RB_L, Key3, Key2, Key1, Output);
+    afficher_64bits("K3 par methode 2 => ", Output);
+
+    cout << endl << "3eme calcul de Ks3" << endl;
+    calcul_MAC_n_Blocks(1,RA_L_RB_L, Key3, Key2, Key1, Output);
+    afficher_64bits("K3 par methode 3 => ", Output);
+    */
+
+    unsigned char custom_block[8] = { 96,140,117,215,3,164,29,31 };  // Remplir_Key (Valeur_Data, 16#608c#, 16#75d7#, 16#03a4#, 16#1d1f#);
+    unsigned char custom_block_v2[8] = { 31,29,164,3,215,117,140,96 };
+
+    const bool mode_tfc = false;
+    if (mode_tfc) {
+        // ---------------------------------------------------------------------------------------
+        //  << MODE TFC >>
+        //
+        // Calcul sur 1 seul bloc
+        // ---------------------------------------------------------------------------------------
+
+        for (int i = 0;i < 8;i++) {
+            Key1[i] = Key1_TE[i]; // test tmp
+            Key2[i] = Key2_TE[i]; // test tmp
+            Key3[i] = Key3_TE[i]; // test tmp
+        }
+        cout << endl << "--- mode TFC ----" << endl << endl;
+
+        unsigned char Random1[8] = { 142,56,111,144,251,227,217,118 }; // Remplir_Key (Random_Data_1 (Connection_Id), 16#8e38#, 16#6f90#, 16#fbe3#, 16#d976#);
+        unsigned char Random2[8] = { 197,63,205,126,215,20,172,194 };  // Remplir_Key (Random_Data_2 (Connection_Id), 16#c53f#, 16#cd7e#, 16#d714#, 16#acc2#);
+        unsigned char Random3[8] = { 62,67,205,12,189,170,212,255 };   // Remplir_Key (Random_Data_3 (Connection_Id), 16#3e43#, 16#cd0c#, 16#bdaa#, 16#d4ff#);
+
+        //unsigned char RandomA[8] = { 10,245,100,49,88,77,235,51 };     // RA_L | RA_R
+        //unsigned char RandomB[8] = { 8,108,122,205,190,26,172,27 };   // RB_L | RB_R
+
+        unsigned char Random1_v2[8] = { 10,245,100,49, 8,108,122,205 }; //  RA_L | RB_L
+        unsigned char Random2_v2[8] = { 88,77,235,51,  190,26,172,27 }; //  RA_R | RB_R
+        unsigned char Random3_v2[8] = { 10,245,100,49, 8,108,122,205 }; //  RA_L | RB_L
+
+
+
+
+        unsigned char R1[8], R2[8], R3[8], block[8];
+        for (int i = 0; i < 8; i++) {
+            R1[i] = Random1_v2[i];
+            R2[i] = Random2_v2[i];
+            R3[i] = Random3_v2[i];
+            block[i] = custom_block[i];
+        }
+
+
+        DES_ENC(R1, Output, Key1);
+        DES_DEC(Output,  Output, Key2);
+        DES_ENC(Output,  Ks1,    Key3);
+
+        DES_ENC(R2, Output, Key1);
+        DES_DEC(Output,  Output, Key2);
+        DES_ENC(Output,  Ks2,    Key3);
+
+        DES_ENC(R3, Output, Key3);
+        DES_DEC(Output,  Output, Key2);
+        DES_ENC(Output,  Ks3,    Key1);
+
+        cout << "Calcul sur 1 seul block :" << endl;
+        afficher_64bits("Bloc 64 bits : ", block);
+        calcul_MAC_single_Block(block, Ks1, Ks2, Ks3, Output);
+        afficher_64bits("MAC : ", Output);
+
+        return 0;
+    }
+    // ---------------------------------------------------------------------------------------
+
+
+    cout << endl << endl << "CALCUL du MAC à 1 bloc" << endl;
+    afficher_hexa_inverse("DATA inverse :", custom_block);
+    calcul_MAC_single_Block(custom_block, Ks1, Ks2, Ks3, Output);
+
+
+    cout << endl << "calcul MAC avec 2 bloc" << endl;
+
+    unsigned char custom_block_1[8] = { 0,27,32,128,45,197,32,128 };    // Remplir_1_Data (Data(Connection_Id), L_Ind_Data, 16#001B#, 16#2080#, 16#2DC5#, 16#2080#);
+    unsigned char custom_block_2[8] = { 43,1,10,245,100,49,88,77 };     // Remplir_1_Data (Data(Connection_Id), L_Ind_Data, 16#2B01#, 16#0AF5#, 16#6431#, 16#584D#);
+
+    //afficher_hexa_inverse("donnees bloc1 pour op_3des_hard : ", custom_block_1);
+    //calcul_MAC_single_Block(custom_block_1, Ks1, Ks2, Ks3, Output);
+    //afficher_hexa_inverse("donnees bloc2 pour op_3des_hard : ", custom_block_2);
+    //calcul_MAC_single_Block(custom_block_2, Ks1, Ks2, Ks3, Output);
+
+    unsigned char the_blocks[32];
+    for (int i = 0; i < 8; i++) the_blocks[i] = custom_block_1[i];
+    for (int i = 0; i < 8; i++) the_blocks[i + 8] = custom_block_2[i];
+    calcul_MAC_n_Blocks(2, the_blocks, Ks1, Ks2, Ks3, Output);
+
+
+    cout << endl << endl << "CALCUL du MAC de AU2" << endl;
+    afficher_64bits("donnees AU2 bloc1 : ", MessageBlock1);
+    afficher_64bits("donnees AU2 bloc2 : ", MessageBlock2);
+    afficher_64bits("donnees AU2 bloc3 : ", MessageBlock3);
+    afficher_64bits("donnees AU2 bloc4 : ", MessageBlock4);
+    calcul_MAC_4Blocks(MessageBlock1, MessageBlock2, MessageBlock3, MessageBlock4, Ks1, Ks2, Ks3, Output);
+
+    cout << "recalcul par methode objet :" << endl;
+    int indice = 0;
+    for (int i = 0; i < 8; i++) the_blocks[indice++] = MessageBlock1[i];
+    for (int i = 0; i < 8; i++) the_blocks[indice++] = MessageBlock2[i];
+    for (int i = 0; i < 8; i++) the_blocks[indice++] = MessageBlock3[i];
+    for (int i = 0; i < 8; i++) the_blocks[indice++] = MessageBlock4[i];
+    connexion_ZcB_PAI75.compute_Mac_n_Blocks(4, the_blocks, Output);
+
+    int marker = 292;
+    Redond mac_redond = constantes_PSC.calculer_redond_MAC(Output, marker, 0, 4);
+    cout << " Redondance cnx1 avec marker=" << marker << " ==> C1=" << mac_redond.C1() << " -- C2=" << mac_redond.C2() << endl;
+
+    cout << endl;
+    marker++;
+    connexion_ZcB_PAI81.compute_Mac_n_Blocks(4, the_blocks, Output);
+    mac_redond = constantes_PSC.calculer_redond_MAC(Output, marker, 1, 4);
+    cout << " Redondance cnx2 avec marker=" << marker << " ==> C1=" << mac_redond.C1() << " -- C2=" << mac_redond.C2() << endl;
+
+    unsigned char block1[8] = { 0,27,32,128,45,197,32,128 };
+    unsigned char block2[8] = { 43,1,107,67,49,193,218,222 };
+    unsigned char block3[8] = { 70,156,188,211,91,242,83,7 };
+    unsigned char block4[8] = { 142,31,32,128,45,0,0,0 };
+
+    /*
+    cout << endl << endl << "CALCUL d'un MAC à 4 blocs" << endl;
+    afficher_64bits("donnees bloc1 pour op_3des_hard : ", block1);
+    afficher_64bits("donnees bloc2 pour op_3des_hard : ", block2);
+    afficher_64bits("donnees bloc3 pour op_3des_hard : ", block3);
+    afficher_64bits("donnees bloc4 pour op_3des_hard : ", block4);
+    calcul_MAC_4Blocks(block1,block2, block3,block4, Ks1, Ks2, Ks3, Output);
+    */
+
+    /*
+      cout << endl << endl << "CALCUL du MAC de AU2 par une autre methode" << endl;
+      unsigned char the_blocks[32];
+      for (int i = 0; i < 8; i++) the_blocks[i]    = MessageBlock1[i];
+      for (int i = 0; i < 8; i++) the_blocks[i+8]  = MessageBlock2[i];
+      for (int i = 0; i < 8; i++) the_blocks[i+16] = MessageBlock3[i];
+      for (int i = 0; i < 8; i++) the_blocks[i+24] = MessageBlock4[i];
+      calcul_MAC_n_Blocks(4, the_blocks, Ks1, Ks2, Ks3, Output);
+  */
+
+    /*
+    unsigned char Block_AR[8] = { 0,  4,  0,  0,  13,  19,  0,  0 };
+    Block_AR[0] = 0; Block_AR[1] = 4; //longueur
+    for (int i = 0;i < 3;i++) Block_AR[2 + i] = Initiator_Etcs_Id[i]; // Calling Etcs_Id
+    Block_AR[5] = 19; // ETY='000' + MTI='1001' + DF='1'
+    for (int i = 6;i < 8;i++) Block_AR[i] = 0; // padding
+    cout << endl << endl << "CALCUL du MAC de AR" << endl;
+    calcul_MAC_single_Block(Block_AR, Ks1, Ks2, Ks3, Output);
+    */
+
+    unsigned char Sequence_Number[2];
+    unsigned char SenderTS[4];
+    unsigned char ReceiverTS[4];
+    unsigned char LastReceivedTS[4];
+
+    /*
+    // G_MAC_INPUT_SaPDUMAC = 0  20  0  0  19  10  6  11  7  0  0  1  228  0  0  3  162  0  0  1  228  3  0  0  0  0  0  0  0  0  0  0
+    unsigned char KA_block1[8] = {   0,   0,  0,  0,  0,   0,  0,   0 }; // 3=KEEP_ALIVE (unique donnee du message Keep_Alive)
+    unsigned char KA_block2[8] = {   0,   0,  0,  0,  0,   0,  0,   0 };
+    unsigned char KA_block3[8] = {   0,   0,  0,  0,  0,   0,  0,   0 };
+    unsigned char Sequence_Number[2] = { 18, 154 }; // {11, 7};    // { 18, 154 };
+    unsigned char SenderTS[4] = { 0, 0, 0x35, 0x38 }; // {0,0,1,228 };      // { 0, 0, 0x35, 0x38 };
+    unsigned char ReceiverTS[4] =  { 0, 0, 0xA7, 0x42 }; // {0,0,3,162 };   // { 0, 0, 0xA7, 0x42 };
+    unsigned char LastReceivedTS[4] = { 0, 0, 0x35, 0x38 }; // {0,0,1,228}; // { 0, 0, 0x35, 0x38 };
+
+    KA_block1[0] = 0; KA_block1[1] = 20; // longueur
+    for (int i = 0;i < 3;i++) KA_block1[2 + i] = Responder_Etcs_Id[i]; // DA (= Initiator ou Responder suivant qui emet le message)
+    KA_block1[5] = 10; // ETY='000' + MTI='0101' + DF='0' (0 = vers repondeur, 1=vers initiateur)
+    KA_block1[6] = 6; // Message TYPE = 6
+    for (int i = 0;i < 2;i++) { // sequence number
+        if (i + 7 < 8) { KA_block1[i + 7] = Sequence_Number[i]; } else { KA_block2[i - 1] = Sequence_Number[i]; }
+    }
+    for (int i = 0;i < 4;i++){ // sender TimeStamp
+            KA_block2[i+1] = SenderTS[i];
+    }
+    for (int i = 0;i < 4;i++) { // receiver TimeStamp
+        if (i + 5 < 8) { KA_block2[i + 5] = ReceiverTS[i]; } else {KA_block3[i-3] = ReceiverTS[i];}
+    }
+    for (int i = 0;i < 4;i++)  // last received TimeStamp
+        KA_block3[i + 1] = LastReceivedTS[i];
+
+    KA_block3[5] = 3; // KEEP_ALIVE =  3 = unique DATA
+    KA_block3[6] = 0;KA_block3[7] = 0; // padding
+
+
+    cout << endl << endl << "CALCUL du MAC de Keep_Alive" << endl;
+    calcul_MAC_3Blocks(KA_block1, KA_block2, KA_block3, Ks1, Ks2, Ks3, Output);
+
+    cout << endl << endl << "CALCUL du MAC de Keep_Alive par une autre méthode" << endl;
+    unsigned char MAC_INPUT_KEEP_ALIVE[24];
+    for (int i = 0; i < 8; i++) MAC_INPUT_KEEP_ALIVE[i] = KA_block1[i];
+    for (int i = 0; i < 8; i++) MAC_INPUT_KEEP_ALIVE[i + 8] = KA_block2[i];
+    for (int i = 0; i < 8; i++) MAC_INPUT_KEEP_ALIVE[i + 16] = KA_block3[i];
+    calcul_MAC_n_Blocks(3, MAC_INPUT_KEEP_ALIVE, Ks1, Ks2, Ks3, Output);
+    */
+
+    // G_MAC_INPUT_SaPDUMAC =  0  23  0  0  19  10  1  93  166  0  0  1  156  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+    //unsigned char SaPDUBlock1[8] = { 213,  6,  11,  45,  128,  32,  109,   0 };  // {   0,  23,   0,   0,  19,  10,   1,  93 };
+    //unsigned char SaPDUBlock2[8] = { 60,   0,  0,  222,  173,  0,   0,   141 }; // { 166,   0,   0,   1, 156,   0,   0,   0 };
+    //unsigned char SaPDUBlock3[8] = { 0,    0,  1,  212,  173,  0,   0,    28 }; // {   0,   0,   0,   0,   0,   0,   0,   0 };
+    //unsigned char SaPDUBlock4[8] = { 3,  128,  7,    0,  124,  0,   240,   0 };   // {   0,   0,   0,   0,   0,   0,   0,   0 };
+    //unsigned char SaPDUBlock5[8] = { 0,    0,  0,    0,    0,  0,   0,   224 };
+
+    unsigned char SaPDUBlock1_1[8] = { 0,109,32,128,45,11,6,213 }; // SN = 213 - 141 -- CNX1
+    unsigned char SaPDUBlock2_1[8] = { 141,0,0,173,221,0,0,60 };
+    unsigned char SaPDUBlock3_1[8] = { 28,0,0,173,211,1,0,0 };
+    unsigned char SaPDUBlock4_1[8] = { 0, 15, 14, 115, 255,255,255,255 };
+    unsigned char SaPDUBlock5_1[8] = { 255,255,255,255,255,224,31,240 };
+
+    unsigned char SaPDUBlock1_2[8] = { 0,109,32,128,45,11,6,213 }; // SN = 213 - 141 -- CNX2
+    unsigned char SaPDUBlock2_2[8] = { 141,0,0,173,222,0,0,60 };
+    unsigned char SaPDUBlock3_2[8] = { 28,0,0,173,212,1,0,0 };
+    unsigned char SaPDUBlock4_2[8] = { 0,240,0,124,0,7,128,3 };
+    unsigned char SaPDUBlock5_2[8] = { 224, 0, 0, 0, 0, 0, 0, 0 };
+
+    unsigned char SaPDUBlock1_3[8] = { 0,70,32,128,42,10,6,49 }; // SN = 0x31 - 0xF2 = 49 - 242
+    unsigned char SaPDUBlock2_3[8] = { 242,0,0,14,140,0,0,90 };  // TTS = 3724;23205;3724;
+    unsigned char SaPDUBlock3_3[8] = { 165,0,0,14,140,2,0,0 };   // 2 = COMMAND
+
+    unsigned char SaPDUBlock1_4[8] = { 0,70,32,128,42,10,6,49 }; // SN = 0x31 - 0xF3 = 49 - 243
+    unsigned char SaPDUBlock2_4[8] = { 243,0,0,14,176,0,0,90 };  // TTS = 3760;23235;3760;
+    unsigned char SaPDUBlock3_4[8] = { 195,0,0,14,176,2,0,0 };   // 2 = COMMAND
+
+    unsigned char SaPDUBlock1_5[8] = { 0,70,32,128,42,10,6,49 }; // SN = 0x31 - 0xF4 = 49 - 244
+    unsigned char SaPDUBlock2_5[8] = { 244,0,0,14,212,0,0,90 };  // TTS = 3796;23275;3796;
+    unsigned char SaPDUBlock3_5[8] = { 235,0,0,14,212,2,0,0 };   // 2 = COMMAND
+
+    unsigned char SaPDUBlock1_6[8] = { 0,70,32,128,42,10,6,49 }; // SN = 0x31 - 0xF4 = 49 - 245
+    unsigned char SaPDUBlock2_6[8] = { 245,0,0,14,248,0,0,91 };  // TTS = 3832;23305;3832;
+    unsigned char SaPDUBlock3_6[8] = { 9,0,0,14,248,2,0,0 };   // 2 = COMMAND
+
+
+    /* cout << endl << endl << "CALCUL du MAC de SaPDU" << endl;
+     calcul_MAC_4Blocks(SaPDUBlock1, SaPDUBlock2, SaPDUBlock3, SaPDUBlock4, Ks1, Ks2, Ks3, Output);*/
+
+
+    cout << endl << endl << "CALCUL du MAC d'un message à N=14 blocks" << endl;
+    afficher_hexa("bloc1 (msg2) = ", SaPDUBlock1_2);
+    afficher_hexa("bloc2 (msg2) = ", SaPDUBlock2_2);
+    afficher_hexa("bloc3 (msg2) = ", SaPDUBlock3_2);
+    unsigned char MAC_INPUT_PIPC_CMD[14 * 8];
+    int index = 0;
+    for (int i = 0;i < 8;i++) MAC_INPUT_PIPC_CMD[index++] = SaPDUBlock1_2[i];
+    for (int i = 0;i < 8;i++) MAC_INPUT_PIPC_CMD[index++] = SaPDUBlock2_2[i];
+    for (int i = 0;i < 8;i++) MAC_INPUT_PIPC_CMD[index++] = SaPDUBlock3_2[i];
+    for (int i = 0;i < 8;i++) MAC_INPUT_PIPC_CMD[index++] = SaPDUBlock4_2[i];
+    for (int i = 0;i < 8;i++) MAC_INPUT_PIPC_CMD[index++] = SaPDUBlock5_2[i];
+    while (index < 14 * 8) { MAC_INPUT_PIPC_CMD[index++] = 0; }
+    calcul_MAC_n_Blocks(14, MAC_INPUT_PIPC_CMD, Ks1, Ks2, Ks3, Output);
+    cout << "recalcul avec methode objet (cnx1) :" << endl;
+    connexion_ZcB_PAI75.compute_Mac_n_Blocks(14, MAC_INPUT_PIPC_CMD, Output);
+    cout << "recalcul avec methode objet (cnx2) :" << endl;
+    connexion_ZcB_PAI81.compute_Mac_n_Blocks(14, MAC_INPUT_PIPC_CMD, Output);
+
+    marker = 274;
+    mac_redond = constantes_PSC.calculer_redond_MAC(Output, marker, 0, 14);
+    cout << " Redondance cnx1 avec marker=" << marker << " ==> C1=" << mac_redond.C1() << " -- C2=" << mac_redond.C2() << endl;
+    mac_redond = constantes_PSC.calculer_redond_MAC(Output, marker, 1, 14);
+    cout << " Redondance cnx2 avec marker=" << marker << " ==> C1=" << mac_redond.C1() << " -- C2=" << mac_redond.C2() << endl;
+
+    cout << endl << "Calcul pour le message PIPC Cnx1 : " << endl;
+    index = 0;
+    for (int i = 0;i < 8;i++) MAC_INPUT_PIPC_CMD[index++] = SaPDUBlock1_1[i];
+    for (int i = 0;i < 8;i++) MAC_INPUT_PIPC_CMD[index++] = SaPDUBlock2_1[i];
+    for (int i = 0;i < 8;i++) MAC_INPUT_PIPC_CMD[index++] = SaPDUBlock3_1[i];
+    for (int i = 0;i < 8;i++) MAC_INPUT_PIPC_CMD[index++] = SaPDUBlock4_1[i];
+    for (int i = 0;i < 8;i++) MAC_INPUT_PIPC_CMD[index++] = SaPDUBlock5_1[i];
+    while (index < 14 * 8) { MAC_INPUT_PIPC_CMD[index++] = 0; }
+    connexion_ZcB_PAI75.compute_Mac_n_Blocks(14, MAC_INPUT_PIPC_CMD, Output);
+
+    marker = 273;
+    mac_redond = constantes_PSC.calculer_redond_MAC(Output, marker, 0, 14);
+    cout << " Redondance cnx1 avec marker=" << marker << " ==> C1=" << mac_redond.C1() << " -- C2=" << mac_redond.C2() << endl;
+    mac_redond = constantes_PSC.calculer_redond_MAC(Output, marker, 1, 14);
+    cout << " Redondance cnx2 avec marker=" << marker << " ==> C1=" << mac_redond.C1() << " -- C2=" << mac_redond.C2() << endl;
+
+    return 0;
+}
+
+// Pour les layer_tests :
+//
+//
+//
+// Dans les invariants :
+// Ks1 = 248 72 66 232 81 122 23 77
+// Ks2 = 50 162 130 112 34 87 93 142
+// Ks3 = 51 189 46 76 159 27 107 95
