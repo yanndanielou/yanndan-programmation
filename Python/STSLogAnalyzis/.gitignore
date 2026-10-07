@@ -13,3 +13,4 @@ Input_for_tests/pcap/*.pcapng
 main_archives_next copy*
 main_sandbox*
 main_atc_temps_cycle_reports_test*
+secret_kmac_keys.py
