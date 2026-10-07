@@ -5,16 +5,11 @@ du code C++ d'implémentation de Connection_U98 / Unisig Subset-098
 (DES, CBC-MAC 3DES, arithmétique de redondance de sécurité).
 """
 
-from stsloganalyzis.unisig.s98 import secret_kmac_keys
-
 from __future__ import annotations
-from typing import List, Sequence, Tuple, Union
 
-# Clés préconfigurées
-Key1_TE: bytes = bytes([80, 73, 80, 67, 50, 48, 48, 54])
-Key2_TE: bytes = bytes([83, 69, 73, 95, 50, 48, 48, 54])
-Key3_TE: bytes = bytes([83, 76, 79, 75, 50, 48, 48, 54])
+from typing import Sequence
 
+from stsloganalyzis.unisig.s98 import secret_kmac_keys
 
 # ------------------------------------------------------------------------------------
 # Arithmétique modulaire et classe Redond
@@ -118,14 +113,14 @@ class const_PSC:
     """
 
     def __init__(self) -> None:
-        self._Fi_A1: List[int] = [8963117, 11615768, 8834825, 4229672, 5015549, 8741366, 4176911, 3182013, 8674420, 9502541, 4591249, 2936130, 10821750, 4640236, 11498060, 7126637]
-        self._Fi_A2: List[int] = [9019133, 6729379, 1155050, 4779184, 7436604, 9339690, 1053442, 5442112, 9016832, 11911906, 9959282, 3503273, 8194484, 9060941, 8337535, 5940019]
+        self._Fi_A1: list[int] = [8963117, 11615768, 8834825, 4229672, 5015549, 8741366, 4176911, 3182013, 8674420, 9502541, 4591249, 2936130, 10821750, 4640236, 11498060, 7126637]
+        self._Fi_A2: list[int] = [9019133, 6729379, 1155050, 4779184, 7436604, 9339690, 1053442, 5442112, 9016832, 11911906, 9959282, 3503273, 8194484, 9060941, 8337535, 5940019]
         self.moinsRk: Redond = Redond(2726071, 6444477)
         self.tau0: Redond = Redond(4691298, 10686154)
         self.deux_p32: Redond = Redond(1779129, 11171346)  # 2**32
         self.deux_p196: Redond = Redond(280108, 10053949)  # 2**(32*8)
 
-        self._unisig_98_hard: List[Redond] = [
+        self._unisig_98_hard: list[Redond] = [
             Redond(3035900, 8152819),  # indice : 0
             Redond(11284085, 7686153),  # indice : 1
             Redond(5454991, 51769),  # indice : 2
@@ -148,8 +143,8 @@ class const_PSC:
             Redond(1050582, 459863),  # indice : 19
         ]
 
-        self.Somme_Fi: List[Redond] = []
-        self.Fi: List[Redond] = []
+        self.Somme_Fi: list[Redond] = []
+        self.Fi: list[Redond] = []
         sum_f: Redond = Redond(0, 0)
         for i in range(16):
             f_val: Redond = Redond(self._Fi_A1[i], self._Fi_A2[i])
@@ -213,56 +208,56 @@ class const_PSC:
 # Tables S-BOX pour le chiffrement DES standard (FIPS PUB 46-3)
 # ------------------------------------------------------------------------------------
 
-SBOX_1: List[List[int]] = [
+SBOX_1: list[list[int]] = [
     [14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7],
     [0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8],
     [4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0],
     [15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13],
 ]
-SBOX_2: List[List[int]] = [
+SBOX_2: list[list[int]] = [
     [15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10],
     [3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5],
     [0, 14, 7, 11, 10, 4, 13, 1, 5, 8, 12, 6, 9, 3, 2, 15],
     [13, 8, 10, 1, 3, 15, 4, 2, 11, 6, 7, 12, 0, 5, 14, 9],
 ]
-SBOX_3: List[List[int]] = [
+SBOX_3: list[list[int]] = [
     [10, 0, 9, 14, 6, 3, 15, 5, 1, 13, 12, 7, 11, 4, 2, 8],
     [13, 7, 0, 9, 3, 4, 6, 10, 2, 8, 5, 14, 12, 11, 15, 1],
     [13, 6, 4, 9, 8, 15, 3, 0, 11, 1, 2, 12, 5, 10, 14, 7],
     [1, 10, 13, 0, 6, 9, 8, 7, 4, 15, 14, 3, 11, 5, 2, 12],
 ]
-SBOX_4: List[List[int]] = [
+SBOX_4: list[list[int]] = [
     [7, 13, 14, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15],
     [13, 8, 11, 5, 6, 15, 0, 3, 4, 7, 2, 12, 1, 10, 14, 9],
     [10, 6, 9, 0, 12, 11, 7, 13, 15, 1, 3, 14, 5, 2, 8, 4],
     [3, 15, 0, 6, 10, 1, 13, 8, 9, 4, 5, 11, 12, 7, 2, 14],
 ]
-SBOX_5: List[List[int]] = [
+SBOX_5: list[list[int]] = [
     [2, 12, 4, 1, 7, 10, 11, 6, 8, 5, 3, 15, 13, 0, 14, 9],
     [14, 11, 2, 12, 4, 7, 13, 1, 5, 0, 15, 10, 3, 9, 8, 6],
     [4, 2, 1, 11, 10, 13, 7, 8, 15, 9, 12, 5, 6, 3, 0, 14],
     [11, 8, 12, 7, 1, 14, 2, 13, 6, 15, 0, 9, 10, 4, 5, 3],
 ]
-SBOX_6: List[List[int]] = [
+SBOX_6: list[list[int]] = [
     [12, 1, 10, 15, 9, 2, 6, 8, 0, 13, 3, 4, 14, 7, 5, 11],
     [10, 15, 4, 2, 7, 12, 9, 5, 6, 1, 13, 14, 0, 11, 3, 8],
     [9, 14, 15, 5, 2, 8, 12, 3, 7, 0, 4, 10, 1, 13, 11, 6],
     [4, 3, 2, 12, 9, 5, 15, 10, 11, 14, 1, 7, 6, 0, 8, 13],
 ]
-SBOX_7: List[List[int]] = [
+SBOX_7: list[list[int]] = [
     [4, 11, 2, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1],
     [13, 0, 11, 7, 4, 9, 1, 10, 14, 3, 5, 12, 2, 15, 8, 6],
     [1, 4, 11, 13, 12, 3, 7, 14, 10, 15, 6, 8, 0, 5, 9, 2],
     [6, 11, 13, 8, 1, 4, 10, 7, 9, 5, 0, 15, 14, 2, 3, 12],
 ]
-SBOX_8: List[List[int]] = [
+SBOX_8: list[list[int]] = [
     [13, 2, 8, 4, 6, 15, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7],
     [1, 15, 13, 8, 10, 3, 7, 4, 12, 5, 6, 11, 0, 14, 9, 2],
     [7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8],
     [2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11],
 ]
 
-SBOX_TABLES: List[List[List[int]]] = [[], SBOX_1, SBOX_2, SBOX_3, SBOX_4, SBOX_5, SBOX_6, SBOX_7, SBOX_8]  # Indexation 1 à 8
+SBOX_TABLES: list[list[list[int]]] = [[], SBOX_1, SBOX_2, SBOX_3, SBOX_4, SBOX_5, SBOX_6, SBOX_7, SBOX_8]  # Indexation 1 à 8
 
 
 # ------------------------------------------------------------------------------------
@@ -961,7 +956,7 @@ def main() -> int:
     etcsid_initiateur: int = 2130068  # 20 80 94
     etcsid_repondeur: int = 2130066  # 20 80 92
 
-    connexion_ZcB_PAI75: Connection_U98 = Connection_U98(Key1_TE, Key2_TE, Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, True)
+    connexion_ZcB_PAI75: Connection_U98 = Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, True)
     connexion_ZcB_PAI75.start_session(random_a_wshark, random_b_wshark)
     MAC_AU2_cnx1: bytearray = bytearray(8)
     print("Compute AU2. Expected MAC: 35 f7 fa 7a 7b 6a d3 75")
