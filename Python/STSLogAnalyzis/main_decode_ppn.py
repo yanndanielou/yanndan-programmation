@@ -2,7 +2,7 @@
 
 from logger import logger_config
 
-from stsloganalyzis.ppn import ppn_log
+from stsloganalyzis.ppn import ppn_profibus_log
 from stsloganalyzis.unisig import decode_unisig
 
 
@@ -21,7 +21,7 @@ def main() -> None:
         for child_directory in all_sub_directories:
 
             logger_config.print_and_log_info(f"Handling directory {child_directory}")
-            library = ppn_log.ProfibusLogLibrary(
+            library = ppn_profibus_log.ProfibusLogLibrary(
                 directory_path=root_path + "\\" + child_directory,
                 label=child_directory,
             )

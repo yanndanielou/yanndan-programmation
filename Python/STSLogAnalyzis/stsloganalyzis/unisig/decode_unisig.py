@@ -5,7 +5,7 @@ from enum import IntEnum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from stsloganalyzis.ppn import ppn_log
+    from stsloganalyzis.ppn import ppn_profibus_log
 
 from common import bytes_messages, date_time_formats
 from logger import logger_config
@@ -72,7 +72,7 @@ class SafetyLevel(IntEnum):
 
 @dataclass
 class UnisigMessage(ABC):
-    profibus_log_line: "ppn_log.ProfibusLogLine|None"
+    profibus_log_line: "ppn_profibus_log.ProfibusLogLine|None"
     byte_message_decoded: bytes_messages.DecodedBytesMessage
 
     def __post_init__(self) -> None:
@@ -120,7 +120,7 @@ class SdnUnisigMessage(UnisigMessage):
     @classmethod
     def decode_sdn_bytes_hexa(
         cls,
-        profibus_log_line: "ppn_log.ProfibusLogLine",
+        profibus_log_line: "ppn_profibus_log.ProfibusLogLine",
         bytes_hexa: str,
         upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary,
     ) -> UnisigMessage | None:
@@ -285,7 +285,7 @@ class SdaUnisigMessage(UnisigMessage):
     @classmethod
     def from_sda_hexa_bytes_str(
         cls,
-        profibus_log_line: "ppn_log.ProfibusLogLine",
+        profibus_log_line: "ppn_profibus_log.ProfibusLogLine",
         bytes_hexa_str: str,
         upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary,
     ) -> UnisigMessage:
