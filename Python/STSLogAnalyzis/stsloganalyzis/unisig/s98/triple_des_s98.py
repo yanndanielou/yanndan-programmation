@@ -272,65 +272,65 @@ def MEMORY_Copy(target: bytearray, source: Sequence[int], size: int, target_off:
         target[target_off + i] = source[source_off + i]
 
 
-def DES_Permuted_Choice_1(Key_In: Sequence[int], Permuted_Choice_1: bytearray) -> None:
-    Permuted_Choice_1[0] = (
-        (Key_In[7] & 0x80) | ((Key_In[6] & 0x80) >> 1) | ((Key_In[5] & 0x80) >> 2) | ((Key_In[4] & 0x80) >> 3) | ((Key_In[3] & 0x80) >> 4) | ((Key_In[2] & 0x80) >> 5) | ((Key_In[1] & 0x80) >> 6)
+def des_permuted_choice_1(key_in: Sequence[int], permuted_choice_1: bytearray) -> None:
+    permuted_choice_1[0] = (
+        (key_in[7] & 0x80) | ((key_in[6] & 0x80) >> 1) | ((key_in[5] & 0x80) >> 2) | ((key_in[4] & 0x80) >> 3) | ((key_in[3] & 0x80) >> 4) | ((key_in[2] & 0x80) >> 5) | ((key_in[1] & 0x80) >> 6)
     )
-    Permuted_Choice_1[1] = (
-        (Key_In[0] & 0x80) | (Key_In[7] & 0x40) | ((Key_In[6] & 0x40) >> 1) | ((Key_In[5] & 0x40) >> 2) | ((Key_In[4] & 0x40) >> 3) | ((Key_In[3] & 0x40) >> 4) | ((Key_In[2] & 0x40) >> 5)
+    permuted_choice_1[1] = (
+        (key_in[0] & 0x80) | (key_in[7] & 0x40) | ((key_in[6] & 0x40) >> 1) | ((key_in[5] & 0x40) >> 2) | ((key_in[4] & 0x40) >> 3) | ((key_in[3] & 0x40) >> 4) | ((key_in[2] & 0x40) >> 5)
     )
-    Permuted_Choice_1[2] = (
-        ((Key_In[1] & 0x40) << 1) | (Key_In[0] & 0x40) | (Key_In[7] & 0x20) | ((Key_In[6] & 0x20) >> 1) | ((Key_In[5] & 0x20) >> 2) | ((Key_In[4] & 0x20) >> 3) | ((Key_In[3] & 0x20) >> 4)
+    permuted_choice_1[2] = (
+        ((key_in[1] & 0x40) << 1) | (key_in[0] & 0x40) | (key_in[7] & 0x20) | ((key_in[6] & 0x20) >> 1) | ((key_in[5] & 0x20) >> 2) | ((key_in[4] & 0x20) >> 3) | ((key_in[3] & 0x20) >> 4)
     )
-    Permuted_Choice_1[3] = (
-        ((Key_In[2] & 0x20) << 2) | ((Key_In[1] & 0x20) << 1) | (Key_In[0] & 0x20) | (Key_In[7] & 0x10) | ((Key_In[6] & 0x10) >> 1) | ((Key_In[5] & 0x10) >> 2) | ((Key_In[4] & 0x10) >> 3)
+    permuted_choice_1[3] = (
+        ((key_in[2] & 0x20) << 2) | ((key_in[1] & 0x20) << 1) | (key_in[0] & 0x20) | (key_in[7] & 0x10) | ((key_in[6] & 0x10) >> 1) | ((key_in[5] & 0x10) >> 2) | ((key_in[4] & 0x10) >> 3)
     )
-    Permuted_Choice_1[4] = (
-        ((Key_In[7] & 0x02) << 6) | ((Key_In[6] & 0x02) << 5) | ((Key_In[5] & 0x02) << 4) | ((Key_In[4] & 0x02) << 3) | ((Key_In[3] & 0x02) << 2) | ((Key_In[2] & 0x02) << 1) | (Key_In[1] & 0x02)
+    permuted_choice_1[4] = (
+        ((key_in[7] & 0x02) << 6) | ((key_in[6] & 0x02) << 5) | ((key_in[5] & 0x02) << 4) | ((key_in[4] & 0x02) << 3) | ((key_in[3] & 0x02) << 2) | ((key_in[2] & 0x02) << 1) | (key_in[1] & 0x02)
     )
-    Permuted_Choice_1[5] = (
-        ((Key_In[0] & 0x02) << 6) | ((Key_In[7] & 0x04) << 4) | ((Key_In[6] & 0x04) << 3) | ((Key_In[5] & 0x04) << 2) | ((Key_In[4] & 0x04) << 1) | (Key_In[3] & 0x04) | ((Key_In[2] & 0x04) >> 1)
+    permuted_choice_1[5] = (
+        ((key_in[0] & 0x02) << 6) | ((key_in[7] & 0x04) << 4) | ((key_in[6] & 0x04) << 3) | ((key_in[5] & 0x04) << 2) | ((key_in[4] & 0x04) << 1) | (key_in[3] & 0x04) | ((key_in[2] & 0x04) >> 1)
     )
-    Permuted_Choice_1[6] = (
-        ((Key_In[1] & 0x04) << 5) | ((Key_In[0] & 0x04) << 4) | ((Key_In[7] & 0x08) << 2) | ((Key_In[6] & 0x08) << 1) | (Key_In[5] & 0x08) | ((Key_In[4] & 0x08) >> 1) | ((Key_In[3] & 0x08) >> 2)
+    permuted_choice_1[6] = (
+        ((key_in[1] & 0x04) << 5) | ((key_in[0] & 0x04) << 4) | ((key_in[7] & 0x08) << 2) | ((key_in[6] & 0x08) << 1) | (key_in[5] & 0x08) | ((key_in[4] & 0x08) >> 1) | ((key_in[3] & 0x08) >> 2)
     )
-    Permuted_Choice_1[7] = (
-        ((Key_In[2] & 0x08) << 4) | ((Key_In[1] & 0x08) << 3) | ((Key_In[0] & 0x08) << 2) | (Key_In[3] & 0x10) | ((Key_In[2] & 0x10) >> 1) | ((Key_In[1] & 0x10) >> 2) | ((Key_In[0] & 0x10) >> 3)
+    permuted_choice_1[7] = (
+        ((key_in[2] & 0x08) << 4) | ((key_in[1] & 0x08) << 3) | ((key_in[0] & 0x08) << 2) | (key_in[3] & 0x10) | ((key_in[2] & 0x10) >> 1) | ((key_in[1] & 0x10) >> 2) | ((key_in[0] & 0x10) >> 3)
     )
 
 
-def DES_Left_Shift(DES_Shift_In: bytearray) -> None:
+def des_left_shift(des_shift_in: bytearray) -> None:
     # Shift C0
-    shift_temp3: int = 0x02 if (DES_Shift_In[3] & 0x80) else 0x00
-    shift_temp2: int = 0x02 if (DES_Shift_In[2] & 0x80) else 0x00
-    shift_temp1: int = 0x02 if (DES_Shift_In[1] & 0x80) else 0x00
-    shift_temp0: int = 0x02 if (DES_Shift_In[0] & 0x80) else 0x00
+    shift_temp3: int = 0x02 if (des_shift_in[3] & 0x80) else 0x00
+    shift_temp2: int = 0x02 if (des_shift_in[2] & 0x80) else 0x00
+    shift_temp1: int = 0x02 if (des_shift_in[1] & 0x80) else 0x00
+    shift_temp0: int = 0x02 if (des_shift_in[0] & 0x80) else 0x00
 
-    DES_Shift_In[3] = (DES_Shift_In[3] << 1) & 0xFF
-    DES_Shift_In[2] = (DES_Shift_In[2] << 1) & 0xFF
-    DES_Shift_In[1] = (DES_Shift_In[1] << 1) & 0xFF
-    DES_Shift_In[0] = (DES_Shift_In[0] << 1) & 0xFF
+    des_shift_in[3] = (des_shift_in[3] << 1) & 0xFF
+    des_shift_in[2] = (des_shift_in[2] << 1) & 0xFF
+    des_shift_in[1] = (des_shift_in[1] << 1) & 0xFF
+    des_shift_in[0] = (des_shift_in[0] << 1) & 0xFF
 
-    DES_Shift_In[0] |= shift_temp1
-    DES_Shift_In[1] |= shift_temp2
-    DES_Shift_In[2] |= shift_temp3
-    DES_Shift_In[3] |= shift_temp0
+    des_shift_in[0] |= shift_temp1
+    des_shift_in[1] |= shift_temp2
+    des_shift_in[2] |= shift_temp3
+    des_shift_in[3] |= shift_temp0
 
     # Shift L0
-    shift_temp3 = 0x02 if (DES_Shift_In[7] & 0x80) else 0x00
-    shift_temp2 = 0x02 if (DES_Shift_In[6] & 0x80) else 0x00
-    shift_temp1 = 0x02 if (DES_Shift_In[5] & 0x80) else 0x00
-    shift_temp0 = 0x02 if (DES_Shift_In[4] & 0x80) else 0x00
+    shift_temp3 = 0x02 if (des_shift_in[7] & 0x80) else 0x00
+    shift_temp2 = 0x02 if (des_shift_in[6] & 0x80) else 0x00
+    shift_temp1 = 0x02 if (des_shift_in[5] & 0x80) else 0x00
+    shift_temp0 = 0x02 if (des_shift_in[4] & 0x80) else 0x00
 
-    DES_Shift_In[7] = (DES_Shift_In[7] << 1) & 0xFF
-    DES_Shift_In[6] = (DES_Shift_In[6] << 1) & 0xFF
-    DES_Shift_In[5] = (DES_Shift_In[5] << 1) & 0xFF
-    DES_Shift_In[4] = (DES_Shift_In[4] << 1) & 0xFF
+    des_shift_in[7] = (des_shift_in[7] << 1) & 0xFF
+    des_shift_in[6] = (des_shift_in[6] << 1) & 0xFF
+    des_shift_in[5] = (des_shift_in[5] << 1) & 0xFF
+    des_shift_in[4] = (des_shift_in[4] << 1) & 0xFF
 
-    DES_Shift_In[4] |= shift_temp1
-    DES_Shift_In[5] |= shift_temp2
-    DES_Shift_In[6] |= shift_temp3
-    DES_Shift_In[7] |= shift_temp0
+    des_shift_in[4] |= shift_temp1
+    des_shift_in[5] |= shift_temp2
+    des_shift_in[6] |= shift_temp3
+    des_shift_in[7] |= shift_temp0
 
 
 def DES_Permuted_Choice_2(Key_In: Sequence[int], Permuted_Choice_2: bytearray, offset: int = 0) -> None:
@@ -591,30 +591,30 @@ def DES_Function_F(DES_Buffer: bytearray, Key: Sequence[int]) -> None:
 
 
 def des_key_scheduling(Key: Sequence[int], Key_Schedule_1: bytearray, Key_Schedule_2: bytearray) -> None:
-    Permuted_Choice_1: bytearray = bytearray(8)
-    DES_Permuted_Choice_1(Key, Permuted_Choice_1)
+    permuted_choice_1: bytearray = bytearray(8)
+    des_permuted_choice_1(Key, permuted_choice_1)
 
-    Key_Index: int = 1
+    key_index: int = 1
     offset_ks1: int = 0
     while True:
-        DES_Left_Shift(Permuted_Choice_1)
-        if Key_Index != 1 and Key_Index != 2:
-            DES_Left_Shift(Permuted_Choice_1)
-        DES_Permuted_Choice_2(Permuted_Choice_1, Key_Schedule_1, offset=offset_ks1)
+        des_left_shift(permuted_choice_1)
+        if key_index != 1 and key_index != 2:
+            des_left_shift(permuted_choice_1)
+        DES_Permuted_Choice_2(permuted_choice_1, Key_Schedule_1, offset=offset_ks1)
         offset_ks1 += 8
-        Key_Index += 1
-        if Key_Index > 8:
+        key_index += 1
+        if key_index > 8:
             break
 
     offset_ks2: int = 0
     while True:
-        DES_Left_Shift(Permuted_Choice_1)
-        if Key_Index != 9 and Key_Index != 16:
-            DES_Left_Shift(Permuted_Choice_1)
-        DES_Permuted_Choice_2(Permuted_Choice_1, Key_Schedule_2, offset=offset_ks2)
+        des_left_shift(permuted_choice_1)
+        if key_index != 9 and key_index != 16:
+            des_left_shift(permuted_choice_1)
+        DES_Permuted_Choice_2(permuted_choice_1, Key_Schedule_2, offset=offset_ks2)
         offset_ks2 += 8
-        Key_Index += 1
-        if Key_Index > 16:
+        key_index += 1
+        if key_index > 16:
             break
 
 
@@ -651,7 +651,7 @@ def des_round_enc(DES_Buffer: bytearray, Key_Schedule_1: bytearray, Key_Schedule
     DES_Buffer[4:8] = DES_Buffer_Right
 
 
-def DES_Round_DEC(DES_Buffer: bytearray, Key_Schedule_1: bytearray, Key_Schedule_2: bytearray) -> None:
+def des_round_dec(DES_Buffer: bytearray, Key_Schedule_1: bytearray, Key_Schedule_2: bytearray) -> None:
     DES_Buffer_Left: bytearray = bytearray(DES_Buffer[4:8])
     DES_Buffer_Right: bytearray = bytearray(DES_Buffer[:4])
     DES_Buffer_Temp1: bytearray = bytearray(4)
@@ -691,14 +691,14 @@ def XOR_Byte2Byte(Source: Sequence[int], Dest: bytearray, SzData: int) -> None:
 
 
 def des_dec(input: Sequence[int], output: bytearray, key: Sequence[int]) -> None:
-    DES_Work_Buffer: bytearray = bytearray(8)
-    Key_Schedule_1: bytearray = bytearray(64)
-    Key_Schedule_2: bytearray = bytearray(64)
+    des_work_buffer: bytearray = bytearray(8)
+    key_schedule_1: bytearray = bytearray(64)
+    key_schedule_2: bytearray = bytearray(64)
 
-    des_key_scheduling(key, Key_Schedule_1, Key_Schedule_2)
-    des_initial_permutation(input, DES_Work_Buffer)
-    DES_Round_DEC(DES_Work_Buffer, Key_Schedule_1, Key_Schedule_2)
-    des_inverse_initial_permutation(DES_Work_Buffer, output)
+    des_key_scheduling(key, key_schedule_1, key_schedule_2)
+    des_initial_permutation(input, des_work_buffer)
+    des_round_dec(des_work_buffer, key_schedule_1, key_schedule_2)
+    des_inverse_initial_permutation(des_work_buffer, output)
 
 
 def des_enc(Input: Sequence[int], Output: bytearray, Key: Sequence[int]) -> None:
