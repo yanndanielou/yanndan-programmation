@@ -8,7 +8,7 @@ from typing import cast
 from common import file_utils, reports_utils, string_utils
 from logger import logger_config
 
-from stsloganalyzis.unisig import decode_unisig, upper_layer_libraries
+from stsloganalyzis.unisig import decode_unisig_s57_s58, upper_layer_libraries
 
 
 class SendingMode(Enum):
@@ -55,12 +55,12 @@ class ProfibusLogLibrary:
 
         self.all_unisig_messages = [log_line.unisig_message for decoded_file in self.decoded_files for log_line in decoded_file.decoded_lines if log_line.unisig_message is not None]
 
-        self.all_upper_layer_telegram = [upper_layer_telegram for upper_layer_telegram in self.all_unisig_messages if isinstance(upper_layer_telegram, decode_unisig.SdaForUpperLayerTelegram)]
+        self.all_upper_layer_telegram = [upper_layer_telegram for upper_layer_telegram in self.all_unisig_messages if isinstance(upper_layer_telegram, decode_unisig_s57_s58.SdaForUpperLayerTelegram)]
         self.all_sl4_upper_layer_telegram = [
             upper_layer_telegram
             for upper_layer_telegram in self.all_unisig_messages
-            if isinstance(upper_layer_telegram, decode_unisig.SdaForUpperLayerTelegram)
-            and upper_layer_telegram.command_type == decode_unisig.OnboardSdaUnisigMessage.CommandTypeSubset57.SL4_TELEGRAM_FOR_UPPER_LAYER
+            if isinstance(upper_layer_telegram, decode_unisig_s57_s58.SdaForUpperLayerTelegram)
+            and upper_layer_telegram.command_type == decode_unisig_s57_s58.OnboardSdaUnisigMessage.CommandTypeSubset57.SL4_TELEGRAM_FOR_UPPER_LAYER
         ]
         # [unisig_message for log_line in self.decoded_lines for unisig_message in log_line.unisig_messages]
         self.all_upper_layer_stms = [stm_message for upper_layer_telegram in self.all_upper_layer_telegram for stm_message in upper_layer_telegram.upper_layer_decoded_stms]
@@ -68,13 +68,13 @@ class ProfibusLogLibrary:
         self.sdn_sync_and_reference_time_messages = [
             sync_and_reference_time_message
             for sync_and_reference_time_message in self.all_unisig_messages
-            if isinstance(sync_and_reference_time_message, decode_unisig.SdnSyncAndReferenceTimeMulticastMessage)
+            if isinstance(sync_and_reference_time_message, decode_unisig_s57_s58.SdnSyncAndReferenceTimeMulticastMessage)
         ]
 
         self.sdn_safe_time_layer_startup_messages = [
             sync_and_reference_time_message
             for sync_and_reference_time_message in self.all_unisig_messages
-            if isinstance(sync_and_reference_time_message, decode_unisig.SdnSafeTimeLayerStartupForMulticast)
+            if isinstance(sync_and_reference_time_message, decode_unisig_s57_s58.SdnSafeTimeLayerStartupForMulticast)
         ]
 
         self.unisig_messages_errors = [error for unisig_message in self.all_unisig_messages for error in unisig_message.creational_and_decoding_errors]
@@ -97,7 +97,7 @@ class ProfibusLogLibrary:
 
         self.save_errors()
 
-    def get_upper_layer_stms_by_stm_ids(self, allowed_stm_ids: list[int]) -> list[decode_unisig.UpperLayerStm]:
+    def get_upper_layer_stms_by_stm_ids(self, allowed_stm_ids: list[int]) -> list[decode_unisig_s57_s58.UpperLayerStm]:
         return [upper_layer_stm for upper_layer_stm in self.all_upper_layer_stms if upper_layer_stm.nid_stm in allowed_stm_ids]
 
     def save_upper_layer_stms_by_stm_ids(self, allowed_stm_ids: list[int], label: str = "") -> None:
@@ -130,7 +130,7 @@ class ProfibusLogLibrary:
         self.save_selected_stm_messages(self.all_upper_layer_stms, file_base_name=f"{self.label} all STM messages")
 
     @logger_config.stopwatch_decorator(monitor_ram_usage=True)
-    def save_selected_stm_messages(self, interesting_stm_messages: list[decode_unisig.UpperLayerStm], file_base_name: str) -> None:
+    def save_selected_stm_messages(self, interesting_stm_messages: list[decode_unisig_s57_s58.UpperLayerStm], file_base_name: str) -> None:
         logger_config.print_and_log_info(f"save_selected_stm_messages {len(interesting_stm_messages)} STM messages to {file_base_name}")
 
         reports_utils.save_rows_to_output_files(
@@ -253,7 +253,7 @@ class ProfibusLogLibrary:
             file_base_name=f"{self.label} all unisig messages",
         )
 
-    def save_selected_unisig_messages(self, selected_unisig_messages: list[decode_unisig.OnboardUnisigMessage], file_base_name: str) -> None:
+    def save_selected_unisig_messages(self, selected_unisig_messages: list[decode_unisig_s57_s58.OnboardUnisigMessage], file_base_name: str) -> None:
         with logger_config.stopwatch_with_label(f"save_selected_unisig_messages {len(self.all_unisig_messages)} unisig messages", monitor_ram_usage=True, inform_beginning=True):
 
             reports_utils.save_rows_to_output_files(
@@ -269,13 +269,15 @@ class ProfibusLogLibrary:
                             "file path": unisig_message.profibus_log_line.file_path if unisig_message.profibus_log_line else None,
                             "line number": unisig_message.profibus_log_line.line_number if unisig_message.profibus_log_line else None,
                             "Number of errors": len(unisig_message.creational_and_decoding_errors),
-                            "lowest_order_byte_sequence_number": unisig_message.lowest_order_byte_sequence_number if isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage) else None,
-                            "CRC": unisig_message.crc.crc_bits_as_string if isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage) and unisig_message.crc else None,
+                            "lowest_order_byte_sequence_number": (
+                                unisig_message.lowest_order_byte_sequence_number if isinstance(unisig_message, decode_unisig_s57_s58.OnboardSdaUnisigMessage) else None
+                            ),
+                            "CRC": unisig_message.crc.crc_bits_as_string if isinstance(unisig_message, decode_unisig_s57_s58.OnboardSdaUnisigMessage) and unisig_message.crc else None,
                             "Safe time layer timestamp (ms)": (
-                                unisig_message.stl_time_stamp.in_ms if isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage) and unisig_message.stl_time_stamp else None
+                                unisig_message.stl_time_stamp.in_ms if isinstance(unisig_message, decode_unisig_s57_s58.OnboardSdaUnisigMessage) and unisig_message.stl_time_stamp else None
                             ),
                             "Safe time layer timestamp (human_format)": (
-                                unisig_message.stl_time_stamp.human_format if isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage) and unisig_message.stl_time_stamp else None
+                                unisig_message.stl_time_stamp.human_format if isinstance(unisig_message, decode_unisig_s57_s58.OnboardSdaUnisigMessage) and unisig_message.stl_time_stamp else None
                             ),
                             "errors": unisig_message.creational_and_decoding_errors,
                         }
@@ -376,7 +378,7 @@ class ProfibusLogFile:
                     logger_config.print_and_log_error(f"Could not decode line {line} in file {self.file_full_path} line {line_number+1}")
 
     @property
-    def unisig_messages(self) -> list[decode_unisig.OnboardUnisigMessage]:
+    def unisig_messages(self) -> list[decode_unisig_s57_s58.OnboardUnisigMessage]:
         return [log_line.unisig_message for log_line in self.decoded_lines if log_line.unisig_message is not None]
 
 
@@ -395,7 +397,7 @@ class ProfibusLogLine:
     line_number: int | None
 
     def __post_init__(self) -> None:
-        self.unisig_message: decode_unisig.OnboardUnisigMessage | None = None
+        self.unisig_message: decode_unisig_s57_s58.OnboardUnisigMessage | None = None
 
     @staticmethod
     def get_equipment_name_from_address(address: int) -> str:
@@ -526,16 +528,16 @@ class ProfibusLogLine:
     def decode_sdn_or_sda(self) -> None:
         if self.mode == SendingMode.SDA:
             try:
-                self.unisig_message = decode_unisig.OnboardSdaUnisigMessage.from_sda_hexa_bytes_str(
+                self.unisig_message = decode_unisig_s57_s58.OnboardSdaUnisigMessage.from_sda_hexa_bytes_str(
                     profibus_log_line=self,
                     bytes_hexa_str=self.bytes_hexa_str,
                     upper_layer_decoding_library=self.upper_layer_decoding_library,
                 )
 
                 assert cast(
-                    decode_unisig.OnboardSdaUnisigMessage, self.unisig_message
+                    decode_unisig_s57_s58.OnboardSdaUnisigMessage, self.unisig_message
                 ).byte_message_decoded.is_correctly_and_completely_decoded, (
-                    f"Line is not completely decoded, {len(cast(decode_unisig.OnboardSdaUnisigMessage, self.unisig_message).byte_message_decoded)} bits remaining"
+                    f"Line is not completely decoded, {len(cast(decode_unisig_s57_s58.OnboardSdaUnisigMessage, self.unisig_message).byte_message_decoded)} bits remaining"
                 )
 
             except (AssertionError, ValueError) as ass_err:
@@ -546,7 +548,7 @@ class ProfibusLogLine:
 
         else:
             try:
-                self.unisig_message = decode_unisig.SdnOnboardUnisigMessage.decode_sdn_bytes_hexa(
+                self.unisig_message = decode_unisig_s57_s58.SdnOnboardUnisigMessage.decode_sdn_bytes_hexa(
                     profibus_log_line=self,
                     bytes_hexa=self.bytes_hexa_str,
                     upper_layer_decoding_library=self.upper_layer_decoding_library,

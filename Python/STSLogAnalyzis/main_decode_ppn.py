@@ -3,7 +3,7 @@
 from logger import logger_config
 
 from stsloganalyzis.ppn import ppn_profibus_log
-from stsloganalyzis.unisig import decode_unisig
+from stsloganalyzis.unisig import decode_unisig_s57_s58
 
 
 def main() -> None:
@@ -36,7 +36,9 @@ def main() -> None:
             library.save_selected_unisig_messages(
                 file_base_name=f"{library.label} SDA messages with timestamp",
                 selected_unisig_messages=[
-                    unisig_message for unisig_message in library.all_unisig_messages if isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage) and unisig_message.stl_time_stamp is not None
+                    unisig_message
+                    for unisig_message in library.all_unisig_messages
+                    if isinstance(unisig_message, decode_unisig_s57_s58.OnboardSdaUnisigMessage) and unisig_message.stl_time_stamp is not None
                 ],
             )
 

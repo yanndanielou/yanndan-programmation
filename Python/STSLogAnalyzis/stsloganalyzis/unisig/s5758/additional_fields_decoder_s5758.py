@@ -3,12 +3,12 @@ import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from stsloganalyzis.unisig import decode_unisig
+    from stsloganalyzis.unisig import decode_unisig_s57_s58
 
 from common import date_time_formats
 
 
-def manual_additional_fields_decoding(upper_layer_stm: "decode_unisig.UpperLayerStm", field_name: str) -> None:
+def manual_additional_fields_decoding(upper_layer_stm: "decode_unisig_s57_s58.UpperLayerStm", field_name: str) -> None:
     if field_name.endswith("T_JD"):  # Timestamp en ms
         t_jd = upper_layer_stm.fields_names_and_values[field_name]
         assert isinstance(t_jd, int)
@@ -21,7 +21,7 @@ def manual_additional_fields_decoding(upper_layer_stm: "decode_unisig.UpperLayer
         decode_also_fields_as_date_with_tts(upper_layer_stm, field_name)
 
 
-def decode_also_fields_as_date_with_tts(upper_layer_stm: "decode_unisig.UpperLayerStm", date_tts_field_name: str) -> None:
+def decode_also_fields_as_date_with_tts(upper_layer_stm: "decode_unisig_s57_s58.UpperLayerStm", date_tts_field_name: str) -> None:
     matched_regex = re.compile(r"(.*)(TTS)").match(date_tts_field_name)
     assert matched_regex is not None
     field_radical = matched_regex.group(1)
@@ -50,7 +50,7 @@ def decode_also_fields_as_date_with_tts(upper_layer_stm: "decode_unisig.UpperLay
         )
 
 
-def decode_also_fields_as_string(upper_layer_stm: "decode_unisig.UpperLayerStm", last_character_field_name: str) -> None:
+def decode_also_fields_as_string(upper_layer_stm: "decode_unisig_s57_s58.UpperLayerStm", last_character_field_name: str) -> None:
     matched_regex = re.compile(r"(.*)(\d+)").match(last_character_field_name)
     assert matched_regex is not None
     field_radical = matched_regex.group(1)
