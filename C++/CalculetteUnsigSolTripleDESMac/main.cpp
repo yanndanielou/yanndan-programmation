@@ -1201,12 +1201,23 @@ int main(int argc, char* argv[]) {
     Connection_U98 connexion_ZcB_PAI75(Key1_TE, Key2_TE, Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, true); // false => cnx2, true=cnx1
     connexion_ZcB_PAI75.start_session(RandomA_wshark, RandomB_wshark);
     unsigned char MAC_AU2_cnx1[8];
-    cout << "Compute AU2. Expected MAC: 35 f7 fa 7a 7b 6a d3 75" << endl;
+    cout << "Compute AU2 Frame 116675	13:24:26,101385. Expected MAC: 35 f7 fa 7a 7b 6a d3 75 (Random Number A (RA): 41b2f3e24ba99c20, MAC: 35f7fa7a7b6ad375)" << endl;
     connexion_ZcB_PAI75.compute_input_MAC_AU2(MAC_AU2_cnx1);
     afficher_64bits(" MAC AU2 cnx1 --> ", MAC_AU2_cnx1);
 
+    cout << endl; // Calcul à 4 blocs
+    cout << "Compute Frame 116756	13:24:27,624244, expected MAC: e2 4f 14 ea f4 65 99 54 (MAC: e24f14eaf4659954, SAI User Data: 00000064), calcul à 4 blocs" << endl;
+    unsigned char blocks_04[32] = {
+            0x00, 0x17, 0x20, 0x80, 0x94, 0x0b, 0x02, 0x00,
+            0x00, 0x00, 0x16, 0x02, 0x42, 0x00, 0x05, 0xca,
+            0x64, 0x00, 0x16, 0x02, 0x42, 0x00, 0x00, 0x00,
+            0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+    connexion_ZcB_PAI75.compute_Mac_n_Blocks(4, blocks_04, Output);
+    cout << "-----------------------------" << endl << endl;
+
     cout << endl; // Calcul à 3 blocs
-    cout << "++++ Compute Frame 116789, expected MAC 69 4c b0 e5 63 c6 d4 2c" << endl;
+    cout << "++++ Compute Frame 116789	13:24:28,084275, expected MAC 69 4c b0 e5 63 c6 d4 2c (Time Stamp at Last Msg Reception : 379564, MAC : 694cb0e563c6d42c)" << endl;
     unsigned char blocks_03[24] = {
         0x00, 0x13, 0x20, 0x80, 0x92, 0x0a, 0x03, 0x3d,
         0xc2, 0x00, 0x05, 0xca, 0xac, 0x00, 0x16, 0x02,
@@ -1216,17 +1227,6 @@ int main(int argc, char* argv[]) {
     cout << "-----------------------------" << endl << endl;
 
 
-
-    cout << endl; // Calcul à 4 blocs
-    cout << "Compute Frame 116756, expected MAC: e2 4f 14 ea f4 65 99 54, calcul à 4 blocs" << endl;
-    unsigned char blocks_04[32] = {
-            0x00, 0x17, 0x20, 0x80, 0x94, 0x0b, 0x02, 0x00,
-            0x00, 0x00, 0x16, 0x02, 0x42, 0x00, 0x05, 0xca,
-            0x64, 0x00, 0x16, 0x02, 0x42, 0x00, 0x00, 0x00,
-            0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-
-    connexion_ZcB_PAI75.compute_Mac_n_Blocks(4, blocks_04, Output);
-    cout << "-----------------------------" << endl << endl;
 
     return 0;
 }
