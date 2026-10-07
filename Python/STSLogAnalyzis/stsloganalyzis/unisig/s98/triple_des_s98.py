@@ -690,18 +690,18 @@ def XOR_Byte2Byte(Source: Sequence[int], Dest: bytearray, SzData: int) -> None:
         Dest[i] ^= Source[i]
 
 
-def DES_DEC(Input: Sequence[int], Output: bytearray, Key: Sequence[int]) -> None:
+def des_dec(input: Sequence[int], output: bytearray, key: Sequence[int]) -> None:
     DES_Work_Buffer: bytearray = bytearray(8)
     Key_Schedule_1: bytearray = bytearray(64)
     Key_Schedule_2: bytearray = bytearray(64)
 
-    des_key_scheduling(Key, Key_Schedule_1, Key_Schedule_2)
-    des_initial_permutation(Input, DES_Work_Buffer)
+    des_key_scheduling(key, Key_Schedule_1, Key_Schedule_2)
+    des_initial_permutation(input, DES_Work_Buffer)
     DES_Round_DEC(DES_Work_Buffer, Key_Schedule_1, Key_Schedule_2)
-    des_inverse_initial_permutation(DES_Work_Buffer, Output)
+    des_inverse_initial_permutation(DES_Work_Buffer, output)
 
 
-def DES_ENC(Input: Sequence[int], Output: bytearray, Key: Sequence[int]) -> None:
+def des_enc(Input: Sequence[int], Output: bytearray, Key: Sequence[int]) -> None:
     des_work_buffer: bytearray = bytearray(8)
     key_schedule_1: bytearray = bytearray(64)
     key_schedule_2: bytearray = bytearray(64)
@@ -752,23 +752,23 @@ def afficher_hexa(s: str, Tab: Sequence[int]) -> None:
 def calcul_mac_4_blocks(block1: Sequence[int], block2: Sequence[int], block3: Sequence[int], block4: Sequence[int], k1: Sequence[int], k2: Sequence[int], k3: Sequence[int]) -> bytearray:
     output = bytearray(MAC_SIZE_IN_BYTES)
     print("CALCUL de MAC à 4 blocs")
-    DES_ENC(block1, output, k1)
+    des_enc(block1, output, k1)
     afficher_64bits("message block 1 : ", block1)
 
     afficher_64bits("message block 2 : ", block2)
     XOR_Byte2Byte(block2, output, 8)
-    DES_ENC(output, output, k1)
+    des_enc(output, output, k1)
 
     afficher_64bits("message block 3 : ", block3)
     XOR_Byte2Byte(block3, output, 8)
-    DES_ENC(output, output, k1)
+    des_enc(output, output, k1)
 
     afficher_64bits("message block 4 : ", block4)
     XOR_Byte2Byte(block4, output, 8)
-    DES_ENC(output, output, k1)
+    des_enc(output, output, k1)
 
-    DES_DEC(output, output, k2)
-    DES_ENC(output, output, k3)
+    des_dec(output, output, k2)
+    des_enc(output, output, k3)
     afficher_64bits("Apres cryptage par Ks3 ==> ", output)
     print(f"CBC-MAC         = {convert_mac_to_string_of_hexas(output)}")
     return output
@@ -788,16 +788,16 @@ def calcul_MAC_n_Blocks(n: int, blocks: Sequence[int], k1: Sequence[int], k2: Se
             XOR_Byte2Byte(current_block, output, 8)
             if verbose:
                 afficher_64bits("Apres XOR avec le block precedent ==> ", output)
-            DES_ENC(output, output, k1)
+            des_enc(output, output, k1)
         else:
-            DES_ENC(current_block, output, k1)
+            des_enc(current_block, output, k1)
         if verbose:
             afficher_64bits("Apres cryptage par Ks1 ==> ", output)
 
-    DES_DEC(output, output, k2)
+    des_dec(output, output, k2)
     if verbose:
         afficher_64bits("Apres decryptage par Ks2 ==> ", output)
-    DES_ENC(output, output, k3)
+    des_enc(output, output, k3)
     if verbose:
         afficher_64bits("Apres cryptage par Ks3 ==> ", output)
     print(f"CBC-MAC         = {output[0]:x} {output[1]:x} {output[2]:x} {output[3]:x} {output[4]:x} {output[5]:x} {output[6]:x} {output[7]:x}")
@@ -830,13 +830,13 @@ class Connection_U98:
 
     def compute_session_key(self, random_number: Sequence[int], session_key: bytearray, reverse: bool) -> None:
         if reverse:
-            DES_ENC(random_number, session_key, self.Key3)
-            DES_DEC(session_key, session_key, self.Key2)
-            DES_ENC(session_key, session_key, self.Key1)
+            des_enc(random_number, session_key, self.Key3)
+            des_dec(session_key, session_key, self.Key2)
+            des_enc(session_key, session_key, self.Key1)
         else:
-            DES_ENC(random_number, session_key, self.Key1)
-            DES_DEC(session_key, session_key, self.Key2)
-            DES_ENC(session_key, session_key, self.Key3)
+            des_enc(random_number, session_key, self.Key1)
+            des_dec(session_key, session_key, self.Key2)
+            des_enc(session_key, session_key, self.Key3)
 
     def start_session(self, RA: Sequence[int], RB: Sequence[int]) -> None:
         RA_L_RB_L: bytearray = bytearray(8)
