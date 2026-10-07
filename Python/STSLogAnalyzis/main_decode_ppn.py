@@ -3,7 +3,7 @@
 from logger import logger_config
 
 from stsloganalyzis.ppn import ppn_profibus_log
-from stsloganalyzis.unisig import decode_unisig_s57_s58
+from stsloganalyzis.unisig.s5758 import decode_unisig_s57_s58
 
 
 def main() -> None:

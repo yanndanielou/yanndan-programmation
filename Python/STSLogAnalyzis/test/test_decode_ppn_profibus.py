@@ -1,7 +1,8 @@
 import pytest
 
 from stsloganalyzis.ppn import ppn_profibus_log
-from stsloganalyzis.unisig import decode_unisig_s57_s58, upper_layer_libraries
+from stsloganalyzis.unisig.s5758 import decode_unisig_s57_s58
+from stsloganalyzis.unisig import upper_layer_libraries
 
 
 @pytest.fixture(scope="session", name="next_unisig_58_library_fixture")

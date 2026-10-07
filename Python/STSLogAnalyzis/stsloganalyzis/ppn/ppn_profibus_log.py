@@ -8,7 +8,8 @@ from typing import cast
 from common import file_utils, reports_utils, string_utils
 from logger import logger_config
 
-from stsloganalyzis.unisig import decode_unisig_s57_s58, upper_layer_libraries
+from stsloganalyzis.unisig.s5758 import decode_unisig_s57_s58
+from stsloganalyzis.unisig import upper_layer_libraries
 
 
 class SendingMode(Enum):

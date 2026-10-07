@@ -10,7 +10,8 @@ if TYPE_CHECKING:
 from common import bytes_messages, date_time_formats
 from logger import logger_config
 
-from stsloganalyzis.unisig import additional_fields_decoder, upper_layer_libraries
+from stsloganalyzis.unisig.s5758 import additional_fields_decoder_s5758
+from stsloganalyzis.unisig import upper_layer_libraries
 
 SL4_CRC_SIZE_IN_BYTES = 6
 
@@ -668,7 +669,7 @@ class UpperLayerStm:
     def add_field(self, field_name: str, value: str | datetime.datetime | int | None) -> None:
         assert field_name not in self.fields_names_and_values, f"{field_name} is already defined with value {self.fields_names_and_values[field_name]}. Cannot set value {value}"
         self.fields_names_and_values[field_name] = value
-        additional_fields_decoder.manual_additional_fields_decoding(self, field_name)
+        additional_fields_decoder_s5758.manual_additional_fields_decoding(self, field_name)
 
 
 @dataclass
