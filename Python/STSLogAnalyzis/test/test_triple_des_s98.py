@@ -9,7 +9,7 @@ etcsid_initiateur: int = 2130068  # 20 80 94
 etcsid_repondeur: int = 2130066  # 20 80 92
 
 
-def test_au2() -> None:
+def test_au2_from_bytearray() -> None:
 
     connexion_ZcB_PAI75 = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, True)
     connexion_ZcB_PAI75.start_session(random_a_wshark, random_b_wshark)
@@ -22,7 +22,7 @@ def test_au2() -> None:
     pass
 
 
-def test_mac_3_blocks() -> None:
+def test_mac_pas_pai_3_blocks_from_bytearray() -> None:
 
     connexion_ZcB_PAI75 = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, True)
     connexion_ZcB_PAI75.start_session(random_a_wshark, random_b_wshark)
@@ -35,7 +35,7 @@ def test_mac_3_blocks() -> None:
     assert computed_mac_as == "69 4c b0 e5 63 c6 d4 2c"
 
 
-def test_mac_4_blocks() -> None:
+def test_mac_pai_pas_4_blocks_from_bytearray() -> None:
 
     connexion_ZcB_PAI75 = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, True)
     connexion_ZcB_PAI75.start_session(random_a_wshark, random_b_wshark)
