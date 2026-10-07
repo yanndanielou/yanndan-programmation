@@ -22,11 +22,11 @@ class UnisigS98PacketType(IntEnum):
 
 
 @dataclass
-class UnisigS98Packet:
+class UnisigS98WiresharkPacket:
     tcp_payload_str: str
     ip_dst_str: str
     ip_src_str: str
-    ale_header: "UnisigS98Packet.AleHeader"
+    ale_header: "UnisigS98WiresharkPacket.AleHeader"
 
     @dataclass
     class AleHeader:
@@ -40,20 +40,29 @@ class UnisigS98Packet:
 
 
 @dataclass
-class UnisigS98Au1Packet(UnisigS98Packet):
+class UnisigS98Au1WiresharkPacket(UnisigS98WiresharkPacket):
     calling_etcs_id_type: UnisigS98EtcsIdType
     calling_etcs_id: int
     called_etcs_id_type: UnisigS98EtcsIdType
     called_etcs_id: int
+    random_number_b_rb: int
+    source_addr_str: str
+
+
+@dataclass
+class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
+    responding_etcs_id_type: UnisigS98EtcsIdType
+    responding_etcs_id: int
     random_number_a_ra: int
+    mac_str: int
 
 
-def build_unisig_s98_packet_from_wireshark_packet(wireshark_packet: pyshark.packet.packet.Packet) -> UnisigS98Packet:
+def build_unisig_s98_packet_from_wireshark_packet(wireshark_packet: pyshark.packet.packet.Packet) -> UnisigS98WiresharkPacket:
     tcp_payload = wireshark_packet.tcp.payload
 
     packet_type = UnisigS98PacketType(int(wireshark_packet.ss098.ale.packet_type))
 
-    ale_header = UnisigS98Packet.AleHeader(
+    ale_header = UnisigS98WiresharkPacket.AleHeader(
         length=int(wireshark_packet.ss098.ale.length),
         version_hexa_str=wireshark_packet.ss098.ale.version,
         apptype_hexa_str=wireshark_packet.ss098.ale.apptype,
@@ -64,7 +73,7 @@ def build_unisig_s98_packet_from_wireshark_packet(wireshark_packet: pyshark.pack
     )
 
     if packet_type == UnisigS98PacketType.AU_1_AUTHENTICATION_1:
-        return UnisigS98Au1Packet(
+        return UnisigS98Au1WiresharkPacket(
             tcp_payload_str=tcp_payload,
             ip_dst_str=wireshark_packet.ip.dst,
             ip_src_str=wireshark_packet.ip.src,
@@ -73,10 +82,22 @@ def build_unisig_s98_packet_from_wireshark_packet(wireshark_packet: pyshark.pack
             calling_etcs_id=int(wireshark_packet.ss098.conn.calling_id),
             called_etcs_id_type=UnisigS98EtcsIdType(int(wireshark_packet.ss098.conn.called_ety)),
             called_etcs_id=int(wireshark_packet.ss098.conn.called_id),
+            random_number_b_rb=int(wireshark_packet.ss098.conn.rb),
+            source_addr_str=wireshark_packet.ss098.conn.source_addr,
+        )
+    elif packet_type == UnisigS98PacketType.AU_2_AUTHENTICATION_2:
+        return UnisigS98Au2WiresharkPacket(
+            tcp_payload_str=tcp_payload,
+            ip_dst_str=wireshark_packet.ip.dst,
+            ip_src_str=wireshark_packet.ip.src,
+            ale_header=ale_header,
+            responding_etcs_id_type=UnisigS98EtcsIdType(int(wireshark_packet.ss098.conn.resp_ety)),
+            responding_etcs_id=int(wireshark_packet.ss098.conn.resp_id),
             random_number_a_ra=int(wireshark_packet.ss098.conn.ra),
+            mac_str=wireshark_packet.ss098.auth.mac,
         )
 
-    unisig_98_packet = UnisigS98Packet(
+    unisig_98_packet = UnisigS98WiresharkPacket(
         tcp_payload_str=tcp_payload,
         ip_dst_str=wireshark_packet.ip.dst,
         ip_src_str=wireshark_packet.ip.src,
@@ -86,8 +107,8 @@ def build_unisig_s98_packet_from_wireshark_packet(wireshark_packet: pyshark.pack
     return unisig_98_packet
 
 
-def get_all_unisig_s98_packets_from_pcap(pcap_file_full_path: str, tshark_path: str = r"C:\Program Files\Wireshark") -> list[UnisigS98Packet]:
-    packets: list[UnisigS98Packet] = []
+def get_all_unisig_s98_packets_from_pcap(pcap_file_full_path: str, tshark_path: str = r"C:\Program Files\Wireshark") -> list[UnisigS98WiresharkPacket]:
+    packets: list[UnisigS98WiresharkPacket] = []
     capture = pyshark.FileCapture(pcap_file_full_path, tshark_path=tshark_path)
 
     number_of_non_tcp_packets = 0
