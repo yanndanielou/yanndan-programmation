@@ -7,9 +7,11 @@ du code C++ d'implémentation de Connection_U98 / Unisig Subset-098
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from stsloganalyzis.unisig.s98 import secret_kmac_keys
+
+MAC_SIZE_IN_BYTES = 8
 
 # ------------------------------------------------------------------------------------
 # Arithmétique modulaire et classe Redond
@@ -722,10 +724,23 @@ def DES_ENC(Input: Sequence[int], Output: bytearray, Key: Sequence[int]) -> None
 # ------------------------------------------------------------------------------------
 
 
-def afficher_64bits(s: str, Tab: Sequence[int]) -> None:
+def convert_mac_to_string_of_hexas(mac: bytearray) -> str:
+    return f"{mac[0]:x} {mac[1]:x} {mac[2]:x} {mac[3]:x} {mac[4]:x} {mac[5]:x} {mac[6]:x} {mac[7]:x}"
+
+
+def bytes_array_to_string_base_10(bytes_array: Sequence[int]) -> str:
+    ret = ""
+    for i in range(8):
+        as_int = int(bytes_array[i])
+        ret = f"{ret}{as_int} "
+        print(f"{ret} ", end="")
+    return ret
+
+
+def afficher_64bits(s: str, bytes_array: Sequence[int]) -> None:
     print(s, end="")
     for i in range(8):
-        print(f"{int(Tab[i])} ", end="")
+        print(f"{int(bytes_array[i])} ", end="")
     print()
 
 
@@ -734,55 +749,59 @@ def afficher_hexa(s: str, Tab: Sequence[int]) -> None:
     print(f"16#{Tab[0]:x}_{Tab[1]:x}#, 16#{Tab[2]:x}_{Tab[3]:x}#, 16#{Tab[4]:x}_{Tab[5]:x}#, 16#{Tab[6]:x}_{Tab[7]:x}#")
 
 
-def calcul_MAC_4Blocks(Block1: Sequence[int], Block2: Sequence[int], Block3: Sequence[int], Block4: Sequence[int], k1: Sequence[int], k2: Sequence[int], k3: Sequence[int], Output: bytearray) -> None:
+def calcul_mac_4_blocks(block1: Sequence[int], block2: Sequence[int], block3: Sequence[int], block4: Sequence[int], k1: Sequence[int], k2: Sequence[int], k3: Sequence[int]) -> bytearray:
+    output = bytearray(MAC_SIZE_IN_BYTES)
     print("CALCUL de MAC à 4 blocs")
-    DES_ENC(Block1, Output, k1)
-    afficher_64bits("message block 1 : ", Block1)
+    DES_ENC(block1, output, k1)
+    afficher_64bits("message block 1 : ", block1)
 
-    afficher_64bits("message block 2 : ", Block2)
-    XOR_Byte2Byte(Block2, Output, 8)
-    DES_ENC(Output, Output, k1)
+    afficher_64bits("message block 2 : ", block2)
+    XOR_Byte2Byte(block2, output, 8)
+    DES_ENC(output, output, k1)
 
-    afficher_64bits("message block 3 : ", Block3)
-    XOR_Byte2Byte(Block3, Output, 8)
-    DES_ENC(Output, Output, k1)
+    afficher_64bits("message block 3 : ", block3)
+    XOR_Byte2Byte(block3, output, 8)
+    DES_ENC(output, output, k1)
 
-    afficher_64bits("message block 4 : ", Block4)
-    XOR_Byte2Byte(Block4, Output, 8)
-    DES_ENC(Output, Output, k1)
+    afficher_64bits("message block 4 : ", block4)
+    XOR_Byte2Byte(block4, output, 8)
+    DES_ENC(output, output, k1)
 
-    DES_DEC(Output, Output, k2)
-    DES_ENC(Output, Output, k3)
-    afficher_64bits("Apres cryptage par Ks3 ==> ", Output)
-    print(f"CBC-MAC         = {Output[0]:x} {Output[1]:x} {Output[2]:x} {Output[3]:x} {Output[4]:x} {Output[5]:x} {Output[6]:x} {Output[7]:x}")
+    DES_DEC(output, output, k2)
+    DES_ENC(output, output, k3)
+    afficher_64bits("Apres cryptage par Ks3 ==> ", output)
+    print(f"CBC-MAC         = {convert_mac_to_string_of_hexas(output)}")
+    return output
 
 
-def calcul_MAC_n_Blocks(n: int, Blocks: Sequence[int], k1: Sequence[int], k2: Sequence[int], k3: Sequence[int], Output: bytearray, verbose: bool = False) -> None:
+def calcul_MAC_n_Blocks(n: int, blocks: Sequence[int], k1: Sequence[int], k2: Sequence[int], k3: Sequence[int], verbose: bool = False) -> bytearray:
+    output = bytearray(MAC_SIZE_IN_BYTES)
     current_block: bytearray = bytearray(8)
     byte_index: int = 0
     for i in range(n):
         for j in range(8):
-            current_block[j] = Blocks[byte_index]
+            current_block[j] = blocks[byte_index]
             byte_index += 1
         if verbose:
             afficher_64bits("current message block : ", current_block)
         if i > 0:
-            XOR_Byte2Byte(current_block, Output, 8)
+            XOR_Byte2Byte(current_block, output, 8)
             if verbose:
-                afficher_64bits("Apres XOR avec le block precedent ==> ", Output)
-            DES_ENC(Output, Output, k1)
+                afficher_64bits("Apres XOR avec le block precedent ==> ", output)
+            DES_ENC(output, output, k1)
         else:
-            DES_ENC(current_block, Output, k1)
+            DES_ENC(current_block, output, k1)
         if verbose:
-            afficher_64bits("Apres cryptage par Ks1 ==> ", Output)
+            afficher_64bits("Apres cryptage par Ks1 ==> ", output)
 
-    DES_DEC(Output, Output, k2)
+    DES_DEC(output, output, k2)
     if verbose:
-        afficher_64bits("Apres decryptage par Ks2 ==> ", Output)
-    DES_ENC(Output, Output, k3)
+        afficher_64bits("Apres decryptage par Ks2 ==> ", output)
+    DES_ENC(output, output, k3)
     if verbose:
-        afficher_64bits("Apres cryptage par Ks3 ==> ", Output)
-    print(f"CBC-MAC         = {Output[0]:x} {Output[1]:x} {Output[2]:x} {Output[3]:x} {Output[4]:x} {Output[5]:x} {Output[6]:x} {Output[7]:x}")
+        afficher_64bits("Apres cryptage par Ks3 ==> ", output)
+    print(f"CBC-MAC         = {output[0]:x} {output[1]:x} {output[2]:x} {output[3]:x} {output[4]:x} {output[5]:x} {output[6]:x} {output[7]:x}")
+    return output
 
 
 # ------------------------------------------------------------------------------------
@@ -869,7 +888,7 @@ class Connection_U98:
         print()
         print("\nconnection etablie ...\n")
 
-    def compute_input_MAC_AU2(self, output: bytearray) -> None:
+    def compute_input_mac_au2(self) -> bytearray:
         print("computing G_INPUT_MAC_AU2 ", end="")
         if self.is_connnection1:
             print("for connection 1", end="")
@@ -928,17 +947,16 @@ class Connection_U98:
         afficher_64bits("bloc3 (msg AU2) = ", AU2_bloc3)
         afficher_64bits("bloc4 (msg AU2) = ", AU2_bloc4)
 
-        calcul_MAC_4Blocks(AU2_bloc1, AU2_bloc2, AU2_bloc3, AU2_bloc4, self.Ks1, self.Ks2, self.Ks3, output)
-        print()
+        return calcul_mac_4_blocks(AU2_bloc1, AU2_bloc2, AU2_bloc3, AU2_bloc4, self.Ks1, self.Ks2, self.Ks3)
 
-    def compute_Mac_n_Blocks(self, nb_bloks: int, Blocks: Sequence[int], Output: bytearray) -> None:
+    def compute_mac_n_blocks(self, nb_bloks: int, blocks: Sequence[int]) -> bytearray:
         print(f"CALCUL de MAC à N blocs avec N={nb_bloks}", end="")
         if self.is_connnection1:
             print(" pour connection 1")
         else:
             print(" pour connection 2")
 
-        calcul_MAC_n_Blocks(nb_bloks, Blocks, self.Ks1, self.Ks2, self.Ks3, Output)
+        return calcul_MAC_n_Blocks(nb_bloks, blocks, self.Ks1, self.Ks2, self.Ks3)
 
 
 # ------------------------------------------------------------------------------------
@@ -947,7 +965,7 @@ class Connection_U98:
 
 
 def main() -> int:
-    Output: bytearray = bytearray(8)
+    output: bytearray = bytearray(8)
 
     random_a_wshark: bytearray = bytearray([0x41, 0xB2, 0xF3, 0xE2, 0x4B, 0xA9, 0x9C, 0x20])
     random_b_wshark: bytearray = bytearray([0x37, 0x59, 0x47, 0xAA, 0xA4, 0xBF, 0x44, 0x97])
@@ -958,25 +976,25 @@ def main() -> int:
 
     connexion_ZcB_PAI75: Connection_U98 = Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, True)
     connexion_ZcB_PAI75.start_session(random_a_wshark, random_b_wshark)
-    MAC_AU2_cnx1: bytearray = bytearray(8)
-    print("Compute AU2. Expected MAC: 35 f7 fa 7a 7b 6a d3 75")
-    connexion_ZcB_PAI75.compute_input_MAC_AU2(MAC_AU2_cnx1)
-    afficher_64bits(" MAC AU2 cnx1 --> ", MAC_AU2_cnx1)
+    mac_au2_cnx: bytearray = bytearray(8)
+    print("Compute AU2 Frame 116675	13:24:26,101385. Expected MAC: 35 f7 fa 7a 7b 6a d3 75 (Random Number A (RA): 41b2f3e24ba99c20, MAC: 35f7fa7a7b6ad375)")
+    connexion_ZcB_PAI75.compute_input_mac_au2(mac_au2_cnx)
+    afficher_64bits(" MAC AU2 cnx1 --> ", mac_au2_cnx)
 
     print()  # Calcul à 3 blocs
-    print("++++ Compute Frame 116789, expected MAC 69 4c b0 e5 63 c6 d4 2c")
+    print("Compute Frame 116789	13:24:28,084275, expected MAC 69 4c b0 e5 63 c6 d4 2c (Time Stamp at Last Msg Reception : 379564, MAC : 694cb0e563c6d42c")
     blocks_03: bytearray = bytearray([0x00, 0x13, 0x20, 0x80, 0x92, 0x0A, 0x03, 0x3D, 0xC2, 0x00, 0x05, 0xCA, 0xAC, 0x00, 0x16, 0x02, 0x42, 0x00, 0x05, 0xCA, 0xAC, 0x00, 0x00, 0x00])
 
-    connexion_ZcB_PAI75.compute_Mac_n_Blocks(3, blocks_03, Output)
+    output = connexion_ZcB_PAI75.compute_mac_n_blocks(3, blocks_03)
     print("-----------------------------\n")
 
     print()  # Calcul à 4 blocs
-    print("Compute Frame 116756, expected MAC: e2 4f 14 ea f4 65 99 54, calcul à 4 blocs")
+    print("Compute Frame 116756	13:24:27,624244, expected MAC: e2 4f 14 ea f4 65 99 54 (MAC: e24f14eaf4659954, SAI User Data: 00000064), calcul à 4 blocs")
     blocks_04: bytearray = bytearray(
         [0x00, 0x17, 0x20, 0x80, 0x94, 0x0B, 0x02, 0x00, 0x00, 0x00, 0x16, 0x02, 0x42, 0x00, 0x05, 0xCA, 0x64, 0x00, 0x16, 0x02, 0x42, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
     )
 
-    connexion_ZcB_PAI75.compute_Mac_n_Blocks(4, blocks_04, Output)
+    output = connexion_ZcB_PAI75.compute_mac_n_blocks(4, blocks_04)
     print("-----------------------------\n")
 
     return 0
