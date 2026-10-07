@@ -354,7 +354,7 @@ def DES_Permuted_Choice_2(Key_In: Sequence[int], Permuted_Choice_2: bytearray, o
     )
 
 
-def DES_Initial_Permutation(Input: Sequence[int], Output: bytearray) -> None:
+def des_initial_permutation(Input: Sequence[int], Output: bytearray) -> None:
     Output[0] = (
         ((Input[7] & 0x40) << 1)
         | (Input[6] & 0x40)
@@ -437,7 +437,7 @@ def DES_Initial_Permutation(Input: Sequence[int], Output: bytearray) -> None:
     )
 
 
-def DES_Inverse_Initial_Permutation(Input: Sequence[int], Output: bytearray) -> None:
+def des_inverse_initial_permutation(Input: Sequence[int], Output: bytearray) -> None:
     Output[0] = (
         ((Input[4] & 0x01) << 7)
         | ((Input[0] & 0x01) << 6)
@@ -590,7 +590,7 @@ def DES_Function_F(DES_Buffer: bytearray, Key: Sequence[int]) -> None:
     DES_Function_P(F_Temp, DES_Buffer)
 
 
-def DES_Key_Scheduling(Key: Sequence[int], Key_Schedule_1: bytearray, Key_Schedule_2: bytearray) -> None:
+def des_key_scheduling(Key: Sequence[int], Key_Schedule_1: bytearray, Key_Schedule_2: bytearray) -> None:
     Permuted_Choice_1: bytearray = bytearray(8)
     DES_Permuted_Choice_1(Key, Permuted_Choice_1)
 
@@ -618,7 +618,7 @@ def DES_Key_Scheduling(Key: Sequence[int], Key_Schedule_1: bytearray, Key_Schedu
             break
 
 
-def DES_Round_ENC(DES_Buffer: bytearray, Key_Schedule_1: bytearray, Key_Schedule_2: bytearray) -> None:
+def des_round_enc(DES_Buffer: bytearray, Key_Schedule_1: bytearray, Key_Schedule_2: bytearray) -> None:
     DES_Buffer_Left: bytearray = bytearray(DES_Buffer[:4])
     DES_Buffer_Right: bytearray = bytearray(DES_Buffer[4:8])
     DES_Buffer_Temp1: bytearray = bytearray(4)
@@ -695,28 +695,28 @@ def DES_DEC(Input: Sequence[int], Output: bytearray, Key: Sequence[int]) -> None
     Key_Schedule_1: bytearray = bytearray(64)
     Key_Schedule_2: bytearray = bytearray(64)
 
-    DES_Key_Scheduling(Key, Key_Schedule_1, Key_Schedule_2)
-    DES_Initial_Permutation(Input, DES_Work_Buffer)
+    des_key_scheduling(Key, Key_Schedule_1, Key_Schedule_2)
+    des_initial_permutation(Input, DES_Work_Buffer)
     DES_Round_DEC(DES_Work_Buffer, Key_Schedule_1, Key_Schedule_2)
-    DES_Inverse_Initial_Permutation(DES_Work_Buffer, Output)
+    des_inverse_initial_permutation(DES_Work_Buffer, Output)
 
 
 def DES_ENC(Input: Sequence[int], Output: bytearray, Key: Sequence[int]) -> None:
-    DES_Work_Buffer: bytearray = bytearray(8)
-    Key_Schedule_1: bytearray = bytearray(64)
-    Key_Schedule_2: bytearray = bytearray(64)
-    DES_Temp: bytearray = bytearray(4)
+    des_work_buffer: bytearray = bytearray(8)
+    key_schedule_1: bytearray = bytearray(64)
+    key_schedule_2: bytearray = bytearray(64)
+    des_temp: bytearray = bytearray(4)
 
-    DES_Initial_Permutation(Input, DES_Work_Buffer)
-    DES_Key_Scheduling(Key, Key_Schedule_1, Key_Schedule_2)
-    DES_Round_ENC(DES_Work_Buffer, Key_Schedule_1, Key_Schedule_2)
+    des_initial_permutation(Input, des_work_buffer)
+    des_key_scheduling(Key, key_schedule_1, key_schedule_2)
+    des_round_enc(des_work_buffer, key_schedule_1, key_schedule_2)
 
     # Swap R16 and L16
-    DES_Temp[:] = DES_Work_Buffer[:4]
-    DES_Work_Buffer[:4] = DES_Work_Buffer[4:8]
-    DES_Work_Buffer[4:8] = DES_Temp
+    des_temp[:] = des_work_buffer[:4]
+    des_work_buffer[:4] = des_work_buffer[4:8]
+    des_work_buffer[4:8] = des_temp
 
-    DES_Inverse_Initial_Permutation(DES_Work_Buffer, Output)
+    des_inverse_initial_permutation(des_work_buffer, Output)
 
 
 # ------------------------------------------------------------------------------------
