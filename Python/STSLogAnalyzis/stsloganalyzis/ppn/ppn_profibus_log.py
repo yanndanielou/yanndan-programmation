@@ -60,7 +60,7 @@ class ProfibusLogLibrary:
             upper_layer_telegram
             for upper_layer_telegram in self.all_unisig_messages
             if isinstance(upper_layer_telegram, decode_unisig.SdaForUpperLayerTelegram)
-            and upper_layer_telegram.command_type == decode_unisig.SdaUnisigMessage.CommandTypeSubset57.SL4_TELEGRAM_FOR_UPPER_LAYER
+            and upper_layer_telegram.command_type == decode_unisig.OnboardSdaUnisigMessage.CommandTypeSubset57.SL4_TELEGRAM_FOR_UPPER_LAYER
         ]
         # [unisig_message for log_line in self.decoded_lines for unisig_message in log_line.unisig_messages]
         self.all_upper_layer_stms = [stm_message for upper_layer_telegram in self.all_upper_layer_telegram for stm_message in upper_layer_telegram.upper_layer_decoded_stms]
@@ -253,7 +253,7 @@ class ProfibusLogLibrary:
             file_base_name=f"{self.label} all unisig messages",
         )
 
-    def save_selected_unisig_messages(self, selected_unisig_messages: list[decode_unisig.UnisigMessage], file_base_name: str) -> None:
+    def save_selected_unisig_messages(self, selected_unisig_messages: list[decode_unisig.OnboardUnisigMessage], file_base_name: str) -> None:
         with logger_config.stopwatch_with_label(f"save_selected_unisig_messages {len(self.all_unisig_messages)} unisig messages", monitor_ram_usage=True, inform_beginning=True):
 
             reports_utils.save_rows_to_output_files(
@@ -269,13 +269,13 @@ class ProfibusLogLibrary:
                             "file path": unisig_message.profibus_log_line.file_path if unisig_message.profibus_log_line else None,
                             "line number": unisig_message.profibus_log_line.line_number if unisig_message.profibus_log_line else None,
                             "Number of errors": len(unisig_message.creational_and_decoding_errors),
-                            "lowest_order_byte_sequence_number": unisig_message.lowest_order_byte_sequence_number if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) else None,
-                            "CRC": unisig_message.crc.crc_bits_as_string if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) and unisig_message.crc else None,
+                            "lowest_order_byte_sequence_number": unisig_message.lowest_order_byte_sequence_number if isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage) else None,
+                            "CRC": unisig_message.crc.crc_bits_as_string if isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage) and unisig_message.crc else None,
                             "Safe time layer timestamp (ms)": (
-                                unisig_message.stl_time_stamp.in_ms if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) and unisig_message.stl_time_stamp else None
+                                unisig_message.stl_time_stamp.in_ms if isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage) and unisig_message.stl_time_stamp else None
                             ),
                             "Safe time layer timestamp (human_format)": (
-                                unisig_message.stl_time_stamp.human_format if isinstance(unisig_message, decode_unisig.SdaUnisigMessage) and unisig_message.stl_time_stamp else None
+                                unisig_message.stl_time_stamp.human_format if isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage) and unisig_message.stl_time_stamp else None
                             ),
                             "errors": unisig_message.creational_and_decoding_errors,
                         }
@@ -376,7 +376,7 @@ class ProfibusLogFile:
                     logger_config.print_and_log_error(f"Could not decode line {line} in file {self.file_full_path} line {line_number+1}")
 
     @property
-    def unisig_messages(self) -> list[decode_unisig.UnisigMessage]:
+    def unisig_messages(self) -> list[decode_unisig.OnboardUnisigMessage]:
         return [log_line.unisig_message for log_line in self.decoded_lines if log_line.unisig_message is not None]
 
 
@@ -395,7 +395,7 @@ class ProfibusLogLine:
     line_number: int | None
 
     def __post_init__(self) -> None:
-        self.unisig_message: decode_unisig.UnisigMessage | None = None
+        self.unisig_message: decode_unisig.OnboardUnisigMessage | None = None
 
     @staticmethod
     def get_equipment_name_from_address(address: int) -> str:
@@ -526,16 +526,16 @@ class ProfibusLogLine:
     def decode_sdn_or_sda(self) -> None:
         if self.mode == SendingMode.SDA:
             try:
-                self.unisig_message = decode_unisig.SdaUnisigMessage.from_sda_hexa_bytes_str(
+                self.unisig_message = decode_unisig.OnboardSdaUnisigMessage.from_sda_hexa_bytes_str(
                     profibus_log_line=self,
                     bytes_hexa_str=self.bytes_hexa_str,
                     upper_layer_decoding_library=self.upper_layer_decoding_library,
                 )
 
                 assert cast(
-                    decode_unisig.SdaUnisigMessage, self.unisig_message
+                    decode_unisig.OnboardSdaUnisigMessage, self.unisig_message
                 ).byte_message_decoded.is_correctly_and_completely_decoded, (
-                    f"Line is not completely decoded, {len(cast(decode_unisig.SdaUnisigMessage, self.unisig_message).byte_message_decoded)} bits remaining"
+                    f"Line is not completely decoded, {len(cast(decode_unisig.OnboardSdaUnisigMessage, self.unisig_message).byte_message_decoded)} bits remaining"
                 )
 
             except (AssertionError, ValueError) as ass_err:
@@ -546,7 +546,7 @@ class ProfibusLogLine:
 
         else:
             try:
-                self.unisig_message = decode_unisig.SdnUnisigMessage.decode_sdn_bytes_hexa(
+                self.unisig_message = decode_unisig.SdnOnboardUnisigMessage.decode_sdn_bytes_hexa(
                     profibus_log_line=self,
                     bytes_hexa=self.bytes_hexa_str,
                     upper_layer_decoding_library=self.upper_layer_decoding_library,

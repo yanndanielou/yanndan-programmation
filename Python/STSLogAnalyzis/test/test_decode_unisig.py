@@ -15,7 +15,7 @@ class TestUpperLayerLibrary:
             telegram_name="",
             byte_message_decoded=bytes_messages.DecodedBytesMessage.from_hex_string("34h 53h 01h 02h 03h 04h 05h 06h 07h 08h 09h 10h"),
             lowest_order_byte_sequence_number=12,
-            command_type=decode_unisig.SdaUnisigMessage.CommandTypeSubset57.SL4_TELEGRAM_FOR_UPPER_LAYER,
+            command_type=decode_unisig.OnboardSdaUnisigMessage.CommandTypeSubset57.SL4_TELEGRAM_FOR_UPPER_LAYER,
             upper_layer_decoding_library=upper_layer_decoding_library,
         )
 

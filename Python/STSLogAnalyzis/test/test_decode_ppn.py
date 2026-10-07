@@ -90,7 +90,7 @@ class TestDecodeOnePpnLogLine:
                 ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
-                assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
+                assert isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage)
                 assert not unisig_message.creational_and_decoding_errors
                 assert unisig_message.stl_time_stamp is not None
                 assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
@@ -105,7 +105,7 @@ class TestDecodeOnePpnLogLine:
                 ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
-                assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
+                assert isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage)
                 assert not unisig_message.creational_and_decoding_errors
                 assert unisig_message.stl_time_stamp is not None
                 assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
@@ -121,7 +121,7 @@ class TestDecodeOnePpnLogLine:
                 ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
-                assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
+                assert isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage)
                 assert not unisig_message.creational_and_decoding_errors
                 assert unisig_message.stl_time_stamp is not None
                 assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
@@ -136,7 +136,7 @@ class TestDecodeOnePpnLogLine:
                 ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
-                assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
+                assert isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage)
                 assert not unisig_message.creational_and_decoding_errors
                 assert unisig_message.stl_time_stamp is not None
                 assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
@@ -151,7 +151,7 @@ class TestDecodeOnePpnLogLine:
                 ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
-                assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
+                assert isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage)
                 assert not unisig_message.creational_and_decoding_errors
                 assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
 
@@ -164,7 +164,7 @@ class TestDecodeOnePpnLogLine:
                 ppn_log_line.decode_sdn_or_sda()
                 unisig_message = ppn_log_line.unisig_message
                 assert unisig_message
-                assert isinstance(unisig_message, decode_unisig.SdaUnisigMessage)
+                assert isinstance(unisig_message, decode_unisig.OnboardSdaUnisigMessage)
                 assert not unisig_message.creational_and_decoding_errors
                 assert unisig_message.byte_message_decoded.is_correctly_and_completely_decoded
 
