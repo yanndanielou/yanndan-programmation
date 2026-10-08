@@ -18,42 +18,6 @@ MAC_SIZE_IN_BYTES = 8
 # ------------------------------------------------------------------------------------
 
 
-def calculer_inverse_modulo(a: int, p: int) -> int:
-    """
-    Calcule l'inverse modulaire de a modulo p via l'algorithme d'Euclide étendu.
-    Retourne l'inverse si pgcd(a, p) == 1, sinon 0.
-    """
-    u_prec: int = 1
-    u: int = 0
-    v_prec: int = 0
-    v: int = 1
-
-    x: int = a
-    y: int = p
-
-    while y != 0:
-        x_prec: int = x
-        y_prec: int = y
-
-        x = y_prec
-        y = x_prec % y_prec
-
-        # Troncature vers zéro identique à la division entière en C++
-        quotient: int = int(x_prec / y_prec)
-        new_u: int = u_prec - u * quotient
-        new_v: int = v_prec - v * quotient
-
-        u_prec = u
-        v_prec = v
-        u = new_u
-        v = new_v
-
-    if x == 1:
-        return u_prec
-    else:
-        return 0
-
-
 A1: int = 12970357
 A2: int = 12239417
 
@@ -94,11 +58,6 @@ class Redond:
     def multiplier(self, r: Redond) -> None:
         self._c1 *= r.C1()
         self._c2 *= r.C2()
-        self.recadrer()
-
-    def inverser(self) -> None:
-        self._c1 = calculer_inverse_modulo(self._c1, A1)
-        self._c2 = calculer_inverse_modulo(self._c2, A2)
         self.recadrer()
 
     def clone(self) -> Redond:
@@ -154,35 +113,6 @@ class const_PSC:
             sum_f.ajouter(f_val)
             self.Somme_Fi.append(sum_f.clone())
 
-    def calcul_Bx_N_non_brouille(self, id_connection: int, N_value: int) -> Redond:
-        if id_connection < 0 or id_connection > 1:
-            print(f"Erreur : mauvais id_connection : {id_connection} (valeur attendue : 0 ou 1)")
-            return Redond(0, 0)
-        if N_value < 0 or N_value > 16:
-            print(f"Erreur : mauvaise valeur pour N : {N_value} (valeurs possibles : 1 à 16)")
-            return Redond(0, 0)
-
-        bx_res: Redond = self.Unisig_98_Hard(7)
-        bx_k3: Redond = self.Unisig_98_Hard(0 + 10 * id_connection)
-        bxd: Redond = self.Unisig_98_Hard(6 + 10 * id_connection)
-
-        calcul1: Redond = Redond(1, 1)
-        for _ in range(1, N_value + 3):
-            calcul1.multiplier(self.deux_p196)
-        calcul1.inverser()
-        calcul1.multiplier(bxd)
-
-        calcul2: Redond = self.deux_p196.clone()
-        calcul2.multiplier(Redond(4181, 4181))
-        calcul2.inverser()
-        calcul2.multiplier(calcul2)
-        calcul2.multiplier(bx_k3)
-
-        result: Redond = bx_res.clone()
-        result.ajouter(calcul1)
-        result.ajouter(calcul2)
-        return result
-
     def tau_i(self, i: int) -> Redond:
         tau: Redond = self.tau0.clone()
         for _ in range(1, i + 1):
@@ -190,10 +120,8 @@ class const_PSC:
         return tau
 
     def Unisig_98_Hard(self, indice: int) -> Redond:
-        if 0 <= indice < 20:
-            return self._unisig_98_hard[indice].clone()
-        print("\nerreur d'indice !!")
-        return Redond(0, 0)
+        assert 0 <= indice < 20
+        return self._unisig_98_hard[indice].clone()
 
     def calculer_redond_tableau8(self, Tab: Sequence[int], Bx_Tab: Redond, reverse: bool = False) -> Redond:
         r: Redond = Bx_Tab.clone()
@@ -265,11 +193,6 @@ SBOX_TABLES: list[list[list[int]]] = [[], SBOX_1, SBOX_2, SBOX_3, SBOX_4, SBOX_5
 # ------------------------------------------------------------------------------------
 # Primitives DES bit-level
 # ------------------------------------------------------------------------------------
-
-
-def MEMORY_Copy(target: bytearray, source: Sequence[int], size: int, target_off: int = 0, source_off: int = 0) -> None:
-    for i in range(size):
-        target[target_off + i] = source[source_off + i]
 
 
 def des_permuted_choice_1(key_in: Sequence[int], permuted_choice_1: bytearray) -> None:
@@ -957,48 +880,3 @@ class Connection_U98:
             print(" pour connection 2")
 
         return calcul_MAC_n_Blocks(nb_bloks, blocks, self.Ks1, self.Ks2, self.Ks3)
-
-
-# ------------------------------------------------------------------------------------
-# Point d'entrée principal (tests de conformité)
-# ------------------------------------------------------------------------------------
-
-
-def main() -> int:
-    output: bytearray = bytearray(8)
-
-    random_a_wshark: bytearray = bytearray([0x41, 0xB2, 0xF3, 0xE2, 0x4B, 0xA9, 0x9C, 0x20])
-    random_b_wshark: bytearray = bytearray([0x37, 0x59, 0x47, 0xAA, 0xA4, 0xBF, 0x44, 0x97])
-
-    print(" Test de la classe connection_U98 : \n")
-    etcsid_initiateur: int = 2130068  # 20 80 94
-    etcsid_repondeur: int = 2130066  # 20 80 92
-
-    connexion_ZcB_PAI75: Connection_U98 = Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, True)
-    connexion_ZcB_PAI75.start_session(random_a_wshark, random_b_wshark)
-    mac_au2_cnx: bytearray = bytearray(8)
-    print("Compute AU2 Frame 116675	13:24:26,101385. Expected MAC: 35 f7 fa 7a 7b 6a d3 75 (Random Number A (RA): 41b2f3e24ba99c20, MAC: 35f7fa7a7b6ad375)")
-    connexion_ZcB_PAI75.compute_input_mac_au2(mac_au2_cnx)
-    afficher_64bits(" MAC AU2 cnx1 --> ", mac_au2_cnx)
-
-    print()  # Calcul à 3 blocs
-    print("Compute Frame 116789	13:24:28,084275, expected MAC 69 4c b0 e5 63 c6 d4 2c (Time Stamp at Last Msg Reception : 379564, MAC : 694cb0e563c6d42c")
-    blocks_03: bytearray = bytearray([0x00, 0x13, 0x20, 0x80, 0x92, 0x0A, 0x03, 0x3D, 0xC2, 0x00, 0x05, 0xCA, 0xAC, 0x00, 0x16, 0x02, 0x42, 0x00, 0x05, 0xCA, 0xAC, 0x00, 0x00, 0x00])
-
-    output = connexion_ZcB_PAI75.compute_mac_n_blocks(3, blocks_03)
-    print("-----------------------------\n")
-
-    print()  # Calcul à 4 blocs
-    print("Compute Frame 116756	13:24:27,624244, expected MAC: e2 4f 14 ea f4 65 99 54 (MAC: e24f14eaf4659954, SAI User Data: 00000064), calcul à 4 blocs")
-    blocks_04: bytearray = bytearray(
-        [0x00, 0x17, 0x20, 0x80, 0x94, 0x0B, 0x02, 0x00, 0x00, 0x00, 0x16, 0x02, 0x42, 0x00, 0x05, 0xCA, 0x64, 0x00, 0x16, 0x02, 0x42, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-    )
-
-    output = connexion_ZcB_PAI75.compute_mac_n_blocks(4, blocks_04)
-    print("-----------------------------\n")
-
-    return 0
-
-
-if __name__ == "__main__":
-    main()
