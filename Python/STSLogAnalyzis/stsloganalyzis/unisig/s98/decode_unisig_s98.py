@@ -1,15 +1,13 @@
 from dataclasses import dataclass
-
-from logger import logger_config
 from enum import IntEnum
 from typing import cast
 
 import pyshark
 import pyshark.packet.packet
-
 from common import file_utils
+from logger import logger_config
 
-from stsloganalyzis.unisig.s98 import secret_equipment_name_from_ip_address, triple_des_s98, secret_kmac_keys
+from stsloganalyzis.unisig.s98 import secret_equipment_name_from_ip_address, secret_kmac_keys, triple_des_s98
 
 UNISIG_S98_PORTS = [49451, 49452, 49453, 49454, 49455, 49456, 49457]
 UNISIG_TRANSPORT_LAYER = "TCP"
@@ -159,7 +157,7 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
 class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
     last_au1_packet: UnisigS98Au1WiresharkPacket | None
     last_connexion: triple_des_s98.ConnectionUnisig98 | None
-    sai_user_data: HexaValueSplitBySemiColonInWireshark
+    sai_user_data: HexaValueSplitBySemiColonInWireshark | None
     mac: HexaValueSplitBySemiColonInWireshark
 
     @dataclass
@@ -267,8 +265,7 @@ class UnisigS98Simulation:
     @logger_config.stopwatch_decorator(monitor_ram_usage=True)
     def build_unisig_s98_packets_from_load_pcap_file(self, pcap_file_full_path: str) -> None:
 
-        capture = pyshark.FileCapture(pcap_file_full_path, tshark_path=TSHARK_FULL_PATH)
-        logger_config.print_and_log_info(f"{len(capture)} or {len(capture._packets)} packets found in {pcap_file_full_path}")
+        capture = pyshark.FileCapture(pcap_file_full_path, tshark_path=TSHARK_FULL_PATH, display_filter="ss098")
 
         number_of_packets_parsed = 0
         number_of_errors = 0
@@ -278,11 +275,12 @@ class UnisigS98Simulation:
 
             packet = cast(pyshark.packet.packet.Packet, packet)
             try:
-                if packet.transport_layer == UNISIG_TRANSPORT_LAYER and int(packet.tcp.port) in UNISIG_S98_PORTS:
+                if packet.transport_layer == UNISIG_TRANSPORT_LAYER and int(packet.tcp.port) in UNISIG_S98_PORTS and "payload" in packet.tcp.field_names and packet.get_multiple_layers("ss098"):
                     unisig_s98_packets_found.append(self.build_unisig_s98_packet_from_wireshark_packet(packet))
+
             except AttributeError as attr_err:
                 logger_config.print_and_log_exception(attr_err)
-                logger_config.print_and_log_error(f"Could not parse {number_of_packets_parsed} th packet of {pcap_file_full_path}")
+                logger_config.print_and_log_error(f"Could not parse {number_of_packets_parsed+1} th packet of {pcap_file_full_path}")
                 number_of_errors += 1
 
             logger_config.print_and_log_info_if(
@@ -366,7 +364,9 @@ class UnisigS98Simulation:
                     ip_src_str=ip_src_str,
                     ale_header=ale_header,
                     emd_byte=emd_byte,
-                    sai_user_data=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.user_data")),
+                    sai_user_data=(
+                        HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.user_data")) if wireshark_packet.ss098.get_field_value("ss098.sai.user_data") else None
+                    ),
                     mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.mac")),
                 )
 
