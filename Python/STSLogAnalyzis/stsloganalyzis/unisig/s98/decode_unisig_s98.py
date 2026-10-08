@@ -15,11 +15,20 @@ def convert_wireshark_string_colon_separated_bytes_to_byte_array(wireshark_strin
 
 
 @dataclass
-class RandomNumber:
+class HexaValueSplitBySemiColonInWireshark:
     raw_str_value: str
 
     def __post_init__(self) -> None:
         self.as_byte_array = convert_wireshark_string_colon_separated_bytes_to_byte_array(self.raw_str_value)
+
+
+@dataclass
+class HexaValueAsListBytesInWireshark:
+    raw_str_value: str
+
+    def __post_init__(self) -> None:
+        pass
+        # self.as_byte_array = convert_wireshark_string_colon_separated_bytes_to_byte_array(self.raw_str_value)
 
 
 class UnisigS98EtcsIdType(IntEnum):
@@ -28,10 +37,18 @@ class UnisigS98EtcsIdType(IntEnum):
     UNKNOWN_6 = 6
 
 
+class UnisigS98EmdMti(IntEnum):
+    AU1 = 1
+    AU2 = 2
+    AU3 = 3
+    DT_DATA = 5
+    AR_AUTHENTIFICATION_RESPONSE = 9
+
+
 class UnisigS98PacketType(IntEnum):
     AU_1_AUTHENTICATION_1 = 1
     AU_2_AUTHENTICATION_2 = 2
-    AU_3_AR_DT_DATA = 3
+    AU_3_OR_AR_OR_DT_DATA = 3
     DT_DATA_OR_RETRANSMISSION = 6
 
 
@@ -41,6 +58,7 @@ class UnisigS98WiresharkPacket:
     ip_dst_str: str
     ip_src_str: str
     ale_header: "UnisigS98WiresharkPacket.AleHeader"
+    emd_byte: "UnisigS98WiresharkPacket.EmdByte"
 
     @dataclass
     class AleHeader:
@@ -52,6 +70,13 @@ class UnisigS98WiresharkPacket:
         packet_type: UnisigS98PacketType
         checksum_hexa_str: str
 
+    @dataclass
+    class EmdByte:
+        value: int
+        ety: int
+        mti: UnisigS98EmdMti
+        df: int
+
 
 @dataclass
 class UnisigS98Au1WiresharkPacket(UnisigS98WiresharkPacket):
@@ -59,7 +84,7 @@ class UnisigS98Au1WiresharkPacket(UnisigS98WiresharkPacket):
     calling_etcs_id: int
     called_etcs_id_type: UnisigS98EtcsIdType
     called_etcs_id: int
-    random_number_b_rb: RandomNumber
+    random_number_b_rb: HexaValueSplitBySemiColonInWireshark
     source_addr_str: str
 
 
@@ -67,8 +92,14 @@ class UnisigS98Au1WiresharkPacket(UnisigS98WiresharkPacket):
 class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
     responding_etcs_id_type: UnisigS98EtcsIdType
     responding_etcs_id: int
-    random_number_a_ra: RandomNumber
-    mac_str: int
+    random_number_a_ra: HexaValueSplitBySemiColonInWireshark
+    mac: HexaValueAsListBytesInWireshark
+
+
+@dataclass
+class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
+    sai_user_data: HexaValueAsListBytesInWireshark
+    mac: HexaValueAsListBytesInWireshark
 
 
 def build_unisig_s98_packet_from_wireshark_packet(wireshark_packet: pyshark.packet.packet.Packet) -> UnisigS98WiresharkPacket:
@@ -86,17 +117,25 @@ def build_unisig_s98_packet_from_wireshark_packet(wireshark_packet: pyshark.pack
         checksum_hexa_str=wireshark_packet.ss098.get_field_value("ss098.ale.checksum_hexa_str"),
     )
 
+    emd_byte = UnisigS98WiresharkPacket.EmdByte(
+        value=int(wireshark_packet.ss098.get_field_value("ss098.sai.emd"), 16),
+        ety=int(wireshark_packet.ss098.get_field_value("ss098.sai.ety")),
+        mti=UnisigS98EmdMti(int(wireshark_packet.ss098.get_field_value("ss098.sai.mti"))),
+        df=int(wireshark_packet.ss098.get_field_value("ss098.sai.df")),
+    )
+
     if packet_type == UnisigS98PacketType.AU_1_AUTHENTICATION_1:
         return UnisigS98Au1WiresharkPacket(
             tcp_payload_str=tcp_payload,
             ip_dst_str=wireshark_packet.ip.dst,
             ip_src_str=wireshark_packet.ip.src,
             ale_header=ale_header,
+            emd_byte=emd_byte,
             calling_etcs_id_type=UnisigS98EtcsIdType(int(wireshark_packet.ss098.get_field_value("ss098.conn.calling_ety"))),
             calling_etcs_id=int(wireshark_packet.ss098.get_field_value("ss098.conn.calling_id")),
             called_etcs_id_type=UnisigS98EtcsIdType(int(wireshark_packet.ss098.get_field_value("ss098.conn.called_ety"))),
             called_etcs_id=int(wireshark_packet.ss098.get_field_value("ss098.conn.called_id")),
-            random_number_b_rb=RandomNumber(wireshark_packet.ss098.get_field_value("ss098.conn.rb")),
+            random_number_b_rb=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.conn.rb")),
             source_addr_str=wireshark_packet.ss098.get_field_value("ss098.conn.source_addr"),
         )
     elif packet_type == UnisigS98PacketType.AU_2_AUTHENTICATION_2:
@@ -105,17 +144,30 @@ def build_unisig_s98_packet_from_wireshark_packet(wireshark_packet: pyshark.pack
             ip_dst_str=wireshark_packet.ip.dst,
             ip_src_str=wireshark_packet.ip.src,
             ale_header=ale_header,
+            emd_byte=emd_byte,
             responding_etcs_id_type=UnisigS98EtcsIdType(int(wireshark_packet.ss098.get_field_value("ss098.conn.resp_ety"))),
             responding_etcs_id=int(wireshark_packet.ss098.get_field_value("ss098.conn.resp_id")),
-            random_number_a_ra=RandomNumber(wireshark_packet.ss098.get_field_value("ss098.conn.ra")),
-            mac_str=wireshark_packet.ss098.get_field_value("ss098.auth.mac"),
+            random_number_a_ra=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.conn.ra")),
+            mac=HexaValueAsListBytesInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
         )
+    elif packet_type == UnisigS98PacketType.AU_3_OR_AR_OR_DT_DATA:
+        if emd_byte.mti == UnisigS98EmdMti.DT_DATA:
+            return UnisigS98DtDataWiresharkPacket(
+                tcp_payload_str=tcp_payload,
+                ip_dst_str=wireshark_packet.ip.dst,
+                ip_src_str=wireshark_packet.ip.src,
+                ale_header=ale_header,
+                emd_byte=emd_byte,
+                sai_user_data=HexaValueAsListBytesInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.user_data")),
+                mac=HexaValueAsListBytesInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
+            )
 
     unisig_98_packet = UnisigS98WiresharkPacket(
         tcp_payload_str=tcp_payload,
         ip_dst_str=wireshark_packet.ip.dst,
         ip_src_str=wireshark_packet.ip.src,
         ale_header=ale_header,
+        emd_byte=emd_byte,
     )
 
     return unisig_98_packet
