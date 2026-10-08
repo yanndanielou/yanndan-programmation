@@ -134,10 +134,12 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
         )
 
         if self.connexion_zc_pai:
+            assert self.last_au1_packet
             self.connexion_zc_pai.start_session(self.random_number_a_ra.as_byte_array, self.last_au1_packet.random_number_b_rb.as_byte_array)
 
     def recompute_mac(self) -> bytearray:
         assert self.last_au1_packet
+        assert self.connexion_zc_pai
         computed_mac_as_byte_array = self.connexion_zc_pai.compute_input_mac_au2()
         return computed_mac_as_byte_array
 
@@ -174,6 +176,7 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
 
     def get_data_to_compute_mac(self) -> DataToComputeMac:
         assert self.last_connexion
+        assert self.last_au1_packet
         message_receiver_etcsid = self.last_au1_packet.get_etcs_id_from_ip_address(self.ip_dst_str)
         # message_receiver_etcsid_as_3_bytes = bytearray(message_receiver_etcsid)
         message_receiver_etcsid_as_3_bytes = bytearray(message_receiver_etcsid.to_bytes(3, byteorder="big"))
@@ -198,6 +201,22 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
             message_bytearray=self.tcp_payload_without_ale_header_and_mac.as_byte_array,
             padding_bytearray=padding,
         )
+
+    def recompute_mac(self) -> bytearray:
+        assert self.last_au1_packet
+        assert self.last_connexion
+        data_to_compute_mac = self.get_data_to_compute_mac()
+        computed_mac_as_byte_array = self.last_connexion.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray)
+        return computed_mac_as_byte_array
+
+    def are_computed_and_transmitted_mac_equal(self) -> bool:
+        computed_mac_as_byte_array = self.recompute_mac()
+        compare_1 = computed_mac_as_byte_array == self.mac.as_byte_array
+        computed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
+        transmitted_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(self.mac.as_byte_array)
+        compare_2 = computed_mac_as_string_of_hexas == transmitted_mac_as_string_of_hexas
+        assert compare_1 == compare_2
+        return compare_1
 
 
 @dataclass

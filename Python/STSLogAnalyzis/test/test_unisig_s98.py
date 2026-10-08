@@ -25,8 +25,7 @@ class TestComputeMacFromWiresharkCapture:
             simulation.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
             offset_answ_1_packet = simulation.unisig_s98_packets[2]
             assert isinstance(offset_answ_1_packet, decode_unisig_s98.UnisigS98DtDataWiresharkPacket)
-            assert offset_answ_1_packet.get_data_to_compute_mac()
-            pass
+            assert offset_answ_1_packet.are_computed_and_transmitted_mac_equal()
 
     class TestMacIsAsHumanComputed:
 
