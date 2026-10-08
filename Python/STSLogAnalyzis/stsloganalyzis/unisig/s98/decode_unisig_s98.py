@@ -205,6 +205,10 @@ class UnisigS98Simulation:
         self.last_au1_packet_by_interlocutors[(au1_packet.ip_src_str, au1_packet.ip_dst_str)] = au1_packet
         self.last_au1_packet_by_interlocutors[(au1_packet.ip_dst_str, au1_packet.ip_src_str)] = au1_packet
 
+    def register_au2_packet(self, au2_packet: UnisigS98Au2WiresharkPacket) -> None:
+        if not au2_packet.last_au1_packet:
+            logger_config.print_and_log_error(f"Could not handle AU2 packet {au2_packet} because no previous AU1 packet")
+
     def get_or_create_equipment_by_ip_address_and_etcs_id(self, raw_ip_address: str, etcs_id: int) -> Unisig98Equipment:
         equipments_found = [equipment for equipment in self.equipments if equipment.raw_ip_address == raw_ip_address and equipment.etcs_id == etcs_id]
         if equipments_found:

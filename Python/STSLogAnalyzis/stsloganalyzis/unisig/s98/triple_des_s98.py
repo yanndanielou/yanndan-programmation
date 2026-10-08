@@ -716,9 +716,9 @@ class Connection_U98:
         self.Key2: bytearray = bytearray(K2[:8])
         self.Key3: bytearray = bytearray(K3[:8])
 
-        self.Ks1: bytearray = bytearray(8)
-        self.Ks2: bytearray = bytearray(8)
-        self.Ks3: bytearray = bytearray(8)
+        self.session_key_1: bytearray = bytearray(8)
+        self.session_key_2: bytearray = bytearray(8)
+        self.session_key_3: bytearray = bytearray(8)
 
         self.initiator_etcs_id: int = initiator
         self.responder_etcs_id: int = responder
@@ -738,24 +738,24 @@ class Connection_U98:
             des_dec(session_key, session_key, self.Key2)
             des_enc(session_key, session_key, self.Key3)
 
-    def start_session(self, RA: Sequence[int], RB: Sequence[int]) -> None:
-        RA_L_RB_L: bytearray = bytearray(8)
-        RA_R_RB_R: bytearray = bytearray(8)
+    def start_session(self, random_number_a: Sequence[int], random_number_b: Sequence[int]) -> None:
+        ral_l_rb_l: bytearray = bytearray(8)
+        ra_r_rb_r: bytearray = bytearray(8)
 
         for i in range(4):
-            self.RandomA[i] = RA[i]
-            self.RandomB[i] = RB[i]
-            RA_L_RB_L[i] = RA[i]
-            RA_L_RB_L[i + 4] = RB[i]
+            self.RandomA[i] = random_number_a[i]
+            self.RandomB[i] = random_number_b[i]
+            ral_l_rb_l[i] = random_number_a[i]
+            ral_l_rb_l[i + 4] = random_number_b[i]
 
-            self.RandomA[i + 4] = RA[i + 4]
-            self.RandomB[i + 4] = RB[i + 4]
-            RA_R_RB_R[i] = RA[i + 4]
-            RA_R_RB_R[i + 4] = RB[i + 4]
+            self.RandomA[i + 4] = random_number_a[i + 4]
+            self.RandomB[i + 4] = random_number_b[i + 4]
+            ra_r_rb_r[i] = random_number_a[i + 4]
+            ra_r_rb_r[i + 4] = random_number_b[i + 4]
 
-        self.compute_session_key(RA_L_RB_L, self.Ks1, False)
-        self.compute_session_key(RA_R_RB_R, self.Ks2, False)
-        self.compute_session_key(RA_L_RB_L, self.Ks3, True)
+        self.compute_session_key(ral_l_rb_l, self.session_key_1, False)
+        self.compute_session_key(ra_r_rb_r, self.session_key_2, False)
+        self.compute_session_key(ral_l_rb_l, self.session_key_3, True)
 
         bx_r: Redond
         if self.is_connnection1:
@@ -766,23 +766,23 @@ class Connection_U98:
             bx_r = self.cst_PSC.Unisig_98_Hard(13)
 
         print()
-        afficher_64bits("Session Key1        : ", self.Ks1)
-        afficher_64bits("Session Key2        : ", self.Ks2)
-        afficher_64bits("Session Key3        : ", self.Ks3)
+        afficher_64bits("Session Key1        : ", self.session_key_1)
+        afficher_64bits("Session Key2        : ", self.session_key_2)
+        afficher_64bits("Session Key3        : ", self.session_key_3)
         print()
 
-        r1_redond: Redond = self.cst_PSC.calculer_redond_tableau8(RA_L_RB_L, bx_r, True)
-        r2_redond: Redond = self.cst_PSC.calculer_redond_tableau8(RA_R_RB_R, bx_r, True)
+        r1_redond: Redond = self.cst_PSC.calculer_redond_tableau8(ral_l_rb_l, bx_r, True)
+        r2_redond: Redond = self.cst_PSC.calculer_redond_tableau8(ra_r_rb_r, bx_r, True)
 
-        afficher_hexa("Random number 1 :", RA_L_RB_L)
+        afficher_hexa("Random number 1 :", ral_l_rb_l)
         print(" Redond Random1 = ", end="")
         r1_redond.afficher()
         print()
-        afficher_hexa("Random number 2 :", RA_R_RB_R)
+        afficher_hexa("Random number 2 :", ra_r_rb_r)
         print(" Redond Random2 = ", end="")
         r2_redond.afficher()
         print()
-        afficher_hexa("Random number 3 :", RA_L_RB_L)  # r3 = r1
+        afficher_hexa("Random number 3 :", ral_l_rb_l)  # r3 = r1
         print(" Redond Random3 = ", end="")
         r1_redond.afficher()
         print()
@@ -847,7 +847,7 @@ class Connection_U98:
         afficher_64bits("bloc3 (msg AU2) = ", AU2_bloc3)
         afficher_64bits("bloc4 (msg AU2) = ", AU2_bloc4)
 
-        return calcul_mac_n_Blocks(AU2_bloc1 + AU2_bloc2 + AU2_bloc3 + AU2_bloc4, self.Ks1, self.Ks2, self.Ks3)
+        return calcul_mac_n_Blocks(AU2_bloc1 + AU2_bloc2 + AU2_bloc3 + AU2_bloc4, self.session_key_1, self.session_key_2, self.session_key_3)
 
     def compute_mac_n_blocks(self, blocks: Sequence[int]) -> bytearray:
         assert len(blocks) % 8 == 0
@@ -858,4 +858,4 @@ class Connection_U98:
         else:
             print(" pour connection 2")
 
-        return calcul_mac_n_Blocks(blocks, self.Ks1, self.Ks2, self.Ks3)
+        return calcul_mac_n_Blocks(blocks, self.session_key_1, self.session_key_2, self.session_key_3)
