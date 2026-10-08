@@ -270,11 +270,20 @@ class UnisigS98Simulation:
         capture = pyshark.FileCapture(pcap_file_full_path, tshark_path=TSHARK_FULL_PATH)
         logger_config.print_and_log_info(f"{len(capture)} packets found in {pcap_file_full_path}")
 
-        p
+        number_of_packets_parsed = 0
+        unisig_s98_packets_found: list[UnisigS98WiresharkPacket] = []
+
         for packet in capture:
+            number_of_packets_parsed += 1
             packet = cast(pyshark.packet.packet.Packet, packet)
             if packet.transport_layer == UNISIG_TRANSPORT_LAYER and int(packet.tcp.port) in UNISIG_S98_PORTS:
-                self.unisig_s98_packets.append(self.build_unisig_s98_packet_from_wireshark_packet(packet))
+                unisig_s98_packets_found.append(self.build_unisig_s98_packet_from_wireshark_packet(packet))
+            logger_config.print_and_log_info_if(
+                number_of_packets_parsed % 1000 == 0,
+                f"{number_of_packets_parsed} packets parsed, {len(unisig_s98_packets_found)} unisig packets found so far in {pcap_file_full_path}",
+                print_ram_usage=True,
+            )
+        self.unisig_s98_packets += unisig_s98_packets_found
 
     def build_unisig_s98_packet_from_wireshark_packet(self, wireshark_packet: pyshark.packet.packet.Packet) -> UnisigS98WiresharkPacket:
         tcp_payload = HexaValueSplitBySemiColonInWireshark(wireshark_packet.tcp.payload)
