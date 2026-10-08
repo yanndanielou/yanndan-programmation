@@ -103,6 +103,10 @@ class UnisigS98Au1WiresharkPacket(UnisigS98WiresharkPacket):
     random_number_b_rb: HexaValueSplitBySemiColonInWireshark
     source_addr_str: str
 
+    def get_etcs_id_from_ip_address(self, ip_address: str) -> int:
+        assert ip_address in [self.ip_src_str, self.ip_dst_str]
+        return self.calling_etcs_id if ip_address == self.ip_src_str else self.called_etcs_id
+
 
 @dataclass
 class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
