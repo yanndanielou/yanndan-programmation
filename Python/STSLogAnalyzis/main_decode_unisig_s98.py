@@ -1,4 +1,3 @@
-from dateutil import parser
 from logger import logger_config
 
 from stsloganalyzis.unisig.s98 import decode_unisig_s98
