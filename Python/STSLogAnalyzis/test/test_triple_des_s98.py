@@ -6,97 +6,110 @@ import pyshark.packet.packet
 import pyshark
 
 
-def test_compute_mac_au2_from_pcap_containing_au1_and_au2() -> None:
-    pcap_file_full_path = r"test\resources\unisig_s98\pas_1_pai_75_Au1_Au2.pcapng"
+class TestComputeMacFromWiresharkCapture:
 
-    unisig_s98_packets = decode_unisig_s98.get_all_unisig_s98_packets_from_pcap(pcap_file_full_path)
-    au1_packet = unisig_s98_packets[0]
-    assert isinstance(au1_packet, decode_unisig_s98.UnisigS98Au1WiresharkPacket)
-    au2_packet = unisig_s98_packets[1]
-    assert isinstance(au2_packet, decode_unisig_s98.UnisigS98Au2WiresharkPacket)
+    def test_compute_mac_au2_from_pcap_containing_au1_and_au2(self) -> None:
+        pcap_file_full_path = r"test\resources\unisig_s98\pas_1_pai_75_Au1_Au2.pcapng"
 
-    pass
-    connexion_zc_pai = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, au1_packet.calling_etcs_id, au1_packet.called_etcs_id, 192, True)
-    connexion_zc_pai.start_session(au2_packet.random_number_a_ra.as_byte_array, au1_packet.random_number_b_rb.as_byte_array)
-    computed_mac_as_byte_array = connexion_zc_pai.compute_input_mac_au2()
-    ed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
+        unisig_s98_packets = decode_unisig_s98.get_all_unisig_s98_packets_from_pcap(pcap_file_full_path)
+        au1_packet = unisig_s98_packets[0]
+        assert isinstance(au1_packet, decode_unisig_s98.UnisigS98Au1WiresharkPacket)
+        au2_packet = unisig_s98_packets[1]
+        assert isinstance(au2_packet, decode_unisig_s98.UnisigS98Au2WiresharkPacket)
 
-    assert ed_mac_as_string_of_hexas == "35 f7 fa 7a 7b 6a d3 75"
+        connexion_zc_pai = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, au1_packet.calling_etcs_id, au1_packet.called_etcs_id, 192, True)
+        connexion_zc_pai.start_session(au2_packet.random_number_a_ra.as_byte_array, au1_packet.random_number_b_rb.as_byte_array)
+        computed_mac_as_byte_array = connexion_zc_pai.compute_input_mac_au2()
+        ed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
 
-
-def test_compute_mac_au2_from_bytearray() -> None:
-
-    random_a_wshark: bytearray = bytearray([0x41, 0xB2, 0xF3, 0xE2, 0x4B, 0xA9, 0x9C, 0x20])
-    random_b_wshark: bytearray = bytearray([0x37, 0x59, 0x47, 0xAA, 0xA4, 0xBF, 0x44, 0x97])
-
-    etcsid_initiateur: int = 2130068  # 20 80 94
-    etcsid_repondeur: int = 2130066  # 20 80 92
-
-    connexion_zc_b_PAI75 = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, True)
-    connexion_zc_b_PAI75.start_session(random_a_wshark, random_b_wshark)
-
-    print("Compute AU2 Frame 116675	13:24:26,101385. Expected MAC: 35 f7 fa 7a 7b 6a d3 75 (Random Number A (RA): 41b2f3e24ba99c20, MAC: 35f7fa7a7b6ad375)")
-    computed_mac_as_byte_array = connexion_zc_b_PAI75.compute_input_mac_au2()
-    triple_des_s98.afficher_64bits(" MAC AU2 cnx1 --> ", computed_mac_as_byte_array)
-    ed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
-    assert ed_mac_as_string_of_hexas == "35 f7 fa 7a 7b 6a d3 75"
-    pass
+        assert ed_mac_as_string_of_hexas == "35 f7 fa 7a 7b 6a d3 75"
 
 
-def test_compute_mac_pas_pai_3_blocks_from_bytearray() -> None:
-    random_a_wshark: bytearray = bytearray([0x41, 0xB2, 0xF3, 0xE2, 0x4B, 0xA9, 0x9C, 0x20])
-    random_b_wshark: bytearray = bytearray([0x37, 0x59, 0x47, 0xAA, 0xA4, 0xBF, 0x44, 0x97])
+class TestComputeMacFromManualData:
 
-    etcsid_initiateur: int = 2130068  # 20 80 94
-    etcsid_repondeur: int = 2130066  # 20 80 92
+    def test_compute_mac_au2_from_bytearray(self) -> None:
 
-    connexion_zc_b_PAI75 = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, True)
-    connexion_zc_b_PAI75.start_session(random_a_wshark, random_b_wshark)
+        random_a_wshark: bytearray = bytearray([0x41, 0xB2, 0xF3, 0xE2, 0x4B, 0xA9, 0x9C, 0x20])
+        random_b_wshark: bytearray = bytearray([0x37, 0x59, 0x47, 0xAA, 0xA4, 0xBF, 0x44, 0x97])
 
-    print("Compute Frame 116789	13:24:28,084275, expected MAC 69 4c b0 e5 63 c6 d4 2c (Time Stamp at Last Msg Reception : 379564, MAC : 694cb0e563c6d42c")
-    blocks_03: bytearray = bytearray([0x00, 0x13, 0x20, 0x80, 0x92, 0x0A, 0x03, 0x3D, 0xC2, 0x00, 0x05, 0xCA, 0xAC, 0x00, 0x16, 0x02, 0x42, 0x00, 0x05, 0xCA, 0xAC, 0x00, 0x00, 0x00])
+        etcsid_initiateur: int = 2130068  # 20 80 94
+        etcsid_repondeur: int = 2130066  # 20 80 92
 
-    computed_mac_as_byte_array = connexion_zc_b_PAI75.compute_mac_n_blocks(3, blocks_03)
-    ed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
-    assert ed_mac_as_string_of_hexas == "69 4c b0 e5 63 c6 d4 2c"
+        connexion_zc_b_PAI75 = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, True)
+        connexion_zc_b_PAI75.start_session(random_a_wshark, random_b_wshark)
 
+        print("Compute AU2 Frame 116675	13:24:26,101385. Expected MAC: 35 f7 fa 7a 7b 6a d3 75 (Random Number A (RA): 41b2f3e24ba99c20, MAC: 35f7fa7a7b6ad375)")
+        computed_mac_as_byte_array = connexion_zc_b_PAI75.compute_input_mac_au2()
+        triple_des_s98.afficher_64bits(" MAC AU2 cnx1 --> ", computed_mac_as_byte_array)
+        ed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
+        assert ed_mac_as_string_of_hexas == "35 f7 fa 7a 7b 6a d3 75"
+        pass
 
-def test_compute_mac_pai_pas_4_blocks_from_bytearray() -> None:
-    random_a_wshark: bytearray = bytearray([0x41, 0xB2, 0xF3, 0xE2, 0x4B, 0xA9, 0x9C, 0x20])
-    random_b_wshark: bytearray = bytearray([0x37, 0x59, 0x47, 0xAA, 0xA4, 0xBF, 0x44, 0x97])
+    def test_compute_mac_pas_pai_3_blocks_from_bytearray(self) -> None:
+        random_a_wshark: bytearray = bytearray([0x41, 0xB2, 0xF3, 0xE2, 0x4B, 0xA9, 0x9C, 0x20])
+        random_b_wshark: bytearray = bytearray([0x37, 0x59, 0x47, 0xAA, 0xA4, 0xBF, 0x44, 0x97])
 
-    etcsid_initiateur: int = 2130068  # 20 80 94
-    etcsid_repondeur: int = 2130066  # 20 80 92
+        etcsid_initiateur: int = 2130068  # 20 80 94
+        etcsid_repondeur: int = 2130066  # 20 80 92
 
-    connexion_zc_b_PAI75 = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, True)
-    connexion_zc_b_PAI75.start_session(random_a_wshark, random_b_wshark)
+        connexion_zc_b_PAI75 = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, True)
+        connexion_zc_b_PAI75.start_session(random_a_wshark, random_b_wshark)
 
-    print("Compute Frame 116756	13:24:27,624244, expected MAC: e2 4f 14 ea f4 65 99 54 (MAC: e24f14eaf4659954, SAI User Data: 00000064), calcul à 4 blocs")
-    blocks_04: bytearray = bytearray(
-        [0x00, 0x17, 0x20, 0x80, 0x94, 0x0B, 0x02, 0x00, 0x00, 0x00, 0x16, 0x02, 0x42, 0x00, 0x05, 0xCA, 0x64, 0x00, 0x16, 0x02, 0x42, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-    )
+        print("Compute Frame 116789	13:24:28,084275, expected MAC 69 4c b0 e5 63 c6 d4 2c (Time Stamp at Last Msg Reception : 379564, MAC : 694cb0e563c6d42c")
+        blocks_03: bytearray = bytearray([0x00, 0x13, 0x20, 0x80, 0x92, 0x0A, 0x03, 0x3D, 0xC2, 0x00, 0x05, 0xCA, 0xAC, 0x00, 0x16, 0x02, 0x42, 0x00, 0x05, 0xCA, 0xAC, 0x00, 0x00, 0x00])
 
-    computed_mac_as_byte_array = connexion_zc_b_PAI75.compute_mac_n_blocks(4, blocks_04)
-    ed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
-    assert ed_mac_as_string_of_hexas == "e2 4f 14 ea f4 65 99 54"
+        computed_mac_as_byte_array = connexion_zc_b_PAI75.compute_mac_n_blocks(3, blocks_03)
+        ed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
+        assert ed_mac_as_string_of_hexas == "69 4c b0 e5 63 c6 d4 2c"
 
+    def test_compute_mac_pai_pas_4_blocks_from_bytearray(self) -> None:
+        random_a_wshark: bytearray = bytearray([0x41, 0xB2, 0xF3, 0xE2, 0x4B, 0xA9, 0x9C, 0x20])
+        random_b_wshark: bytearray = bytearray([0x37, 0x59, 0x47, 0xAA, 0xA4, 0xBF, 0x44, 0x97])
 
-def test_compute_mac_pai_pas_4_blocks_from_wireshark_hexa_string_except_mac() -> None:
+        etcsid_initiateur: int = 2130068  # 20 80 94
+        etcsid_repondeur: int = 2130066  # 20 80 92
 
-    random_a_wshark: bytearray = bytearray([0x41, 0xB2, 0xF3, 0xE2, 0x4B, 0xA9, 0x9C, 0x20])
-    random_b_wshark: bytearray = bytearray([0x37, 0x59, 0x47, 0xAA, 0xA4, 0xBF, 0x44, 0x97])
+        connexion_zc_b_PAI75 = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, True)
+        connexion_zc_b_PAI75.start_session(random_a_wshark, random_b_wshark)
 
-    etcsid_initiateur: int = 2130068  # 20 80 94
-    etcsid_repondeur: int = 2130066  # 20 80 92
+        print("Compute Frame 116756	13:24:27,624244, expected MAC: e2 4f 14 ea f4 65 99 54 (MAC: e24f14eaf4659954, SAI User Data: 00000064), calcul à 4 blocs")
+        blocks_04: bytearray = bytearray(
+            [
+                0x00,
+                0x17,
+                0x20,
+                0x80,
+                0x94,
+                0x0B,
+                0x02,
+                0x00,
+                0x00,
+                0x00,
+                0x16,
+                0x02,
+                0x42,
+                0x00,
+                0x05,
+                0xCA,
+                0x64,
+                0x00,
+                0x16,
+                0x02,
+                0x42,
+                0x00,
+                0x00,
+                0x00,
+                0x64,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+            ]
+        )
 
-    connexion_zc_b_PAI75 = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcsid_initiateur, etcsid_repondeur, 192, True)
-    connexion_zc_b_PAI75.start_session(random_a_wshark, random_b_wshark)
-
-    print("Compute Frame 116756	13:24:27,624244, expected MAC: e2 4f 14 ea f4 65 99 54 (MAC: e24f14eaf4659954, SAI User Data: 00000064), calcul à 4 blocs")
-    blocks_04: bytearray = bytearray(
-        [0x00, 0x17, 0x20, 0x80, 0x94, 0x0B, 0x02, 0x00, 0x00, 0x00, 0x16, 0x02, 0x42, 0x00, 0x05, 0xCA, 0x64, 0x00, 0x16, 0x02, 0x42, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-    )
-
-    computed_mac_as_byte_array = connexion_zc_b_PAI75.compute_mac_n_blocks(4, blocks_04)
-    ed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
-    assert ed_mac_as_string_of_hexas == "e2 4f 14 ea f4 65 99 54"
+        computed_mac_as_byte_array = connexion_zc_b_PAI75.compute_mac_n_blocks(4, blocks_04)
+        ed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
+        assert ed_mac_as_string_of_hexas == "e2 4f 14 ea f4 65 99 54"
