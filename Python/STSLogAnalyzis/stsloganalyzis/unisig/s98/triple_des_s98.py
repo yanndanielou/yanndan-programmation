@@ -709,19 +709,28 @@ def calcul_mac_n_Blocks(blocks: Sequence[int], k1: Sequence[int], k2: Sequence[i
 # ------------------------------------------------------------------------------------
 
 
-class Connection_U98:
-    def __init__(self, K1: Sequence[int], K2: Sequence[int], K3: Sequence[int], initiator: int, responder: int, resp_type: int = 192, is_cnx1: bool = True) -> None:
+class ConnectionUnisig98:
+    def __init__(
+        self,
+        authentication_key_kmac_1: Sequence[int],
+        authentication_key_kmac_2: Sequence[int],
+        authentication_key_kmac_3: Sequence[int],
+        initiator_etcs_id: int,
+        responder_etcs_id: int,
+        resp_type: int = 192,
+        is_cnx1: bool = True,
+    ) -> None:
         self.cst_PSC: const_PSC = const_PSC()
-        self.Key1: bytearray = bytearray(K1[:8])
-        self.Key2: bytearray = bytearray(K2[:8])
-        self.Key3: bytearray = bytearray(K3[:8])
+        self.authentication_key_kmac_1: bytearray = bytearray(authentication_key_kmac_1[:8])
+        self.authentication_key_kmac_2: bytearray = bytearray(authentication_key_kmac_2[:8])
+        self.authentication_key_kmac_3: bytearray = bytearray(authentication_key_kmac_3[:8])
 
         self.session_key_1: bytearray = bytearray(8)
         self.session_key_2: bytearray = bytearray(8)
         self.session_key_3: bytearray = bytearray(8)
 
-        self.initiator_etcs_id: int = initiator
-        self.responder_etcs_id: int = responder
+        self.initiator_etcs_id: int = initiator_etcs_id
+        self.responder_etcs_id: int = responder_etcs_id
         self.responder_type: int = resp_type
         self.is_connnection1: bool = is_cnx1
 
@@ -730,13 +739,13 @@ class Connection_U98:
 
     def compute_session_key(self, random_number: Sequence[int], session_key: bytearray, reverse: bool) -> None:
         if reverse:
-            des_enc(random_number, session_key, self.Key3)
-            des_dec(session_key, session_key, self.Key2)
-            des_enc(session_key, session_key, self.Key1)
+            des_enc(random_number, session_key, self.authentication_key_kmac_3)
+            des_dec(session_key, session_key, self.authentication_key_kmac_2)
+            des_enc(session_key, session_key, self.authentication_key_kmac_1)
         else:
-            des_enc(random_number, session_key, self.Key1)
-            des_dec(session_key, session_key, self.Key2)
-            des_enc(session_key, session_key, self.Key3)
+            des_enc(random_number, session_key, self.authentication_key_kmac_1)
+            des_dec(session_key, session_key, self.authentication_key_kmac_2)
+            des_enc(session_key, session_key, self.authentication_key_kmac_3)
 
     def start_session(self, random_number_a: Sequence[int], random_number_b: Sequence[int]) -> None:
         ral_l_rb_l: bytearray = bytearray(8)

@@ -25,7 +25,7 @@ class TestComputeMacFromWiresharkCapture:
             simulation.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
             offset_answ_1_packet = simulation.unisig_s98_packets[2]
             assert isinstance(offset_answ_1_packet, decode_unisig_s98.UnisigS98DtDataWiresharkPacket)
-            assert offset_answ_1_packet.get_data_to_compute_mac
+            assert offset_answ_1_packet.get_data_to_compute_mac()
             pass
 
     class TestMacIsAsHumanComputed:
@@ -40,8 +40,14 @@ class TestComputeMacFromWiresharkCapture:
             au2_packet = simulation.unisig_s98_packets[1]
             assert isinstance(au2_packet, decode_unisig_s98.UnisigS98Au2WiresharkPacket)
 
-            connexion_zc_pai = triple_des_s98.Connection_U98(
-                secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, au1_packet.calling_etcs_id, au1_packet.called_etcs_id, 192, True
+            connexion_zc_pai = triple_des_s98.ConnectionUnisig98(
+                secret_kmac_keys.authentication_key_kmac_1,
+                secret_kmac_keys.authentication_key_kmac_2,
+                secret_kmac_keys.authentication_key_kmac_3,
+                au1_packet.calling_etcs_id,
+                au1_packet.called_etcs_id,
+                192,
+                True,
             )
             connexion_zc_pai.start_session(au2_packet.random_number_a_ra.as_byte_array, au1_packet.random_number_b_rb.as_byte_array)
             computed_mac_as_byte_array = connexion_zc_pai.compute_input_mac_au2()
@@ -60,8 +66,14 @@ class TestComputeMacFromWiresharkCapture:
             au2_packet = simulation.unisig_s98_packets[1]
             assert isinstance(au2_packet, decode_unisig_s98.UnisigS98Au2WiresharkPacket)
 
-            connexion_zc_pai = triple_des_s98.Connection_U98(
-                secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, au1_packet.calling_etcs_id, au1_packet.called_etcs_id, 192, True
+            connexion_zc_pai = triple_des_s98.ConnectionUnisig98(
+                secret_kmac_keys.authentication_key_kmac_1,
+                secret_kmac_keys.authentication_key_kmac_2,
+                secret_kmac_keys.authentication_key_kmac_3,
+                au1_packet.calling_etcs_id,
+                au1_packet.called_etcs_id,
+                192,
+                True,
             )
             connexion_zc_pai.start_session(au2_packet.random_number_a_ra.as_byte_array, au1_packet.random_number_b_rb.as_byte_array)
 
@@ -88,7 +100,9 @@ class TestComputeMacFromManualData:
         etcs_id_initiateur: int = 2130068  # 20 80 94
         etcs_id_repondeur: int = 2130066  # 20 80 92
 
-        connexion_zc_b_PAI75 = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcs_id_initiateur, etcs_id_repondeur, 192, True)
+        connexion_zc_b_PAI75 = triple_des_s98.ConnectionUnisig98(
+            secret_kmac_keys.authentication_key_kmac_1, secret_kmac_keys.authentication_key_kmac_2, secret_kmac_keys.authentication_key_kmac_3, etcs_id_initiateur, etcs_id_repondeur, 192, True
+        )
         connexion_zc_b_PAI75.start_session(random_a_wshark, random_b_wshark)
 
         print("Compute AU2 Frame 116675	13:24:26,101385. Expected MAC: 35 f7 fa 7a 7b 6a d3 75 (Random Number A (RA): 41b2f3e24ba99c20, MAC: 35f7fa7a7b6ad375)")
@@ -105,7 +119,9 @@ class TestComputeMacFromManualData:
         etcs_id_initiateur: int = 2130068  # 20 80 94
         etcs_id_repondeur: int = 2130066  # 20 80 92
 
-        connexion_zc_b_PAI75 = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcs_id_initiateur, etcs_id_repondeur, 192, True)
+        connexion_zc_b_PAI75 = triple_des_s98.ConnectionUnisig98(
+            secret_kmac_keys.authentication_key_kmac_1, secret_kmac_keys.authentication_key_kmac_2, secret_kmac_keys.authentication_key_kmac_3, etcs_id_initiateur, etcs_id_repondeur, 192, True
+        )
         connexion_zc_b_PAI75.start_session(random_a_wshark, random_b_wshark)
 
         print("Compute Frame 116789	13:24:28,084275, expected MAC 69 4c b0 e5 63 c6 d4 2c (Time Stamp at Last Msg Reception : 379564, MAC : 694cb0e563c6d42c")
@@ -122,7 +138,9 @@ class TestComputeMacFromManualData:
         etcs_id_initiateur: int = 2130068  # 20 80 94
         etcs_id_repondeur: int = 2130066  # 20 80 92
 
-        connexion_zc_b_PAI75 = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, etcs_id_initiateur, etcs_id_repondeur, 192, True)
+        connexion_zc_b_PAI75 = triple_des_s98.ConnectionUnisig98(
+            secret_kmac_keys.authentication_key_kmac_1, secret_kmac_keys.authentication_key_kmac_2, secret_kmac_keys.authentication_key_kmac_3, etcs_id_initiateur, etcs_id_repondeur, 192, True
+        )
         connexion_zc_b_PAI75.start_session(random_a_wshark, random_b_wshark)
 
         print("Compute Frame 116756	13:24:27,624244, expected MAC: e2 4f 14 ea f4 65 99 54 (MAC: e24f14eaf4659954, SAI User Data: 00000064), calcul à 4 blocs")

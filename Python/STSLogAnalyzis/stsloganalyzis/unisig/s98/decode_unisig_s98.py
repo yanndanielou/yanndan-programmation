@@ -120,10 +120,10 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
 
     def recompute_mac(self) -> bytearray:
         assert self.last_au1_packet
-        connexion_zc_pai = triple_des_s98.Connection_U98(
-            secret_kmac_keys.Key1_TE,
-            secret_kmac_keys.Key2_TE,
-            secret_kmac_keys.Key3_TE,
+        connexion_zc_pai = triple_des_s98.ConnectionUnisig98(
+            secret_kmac_keys.authentication_key_kmac_1,
+            secret_kmac_keys.authentication_key_kmac_2,
+            secret_kmac_keys.authentication_key_kmac_3,
             self.last_au1_packet.calling_etcs_id,
             self.last_au1_packet.called_etcs_id,
             192,
@@ -204,6 +204,7 @@ class UnisigS98Simulation:
         self.get_or_create_equipment_by_ip_address_and_etcs_id(au1_packet.ip_dst_str, au1_packet.called_etcs_id)
         self.last_au1_packet_by_interlocutors[(au1_packet.ip_src_str, au1_packet.ip_dst_str)] = au1_packet
         self.last_au1_packet_by_interlocutors[(au1_packet.ip_dst_str, au1_packet.ip_src_str)] = au1_packet
+        # self.last_connexion_by_interlocutors[(au1_packet.ip_dst_str, au1_packet.ip_src_str)] = au1_packet
 
     def register_au2_packet(self, au2_packet: UnisigS98Au2WiresharkPacket) -> None:
         if not au2_packet.last_au1_packet:
