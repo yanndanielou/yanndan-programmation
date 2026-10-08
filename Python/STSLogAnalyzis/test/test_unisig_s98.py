@@ -10,14 +10,23 @@ class TestComputeMacFromWiresharkCapture:
 
     class TestMacRecomputedIsSameAsTransmitted:
 
-        def test_compute_mac_au2_from_pcap_containing_au1_and_au2(self) -> None:
+        def test_au2_from_pcap_containing_au1_and_au2(self) -> None:
             pcap_file_full_path = r"test\resources\unisig_s98\pas_1_pai_75_Au1_Au2.pcapng"
 
             simulation = decode_unisig_s98.UnisigS98Simulation()
             simulation.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
             au2_packet = simulation.unisig_s98_packets[1]
             assert isinstance(au2_packet, decode_unisig_s98.UnisigS98Au2WiresharkPacket)
-            assert au2_packet.check_computed_and_transmitted_mac()
+            assert au2_packet.are_computed_and_transmitted_mac_equal()
+
+        def test_dt_offset_answ_1(self) -> None:
+            pcap_file_full_path = r"test\resources\unisig_s98\pas_1_pai_75_Au1_Au2_and_pai_pas_dt_OffsetAnsw1.pcapng"
+            simulation = decode_unisig_s98.UnisigS98Simulation()
+            simulation.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
+            offset_answ_1_packet = simulation.unisig_s98_packets[2]
+            assert isinstance(offset_answ_1_packet, decode_unisig_s98.UnisigS98DtDataWiresharkPacket)
+            assert offset_answ_1_packet.get_data_to_compute_mac
+            pass
 
     class TestMacIsAsHumanComputed:
 
