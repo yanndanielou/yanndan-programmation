@@ -271,12 +271,20 @@ class UnisigS98Simulation:
         logger_config.print_and_log_info(f"{len(capture)} or {len(capture._packets)} packets found in {pcap_file_full_path}")
 
         number_of_packets_parsed = 0
+        number_of_errors = 0
         unisig_s98_packets_found: list[UnisigS98WiresharkPacket] = []
 
-        for packet in enumerate(capture):
+        for number_of_packets_parsed, packet in enumerate(capture):
+
             packet = cast(pyshark.packet.packet.Packet, packet)
-            if packet.transport_layer == UNISIG_TRANSPORT_LAYER and int(packet.tcp.port) in UNISIG_S98_PORTS:
-                unisig_s98_packets_found.append(self.build_unisig_s98_packet_from_wireshark_packet(packet))
+            try:
+                if packet.transport_layer == UNISIG_TRANSPORT_LAYER and int(packet.tcp.port) in UNISIG_S98_PORTS:
+                    unisig_s98_packets_found.append(self.build_unisig_s98_packet_from_wireshark_packet(packet))
+            except AttributeError as attr_err:
+                logger_config.print_and_log_exception(attr_err)
+                logger_config.print_and_log_error(f"Could not parse {number_of_packets_parsed} th packet of {pcap_file_full_path}")
+                number_of_errors += 1
+
             logger_config.print_and_log_info_if(
                 number_of_packets_parsed % 1000 == 0,
                 f"{number_of_packets_parsed} packets parsed, {len(unisig_s98_packets_found)} unisig packets found so far in {pcap_file_full_path}",
