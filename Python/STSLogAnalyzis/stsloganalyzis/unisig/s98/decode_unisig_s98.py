@@ -133,7 +133,7 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
         computed_mac_as_byte_array = connexion_zc_pai.compute_input_mac_au2()
         return computed_mac_as_byte_array
 
-    def check_computed_and_transmitted_mac(self) -> bool:
+    def are_computed_and_transmitted_mac_equal(self) -> bool:
         computed_mac_as_byte_array = self.recompute_mac()
         compare_1 = computed_mac_as_byte_array == self.mac.as_byte_array
         computed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
