@@ -672,36 +672,13 @@ def afficher_hexa(s: str, Tab: Sequence[int]) -> None:
     print(f"16#{Tab[0]:x}_{Tab[1]:x}#, 16#{Tab[2]:x}_{Tab[3]:x}#, 16#{Tab[4]:x}_{Tab[5]:x}#, 16#{Tab[6]:x}_{Tab[7]:x}#")
 
 
-def calcul_mac_4_blocks(block1: Sequence[int], block2: Sequence[int], block3: Sequence[int], block4: Sequence[int], k1: Sequence[int], k2: Sequence[int], k3: Sequence[int]) -> bytearray:
-    output = bytearray(MAC_SIZE_IN_BYTES)
-    print("CALCUL de MAC à 4 blocs")
-    des_enc(block1, output, k1)
-    afficher_64bits("message block 1 : ", block1)
+def calcul_mac_n_Blocks(blocks: Sequence[int], k1: Sequence[int], k2: Sequence[int], k3: Sequence[int], verbose: bool = False) -> bytearray:
 
-    afficher_64bits("message block 2 : ", block2)
-    XOR_Byte2Byte(block2, output, 8)
-    des_enc(output, output, k1)
-
-    afficher_64bits("message block 3 : ", block3)
-    XOR_Byte2Byte(block3, output, 8)
-    des_enc(output, output, k1)
-
-    afficher_64bits("message block 4 : ", block4)
-    XOR_Byte2Byte(block4, output, 8)
-    des_enc(output, output, k1)
-
-    des_dec(output, output, k2)
-    des_enc(output, output, k3)
-    afficher_64bits("Apres cryptage par Ks3 ==> ", output)
-    print(f"CBC-MAC         = {convert_mac_to_string_of_hexas(output)}")
-    return output
-
-
-def calcul_MAC_n_Blocks(n: int, blocks: Sequence[int], k1: Sequence[int], k2: Sequence[int], k3: Sequence[int], verbose: bool = False) -> bytearray:
+    nb_bloks = len(blocks) // 8
     output = bytearray(MAC_SIZE_IN_BYTES)
     current_block: bytearray = bytearray(8)
     byte_index: int = 0
-    for i in range(n):
+    for i in range(nb_bloks):
         for j in range(8):
             current_block[j] = blocks[byte_index]
             byte_index += 1
@@ -870,13 +847,15 @@ class Connection_U98:
         afficher_64bits("bloc3 (msg AU2) = ", AU2_bloc3)
         afficher_64bits("bloc4 (msg AU2) = ", AU2_bloc4)
 
-        return calcul_mac_4_blocks(AU2_bloc1, AU2_bloc2, AU2_bloc3, AU2_bloc4, self.Ks1, self.Ks2, self.Ks3)
+        return calcul_mac_n_Blocks(AU2_bloc1 + AU2_bloc2 + AU2_bloc3 + AU2_bloc4, self.Ks1, self.Ks2, self.Ks3)
 
-    def compute_mac_n_blocks(self, nb_bloks: int, blocks: Sequence[int]) -> bytearray:
+    def compute_mac_n_blocks(self, blocks: Sequence[int]) -> bytearray:
+        assert len(blocks) % 8 == 0
+        nb_bloks = len(blocks) // 8
         print(f"CALCUL de MAC à N blocs avec N={nb_bloks}", end="")
         if self.is_connnection1:
             print(" pour connection 1")
         else:
             print(" pour connection 2")
 
-        return calcul_MAC_n_Blocks(nb_bloks, blocks, self.Ks1, self.Ks2, self.Ks3)
+        return calcul_mac_n_Blocks(blocks, self.Ks1, self.Ks2, self.Ks3)
