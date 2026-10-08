@@ -303,7 +303,7 @@ def application_logger(
     calling_file_name_and_line_number = file_name + ":" + str(line_number)
 
     at_beginning_log_timestamp = time.asctime(time.localtime(time.time()))
-    to_print_and_log = f"{application_name} : application begin. Ram usage: {ram_usage_monitor.measure_now(measure_label=f"{application_name} : application begin")}"
+    to_print_and_log = f"{application_name} : application begin. Ram usage: {ram_usage_monitor.measure_now(measure_label=f"{application_name} : application begin").as_human_readable}"
     print(at_beginning_log_timestamp + "\t" + calling_file_name_and_line_number + "\t" + to_print_and_log)
     logging.info(f"{calling_file_name_and_line_number} \t {to_print_and_log}")
 
