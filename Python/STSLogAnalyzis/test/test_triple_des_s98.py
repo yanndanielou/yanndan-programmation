@@ -24,6 +24,20 @@ class TestComputeMacFromWiresharkCapture:
 
         assert ed_mac_as_string_of_hexas == "35 f7 fa 7a 7b 6a d3 75"
 
+    def test_compute_mac_pas_pai_dt_offset_answ_1(self) -> None:
+        pcap_file_full_path = r"test\resources\unisig_s98\pas_1_pai_75_Au1_Au2_and_pai_pas_dt_OffsetAnsw1.pcapng"
+
+        unisig_s98_packets = decode_unisig_s98.get_all_unisig_s98_packets_from_pcap(pcap_file_full_path)
+        au1_packet = unisig_s98_packets[0]
+        assert isinstance(au1_packet, decode_unisig_s98.UnisigS98Au1WiresharkPacket)
+        au2_packet = unisig_s98_packets[1]
+        assert isinstance(au2_packet, decode_unisig_s98.UnisigS98Au2WiresharkPacket)
+
+        pas_pai_dt_offset_answ_1_packet = unisig_s98_packets[2]
+
+        connexion_zc_pai = triple_des_s98.Connection_U98(secret_kmac_keys.Key1_TE, secret_kmac_keys.Key2_TE, secret_kmac_keys.Key3_TE, au1_packet.calling_etcs_id, au1_packet.called_etcs_id, 192, True)
+        connexion_zc_pai.start_session(au2_packet.random_number_a_ra.as_byte_array, au1_packet.random_number_b_rb.as_byte_array)
+
 
 class TestComputeMacFromManualData:
 
