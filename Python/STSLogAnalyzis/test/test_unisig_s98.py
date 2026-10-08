@@ -58,8 +58,15 @@ class TestComputeMacFromWiresharkCapture:
 
             pas_pai_dt_offset_answ_1_packet = simulation.unisig_s98_packets[2]
             assert isinstance(pas_pai_dt_offset_answ_1_packet, decode_unisig_s98.UnisigS98DtDataWiresharkPacket)
-            pas_pai_dt_offset_answ_1_packet.recompute_mac()
-            assert False, "Test not implemented"
+            data_to_compute_mac = pas_pai_dt_offset_answ_1_packet.get_data_to_compute_mac()
+            assert len(data_to_compute_mac.da_bytearray) == 3
+            assert len(data_to_compute_mac.length_bytearray) == 2
+            assert len(data_to_compute_mac.message_bytearray) == 20
+            assert len(data_to_compute_mac.padding_bytearray) == 7
+
+            computed_mac_as_byte_array = connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray)
+            ed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
+            assert ed_mac_as_string_of_hexas == "e2 4f 14 ea f4 65 99 54"
 
 
 class TestComputeMacFromManualData:
@@ -95,7 +102,7 @@ class TestComputeMacFromManualData:
         print("Compute Frame 116789	13:24:28,084275, expected MAC 69 4c b0 e5 63 c6 d4 2c (Time Stamp at Last Msg Reception : 379564, MAC : 694cb0e563c6d42c")
         blocks_03: bytearray = bytearray([0x00, 0x13, 0x20, 0x80, 0x92, 0x0A, 0x03, 0x3D, 0xC2, 0x00, 0x05, 0xCA, 0xAC, 0x00, 0x16, 0x02, 0x42, 0x00, 0x05, 0xCA, 0xAC, 0x00, 0x00, 0x00])
 
-        computed_mac_as_byte_array = connexion_zc_b_PAI75.compute_mac_n_blocks(3, blocks_03)
+        computed_mac_as_byte_array = connexion_zc_b_PAI75.compute_mac_n_blocks(blocks_03)
         ed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
         assert ed_mac_as_string_of_hexas == "69 4c b0 e5 63 c6 d4 2c"
 
@@ -147,6 +154,6 @@ class TestComputeMacFromManualData:
             ]
         )
 
-        computed_mac_as_byte_array = connexion_zc_b_PAI75.compute_mac_n_blocks(4, blocks_04)
+        computed_mac_as_byte_array = connexion_zc_b_PAI75.compute_mac_n_blocks(blocks_04)
         ed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
         assert ed_mac_as_string_of_hexas == "e2 4f 14 ea f4 65 99 54"
