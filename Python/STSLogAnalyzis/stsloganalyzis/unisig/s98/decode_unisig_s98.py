@@ -55,11 +55,14 @@ class UnisigS98EtcsIdType(IntEnum):
 
 
 class UnisigS98EmdMti(IntEnum):
-    AU1 = 1
-    AU2 = 2
-    AU3 = 3
-    DT_DATA = 5
-    AR_AUTHENTIFICATION_RESPONSE = 9
+    """6.2.5.1.6.1 The message type identifier (MTI) specifies the type of the SaPDU (Table 7)."""
+
+    AU1_FIRST_AUTHENTICATION_SAPDU = 1
+    AU2_SECOND_AUTHENTICATION_SAPDU = 2
+    AU3_THIRD_AUTHENTICATION_SAPDU = 3
+    DT_DATA_SAPDU = 5
+    DISCONNECT_DI_SAPDU = 8
+    AR_AUTHENTIFICATION_RESPONSE_TO_THIRD_AUTHENTICATION_SAPDU = 9
 
 
 class UnisigS98PacketType(IntEnum):
@@ -365,7 +368,7 @@ class UnisigS98Simulation:
         elif packet_type == UnisigS98PacketType.AU_3_OR_AR_OR_DT_DATA_PACKET_TYPE_3:
             last_au1_packet = self.last_au1_packet_by_interlocutors.get((ip_src_str, ip_dst_str))
             last_connexion = self.last_connexion_by_interlocutors.get((ip_src_str, ip_dst_str))
-            if emd_byte.mti == UnisigS98EmdMti.DT_DATA:
+            if emd_byte.mti == UnisigS98EmdMti.DT_DATA_SAPDU:
                 return UnisigS98DtDataWiresharkPacket(
                     last_au1_packet=last_au1_packet,
                     last_connexion=last_connexion,
@@ -381,7 +384,7 @@ class UnisigS98Simulation:
                     mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.mac")),
                 )
 
-            elif emd_byte.mti == UnisigS98EmdMti.AU3:
+            elif emd_byte.mti == UnisigS98EmdMti.AU3_THIRD_AUTHENTICATION_SAPDU:
                 return UnisigS98Au3WiresharkPacket(
                     tcp_payload=tcp_payload,
                     tcp_payload_without_ale_header=tcp_payload_without_ale_header,
@@ -391,8 +394,8 @@ class UnisigS98Simulation:
                     emd_byte=emd_byte,
                     mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
                 )
-            elif emd_byte.mti == UnisigS98EmdMti.AR_AUTHENTIFICATION_RESPONSE:
-                return UnisigS98Au3WiresharkPacket(
+            elif emd_byte.mti == UnisigS98EmdMti.AR_AUTHENTIFICATION_RESPONSE_TO_THIRD_AUTHENTICATION_SAPDU:
+                return UnisigS98AuthenticationResponseWiresharkPacket(
                     tcp_payload=tcp_payload,
                     tcp_payload_without_ale_header=tcp_payload_without_ale_header,
                     ip_dst_str=ip_dst_str,
