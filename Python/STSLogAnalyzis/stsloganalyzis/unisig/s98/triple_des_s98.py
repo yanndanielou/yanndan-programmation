@@ -725,8 +725,8 @@ class Connection_U98:
         self.responder_type: int = resp_type
         self.is_connnection1: bool = is_cnx1
 
-        self.RandomA: bytearray = bytearray(8)
-        self.RandomB: bytearray = bytearray(8)
+        self.random_a: bytearray = bytearray(8)
+        self.random_b: bytearray = bytearray(8)
 
     def compute_session_key(self, random_number: Sequence[int], session_key: bytearray, reverse: bool) -> None:
         if reverse:
@@ -743,13 +743,13 @@ class Connection_U98:
         ra_r_rb_r: bytearray = bytearray(8)
 
         for i in range(4):
-            self.RandomA[i] = random_number_a[i]
-            self.RandomB[i] = random_number_b[i]
+            self.random_a[i] = random_number_a[i]
+            self.random_b[i] = random_number_b[i]
             ral_l_rb_l[i] = random_number_a[i]
             ral_l_rb_l[i + 4] = random_number_b[i]
 
-            self.RandomA[i + 4] = random_number_a[i + 4]
-            self.RandomB[i + 4] = random_number_b[i + 4]
+            self.random_a[i + 4] = random_number_a[i + 4]
+            self.random_b[i + 4] = random_number_b[i + 4]
             ra_r_rb_r[i] = random_number_a[i + 4]
             ra_r_rb_r[i + 4] = random_number_b[i + 4]
 
@@ -827,15 +827,15 @@ class Connection_U98:
         AU2_bloc2[1] = 1
         for i in range(8):  # RA
             if i + 2 < 8:
-                AU2_bloc2[i + 2] = self.RandomA[i]
+                AU2_bloc2[i + 2] = self.random_a[i]
             else:
-                AU2_bloc3[i - 6] = self.RandomA[i]
+                AU2_bloc3[i - 6] = self.random_a[i]
 
         for i in range(8):  # RB
             if i + 2 < 8:
-                AU2_bloc3[i + 2] = self.RandomB[i]
+                AU2_bloc3[i + 2] = self.random_b[i]
             else:
-                AU2_bloc4[i - 6] = self.RandomB[i]
+                AU2_bloc4[i - 6] = self.random_b[i]
 
         for i in range(3):
             AU2_bloc4[i + 2] = Initiator_Etcs_Id[i]  # DA (=B)
