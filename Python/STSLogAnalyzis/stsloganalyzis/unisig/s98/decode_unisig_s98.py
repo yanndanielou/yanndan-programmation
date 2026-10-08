@@ -93,13 +93,13 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
     responding_etcs_id_type: UnisigS98EtcsIdType
     responding_etcs_id: int
     random_number_a_ra: HexaValueSplitBySemiColonInWireshark
-    mac: HexaValueAsListBytesInWireshark
+    mac: HexaValueSplitBySemiColonInWireshark
 
 
 @dataclass
 class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
-    sai_user_data: HexaValueAsListBytesInWireshark
-    mac: HexaValueAsListBytesInWireshark
+    sai_user_data: HexaValueSplitBySemiColonInWireshark
+    mac: HexaValueSplitBySemiColonInWireshark
 
 
 def build_unisig_s98_packet_from_wireshark_packet(wireshark_packet: pyshark.packet.packet.Packet) -> UnisigS98WiresharkPacket:
@@ -148,7 +148,7 @@ def build_unisig_s98_packet_from_wireshark_packet(wireshark_packet: pyshark.pack
             responding_etcs_id_type=UnisigS98EtcsIdType(int(wireshark_packet.ss098.get_field_value("ss098.conn.resp_ety"))),
             responding_etcs_id=int(wireshark_packet.ss098.get_field_value("ss098.conn.resp_id")),
             random_number_a_ra=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.conn.ra")),
-            mac=HexaValueAsListBytesInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
+            mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
         )
     elif packet_type == UnisigS98PacketType.AU_3_OR_AR_OR_DT_DATA:
         if emd_byte.mti == UnisigS98EmdMti.DT_DATA:
@@ -158,8 +158,8 @@ def build_unisig_s98_packet_from_wireshark_packet(wireshark_packet: pyshark.pack
                 ip_src_str=wireshark_packet.ip.src,
                 ale_header=ale_header,
                 emd_byte=emd_byte,
-                sai_user_data=HexaValueAsListBytesInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.user_data")),
-                mac=HexaValueAsListBytesInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
+                sai_user_data=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.user_data")),
+                mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.mac")),
             )
 
     unisig_98_packet = UnisigS98WiresharkPacket(
