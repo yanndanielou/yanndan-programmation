@@ -7,6 +7,8 @@ from typing import cast
 import pyshark
 import pyshark.packet.packet
 
+from common import file_utils
+
 from stsloganalyzis.unisig.s98 import secret_equipment_name_from_ip_address, triple_des_s98, secret_kmac_keys
 
 UNISIG_S98_PORTS = [49451, 49452, 49453, 49454, 49455, 49456, 49457]
@@ -251,12 +253,24 @@ class UnisigS98Simulation:
         self.equipments.append(Unisig98Equipment(raw_ip_address=raw_ip_address, etcs_id=etcs_id))
         return self.get_or_create_equipment_by_ip_address_and_etcs_id(raw_ip_address, etcs_id)
 
+    def build_unisig_s98_packets_from_load_pcap_files_in_directory(self, pcap_directory_full_path: str) -> None:
+
+        all_pcap_files_full_paths = file_utils.get_files_by_directory_and_file_name_mask(
+            directory_path=pcap_directory_full_path,
+            file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER,
+            filename_pattern="*",
+        )
+        logger_config.print_and_log_info(f"{len(all_pcap_files_full_paths)} pcap packets found in {pcap_directory_full_path}")
+        for pcap_file_full_path in all_pcap_files_full_paths:
+            self.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
+
+    @logger_config.stopwatch_decorator(monitor_ram_usage=True)
     def build_unisig_s98_packets_from_load_pcap_file(self, pcap_file_full_path: str) -> None:
 
         capture = pyshark.FileCapture(pcap_file_full_path, tshark_path=TSHARK_FULL_PATH)
-
         logger_config.print_and_log_info(f"{len(capture)} packets found in {pcap_file_full_path}")
 
+        p
         for packet in capture:
             packet = cast(pyshark.packet.packet.Packet, packet)
             if packet.transport_layer == UNISIG_TRANSPORT_LAYER and int(packet.tcp.port) in UNISIG_S98_PORTS:
