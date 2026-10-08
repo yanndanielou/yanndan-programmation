@@ -63,9 +63,10 @@ class UnisigS98EmdMti(IntEnum):
 
 
 class UnisigS98PacketType(IntEnum):
-    AU_1_AUTHENTICATION_1 = 1
-    AU_2_AUTHENTICATION_2 = 2
-    AU_3_OR_AR_OR_DT_DATA = 3
+    AU_1_AUTHENTICATION_PACKET_TYPE_1 = 1
+    AU_2_AUTHENTICATION_PACKET_TYPE_2 = 2
+    AU_3_OR_AR_OR_DT_DATA_PACKET_TYPE_3 = 3
+    DISCONNECT_PACKET_TYPE_4 = 4
     DT_DATA_OR_RETRANSMISSION = 6
 
 
@@ -151,6 +152,16 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
         compare_2 = computed_mac_as_string_of_hexas == transmitted_mac_as_string_of_hexas
         assert compare_1 == compare_2
         return compare_1
+
+
+@dataclass
+class UnisigS98Au3WiresharkPacket(UnisigS98WiresharkPacket):
+    mac: HexaValueSplitBySemiColonInWireshark
+
+
+@dataclass
+class UnisigS98AuthenticationResponseWiresharkPacket(UnisigS98WiresharkPacket):
+    mac: HexaValueSplitBySemiColonInWireshark
 
 
 @dataclass
@@ -278,9 +289,9 @@ class UnisigS98Simulation:
                 if packet.transport_layer == UNISIG_TRANSPORT_LAYER and int(packet.tcp.port) in UNISIG_S98_PORTS and "payload" in packet.tcp.field_names and packet.get_multiple_layers("ss098"):
                     unisig_s98_packets_found.append(self.build_unisig_s98_packet_from_wireshark_packet(packet))
 
-            except AttributeError as attr_err:
-                logger_config.print_and_log_exception(attr_err)
-                logger_config.print_and_log_error(f"Could not parse {number_of_packets_parsed+1} th packet of {pcap_file_full_path}")
+            except (AttributeError, ValueError, AssertionError) as exc_catched:
+                logger_config.print_and_log_exception(exc_catched)
+                logger_config.print_and_log_error(f"Could not parse {number_of_packets_parsed+1} th packet of {pcap_file_full_path} at {packet.frame_info}")
                 number_of_errors += 1
 
             logger_config.print_and_log_info_if(
@@ -316,7 +327,7 @@ class UnisigS98Simulation:
             df=int(wireshark_packet.ss098.get_field_value("ss098.sai.df")),
         )
 
-        if packet_type == UnisigS98PacketType.AU_1_AUTHENTICATION_1:
+        if packet_type == UnisigS98PacketType.AU_1_AUTHENTICATION_PACKET_TYPE_1:
 
             au1_packet = UnisigS98Au1WiresharkPacket(
                 tcp_payload=tcp_payload,
@@ -334,7 +345,7 @@ class UnisigS98Simulation:
             )
             self.register_au1_packet(au1_packet)
             return au1_packet
-        elif packet_type == UnisigS98PacketType.AU_2_AUTHENTICATION_2:
+        elif packet_type == UnisigS98PacketType.AU_2_AUTHENTICATION_PACKET_TYPE_2:
             last_au1_packet = self.last_au1_packet_by_interlocutors.get((ip_src_str, ip_dst_str))
             au2 = UnisigS98Au2WiresharkPacket(
                 last_au1_packet=last_au1_packet,
@@ -351,7 +362,7 @@ class UnisigS98Simulation:
             )
             self.register_au2_packet(au2)
             return au2
-        elif packet_type == UnisigS98PacketType.AU_3_OR_AR_OR_DT_DATA:
+        elif packet_type == UnisigS98PacketType.AU_3_OR_AR_OR_DT_DATA_PACKET_TYPE_3:
             last_au1_packet = self.last_au1_packet_by_interlocutors.get((ip_src_str, ip_dst_str))
             last_connexion = self.last_connexion_by_interlocutors.get((ip_src_str, ip_dst_str))
             if emd_byte.mti == UnisigS98EmdMti.DT_DATA:
@@ -370,7 +381,27 @@ class UnisigS98Simulation:
                     mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.mac")),
                 )
 
-        assert False
+            elif emd_byte.mti == UnisigS98EmdMti.AU3:
+                return UnisigS98Au3WiresharkPacket(
+                    tcp_payload=tcp_payload,
+                    tcp_payload_without_ale_header=tcp_payload_without_ale_header,
+                    ip_dst_str=ip_dst_str,
+                    ip_src_str=ip_src_str,
+                    ale_header=ale_header,
+                    emd_byte=emd_byte,
+                    mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
+                )
+            elif emd_byte.mti == UnisigS98EmdMti.AR_AUTHENTIFICATION_RESPONSE:
+                return UnisigS98Au3WiresharkPacket(
+                    tcp_payload=tcp_payload,
+                    tcp_payload_without_ale_header=tcp_payload_without_ale_header,
+                    ip_dst_str=ip_dst_str,
+                    ip_src_str=ip_src_str,
+                    ale_header=ale_header,
+                    emd_byte=emd_byte,
+                    mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
+                )
+        assert False, f"{wireshark_packet.frame_info}"
         unisig_98_packet = UnisigS98WiresharkPacket(
             tcp_payload=tcp_payload,
             tcp_payload_without_ale_header=tcp_payload_without_ale_header,
