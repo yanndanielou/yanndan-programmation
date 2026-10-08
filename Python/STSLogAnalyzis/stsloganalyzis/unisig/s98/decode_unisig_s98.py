@@ -118,19 +118,27 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
     random_number_a_ra: HexaValueSplitBySemiColonInWireshark
     mac: HexaValueSplitBySemiColonInWireshark
 
+    def __post_init__(self) -> None:
+        self.connexion_zc_pai = (
+            triple_des_s98.ConnectionUnisig98(
+                secret_kmac_keys.authentication_key_kmac_1,
+                secret_kmac_keys.authentication_key_kmac_2,
+                secret_kmac_keys.authentication_key_kmac_3,
+                self.last_au1_packet.calling_etcs_id,
+                self.last_au1_packet.called_etcs_id,
+                192,
+                True,
+            )
+            if self.last_au1_packet
+            else None
+        )
+
+        if self.connexion_zc_pai:
+            self.connexion_zc_pai.start_session(self.random_number_a_ra.as_byte_array, self.last_au1_packet.random_number_b_rb.as_byte_array)
+
     def recompute_mac(self) -> bytearray:
         assert self.last_au1_packet
-        connexion_zc_pai = triple_des_s98.ConnectionUnisig98(
-            secret_kmac_keys.authentication_key_kmac_1,
-            secret_kmac_keys.authentication_key_kmac_2,
-            secret_kmac_keys.authentication_key_kmac_3,
-            self.last_au1_packet.calling_etcs_id,
-            self.last_au1_packet.called_etcs_id,
-            192,
-            True,
-        )
-        connexion_zc_pai.start_session(self.random_number_a_ra.as_byte_array, self.last_au1_packet.random_number_b_rb.as_byte_array)
-        computed_mac_as_byte_array = connexion_zc_pai.compute_input_mac_au2()
+        computed_mac_as_byte_array = self.connexion_zc_pai.compute_input_mac_au2()
         return computed_mac_as_byte_array
 
     def are_computed_and_transmitted_mac_equal(self) -> bool:
@@ -146,6 +154,7 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
 @dataclass
 class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
     last_au1_packet: UnisigS98Au1WiresharkPacket | None
+    last_connexion: triple_des_s98.ConnectionUnisig98 | None
     sai_user_data: HexaValueSplitBySemiColonInWireshark
     mac: HexaValueSplitBySemiColonInWireshark
 
@@ -164,7 +173,7 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
         self.tcp_payload_without_ale_header_and_mac = HexaValueSplitBySemiColonInWireshark(self.tcp_payload_without_ale_header.raw_str_value[:-24])
 
     def get_data_to_compute_mac(self) -> DataToComputeMac:
-        assert self.last_au1_packet
+        assert self.last_connexion
         message_receiver_etcsid = self.last_au1_packet.get_etcs_id_from_ip_address(self.ip_dst_str)
         # message_receiver_etcsid_as_3_bytes = bytearray(message_receiver_etcsid)
         message_receiver_etcsid_as_3_bytes = bytearray(message_receiver_etcsid.to_bytes(3, byteorder="big"))
@@ -198,17 +207,22 @@ class UnisigS98Simulation:
         self.unisig_s98_packets: list[UnisigS98WiresharkPacket] = []
         self.equipments: list[Unisig98Equipment] = []
         self.last_au1_packet_by_interlocutors: dict[tuple[str, str], UnisigS98Au1WiresharkPacket] = {}
+        self.last_connexion_by_interlocutors: dict[tuple[str, str], triple_des_s98.ConnectionUnisig98] = {}
 
     def register_au1_packet(self, au1_packet: UnisigS98Au1WiresharkPacket) -> None:
         self.get_or_create_equipment_by_ip_address_and_etcs_id(au1_packet.ip_src_str, au1_packet.calling_etcs_id)
         self.get_or_create_equipment_by_ip_address_and_etcs_id(au1_packet.ip_dst_str, au1_packet.called_etcs_id)
         self.last_au1_packet_by_interlocutors[(au1_packet.ip_src_str, au1_packet.ip_dst_str)] = au1_packet
         self.last_au1_packet_by_interlocutors[(au1_packet.ip_dst_str, au1_packet.ip_src_str)] = au1_packet
-        # self.last_connexion_by_interlocutors[(au1_packet.ip_dst_str, au1_packet.ip_src_str)] = au1_packet
 
     def register_au2_packet(self, au2_packet: UnisigS98Au2WiresharkPacket) -> None:
-        if not au2_packet.last_au1_packet:
+        if not au2_packet.connexion_zc_pai:
             logger_config.print_and_log_error(f"Could not handle AU2 packet {au2_packet} because no previous AU1 packet")
+            self.last_connexion_by_interlocutors.pop((au2_packet.ip_src_str, au2_packet.ip_dst_str))
+            self.last_connexion_by_interlocutors.pop((au2_packet.ip_dst_str, au2_packet.ip_src_str))
+            return
+        self.last_connexion_by_interlocutors[(au2_packet.ip_src_str, au2_packet.ip_dst_str)] = au2_packet.connexion_zc_pai
+        self.last_connexion_by_interlocutors[(au2_packet.ip_dst_str, au2_packet.ip_src_str)] = au2_packet.connexion_zc_pai
 
     def get_or_create_equipment_by_ip_address_and_etcs_id(self, raw_ip_address: str, etcs_id: int) -> Unisig98Equipment:
         equipments_found = [equipment for equipment in self.equipments if equipment.raw_ip_address == raw_ip_address and equipment.etcs_id == etcs_id]
@@ -275,7 +289,7 @@ class UnisigS98Simulation:
             return au1_packet
         elif packet_type == UnisigS98PacketType.AU_2_AUTHENTICATION_2:
             last_au1_packet = self.last_au1_packet_by_interlocutors.get((ip_src_str, ip_dst_str))
-            return UnisigS98Au2WiresharkPacket(
+            au2 = UnisigS98Au2WiresharkPacket(
                 last_au1_packet=last_au1_packet,
                 tcp_payload=tcp_payload,
                 tcp_payload_without_ale_header=tcp_payload_without_ale_header,
@@ -288,11 +302,15 @@ class UnisigS98Simulation:
                 random_number_a_ra=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.conn.ra")),
                 mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
             )
+            self.register_au2_packet(au2)
+            return au2
         elif packet_type == UnisigS98PacketType.AU_3_OR_AR_OR_DT_DATA:
             last_au1_packet = self.last_au1_packet_by_interlocutors.get((ip_src_str, ip_dst_str))
+            last_connexion = self.last_connexion_by_interlocutors.get((ip_src_str, ip_dst_str))
             if emd_byte.mti == UnisigS98EmdMti.DT_DATA:
                 return UnisigS98DtDataWiresharkPacket(
                     last_au1_packet=last_au1_packet,
+                    last_connexion=last_connexion,
                     tcp_payload=tcp_payload,
                     tcp_payload_without_ale_header=tcp_payload_without_ale_header,
                     ip_dst_str=ip_dst_str,
@@ -303,6 +321,7 @@ class UnisigS98Simulation:
                     mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.mac")),
                 )
 
+        assert False
         unisig_98_packet = UnisigS98WiresharkPacket(
             tcp_payload=tcp_payload,
             tcp_payload_without_ale_header=tcp_payload_without_ale_header,
