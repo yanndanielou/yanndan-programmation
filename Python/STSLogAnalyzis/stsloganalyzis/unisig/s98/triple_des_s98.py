@@ -860,11 +860,6 @@ class ConnectionUnisig98:
 
     def compute_mac_n_blocks(self, blocks: Sequence[int]) -> bytearray:
         assert len(blocks) % 8 == 0
-        nb_bloks = len(blocks) // 8
-        print(f"CALCUL de MAC à N blocs avec N={nb_bloks}", end="")
-        if self.is_connnection1:
-            print(" pour connection 1")
-        else:
-            print(" pour connection 2")
-
+        nb_blocks = len(blocks) // 8
+        print(f"CALCUL de MAC à {nb_blocks} blocs avec N={nb_blocks}", end="")
         return calcul_mac_n_Blocks(blocks, self.session_key_1, self.session_key_2, self.session_key_3)
