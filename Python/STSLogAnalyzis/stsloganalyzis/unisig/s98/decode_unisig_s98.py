@@ -239,8 +239,6 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
         assert self.has_context_to_compute_mac()
         assert self.last_au1_packet
         assert self.connexion_zc_pai
-        assert self.connexion_zc_pai
-        assert self.last_au1_packet
 
         # l | DA (initiator) | Emd byte (ETY + MTI + DF) | SA (responder) | RA | RB | DA (=B)
         length = 27
@@ -294,6 +292,13 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
 
 @dataclass
 class UnisigS98Au3WiresharkPacket(UnisigS98WiresharkPacketWithMac):
+
+    def get_data_to_compute_mac(self) -> None:
+        """
+        6.2.3.2.1.10 Concerning the AU3 SaPDU, the message m = 000 | MTI | DF | auth3
+        auth3 = Rb | Ra.
+        """
+        pass
 
     def has_context_to_compute_mac(self) -> bool:
         logger_config.print_and_log_error("Not implemented")
