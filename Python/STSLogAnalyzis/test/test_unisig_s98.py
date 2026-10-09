@@ -1,9 +1,8 @@
-import pytest
-
-from stsloganalyzis.unisig.s98 import triple_des_s98, secret_kmac_keys, decode_unisig_s98
-from typing import cast
-import pyshark.packet.packet
-import pyshark
+from stsloganalyzis.unisig.s98 import (
+    decode_unisig_s98,
+    secret_kmac_keys,
+    triple_des_s98,
+)
 
 
 class TestLoadLibraryFromFromWiresharkCapture:
@@ -14,6 +13,23 @@ class TestLoadLibraryFromFromWiresharkCapture:
             simulation = decode_unisig_s98.UnisigS98Simulation()
             simulation.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
             assert simulation.unisig_s98_packets
+
+        def test_mac_recomputed_are_equals_to_transmitted(self) -> None:
+            pcap_file_full_path = r"test\resources\unisig_s98\small_capture_started_after_connexion.pcapng"
+            simulation = decode_unisig_s98.UnisigS98Simulation()
+            simulation.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
+            assert simulation.unisig_s98_packets
+            mac_computed, errors = simulation.recompute_all_mac()
+            assert mac_computed
+            assert errors == 0
+            unisig_packets_with_mac_recomputed = [
+                unisig_packet
+                for unisig_packet in simulation.unisig_s98_packets
+                if isinstance(unisig_packet, decode_unisig_s98.UnisigS98WiresharkPacketWithMac) and unisig_packet.recompute_mac is not None
+            ]
+            assert unisig_packets_with_mac_recomputed
+            for unisig_packet_with_mac_recomputed in unisig_packets_with_mac_recomputed:
+                assert unisig_packet_with_mac_recomputed.recomputed_mac_and_transmitted_mac_are_equals
 
 
 class TestComputeMacFromWiresharkCapture:
@@ -157,7 +173,6 @@ class TestComputeMacFromManualData:
         triple_des_s98.afficher_64bits(" MAC AU2 cnx1 --> ", computed_mac_as_byte_array)
         ed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
         assert ed_mac_as_string_of_hexas == "35 f7 fa 7a 7b 6a d3 75"
-        pass
 
     def test_compute_mac_pas_pai_3_blocks_from_bytearray(self) -> None:
         random_a_wshark: bytearray = bytearray([0x41, 0xB2, 0xF3, 0xE2, 0x4B, 0xA9, 0x9C, 0x20])
