@@ -738,7 +738,7 @@ class ConnectionUnisig98:
             des_dec(session_key, session_key, self.authentication_key_kmac_2)
             des_enc(session_key, session_key, self.authentication_key_kmac_3)
 
-    def start_session(self, random_number_a: Sequence[int], random_number_b: Sequence[int]) -> None:
+    def start_session(self, random_number_a: Sequence[int], random_number_b: Sequence[int], verbose: bool = False) -> None:
         ral_l_rb_l: bytearray = bytearray(8)
         ra_r_rb_r: bytearray = bytearray(8)
 
@@ -766,35 +766,38 @@ class ConnectionUnisig98:
             bx_r = self.cst_PSC.Unisig_98_Hard(13)
 
         print()
-        afficher_64bits("Session Key1        : ", self.session_key_1)
-        afficher_64bits("Session Key2        : ", self.session_key_2)
-        afficher_64bits("Session Key3        : ", self.session_key_3)
+        if verbose:
+            afficher_64bits("Session Key1        : ", self.session_key_1)
+            afficher_64bits("Session Key2        : ", self.session_key_2)
+            afficher_64bits("Session Key3        : ", self.session_key_3)
         print()
 
         r1_redond: Redond = self.cst_PSC.calculer_redond_tableau8(ral_l_rb_l, bx_r, True)
         r2_redond: Redond = self.cst_PSC.calculer_redond_tableau8(ra_r_rb_r, bx_r, True)
 
-        afficher_hexa("Random number 1 :", ral_l_rb_l)
-        print(" Redond Random1 = ", end="")
-        r1_redond.afficher()
-        print()
-        afficher_hexa("Random number 2 :", ra_r_rb_r)
-        print(" Redond Random2 = ", end="")
-        r2_redond.afficher()
-        print()
-        afficher_hexa("Random number 3 :", ral_l_rb_l)  # r3 = r1
-        print(" Redond Random3 = ", end="")
-        r1_redond.afficher()
-        print()
-        print("\nconnection etablie ...\n")
+        if verbose:
+            afficher_hexa("Random number 1 :", ral_l_rb_l)
+            print(" Redond Random1 = ", end="")
+            r1_redond.afficher()
+            print()
+            afficher_hexa("Random number 2 :", ra_r_rb_r)
+            print(" Redond Random2 = ", end="")
+            r2_redond.afficher()
+            print()
+            afficher_hexa("Random number 3 :", ral_l_rb_l)  # r3 = r1
+            print(" Redond Random3 = ", end="")
+            r1_redond.afficher()
+            print()
+            print("\nconnection etablie ...\n")
 
-    def compute_input_mac_au2(self) -> bytearray:
-        print("computing G_INPUT_MAC_AU2 ", end="")
-        if self.is_connnection1:
-            print("for connection 1", end="")
-        else:
-            print("for connection 2", end="")
-        print(" ...")
+    def compute_input_mac_au2(self, verbose: bool = False) -> bytearray:
+        if verbose:
+            print("computing G_INPUT_MAC_AU2 ", end="")
+            if self.is_connnection1:
+                print("for connection 1", end="")
+            else:
+                print("for connection 2", end="")
+            print(" ...")
 
         AU2_bloc1: bytearray = bytearray(8)
         AU2_bloc2: bytearray = bytearray(8)
@@ -842,66 +845,11 @@ class ConnectionUnisig98:
         for i in range(5, 8):
             AU2_bloc4[i] = 0  # padding
 
-        afficher_64bits("bloc1 (msg AU2) = ", AU2_bloc1)
-        afficher_64bits("bloc2 (msg AU2) = ", AU2_bloc2)
-        afficher_64bits("bloc3 (msg AU2) = ", AU2_bloc3)
-        afficher_64bits("bloc4 (msg AU2) = ", AU2_bloc4)
-
-        return calcul_mac_n_Blocks(AU2_bloc1 + AU2_bloc2 + AU2_bloc3 + AU2_bloc4, self.session_key_1, self.session_key_2, self.session_key_3)
-
-    def compute_input_mac_au3(self) -> bytearray:
-        print("computing G_INPUT_MAC_AU3 ", end="")
-        if self.is_connnection1:
-            print("for connection 1", end="")
-        else:
-            print("for connection 2", end="")
-        print(" ...")
-
-        AU2_bloc1: bytearray = bytearray(8)
-        AU2_bloc2: bytearray = bytearray(8)
-        AU2_bloc3: bytearray = bytearray(8)
-        AU2_bloc4: bytearray = bytearray(8)
-
-        Initiator_Etcs_Id: bytearray = bytearray(3)
-        Responder_Etcs_Id: bytearray = bytearray(3)
-
-        remaining_value1: int = self.initiator_etcs_id
-        remaining_value2: int = self.responder_etcs_id
-        for i in range(3):
-            Initiator_Etcs_Id[2 - i] = remaining_value1 % 256
-            remaining_value1 //= 256
-            Responder_Etcs_Id[2 - i] = remaining_value2 % 256
-            remaining_value2 //= 256
-
-        # Creation de G_MAC_INPUT_AU2
-        AU2_bloc1[0] = 0
-        AU2_bloc1[1] = 27  # longueur
-        for i in range(3):
-            AU2_bloc1[i + 2] = Initiator_Etcs_Id[i]  # DA
-        AU2_bloc1[5] = 0 + 5  # ETY + MTI + DF
-
-        AU2_bloc2[1] = 1
-        for i in range(8):  # RA
-            if i + 2 < 8:
-                AU2_bloc2[i + 2] = self.random_a[i]
-            else:
-                AU2_bloc3[i - 6] = self.random_a[i]
-
-        for i in range(8):  # RB
-            if i + 2 < 8:
-                AU2_bloc3[i + 2] = self.random_b[i]
-            else:
-                AU2_bloc4[i - 6] = self.random_b[i]
-
-        for i in range(3):
-            AU2_bloc4[i + 2] = Initiator_Etcs_Id[i]  # DA (=B)
-        for i in range(5, 8):
-            AU2_bloc4[i] = 0  # padding
-
-        afficher_64bits("bloc1 (msg AU2) = ", AU2_bloc1)
-        afficher_64bits("bloc2 (msg AU2) = ", AU2_bloc2)
-        afficher_64bits("bloc3 (msg AU2) = ", AU2_bloc3)
-        afficher_64bits("bloc4 (msg AU2) = ", AU2_bloc4)
+        if verbose:
+            afficher_64bits("bloc1 (msg AU2) = ", AU2_bloc1)
+            afficher_64bits("bloc2 (msg AU2) = ", AU2_bloc2)
+            afficher_64bits("bloc3 (msg AU2) = ", AU2_bloc3)
+            afficher_64bits("bloc4 (msg AU2) = ", AU2_bloc4)
 
         return calcul_mac_n_Blocks(AU2_bloc1 + AU2_bloc2 + AU2_bloc3 + AU2_bloc4, self.session_key_1, self.session_key_2, self.session_key_3)
 
