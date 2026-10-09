@@ -691,7 +691,7 @@ def calcul_mac_n_Blocks(blocks: Sequence[int], k1: Sequence[int], k2: Sequence[i
     des_enc(output, output, k3)
     if verbose:
         afficher_64bits("Apres cryptage par Ks3 ==> ", output)
-    print(f"CBC-MAC         = {output[0]:x} {output[1]:x} {output[2]:x} {output[3]:x} {output[4]:x} {output[5]:x} {output[6]:x} {output[7]:x}")
+        print(f"CBC-MAC         = {output[0]:x} {output[1]:x} {output[2]:x} {output[3]:x} {output[4]:x} {output[5]:x} {output[6]:x} {output[7]:x}")
     return output
 
 
@@ -759,10 +759,12 @@ class ConnectionUnisig98:
 
         bx_r: Redond
         if self.is_connnection1:
-            print("Connection numero 1 :")
+            if verbose:
+                print("Connection numero 1 :")
             bx_r = self.cst_PSC.Unisig_98_Hard(3)
         else:
-            print("Connection numero 2 :")
+            if verbose:
+                print("Connection numero 2 :")
             bx_r = self.cst_PSC.Unisig_98_Hard(13)
 
         print()
