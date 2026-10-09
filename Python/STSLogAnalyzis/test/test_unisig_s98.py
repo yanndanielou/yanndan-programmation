@@ -17,7 +17,8 @@ class TestComputeMacFromWiresharkCapture:
             simulation.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
             au2_packet = simulation.unisig_s98_packets[1]
             assert isinstance(au2_packet, decode_unisig_s98.UnisigS98Au2WiresharkPacket)
-            assert au2_packet.are_computed_and_transmitted_mac_equal()
+            au2_packet.recompute_mac()
+            assert au2_packet.recomputed_mac_and_transmitted_mac_are_equals
 
         def test_dt_offset_answ_1(self) -> None:
             pcap_file_full_path = r"test\resources\unisig_s98\pas_1_pai_75_Au1_Au2_and_pai_pas_dt_OffsetAnsw1.pcapng"
@@ -25,7 +26,26 @@ class TestComputeMacFromWiresharkCapture:
             simulation.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
             offset_answ_1_packet = simulation.unisig_s98_packets[2]
             assert isinstance(offset_answ_1_packet, decode_unisig_s98.UnisigS98DtDataWiresharkPacket)
-            assert offset_answ_1_packet.are_computed_and_transmitted_mac_equal()
+            offset_answ_1_packet.recompute_mac()
+            assert offset_answ_1_packet.recomputed_mac_and_transmitted_mac_are_equals
+
+        def test_pas_pai_dt_keep_alive_no_user_data(self) -> None:
+            pcap_file_full_path = r"test\resources\unisig_s98\pas_1_pai_75_Au1_Au2_and_pas_pai_dt_keep_alive_no_user_data.pcapng"
+            simulation = decode_unisig_s98.UnisigS98Simulation()
+            simulation.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
+            dt_packet = simulation.unisig_s98_packets[2]
+            assert isinstance(dt_packet, decode_unisig_s98.UnisigS98DtDataWiresharkPacket)
+            dt_packet.recompute_mac()
+            assert dt_packet.recomputed_mac_and_transmitted_mac_are_equals
+
+        def test_pai_pas_dt_keep_alive_no_user_data(self) -> None:
+            pcap_file_full_path = r"test\resources\unisig_s98\pas_1_pai_75_Au1_Au2_and_pai_pas_dt_keep_alive_no_user_data.pcapng"
+            simulation = decode_unisig_s98.UnisigS98Simulation()
+            simulation.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
+            dt_packet = simulation.unisig_s98_packets[2]
+            assert isinstance(dt_packet, decode_unisig_s98.UnisigS98DtDataWiresharkPacket)
+            dt_packet.recompute_mac()
+            assert dt_packet.recomputed_mac_and_transmitted_mac_are_equals
 
     class TestMacIsAsHumanComputed:
 
