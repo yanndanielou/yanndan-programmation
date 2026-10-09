@@ -5,15 +5,27 @@ from stsloganalyzis.unisig.s98 import decode_unisig_s98
 OUTPUT_DIRECTORY = "output"
 
 
+def handle_directory(directory_full_path: str, filename_pattern: str = "*") -> None:
+    unisig_simulation = decode_unisig_s98.UnisigS98Simulation()
+    unisig_simulation.build_unisig_s98_packets_from_load_pcap_files_in_directory(directory_full_path, filename_pattern)
+    unisig_simulation.recompute_all_mac()
+    unisig_simulation.save_all_packets()
+    assert unisig_simulation.unisig_s98_packets
+
+
+def handle_file(file_full_path: str) -> None:
+    unisig_simulation = decode_unisig_s98.UnisigS98Simulation()
+    unisig_simulation.build_unisig_s98_packets_from_load_pcap_file(file_full_path)
+    unisig_simulation.recompute_all_mac()
+    unisig_simulation.save_all_packets()
+    assert unisig_simulation.unisig_s98_packets
+
+
 def main() -> None:
     with logger_config.application_logger():
-
-        unisig_simulation = decode_unisig_s98.UnisigS98Simulation()
-        unisig_simulation.build_unisig_s98_packets_from_load_pcap_file(r"C:\Users\fr232487\Downloads\logs_wsk_PAI75_22.09.2026\log_PAS_PAI_22.09_00002_20260922145856.2026.pcap")
-        # unisig_simulation.build_unisig_s98_packets_from_load_pcap_files_in_directory(r"C:\Users\fr232487\Downloads\logs_wsk_PAI75_22.09.2026", "*.pcap")
-        unisig_simulation.recompute_all_mac()
-        unisig_simulation.save_all_packets()
-        assert unisig_simulation.unisig_s98_packets
+        handle_file(r"C:\Users\fr232487\Downloads\logs_wsk_PAI75_22.09.2026\log_PAS_PAI_22.09_00002_20260922145856.2026.pcap")
+        handle_directory(r"C:\Users\fr232487\Downloads\2026_10_02_PAS_PAI_2")
+        handle_directory(r"C:\Users\fr232487\Downloads\logs_wsk_PAI75_22.09.2026", "*.pcap")
 
 
 if __name__ == "__main__":
