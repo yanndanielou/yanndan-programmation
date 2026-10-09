@@ -46,6 +46,16 @@ class TestComputeMacFromWiresharkCapture:
             au2_packet.recompute_mac()
             assert au2_packet.recomputed_mac_and_transmitted_mac_are_equals
 
+        def test_au3_from_pcap_containing_au1_and_au2_au3(self) -> None:
+            pcap_file_full_path = r"test\resources\unisig_s98\pas_1_pai_75_Au1_Au2_Au3.pcapng"
+
+            simulation = decode_unisig_s98.UnisigS98Simulation()
+            simulation.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
+            au3_packet = simulation.unisig_s98_packets[1]
+            assert isinstance(au3_packet, decode_unisig_s98.UnisigS98Au3WiresharkPacket)
+            au3_packet.recompute_mac()
+            assert au3_packet.recomputed_mac_and_transmitted_mac_are_equals
+
         def ignore_test_au3(self) -> None:
             pcap_file_full_path = r"test\resources\unisig_s98\pas_1_pai_75_Au1_Au2_Au3.pcapng"
             simulation = decode_unisig_s98.UnisigS98Simulation()
