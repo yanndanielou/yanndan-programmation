@@ -410,6 +410,7 @@ class UnisigS98Simulation:
         tcp_payload_without_ale_header = HexaValueSplitBySemiColonInWireshark(tcp_payload.raw_str_value[30:])
 
         sniff_time = wireshark_packet.sniff_time
+        assert isinstance(sniff_time, datetime)
         sniff_timestamp_str = wireshark_packet.sniff_timestamp
         number = int(wireshark_packet.number)
         ip_dst_str = wireshark_packet.ip.dst
@@ -438,7 +439,7 @@ class UnisigS98Simulation:
 
             au1_packet = UnisigS98Au1WiresharkPacket(
                 file_full_path=pcap_file_full_path,
-                sniff_time=sniff_time,
+                sniff_time=sniff_time.replace(tzinfo=None),
                 sniff_timestamp_str=sniff_timestamp_str,
                 tcp_payload=tcp_payload,
                 tcp_payload_without_ale_header=tcp_payload_without_ale_header,
@@ -576,6 +577,8 @@ class UnisigS98Simulation:
                     {
                         "File name": file_name_utils.get_file_name_without_extension_from_full_path(unisig_s98_packet.file_full_path),
                         "Number": unisig_s98_packet.number,
+                        "sniff_time": unisig_s98_packet.sniff_time,
+                        "sniff_timestamp_str": unisig_s98_packet.sniff_timestamp_str,
                         "class": unisig_s98_packet.__class__.__name__,
                         "ip_src_str": unisig_s98_packet.ip_src_str,
                         "ip_dst_str": unisig_s98_packet.ip_dst_str,
@@ -587,9 +590,6 @@ class UnisigS98Simulation:
                         "ale packet type": unisig_s98_packet.ale_header.packet_type,
                         "transmitted mac str": (
                             unisig_s98_packet.transmitted_mac.raw_str_value if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.transmitted_mac else None
-                        ),
-                        "recomputed mac as bytearray": (
-                            unisig_s98_packet.recomputed_mac if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac else None
                         ),
                         "recomputed mac as str base 10": (
                             byte_array_to_string_base_10(unisig_s98_packet.recomputed_mac)
