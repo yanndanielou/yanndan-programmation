@@ -642,15 +642,6 @@ def convert_mac_to_string_of_hexas(mac: bytearray) -> str:
     return f"{mac[0]:x} {mac[1]:x} {mac[2]:x} {mac[3]:x} {mac[4]:x} {mac[5]:x} {mac[6]:x} {mac[7]:x}"
 
 
-def bytes_array_to_string_base_10(bytes_array: Sequence[int]) -> str:
-    ret = ""
-    for i in range(8):
-        as_int = int(bytes_array[i])
-        ret = f"{ret}{as_int} "
-        print(f"{ret} ", end="")
-    return ret
-
-
 def afficher_64bits(s: str, bytes_array: Sequence[int]) -> None:
     print(s, end="")
     for i in range(8):
@@ -767,12 +758,12 @@ class ConnectionUnisig98:
                 print("Connection numero 2 :")
             bx_r = self.cst_PSC.Unisig_98_Hard(13)
 
-        print()
         if verbose:
+            print()
             afficher_64bits("Session Key1        : ", self.session_key_1)
             afficher_64bits("Session Key2        : ", self.session_key_2)
             afficher_64bits("Session Key3        : ", self.session_key_3)
-        print()
+            print()
 
         r1_redond: Redond = self.cst_PSC.calculer_redond_tableau8(ral_l_rb_l, bx_r, True)
         r2_redond: Redond = self.cst_PSC.calculer_redond_tableau8(ra_r_rb_r, bx_r, True)
