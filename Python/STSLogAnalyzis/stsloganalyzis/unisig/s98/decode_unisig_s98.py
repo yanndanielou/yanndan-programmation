@@ -398,7 +398,7 @@ class UnisigS98Simulation:
     @property
     def label(self) -> str:
         if self.directories_parsed:
-            return " ".join(self.directories_parsed)
+            return " ".join(file_name_utils.get_directory_name_from_directory_full_path(self.directories_parsed))
 
         if self.files_full_paths_parsed:
             return " ".join([file_name_utils.get_file_name_without_extension_from_full_path(file_full_path_parsed) for file_full_path_parsed in self.files_full_paths_parsed])
