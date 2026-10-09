@@ -123,7 +123,7 @@ class UnisigS98WiresharkPacket:
 @dataclass
 class UnisigS98WiresharkPacketWithMac(UnisigS98WiresharkPacket, ABC):
     last_au1_packet: "UnisigS98Au1WiresharkPacket | None"
-    mac: HexaValueSplitBySemiColonInWireshark
+    transmitted_mac: HexaValueSplitBySemiColonInWireshark
 
     def __post_init__(self) -> None:
         self.recomputed_mac: bytearray | None = None
@@ -188,8 +188,8 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
         assert self.connexion_zc_pai
         self.recomputed_mac = self.connexion_zc_pai.compute_input_mac_au2()
 
-        compare_as_byte_array = self.recomputed_mac == self.mac.as_byte_array
-        compare_as_string = triple_des_s98.convert_mac_to_string_of_hexas(self.recomputed_mac) == triple_des_s98.convert_mac_to_string_of_hexas(self.mac.as_byte_array)
+        compare_as_byte_array = self.recomputed_mac == self.transmitted_mac.as_byte_array
+        compare_as_string = triple_des_s98.convert_mac_to_string_of_hexas(self.recomputed_mac) == triple_des_s98.convert_mac_to_string_of_hexas(self.transmitted_mac.as_byte_array)
         assert compare_as_byte_array == compare_as_string
         self.recomputed_mac_and_transmitted_mac_are_equals = compare_as_byte_array
         return self.recomputed_mac
@@ -280,8 +280,8 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacketWithMac):
         data_to_compute_mac = self.get_data_to_compute_mac()
         self.recomputed_mac = self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray)
 
-        compare_as_byte_array = self.recomputed_mac == self.mac.as_byte_array
-        compare_as_string = triple_des_s98.convert_mac_to_string_of_hexas(self.recomputed_mac) == triple_des_s98.convert_mac_to_string_of_hexas(self.mac.as_byte_array)
+        compare_as_byte_array = self.recomputed_mac == self.transmitted_mac.as_byte_array
+        compare_as_string = triple_des_s98.convert_mac_to_string_of_hexas(self.recomputed_mac) == triple_des_s98.convert_mac_to_string_of_hexas(self.transmitted_mac.as_byte_array)
         assert compare_as_byte_array == compare_as_string
         self.recomputed_mac_and_transmitted_mac_are_equals = compare_as_byte_array
         return self.recomputed_mac
@@ -448,7 +448,7 @@ class UnisigS98Simulation:
                 responding_etcs_id_type=UnisigS98EtcsIdType(int(wireshark_packet.ss098.get_field_value("ss098.conn.resp_ety"))),
                 responding_etcs_id=int(wireshark_packet.ss098.get_field_value("ss098.conn.resp_id")),
                 random_number_a_ra=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.conn.ra")),
-                mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
+                transmitted_mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
             )
             self.register_au2_packet(au2)
             return au2
@@ -470,7 +470,7 @@ class UnisigS98Simulation:
                     sai_user_data=(
                         HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.user_data")) if wireshark_packet.ss098.get_field_value("ss098.sai.user_data") else None
                     ),
-                    mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.mac")),
+                    transmitted_mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.mac")),
                 )
 
             elif emd_byte.mti == UnisigS98EmdMti.AU3_THIRD_AUTHENTICATION_SAPDU:
@@ -484,7 +484,7 @@ class UnisigS98Simulation:
                     number=number,
                     ale_header=ale_header,
                     emd_byte=emd_byte,
-                    mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
+                    transmitted_mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
                 )
             elif emd_byte.mti == UnisigS98EmdMti.AR_AUTHENTIFICATION_RESPONSE_TO_THIRD_AUTHENTICATION_SAPDU:
                 return UnisigS98AuthenticationResponseWiresharkPacket(
@@ -497,7 +497,7 @@ class UnisigS98Simulation:
                     number=number,
                     ale_header=ale_header,
                     emd_byte=emd_byte,
-                    mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
+                    transmitted_mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
                 )
             assert False, f"Unsupported emd_byte.mti {emd_byte.mti} in {wireshark_packet.frame_info}"
         elif packet_type == UnisigS98PacketType.DISCONNECT_PACKET_TYPE_4:
@@ -546,12 +546,21 @@ class UnisigS98Simulation:
                         "class": unisig_s98_packet.__class__.__name__,
                         "ip_src_str": unisig_s98_packet.ip_src_str,
                         "ip_dst_str": unisig_s98_packet.ip_dst_str,
-                        "emd_byte": unisig_s98_packet.emd_byte,
+                        "emd_byte": unisig_s98_packet.emd_byte.value,
+                        "emb ety": unisig_s98_packet.emd_byte.ety,
+                        "emb mti": unisig_s98_packet.emd_byte.mti,
+                        "emb df": unisig_s98_packet.emd_byte.df,
                         "ale length": unisig_s98_packet.ale_header.length,
                         "ale packet type": unisig_s98_packet.ale_header.packet_type,
-                        "has mac": unisig_s98_packet.mac if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) else None,
-                        "mac": unisig_s98_packet.mac if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) else None,
-                        "recomputed_mac": unisig_s98_packet.recomputed_mac if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac else None,
+                        "transmitted mac str": (
+                            unisig_s98_packet.transmitted_mac.raw_str_value if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.transmitted_mac else None
+                        ),
+                        "recomputed mac as bytearray": (
+                            unisig_s98_packet.recomputed_mac if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac else None
+                        ),
+                        "recomputed mac as str": (
+                            unisig_s98_packet.recomputed_mac.decode("utf-8") if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac else None
+                        ),
                         "recomputed_mac_and_transmitted_mac_are_equals": (
                             unisig_s98_packet.recomputed_mac_and_transmitted_mac_are_equals if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) else None
                         ),
