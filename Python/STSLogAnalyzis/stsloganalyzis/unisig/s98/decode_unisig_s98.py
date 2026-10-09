@@ -22,10 +22,18 @@ UNISIG_TRANSPORT_LAYER = "TCP"
 TSHARK_FULL_PATH: str = r"C:\Program Files\Wireshark"
 
 
-def byte_array_to_string(as_byte_array: bytearray) -> str:
+def byte_array_to_string_base_10(as_byte_array: bytearray) -> str:
     ret = ""
     for i in range(len(as_byte_array)):
         ret += f"{int(as_byte_array[i])}:"
+    ret = ret[:-1]
+    return ret
+
+
+def byte_array_to_string_base_16(as_byte_array: bytearray) -> str:
+    ret = ""
+    for i in range(len(as_byte_array)):
+        ret += f"{hex(int(as_byte_array[i]))[2:]}:"
     ret = ret[:-1]
     return ret
 
@@ -583,8 +591,15 @@ class UnisigS98Simulation:
                         "recomputed mac as bytearray": (
                             unisig_s98_packet.recomputed_mac if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac else None
                         ),
-                        "recomputed mac as str": (
-                            byte_array_to_string(unisig_s98_packet.recomputed_mac) if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac else None
+                        "recomputed mac as str base 10": (
+                            byte_array_to_string_base_10(unisig_s98_packet.recomputed_mac)
+                            if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac
+                            else None
+                        ),
+                        "recomputed mac as str base 16": (
+                            byte_array_to_string_base_16(unisig_s98_packet.recomputed_mac)
+                            if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac
+                            else None
                         ),
                         "recomputed_mac_and_transmitted_mac_are_equals": (
                             unisig_s98_packet.recomputed_mac_and_transmitted_mac_are_equals if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) else None
