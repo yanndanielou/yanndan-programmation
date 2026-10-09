@@ -275,35 +275,12 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
         assert self.last_au1_packet
         assert self.connexion_zc_pai
 
-        inputs_to_compute_for_mac_au2 = self.connexion_zc_pai.get_blocks_for_mac_au2(verbose=True)
-        inputs_to_compute_for_mac_au2_array_to_string_base_10 = byte_array_to_string_base_10(inputs_to_compute_for_mac_au2)
-        inputs_to_compute_for_mac_au2_array_to_string_base_16 = byte_array_to_string_base_16(inputs_to_compute_for_mac_au2)
-
         data_to_compute_mac = self.get_data_to_compute_mac()
-        data_to_compute_mac_array_to_string_base_10 = data_to_compute_mac.all_blocks_byte_array_to_string_base_10
-        data_to_compute_mac_array_to_string_base_16 = data_to_compute_mac.all_blocks_byte_array_to_string_base_16
 
-        assert inputs_to_compute_for_mac_au2_array_to_string_base_10 == data_to_compute_mac_array_to_string_base_10
-        assert inputs_to_compute_for_mac_au2_array_to_string_base_16 == data_to_compute_mac_array_to_string_base_16
-
-        mac_computed_data_to_compute_mac = self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray, verbose=True)
-        mac_computed_inputs_to_compute_for_mac_au2 = self.connexion_zc_pai.compute_mac_n_blocks(inputs_to_compute_for_mac_au2, verbose=True)
-        assert mac_computed_data_to_compute_mac == mac_computed_inputs_to_compute_for_mac_au2
-        recomputed_mac_with_compute_mac_n_blocks = self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray, verbose=True)
-        recomputed_mac_with_compute_mac_n_blocks_str = triple_des_s98.convert_mac_to_string_of_hexas(recomputed_mac_with_compute_mac_n_blocks)
-
-        recomputed_mac_with_compute_input_mac_au2 = self.connexion_zc_pai.get_blocks_for_mac_au2(verbose=True)
-        recomputed_mac_with_compute_input_mac_au2_str = triple_des_s98.convert_mac_to_string_of_hexas(recomputed_mac_with_compute_input_mac_au2)
-
-        assert recomputed_mac_with_compute_mac_n_blocks == recomputed_mac_with_compute_input_mac_au2
-        assert recomputed_mac_with_compute_mac_n_blocks_str == recomputed_mac_with_compute_mac_n_blocks_str
-
-        self.recomputed_mac = recomputed_mac_with_compute_input_mac_au2
+        self.recomputed_mac = self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray, verbose=True)
 
         compare_as_byte_array = self.recomputed_mac == self.transmitted_mac.as_byte_array
-        compare_as_string = triple_des_s98.convert_mac_to_string_of_hexas(recomputed_mac_with_compute_input_mac_au2) == triple_des_s98.convert_mac_to_string_of_hexas(
-            self.transmitted_mac.as_byte_array
-        )
+        compare_as_string = triple_des_s98.convert_mac_to_string_of_hexas(self.recomputed_mac) == triple_des_s98.convert_mac_to_string_of_hexas(self.transmitted_mac.as_byte_array)
         assert compare_as_byte_array == compare_as_string
         self.recomputed_mac_and_transmitted_mac_are_equals = compare_as_byte_array
 
