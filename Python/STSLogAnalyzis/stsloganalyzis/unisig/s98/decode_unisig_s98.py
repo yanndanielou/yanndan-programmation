@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import cast
@@ -98,6 +99,14 @@ class UnisigS98WiresharkPacket:
     emd_byte: "UnisigS98WiresharkPacket.EmdByte"
     file_full_path: str
     has_mac_field: bool
+
+    @abstractmethod
+    def has_context_to_compute_mac(self) -> bool:
+        pass
+
+    @abstractmethod
+    def recompute_mac(self) -> bytearray:
+        pass
 
     @dataclass
     class AleHeader:
@@ -482,9 +491,20 @@ class UnisigS98Simulation:
 
         assert False, f"Unsupported packet_type {packet_type} in {wireshark_packet.frame_info}"
 
+    @logger_config.stopwatch_decorator(monitor_ram_usage=True, inform_beginning=True)
     def recompute_all_mac(self) -> None:
+        mac_computed = 0
+        errors = 0
         for unisig_s98_packet in self.unisig_s98_packets:
-            pass
+            if unisig_s98_packet.has_mac_field and unisig_s98_packet.has_context_to_compute_mac():
+                try:
+                    unisig_s98_packet.recompute_mac()
+                except AssertionError as ass_err:
+                    logger_config.print_and_log_exception(ass_err)
+                    errors += 1
+                mac_computed += 1
+
+        logger_config.print_and_log_info(f"{mac_computed} mac computed. {errors} errors")
 
     def save_all_packets(self) -> None:
 
