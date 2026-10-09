@@ -262,20 +262,26 @@ class UnisigS98Simulation:
 
         return ""
 
-    def register_au1_packet(self, au1_packet: UnisigS98Au1WiresharkPacket) -> None:
-        self.get_or_create_equipment_by_ip_address_and_etcs_id(au1_packet.ip_src_str, au1_packet.calling_etcs_id)
-        self.get_or_create_equipment_by_ip_address_and_etcs_id(au1_packet.ip_dst_str, au1_packet.called_etcs_id)
-        self.last_au1_packet_by_interlocutors[(au1_packet.ip_src_str, au1_packet.ip_dst_str)] = au1_packet
-        self.last_au1_packet_by_interlocutors[(au1_packet.ip_dst_str, au1_packet.ip_src_str)] = au1_packet
+    def register_au1_packet(self, packet: UnisigS98Au1WiresharkPacket) -> None:
+        self.get_or_create_equipment_by_ip_address_and_etcs_id(packet.ip_src_str, packet.calling_etcs_id)
+        self.get_or_create_equipment_by_ip_address_and_etcs_id(packet.ip_dst_str, packet.called_etcs_id)
+        self.last_au1_packet_by_interlocutors[(packet.ip_src_str, packet.ip_dst_str)] = packet
+        self.last_au1_packet_by_interlocutors[(packet.ip_dst_str, packet.ip_src_str)] = packet
 
-    def register_au2_packet(self, au2_packet: UnisigS98Au2WiresharkPacket) -> None:
-        if not au2_packet.connexion_zc_pai:
-            logger_config.print_and_log_error(f"Could not handle AU2 packet {au2_packet} because no previous AU1 packet")
-            self.last_connexion_by_interlocutors.pop((au2_packet.ip_src_str, au2_packet.ip_dst_str))
-            self.last_connexion_by_interlocutors.pop((au2_packet.ip_dst_str, au2_packet.ip_src_str))
+    def register_au2_packet(self, packet: UnisigS98Au2WiresharkPacket) -> None:
+        if not packet.connexion_zc_pai:
+            logger_config.print_and_log_error(f"Could not handle AU2 packet {packet} because no previous AU1 packet")
+            self.last_connexion_by_interlocutors.pop((packet.ip_src_str, packet.ip_dst_str))
+            self.last_connexion_by_interlocutors.pop((packet.ip_dst_str, packet.ip_src_str))
             return
-        self.last_connexion_by_interlocutors[(au2_packet.ip_src_str, au2_packet.ip_dst_str)] = au2_packet.connexion_zc_pai
-        self.last_connexion_by_interlocutors[(au2_packet.ip_dst_str, au2_packet.ip_src_str)] = au2_packet.connexion_zc_pai
+        self.last_connexion_by_interlocutors[(packet.ip_src_str, packet.ip_dst_str)] = packet.connexion_zc_pai
+        self.last_connexion_by_interlocutors[(packet.ip_dst_str, packet.ip_src_str)] = packet.connexion_zc_pai
+
+    def register_disconnect_request_packet(self, packet: UnisigS98PaiDisconnectRequest) -> None:
+        self.last_connexion_by_interlocutors.pop((packet.ip_src_str, packet.ip_dst_str))
+        self.last_connexion_by_interlocutors.pop((packet.ip_dst_str, packet.ip_src_str))
+        self.last_au1_packet_by_interlocutors.pop((packet.ip_src_str, packet.ip_dst_str))
+        self.last_au1_packet_by_interlocutors.pop((packet.ip_dst_str, packet.ip_src_str))
 
     def get_or_create_equipment_by_ip_address_and_etcs_id(self, raw_ip_address: str, etcs_id: int) -> Unisig98Equipment:
         equipments_found = [equipment for equipment in self.equipments if equipment.raw_ip_address == raw_ip_address and equipment.etcs_id == etcs_id]
@@ -439,7 +445,7 @@ class UnisigS98Simulation:
                 )
             assert False, f"Unsupported emd_byte.mti {emd_byte.mti} in {wireshark_packet.frame_info}"
         elif packet_type == UnisigS98PacketType.DISCONNECT_PACKET_TYPE_4:
-            return UnisigS98PaiDisconnectRequest(
+            disconnect_request = UnisigS98PaiDisconnectRequest(
                 file_full_path=pcap_file_full_path,
                 tcp_payload=tcp_payload,
                 tcp_payload_without_ale_header=tcp_payload_without_ale_header,
@@ -452,6 +458,9 @@ class UnisigS98Simulation:
                     wireshark_packet.ss098.get_field_value("ss098.data"),
                 ),
             )
+            self.register_disconnect_request_packet(disconnect_request)
+            return disconnect_request
+
         assert False, f"Unsupported packet_type {packet_type} in {wireshark_packet.frame_info}"
 
     def save_all_packets(self) -> None:
