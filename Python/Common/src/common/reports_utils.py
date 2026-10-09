@@ -99,10 +99,10 @@ def save_rows_to_output_files(
                 logger_config.print_and_log_exception(err)
         success = False
         while not success:
-            try:
-                with logger_config.stopwatch_with_label(f"Create dataframe from {len(rows_as_list_dict)} rows", monitor_ram_usage=True):
-                    rows_as_dataframe = pandas.DataFrame(rows_as_list_dict)
+            with logger_config.stopwatch_with_label(f"Create dataframe from {len(rows_as_list_dict)} rows", monitor_ram_usage=True):
+                rows_as_dataframe = pandas.DataFrame(rows_as_list_dict)
 
+            try:
                 if create_xlsx_file and len(rows_as_list_dict) < excel_utils.EXCEL_LIMIT_NUMBER_OF_LINES - 1:
                     with logger_config.stopwatch_with_label(
                         f"Create {file_path_without_suffix}.xlsx ({len(rows_as_list_dict)} lines)",
