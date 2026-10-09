@@ -178,6 +178,34 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
     responding_etcs_id: int
     random_number_a_ra: HexaValueSplitBySemiColonInWireshark
 
+    @dataclass
+    class DataToComputeMac:
+        length_bytearray: bytearray
+        da_bytearray: bytearray
+        ety_mti_df_as_byte_array: bytearray
+        sa_responder_etcsid_as_3_bytes: bytearray
+        unknwown_value_1_as_1_byte: bytearray
+        ra_random_number_a_as_8_bytes: bytearray
+        rb_random_number_b_as_8_bytes: bytearray
+        padding_bytearray: bytearray
+
+        def __post_init__(self) -> None:
+            # l | DA | m + padding
+            self.all_blocks_bytearray = (
+                self.length_bytearray
+                + self.da_bytearray
+                + self.ety_mti_df_as_byte_array
+                + self.sa_responder_etcsid_as_3_bytes
+                + self.unknwown_value_1_as_1_byte
+                + self.ra_random_number_a_as_8_bytes
+                + self.rb_random_number_b_as_8_bytes
+                + self.da_bytearray
+                + self.padding_bytearray
+            )
+            self.all_blocks_byte_array_to_string_base_16 = byte_array_to_string_base_16(self.all_blocks_bytearray)
+            self.all_blocks_byte_array_to_string_base_10 = byte_array_to_string_base_10(self.all_blocks_bytearray)
+            pass
+
     def __post_init__(self) -> None:
         super().__post_init__()
         self.connexion_zc_pai = (
@@ -201,16 +229,84 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
     def has_context_to_compute_mac(self) -> bool:
         return self.last_au1_packet is not None and self.connexion_zc_pai is not None
 
+    def get_data_to_compute_mac(self) -> DataToComputeMac:
+
+        assert self.has_context_to_compute_mac()
+        assert self.last_au1_packet
+        assert self.connexion_zc_pai
+        assert self.connexion_zc_pai
+        assert self.last_au1_packet
+
+        # l | DA (initiator) | Emd byte (ETY + MTI + DF) | SA (responder) | RA | RB | DA (=B)
+        length = 27
+        length_da_and_message_as_2_bytes_byte_array = bytearray(length.to_bytes(2, byteorder="big"))
+
+        da_initiator_etcsid = self.last_au1_packet.get_etcs_id_from_ip_address(self.ip_dst_str)
+        da_initiator_etcsid_etcsid_as_3_bytes_byte_array = bytearray(da_initiator_etcsid.to_bytes(3, byteorder="big"))
+        assert len(da_initiator_etcsid_etcsid_as_3_bytes_byte_array) == 3
+
+        ety_mti_df_as_int = self.emd_byte.value
+        assert ety_mti_df_as_int == 197
+        ety_mti_df_as_1_byte_byte_array = bytearray.fromhex(hex(ety_mti_df_as_int)[2:])
+
+        sa_responder_etcsid = self.last_au1_packet.get_etcs_id_from_ip_address(self.ip_src_str)
+        sa_responder_etcsid_as_3_bytes = bytearray(sa_responder_etcsid.to_bytes(3, byteorder="big"))
+        assert len(sa_responder_etcsid_as_3_bytes) == 3
+
+        unknwown_value_1_as_1_byte = bytearray(int(1).to_bytes(1, byteorder="big"))
+
+        ra_random_number_a_as_8_bytes = self.random_number_a_ra.as_byte_array
+        rb_random_number_b_as_8_bytes = self.last_au1_packet.random_number_b_rb.as_byte_array
+
+        padding = bytearray(int(0).to_bytes(3, byteorder="big"))
+        return UnisigS98Au2WiresharkPacket.DataToComputeMac(
+            length_bytearray=length_da_and_message_as_2_bytes_byte_array,
+            da_bytearray=da_initiator_etcsid_etcsid_as_3_bytes_byte_array,
+            ety_mti_df_as_byte_array=ety_mti_df_as_1_byte_byte_array,
+            sa_responder_etcsid_as_3_bytes=sa_responder_etcsid_as_3_bytes,
+            unknwown_value_1_as_1_byte=unknwown_value_1_as_1_byte,
+            ra_random_number_a_as_8_bytes=ra_random_number_a_as_8_bytes,
+            rb_random_number_b_as_8_bytes=rb_random_number_b_as_8_bytes,
+            padding_bytearray=padding,
+        )
+
     def recompute_mac(self) -> bytearray:
         assert self.has_context_to_compute_mac()
         assert self.last_au1_packet
         assert self.connexion_zc_pai
-        self.recomputed_mac = self.connexion_zc_pai.compute_input_mac_au2()
+
+        inputs_to_compute_for_mac_au2 = self.connexion_zc_pai.get_blocks_for_mac_au2(verbose=True)
+        inputs_to_compute_for_mac_au2_array_to_string_base_10 = byte_array_to_string_base_10(inputs_to_compute_for_mac_au2)
+        inputs_to_compute_for_mac_au2_array_to_string_base_16 = byte_array_to_string_base_16(inputs_to_compute_for_mac_au2)
+
+        data_to_compute_mac = self.get_data_to_compute_mac()
+        data_to_compute_mac_array_to_string_base_10 = data_to_compute_mac.all_blocks_byte_array_to_string_base_10
+        data_to_compute_mac_array_to_string_base_16 = data_to_compute_mac.all_blocks_byte_array_to_string_base_16
+
+        assert inputs_to_compute_for_mac_au2_array_to_string_base_10 == data_to_compute_mac_array_to_string_base_10
+        assert inputs_to_compute_for_mac_au2_array_to_string_base_16 == data_to_compute_mac_array_to_string_base_16
+
+        mac_computed_data_to_compute_mac = self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray, verbose=True)
+        mac_computed_inputs_to_compute_for_mac_au2 = self.connexion_zc_pai.compute_mac_n_blocks(inputs_to_compute_for_mac_au2, verbose=True)
+        assert mac_computed_data_to_compute_mac == mac_computed_inputs_to_compute_for_mac_au2
+        recomputed_mac_with_compute_mac_n_blocks = self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray, verbose=True)
+        recomputed_mac_with_compute_mac_n_blocks_str = triple_des_s98.convert_mac_to_string_of_hexas(recomputed_mac_with_compute_mac_n_blocks)
+
+        recomputed_mac_with_compute_input_mac_au2 = self.connexion_zc_pai.get_blocks_for_mac_au2(verbose=True)
+        recomputed_mac_with_compute_input_mac_au2_str = triple_des_s98.convert_mac_to_string_of_hexas(recomputed_mac_with_compute_input_mac_au2)
+
+        assert recomputed_mac_with_compute_mac_n_blocks == recomputed_mac_with_compute_input_mac_au2
+        assert recomputed_mac_with_compute_mac_n_blocks_str == recomputed_mac_with_compute_mac_n_blocks_str
+
+        self.recomputed_mac = recomputed_mac_with_compute_input_mac_au2
 
         compare_as_byte_array = self.recomputed_mac == self.transmitted_mac.as_byte_array
-        compare_as_string = triple_des_s98.convert_mac_to_string_of_hexas(self.recomputed_mac) == triple_des_s98.convert_mac_to_string_of_hexas(self.transmitted_mac.as_byte_array)
+        compare_as_string = triple_des_s98.convert_mac_to_string_of_hexas(recomputed_mac_with_compute_input_mac_au2) == triple_des_s98.convert_mac_to_string_of_hexas(
+            self.transmitted_mac.as_byte_array
+        )
         assert compare_as_byte_array == compare_as_string
         self.recomputed_mac_and_transmitted_mac_are_equals = compare_as_byte_array
+
         return self.recomputed_mac
 
 
