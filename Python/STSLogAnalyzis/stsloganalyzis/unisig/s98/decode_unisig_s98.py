@@ -307,12 +307,14 @@ class UnisigS98Simulation:
         return ""
 
     def register_au1_packet(self, packet: UnisigS98Au1WiresharkPacket) -> None:
+        logger_config.print_and_log_info(f"AU1 packet detected from {packet.ip_src_str} to packet.ip_dst_str")
         self.get_or_create_equipment_by_ip_address_and_etcs_id(packet.ip_src_str, packet.calling_etcs_id)
         self.get_or_create_equipment_by_ip_address_and_etcs_id(packet.ip_dst_str, packet.called_etcs_id)
         self.last_au1_packet_by_interlocutors[(packet.ip_src_str, packet.ip_dst_str)] = packet
         self.last_au1_packet_by_interlocutors[(packet.ip_dst_str, packet.ip_src_str)] = packet
 
     def register_au2_packet(self, packet: UnisigS98Au2WiresharkPacket) -> None:
+        logger_config.print_and_log_info(f"AU2 packet detected from {packet.ip_src_str} to packet.ip_dst_str")
         if not packet.connexion_zc_pai:
             logger_config.print_and_log_error(f"Could not handle AU2 packet {packet} because no previous AU1 packet")
             self.last_connexion_by_interlocutors.pop((packet.ip_src_str, packet.ip_dst_str))
@@ -322,10 +324,11 @@ class UnisigS98Simulation:
         self.last_connexion_by_interlocutors[(packet.ip_dst_str, packet.ip_src_str)] = packet.connexion_zc_pai
 
     def register_disconnect_request_packet(self, packet: UnisigS98PaiDisconnectRequest) -> None:
-        self.last_connexion_by_interlocutors.pop((packet.ip_src_str, packet.ip_dst_str))
-        self.last_connexion_by_interlocutors.pop((packet.ip_dst_str, packet.ip_src_str))
-        self.last_au1_packet_by_interlocutors.pop((packet.ip_src_str, packet.ip_dst_str))
-        self.last_au1_packet_by_interlocutors.pop((packet.ip_dst_str, packet.ip_src_str))
+        logger_config.print_and_log_info(f"Disconnect request packet detected from {packet.ip_src_str} to packet.ip_dst_str")
+        self.last_connexion_by_interlocutors.pop((packet.ip_src_str, packet.ip_dst_str), None)
+        self.last_connexion_by_interlocutors.pop((packet.ip_dst_str, packet.ip_src_str), None)
+        self.last_au1_packet_by_interlocutors.pop((packet.ip_src_str, packet.ip_dst_str), None)
+        self.last_au1_packet_by_interlocutors.pop((packet.ip_dst_str, packet.ip_src_str), None)
 
     def get_or_create_equipment_by_ip_address_and_etcs_id(self, raw_ip_address: str, etcs_id: int) -> Unisig98Equipment:
         equipments_found = [equipment for equipment in self.equipments if equipment.raw_ip_address == raw_ip_address and equipment.etcs_id == etcs_id]
@@ -370,7 +373,7 @@ class UnisigS98Simulation:
                 number_of_errors += 1
 
             logger_config.print_and_log_info_if(
-                number_of_packets_parsed + 1 % 1000 == 0,
+                (number_of_packets_parsed + 1) % 1000 == 0,
                 f"{number_of_packets_parsed+1} packets parsed, {len(unisig_s98_packets_found)} unisig packets found so far in {pcap_file_full_path}",
                 print_ram_usage=True,
             )
@@ -465,6 +468,7 @@ class UnisigS98Simulation:
 
             elif emd_byte.mti == UnisigS98EmdMti.AU3_THIRD_AUTHENTICATION_SAPDU:
                 return UnisigS98Au3WiresharkPacket(
+                    last_au1_packet=last_au1_packet,
                     file_full_path=pcap_file_full_path,
                     tcp_payload=tcp_payload,
                     tcp_payload_without_ale_header=tcp_payload_without_ale_header,
@@ -477,6 +481,7 @@ class UnisigS98Simulation:
                 )
             elif emd_byte.mti == UnisigS98EmdMti.AR_AUTHENTIFICATION_RESPONSE_TO_THIRD_AUTHENTICATION_SAPDU:
                 return UnisigS98AuthenticationResponseWiresharkPacket(
+                    last_au1_packet=last_au1_packet,
                     file_full_path=pcap_file_full_path,
                     tcp_payload=tcp_payload,
                     tcp_payload_without_ale_header=tcp_payload_without_ale_header,
@@ -512,13 +517,13 @@ class UnisigS98Simulation:
         mac_computed = 0
         errors = 0
         for unisig_s98_packet in self.unisig_s98_packets:
-            if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.has_context_to_compute_mac():
-                try:
+            try:
+                if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.has_context_to_compute_mac():
                     unisig_s98_packet.recompute_mac()
-                except AssertionError as ass_err:
-                    logger_config.print_and_log_exception(ass_err)
-                    errors += 1
-                mac_computed += 1
+                    mac_computed += 1
+            except AssertionError as ass_err:
+                logger_config.print_and_log_exception(ass_err)
+                errors += 1
 
         logger_config.print_and_log_info(f"{mac_computed} mac computed. {errors} errors")
 
