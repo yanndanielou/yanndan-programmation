@@ -98,15 +98,6 @@ class UnisigS98WiresharkPacket:
     ale_header: "UnisigS98WiresharkPacket.AleHeader"
     emd_byte: "UnisigS98WiresharkPacket.EmdByte"
     file_full_path: str
-    has_mac_field: bool
-
-    @abstractmethod
-    def has_context_to_compute_mac(self) -> bool:
-        pass
-
-    @abstractmethod
-    def recompute_mac(self) -> bytearray:
-        pass
 
     @dataclass
     class AleHeader:
@@ -127,6 +118,20 @@ class UnisigS98WiresharkPacket:
 
 
 @dataclass
+class UnisigS98WiresharkPacketWithMac(UnisigS98WiresharkPacket):
+    last_au1_packet: "UnisigS98Au1WiresharkPacket | None"
+    mac: HexaValueSplitBySemiColonInWireshark
+
+    @abstractmethod
+    def has_context_to_compute_mac(self) -> bool:
+        pass
+
+    @abstractmethod
+    def recompute_mac(self) -> bytearray:
+        pass
+
+
+@dataclass
 class UnisigS98Au1WiresharkPacket(UnisigS98WiresharkPacket):
     calling_etcs_id_type: UnisigS98EtcsIdType
     calling_etcs_id: int
@@ -141,12 +146,11 @@ class UnisigS98Au1WiresharkPacket(UnisigS98WiresharkPacket):
 
 
 @dataclass
-class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
+class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
     last_au1_packet: UnisigS98Au1WiresharkPacket | None
     responding_etcs_id_type: UnisigS98EtcsIdType
     responding_etcs_id: int
     random_number_a_ra: HexaValueSplitBySemiColonInWireshark
-    mac: HexaValueSplitBySemiColonInWireshark
 
     def __post_init__(self) -> None:
         self.connexion_zc_pai = (
@@ -170,7 +174,11 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
             assert self.last_au1_packet
             self.connexion_zc_pai.start_session(self.random_number_a_ra.as_byte_array, self.last_au1_packet.random_number_b_rb.as_byte_array)
 
+    def has_context_to_compute_mac(self) -> bool:
+        return self.last_au1_packet is not None and self.connexion_zc_pai is not None
+
     def recompute_mac(self) -> bytearray:
+        assert self.has_context_to_compute_mac()
         assert self.last_au1_packet
         assert self.connexion_zc_pai
         self.recomputed_mac = self.connexion_zc_pai.compute_input_mac_au2()
@@ -183,13 +191,27 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
 
 
 @dataclass
-class UnisigS98Au3WiresharkPacket(UnisigS98WiresharkPacket):
-    mac: HexaValueSplitBySemiColonInWireshark
+class UnisigS98Au3WiresharkPacket(UnisigS98WiresharkPacketWithMac):
+
+    def has_context_to_compute_mac(self) -> bool:
+        logger_config.print_and_log_error(f"Not implemented")
+        assert False
+
+    def recompute_mac(self) -> bytearray:
+        logger_config.print_and_log_error(f"Not implemented")
+        assert False
 
 
 @dataclass
-class UnisigS98AuthenticationResponseWiresharkPacket(UnisigS98WiresharkPacket):
-    mac: HexaValueSplitBySemiColonInWireshark
+class UnisigS98AuthenticationResponseWiresharkPacket(UnisigS98WiresharkPacketWithMac):
+
+    def has_context_to_compute_mac(self) -> bool:
+        logger_config.print_and_log_error(f"Not implemented")
+        assert False
+
+    def recompute_mac(self) -> bytearray:
+        logger_config.print_and_log_error(f"Not implemented")
+        assert False
 
 
 @dataclass
@@ -398,7 +420,6 @@ class UnisigS98Simulation:
                 called_etcs_id=int(wireshark_packet.ss098.get_field_value("ss098.conn.called_id")),
                 random_number_b_rb=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.conn.rb")),
                 source_addr_str=wireshark_packet.ss098.get_field_value("ss098.conn.source_addr"),
-                has_mac_field=False,
             )
             self.register_au1_packet(au1_packet)
             return au1_packet
@@ -418,7 +439,6 @@ class UnisigS98Simulation:
                 responding_etcs_id=int(wireshark_packet.ss098.get_field_value("ss098.conn.resp_id")),
                 random_number_a_ra=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.conn.ra")),
                 mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
-                has_mac_field=True,
             )
             self.register_au2_packet(au2)
             return au2
@@ -441,7 +461,6 @@ class UnisigS98Simulation:
                         HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.user_data")) if wireshark_packet.ss098.get_field_value("ss098.sai.user_data") else None
                     ),
                     mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.mac")),
-                    has_mac_field=True,
                 )
 
             elif emd_byte.mti == UnisigS98EmdMti.AU3_THIRD_AUTHENTICATION_SAPDU:
@@ -455,7 +474,6 @@ class UnisigS98Simulation:
                     ale_header=ale_header,
                     emd_byte=emd_byte,
                     mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
-                    has_mac_field=True,
                 )
             elif emd_byte.mti == UnisigS98EmdMti.AR_AUTHENTIFICATION_RESPONSE_TO_THIRD_AUTHENTICATION_SAPDU:
                 return UnisigS98AuthenticationResponseWiresharkPacket(
@@ -468,7 +486,6 @@ class UnisigS98Simulation:
                     ale_header=ale_header,
                     emd_byte=emd_byte,
                     mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
-                    has_mac_field=True,
                 )
             assert False, f"Unsupported emd_byte.mti {emd_byte.mti} in {wireshark_packet.frame_info}"
         elif packet_type == UnisigS98PacketType.DISCONNECT_PACKET_TYPE_4:
@@ -484,7 +501,6 @@ class UnisigS98Simulation:
                 remaining_data=HexaValueSplitBySemiColonInWireshark(
                     wireshark_packet.ss098.get_field_value("ss098.data"),
                 ),
-                has_mac_field=False,
             )
             self.register_disconnect_request_packet(disconnect_request)
             return disconnect_request
@@ -496,7 +512,7 @@ class UnisigS98Simulation:
         mac_computed = 0
         errors = 0
         for unisig_s98_packet in self.unisig_s98_packets:
-            if unisig_s98_packet.has_mac_field and unisig_s98_packet.has_context_to_compute_mac():
+            if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.has_context_to_compute_mac():
                 try:
                     unisig_s98_packet.recompute_mac()
                 except AssertionError as ass_err:
