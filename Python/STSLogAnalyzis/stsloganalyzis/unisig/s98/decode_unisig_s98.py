@@ -142,25 +142,22 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
         )
 
         self.recomputed_mac: bytearray | None = None
+        self.recomputed_mac_and_transmitted_mac_are_equals: bool | None = None
 
         if self.connexion_zc_pai:
             assert self.last_au1_packet
             self.connexion_zc_pai.start_session(self.random_number_a_ra.as_byte_array, self.last_au1_packet.random_number_b_rb.as_byte_array)
 
-    def recompute_mac(self) -> bytearray | None:
+    def recompute_mac(self) -> bytearray:
         assert self.last_au1_packet
         assert self.connexion_zc_pai
         self.recomputed_mac = self.connexion_zc_pai.compute_input_mac_au2()
-        return self.recomputed_mac
 
-    def are_computed_and_transmitted_mac_equal(self) -> bool:
-        computed_mac_as_byte_array = self.recompute_mac()
-        compare_1 = computed_mac_as_byte_array == self.mac.as_byte_array
-        computed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
-        transmitted_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(self.mac.as_byte_array)
-        compare_2 = computed_mac_as_string_of_hexas == transmitted_mac_as_string_of_hexas
-        assert compare_1 == compare_2
-        return compare_1
+        compare_as_byte_array = self.recomputed_mac == self.mac.as_byte_array
+        compare_as_string = triple_des_s98.convert_mac_to_string_of_hexas(self.recomputed_mac) == triple_des_s98.convert_mac_to_string_of_hexas(self.mac.as_byte_array)
+        assert compare_as_byte_array == compare_as_string
+        self.recomputed_mac_and_transmitted_mac_are_equals = compare_as_byte_array
+        return self.recomputed_mac
 
 
 @dataclass
@@ -194,6 +191,9 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
     def __post_init__(self) -> None:
         self.tcp_payload_without_ale_header_and_mac = HexaValueSplitBySemiColonInWireshark(self.tcp_payload_without_ale_header.raw_str_value[:-24])
         self.recomputed_mac: bytearray | None = None
+        self.recomputed_mac_and_transmitted_mac_are_equals: bool | None = None
+        if self.sai_user_data is None:
+            pass
 
     def get_data_to_compute_mac(self) -> DataToComputeMac:
         assert self.connexion_zc_pai
@@ -228,16 +228,17 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
         assert self.connexion_zc_pai
         data_to_compute_mac = self.get_data_to_compute_mac()
         self.recomputed_mac = self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray)
+
+        compare_as_byte_array = self.recomputed_mac == self.mac.as_byte_array
+        compare_as_string = triple_des_s98.convert_mac_to_string_of_hexas(self.recomputed_mac) == triple_des_s98.convert_mac_to_string_of_hexas(self.mac.as_byte_array)
+        assert compare_as_byte_array == compare_as_string
+        self.recomputed_mac_and_transmitted_mac_are_equals = compare_as_byte_array
         return self.recomputed_mac
 
-    def are_computed_and_transmitted_mac_equal(self) -> bool:
-        computed_mac_as_byte_array = self.recompute_mac()
-        compare_1 = computed_mac_as_byte_array == self.mac.as_byte_array
-        computed_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(computed_mac_as_byte_array)
-        transmitted_mac_as_string_of_hexas = triple_des_s98.convert_mac_to_string_of_hexas(self.mac.as_byte_array)
-        compare_2 = computed_mac_as_string_of_hexas == transmitted_mac_as_string_of_hexas
-        assert compare_1 == compare_2
-        return compare_1
+
+@dataclass
+class UnisigS98PaiDisconnectRequest(UnisigS98WiresharkPacket):
+    remaining_data: HexaValueSplitBySemiColonInWireshark
 
 
 @dataclass
@@ -319,8 +320,8 @@ class UnisigS98Simulation:
                 number_of_errors += 1
 
             logger_config.print_and_log_info_if(
-                number_of_packets_parsed % 1000 == 0,
-                f"{number_of_packets_parsed} packets parsed, {len(unisig_s98_packets_found)} unisig packets found so far in {pcap_file_full_path}",
+                number_of_packets_parsed + 1 % 1000 == 0,
+                f"{number_of_packets_parsed+1} packets parsed, {len(unisig_s98_packets_found)} unisig packets found so far in {pcap_file_full_path}",
                 print_ram_usage=True,
             )
         self.unisig_s98_packets += unisig_s98_packets_found
@@ -329,7 +330,7 @@ class UnisigS98Simulation:
         tcp_payload = HexaValueSplitBySemiColonInWireshark(wireshark_packet.tcp.payload)
         tcp_payload_without_ale_header = HexaValueSplitBySemiColonInWireshark(tcp_payload.raw_str_value[30:])
 
-        number = wireshark_packet.number
+        number = int(wireshark_packet.number)
         ip_dst_str = wireshark_packet.ip.dst
         ip_src_str = wireshark_packet.ip.src
 
@@ -437,6 +438,20 @@ class UnisigS98Simulation:
                     mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
                 )
             assert False, f"Unsupported emd_byte.mti {emd_byte.mti} in {wireshark_packet.frame_info}"
+        elif packet_type == UnisigS98PacketType.DISCONNECT_PACKET_TYPE_4:
+            return UnisigS98PaiDisconnectRequest(
+                file_full_path=pcap_file_full_path,
+                tcp_payload=tcp_payload,
+                tcp_payload_without_ale_header=tcp_payload_without_ale_header,
+                ip_dst_str=ip_dst_str,
+                ip_src_str=ip_src_str,
+                number=number,
+                ale_header=ale_header,
+                emd_byte=emd_byte,
+                remaining_data=HexaValueSplitBySemiColonInWireshark(
+                    wireshark_packet.ss098.get_field_value("ss098.data"),
+                ),
+            )
         assert False, f"Unsupported packet_type {packet_type} in {wireshark_packet.frame_info}"
 
     def save_all_packets(self) -> None:
