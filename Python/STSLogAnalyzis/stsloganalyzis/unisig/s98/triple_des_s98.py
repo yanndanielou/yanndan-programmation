@@ -803,7 +803,7 @@ class ConnectionUnisig98:
             print()
             print("\nconnection etablie ...\n")
 
-    def compute_input_mac_au2(self, verbose: bool = False) -> bytearray:
+    def get_blocks_for_mac_au2(self, verbose: bool = False) -> bytearray:
         if verbose:
             print("computing G_INPUT_MAC_AU2 ", end="")
             if self.is_connnection1:
@@ -868,7 +868,11 @@ class ConnectionUnisig98:
             print(f"bloc4 (msg AU2) = {byte_array_to_string_base_16(au2_bloc1)}")
             afficher_64bits("bloc4 (msg AU2) = ", au2_bloc4)
 
-        return calcul_mac_n_Blocks(au2_bloc1 + au2_bloc2 + au2_bloc3 + au2_bloc4, self.session_key_1, self.session_key_2, self.session_key_3)
+        return au2_bloc1 + au2_bloc2 + au2_bloc3 + au2_bloc4
+
+    def compute_input_mac_au2(self, verbose: bool = False) -> bytearray:
+        blocks = self.get_blocks_for_mac_au2(verbose)
+        return calcul_mac_n_Blocks(blocks, self.session_key_1, self.session_key_2, self.session_key_3)
 
     def compute_mac_n_blocks(self, blocks: Sequence[int], verbose: bool = False) -> bytearray:
         assert len(blocks) % 8 == 0
