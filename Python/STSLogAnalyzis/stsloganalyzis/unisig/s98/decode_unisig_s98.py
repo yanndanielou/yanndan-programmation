@@ -688,6 +688,46 @@ class UnisigS98Simulation:
                         "recomputed_mac_and_transmitted_mac_are_equals": (
                             unisig_s98_packet.recomputed_mac_and_transmitted_mac_are_equals if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) else None
                         ),
+                        "data to compute mac: length_bytearray (base 10)": (
+                            byte_array_to_string_base_10(unisig_s98_packet.get_data_to_compute_mac().length_bytearray)
+                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            else None
+                        ),
+                        "data to compute mac: da_bytearray (base 10)": (
+                            byte_array_to_string_base_10(unisig_s98_packet.get_data_to_compute_mac().da_bytearray)
+                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            else None
+                        ),
+                        "data to compute mac: message_bytearray (base 10)": (
+                            byte_array_to_string_base_10(unisig_s98_packet.get_data_to_compute_mac().message_bytearray)
+                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            else None
+                        ),
+                        "data to compute mac: padding_bytearray (base 10)": (
+                            byte_array_to_string_base_10(unisig_s98_packet.get_data_to_compute_mac().padding_bytearray)
+                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            else None
+                        ),
+                        "data to compute mac: length_bytearray (base 16)": (
+                            byte_array_to_string_base_16(unisig_s98_packet.get_data_to_compute_mac().length_bytearray)
+                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            else None
+                        ),
+                        "data to compute mac: da_bytearray (base 16)": (
+                            byte_array_to_string_base_16(unisig_s98_packet.get_data_to_compute_mac().da_bytearray)
+                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            else None
+                        ),
+                        "data to compute mac: message_bytearray (base 16)": (
+                            byte_array_to_string_base_16(unisig_s98_packet.get_data_to_compute_mac().message_bytearray)
+                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            else None
+                        ),
+                        "data to compute mac: padding_bytearray (base 16)": (
+                            byte_array_to_string_base_16(unisig_s98_packet.get_data_to_compute_mac().padding_bytearray)
+                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            else None
+                        ),
                     }
                 )
                 for unisig_s98_packet in self.unisig_s98_packets
