@@ -1,15 +1,6 @@
-#!/usr/bin/env python3
-"""
-Conversion en Python 3 avec typage statique (typing)
-du code C++ d'implémentation de Connection_U98 / Unisig Subset-098
-(DES, CBC-MAC 3DES, arithmétique de redondance de sécurité).
-"""
-
 from __future__ import annotations
 
 from collections.abc import Sequence
-
-from stsloganalyzis.unisig.s98 import secret_kmac_keys
 
 MAC_SIZE_IN_BYTES = 8
 
@@ -613,13 +604,13 @@ def XOR_Byte2Byte(Source: Sequence[int], Dest: bytearray, SzData: int) -> None:
         Dest[i] ^= Source[i]
 
 
-def des_dec(input: Sequence[int], output: bytearray, key: Sequence[int]) -> None:
+def des_dec(input_bytes: Sequence[int], output: bytearray, key: Sequence[int]) -> None:
     des_work_buffer: bytearray = bytearray(8)
     key_schedule_1: bytearray = bytearray(64)
     key_schedule_2: bytearray = bytearray(64)
 
     des_key_scheduling(key, key_schedule_1, key_schedule_2)
-    des_initial_permutation(input, des_work_buffer)
+    des_initial_permutation(input_bytes, des_work_buffer)
     des_round_dec(des_work_buffer, key_schedule_1, key_schedule_2)
     des_inverse_initial_permutation(des_work_buffer, output)
 
@@ -832,6 +823,62 @@ class ConnectionUnisig98:
                 AU2_bloc1[i + 6] = Responder_Etcs_Id[i]
             else:
                 AU2_bloc2[i - 2] = Responder_Etcs_Id[i]
+
+        AU2_bloc2[1] = 1
+        for i in range(8):  # RA
+            if i + 2 < 8:
+                AU2_bloc2[i + 2] = self.random_a[i]
+            else:
+                AU2_bloc3[i - 6] = self.random_a[i]
+
+        for i in range(8):  # RB
+            if i + 2 < 8:
+                AU2_bloc3[i + 2] = self.random_b[i]
+            else:
+                AU2_bloc4[i - 6] = self.random_b[i]
+
+        for i in range(3):
+            AU2_bloc4[i + 2] = Initiator_Etcs_Id[i]  # DA (=B)
+        for i in range(5, 8):
+            AU2_bloc4[i] = 0  # padding
+
+        afficher_64bits("bloc1 (msg AU2) = ", AU2_bloc1)
+        afficher_64bits("bloc2 (msg AU2) = ", AU2_bloc2)
+        afficher_64bits("bloc3 (msg AU2) = ", AU2_bloc3)
+        afficher_64bits("bloc4 (msg AU2) = ", AU2_bloc4)
+
+        return calcul_mac_n_Blocks(AU2_bloc1 + AU2_bloc2 + AU2_bloc3 + AU2_bloc4, self.session_key_1, self.session_key_2, self.session_key_3)
+
+    def compute_input_mac_au3(self) -> bytearray:
+        print("computing G_INPUT_MAC_AU3 ", end="")
+        if self.is_connnection1:
+            print("for connection 1", end="")
+        else:
+            print("for connection 2", end="")
+        print(" ...")
+
+        AU2_bloc1: bytearray = bytearray(8)
+        AU2_bloc2: bytearray = bytearray(8)
+        AU2_bloc3: bytearray = bytearray(8)
+        AU2_bloc4: bytearray = bytearray(8)
+
+        Initiator_Etcs_Id: bytearray = bytearray(3)
+        Responder_Etcs_Id: bytearray = bytearray(3)
+
+        remaining_value1: int = self.initiator_etcs_id
+        remaining_value2: int = self.responder_etcs_id
+        for i in range(3):
+            Initiator_Etcs_Id[2 - i] = remaining_value1 % 256
+            remaining_value1 //= 256
+            Responder_Etcs_Id[2 - i] = remaining_value2 % 256
+            remaining_value2 //= 256
+
+        # Creation de G_MAC_INPUT_AU2
+        AU2_bloc1[0] = 0
+        AU2_bloc1[1] = 27  # longueur
+        for i in range(3):
+            AU2_bloc1[i + 2] = Initiator_Etcs_Id[i]  # DA
+        AU2_bloc1[5] = 0 + 5  # ETY + MTI + DF
 
         AU2_bloc2[1] = 1
         for i in range(8):  # RA
