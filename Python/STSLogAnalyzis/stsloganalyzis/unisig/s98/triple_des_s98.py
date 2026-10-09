@@ -905,8 +905,9 @@ class ConnectionUnisig98:
 
         return calcul_mac_n_Blocks(AU2_bloc1 + AU2_bloc2 + AU2_bloc3 + AU2_bloc4, self.session_key_1, self.session_key_2, self.session_key_3)
 
-    def compute_mac_n_blocks(self, blocks: Sequence[int]) -> bytearray:
+    def compute_mac_n_blocks(self, blocks: Sequence[int], verbose: bool) -> bytearray:
         assert len(blocks) % 8 == 0
         nb_blocks = len(blocks) // 8
-        print(f"CALCUL de MAC à {nb_blocks} blocs avec N={nb_blocks}", end="")
-        return calcul_mac_n_Blocks(blocks, self.session_key_1, self.session_key_2, self.session_key_3)
+        if verbose:
+            print(f"CALCUL de MAC à {nb_blocks} blocs avec N={nb_blocks}", end="")
+        return calcul_mac_n_Blocks(blocks, self.session_key_1, self.session_key_2, self.session_key_3, verbose)
