@@ -176,6 +176,7 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
     last_au1_packet: UnisigS98Au1WiresharkPacket | None
     responding_etcs_id_type: UnisigS98EtcsIdType
     responding_etcs_id: int
+    safety_feature_saf: int
     random_number_a_ra: HexaValueSplitBySemiColonInWireshark
 
     @dataclass
@@ -184,7 +185,7 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
         da_bytearray: bytearray
         ety_mti_df_as_byte_array: bytearray
         sa_responder_etcsid_as_3_bytes: bytearray
-        unknwown_value_1_as_1_byte: bytearray
+        safety_feature_saf_as_1_byte: bytearray
         ra_random_number_a_as_8_bytes: bytearray
         rb_random_number_b_as_8_bytes: bytearray
         padding_bytearray: bytearray
@@ -196,7 +197,7 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
                 + self.da_bytearray
                 + self.ety_mti_df_as_byte_array
                 + self.sa_responder_etcsid_as_3_bytes
-                + self.unknwown_value_1_as_1_byte
+                + self.safety_feature_saf_as_1_byte
                 + self.ra_random_number_a_as_8_bytes
                 + self.rb_random_number_b_as_8_bytes
                 + self.da_bytearray
@@ -230,6 +231,10 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
         return self.last_au1_packet is not None and self.connexion_zc_pai is not None
 
     def get_data_to_compute_mac(self) -> DataToComputeMac:
+        """
+        6.2.3.2.1.9 Concerning the AU2 SaPDU, the message m = ETY | MTI | DF | SA | SaF | auth2
+        auth2 = "Ra | Rb | B
+        """
 
         assert self.has_context_to_compute_mac()
         assert self.last_au1_packet
@@ -253,7 +258,7 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
         sa_responder_etcsid_as_3_bytes = bytearray(sa_responder_etcsid.to_bytes(3, byteorder="big"))
         assert len(sa_responder_etcsid_as_3_bytes) == 3
 
-        unknwown_value_1_as_1_byte = bytearray(int(1).to_bytes(1, byteorder="big"))
+        unknwown_value_1_as_1_byte = self.safety_feature_saf
 
         ra_random_number_a_as_8_bytes = self.random_number_a_ra.as_byte_array
         rb_random_number_b_as_8_bytes = self.last_au1_packet.random_number_b_rb.as_byte_array
@@ -264,7 +269,7 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
             da_bytearray=da_initiator_etcsid_etcsid_as_3_bytes_byte_array,
             ety_mti_df_as_byte_array=ety_mti_df_as_1_byte_byte_array,
             sa_responder_etcsid_as_3_bytes=sa_responder_etcsid_as_3_bytes,
-            unknwown_value_1_as_1_byte=unknwown_value_1_as_1_byte,
+            safety_feature_saf_as_1_byte=unknwown_value_1_as_1_byte,
             ra_random_number_a_as_8_bytes=ra_random_number_a_as_8_bytes,
             rb_random_number_b_as_8_bytes=rb_random_number_b_as_8_bytes,
             padding_bytearray=padding,
@@ -546,6 +551,7 @@ class UnisigS98Simulation:
                 emd_byte=emd_byte,
                 responding_etcs_id_type=UnisigS98EtcsIdType(int(wireshark_packet.ss098.get_field_value("ss098.conn.resp_ety"))),
                 responding_etcs_id=int(wireshark_packet.ss098.get_field_value("ss098.conn.resp_id")),
+                safety_feature_saf=int(wireshark_packet.ss098.get_field_value("ss098.conn.saf")),
                 random_number_a_ra=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.conn.ra")),
                 transmitted_mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
             )
