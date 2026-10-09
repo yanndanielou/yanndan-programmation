@@ -2,9 +2,11 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import cast
 
+from collections import OrderedDict
+
 import pyshark
 import pyshark.packet.packet
-from common import file_utils
+from common import file_utils, reports_utils, file_name_utils
 from logger import logger_config
 
 from stsloganalyzis.unisig.s98 import secret_equipment_name_from_ip_address, secret_kmac_keys, triple_des_s98
@@ -79,8 +81,10 @@ class UnisigS98WiresharkPacket:
     tcp_payload_without_ale_header: HexaValueSplitBySemiColonInWireshark
     ip_dst_str: str
     ip_src_str: str
+    number: int
     ale_header: "UnisigS98WiresharkPacket.AleHeader"
     emd_byte: "UnisigS98WiresharkPacket.EmdByte"
+    file_full_path: str
 
     @dataclass
     class AleHeader:
@@ -137,15 +141,17 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacket):
             else None
         )
 
+        self.recomputed_mac: bytearray | None = None
+
         if self.connexion_zc_pai:
             assert self.last_au1_packet
             self.connexion_zc_pai.start_session(self.random_number_a_ra.as_byte_array, self.last_au1_packet.random_number_b_rb.as_byte_array)
 
-    def recompute_mac(self) -> bytearray:
+    def recompute_mac(self) -> bytearray | None:
         assert self.last_au1_packet
         assert self.connexion_zc_pai
-        computed_mac_as_byte_array = self.connexion_zc_pai.compute_input_mac_au2()
-        return computed_mac_as_byte_array
+        self.recomputed_mac = self.connexion_zc_pai.compute_input_mac_au2()
+        return self.recomputed_mac
 
     def are_computed_and_transmitted_mac_equal(self) -> bool:
         computed_mac_as_byte_array = self.recompute_mac()
@@ -170,7 +176,7 @@ class UnisigS98AuthenticationResponseWiresharkPacket(UnisigS98WiresharkPacket):
 @dataclass
 class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
     last_au1_packet: UnisigS98Au1WiresharkPacket | None
-    last_connexion: triple_des_s98.ConnectionUnisig98 | None
+    connexion_zc_pai: triple_des_s98.ConnectionUnisig98 | None
     sai_user_data: HexaValueSplitBySemiColonInWireshark | None
     mac: HexaValueSplitBySemiColonInWireshark
 
@@ -187,9 +193,10 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
 
     def __post_init__(self) -> None:
         self.tcp_payload_without_ale_header_and_mac = HexaValueSplitBySemiColonInWireshark(self.tcp_payload_without_ale_header.raw_str_value[:-24])
+        self.recomputed_mac: bytearray | None = None
 
     def get_data_to_compute_mac(self) -> DataToComputeMac:
-        assert self.last_connexion
+        assert self.connexion_zc_pai
         assert self.last_au1_packet
         message_receiver_etcsid = self.last_au1_packet.get_etcs_id_from_ip_address(self.ip_dst_str)
         # message_receiver_etcsid_as_3_bytes = bytearray(message_receiver_etcsid)
@@ -218,10 +225,10 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
 
     def recompute_mac(self) -> bytearray:
         assert self.last_au1_packet
-        assert self.last_connexion
+        assert self.connexion_zc_pai
         data_to_compute_mac = self.get_data_to_compute_mac()
-        computed_mac_as_byte_array = self.last_connexion.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray)
-        return computed_mac_as_byte_array
+        self.recomputed_mac = self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray)
+        return self.recomputed_mac
 
     def are_computed_and_transmitted_mac_equal(self) -> bool:
         computed_mac_as_byte_array = self.recompute_mac()
@@ -241,6 +248,18 @@ class UnisigS98Simulation:
         self.equipments: list[Unisig98Equipment] = []
         self.last_au1_packet_by_interlocutors: dict[tuple[str, str], UnisigS98Au1WiresharkPacket] = {}
         self.last_connexion_by_interlocutors: dict[tuple[str, str], triple_des_s98.ConnectionUnisig98] = {}
+        self.directories_parsed: list[str] = []
+        self.files_full_paths_parsed: list[str] = []
+
+    @property
+    def label(self) -> str:
+        if self.directories_parsed:
+            return " ".join(self.directories_parsed)
+
+        if self.files_full_paths_parsed:
+            return " ".join([file_name_utils.get_file_name_without_extension_from_full_path(file_full_path_parsed) for file_full_path_parsed in self.files_full_paths_parsed])
+
+        return ""
 
     def register_au1_packet(self, au1_packet: UnisigS98Au1WiresharkPacket) -> None:
         self.get_or_create_equipment_by_ip_address_and_etcs_id(au1_packet.ip_src_str, au1_packet.calling_etcs_id)
@@ -267,6 +286,7 @@ class UnisigS98Simulation:
 
     def build_unisig_s98_packets_from_load_pcap_files_in_directory(self, pcap_directory_full_path: str, filename_pattern: str = "*") -> None:
 
+        self.directories_parsed.append(pcap_directory_full_path)
         all_pcap_files_full_paths = file_utils.get_files_by_directory_and_file_name_mask(
             directory_path=pcap_directory_full_path,
             file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER,
@@ -279,6 +299,7 @@ class UnisigS98Simulation:
     @logger_config.stopwatch_decorator(monitor_ram_usage=True)
     def build_unisig_s98_packets_from_load_pcap_file(self, pcap_file_full_path: str) -> None:
 
+        self.files_full_paths_parsed.append(pcap_file_full_path)
         capture = pyshark.FileCapture(pcap_file_full_path, tshark_path=TSHARK_FULL_PATH, display_filter="ss098")
 
         number_of_packets_parsed = 0
@@ -290,7 +311,7 @@ class UnisigS98Simulation:
             packet = cast(pyshark.packet.packet.Packet, packet)
             try:
                 if packet.transport_layer == UNISIG_TRANSPORT_LAYER and int(packet.tcp.port) in UNISIG_S98_PORTS and "payload" in packet.tcp.field_names and packet.get_multiple_layers("ss098"):
-                    unisig_s98_packets_found.append(self.build_unisig_s98_packet_from_wireshark_packet(packet))
+                    unisig_s98_packets_found.append(self.build_unisig_s98_packet_from_wireshark_packet(packet, pcap_file_full_path))
 
             except (AttributeError, ValueError, AssertionError) as exc_catched:
                 logger_config.print_and_log_exception(exc_catched)
@@ -304,10 +325,11 @@ class UnisigS98Simulation:
             )
         self.unisig_s98_packets += unisig_s98_packets_found
 
-    def build_unisig_s98_packet_from_wireshark_packet(self, wireshark_packet: pyshark.packet.packet.Packet) -> UnisigS98WiresharkPacket:
+    def build_unisig_s98_packet_from_wireshark_packet(self, wireshark_packet: pyshark.packet.packet.Packet, pcap_file_full_path: str) -> UnisigS98WiresharkPacket:
         tcp_payload = HexaValueSplitBySemiColonInWireshark(wireshark_packet.tcp.payload)
         tcp_payload_without_ale_header = HexaValueSplitBySemiColonInWireshark(tcp_payload.raw_str_value[30:])
 
+        number = wireshark_packet.number
         ip_dst_str = wireshark_packet.ip.dst
         ip_src_str = wireshark_packet.ip.src
 
@@ -333,10 +355,12 @@ class UnisigS98Simulation:
         if packet_type == UnisigS98PacketType.AU_1_AUTHENTICATION_PACKET_TYPE_1:
 
             au1_packet = UnisigS98Au1WiresharkPacket(
+                file_full_path=pcap_file_full_path,
                 tcp_payload=tcp_payload,
                 tcp_payload_without_ale_header=tcp_payload_without_ale_header,
                 ip_dst_str=ip_dst_str,
                 ip_src_str=ip_src_str,
+                number=number,
                 ale_header=ale_header,
                 emd_byte=emd_byte,
                 calling_etcs_id_type=UnisigS98EtcsIdType(int(wireshark_packet.ss098.get_field_value("ss098.conn.calling_ety"))),
@@ -351,11 +375,13 @@ class UnisigS98Simulation:
         elif packet_type == UnisigS98PacketType.AU_2_AUTHENTICATION_PACKET_TYPE_2:
             last_au1_packet = self.last_au1_packet_by_interlocutors.get((ip_src_str, ip_dst_str))
             au2 = UnisigS98Au2WiresharkPacket(
+                file_full_path=pcap_file_full_path,
                 last_au1_packet=last_au1_packet,
                 tcp_payload=tcp_payload,
                 tcp_payload_without_ale_header=tcp_payload_without_ale_header,
                 ip_dst_str=ip_dst_str,
                 ip_src_str=ip_src_str,
+                number=number,
                 ale_header=ale_header,
                 emd_byte=emd_byte,
                 responding_etcs_id_type=UnisigS98EtcsIdType(int(wireshark_packet.ss098.get_field_value("ss098.conn.resp_ety"))),
@@ -370,12 +396,14 @@ class UnisigS98Simulation:
             last_connexion = self.last_connexion_by_interlocutors.get((ip_src_str, ip_dst_str))
             if emd_byte.mti == UnisigS98EmdMti.DT_DATA_SAPDU:
                 return UnisigS98DtDataWiresharkPacket(
+                    file_full_path=pcap_file_full_path,
                     last_au1_packet=last_au1_packet,
-                    last_connexion=last_connexion,
+                    connexion_zc_pai=last_connexion,
                     tcp_payload=tcp_payload,
                     tcp_payload_without_ale_header=tcp_payload_without_ale_header,
                     ip_dst_str=ip_dst_str,
                     ip_src_str=ip_src_str,
+                    number=number,
                     ale_header=ale_header,
                     emd_byte=emd_byte,
                     sai_user_data=(
@@ -386,32 +414,47 @@ class UnisigS98Simulation:
 
             elif emd_byte.mti == UnisigS98EmdMti.AU3_THIRD_AUTHENTICATION_SAPDU:
                 return UnisigS98Au3WiresharkPacket(
+                    file_full_path=pcap_file_full_path,
                     tcp_payload=tcp_payload,
                     tcp_payload_without_ale_header=tcp_payload_without_ale_header,
                     ip_dst_str=ip_dst_str,
                     ip_src_str=ip_src_str,
+                    number=number,
                     ale_header=ale_header,
                     emd_byte=emd_byte,
                     mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
                 )
             elif emd_byte.mti == UnisigS98EmdMti.AR_AUTHENTIFICATION_RESPONSE_TO_THIRD_AUTHENTICATION_SAPDU:
                 return UnisigS98AuthenticationResponseWiresharkPacket(
+                    file_full_path=pcap_file_full_path,
                     tcp_payload=tcp_payload,
                     tcp_payload_without_ale_header=tcp_payload_without_ale_header,
                     ip_dst_str=ip_dst_str,
                     ip_src_str=ip_src_str,
+                    number=number,
                     ale_header=ale_header,
                     emd_byte=emd_byte,
                     mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
                 )
-        assert False, f"{wireshark_packet.frame_info}"
-        unisig_98_packet = UnisigS98WiresharkPacket(
-            tcp_payload=tcp_payload,
-            tcp_payload_without_ale_header=tcp_payload_without_ale_header,
-            ip_dst_str=ip_dst_str,
-            ip_src_str=ip_src_str,
-            ale_header=ale_header,
-            emd_byte=emd_byte,
-        )
+            assert False, f"Unsupported emd_byte.mti {emd_byte.mti} in {wireshark_packet.frame_info}"
+        assert False, f"Unsupported packet_type {packet_type} in {wireshark_packet.frame_info}"
 
-        return unisig_98_packet
+    def save_all_packets(self) -> None:
+
+        reports_utils.save_rows_to_output_files(
+            rows_as_list_dict=[
+                OrderedDict(
+                    {
+                        "File name": file_name_utils.get_file_name_without_extension_from_full_path(unisig_s98_packet.file_full_path),
+                        "Number": unisig_s98_packet.number,
+                        "class": unisig_s98_packet.__class__.__name__,
+                    }
+                )
+                for unisig_s98_packet in self.unisig_s98_packets
+            ],
+            file_base_name=self.label + " all packets",
+            create_csv_file=False,
+            create_txt_file=False,
+            split_big_files=False,
+            chunk_size=200000,
+        )
