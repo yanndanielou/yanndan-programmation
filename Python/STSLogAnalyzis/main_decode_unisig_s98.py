@@ -5,6 +5,7 @@ from stsloganalyzis.unisig.s98 import decode_unisig_s98
 OUTPUT_DIRECTORY = "output"
 
 
+@logger_config.stopwatch_decorator(monitor_ram_usage=True)
 def handle_directory(directory_full_path: str, filename_pattern: str = "*") -> None:
     unisig_simulation = decode_unisig_s98.UnisigS98Simulation()
     unisig_simulation.build_unisig_s98_packets_from_load_pcap_files_in_directory(directory_full_path, filename_pattern)
@@ -13,6 +14,7 @@ def handle_directory(directory_full_path: str, filename_pattern: str = "*") -> N
     assert unisig_simulation.unisig_s98_packets
 
 
+@logger_config.stopwatch_decorator(monitor_ram_usage=True)
 def handle_file(file_full_path: str) -> None:
     unisig_simulation = decode_unisig_s98.UnisigS98Simulation()
     unisig_simulation.build_unisig_s98_packets_from_load_pcap_file(file_full_path)
