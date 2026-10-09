@@ -67,6 +67,18 @@ class UnisigS98EmdMti(IntEnum):
     AR_AUTHENTIFICATION_RESPONSE_TO_THIRD_AUTHENTICATION_SAPDU = 9
 
 
+class UnisigS98EmdEty(IntEnum):
+    """6.2.5.2.2 The first authentication SaPDU consists of the fields specified in Table 8."""
+
+    RADIO_IN_FILL_UNIT = 0
+    RBC = 1
+    ENGINE = 2
+    RESERVED_FOR_BALISE = 3
+    RESERVED_FOR_FIELD_ELEMENT_EG_LEVEL_CROSSING_ETC = 4
+    KEY_MANAGEMENT_ENTITY = 5
+    INTERLOCKING_RELATED_ENTITY = 6
+
+
 class UnisigS98PacketType(IntEnum):
     AU_1_AUTHENTICATION_PACKET_TYPE_1 = 1
     AU_2_AUTHENTICATION_PACKET_TYPE_2 = 2
@@ -85,6 +97,7 @@ class UnisigS98WiresharkPacket:
     ale_header: "UnisigS98WiresharkPacket.AleHeader"
     emd_byte: "UnisigS98WiresharkPacket.EmdByte"
     file_full_path: str
+    has_mac_field: bool
 
     @dataclass
     class AleHeader:
@@ -99,7 +112,7 @@ class UnisigS98WiresharkPacket:
     @dataclass
     class EmdByte:
         value: int
-        ety: int
+        ety: UnisigS98EmdEty
         mti: UnisigS98EmdMti
         df: int
 
@@ -354,7 +367,7 @@ class UnisigS98Simulation:
 
         emd_byte = UnisigS98WiresharkPacket.EmdByte(
             value=int(wireshark_packet.ss098.get_field_value("ss098.sai.emd"), 16),
-            ety=int(wireshark_packet.ss098.get_field_value("ss098.sai.ety")),
+            ety=UnisigS98EmdEty(int(wireshark_packet.ss098.get_field_value("ss098.sai.ety"))),
             mti=UnisigS98EmdMti(int(wireshark_packet.ss098.get_field_value("ss098.sai.mti"))),
             df=int(wireshark_packet.ss098.get_field_value("ss098.sai.df")),
         )
@@ -376,6 +389,7 @@ class UnisigS98Simulation:
                 called_etcs_id=int(wireshark_packet.ss098.get_field_value("ss098.conn.called_id")),
                 random_number_b_rb=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.conn.rb")),
                 source_addr_str=wireshark_packet.ss098.get_field_value("ss098.conn.source_addr"),
+                has_mac_field=False,
             )
             self.register_au1_packet(au1_packet)
             return au1_packet
@@ -395,6 +409,7 @@ class UnisigS98Simulation:
                 responding_etcs_id=int(wireshark_packet.ss098.get_field_value("ss098.conn.resp_id")),
                 random_number_a_ra=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.conn.ra")),
                 mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
+                has_mac_field=True,
             )
             self.register_au2_packet(au2)
             return au2
@@ -417,6 +432,7 @@ class UnisigS98Simulation:
                         HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.user_data")) if wireshark_packet.ss098.get_field_value("ss098.sai.user_data") else None
                     ),
                     mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.sai.mac")),
+                    has_mac_field=True,
                 )
 
             elif emd_byte.mti == UnisigS98EmdMti.AU3_THIRD_AUTHENTICATION_SAPDU:
@@ -430,6 +446,7 @@ class UnisigS98Simulation:
                     ale_header=ale_header,
                     emd_byte=emd_byte,
                     mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
+                    has_mac_field=True,
                 )
             elif emd_byte.mti == UnisigS98EmdMti.AR_AUTHENTIFICATION_RESPONSE_TO_THIRD_AUTHENTICATION_SAPDU:
                 return UnisigS98AuthenticationResponseWiresharkPacket(
@@ -442,6 +459,7 @@ class UnisigS98Simulation:
                     ale_header=ale_header,
                     emd_byte=emd_byte,
                     mac=HexaValueSplitBySemiColonInWireshark(wireshark_packet.ss098.get_field_value("ss098.auth.mac")),
+                    has_mac_field=True,
                 )
             assert False, f"Unsupported emd_byte.mti {emd_byte.mti} in {wireshark_packet.frame_info}"
         elif packet_type == UnisigS98PacketType.DISCONNECT_PACKET_TYPE_4:
@@ -457,11 +475,16 @@ class UnisigS98Simulation:
                 remaining_data=HexaValueSplitBySemiColonInWireshark(
                     wireshark_packet.ss098.get_field_value("ss098.data"),
                 ),
+                has_mac_field=False,
             )
             self.register_disconnect_request_packet(disconnect_request)
             return disconnect_request
 
         assert False, f"Unsupported packet_type {packet_type} in {wireshark_packet.frame_info}"
+
+    def recompute_all_mac(self) -> None:
+        for unisig_s98_packet in self.unisig_s98_packets:
+            pass
 
     def save_all_packets(self) -> None:
 
