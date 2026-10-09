@@ -258,7 +258,7 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
         sa_responder_etcsid_as_3_bytes = bytearray(sa_responder_etcsid.to_bytes(3, byteorder="big"))
         assert len(sa_responder_etcsid_as_3_bytes) == 3
 
-        unknwown_value_1_as_1_byte = self.safety_feature_saf
+        unknwown_value_1_as_1_byte = bytearray(self.safety_feature_saf.to_bytes(1, byteorder="big"))
 
         ra_random_number_a_as_8_bytes = self.random_number_a_ra.as_byte_array
         rb_random_number_b_as_8_bytes = self.last_au1_packet.random_number_b_rb.as_byte_array
