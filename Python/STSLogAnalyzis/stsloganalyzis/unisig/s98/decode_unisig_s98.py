@@ -1,16 +1,19 @@
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import cast
 
-from collections import OrderedDict
-
 import pyshark
 import pyshark.packet.packet
-from common import file_utils, reports_utils, file_name_utils
+from common import file_name_utils, file_utils, reports_utils
 from logger import logger_config
 
-from stsloganalyzis.unisig.s98 import secret_equipment_name_from_ip_address, secret_kmac_keys, triple_des_s98
+from stsloganalyzis.unisig.s98 import (
+    secret_equipment_name_from_ip_address,
+    secret_kmac_keys,
+    triple_des_s98,
+)
 
 UNISIG_S98_PORTS = [49451, 49452, 49453, 49454, 49455, 49456, 49457]
 UNISIG_TRANSPORT_LAYER = "TCP"
@@ -118,9 +121,13 @@ class UnisigS98WiresharkPacket:
 
 
 @dataclass
-class UnisigS98WiresharkPacketWithMac(UnisigS98WiresharkPacket):
+class UnisigS98WiresharkPacketWithMac(UnisigS98WiresharkPacket, ABC):
     last_au1_packet: "UnisigS98Au1WiresharkPacket | None"
     mac: HexaValueSplitBySemiColonInWireshark
+
+    def __post_init__(self) -> None:
+        self.recomputed_mac: bytearray | None = None
+        self.recomputed_mac_and_transmitted_mac_are_equals: bool | None = None
 
     @abstractmethod
     def has_context_to_compute_mac(self) -> bool:
@@ -153,6 +160,7 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
     random_number_a_ra: HexaValueSplitBySemiColonInWireshark
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         self.connexion_zc_pai = (
             triple_des_s98.ConnectionUnisig98(
                 secret_kmac_keys.authentication_key_kmac_1,
@@ -166,9 +174,6 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
             if self.last_au1_packet
             else None
         )
-
-        self.recomputed_mac: bytearray | None = None
-        self.recomputed_mac_and_transmitted_mac_are_equals: bool | None = None
 
         if self.connexion_zc_pai:
             assert self.last_au1_packet
@@ -194,11 +199,11 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
 class UnisigS98Au3WiresharkPacket(UnisigS98WiresharkPacketWithMac):
 
     def has_context_to_compute_mac(self) -> bool:
-        logger_config.print_and_log_error(f"Not implemented")
+        logger_config.print_and_log_error("Not implemented")
         assert False
 
     def recompute_mac(self) -> bytearray:
-        logger_config.print_and_log_error(f"Not implemented")
+        logger_config.print_and_log_error("Not implemented")
         assert False
 
 
@@ -206,20 +211,18 @@ class UnisigS98Au3WiresharkPacket(UnisigS98WiresharkPacketWithMac):
 class UnisigS98AuthenticationResponseWiresharkPacket(UnisigS98WiresharkPacketWithMac):
 
     def has_context_to_compute_mac(self) -> bool:
-        logger_config.print_and_log_error(f"Not implemented")
+        logger_config.print_and_log_error("Not implemented")
         assert False
 
     def recompute_mac(self) -> bytearray:
-        logger_config.print_and_log_error(f"Not implemented")
+        logger_config.print_and_log_error("Not implemented")
         assert False
 
 
 @dataclass
-class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
-    last_au1_packet: UnisigS98Au1WiresharkPacket | None
+class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacketWithMac):
     connexion_zc_pai: triple_des_s98.ConnectionUnisig98 | None
     sai_user_data: HexaValueSplitBySemiColonInWireshark | None
-    mac: HexaValueSplitBySemiColonInWireshark
 
     @dataclass
     class DataToComputeMac:
@@ -233,6 +236,7 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
             self.all_blocks_bytearray = self.length_bytearray + self.da_bytearray + self.message_bytearray + self.padding_bytearray
 
     def __post_init__(self) -> None:
+        super().__post_init__()
         self.tcp_payload_without_ale_header_and_mac = HexaValueSplitBySemiColonInWireshark(self.tcp_payload_without_ale_header.raw_str_value[:-24])
         self.recomputed_mac: bytearray | None = None
         self.recomputed_mac_and_transmitted_mac_are_equals: bool | None = None
@@ -266,6 +270,9 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacket):
             message_bytearray=self.tcp_payload_without_ale_header_and_mac.as_byte_array,
             padding_bytearray=padding,
         )
+
+    def has_context_to_compute_mac(self) -> bool:
+        return self.last_au1_packet is not None and self.connexion_zc_pai is not None
 
     def recompute_mac(self) -> bytearray:
         assert self.last_au1_packet
@@ -307,14 +314,14 @@ class UnisigS98Simulation:
         return ""
 
     def register_au1_packet(self, packet: UnisigS98Au1WiresharkPacket) -> None:
-        logger_config.print_and_log_info(f"AU1 packet detected from {packet.ip_src_str} to packet.ip_dst_str")
+        logger_config.print_and_log_info(f"AU1 packet detected from {packet.ip_src_str} to {packet.ip_dst_str}")
         self.get_or_create_equipment_by_ip_address_and_etcs_id(packet.ip_src_str, packet.calling_etcs_id)
         self.get_or_create_equipment_by_ip_address_and_etcs_id(packet.ip_dst_str, packet.called_etcs_id)
         self.last_au1_packet_by_interlocutors[(packet.ip_src_str, packet.ip_dst_str)] = packet
         self.last_au1_packet_by_interlocutors[(packet.ip_dst_str, packet.ip_src_str)] = packet
 
     def register_au2_packet(self, packet: UnisigS98Au2WiresharkPacket) -> None:
-        logger_config.print_and_log_info(f"AU2 packet detected from {packet.ip_src_str} to packet.ip_dst_str")
+        logger_config.print_and_log_info(f"AU2 packet detected from {packet.ip_src_str} to {packet.ip_dst_str}")
         if not packet.connexion_zc_pai:
             logger_config.print_and_log_error(f"Could not handle AU2 packet {packet} because no previous AU1 packet")
             self.last_connexion_by_interlocutors.pop((packet.ip_src_str, packet.ip_dst_str))
@@ -324,7 +331,7 @@ class UnisigS98Simulation:
         self.last_connexion_by_interlocutors[(packet.ip_dst_str, packet.ip_src_str)] = packet.connexion_zc_pai
 
     def register_disconnect_request_packet(self, packet: UnisigS98PaiDisconnectRequest) -> None:
-        logger_config.print_and_log_info(f"Disconnect request packet detected from {packet.ip_src_str} to packet.ip_dst_str")
+        logger_config.print_and_log_info(f"Disconnect request packet detected from {packet.ip_src_str} to {packet.ip_dst_str}")
         self.last_connexion_by_interlocutors.pop((packet.ip_src_str, packet.ip_dst_str), None)
         self.last_connexion_by_interlocutors.pop((packet.ip_dst_str, packet.ip_src_str), None)
         self.last_au1_packet_by_interlocutors.pop((packet.ip_src_str, packet.ip_dst_str), None)
@@ -513,7 +520,7 @@ class UnisigS98Simulation:
         assert False, f"Unsupported packet_type {packet_type} in {wireshark_packet.frame_info}"
 
     @logger_config.stopwatch_decorator(monitor_ram_usage=True, inform_beginning=True)
-    def recompute_all_mac(self) -> None:
+    def recompute_all_mac(self) -> tuple[int, int]:
         mac_computed = 0
         errors = 0
         for unisig_s98_packet in self.unisig_s98_packets:
@@ -526,6 +533,7 @@ class UnisigS98Simulation:
                 errors += 1
 
         logger_config.print_and_log_info(f"{mac_computed} mac computed. {errors} errors")
+        return mac_computed, errors
 
     def save_all_packets(self) -> None:
 
@@ -536,6 +544,17 @@ class UnisigS98Simulation:
                         "File name": file_name_utils.get_file_name_without_extension_from_full_path(unisig_s98_packet.file_full_path),
                         "Number": unisig_s98_packet.number,
                         "class": unisig_s98_packet.__class__.__name__,
+                        "ip_src_str": unisig_s98_packet.ip_src_str,
+                        "ip_dst_str": unisig_s98_packet.ip_dst_str,
+                        "emd_byte": unisig_s98_packet.emd_byte,
+                        "ale length": unisig_s98_packet.ale_header.length,
+                        "ale packet type": unisig_s98_packet.ale_header.packet_type,
+                        "has mac": unisig_s98_packet.mac if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) else None,
+                        "mac": unisig_s98_packet.mac if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) else None,
+                        "recomputed_mac": unisig_s98_packet.recomputed_mac if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and self.unisig_s98_packet.recomputed_mac else None,
+                        "recomputed_mac_and_transmitted_mac_are_equals": (
+                            unisig_s98_packet.recomputed_mac_and_transmitted_mac_are_equals if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) else None
+                        ),
                     }
                 )
                 for unisig_s98_packet in self.unisig_s98_packets
