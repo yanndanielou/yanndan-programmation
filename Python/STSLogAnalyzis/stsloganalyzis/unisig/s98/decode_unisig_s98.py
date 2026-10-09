@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from collections import OrderedDict
 from dataclasses import dataclass
 from enum import IntEnum
@@ -19,6 +20,14 @@ UNISIG_S98_PORTS = [49451, 49452, 49453, 49454, 49455, 49456, 49457]
 UNISIG_TRANSPORT_LAYER = "TCP"
 
 TSHARK_FULL_PATH: str = r"C:\Program Files\Wireshark"
+
+
+def byte_array_to_string(as_byte_array: bytearray) -> str:
+    ret = ""
+    for i in range(len(as_byte_array)):
+        ret += f"{int(as_byte_array[i])}:"
+    ret = ret[:-1]
+    return ret
 
 
 @dataclass
@@ -101,6 +110,8 @@ class UnisigS98WiresharkPacket:
     ale_header: "UnisigS98WiresharkPacket.AleHeader"
     emd_byte: "UnisigS98WiresharkPacket.EmdByte"
     file_full_path: str
+    sniff_time: datetime
+    sniff_timestamp_str: str
 
     @dataclass
     class AleHeader:
@@ -390,6 +401,8 @@ class UnisigS98Simulation:
         tcp_payload = HexaValueSplitBySemiColonInWireshark(wireshark_packet.tcp.payload)
         tcp_payload_without_ale_header = HexaValueSplitBySemiColonInWireshark(tcp_payload.raw_str_value[30:])
 
+        sniff_time = wireshark_packet.sniff_time
+        sniff_timestamp_str = wireshark_packet.sniff_timestamp
         number = int(wireshark_packet.number)
         ip_dst_str = wireshark_packet.ip.dst
         ip_src_str = wireshark_packet.ip.src
@@ -417,6 +430,8 @@ class UnisigS98Simulation:
 
             au1_packet = UnisigS98Au1WiresharkPacket(
                 file_full_path=pcap_file_full_path,
+                sniff_time=sniff_time,
+                sniff_timestamp_str=sniff_timestamp_str,
                 tcp_payload=tcp_payload,
                 tcp_payload_without_ale_header=tcp_payload_without_ale_header,
                 ip_dst_str=ip_dst_str,
@@ -437,6 +452,8 @@ class UnisigS98Simulation:
             last_au1_packet = self.last_au1_packet_by_interlocutors.get((ip_src_str, ip_dst_str))
             au2 = UnisigS98Au2WiresharkPacket(
                 file_full_path=pcap_file_full_path,
+                sniff_time=sniff_time,
+                sniff_timestamp_str=sniff_timestamp_str,
                 last_au1_packet=last_au1_packet,
                 tcp_payload=tcp_payload,
                 tcp_payload_without_ale_header=tcp_payload_without_ale_header,
@@ -458,6 +475,8 @@ class UnisigS98Simulation:
             if emd_byte.mti == UnisigS98EmdMti.DT_DATA_SAPDU:
                 return UnisigS98DtDataWiresharkPacket(
                     file_full_path=pcap_file_full_path,
+                    sniff_time=sniff_time,
+                    sniff_timestamp_str=sniff_timestamp_str,
                     last_au1_packet=last_au1_packet,
                     connexion_zc_pai=last_connexion,
                     tcp_payload=tcp_payload,
@@ -477,6 +496,8 @@ class UnisigS98Simulation:
                 return UnisigS98Au3WiresharkPacket(
                     last_au1_packet=last_au1_packet,
                     file_full_path=pcap_file_full_path,
+                    sniff_time=sniff_time,
+                    sniff_timestamp_str=sniff_timestamp_str,
                     tcp_payload=tcp_payload,
                     tcp_payload_without_ale_header=tcp_payload_without_ale_header,
                     ip_dst_str=ip_dst_str,
@@ -490,6 +511,8 @@ class UnisigS98Simulation:
                 return UnisigS98AuthenticationResponseWiresharkPacket(
                     last_au1_packet=last_au1_packet,
                     file_full_path=pcap_file_full_path,
+                    sniff_time=sniff_time,
+                    sniff_timestamp_str=sniff_timestamp_str,
                     tcp_payload=tcp_payload,
                     tcp_payload_without_ale_header=tcp_payload_without_ale_header,
                     ip_dst_str=ip_dst_str,
@@ -503,6 +526,8 @@ class UnisigS98Simulation:
         elif packet_type == UnisigS98PacketType.DISCONNECT_PACKET_TYPE_4:
             disconnect_request = UnisigS98PaiDisconnectRequest(
                 file_full_path=pcap_file_full_path,
+                sniff_time=sniff_time,
+                sniff_timestamp_str=sniff_timestamp_str,
                 tcp_payload=tcp_payload,
                 tcp_payload_without_ale_header=tcp_payload_without_ale_header,
                 ip_dst_str=ip_dst_str,
@@ -559,7 +584,7 @@ class UnisigS98Simulation:
                             unisig_s98_packet.recomputed_mac if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac else None
                         ),
                         "recomputed mac as str": (
-                            unisig_s98_packet.recomputed_mac.decode("utf-8") if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac else None
+                            byte_array_to_string(unisig_s98_packet.recomputed_mac) if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac else None
                         ),
                         "recomputed_mac_and_transmitted_mac_are_equals": (
                             unisig_s98_packet.recomputed_mac_and_transmitted_mac_are_equals if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) else None
