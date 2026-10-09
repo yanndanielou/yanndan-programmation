@@ -551,7 +551,7 @@ class UnisigS98Simulation:
                         "ale packet type": unisig_s98_packet.ale_header.packet_type,
                         "has mac": unisig_s98_packet.mac if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) else None,
                         "mac": unisig_s98_packet.mac if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) else None,
-                        "recomputed_mac": unisig_s98_packet.recomputed_mac if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and self.unisig_s98_packet.recomputed_mac else None,
+                        "recomputed_mac": unisig_s98_packet.recomputed_mac if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac else None,
                         "recomputed_mac_and_transmitted_mac_are_equals": (
                             unisig_s98_packet.recomputed_mac_and_transmitted_mac_are_equals if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) else None
                         ),
