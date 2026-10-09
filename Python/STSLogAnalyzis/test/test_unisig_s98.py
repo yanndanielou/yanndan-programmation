@@ -13,7 +13,7 @@ class TestLoadLibraryFromFromWiresharkCapture:
             pcap_file_full_path = r"test\resources\unisig_s98\small_capture_started_after_connexion.pcapng"
             simulation = decode_unisig_s98.UnisigS98Simulation()
             simulation.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
-)
+            assert simulation.unisig_s98_packets
 
 
 class TestComputeMacFromWiresharkCapture:
