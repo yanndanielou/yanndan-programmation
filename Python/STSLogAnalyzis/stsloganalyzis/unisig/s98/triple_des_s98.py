@@ -642,6 +642,22 @@ def convert_mac_to_string_of_hexas(mac: bytearray) -> str:
     return f"{mac[0]:x} {mac[1]:x} {mac[2]:x} {mac[3]:x} {mac[4]:x} {mac[5]:x} {mac[6]:x} {mac[7]:x}"
 
 
+def byte_array_to_string_base_10(as_byte_array: bytearray) -> str:
+    ret = ""
+    for i in range(len(as_byte_array)):
+        ret += f"{int(as_byte_array[i])}:"
+    ret = ret[:-1]
+    return ret
+
+
+def byte_array_to_string_base_16(as_byte_array: bytearray) -> str:
+    ret = ""
+    for i in range(len(as_byte_array)):
+        ret += f"{hex(int(as_byte_array[i]))[2:]}:"
+    ret = ret[:-1]
+    return ret
+
+
 def afficher_64bits(s: str, bytes_array: Sequence[int]) -> None:
     print(s, end="")
     for i in range(8):
@@ -733,6 +749,10 @@ class ConnectionUnisig98:
         ral_l_rb_l: bytearray = bytearray(8)
         ra_r_rb_r: bytearray = bytearray(8)
 
+        if verbose:
+            print(f"random_number_a: {random_number_a}")
+            print(f"random_number_b: {random_number_b}")
+
         for i in range(4):
             self.random_a[i] = random_number_a[i]
             self.random_b[i] = random_number_b[i]
@@ -792,59 +812,63 @@ class ConnectionUnisig98:
                 print("for connection 2", end="")
             print(" ...")
 
-        AU2_bloc1: bytearray = bytearray(8)
-        AU2_bloc2: bytearray = bytearray(8)
-        AU2_bloc3: bytearray = bytearray(8)
-        AU2_bloc4: bytearray = bytearray(8)
+        au2_bloc1: bytearray = bytearray(8)
+        au2_bloc2: bytearray = bytearray(8)
+        au2_bloc3: bytearray = bytearray(8)
+        au2_bloc4: bytearray = bytearray(8)
 
-        Initiator_Etcs_Id: bytearray = bytearray(3)
+        initiator_etcs_id: bytearray = bytearray(3)
         Responder_Etcs_Id: bytearray = bytearray(3)
 
         remaining_value1: int = self.initiator_etcs_id
         remaining_value2: int = self.responder_etcs_id
         for i in range(3):
-            Initiator_Etcs_Id[2 - i] = remaining_value1 % 256
+            initiator_etcs_id[2 - i] = remaining_value1 % 256
             remaining_value1 //= 256
             Responder_Etcs_Id[2 - i] = remaining_value2 % 256
             remaining_value2 //= 256
 
         # Creation de G_MAC_INPUT_AU2
-        AU2_bloc1[0] = 0
-        AU2_bloc1[1] = 27  # longueur
+        au2_bloc1[0] = 0
+        au2_bloc1[1] = 27  # longueur
         for i in range(3):
-            AU2_bloc1[i + 2] = Initiator_Etcs_Id[i]  # DA
-        AU2_bloc1[5] = self.responder_type + 5  # ETY + MTI + DF
+            au2_bloc1[i + 2] = initiator_etcs_id[i]  # DA
+        au2_bloc1[5] = self.responder_type + 5  # ETY + MTI + DF
         for i in range(3):  # SA
             if i + 6 < 8:
-                AU2_bloc1[i + 6] = Responder_Etcs_Id[i]
+                au2_bloc1[i + 6] = Responder_Etcs_Id[i]
             else:
-                AU2_bloc2[i - 2] = Responder_Etcs_Id[i]
+                au2_bloc2[i - 2] = Responder_Etcs_Id[i]
 
-        AU2_bloc2[1] = 1
+        au2_bloc2[1] = 1
         for i in range(8):  # RA
             if i + 2 < 8:
-                AU2_bloc2[i + 2] = self.random_a[i]
+                au2_bloc2[i + 2] = self.random_a[i]
             else:
-                AU2_bloc3[i - 6] = self.random_a[i]
+                au2_bloc3[i - 6] = self.random_a[i]
 
         for i in range(8):  # RB
             if i + 2 < 8:
-                AU2_bloc3[i + 2] = self.random_b[i]
+                au2_bloc3[i + 2] = self.random_b[i]
             else:
-                AU2_bloc4[i - 6] = self.random_b[i]
+                au2_bloc4[i - 6] = self.random_b[i]
 
         for i in range(3):
-            AU2_bloc4[i + 2] = Initiator_Etcs_Id[i]  # DA (=B)
+            au2_bloc4[i + 2] = initiator_etcs_id[i]  # DA (=B)
         for i in range(5, 8):
-            AU2_bloc4[i] = 0  # padding
+            au2_bloc4[i] = 0  # padding
 
         if verbose:
-            afficher_64bits("bloc1 (msg AU2) = ", AU2_bloc1)
-            afficher_64bits("bloc2 (msg AU2) = ", AU2_bloc2)
-            afficher_64bits("bloc3 (msg AU2) = ", AU2_bloc3)
-            afficher_64bits("bloc4 (msg AU2) = ", AU2_bloc4)
+            print(f"bloc1 (msg AU2) = {byte_array_to_string_base_16(au2_bloc1)}")
+            afficher_64bits("bloc1 (msg AU2) = ", au2_bloc1)
+            print(f"bloc2 (msg AU2) = {byte_array_to_string_base_16(au2_bloc1)}")
+            afficher_64bits("bloc2 (msg AU2) = ", au2_bloc2)
+            print(f"bloc3 (msg AU2) = {byte_array_to_string_base_16(au2_bloc1)}")
+            afficher_64bits("bloc3 (msg AU2) = ", au2_bloc3)
+            print(f"bloc4 (msg AU2) = {byte_array_to_string_base_16(au2_bloc1)}")
+            afficher_64bits("bloc4 (msg AU2) = ", au2_bloc4)
 
-        return calcul_mac_n_Blocks(AU2_bloc1 + AU2_bloc2 + AU2_bloc3 + AU2_bloc4, self.session_key_1, self.session_key_2, self.session_key_3)
+        return calcul_mac_n_Blocks(au2_bloc1 + au2_bloc2 + au2_bloc3 + au2_bloc4, self.session_key_1, self.session_key_2, self.session_key_3)
 
     def compute_mac_n_blocks(self, blocks: Sequence[int], verbose: bool = False) -> bytearray:
         assert len(blocks) % 8 == 0
