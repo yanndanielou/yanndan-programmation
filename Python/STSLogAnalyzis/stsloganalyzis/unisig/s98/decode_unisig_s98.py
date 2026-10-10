@@ -33,6 +33,12 @@ class Unisig98Equipment:
         logger_config.print_and_log_info(f"Equipment created:{self}")
 
 
+@dataclass
+class Unisig98Communication:
+    initiator: Unisig98Equipment
+    responder: Unisig98Equipment
+
+
 def convert_wireshark_string_colon_separated_bytes_to_byte_array(wireshark_string_column_separated_bytes: str) -> bytearray:
     bytes_as_list_of_int = [int("0x" + byte_str, 16) for byte_str in wireshark_string_column_separated_bytes.split(":")]
     return bytearray(bytes_as_list_of_int)
@@ -369,10 +375,11 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacketWithMac):
             pass
 
     def get_data_to_compute_mac(self) -> DataToComputeMac:
-        assert self.connexion_zc_pai
         assert self.last_au1_packet
         message_receiver_etcsid = self.last_au1_packet.get_etcs_id_from_ip_address(self.ip_dst_str)
-        # message_receiver_etcsid_as_3_bytes = bytearray(message_receiver_etcsid)
+        return self.get_data_to_compute_mac_knowing_message_receiver_etcsid(message_receiver_etcsid)
+
+    def get_data_to_compute_mac_knowing_message_receiver_etcsid(self, message_receiver_etcsid: int) -> DataToComputeMac:
         message_receiver_etcsid_as_3_bytes = bytearray(message_receiver_etcsid.to_bytes(3, byteorder="big"))
 
         assert len(message_receiver_etcsid_as_3_bytes) == 3
@@ -405,6 +412,18 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacketWithMac):
         data_to_compute_mac = self.get_data_to_compute_mac()
         self.set_recomputed_mac(self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray))
 
+    def recompute_data_knowing_etcs_ids(self, message_receiver_etcsid: int, initiator_etcs_id: int, responder_etcs_id: int) -> None:
+
+        self.connexion_zc_pai = triple_des_s98.ConnectionUnisig98(
+            secret_kmac_keys.authentication_key_kmac_1,
+            secret_kmac_keys.authentication_key_kmac_2,
+            secret_kmac_keys.authentication_key_kmac_3,
+            initiator_etcs_id,
+            responder_etcs_id,
+            192,
+            True,
+        )
+
 
 @dataclass
 class UnisigS98PaiDisconnectRequest(UnisigS98WiresharkPacket):
@@ -433,14 +452,14 @@ class UnisigS98Simulation:
         return ""
 
     def register_au1_packet(self, packet: UnisigS98Au1WiresharkPacket) -> None:
-        logger_config.print_and_log_info(f"AU1 packet detected from {packet.ip_src_str} to {packet.ip_dst_str}")
+        logger_config.print_and_log_info(f"AU1 packet detected from {packet.ip_src_str} to {packet.ip_dst_str}: {packet}")
         self.get_or_create_equipment_by_ip_address_and_etcs_id(packet.ip_src_str, packet.calling_etcs_id)
         self.get_or_create_equipment_by_ip_address_and_etcs_id(packet.ip_dst_str, packet.called_etcs_id)
         self.last_au1_packet_by_interlocutors[(packet.ip_src_str, packet.ip_dst_str)] = packet
         self.last_au1_packet_by_interlocutors[(packet.ip_dst_str, packet.ip_src_str)] = packet
 
     def register_au2_packet(self, packet: UnisigS98Au2WiresharkPacket) -> None:
-        logger_config.print_and_log_info(f"AU2 packet detected from {packet.ip_src_str} to {packet.ip_dst_str}")
+        logger_config.print_and_log_info(f"AU2 packet detected from {packet.ip_src_str} to {packet.ip_dst_str}: {packet}")
         if not packet.connexion_zc_pai:
             logger_config.print_and_log_error(f"Could not handle AU2 packet {packet} because no previous AU1 packet")
             self.last_connexion_by_interlocutors.pop((packet.ip_src_str, packet.ip_dst_str), None)
