@@ -33,6 +33,8 @@ class JsonEncodersUtils(metaclass=singleton.Singleton):
     @staticmethod
     def serialize_list_objects_in_json(list_objects: list[Any], json_file_full_path: str, split_big_files: bool = True, chunk_size: int = 20000) -> None:
 
+        if json_file_full_path.endswith(".json"):
+            json_file_full_path += ".json"
         with logger_config.stopwatch_with_label(f"Serialize {len(list_objects)} objects in {json_file_full_path}"):
             with open(json_file_full_path, "w", encoding="utf-8") as json_file:
                 json_file.write("[\n")
