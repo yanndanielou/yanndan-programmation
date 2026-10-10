@@ -409,7 +409,7 @@ class UnisigS98Simulation:
     @property
     def label(self) -> str:
         if self.directories_parsed:
-            return " ".join(file_name_utils.get_directory_name_from_directory_full_path(self.directories_parsed))
+            return " ".join([file_name_utils.get_directory_name_from_directory_full_path(directory_parsed) for directory_parsed in self.directories_parsed])
 
         if self.files_full_paths_parsed:
             return " ".join([file_name_utils.get_file_name_without_extension_from_full_path(file_full_path_parsed) for file_full_path_parsed in self.files_full_paths_parsed])
@@ -654,8 +654,8 @@ class UnisigS98Simulation:
         logger_config.print_and_log_info(f"{mac_computed} mac computed. {errors} errors")
         return mac_computed, errors
 
-    def dump_packets_as_json(self) -> None:
-        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(self.unisig_s98_packets, self.label + " json dump")
+    def dump_packets_as_json(self, output_directory: str) -> None:
+        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(self.unisig_s98_packets, json_file_full_path=output_directory + "\\" + self.label + " json dump")
 
     def save_all_packets_as_reports(self) -> None:
 
