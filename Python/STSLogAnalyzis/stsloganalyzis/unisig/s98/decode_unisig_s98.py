@@ -129,6 +129,17 @@ class UnisigS98WiresharkPacketWithMac(UnisigS98WiresharkPacket, ABC):
     last_au1_packet: "UnisigS98Au1WiresharkPacket | None"
     transmitted_mac: HexaValueSplitBySemiColonInWireshark
 
+    @dataclass
+    class DataToComputeMac:
+        length_bytearray: bytearray
+        padding_bytearray: bytearray
+
+        def __post_init__(self) -> None:
+            self.all_blocks_byte_array_to_string_base_16 = ""
+            self.all_blocks_byte_array_to_string_base_10 = ""
+
+            self.explanations_for_debug = ""
+
     def __post_init__(self) -> None:
         self.recomputed_mac: bytearray | None = None
         self.recomputed_mac_and_transmitted_mac_are_equals: bool | None = None
@@ -165,18 +176,17 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
     random_number_a_ra: HexaValueSplitBySemiColonInWireshark
 
     @dataclass
-    class DataToComputeMac:
-        length_bytearray: bytearray
+    class DataToComputeMac(UnisigS98WiresharkPacketWithMac.DataToComputeMac):
         da_bytearray: bytearray
         ety_mti_df_as_byte_array: bytearray
         sa_responder_etcsid_as_3_bytes: bytearray
         safety_feature_saf_as_1_byte: bytearray
         ra_random_number_a_as_8_bytes: bytearray
         rb_random_number_b_as_8_bytes: bytearray
-        padding_bytearray: bytearray
+        da_b_as_8_bytes: bytearray
 
         def __post_init__(self) -> None:
-            # l | DA | m + padding
+            super().__post_init__()
             self.all_blocks_bytearray = (
                 self.length_bytearray
                 + self.da_bytearray
@@ -185,12 +195,21 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
                 + self.safety_feature_saf_as_1_byte
                 + self.ra_random_number_a_as_8_bytes
                 + self.rb_random_number_b_as_8_bytes
-                + self.da_bytearray
+                + self.da_b_as_8_bytes
                 + self.padding_bytearray
             )
             self.all_blocks_byte_array_to_string_base_16 = bytes_utils.byte_array_to_string_base_16(self.all_blocks_bytearray)
             self.all_blocks_byte_array_to_string_base_10 = bytes_utils.byte_array_to_string_base_10(self.all_blocks_bytearray)
-            pass
+
+            self.explanations_for_debug = f"length: {bytes_utils.byte_array_to_string_base_16(self.length_bytearray)}"
+            self.explanations_for_debug += f", da: {bytes_utils.byte_array_to_string_base_16(self.da_bytearray)}"
+            self.explanations_for_debug += f", ety_mti_df: {bytes_utils.byte_array_to_string_base_16(self.ety_mti_df_as_byte_array)}"
+            self.explanations_for_debug += f", sa_responder_etcsid: {bytes_utils.byte_array_to_string_base_16(self.sa_responder_etcsid_as_3_bytes)}"
+            self.explanations_for_debug += f", safety_feature_saf: {bytes_utils.byte_array_to_string_base_16(self.safety_feature_saf_as_1_byte)}"
+            self.explanations_for_debug += f", ra_random_number_a: {bytes_utils.byte_array_to_string_base_16(self.ra_random_number_a_as_8_bytes)}"
+            self.explanations_for_debug += f", rb_random_number_b: {bytes_utils.byte_array_to_string_base_16(self.rb_random_number_b_as_8_bytes)}"
+            self.explanations_for_debug += f", da_b: {bytes_utils.byte_array_to_string_base_16(self.da_b_as_8_bytes)}"
+            self.explanations_for_debug += f", padding: {bytes_utils.byte_array_to_string_base_16(self.padding_bytearray)}"
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -255,6 +274,7 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
             safety_feature_saf_as_1_byte=unknwown_value_1_as_1_byte,
             ra_random_number_a_as_8_bytes=ra_random_number_a_as_8_bytes,
             rb_random_number_b_as_8_bytes=rb_random_number_b_as_8_bytes,
+            da_b_as_8_bytes=rb_random_number_b_as_8_bytes,
             padding_bytearray=padding,
         )
 
@@ -319,8 +339,18 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacketWithMac):
         padding_bytearray: bytearray
 
         def __post_init__(self) -> None:
+            super().__post_init__()
+
             # l | DA | m + padding
             self.all_blocks_bytearray = self.length_bytearray + self.da_bytearray + self.message_bytearray + self.padding_bytearray
+
+            self.all_blocks_byte_array_to_string_base_16 = bytes_utils.byte_array_to_string_base_16(self.all_blocks_bytearray)
+            self.all_blocks_byte_array_to_string_base_10 = bytes_utils.byte_array_to_string_base_10(self.all_blocks_bytearray)
+
+            self.explanations_for_debug = f"length: {bytes_utils.byte_array_to_string_base_16(self.length_bytearray)}"
+            self.explanations_for_debug += f", da: {bytes_utils.byte_array_to_string_base_16(self.da_bytearray)}"
+            self.explanations_for_debug += f", message: {bytes_utils.byte_array_to_string_base_16(self.message_bytearray)}"
+            self.explanations_for_debug += f", padding: {bytes_utils.byte_array_to_string_base_16(self.padding_bytearray)}"
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -448,30 +478,33 @@ class UnisigS98Simulation:
     def build_unisig_s98_packets_from_load_pcap_file(self, pcap_file_full_path: str) -> None:
 
         self.files_full_paths_parsed.append(pcap_file_full_path)
-        capture = pyshark.FileCapture(pcap_file_full_path, tshark_path=TSHARK_FULL_PATH, display_filter="ss098")
+        try:
+            capture = pyshark.FileCapture(pcap_file_full_path, tshark_path=TSHARK_FULL_PATH, display_filter="ss098")
 
-        number_of_packets_parsed = 0
-        number_of_errors = 0
-        unisig_s98_packets_found: list[UnisigS98WiresharkPacket] = []
+            number_of_packets_parsed = 0
+            number_of_errors = 0
+            unisig_s98_packets_found: list[UnisigS98WiresharkPacket] = []
 
-        for number_of_packets_parsed, packet in enumerate(capture):
+            for number_of_packets_parsed, packet in enumerate(capture):
 
-            packet = cast(pyshark.packet.packet.Packet, packet)
-            try:
-                if packet.transport_layer == UNISIG_TRANSPORT_LAYER and int(packet.tcp.port) in UNISIG_S98_PORTS and "payload" in packet.tcp.field_names and packet.get_multiple_layers("ss098"):
-                    unisig_s98_packets_found.append(self.build_unisig_s98_packet_from_wireshark_packet(packet, pcap_file_full_path))
+                packet = cast(pyshark.packet.packet.Packet, packet)
+                try:
+                    if packet.transport_layer == UNISIG_TRANSPORT_LAYER and int(packet.tcp.port) in UNISIG_S98_PORTS and "payload" in packet.tcp.field_names and packet.get_multiple_layers("ss098"):
+                        unisig_s98_packets_found.append(self.build_unisig_s98_packet_from_wireshark_packet(packet, pcap_file_full_path))
 
-            except (AttributeError, ValueError, AssertionError) as exc_catched:
-                logger_config.print_and_log_exception(exc_catched)
-                logger_config.print_and_log_error(f"Could not parse {number_of_packets_parsed+1} th packet of {pcap_file_full_path} at {packet.frame_info}")
-                number_of_errors += 1
+                except (AttributeError, ValueError, AssertionError) as exc_catched:
+                    logger_config.print_and_log_exception(exc_catched)
+                    logger_config.print_and_log_error(f"Could not parse {number_of_packets_parsed+1} th packet of {pcap_file_full_path} at {packet.frame_info}")
+                    number_of_errors += 1
 
-            logger_config.print_and_log_info_if(
-                (number_of_packets_parsed + 1) % 1000 == 0,
-                f"{number_of_packets_parsed+1} packets parsed, {len(unisig_s98_packets_found)} unisig packets found so far in {pcap_file_full_path}",
-                print_ram_usage=True,
-            )
-        self.unisig_s98_packets += unisig_s98_packets_found
+                logger_config.print_and_log_info_if(
+                    (number_of_packets_parsed + 1) % 1000 == 0,
+                    f"{number_of_packets_parsed+1} packets parsed, {len(unisig_s98_packets_found)} unisig packets found so far in {pcap_file_full_path}",
+                    print_ram_usage=True,
+                )
+            self.unisig_s98_packets += unisig_s98_packets_found
+        except FileNotFoundError as exc:
+            logger_config.print_and_log_exception(exc)
 
     def build_unisig_s98_packet_from_wireshark_packet(self, wireshark_packet: pyshark.packet.packet.Packet, pcap_file_full_path: str) -> UnisigS98WiresharkPacket:
         tcp_payload = HexaValueSplitBySemiColonInWireshark(wireshark_packet.tcp.payload)
@@ -678,6 +711,21 @@ class UnisigS98Simulation:
                         ),
                         "data to compute mac: length_bytearray (base 10)": (
                             bytes_utils.byte_array_to_string_base_10(unisig_s98_packet.get_data_to_compute_mac().length_bytearray)
+                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            else None
+                        ),
+                        "data to compute mac explanations": (
+                            unisig_s98_packet.get_data_to_compute_mac().explanations_for_debug
+                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            else None
+                        ),
+                        "data to compute mac all_blocks_byte_array_to_string_base_10": (
+                            unisig_s98_packet.get_data_to_compute_mac().all_blocks_byte_array_to_string_base_10
+                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            else None
+                        ),
+                        "data to compute mac all_blocks_byte_array_to_string_base_16": (
+                            unisig_s98_packet.get_data_to_compute_mac().all_blocks_byte_array_to_string_base_16
                             if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
                             else None
                         ),
