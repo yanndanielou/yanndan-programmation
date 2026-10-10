@@ -297,7 +297,7 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
             safety_feature_saf_as_1_byte=unknwown_value_1_as_1_byte,
             ra_random_number_a_as_8_bytes=ra_random_number_a_as_8_bytes,
             rb_random_number_b_as_8_bytes=rb_random_number_b_as_8_bytes,
-            da_b_as_8_bytes=rb_random_number_b_as_8_bytes,
+            da_b_as_8_bytes=da_initiator_etcsid_etcsid_as_3_bytes_byte_array,
             padding_bytearray=padding,
         )
 
