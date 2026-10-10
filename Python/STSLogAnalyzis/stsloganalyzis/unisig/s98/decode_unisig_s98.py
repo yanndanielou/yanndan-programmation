@@ -1,14 +1,19 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
 from collections import OrderedDict
 from dataclasses import dataclass
+from datetime import datetime
 from enum import IntEnum
 from typing import cast
 
-
 import pyshark
 import pyshark.packet.packet
-from common import file_name_utils, file_utils, reports_utils, json_encoders, bytes_utils
+from common import (
+    bytes_utils,
+    file_name_utils,
+    file_utils,
+    json_encoders,
+    reports_utils,
+)
 from logger import logger_config
 
 from stsloganalyzis.unisig.s98 import (
