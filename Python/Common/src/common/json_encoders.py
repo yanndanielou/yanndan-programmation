@@ -11,7 +11,7 @@ from typing import Any
 
 from logger import logger_config
 
-from common import singleton
+from common import singleton, bytes_utils
 
 
 class ListOfObjectsEncoder(JSONEncoder):
@@ -22,6 +22,8 @@ class ListOfObjectsEncoder(JSONEncoder):
             return str(o)
         if isinstance(o, timedelta):
             return str(o)
+        if isinstance(o, bytearray):
+            return bytes_utils.byte_array_to_string_base_16(o)
         # if isinstance(o, MappingProxyType):
         #    return str(o)
         # return json.JSONEncoder.default(self, obj)
