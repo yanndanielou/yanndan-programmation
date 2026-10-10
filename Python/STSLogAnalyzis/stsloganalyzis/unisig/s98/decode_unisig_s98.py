@@ -304,8 +304,6 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
 
         self.set_recomputed_mac(self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray, verbose=True))
 
-        return self.recomputed_mac_as_bytearray
-
 
 @dataclass
 class UnisigS98Au3WiresharkPacket(UnisigS98WiresharkPacketWithMac):
@@ -407,8 +405,6 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacketWithMac):
         data_to_compute_mac = self.get_data_to_compute_mac()
         self.set_recomputed_mac(self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray))
 
-        return self.recomputed_mac_as_bytearray
-
 
 @dataclass
 class UnisigS98PaiDisconnectRequest(UnisigS98WiresharkPacket):
@@ -447,8 +443,8 @@ class UnisigS98Simulation:
         logger_config.print_and_log_info(f"AU2 packet detected from {packet.ip_src_str} to {packet.ip_dst_str}")
         if not packet.connexion_zc_pai:
             logger_config.print_and_log_error(f"Could not handle AU2 packet {packet} because no previous AU1 packet")
-            self.last_connexion_by_interlocutors.pop((packet.ip_src_str, packet.ip_dst_str))
-            self.last_connexion_by_interlocutors.pop((packet.ip_dst_str, packet.ip_src_str))
+            self.last_connexion_by_interlocutors.pop((packet.ip_src_str, packet.ip_dst_str), None)
+            self.last_connexion_by_interlocutors.pop((packet.ip_dst_str, packet.ip_src_str), None)
             return
         self.last_connexion_by_interlocutors[(packet.ip_src_str, packet.ip_dst_str)] = packet.connexion_zc_pai
         self.last_connexion_by_interlocutors[(packet.ip_dst_str, packet.ip_src_str)] = packet.connexion_zc_pai
