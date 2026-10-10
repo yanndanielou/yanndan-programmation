@@ -166,7 +166,7 @@ class UnisigS98WiresharkPacketWithMac(UnisigS98WiresharkPacket, ABC):
         pass
 
     @abstractmethod
-    def recompute_mac(self) -> bytearray:
+    def recompute_mac(self) -> None:
         pass
 
 
@@ -295,7 +295,7 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
             padding_bytearray=padding,
         )
 
-    def recompute_mac(self) -> bytearray:
+    def recompute_mac(self) -> None:
         assert self.has_context_to_compute_mac()
         assert self.last_au1_packet
         assert self.connexion_zc_pai
@@ -321,7 +321,7 @@ class UnisigS98Au3WiresharkPacket(UnisigS98WiresharkPacketWithMac):
         logger_config.print_and_log_error("Not implemented")
         assert False
 
-    def recompute_mac(self) -> bytearray:
+    def recompute_mac(self) -> None:
         logger_config.print_and_log_error("Not implemented")
         assert False
 
@@ -333,7 +333,7 @@ class UnisigS98AuthenticationResponseWiresharkPacket(UnisigS98WiresharkPacketWit
         logger_config.print_and_log_error("Not implemented")
         assert False
 
-    def recompute_mac(self) -> bytearray:
+    def recompute_mac(self) -> None:
         logger_config.print_and_log_error("Not implemented")
         assert False
 
@@ -401,7 +401,7 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacketWithMac):
     def has_context_to_compute_mac(self) -> bool:
         return self.last_au1_packet is not None and self.connexion_zc_pai is not None
 
-    def recompute_mac(self) -> bytearray:
+    def recompute_mac(self) -> None:
         assert self.last_au1_packet
         assert self.connexion_zc_pai
         data_to_compute_mac = self.get_data_to_compute_mac()
