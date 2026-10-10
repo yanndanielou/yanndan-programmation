@@ -5,9 +5,10 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import cast
 
+
 import pyshark
 import pyshark.packet.packet
-from common import file_name_utils, file_utils, reports_utils
+from common import file_name_utils, file_utils, reports_utils, json_encoders
 from logger import logger_config
 
 from stsloganalyzis.unisig.s98 import (
@@ -653,7 +654,10 @@ class UnisigS98Simulation:
         logger_config.print_and_log_info(f"{mac_computed} mac computed. {errors} errors")
         return mac_computed, errors
 
-    def save_all_packets(self) -> None:
+    def dump_packets_as_json(self) -> None:
+        json_encoders.JsonEncodersUtils.serialize_list_objects_in_json(self.unisig_s98_packets, self.label + " json dump")
+
+    def save_all_packets_as_reports(self) -> None:
 
         reports_utils.save_rows_to_output_files(
             rows_as_list_dict=[
