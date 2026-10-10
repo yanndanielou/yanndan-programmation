@@ -436,6 +436,7 @@ class UnisigS98Simulation:
     def __init__(self) -> None:
         self.unisig_s98_packets: list[UnisigS98WiresharkPacket] = []
         self.equipments: list[Unisig98Equipment] = []
+        self.communications: list[Unisig98Communication] = []
         self.last_au1_packet_by_interlocutors: dict[tuple[str, str], UnisigS98Au1WiresharkPacket] = {}
         self.last_connexion_by_interlocutors: dict[tuple[str, str], triple_des_s98.ConnectionUnisig98] = {}
         self.directories_parsed: list[str] = []
@@ -453,8 +454,9 @@ class UnisigS98Simulation:
 
     def register_au1_packet(self, packet: UnisigS98Au1WiresharkPacket) -> None:
         logger_config.print_and_log_info(f"AU1 packet detected from {packet.ip_src_str} to {packet.ip_dst_str}: {packet}")
-        self.get_or_create_equipment_by_ip_address_and_etcs_id(packet.ip_src_str, packet.calling_etcs_id)
-        self.get_or_create_equipment_by_ip_address_and_etcs_id(packet.ip_dst_str, packet.called_etcs_id)
+        initiator = self.get_or_create_equipment_by_ip_address_and_etcs_id(packet.ip_src_str, packet.calling_etcs_id)
+        responder = self.get_or_create_equipment_by_ip_address_and_etcs_id(packet.ip_dst_str, packet.called_etcs_id)
+        self.get_or_create_communication_by_equipment_initiator_and_responder(initiator, responder)
         self.last_au1_packet_by_interlocutors[(packet.ip_src_str, packet.ip_dst_str)] = packet
         self.last_au1_packet_by_interlocutors[(packet.ip_dst_str, packet.ip_src_str)] = packet
 
@@ -482,6 +484,23 @@ class UnisigS98Simulation:
             return equipments_found[0]
         self.equipments.append(Unisig98Equipment(raw_ip_address=raw_ip_address, etcs_id=etcs_id))
         return self.get_or_create_equipment_by_ip_address_and_etcs_id(raw_ip_address, etcs_id)
+
+    def get_or_create_communication_by_equipment_initiator_and_responder(self, initiator: Unisig98Equipment, responder: Unisig98Equipment) -> Unisig98Communication:
+        communications_found = [communication for communication in self.communications if communication.initiator == initiator and communication.responder == responder]
+        if communications_found:
+            assert len(communications_found) == 1
+            return communications_found[0]
+        self.communications.append(Unisig98Communication(initiator=initiator, responder=responder))
+        return self.get_or_create_communication_by_equipment_initiator_and_responder(initiator, responder)
+
+    def get_if_existing_communication_by_initiator_and_responder_ip_addresses(self, initiator_ip_address: str, responder_ip_address: str) -> Unisig98Communication | None:
+        communications_found = [
+            communication for communication in self.communications if communication.initiator.raw_ip_address == initiator_ip_address and communication.responder.raw_ip_address == responder_ip_address
+        ]
+        if communications_found:
+            assert len(communications_found) == 1
+            return communications_found[0]
+        return None
 
     def build_unisig_s98_packets_from_load_pcap_files_in_directory(self, pcap_directory_full_path: str, filename_pattern: str = "*") -> None:
 
