@@ -40,11 +40,11 @@ def convert_wireshark_string_colon_separated_bytes_to_byte_array(wireshark_strin
 
 @dataclass
 class HexaValueSplitBySemiColonInWireshark:
-    raw_str_value: str
+    raw_str_value_base_16: str
 
     def __post_init__(self) -> None:
-        self.as_list_of_bytes_as_string = self.raw_str_value.split(":")
-        self.as_byte_array = convert_wireshark_string_colon_separated_bytes_to_byte_array(self.raw_str_value)
+        self.as_list_of_bytes_as_string = self.raw_str_value_base_16.split(":")
+        self.as_byte_array = convert_wireshark_string_colon_separated_bytes_to_byte_array(self.raw_str_value_base_16)
 
 
 @dataclass
@@ -141,8 +141,25 @@ class UnisigS98WiresharkPacketWithMac(UnisigS98WiresharkPacket, ABC):
             self.explanations_for_debug = ""
 
     def __post_init__(self) -> None:
-        self.recomputed_mac: bytearray | None = None
+        self.recomputed_mac_as_bytearray: bytearray | None = None
+        self.recomputed_mac_as_string_base_10: str | None = None
+        self.recomputed_mac_as_string_base_16: str | None = None
         self.recomputed_mac_and_transmitted_mac_are_equals: bool | None = None
+
+    def set_recomputed_mac(self, recomputed_mac: bytearray) -> None:
+        self.recomputed_mac_as_bytearray = recomputed_mac
+
+        self.recomputed_mac_as_string_base_10 = bytes_utils.byte_array_to_string_base_10(self.recomputed_mac_as_bytearray)
+        self.recomputed_mac_as_string_base_16 = bytes_utils.byte_array_to_string_base_16(self.recomputed_mac_as_bytearray)
+
+        compare_as_byte_array = self.recomputed_mac_as_bytearray == self.transmitted_mac.as_byte_array
+        compare_as_string = triple_des_s98.convert_mac_to_string_of_hexas(self.recomputed_mac_as_bytearray) == triple_des_s98.convert_mac_to_string_of_hexas(self.transmitted_mac.as_byte_array)
+        assert compare_as_byte_array == compare_as_string
+        self.recomputed_mac_and_transmitted_mac_are_equals = compare_as_byte_array
+        logger_config.print_and_log_error_if(
+            not self.recomputed_mac_and_transmitted_mac_are_equals,
+            f"{self} transmitted MAC is incorrect. Is {self.transmitted_mac.raw_str_value_base_16}, should be {self.recomputed_mac_as_string_base_16}",
+        )
 
     @abstractmethod
     def has_context_to_compute_mac(self) -> bool:
@@ -285,14 +302,9 @@ class UnisigS98Au2WiresharkPacket(UnisigS98WiresharkPacketWithMac):
 
         data_to_compute_mac = self.get_data_to_compute_mac()
 
-        self.recomputed_mac = self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray, verbose=True)
+        self.set_recomputed_mac(self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray, verbose=True))
 
-        compare_as_byte_array = self.recomputed_mac == self.transmitted_mac.as_byte_array
-        compare_as_string = triple_des_s98.convert_mac_to_string_of_hexas(self.recomputed_mac) == triple_des_s98.convert_mac_to_string_of_hexas(self.transmitted_mac.as_byte_array)
-        assert compare_as_byte_array == compare_as_string
-        self.recomputed_mac_and_transmitted_mac_are_equals = compare_as_byte_array
-
-        return self.recomputed_mac
+        return self.recomputed_mac_as_bytearray
 
 
 @dataclass
@@ -352,8 +364,8 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacketWithMac):
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        self.tcp_payload_without_ale_header_and_mac = HexaValueSplitBySemiColonInWireshark(self.tcp_payload_without_ale_header.raw_str_value[:-24])
-        self.recomputed_mac: bytearray | None = None
+        self.tcp_payload_without_ale_header_and_mac = HexaValueSplitBySemiColonInWireshark(self.tcp_payload_without_ale_header.raw_str_value_base_16[:-24])
+        self.recomputed_mac_as_bytearray: bytearray | None = None
         self.recomputed_mac_and_transmitted_mac_are_equals: bool | None = None
         if self.sai_user_data is None:
             pass
@@ -393,13 +405,9 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacketWithMac):
         assert self.last_au1_packet
         assert self.connexion_zc_pai
         data_to_compute_mac = self.get_data_to_compute_mac()
-        self.recomputed_mac = self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray)
+        self.set_recomputed_mac(self.connexion_zc_pai.compute_mac_n_blocks(data_to_compute_mac.all_blocks_bytearray))
 
-        compare_as_byte_array = self.recomputed_mac == self.transmitted_mac.as_byte_array
-        compare_as_string = triple_des_s98.convert_mac_to_string_of_hexas(self.recomputed_mac) == triple_des_s98.convert_mac_to_string_of_hexas(self.transmitted_mac.as_byte_array)
-        assert compare_as_byte_array == compare_as_string
-        self.recomputed_mac_and_transmitted_mac_are_equals = compare_as_byte_array
-        return self.recomputed_mac
+        return self.recomputed_mac_as_bytearray
 
 
 @dataclass
@@ -501,12 +509,20 @@ class UnisigS98Simulation:
                     print_ram_usage=True,
                 )
             self.unisig_s98_packets += unisig_s98_packets_found
+            logger_config.print_and_log_warning_if(
+                not unisig_s98_packets_found,
+                f"File {file_name_utils.get_file_name_with_extension_from_full_path(pcap_file_full_path)} {number_of_packets_parsed+1} packets parsed, {len(unisig_s98_packets_found)} unisig packets found",
+            )
+            logger_config.print_and_log_info(
+                f"File {file_name_utils.get_file_name_with_extension_from_full_path(pcap_file_full_path)} {number_of_packets_parsed+1} packets parsed, {len(unisig_s98_packets_found)} unisig packets found",
+                print_ram_usage=True,
+            )
         except FileNotFoundError as exc:
             logger_config.print_and_log_exception(exc)
 
     def build_unisig_s98_packet_from_wireshark_packet(self, wireshark_packet: pyshark.packet.packet.Packet, pcap_file_full_path: str) -> UnisigS98WiresharkPacket:
         tcp_payload = HexaValueSplitBySemiColonInWireshark(wireshark_packet.tcp.payload)
-        tcp_payload_without_ale_header = HexaValueSplitBySemiColonInWireshark(tcp_payload.raw_str_value[30:])
+        tcp_payload_without_ale_header = HexaValueSplitBySemiColonInWireshark(tcp_payload.raw_str_value_base_16[30:])
 
         sniff_time = wireshark_packet.sniff_time
         assert isinstance(sniff_time, datetime)
@@ -691,17 +707,19 @@ class UnisigS98Simulation:
                         "emb df": unisig_s98_packet.emd_byte.df,
                         "ale length": unisig_s98_packet.ale_header.length,
                         "ale packet type": unisig_s98_packet.ale_header.packet_type,
-                        "transmitted mac str": (
-                            unisig_s98_packet.transmitted_mac.raw_str_value if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.transmitted_mac else None
+                        "tcp_payload (base 16)": unisig_s98_packet.tcp_payload.raw_str_value_base_16,
+                        "tcp_payload_without_ale_header  (base 16)": unisig_s98_packet.tcp_payload_without_ale_header.raw_str_value_base_16,
+                        "transmitted mac (base 16)": (
+                            unisig_s98_packet.transmitted_mac.raw_str_value_base_16 if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.transmitted_mac else None
                         ),
                         "recomputed mac as str base 10": (
-                            bytes_utils.byte_array_to_string_base_10(unisig_s98_packet.recomputed_mac)
-                            if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac
+                            bytes_utils.byte_array_to_string_base_10(unisig_s98_packet.recomputed_mac_as_bytearray)
+                            if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac_as_bytearray
                             else None
                         ),
                         "recomputed mac as str base 16": (
-                            bytes_utils.byte_array_to_string_base_16(unisig_s98_packet.recomputed_mac)
-                            if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac
+                            bytes_utils.byte_array_to_string_base_16(unisig_s98_packet.recomputed_mac_as_bytearray)
+                            if isinstance(unisig_s98_packet, UnisigS98WiresharkPacketWithMac) and unisig_s98_packet.recomputed_mac_as_bytearray
                             else None
                         ),
                         "recomputed_mac_and_transmitted_mac_are_equals": (
@@ -709,27 +727,27 @@ class UnisigS98Simulation:
                         ),
                         "data to compute mac: length_bytearray (base 10)": (
                             bytes_utils.byte_array_to_string_base_10(unisig_s98_packet.get_data_to_compute_mac().length_bytearray)
-                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            if isinstance(unisig_s98_packet, (UnisigS98DtDataWiresharkPacket, UnisigS98Au2WiresharkPacket)) and unisig_s98_packet.has_context_to_compute_mac()
                             else None
                         ),
                         "data to compute mac explanations": (
                             unisig_s98_packet.get_data_to_compute_mac().explanations_for_debug
-                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            if isinstance(unisig_s98_packet, (UnisigS98DtDataWiresharkPacket, UnisigS98Au2WiresharkPacket)) and unisig_s98_packet.has_context_to_compute_mac()
                             else None
                         ),
                         "data to compute mac all_blocks_byte_array_to_string_base_10": (
                             unisig_s98_packet.get_data_to_compute_mac().all_blocks_byte_array_to_string_base_10
-                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            if isinstance(unisig_s98_packet, (UnisigS98DtDataWiresharkPacket, UnisigS98Au2WiresharkPacket)) and unisig_s98_packet.has_context_to_compute_mac()
                             else None
                         ),
                         "data to compute mac all_blocks_byte_array_to_string_base_16": (
                             unisig_s98_packet.get_data_to_compute_mac().all_blocks_byte_array_to_string_base_16
-                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            if isinstance(unisig_s98_packet, (UnisigS98DtDataWiresharkPacket, UnisigS98Au2WiresharkPacket)) and unisig_s98_packet.has_context_to_compute_mac()
                             else None
                         ),
                         "data to compute mac: da_bytearray (base 10)": (
                             bytes_utils.byte_array_to_string_base_10(unisig_s98_packet.get_data_to_compute_mac().da_bytearray)
-                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            if isinstance(unisig_s98_packet, (UnisigS98DtDataWiresharkPacket, UnisigS98Au2WiresharkPacket)) and unisig_s98_packet.has_context_to_compute_mac()
                             else None
                         ),
                         "data to compute mac: message_bytearray (base 10)": (
@@ -739,12 +757,12 @@ class UnisigS98Simulation:
                         ),
                         "data to compute mac: padding_bytearray (base 10)": (
                             bytes_utils.byte_array_to_string_base_10(unisig_s98_packet.get_data_to_compute_mac().padding_bytearray)
-                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            if isinstance(unisig_s98_packet, (UnisigS98DtDataWiresharkPacket, UnisigS98Au2WiresharkPacket)) and unisig_s98_packet.has_context_to_compute_mac()
                             else None
                         ),
                         "data to compute mac: length_bytearray (base 16)": (
                             bytes_utils.byte_array_to_string_base_16(unisig_s98_packet.get_data_to_compute_mac().length_bytearray)
-                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            if isinstance(unisig_s98_packet, (UnisigS98DtDataWiresharkPacket, UnisigS98Au2WiresharkPacket)) and unisig_s98_packet.has_context_to_compute_mac()
                             else None
                         ),
                         "data to compute mac: da_bytearray (base 16)": (
@@ -759,7 +777,7 @@ class UnisigS98Simulation:
                         ),
                         "data to compute mac: padding_bytearray (base 16)": (
                             bytes_utils.byte_array_to_string_base_16(unisig_s98_packet.get_data_to_compute_mac().padding_bytearray)
-                            if isinstance(unisig_s98_packet, UnisigS98DtDataWiresharkPacket) and unisig_s98_packet.has_context_to_compute_mac()
+                            if isinstance(unisig_s98_packet, (UnisigS98DtDataWiresharkPacket, UnisigS98Au2WiresharkPacket)) and unisig_s98_packet.has_context_to_compute_mac()
                             else None
                         ),
                     }
