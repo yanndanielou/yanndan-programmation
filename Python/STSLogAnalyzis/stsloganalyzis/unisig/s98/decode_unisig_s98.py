@@ -332,11 +332,9 @@ class UnisigS98DtDataWiresharkPacket(UnisigS98WiresharkPacketWithMac):
     sai_user_data: HexaValueSplitBySemiColonInWireshark | None
 
     @dataclass
-    class DataToComputeMac:
-        length_bytearray: bytearray
+    class DataToComputeMac(UnisigS98WiresharkPacketWithMac.DataToComputeMac):
         da_bytearray: bytearray
         message_bytearray: bytearray
-        padding_bytearray: bytearray
 
         def __post_init__(self) -> None:
             super().__post_init__()
