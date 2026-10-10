@@ -12,7 +12,7 @@ from common import file_name_utils, file_utils, reports_utils, json_encoders, by
 from logger import logger_config
 
 from stsloganalyzis.unisig.s98 import (
-    secret_equipment_name_from_ip_address,
+    next_equipment_name_from_ip_address,
     secret_kmac_keys,
     triple_des_s98,
 )
@@ -29,7 +29,7 @@ class Unisig98Equipment:
     etcs_id: int
 
     def __post_init__(self) -> None:
-        self.name = secret_equipment_name_from_ip_address.get_equipment_name_from_ip_address(self.raw_ip_address)
+        self.name = next_equipment_name_from_ip_address.get_equipment_name_from_ip_address(self.raw_ip_address)
         logger_config.print_and_log_info(f"Equipment created:{self}")
 
 
