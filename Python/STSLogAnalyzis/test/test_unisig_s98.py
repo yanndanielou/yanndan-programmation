@@ -25,7 +25,7 @@ class TestLoadLibraryFromFromWiresharkCapture:
             unisig_packets_with_mac_recomputed = [
                 unisig_packet
                 for unisig_packet in simulation.unisig_s98_packets
-                if isinstance(unisig_packet, decode_unisig_s98.UnisigS98WiresharkPacketWithMac) and unisig_packet.recompute_mac is not None
+                if isinstance(unisig_packet, decode_unisig_s98.UnisigS98WiresharkPacketWithMac) and unisig_packet.recomputed_mac_as_bytearray is not None
             ]
             assert unisig_packets_with_mac_recomputed
             for unisig_packet_with_mac_recomputed in unisig_packets_with_mac_recomputed:
