@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import cast, Self
+from typing import Self, cast
 
 NUMBER_OF_BITS_IN_BYTE = int(8)
 SIZE_BITS_PER_CHAR = 8
