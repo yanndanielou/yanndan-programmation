@@ -85,7 +85,8 @@ def get_files_by_directory_and_file_name_mask(
     for file in os.listdir(directory_path):
         if fnmatch.fnmatch(file, filename_pattern):
             file_path = os.path.join(directory_path, file)
-            files_paths.append(file_path)
+            if Path(file).is_file():
+                files_paths.append(file_path)
 
     if file_sort_order == FileSortOrder.ALPHABETICAL:
         return natsort.natsorted(files_paths)
