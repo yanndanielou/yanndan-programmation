@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from logger import logger_config
+
 from collections.abc import Sequence
 
 MAC_SIZE_IN_BYTES = 8
@@ -718,6 +720,9 @@ class ConnectionUnisig98:
         resp_type: int = 192,
         is_cnx1: bool = True,
     ) -> None:
+
+        logger_config.print_and_log_info(f"Build connection initiator_etcs_id:{initiator_etcs_id}, responder_etcs_id:{responder_etcs_id}")
+
         self.cst_PSC: const_PSC = const_PSC()
         self.authentication_key_kmac_1: bytearray = bytearray(authentication_key_kmac_1[:8])
         self.authentication_key_kmac_2: bytearray = bytearray(authentication_key_kmac_2[:8])
