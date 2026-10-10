@@ -466,15 +466,19 @@ class UnisigS98Simulation:
 
     def build_unisig_s98_packets_from_load_pcap_files_in_directory(self, pcap_directory_full_path: str, filename_pattern: str = "*") -> None:
 
-        self.directories_parsed.append(pcap_directory_full_path)
-        all_pcap_files_full_paths = file_utils.get_files_by_directory_and_file_name_mask(
-            directory_path=pcap_directory_full_path,
-            file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER,
-            filename_pattern=filename_pattern,
-        )
-        logger_config.print_and_log_info(f"{len(all_pcap_files_full_paths)} files found in {pcap_directory_full_path}")
-        for pcap_file_full_path in all_pcap_files_full_paths:
-            self.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
+        try:
+            self.directories_parsed.append(pcap_directory_full_path)
+            all_pcap_files_full_paths = file_utils.get_files_by_directory_and_file_name_mask(
+                directory_path=pcap_directory_full_path,
+                file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER,
+                filename_pattern=filename_pattern,
+            )
+            logger_config.print_and_log_info(f"{len(all_pcap_files_full_paths)} files found in {pcap_directory_full_path}")
+            for pcap_file_full_path in all_pcap_files_full_paths:
+                self.build_unisig_s98_packets_from_load_pcap_file(pcap_file_full_path)
+        except FileNotFoundError as err:
+            logger_config.print_and_log_exception(err)
+            logger_config.print_and_log_error(f"Could not find {pcap_directory_full_path}")
 
     @logger_config.stopwatch_decorator(monitor_ram_usage=True)
     def build_unisig_s98_packets_from_load_pcap_file(self, pcap_file_full_path: str) -> None:
@@ -507,10 +511,10 @@ class UnisigS98Simulation:
             self.unisig_s98_packets += unisig_s98_packets_found
             logger_config.print_and_log_warning_if(
                 not unisig_s98_packets_found,
-                f"File {file_name_utils.get_file_name_with_extension_from_full_path(pcap_file_full_path)} {number_of_packets_parsed+1} packets parsed, {len(unisig_s98_packets_found)} unisig packets found",
+                f"File {file_name_utils.get_file_name_with_extension_from_full_path(pcap_file_full_path)} {number_of_packets_parsed} packets parsed, {len(unisig_s98_packets_found)} unisig packets found",
             )
             logger_config.print_and_log_info(
-                f"File {file_name_utils.get_file_name_with_extension_from_full_path(pcap_file_full_path)} {number_of_packets_parsed+1} packets parsed, {len(unisig_s98_packets_found)} unisig packets found",
+                f"File {file_name_utils.get_file_name_with_extension_from_full_path(pcap_file_full_path)} {number_of_packets_parsed} packets parsed, {len(unisig_s98_packets_found)} unisig packets found",
                 print_ram_usage=True,
             )
         except FileNotFoundError as exc:
