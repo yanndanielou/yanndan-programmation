@@ -29,8 +29,12 @@ def common_actions(unisig_simulation: decode_unisig_s98.UnisigS98Simulation) -> 
 
 def main() -> None:
     with logger_config.application_logger():
-        handle_directory(r"C:\Users\fr232487\Downloads\2026_10_02_PAS_PAI_2")
         handle_file(r"D:\Github\yanndanielou-programmation\Python\STSLogAnalyzis\test\resources\unisig_s98\small_capture_started_after_connexion.pcapng")
+        handle_file(r"C:\Users\fr232487\Downloads\tg13zc1-pas3-cucp-a-m_pai+deconnexion+21h34\tg13zc1-pas3-cucp-a-m_pai deconnexion 21h34.pcap")
+        handle_directory(r"C:\Users\fr232487\Downloads\tcp dump 2026_10_02_PAS_PAI_2\2026_10_02_PAS_PAI_2")
+        handle_directory(r"C:\Users\fr232487\Downloads\tg13zc1-pas3-cucp-a-m_pai+deconnexion+21h34")
+        handle_directory(r"C:\Users\fr232487\Downloads\2026-09-14 wiresharks pas pai raoul OneDrive_1_14-09-2026")
+        handle_directory(r"C:\Users\fr232487\Downloads\2026_10_02_PAS_PAI_2")
         handle_file(r"C:\Users\fr232487\Downloads\logs_wsk_PAI75_22.09.2026\log_PAS_PAI_22.09_00002_20260922145856.2026.pcap")
         # handle_directory(r"C:\Users\fr232487\Downloads\2026_10_02_PAS_PAI_2\wireshark")
         handle_directory(r"C:\Users\fr232487\Downloads\logs_wsk_PAI75_22.09.2026", "*.pcap")
