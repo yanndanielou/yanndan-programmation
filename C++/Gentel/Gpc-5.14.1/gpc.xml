@@ -39,11 +39,11 @@
         <exec_name>cl</exec_name>
 		<qt_includes>-I%QtInc% -I%QtInc%/Qt -I%QtInc%/QtCore -I%QtInc%/QtGui -I%QtInc%/QtXml -I%QtInc%/QtMultimedia -I%QtInc%/QtMultimediaWidgets -I%QtInc%/QtNetwork -I%QtInc%/QtOpenGL  -I%QtInc%/QtUiTools -I%QtInc%/QtWidgets -I%QtInc%/QtPrintSupport -I%QtInc%/QtScript -I%QtInc%/activeQt</qt_includes>
         <includes>%qt_includes% -ID:\Tools\GnuWin32\include %project_includes%</includes>
-		<compile_options>%ccflags% %includes% -c %source% -o %target%</compile_options>
-		<compile_options>%ccflags% -c /Zi /Od /FS /W3 -DCRTAPI1=_cdecl -DCRTAPI2=_cdecl -nologo -D_X86_=1 -D_WINNT -D_WIN32_IE=0x0300 -DWIN32 -D_WIN32 -DYYDEBUG /Fo%target% %includes% -I%QtInc%/QtSerialPort %source% </compile_options>
+		<compile_options>%ccflags% %includes% -c %source% -o %target% /Zi /Od /FS</compile_options>
+		<compile_options>%ccflags% -c /Zi /W3 -DCRTAPI1=_cdecl -DCRTAPI2=_cdecl -nologo -D_X86_=1 -D_WINNT -D_WIN32_IE=0x0300 -DWIN32 -D_WIN32 -DYYDEBUG /Fo%target% %includes% -I%QtInc%/QtSerialPort %source% /Od /FS</compile_options>
 		<libraries>%QtLib%/Qt5AxContainer.lib %QtLib%/Qt5AxBase.lib %QtLib%\Qt5MultimediaWidgets.lib %QtLib%\Qt5Multimedia.lib %QtLib%\Qt5UiTools.lib %QtLib%\Qt5Network.lib %QtLib%\Qt5Xml.lib  %QtLib%\Qt5OpenGL.lib %QtLib%\Qt5PrintSupport.lib %QtLib%\Qt5Gui.lib %QtLib%\Qt5Widgets.lib %QtLib%\Qt5SerialPort.lib %QtLib%\Qt5Core.lib AdvApi32.lib user32.lib ole32.lib oleaut32.lib gdi32.lib comdlg32.lib comctl32.lib Winmm.lib glu32.lib openGL32.lib</libraries>
-		<link_options>%ldflags% -o %target% %objects% %libraries%</link_options>
-		<link_options>/W3 /DCRTAPI1=_cdecl -DCRTAPI2=_cdecl -nologo -D_X86_=1 -D_WINNT -D_WIN32_WINNT=0x0400 -D_WIN32_IE=0x0300 -DWINVER=0x0400 -DWIN32 -D_WIN32 /Fe%target% %objects% /link /DEBUG /INCREMENTAL:NO %ldflags% %libraries%</link_options>
+		<link_options>%ldflags% -o %target% %objects% %libraries% /link /DEBUG /INCREMENTAL:NO /OPT:NOREF /OPT:NOICF</link_options>
+		<link_options>/W3 /DCRTAPI1=_cdecl -DCRTAPI2=_cdecl -nologo -D_X86_=1 -D_WINNT -D_WIN32_WINNT=0x0400 -D_WIN32_IE=0x0300 -DWINVER=0x0400 -DWIN32 -D_WIN32 /Fe%target% %objects% /link /DEBUG /INCREMENTAL:NO /OPT:NOREF /OPT:NOICF %ldflags% %libraries%</link_options>
     </compiler>
 <!--                             -+-+-+-+-                              -->
 <!--                               Files                                -->
