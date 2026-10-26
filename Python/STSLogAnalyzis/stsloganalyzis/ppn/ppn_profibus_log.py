@@ -547,6 +547,7 @@ class ProfibusLogLibrary:
                             "Line length": unisig_message.profibus_log_line.length if unisig_message.profibus_log_line else None,
                             "file path": unisig_message.profibus_log_line.file_path if unisig_message.profibus_log_line else None,
                             "line number": unisig_message.profibus_log_line.line_number if unisig_message.profibus_log_line else None,
+                            "duration since previous line": unisig_message.profibus_log_line.excessive_duration_since_previous_line if unisig_message.profibus_log_line else None,
                             "excessive duration since previous line": unisig_message.profibus_log_line.excessive_duration_since_previous_line if unisig_message.profibus_log_line else None,
                             "message type": unisig_message.__class__.__name__,
                             "Unisig message: all_data_aka_net_data": (
@@ -778,9 +779,11 @@ class ProfibusLogLine:
 
     def __post_init__(self) -> None:
         self.unisig_message: decode_unisig_s57_s58.OnboardUnisigMessage | None = None
-        self.excessive_duration_since_previous_line = (
-            self.previous_line_timestamp is not None and (max(self.previous_line_timestamp, self.timestamp) - min(self.previous_line_timestamp, self.timestamp)).seconds > 120
+        self.duration_since_previous_line_absolute_value = (
+            max(self.previous_line_timestamp, self.timestamp) - min(self.previous_line_timestamp, self.timestamp) if self.previous_line_timestamp is not None else None
         )
+        self.duration_since_previous_line = self.timestamp - self.previous_line_timestamp if self.previous_line_timestamp is not None else None
+        self.excessive_duration_since_previous_line = self.duration_since_previous_line_absolute_value.total_seconds > 120 if self.duration_since_previous_line_absolute_value is not None else None
 
     @staticmethod
     def get_equipment_name_from_address(address: int) -> str:
