@@ -783,7 +783,7 @@ class ProfibusLogLine:
             max(self.previous_line_timestamp, self.timestamp) - min(self.previous_line_timestamp, self.timestamp) if self.previous_line_timestamp is not None else None
         )
         self.duration_since_previous_line = self.timestamp - self.previous_line_timestamp if self.previous_line_timestamp is not None else None
-        self.excessive_duration_since_previous_line = self.duration_since_previous_line_absolute_value.total_seconds > 120 if self.duration_since_previous_line_absolute_value is not None else None
+        self.excessive_duration_since_previous_line = self.duration_since_previous_line_absolute_value.total_seconds() > 120 if self.duration_since_previous_line_absolute_value is not None else None
 
     @staticmethod
     def get_equipment_name_from_address(address: int) -> str:
