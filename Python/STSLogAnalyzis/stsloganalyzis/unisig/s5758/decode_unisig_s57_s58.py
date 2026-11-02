@@ -319,10 +319,10 @@ class Unisig16BitsIntWithUnisigBytesOrder:
 
     def __init__(self, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> None:
 
-        low_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        high_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        self.low_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        self.high_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
 
-        self.value_in_decimal_format = bytes_messages.DecodedBytesMessage.from_bytes_as_list_int([high_byte, low_byte]).get_remaining_bits_as_unsigned_int()
+        self.value_in_decimal_format = bytes_messages.DecodedBytesMessage.from_bytes_as_list_int([self.high_byte, self.low_byte]).get_remaining_bits_as_unsigned_int()
 
 
 @dataclass
@@ -742,7 +742,7 @@ class SdaConnectRequestOrConfirmTelegram(OnboardSdaUnisigMessage):
         self.configuration_data_prefix_y = self.all_data_aka_net_data.as_decoded_bytes_message.get_next_byte_as_single_int_unsigned()
         assert self.configuration_data_prefix_y == 0
         self.configuration_data_prefix_z = self.all_data_aka_net_data.as_decoded_bytes_message.get_next_byte_as_single_int_unsigned()
-        assert self.configuration_data_prefix_y == 0
+        assert self.configuration_data_prefix_z == 0
 
         self.dual_bus = OnboardSdaUnisigMessage.ConnectTelegramDualBusType(self.all_data_aka_net_data.as_decoded_bytes_message.get_next_byte_as_single_int_unsigned())
 
