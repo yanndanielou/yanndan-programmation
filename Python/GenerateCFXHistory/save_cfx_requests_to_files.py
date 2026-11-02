@@ -692,8 +692,16 @@ class SaveCfxRequestMultipagesResultsApplication:
     def create_webdriver_and_login(self) -> None:
         # Use Chrome by default, switch to Firefox if you want
         # self.create_webdriver_chrome()
-        self.create_webdriver_firefox()
-        self.login_champfx()
+        delay_between_retry_in_seconds = 1
+        while True:
+            try:
+                self.create_webdriver_firefox()
+                self.login_champfx()
+                return
+            except TimeoutException as exc:
+                logger_config.print_and_log_exception(exc)
+                time.sleep(delay_between_retry_in_seconds)
+                delay_between_retry_in_seconds += 1
 
     def reset_driver(self) -> None:
         self.driver.quit()
