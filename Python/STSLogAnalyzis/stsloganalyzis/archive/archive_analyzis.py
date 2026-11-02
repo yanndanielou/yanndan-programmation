@@ -276,7 +276,7 @@ class SqlArchArchiveLineWithContext:
 
 @dataclass
 class ArchiveAnalyzis:
-    railway_line: line_topology.Line
+    railway_line: line_topology.Line | None
     archive_library: decode_archive.ArchiveLibrary
     label: str
 
@@ -368,11 +368,15 @@ class ArchiveAnalyzis:
                 label=mal_label,
                 train=train,
                 zone_controller=zone_controller,
-                mal_location=helpers.decode_one_exact_location(
-                    decoded_fields_flat_directory=decoded_message.decoded_fields_flat_directory,
-                    segment_id_field_name=segment_id_field_name,
-                    abscissa_field_name=abscissa_field_name,
-                    railway_line=self.railway_line,
+                mal_location=(
+                    helpers.decode_one_exact_location(
+                        decoded_fields_flat_directory=decoded_message.decoded_fields_flat_directory,
+                        segment_id_field_name=segment_id_field_name,
+                        abscissa_field_name=abscissa_field_name,
+                        railway_line=self.railway_line,
+                    )
+                    if self.railway_line
+                    else None
                 ),
                 raw_mal_type=cast(int, decoded_message.decoded_fields_flat_directory.get("MALType")),
             )
@@ -394,7 +398,8 @@ class ArchiveAnalyzis:
     ) -> list[FieldLastValue]:
         assert sql_arch_line.decoded_message is not None
         train = self.get_or_create_train_by_cc_id_field_name(decoded_fields_flat_directory=sql_arch_line.decoded_message.decoded_fields_flat_directory)
-        train.update_location_from_decoded_fields_flat_directory(decoded_fields_flat_directory=sql_arch_line.decoded_message.decoded_fields_flat_directory, railway_line=self.railway_line)
+        if self.railway_line:
+            train.update_location_from_decoded_fields_flat_directory(decoded_fields_flat_directory=sql_arch_line.decoded_message.decoded_fields_flat_directory, railway_line=self.railway_line)
 
         all_fields_changed = self.update_fields_for_line(sql_arch_line=sql_arch_line, fields_names_and_values=train.field_names_and_values_in_report)
         return all_fields_changed

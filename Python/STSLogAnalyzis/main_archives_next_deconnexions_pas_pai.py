@@ -14,9 +14,9 @@ OUTPUT_DIRECTORY = "output"
 def main() -> None:
     with logger_config.application_logger():
 
-        railway_line, archive_decoder = next_ats_data.get_encoders()
+        # railway_line, archive_decoder = next_ats_data.get_encoders()
         archive_library = (
-            next_ats_data.get_classic_archive_library_base_builder(archive_decoder=archive_decoder)
+            next_ats_data.get_classic_archive_library_base_builder(archive_decoder=None)
             .add_archive_files(directory_path=r"D:\temp\TemporaryArchiving 2026-11-02 PLT_1\TemporaryArchiving", filename_pattern="NEXTFileArchiveServer_*.json")
             .add_sqlarch_archive_lines_filter(
                 decode_archive.IdFilter(
@@ -31,7 +31,7 @@ def main() -> None:
             .build()
         )
 
-        analyzis = archive_analyzis.ArchiveAnalyzis(railway_line=railway_line, archive_library=archive_library, label="déconnexions PAS PAI ITV 1 2026-09-11")
+        analyzis = archive_analyzis.ArchiveAnalyzis(railway_line=None, archive_library=archive_library, label="déconnexions PAS PAI ITV 1 2026-09-11")
 
         # analyzis.create_reports_all_sqlarch_changes_since_previous()
         # analyzis.create_output_with_all_fields_decoded()

@@ -420,13 +420,14 @@ class SqlArchArchiveLine(ArchiveLine):
         self.invariant_message: decode_message.InvariantMessage | None = None
         self.decoded_message: decode_message.DecodedMessage | None = None
 
-    def decode_message(self, archive_decoder: ArchiveDecoder) -> None:
+    def decode_message(self, archive_decoder: ArchiveDecoder | None) -> None:
         # Directly copy all items from SQLARCH section into a new dictionary
         self.sqlarch_fields_dict_raw = {f"{key}_raw": value for key, value in self.all_fields_dict.items()}
         self.sqlarch_fields_dict_raw["newSt"] = self.get_new_state_str()
         self.sqlarch_fields_dict_raw["oldSt"] = self.get_old_state_str()
-        self.invariant_message = archive_decoder.message_manager.get_message_by_id(self.get_id())
+        self.invariant_message = archive_decoder.message_manager.get_message_by_id(self.get_id()) if archive_decoder else None
         if self.invariant_message:
+            assert archive_decoder
             self.decoded_message = archive_decoder.message_decoder.decode_raw_hexadecimal_message(
                 message_number=self.invariant_message.message_number, hexadecimal_content=self.get_new_state_str(), equipment_name=self.eqp
             )
