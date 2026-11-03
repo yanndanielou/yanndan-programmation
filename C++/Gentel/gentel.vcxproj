@@ -78,18 +78,21 @@
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\ActiveQt;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\Qt3DAnimation;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\Qt3DCore;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\Qt3DExtras;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\Qt3DInput;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\Qt3DLogic;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\Qt3DQuick;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\Qt3DQuickAnimation;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\Qt3DQuickExtras;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\Qt3DQuickInput;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\Qt3DQuickRender;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\Qt3DQuickScene2D;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\Qt3DRender;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtAccessibilitySupport;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtANGLE;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtBluetooth;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtBodymovin;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtCharts;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtConcurrent;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtCore;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtDataVisualization;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtDBus;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtDesigner;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtDesignerComponents;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtDeviceDiscoverySupport;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtEdidSupport;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtEglSupport;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtEventDispatcherSupport;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtFbSupport;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtFontDatabaseSupport;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtGamepad;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtGui;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtHelp;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtLocation;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtMultimedia;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtMultimediaQuick;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtMultimediaWidgets;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtNetwork;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtNetworkAuth;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtNfc;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtOpenGL;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtOpenGLExtensions;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtPacketProtocol;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtPlatformCompositorSupport;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtPlatformHeaders;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtPositioning;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtPositioningQuick;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtPrintSupport;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtPurchasing;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQml;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQmlDebug;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQmlModels;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQmlWorkerScript;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQuick;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQuick3D;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQuick3DAssetImport;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQuick3DRender;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQuick3DRuntimeRender;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQuick3DUtils;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQuickControls2;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQuickParticles;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQuickShapes;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQuickTemplates2;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQuickTest;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtQuickWidgets;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtRemoteObjects;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtRepParser;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtScript;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtScriptTools;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtScxml;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtSensors;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtSerialBus;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtSerialPort;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtSql;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtSvg;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtTest;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtTextToSpeech;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtThemeSupport;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtUiPlugin;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtUiTools;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtVirtualKeyboard;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtVulkanSupport;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtWebChannel;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtWebEngine;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtWebEngineCore;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtWebEngineWidgets;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtWebSockets;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtWebView;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtWidgets;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtWindowsUIAutomationSupport;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtWinExtras;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtXml;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\include\QtXmlPatterns;./Model/core;./Model/types;../typha/XCalc;../typha/Icons;../typha/Core;Model/types/primitives;./core;./Model/;Model/types/aggregates;./Probes/tgmt_mega;Model/other;./Model/Readers/;./Hmi/;./Hmi/BasicWidgets;./Hmi/ModelView;./Hmi/BusinessWidgets/;Model/export/;./Model/Readers/Core/;./Hmi/ProbeView/;../qwt-6.3.0/src/;./Hmi/TestView/;./Hmi/EdbreView/;./Hmi/PertView/;./Hmi/GraphWidgets/Core/;./Model/Readers/TelegramCatalog/;./Sampler/events/;./Probes/ced_flash/;./Sampler/;./Probes/core/;../typha/BasicWidgets/;./Probes/tgmt_atp/;./Probes/airlink/;./Gvm/;./Hmi/Dialogs/;./Model/Readers/Perturbo/;./Probes/cbtc_pert/;./Model/Readers/TgmtDoors/;./Model/Readers/Simech/;./Hmi/GraphWidgets/Graph/;./Model/Readers/Misc/;./Hmi/GraphWidgets/Scope/;./Model/Readers/Ced/;./Hmi/GraphWidgets/Sheet/;./Probes/tgmt_ato/;./Probes/tgmt_itf/;./Probes/tgmt_dio/;./Probes/cbtc_recorder/;./Probes/inspector/;./Probes/tgmt_wcu/;./Probes/unisig/;./Hmi/Core/;./Hmi/GraphWidgets/Pie/;./Hmi/GraphWidgets/Panel/;./Hmi/GraphWidgets/SequenceDiagram/;./Hmi/GraphWidgets/Plot/;./Hmi/GraphWidgets/Grid/</AdditionalIncludeDirectories>
-	  <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>2491;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <!--<AdditionalOptions>/Zc:auto-</AdditionalOptions>-->
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\lib;./Bin/;%(AdditionalLibraryDirectories);D:\xt_gp_toolset\qwt-6.3.0\classincludes</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\lib\Qt5AxContainer.lib ;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\lib\Qt5AxBase.lib ;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\lib\Qt5MultimediaWidgets.lib ;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\lib\Qt5Multimedia.lib ;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\lib\Qt5UiTools.lib ;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\lib\Qt5Network.lib ;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\lib\Qt5Xml.lib  ;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\lib\Qt5OpenGL.lib ;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\lib\Qt5PrintSupport.lib ;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\lib\Qt5Gui.lib ;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\lib\Qt5Widgets.lib ;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\lib\Qt5SerialPort.lib ;C:\My_Partition\Tools\Qt\Qt5.14.1\5.14.1\msvc2017\lib\Qt5Core.lib</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Probes\Unisig\stringunisigfield.cpp" />
     <ClInclude Include="../qwt-6.3.0/src/qwt.h" />
     <ClInclude Include="../qwt-6.3.0/src/qwt_abstract_legend.h" />
     <ClInclude Include="../qwt-6.3.0/src/qwt_abstract_scale.h" />
@@ -763,10 +766,7 @@
     <ClInclude Include="Model/types/primitives/numeric.h" />
     <ClInclude Include="Model/types/primitives/pad.h" />
     <ClInclude Include="Model/types/primitives/unitconverter.h" />
-    <ClCompile Include=".//flashdump.cpp" />
     <ClCompile Include=".//gentel.cpp" />
-    <ClCompile Include=".//gentel_rcc.cpp" />
-    <ClCompile Include=".//hash.cpp" />
     <ClCompile Include="./Gvm/gvm.cpp" />
     <ClCompile Include="./Gvm/gvmlib.cpp" />
     <ClCompile Include="./Hmi/BasicWidgets/knob.cpp" />
@@ -929,15 +929,10 @@
     <ClCompile Include="./Probes/inspector/inspectorlogcreator.cpp" />
     <ClCompile Include="./Probes/tgmt_ato/atolog.cpp" />
     <ClCompile Include="./Probes/tgmt_atp/atplog.cpp" />
-    <ClCompile Include="./Probes/tgmt_atp/atplog_log.cpp" />
     <ClCompile Include="./Probes/tgmt_atp/atplogdecoder.cpp" />
     <ClCompile Include="./Probes/tgmt_core/wind.cpp" />
     <ClCompile Include="./Probes/tgmt_core/windpattern.cpp" />
     <ClCompile Include="./Probes/tgmt_dio/diolog.cpp" />
-    <ClCompile Include="./Probes/tgmt_duo/duoabstractreader.cpp" />
-    <ClCompile Include="./Probes/tgmt_duo/duolog.cpp" />
-    <ClCompile Include="./Probes/tgmt_duo/duologreader.cpp" />
-    <ClCompile Include="./Probes/tgmt_duo/duolstreader.cpp" />
     <ClCompile Include="./Probes/tgmt_itf/itflog.cpp" />
     <ClCompile Include="./Probes/tgmt_mega/atplogreader.cpp" />
     <ClCompile Include="./Probes/tgmt_mega/megaaddressmapper.cpp" />
@@ -969,13 +964,6 @@
     <ClCompile Include="./Sampler/sniffer.cpp" />
     <ClCompile Include="./Sampler/star.cpp" />
     <ClCompile Include="./Sampler/timesortedlist.cpp" />
-    <ClCompile Include="./Unit_Tests/ts_bitset.cpp" />
-    <ClCompile Include="./Unit_Tests/ts_bytearray.cpp" />
-    <ClCompile Include="./Unit_Tests/ts_cedflashfile.cpp" />
-    <ClCompile Include="./Unit_Tests/ts_document.cpp" />
-    <ClCompile Include="./Unit_Tests/ts_telegram.cpp" />
-    <ClCompile Include="./Unit_Tests/ts_timesortedlist.cpp" />
-    <ClCompile Include="./Unit_Tests/ts_viewport.cpp" />
     <ClCompile Include="./core/abstractalu.cpp" />
     <ClCompile Include="./core/alux86.cpp" />
     <ClCompile Include="./core/backbone.cpp" />
@@ -1147,6 +1135,7 @@
     <ClCompile Include="Model/types/primitives/numeric.cpp" />
     <ClCompile Include="Model/types/primitives/pad.cpp" />
     <ClCompile Include="Model/types/primitives/unitconverter.cpp" />
+    <ClInclude Include="Probes\Unisig\stringunisigfield.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
