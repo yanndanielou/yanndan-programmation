@@ -23,6 +23,7 @@ def main() -> None:
                     field_values=[
                         "S_PAI_.*._PAS_0._LINK_LOSS",
                         "S_PAS_.*_ZAUM.*_RAZ_RESTRICTED",
+                        "S_PAS_.*_NRB",
                     ],
                     filter_type=common_filters.StringFilterType.MATCHES_REGEX,
                     white_or_black_list=common_filters.WhiteOrBlackListFilterType.WHITELIST,
@@ -59,9 +60,37 @@ def main() -> None:
                     ],
                     label="RAZ restricted",
                 ),
+                archive_analyzis.ArchiveAnalyzis.GroupToCreateForFrequencyReportDefinition(
+                    split_by_id=False,
+                    archive_id_filters=[
+                        common_filters.StringFieldValueBasedFilter(
+                            field_values="S_PAS_.*NRB",
+                            filter_type=common_filters.StringFilterType.MATCHES_REGEX,
+                            white_or_black_list=common_filters.WhiteOrBlackListFilterType.WHITELIST,
+                        ),
+                    ],
+                    label="NRB",
+                ),
             ],
             frequency_between_measures=timedelta(minutes=30),
             file_base_name="ZAUM vs PAI PAS link",
+        )
+        analyzis.create_output_with_frequencies_of_terms(
+            groups_definitions_to_create=[
+                archive_analyzis.ArchiveAnalyzis.GroupToCreateForFrequencyReportDefinition(
+                    split_by_id=False,
+                    archive_id_filters=[
+                        common_filters.StringFieldValueBasedFilter(
+                            field_values="S_PAS_.*NRB",
+                            filter_type=common_filters.StringFilterType.MATCHES_REGEX,
+                            white_or_black_list=common_filters.WhiteOrBlackListFilterType.WHITELIST,
+                        ),
+                    ],
+                    label="NRB",
+                ),
+            ],
+            frequency_between_measures=timedelta(minutes=30),
+            file_base_name="NRB",
         )
 
 
