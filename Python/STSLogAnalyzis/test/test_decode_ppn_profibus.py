@@ -18,9 +18,9 @@ def next_unisig_58_library() -> upper_layer_libraries.UpperLayerDecodingLibrary:
 
 class TestSimpleProfibusLogFile:
 
-    def test_file_with_only_sl0_connect_request_telegram(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+    def test_file_with_only_sl4_connect_request_telegram(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
         library = ppn_profibus_log.ProfibusLogLibrary.from_file_full_path(
-            r"test\resources\ppn\sl0_connect_request.log_ppn",
+            r"test\resources\ppn\sl4_connect_request.log_ppn",
             upper_layer_decoding_library=next_unisig_58_library_fixture,
         )
         for unisig_message_index, unisig_message in enumerate(library.all_unisig_messages):
