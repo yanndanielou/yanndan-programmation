@@ -79,7 +79,7 @@ def get_classic_archive_library_base_builder(archive_decoder: decode_archive.Arc
         .add_sqlarch_archive_lines_filter(
             decode_archive.SignalTypeFilter(
                 white_or_black_list=common_filters.WhiteOrBlackListFilterType.BLACKLIST,
-                field_values=["TRAIN", "ARS_AD", "TB"],
+                field_values=["TRAIN", "ARS_AD", "TB", "ARRET", "MISSION"],
                 filter_type=common_filters.StringFilterType.EQUALS_TO,
             )
         )
