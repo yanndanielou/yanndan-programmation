@@ -308,7 +308,7 @@ class ArchiveLibrary:
 
         # Check ID filters
         for f in self.sqlarch_archive_lines_filters:
-            if not f.do_passes(raw_sql_arch_line, parent):
+            if not f.passes(raw_sql_arch_line, parent):
                 return False
 
         return True
