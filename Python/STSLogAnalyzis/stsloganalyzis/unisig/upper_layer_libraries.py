@@ -4,6 +4,8 @@ from typing import Self, cast
 
 from logger import logger_config
 
+FIELDS_NAME_TO_IGNORE = ["Packet Header"]
+
 
 @dataclass
 class EnumAttributesTypeDefinition:
@@ -60,6 +62,10 @@ class UpperLayerDecodingLibrary:
             name = value_dict.get("name")
             variants = value_dict.get("Variants")
 
+            if name in FIELDS_NAME_TO_IGNORE:
+                logger_config.print_and_log_info(f"Ignore field {name}")
+                continue
+
             if name is not None:
                 ret.append(UpperLayerDecodingLibrary.create_packet_field_definition(value_dict))
             elif variants is not None:
@@ -71,6 +77,7 @@ class UpperLayerDecodingLibrary:
     @staticmethod
     def create_variants_definition(value_dict: dict) -> PacketVariantsDefinition:
         variants_definitions = value_dict.get("Variants")
+        assert variants_definitions
         packet_variant_definitions: list[PacketVariantDefinition] = []
         for variant_definition in variants_definitions:
             packet_variant_definition = UpperLayerDecodingLibrary.create_variant_definition(value_dict=variant_definition)
