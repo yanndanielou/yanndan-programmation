@@ -62,7 +62,6 @@ class Train:
     cc_id_with_offset: int
 
     def __post_init__(self) -> None:
-        self.all_locations: list[TrainLocation] = []
 
         self.all_locations = [
             TrainLocation(train=self, segment_number_and_offset_field_prefix=location_label) for location_label in ["ExtFront", "IntFront", "ExtRear", "IntRear", "NvFront", "NvRear"]
@@ -97,10 +96,10 @@ class Train:
             loc_tc_label = location.exact_location.get_track_circuit_id_string_if_no() if location.exact_location else "None"
             loc_tb_label = location.exact_location.get_tracking_block_id_string_if_no() if location.exact_location else "None"
             loc_cv_label = location.exact_location.get_virtual_canton_id_string_if_no() if location.exact_location else "None"
-            field_names_and_values.append((f"Location {location.label} for {self.__str__} TB", f"{loc_tb_label}"))
-            field_names_and_values.append((f"Location {location.label} for {self.__str__} TC", f"{loc_tc_label}"))
-            field_names_and_values.append((f"Location {location.label} for {self.__str__} CV", f"{loc_cv_label}"))
-            field_names_and_values.append((f"Location {location.label} for {self.__str__}", f"{location.exact_location}"))
+            field_names_and_values.append((f"Location {location.label} for {self.__str__()} TB", f"{loc_tb_label}"))
+            field_names_and_values.append((f"Location {location.label} for {self.__str__()} TC", f"{loc_tc_label}"))
+            field_names_and_values.append((f"Location {location.label} for {self.__str__()} CV", f"{loc_cv_label}"))
+            field_names_and_values.append((f"Location {location.label} for {self.__str__()}", f"{location.exact_location}"))
 
         return field_names_and_values
 
@@ -126,11 +125,11 @@ class MovementAuthorityLimitForOneZoneController:
         mal_tb_label = self.mal_location.get_tracking_block_id_string_if_no() if self.mal_location else "None"
         mal_cv_label = self.mal_location.get_virtual_canton_id_string_if_no() if self.mal_location else "None"
 
-        field_names_and_values.append((f"{self.label} for {self.train.__str__} TB", f"type {self.mal_type.name} {mal_tb_label}"))
-        field_names_and_values.append((f"{self.label} for {self.train.__str__} TC", f"type {self.mal_type.name} {mal_tc_label}"))
-        field_names_and_values.append((f"{self.label} for {self.train.__str__} CV", f"type {self.mal_type.name} {mal_cv_label}"))
-        field_names_and_values.append((f"{self.label} for {self.train.__str__} location", f"type {self.mal_type.name} {self.mal_location}"))
-        field_names_and_values.append((f"{self.label} for {self.train.__str__} Type", f"{self.mal_type.name}"))
+        field_names_and_values.append((f"{self.label} for {self.train.__str__()} TB", f"type {self.mal_type.name} {mal_tb_label}"))
+        field_names_and_values.append((f"{self.label} for {self.train.__str__()} TC", f"type {self.mal_type.name} {mal_tc_label}"))
+        field_names_and_values.append((f"{self.label} for {self.train.__str__()} CV", f"type {self.mal_type.name} {mal_cv_label}"))
+        field_names_and_values.append((f"{self.label} for {self.train.__str__()} location", f"type {self.mal_type.name} {self.mal_location}"))
+        field_names_and_values.append((f"{self.label} for {self.train.__str__()} Type", f"{self.mal_type.name}"))
         return field_names_and_values
 
     class MALType(IntEnum):
