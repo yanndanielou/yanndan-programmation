@@ -245,9 +245,7 @@ class ProfibusLogLibrary:
         self.ppn_connections_library = PpnConnectionsLibrary()
 
         if self.upper_layer_decoding_library is None:
-            self.upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(
-                json_file_full_path=r"D:\temp\GenTel\0.1-0-Original_Edition\GenTel\rom\unisig_s58.json"
-            )
+            self.upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(json_file_full_path=r"unisig_s58.json")
 
         self.decoded_files: list[ProfibusLogFile] = []
         self.decoded_files_sorted_by_line_timestamp: list[ProfibusLogFile] = []
@@ -697,9 +695,7 @@ class ProfibusLogFile:
         self.decoded_lines: list[ProfibusLogLine] = []
         self._lines_with_valid_timestamp_sorted_by_timestamp: list[ProfibusLogLine] = []
         if self.upper_layer_decoding_library is None:
-            self.upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(
-                json_file_full_path=r"D:\temp\GenTel\0.1-0-Original_Edition\GenTel\rom\unisig_s58.json"
-            )
+            self.upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(json_file_full_path=r"unisig_s58.json")
         self.file_name_with_extension = file_name_utils.get_file_name_with_extension_from_full_path(self.file_full_path)
 
     @property
@@ -823,9 +819,7 @@ class ProfibusLogLine:
         previous_line_timestamp: datetime | None = None,
     ) -> "ProfibusLogLine|None":
         if upper_layer_decoding_library is None:
-            upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(
-                json_file_full_path=r"D:\temp\GenTel\0.1-0-Original_Edition\GenTel\rom\unisig_s58.json"
-            )
+            upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(json_file_full_path=r"unisig_s58.json")
 
         line = line.lstrip("\x00")
 
