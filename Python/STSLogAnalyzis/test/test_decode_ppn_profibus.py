@@ -26,6 +26,14 @@ class TestSimpleProfibusLogFile:
         for unisig_message_index, unisig_message in enumerate(library.all_unisig_messages):
             assert unisig_message.recomputed_crc_and_transmitted_crc_are_equals, f"Invalid CRC in {unisig_message_index+1}th unisig message, {unisig_message.__class__.__name__}"
 
+    def test_file_with_only_sl4_stm_15(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+        library = ppn_profibus_log.ProfibusLogLibrary.from_file_full_path(
+            r"test\resources\ppn\sl4_next_evc_stm_15.log_ppn",
+            upper_layer_decoding_library=next_unisig_58_library_fixture,
+        )
+        unisig_message = library.all_unisig_messages[0]
+        assert not unisig_message.creational_and_decoding_errors
+
 
 class TestDecodeOnePpnProfibusLogFileWithTwoInterlocutorsAnd2Channels:
 
