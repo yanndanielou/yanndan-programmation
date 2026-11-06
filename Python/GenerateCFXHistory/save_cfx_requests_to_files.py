@@ -698,8 +698,9 @@ class SaveCfxRequestMultipagesResultsApplication:
                 self.create_webdriver_firefox()
                 self.login_champfx()
                 return
-            except TimeoutException as exc:
+            except (TimeoutException, urllib3.exceptions.ReadTimeoutError, WebDriverException) as exc:
                 logger_config.print_and_log_exception(exc)
+                logger_config.print_and_log_info(f"Error in creating webdriver and driver, will wait {delay_between_retry_in_seconds} seconds")
                 time.sleep(delay_between_retry_in_seconds)
                 delay_between_retry_in_seconds += 1
 
@@ -717,7 +718,7 @@ class SaveCfxRequestMultipagesResultsApplication:
         ):
             self.driver.get(login_url)
 
-        with stopwatch_with_label_and_surround_with_screenshots(label="Waited page is loaded", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
+        with stopwatch_with_label_and_surround_with_screenshots(label="Wait page loading", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
             with surround_with_screenshots(label="login_champfx - title_contains ok", remote_web_driver=self.driver, screenshots_directory_path=self.screenshots_output_relative_path):
                 WebDriverWait(self.driver, 100).until(expected_conditions.title_contains("01_CHAMP/CFX - IBM Rational ClearQuest"))
 
