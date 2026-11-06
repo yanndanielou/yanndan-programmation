@@ -92,6 +92,20 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Probes\Unisig\pae\stringunisigpaefield.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\unisigbasicmessagesdecoders.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\unisigpaehelpers.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\unisigpaelog.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\unisigpaelogcreator.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\unisigpaeprotocolevent.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\unisigpaespecificunisiginttypes.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\unisigpaestmmessagesupperlayersdecoders.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\unisigpaewarningevent.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\unisigprotocolmessagesdecoders.cpp" />
+    <ClCompile Include="Probes\Unisig\pas\unisigpaslog.cpp" />
+    <ClCompile Include="Probes\Unisig\pas\unisigpaslogcreator.cpp" />
+    <ClCompile Include="Probes\Unisig\pas\unisigunvariantsdialog.cpp" />
+    <ClCompile Include="Probes\Unisig\pas\unisig_s98.cpp" />
     <ClCompile Include="Probes\Unisig\stringunisigfield.cpp" />
     <ClInclude Include="../qwt-6.3.0/src/qwt.h" />
     <ClInclude Include="../qwt-6.3.0/src/qwt_abstract_legend.h" />
@@ -708,14 +722,6 @@
     <ClInclude Include="./Probes/tgmt_mega/megareader.h" />
     <ClInclude Include="./Probes/tgmt_wcu/wculog.h" />
     <ClInclude Include="./Probes/tgmt_wcu/wculogcreator.h" />
-    <ClInclude Include="./Probes/unisig/unisig_s98.h" />
-    <ClInclude Include="./Probes/unisig/unisiglogcreator.h" />
-    <ClInclude Include="./Probes/unisig/unisigmodel.h" />
-    <ClInclude Include="./Probes/unisig/unisigpaelog.h" />
-    <ClInclude Include="./Probes/unisig/unisigpaelogcreator.h" />
-    <ClInclude Include="./Probes/unisig/unisigpaslog.h" />
-    <ClInclude Include="./Probes/unisig/unisigpaslogcreator.h" />
-    <ClInclude Include="./Probes/unisig/unisigunvariantsdialog.h" />
     <ClInclude Include="./Sampler/calculator.h" />
     <ClInclude Include="./Sampler/checker.h" />
     <ClInclude Include="./Sampler/datasampler.h" />
@@ -941,14 +947,6 @@
     <ClCompile Include="./Probes/tgmt_mega/megalogreader.cpp" />
     <ClCompile Include="./Probes/tgmt_mega/megareader.cpp" />
     <ClCompile Include="./Probes/tgmt_wcu/wculog.cpp" />
-    <ClCompile Include="./Probes/unisig/unisig_s98.cpp" />
-    <ClCompile Include="./Probes/unisig/unisiglogcreator.cpp" />
-    <ClCompile Include="./Probes/unisig/unisigmodel.cpp" />
-    <ClCompile Include="./Probes/unisig/unisigpaelog.cpp" />
-    <ClCompile Include="./Probes/unisig/unisigpaelogcreator.cpp" />
-    <ClCompile Include="./Probes/unisig/unisigpaslog.cpp" />
-    <ClCompile Include="./Probes/unisig/unisigpaslogcreator.cpp" />
-    <ClCompile Include="./Probes/unisig/unisigunvariantsdialog.cpp" />
     <ClCompile Include="./Sampler/calculator.cpp" />
     <ClCompile Include="./Sampler/checker.cpp" />
     <ClCompile Include="./Sampler/datasampler.cpp" />
@@ -1135,7 +1133,27 @@
     <ClCompile Include="Model/types/primitives/numeric.cpp" />
     <ClCompile Include="Model/types/primitives/pad.cpp" />
     <ClCompile Include="Model/types/primitives/unitconverter.cpp" />
+    <ClInclude Include="Probes\Unisig\pae\stringunisigpaefield.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigbasicmessagesdecoders.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigpaeconstants.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigpaehelpers.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigpaelog.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigpaelogcreator.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigpaeprotocolevent.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigpaespecificunisiginttypes.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigpaestmmessagesupperlayersdecoders.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigpaewarningevent.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigprotocolmessagesdecoders.h" />
+    <ClInclude Include="Probes\Unisig\pas\unisigpaslog.h" />
+    <ClInclude Include="Probes\Unisig\pas\unisigpaslogcreator.h" />
+    <ClInclude Include="Probes\Unisig\pas\unisigunvariantsdialog.h" />
+    <ClInclude Include="Probes\Unisig\pas\unisig_s98.h" />
     <ClInclude Include="Probes\Unisig\stringunisigfield.h" />
+    <ClInclude Include="Probes\Unisig\unisiglogcreator.h" />
+    <ClInclude Include="Probes\Unisig\unisigmodel.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Probes\Unisig\pae\.gitkeep" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
