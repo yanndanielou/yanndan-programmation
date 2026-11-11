@@ -178,7 +178,7 @@ class DownloadAndCleanDMLApplication:
         today_copy_file_name = (
             file_name_utils.get_file_name_without_extension_from_full_path(dml_file_path)
             + " - "
-            + datetime.datetime.now().strftime("%Y-%m-%d")  # noqa: DTZ005
+            + datetime.datetime.now().strftime("%Y-%m-%d")
             + file_name_utils.file_extension_from_full_path(dml_file_path)
         )
         final_excel_file_directory = os.path.dirname(dml_file_path)
