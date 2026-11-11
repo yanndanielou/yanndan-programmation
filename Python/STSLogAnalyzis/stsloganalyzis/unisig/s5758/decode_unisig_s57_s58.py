@@ -28,6 +28,26 @@ UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITS = UPPER_LAYER_STM_NID_STM_FIELD_SIZE_
 UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS = 13
 
 
+def jru_crc16_as_bytes(data: bytes | bytearray) -> bytes:
+    as_int = jru_crc16_as_int(data)
+    return as_int.to_bytes(length=2)
+
+
+def jru_crc16_as_int(data: bytes | bytearray) -> int:
+    crc = 0x0000
+    poly = 0x1021
+    for byte in data:
+        # On injecte l'octet dans le poids fort du CRC (16 bits)
+        crc ^= byte << 8
+
+        for _ in range(8):
+            if crc & 0x8000:
+                crc = ((crc << 1) ^ poly) & 0xFFFF
+            else:
+                crc = (crc << 1) & 0xFFFF
+    return crc
+
+
 def crc48_unisig_s57_as_bytes(data: bytes | bytearray, verbose: bool = False) -> bytes:
     as_int = crc48_unisig_s57_as_int(data, verbose)
     return as_int.to_bytes(length=6)
@@ -137,7 +157,7 @@ class OnboardUnisigMessage(ABC):
         pass
 
     @abstractmethod
-    def can_src_be_computed(self) -> bool:
+    def can_crc_be_computed(self) -> bool:
         pass
 
     @abstractmethod
@@ -245,7 +265,7 @@ class SdnSafeTimeLayerStartupForMulticast(SdnOnboardUnisigMessage):
         # assert self.byte_message_decoded.is_correctly_and_completely_decoded
         pass
 
-    def can_src_be_computed(self) -> bool:
+    def can_crc_be_computed(self) -> bool:
         raise NotImplementedError()
 
     def prepare_data_and_recompute_crc(self) -> None:
@@ -262,7 +282,7 @@ class SdnApplicationDataMulticastForUpperLayerTelegram(SdnOnboardUnisigMessage):
         # assert self.byte_message_decoded.is_correctly_and_completely_decoded
         pass
 
-    def can_src_be_computed(self) -> bool:
+    def can_crc_be_computed(self) -> bool:
         raise NotImplementedError()
 
     def prepare_data_and_recompute_crc(self) -> None:
@@ -289,7 +309,7 @@ class SdnSyncAndReferenceTimeMulticastMessage(SdnOnboardUnisigMessage):
         assert self.byte_message_decoded.is_correctly_and_completely_decoded
         pass
 
-    def can_src_be_computed(self) -> bool:
+    def can_crc_be_computed(self) -> bool:
         raise NotImplementedError()
 
     def prepare_data_and_recompute_crc(self) -> None:
@@ -323,6 +343,25 @@ class Unisig16BitsIntWithUnisigBytesOrder:
         self.high_byte = byte_message_decoded.get_next_byte_as_single_int_unsigned()
 
         self.value_in_decimal_format = bytes_messages.DecodedBytesMessage.from_bytes_as_list_int([self.high_byte, self.low_byte]).get_remaining_bits_as_unsigned_int()
+
+
+@dataclass
+class JruCrc:
+    byte_1: int
+    byte_2: int
+
+    def __post_init__(self) -> None:
+        self.as_int = bytes_messages.DecodedBytesMessage.from_bytes_as_list_int([self.byte_1, self.byte_2]).get_remaining_bits_as_unsigned_int()
+
+    @classmethod
+    def from_decoded_bytes_message(cls, decoded_byte_message: bytes_messages.DecodedBytesMessage) -> "JruCrc":
+        return JruCrc(decoded_byte_message.get_next_byte_as_single_int_unsigned(), decoded_byte_message.get_next_byte_as_single_int_unsigned())
+
+    @classmethod
+    def compute_from_data(cls, data: bytes | bytearray) -> "JruCrc":
+        as_bytes = jru_crc16_as_bytes(data)
+        assert len(as_bytes) != 1
+        return JruCrc(as_bytes[0], as_bytes[1])
 
 
 @dataclass
@@ -715,7 +754,7 @@ class SdaDisconnectTelegram(OnboardSdaUnisigMessage):
 
         self.ppn_connections_library.register_disconnect_telegram(self)
 
-    def can_src_be_computed(self) -> bool:
+    def can_crc_be_computed(self) -> bool:
         return self.safety_level == SafetyLevel.SL4 and self.profibus_log_line is not None
 
 
@@ -756,7 +795,7 @@ class SdaConnectRequestOrConfirmTelegram(OnboardSdaUnisigMessage):
         elif self.command_type in [OnboardSdaUnisigMessage.CommandTypeSubset57.SL0_CONNECT_CONFIRM_TELEGRAM, OnboardSdaUnisigMessage.CommandTypeSubset57.SL4_CONNECT_CONFIRM_TELEGRAM]:
             self.ppn_connections_library.register_connect_confirm_telegram(self)
 
-    def can_src_be_computed(self) -> bool:
+    def can_crc_be_computed(self) -> bool:
         return self.safety_level == SafetyLevel.SL4 and self.profibus_log_line is not None
 
     def get_crc_implicit_data_except_length(self) -> "UnisigCrc.ImplicitDataExceptLength":
@@ -788,7 +827,7 @@ class SdaAuthenticationOrAuthenticationAcknowledgementTelegram(OnboardSdaUnisigM
 
         assert self.all_data_aka_net_data.as_decoded_bytes_message.is_correctly_and_completely_decoded
 
-    def can_src_be_computed(self) -> bool:
+    def can_crc_be_computed(self) -> bool:
         return self.safety_level == SafetyLevel.SL4 and self.profibus_log_line is not None and self.current_connection_session_before_this_message is not None
 
 
@@ -804,7 +843,7 @@ class SdaRunOrReadyToRunTelegram(OnboardSdaUnisigMessage):
         self.stl_time_stamp = UnisigTimeStamp.from_next_bytes_in_byte_message_decoded(self.all_data_aka_net_data.as_decoded_bytes_message)
         assert self.all_data_aka_net_data.as_decoded_bytes_message.is_correctly_and_completely_decoded
 
-    def can_src_be_computed(self) -> bool:
+    def can_crc_be_computed(self) -> bool:
         return self.safety_level == SafetyLevel.SL4 and self.profibus_log_line is not None and self.current_connection_session_before_this_message is not None
 
 
@@ -816,7 +855,7 @@ class SdaIdleTelegram(OnboardSdaUnisigMessage):
         if self.safety_level == SafetyLevel.SL4:
             self.crc = UnisigCrc.from_bits_as_string(self.byte_message_decoded.extract_next_bytes_to_str_of_bit(size_bytes=SL4_CRC_SIZE_IN_BYTES))
 
-    def can_src_be_computed(self) -> bool:
+    def can_crc_be_computed(self) -> bool:
         return self.safety_level == SafetyLevel.SL4 and self.current_connection_session_before_this_message is not None
 
 
@@ -1051,8 +1090,9 @@ class SdaForUpperLayerTelegram(OnboardSdaUnisigMessage):
 
         self.upper_layer_decoded_stms: list[UpperLayerStm] = []
 
-        delegate_content_bytes = self.all_data_aka_net_data.as_decoded_bytes_message.get_next_bits_as_bitset_str(self.header.l_message_minus_delegate_header_size_in_bytes * 8)
-        data_for_upper_layer_without_header = bytes_messages.DecodedBytesMessage.from_bit_string(delegate_content_bytes)
+        delegate_content_biteset_str = self.all_data_aka_net_data.as_decoded_bytes_message.get_next_bits_as_bitset_str(self.header.l_message_minus_delegate_header_size_in_bytes * 8)
+
+        data_for_upper_layer_without_header = bytes_messages.DecodedBytesMessage.from_bit_string(delegate_content_biteset_str)
 
         while data_for_upper_layer_without_header.number_of_bits_remaining_to_decode > MAXIMUM_PADDING_SIZE_IN_BITS_SUBSET_58:
 
@@ -1076,6 +1116,17 @@ class SdaForUpperLayerTelegram(OnboardSdaUnisigMessage):
             )
         )
 
+        if self.profibus_log_line and "JRU" in self.profibus_log_line.target_name.upper():
+            self.transmitted_jru_crc16 = JruCrc.from_decoded_bytes_message(self.all_data_aka_net_data.as_decoded_bytes_message)
+            self.recomputed_jru_crc16 = JruCrc.compute_from_data(
+                self.header.NID_STM.to_bytes() + self.header.L_MESSAGE.to_bytes() + bytes_messages.DecodedBytesMessage.from_bit_string(delegate_content_biteset_str).get_remaining_bits_as_bytes()
+            )
+            self.recomputed_jru_crc16_is_equal_to_transmitted = self.transmitted_jru_crc16.as_int == self.recomputed_jru_crc16.as_int
+        else:
+            self.transmitted_jru_crc16 = None
+            self.recomputed_jru_crc16 = None
+            self.recomputed_jru_crc16_is_equal_to_transmitted = None
+
         self.remaining_undecoded_bits = self.all_data_aka_net_data.as_decoded_bytes_message.get_remaining_bits_as_str_of_bit()
         self.number_remaining_undecoded_bits = len(self.remaining_undecoded_bits)
 
@@ -1085,5 +1136,5 @@ class SdaForUpperLayerTelegram(OnboardSdaUnisigMessage):
                 # f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.number_remaining_undecoded_bits}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
             )
 
-    def can_src_be_computed(self) -> bool:
+    def can_crc_be_computed(self) -> bool:
         return self.safety_level == SafetyLevel.SL4 and self.profibus_log_line is not None and self.current_connection_session_before_this_message is not None

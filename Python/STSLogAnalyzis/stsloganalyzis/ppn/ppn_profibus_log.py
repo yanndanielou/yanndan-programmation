@@ -394,6 +394,11 @@ class ProfibusLogLibrary:
                         "line number": interesting_stm_message.upper_layer_telegram.profibus_log_line.line_number if interesting_stm_message.upper_layer_telegram.profibus_log_line else None,
                         "nid stm": interesting_stm_message.nid_stm,
                         "message type": interesting_stm_message.upper_layer_telegram.__class__.__name__,
+                        "safety level": (
+                            interesting_stm_message.upper_layer_telegram.safety_level
+                            if interesting_stm_message.upper_layer_telegram and isinstance(interesting_stm_message.upper_layer_telegram, decode_unisig_s57_s58.OnboardSdaUnisigMessage)
+                            else None
+                        ),
                         "stm l_message": interesting_stm_message.l_packet,
                         "stm data_without_header_size_in_bits": interesting_stm_message.data_without_header_size_in_bits,
                         "Number of errors (only this STM message)": len(interesting_stm_message.creational_and_decoding_errors),
@@ -423,8 +428,9 @@ class ProfibusLogLibrary:
                         "Safe time layer timestamp (human_format)": (
                             interesting_stm_message.upper_layer_telegram.stl_time_stamp.human_format if interesting_stm_message.upper_layer_telegram.stl_time_stamp else None
                         ),
+                        "STM message: has remaining bits to decode": interesting_stm_message.number_remaining_undecoded_bits > 0,
                         "STM message: number remaining bits to decode": interesting_stm_message.number_remaining_undecoded_bits,
-                        "STM message: remaining bits to decode": interesting_stm_message.remaining_undecoded_bits,
+                        "STM message: remaining bits to decode (bitset)": interesting_stm_message.remaining_undecoded_bits,
                         "log line: number remaining bits to decode": interesting_stm_message.upper_layer_telegram.number_remaining_undecoded_bits,
                         "log line: remaining bits to decode": interesting_stm_message.upper_layer_telegram.remaining_undecoded_bits,
                         "STM message errors": interesting_stm_message.creational_and_decoding_errors,
@@ -560,6 +566,7 @@ class ProfibusLogLibrary:
                             "duration since previous line": unisig_message.profibus_log_line.excessive_duration_since_previous_line if unisig_message.profibus_log_line else None,
                             "excessive duration since previous line": unisig_message.profibus_log_line.excessive_duration_since_previous_line if unisig_message.profibus_log_line else None,
                             "message type": unisig_message.__class__.__name__,
+                            "safety level": unisig_message.safety_level if isinstance(unisig_message, decode_unisig_s57_s58.OnboardSdaUnisigMessage) else None,
                             "Unisig message: all_data_aka_net_data": (
                                 unisig_message.all_data_aka_net_data.as_base_16
                                 if isinstance(unisig_message, decode_unisig_s57_s58.OnboardSdaUnisigMessage) and unisig_message.all_data_aka_net_data
@@ -568,9 +575,20 @@ class ProfibusLogLibrary:
                             "number remaining undecoded bits (if UpperLayer)": (
                                 unisig_message.number_remaining_undecoded_bits if isinstance(unisig_message, decode_unisig_s57_s58.SdaForUpperLayerTelegram) else None
                             ),
+                            "recomputed_jru_crc16_is_equal_to_transmitted (if UpperLayer)": (
+                                unisig_message.recomputed_jru_crc16_is_equal_to_transmitted if isinstance(unisig_message, decode_unisig_s57_s58.SdaForUpperLayerTelegram) else None
+                            ),
                             "remaining undecoded bits (if UpperLayer)": unisig_message.remaining_undecoded_bits if isinstance(unisig_message, decode_unisig_s57_s58.SdaForUpperLayerTelegram) else None,
                             "sequence_number is continuous with previous": (
                                 unisig_message.sequence_number_is_continuous_with_previous if isinstance(unisig_message, decode_unisig_s57_s58.OnboardSdaUnisigMessage) else None
+                            ),
+                            "Number upper layer decoded STM (if upperlayer)": (
+                                len(unisig_message.upper_layer_decoded_stms) if isinstance(unisig_message, decode_unisig_s57_s58.SdaForUpperLayerTelegram) else None
+                            ),
+                            "Upper layer decoded STM (if upperlayer)": (
+                                ",".join([str(stm_message.nid_stm) for stm_message in unisig_message.upper_layer_decoded_stms])
+                                if isinstance(unisig_message, decode_unisig_s57_s58.SdaForUpperLayerTelegram)
+                                else None
                             ),
                             "sequence error": unisig_message.sequence_error if isinstance(unisig_message, decode_unisig_s57_s58.OnboardSdaUnisigMessage) else None,
                             "Number of errors": len(unisig_message.creational_and_decoding_errors),
@@ -664,7 +682,7 @@ class ProfibusLogLibrary:
     @logger_config.stopwatch_decorator(monitor_ram_usage=True, inform_beginning=True)
     def _recalculate_all_crcs(self) -> None:
 
-        sda_unisig_messages_to_compute_crc = [unisig_message for unisig_message in self.all_sda_unisig_messages if unisig_message.can_src_be_computed()]
+        sda_unisig_messages_to_compute_crc = [unisig_message for unisig_message in self.all_sda_unisig_messages if unisig_message.can_crc_be_computed()]
         logger_config.print_and_log_info(f"Recompute CRC of {len(sda_unisig_messages_to_compute_crc)}/{len(self.all_sda_unisig_messages)} SDA messages")
         for sda_unisig_message_index, sda_unisig_message_to_compute_crc in enumerate(sda_unisig_messages_to_compute_crc):
             logger_config.print_and_log_info_if(sda_unisig_message_index + 1 % 1000 == 0, f"{sda_unisig_message_index}/{len(sda_unisig_messages_to_compute_crc)} CRC computed")

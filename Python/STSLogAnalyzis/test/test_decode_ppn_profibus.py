@@ -82,7 +82,7 @@ class TestDecodeOnePpnProfibusLogFileWithOnlyTwoInterlocutors:
                 assert connect_request_telegram.command_type == decode_unisig_s57_s58.OnboardSdaUnisigMessage.CommandTypeSubset57.SL4_CONNECT_REQUEST_TELEGRAM
                 assert connect_request_telegram.profibus_log_line
                 assert "next" in connect_request_telegram.profibus_log_line.source_name.lower()
-                assert connect_request_telegram.can_src_be_computed()
+                assert connect_request_telegram.can_crc_be_computed()
                 connect_request_telegram.prepare_data_and_recompute_crc()
                 assert connect_request_telegram.recomputed_crc
                 assert connect_request_telegram.recomputed_crc_and_transmitted_crc_are_equals
@@ -97,7 +97,7 @@ class TestDecodeOnePpnProfibusLogFileWithOnlyTwoInterlocutors:
                 assert connect_confirm_telegram.command_type == decode_unisig_s57_s58.OnboardSdaUnisigMessage.CommandTypeSubset57.SL4_CONNECT_CONFIRM_TELEGRAM
                 assert connect_confirm_telegram.profibus_log_line
                 assert "evc" in connect_confirm_telegram.profibus_log_line.source_name.lower()
-                assert connect_confirm_telegram.can_src_be_computed()
+                assert connect_confirm_telegram.can_crc_be_computed()
                 connect_confirm_telegram.prepare_data_and_recompute_crc()
                 assert connect_confirm_telegram.recomputed_crc
                 assert connect_confirm_telegram.recomputed_crc_and_transmitted_crc_are_equals
@@ -112,7 +112,7 @@ class TestDecodeOnePpnProfibusLogFileWithOnlyTwoInterlocutors:
                 assert authentication_telegram.command_type == decode_unisig_s57_s58.OnboardSdaUnisigMessage.CommandTypeSubset57.SL4_AUTHENTICATION_TELEGRAM
                 assert authentication_telegram.profibus_log_line
                 assert "next" in authentication_telegram.profibus_log_line.source_name.lower()
-                assert authentication_telegram.can_src_be_computed()
+                assert authentication_telegram.can_crc_be_computed()
                 authentication_telegram.prepare_data_and_recompute_crc()
                 assert authentication_telegram.recomputed_crc
                 assert authentication_telegram.recomputed_crc_and_transmitted_crc_are_equals
@@ -127,7 +127,7 @@ class TestDecodeOnePpnProfibusLogFileWithOnlyTwoInterlocutors:
                 assert authentication_acknowledgment_telegram.command_type == decode_unisig_s57_s58.OnboardSdaUnisigMessage.CommandTypeSubset57.SL4_AUTHENTICATION_ACKNOWLEDGEMENT_TELEGRAM
                 assert authentication_acknowledgment_telegram.profibus_log_line
                 assert "evc" in authentication_acknowledgment_telegram.profibus_log_line.source_name.lower()
-                assert authentication_acknowledgment_telegram.can_src_be_computed()
+                assert authentication_acknowledgment_telegram.can_crc_be_computed()
                 authentication_acknowledgment_telegram.prepare_data_and_recompute_crc()
                 assert authentication_acknowledgment_telegram.recomputed_crc
                 assert authentication_acknowledgment_telegram.recomputed_crc_and_transmitted_crc_are_equals
@@ -142,7 +142,7 @@ class TestDecodeOnePpnProfibusLogFileWithOnlyTwoInterlocutors:
                 assert ready_to_run_telegram.command_type == decode_unisig_s57_s58.OnboardSdaUnisigMessage.CommandTypeSubset57.SL4_READY_TO_RUN
                 assert ready_to_run_telegram.profibus_log_line
                 assert "evc" in ready_to_run_telegram.profibus_log_line.source_name.lower()
-                assert ready_to_run_telegram.can_src_be_computed()
+                assert ready_to_run_telegram.can_crc_be_computed()
                 ready_to_run_telegram.prepare_data_and_recompute_crc()
                 assert ready_to_run_telegram.recomputed_crc
                 assert ready_to_run_telegram.recomputed_crc_and_transmitted_crc_are_equals
@@ -157,7 +157,7 @@ class TestDecodeOnePpnProfibusLogFileWithOnlyTwoInterlocutors:
                 assert run_telegram.command_type == decode_unisig_s57_s58.OnboardSdaUnisigMessage.CommandTypeSubset57.SL4_RUN
                 assert run_telegram.profibus_log_line
                 assert "next" in run_telegram.profibus_log_line.source_name.lower()
-                assert run_telegram.can_src_be_computed()
+                assert run_telegram.can_crc_be_computed()
                 run_telegram.prepare_data_and_recompute_crc()
                 assert run_telegram.recomputed_crc
                 assert run_telegram.recomputed_crc_and_transmitted_crc_are_equals
@@ -240,7 +240,7 @@ class TestDecodeOnePpnProfibusLogFileWithOnlyTwoInterlocutors:
                     idle_telegram = library.all_unisig_messages[1]
                     assert isinstance(idle_telegram, decode_unisig_s57_s58.SdaIdleTelegram)
                     assert idle_telegram.safety_level == decode_unisig_s57_s58.SafetyLevel.SL4
-                    assert idle_telegram.can_src_be_computed()
+                    assert idle_telegram.can_crc_be_computed()
                     idle_telegram.prepare_data_and_recompute_crc()
                     assert idle_telegram.recomputed_crc
                     assert idle_telegram.recomputed_crc_and_transmitted_crc_are_equals
@@ -257,7 +257,7 @@ class TestDecodeOnePpnProfibusLogFileWithOnlyTwoInterlocutors:
                     idle_telegram = library.all_unisig_messages[1]
                     assert isinstance(idle_telegram, decode_unisig_s57_s58.SdaIdleTelegram)
                     assert idle_telegram.safety_level == decode_unisig_s57_s58.SafetyLevel.SL4
-                    assert idle_telegram.can_src_be_computed()
+                    assert idle_telegram.can_crc_be_computed()
                     idle_telegram.prepare_data_and_recompute_crc()
                     assert idle_telegram.recomputed_crc
                     expected_crc_result_base_16 = bytes_utils.byte_array_to_string_base_16(
@@ -628,6 +628,24 @@ class TestDecodeOnePpnProfibusLogLine:
                     assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 2
                     for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
                         assert not upper_layer_decoded_stm.creational_and_decoding_errors
+
+                @pytest.mark.parametrize(
+                    "raw_ppn_log_line",
+                    [
+                        "2026-03-28 18:17:17:722 kppn 1.3.3: [99:2 => 3:2] Sending PROFIBUS message  [num:25130][rt:1763][mode:SDA][len:102] 7a c9 1d 5e a1 16 28 21 20 dd da 88 70 51 34 7c 92 45 01 08 61 83 00 7d 40 00 00 02 00 a0 00 00 00 00 00 06 c7 06 26 06 a6 26 e9 80 00 00 00 00 68 0e 8e d4 21 45 04 24 1b bb 21 14 30 40 00 00 00 11 53 d3 11 40 02 3e e0 18 f0 1a 88 17 92 02 18 2f 51 55 b0 00 00 f8 00 09 21 80 00 78 06 50 9a 12 bb 1b 24 04",
+                        "2026-07-26 03:17:11:523 kppn 1.3.3: [99:2 => 3:2] Sending PROFIBUS message  [num:10032][rt:1688][mode:SDA][len:14] d4 c9 1d 06 0f 00 ca 00 b4 33 83 82 07 01",
+                        "2026-07-26 06:05:15:269 kppn 1.3.3: [99:2 => 3:2] Sending PROFIBUS message  [num:37644][rt:1350][mode:SDA][len:102] e8 c9 1d 5e a1 16 28 0d 0c ba 82 88 70 51 34 fa 30 b9 29 ff ff ff ff ff 5f ff ff ff 80 00 00 00 00 00 00 06 e6 46 06 67 07 26 0a 40 00 00 00 00 68 0b 0e d4 21 45 01 a1 97 50 21 14 0b 40 00 00 00 11 53 d3 11 7f ff ff c0 00 00 00 00 00 02 02 18 2f 55 5f c8 00 00 f8 00 09 21 80 00 78 06 50 4c a2 50 97 a1 01",
+                    ],
+                )
+                def test_recompute_and_compare_jru_crc_16(self, raw_ppn_log_line: str, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+                    ppn_log_line = ppn_profibus_log.ProfibusLogLine.from_raw_log_line(
+                        line=raw_ppn_log_line,
+                        upper_layer_decoding_library=next_unisig_58_library_fixture,
+                    )
+                    assert ppn_log_line
+                    ppn_log_line.decode_sdn_or_sda()
+                    assert isinstance(ppn_log_line.unisig_message, decode_unisig_s57_s58.SdaForUpperLayerTelegram)
+                    assert ppn_log_line.unisig_message.recomputed_jru_crc16_is_equal_to_transmitted
 
             class TestBasicStmMessages:
 
