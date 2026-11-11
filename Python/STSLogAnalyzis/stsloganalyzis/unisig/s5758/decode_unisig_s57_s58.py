@@ -473,11 +473,12 @@ class OnboardSdaUnisigMessage(OnboardUnisigMessage):
         self.all_data_aka_net_data: OnboardSdaUnisigMessage.NetData | None = None
 
         if self.transmitter_interlocutor:
-            sequence_error = self.transmitter_interlocutor.update_lowest_order_byte_sequence_number(self.lowest_order_byte_sequence_number)
-            self.sequence_number_is_continuous_with_previous = sequence_error is None
-            if sequence_error:
-                self.add_error(sequence_error)
-            logger_config.print_and_log_error_if(sequence_error, f"{self} {sequence_error}")
+            self.sequence_error = self.transmitter_interlocutor.update_lowest_order_byte_sequence_number(self.lowest_order_byte_sequence_number)
+            self.sequence_number_is_continuous_with_previous = self.sequence_error is None
+            logger_config.print_and_log_error_if(self.sequence_error, f"{self} {self.sequence_error}")
+        else:
+            self.sequence_error = None
+            self.sequence_number_is_continuous_with_previous = None
 
         self.random_number_representing_sequence_number_byte_2_of_4_for_crc = (
             self.transmitter_interlocutor.random_number_representing_sequence_number_byte_2_of_4 if self.transmitter_interlocutor else None
