@@ -207,11 +207,15 @@ class ProfibusLogLibrary:
     @classmethod
     def from_directory(
         cls,
-        directory_path: str,
+        directory_parent_path: str,
+        directory_name: str,
         filename_pattern: str = "profibus*",
         label: str | None = None,
         upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary | None = None,
     ) -> "ProfibusLogLibrary":
+        directory_path = directory_parent_path + "\\" + directory_name
+        logger_config.print_and_log_info(f"Handling directory {directory_path}", print_ram_usage=True)
+
         all_ppn_logs_paths = file_utils.get_files_by_directory_and_file_name_mask(
             directory_path=directory_path,
             file_sort_order=file_utils.FileSortOrder.TIMESTAMP_OLDER_TO_NEWER,
