@@ -389,7 +389,7 @@ class ProfibusLogLibrary:
                         "line number": interesting_stm_message.upper_layer_telegram.profibus_log_line.line_number if interesting_stm_message.upper_layer_telegram.profibus_log_line else None,
                         "nid stm": interesting_stm_message.nid_stm,
                         "message type": interesting_stm_message.upper_layer_telegram.__class__.__name__,
-                        "stm l_message": interesting_stm_message.l_message,
+                        "stm l_message": interesting_stm_message.l_packet,
                         "stm data_without_header_size_in_bits": interesting_stm_message.data_without_header_size_in_bits,
                         "Number of errors (only this STM message)": len(interesting_stm_message.creational_and_decoding_errors),
                         "Number of errors (unisig message)": len(interesting_stm_message.upper_layer_telegram.creational_and_decoding_errors),

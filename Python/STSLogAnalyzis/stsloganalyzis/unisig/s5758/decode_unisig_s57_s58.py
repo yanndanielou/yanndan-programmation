@@ -827,8 +827,8 @@ class UpperLayerStm:
         self.fields_names_and_values: dict[str, str | datetime.datetime | int | None] = {}
 
         self.nid_stm = self.byte_message_decoded.get_next_byte_as_single_int_unsigned()
-        self.l_message = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS)
-        self.data_without_header_size_in_bits = self.l_message - UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITS - UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS
+        self.l_packet = self.byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS)
+        self.data_without_header_size_in_bits = self.l_packet - UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITS - UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS
 
         self.creational_and_decoding_errors: list[str] = []
         if self.byte_message_decoded.number_of_bits_remaining_to_decode < self.data_without_header_size_in_bits:
@@ -1023,6 +1023,13 @@ class UpperLayerStm:
         additional_fields_decoder_s5758.manual_additional_fields_decoding(self, field_name)
 
 
+class DelegateHeader:
+    def __init__(self, byte_message_decoded: bytes_messages.DecodedBytesMessage) -> None:
+        self.NID_STM = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        self.L_MESSAGE = byte_message_decoded.get_next_byte_as_single_int_unsigned()
+        self.l_message_minus_delegate_header_size_in_bytes = self.L_MESSAGE - 2
+
+
 @dataclass
 class SdaForUpperLayerTelegram(OnboardSdaUnisigMessage):
     upper_layer_decoding_library: upper_layer_libraries.UpperLayerDecodingLibrary
@@ -1035,41 +1042,44 @@ class SdaForUpperLayerTelegram(OnboardSdaUnisigMessage):
 
         self.all_data_aka_net_data = OnboardSdaUnisigMessage.NetData.from_remaining_bits_in_decoded_message(self.byte_message_decoded)
 
-        self.header = OnboardSdaUnisigMessage.Header(self.all_data_aka_net_data.as_decoded_bytes_message)
+        self.header = DelegateHeader(self.all_data_aka_net_data.as_decoded_bytes_message)
 
         self.stl_time_stamp = UnisigTimeStamp.from_last_bytes_in_byte_message_decoded(self.all_data_aka_net_data.as_decoded_bytes_message)
 
         self.upper_layer_decoded_stms: list[UpperLayerStm] = []
 
-        while self.all_data_aka_net_data.as_decoded_bytes_message.number_of_bits_remaining_to_decode > MAXIMUM_PADDING_SIZE_IN_BITS_SUBSET_58:
+        delegate_content_bytes = self.all_data_aka_net_data.as_decoded_bytes_message.get_next_bits_as_bitset_str(self.header.l_message_minus_delegate_header_size_in_bytes * 8)
+        data_for_upper_layer_without_header = bytes_messages.DecodedBytesMessage.from_bit_string(delegate_content_bytes)
 
-            if self.all_data_aka_net_data.as_decoded_bytes_message.number_of_bits_remaining_to_decode >= UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITS + UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS:
-                upper_layer_decoded_stm = UpperLayerStm(self, byte_message_decoded=self.all_data_aka_net_data.as_decoded_bytes_message)
+        while data_for_upper_layer_without_header.number_of_bits_remaining_to_decode > MAXIMUM_PADDING_SIZE_IN_BITS_SUBSET_58:
+
+            if data_for_upper_layer_without_header.number_of_bits_remaining_to_decode >= UPPER_LAYER_STM_NID_STM_FIELD_SIZE_IN_BITS + UPPER_LAYER_STM_L_MESSAGE_FIELD_SIZE_IN_BITS:
+                upper_layer_decoded_stm = UpperLayerStm(self, byte_message_decoded=data_for_upper_layer_without_header)
                 self.upper_layer_decoded_stms.append(upper_layer_decoded_stm)
                 assert len(self.upper_layer_decoded_stms) < 100
             else:
                 self.add_error(
-                    f"NotEnoughBitsToDecodeUpperLayerStm nid_content_length_in_bits={upper_layer_decoded_stm.data_without_header_size_in_bits}, byte_message_number_of_remaining_bits_to_decode={self.all_data_aka_net_data.as_decoded_bytes_message.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
+                    f"NotEnoughBitsToDecodeUpperLayerStm nid_content_length_in_bits={upper_layer_decoded_stm.data_without_header_size_in_bits}, byte_message_number_of_remaining_bits_to_decode={data_for_upper_layer_without_header.number_of_bits_remaining_to_decode}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
                 )
                 break
 
         self.padding = (
-            self.all_data_aka_net_data.as_decoded_bytes_message.get_next_bits_as_single_int_unsigned(self.all_data_aka_net_data.as_decoded_bytes_message.number_of_bits_remaining_to_decode)
-            if self.all_data_aka_net_data.as_decoded_bytes_message.number_of_bits_remaining_to_decode > 0 and self.all_data_aka_net_data.as_decoded_bytes_message.number_of_bits_remaining_to_decode < 8
+            data_for_upper_layer_without_header.get_next_bits_as_single_int_unsigned(data_for_upper_layer_without_header.number_of_bits_remaining_to_decode)
+            if data_for_upper_layer_without_header.number_of_bits_remaining_to_decode > 0 and data_for_upper_layer_without_header.number_of_bits_remaining_to_decode < 8
             else (
                 None
-                if self.all_data_aka_net_data.as_decoded_bytes_message.number_of_bits_remaining_to_decode == 0
-                else f"Error, too many bits ({self.all_data_aka_net_data.as_decoded_bytes_message.number_of_bits_remaining_to_decode}) for padding"
+                if data_for_upper_layer_without_header.number_of_bits_remaining_to_decode == 0
+                else f"Error, too many bits ({data_for_upper_layer_without_header.number_of_bits_remaining_to_decode}) for padding"
             )
         )
 
         self.remaining_undecoded_bits = self.all_data_aka_net_data.as_decoded_bytes_message.get_remaining_bits_as_str_of_bit()
         self.number_remaining_undecoded_bits = len(self.remaining_undecoded_bits)
 
-        if self.number_remaining_undecoded_bits >= 8:
+        if self.number_remaining_undecoded_bits > 0:
             self.add_error(
-                # f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.all_data_aka_net_data.as_decoded_bytes_message.number_of_bits_remaining_to_decode}, undecoded_bits_as_str={self.all_data_aka_net_data.as_decoded_bytes_message.extract_next_bits_to_str_of_bit(number_of_bits=self.all_data_aka_net_data.as_decoded_bytes_message.number_of_bits_remaining_to_decode)}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
-                f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.number_remaining_undecoded_bits}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
+                f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.number_remaining_undecoded_bits}, undecoded_bits_as_str={self.remaining_undecoded_bits}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
+                # f"RemainingBitsUndecodedAtEndOfSdaDelegate number_of_undecoded_bits={self.number_remaining_undecoded_bits}, upper_layer_already_decoded_stms_ids={','.join([str(stm.nid_stm) for stm in self.upper_layer_decoded_stms])}",
             )
 
     def can_src_be_computed(self) -> bool:

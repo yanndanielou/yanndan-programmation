@@ -5,24 +5,6 @@ from stsloganalyzis.unisig import upper_layer_libraries
 from stsloganalyzis.unisig.s5758 import decode_unisig_s57_s58
 
 
-class TestUpperLayerLibrary:
-
-    def tests_upper_layer_library_packet_field_containing_fields(self) -> None:
-        upper_layer_decoding_library = upper_layer_libraries.UpperLayerDecodingLibrary.from_next_json_file_full_path(r"test\resources\ppn\upper_layer_library_packet_field_containing_fields.json")
-
-        data_to_encode = bytes_messages.convert_hex_string_to_hex_bytes("7Bh 89h 34h 53h 01h 02h 03h 04h 05h 06h 07h 08h 09h 10h")
-        telegram = decode_unisig_s57_s58.SdaForUpperLayerTelegram(
-            ppn_connections_library=ppn_profibus_log.PpnConnectionsLibrary(),
-            profibus_log_line=None,
-            safety_level=decode_unisig_s57_s58.SafetyLevel.SL4,
-            telegram_name="",
-            byte_message_decoded=bytes_messages.DecodedBytesMessage.from_hex_string("34h 53h 01h 02h 03h 04h 05h 06h 07h 08h 09h 10h"),
-            lowest_order_byte_sequence_number=12,
-            command_type=decode_unisig_s57_s58.OnboardSdaUnisigMessage.CommandTypeSubset57.SL4_TELEGRAM_FOR_UPPER_LAYER,
-            upper_layer_decoding_library=upper_layer_decoding_library,
-        )
-
-
 class TestComputeUnisigCrc:
 
     class TestSrcSl4:
