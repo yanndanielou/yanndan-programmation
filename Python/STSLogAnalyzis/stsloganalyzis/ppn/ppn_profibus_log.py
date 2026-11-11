@@ -324,6 +324,7 @@ class ProfibusLogLibrary:
 
         self.save_all_unisig_messages_that_have_context_to_compute_crc()
         self.save_all_unisig_messages_with_bad_crc()
+        self.save_all_unisig_messages_containing_upper_layer()
 
         self.save_all_sda_messages_with_timestamp()
         self.save_all_stm_messages()
@@ -534,6 +535,13 @@ class ProfibusLogLibrary:
             file_base_name=f"{self.label} all unisig messages with bad crc",
         )
 
+    @logger_config.stopwatch_decorator()
+    def save_all_unisig_messages_containing_upper_layer(self) -> None:
+        self.save_selected_unisig_messages(
+            selected_unisig_messages=[unisig_message for unisig_message in self.all_unisig_messages if isinstance(unisig_message, decode_unisig_s57_s58.SdaForUpperLayerTelegram)],
+            file_base_name=f"{self.label} all unisig messages upper layer telegrams",
+        )
+
     def save_selected_unisig_messages(self, selected_unisig_messages: list[decode_unisig_s57_s58.OnboardUnisigMessage], file_base_name: str) -> None:
         with logger_config.stopwatch_with_label(f"save_selected_unisig_messages {len(self.all_unisig_messages)} unisig messages", monitor_ram_usage=True, inform_beginning=True):
 
@@ -557,6 +565,14 @@ class ProfibusLogLibrary:
                                 if isinstance(unisig_message, decode_unisig_s57_s58.OnboardSdaUnisigMessage) and unisig_message.all_data_aka_net_data
                                 else None
                             ),
+                            "number remaining undecoded bits (if UpperLayer)": (
+                                unisig_message.number_remaining_undecoded_bits if isinstance(unisig_message, decode_unisig_s57_s58.SdaForUpperLayerTelegram) else None
+                            ),
+                            "remaining undecoded bits (if UpperLayer)": unisig_message.remaining_undecoded_bits if isinstance(unisig_message, decode_unisig_s57_s58.SdaForUpperLayerTelegram) else None,
+                            "sequence_number is continuous with previous": (
+                                unisig_message.sequence_number_is_continuous_with_previous if isinstance(unisig_message, decode_unisig_s57_s58.OnboardSdaUnisigMessage) else None
+                            ),
+                            "sequence error": unisig_message.sequence_error if isinstance(unisig_message, decode_unisig_s57_s58.OnboardSdaUnisigMessage) else None,
                             "Number of errors": len(unisig_message.creational_and_decoding_errors),
                             "lowest_order_byte_sequence_number": (
                                 unisig_message.lowest_order_byte_sequence_number if isinstance(unisig_message, decode_unisig_s57_s58.OnboardSdaUnisigMessage) else None
