@@ -475,6 +475,8 @@ class OnboardSdaUnisigMessage(OnboardUnisigMessage):
         if self.transmitter_interlocutor:
             sequence_error = self.transmitter_interlocutor.update_lowest_order_byte_sequence_number(self.lowest_order_byte_sequence_number)
             self.sequence_number_is_continuous_with_previous = sequence_error is None
+            if sequence_error:
+                self.add_error(sequence_error)
             logger_config.print_and_log_error_if(sequence_error, f"{self} {sequence_error}")
 
         self.random_number_representing_sequence_number_byte_2_of_4_for_crc = (
