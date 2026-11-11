@@ -117,7 +117,12 @@ def save_rows_to_output_files(
         success = False
         while not success:
             with logger_config.stopwatch_with_label(f"Create dataframe from {len(rows_as_list_dict)} rows", monitor_ram_usage=True):
-                rows_as_dataframe = pandas.DataFrame(rows_as_list_dict)
+                try:
+                    rows_as_dataframe = pandas.DataFrame(rows_as_list_dict)
+                except numpy._core._exceptions._ArrayMemoryError as exc:
+                    logger_config.print_and_log_exception(exc)
+                    logger_config.print_and_log_error(f"Could not create {file_base_name} panda frame")
+                    return
 
             try:
                 if create_xlsx_file and len(rows_as_list_dict) < excel_utils.EXCEL_LIMIT_NUMBER_OF_LINES - 1:
