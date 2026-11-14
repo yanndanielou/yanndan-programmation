@@ -1116,15 +1116,16 @@ class SdaForUpperLayerTelegram(OnboardSdaUnisigMessage):
             )
         )
 
+        self.transmitted_jru_crc16: JruCrc | None = None
+        self.recomputed_jru_crc16: JruCrc | None = None
         if self.profibus_log_line and "JRU" in self.profibus_log_line.target_name.upper():
             self.transmitted_jru_crc16 = JruCrc.from_decoded_bytes_message(self.all_data_aka_net_data.as_decoded_bytes_message)
             self.recomputed_jru_crc16 = JruCrc.compute_from_data(
                 self.header.NID_STM.to_bytes() + self.header.L_MESSAGE.to_bytes() + bytes_messages.DecodedBytesMessage.from_bit_string(delegate_content_biteset_str).get_remaining_bits_as_bytes()
             )
             self.recomputed_jru_crc16_is_equal_to_transmitted = self.transmitted_jru_crc16.as_int == self.recomputed_jru_crc16.as_int
+            logger_config.print_and_log_error_if(not self.recomputed_jru_crc16_is_equal_to_transmitted, f"JRU CRC recomputation does not match {self}")
         else:
-            self.transmitted_jru_crc16 = None
-            self.recomputed_jru_crc16 = None
             self.recomputed_jru_crc16_is_equal_to_transmitted = None
 
         self.remaining_undecoded_bits = self.all_data_aka_net_data.as_decoded_bytes_message.get_remaining_bits_as_str_of_bit()
