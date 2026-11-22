@@ -593,6 +593,16 @@ class TestDecodeOnePpnProfibusLogLine:
                     for upper_layer_decoded_stm in ppn_log_line.unisig_message.upper_layer_decoded_stms:
                         assert not upper_layer_decoded_stm.creational_and_decoding_errors
 
+            class TestStm15Cfx00960059:
+                def test_decode_stm_5_with_or_without_nid_stc(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+                    library = ppn_profibus_log.ProfibusLogLibrary.from_file_full_path(
+                        r"test\resources\ppn\Several_stm_5_different_m_level.log_ppn",
+                        upper_layer_decoding_library=next_unisig_58_library_fixture,
+                    ) 
+                    for unisig_message_index, unisig_message in enumerate(library.all_unisig_messages):
+                        assert not unisig_message.creational_and_decoding_errors
+
+
             class TestStm161ForJru:
 
                 def test_decode_161_fields_are_correct(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
