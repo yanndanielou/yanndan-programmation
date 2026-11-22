@@ -598,10 +598,13 @@ class TestDecodeOnePpnProfibusLogLine:
                     library = ppn_profibus_log.ProfibusLogLibrary.from_file_full_path(
                         r"test\resources\ppn\Several_stm_5_different_m_level.log_ppn",
                         upper_layer_decoding_library=next_unisig_58_library_fixture,
-                    ) 
+                    )
                     for unisig_message_index, unisig_message in enumerate(library.all_unisig_messages):
                         assert not unisig_message.creational_and_decoding_errors
-
+                        assert isinstance(unisig_message, decode_unisig_s57_s58.SdaForUpperLayerTelegram)
+                        assert unisig_message.upper_layer_decoded_stms
+                        for upper_layer_decoded_stm in unisig_message.upper_layer_decoded_stms:
+                            assert not upper_layer_decoded_stm.creational_and_decoding_errors
 
             class TestStm161ForJru:
 
