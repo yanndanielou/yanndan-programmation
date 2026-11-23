@@ -3,7 +3,7 @@ import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from stsloganalyzis.unisig.s5758 import decode_unisig_s57_s58 
+    from stsloganalyzis.unisig.s5758 import decode_unisig_s57_s58
 
 from common import date_time_formats
 
@@ -51,14 +51,16 @@ def decode_also_fields_as_date_with_tts(upper_layer_stm: "decode_unisig_s57_s58.
 
 
 def decode_also_fields_as_string(upper_layer_stm: "decode_unisig_s57_s58.UpperLayerStm", last_character_field_name: str) -> None:
-    matched_regex = re.compile(r"(.*)(\d+)").match(last_character_field_name)
+    matched_regex = re.compile(r"(.*?)(\d{1,2})$").match(last_character_field_name)
     assert matched_regex is not None
     field_radical = matched_regex.group(1)
-    field_index = int(matched_regex.group(2))
+    field_index_str = matched_regex.group(2)
+    field_index_int = int(field_index_str)
+    field_index_number_characters = len(field_index_str)
 
     all_fields_as_one_string_value = ""
-    for i in range(field_index + 1):
-        field_i_name = f"{field_radical}{i}"
+    for i in range(field_index_int + 1):
+        field_i_name = f"{field_radical}{i:0{field_index_number_characters}d}"
         field_i_value_int = upper_layer_stm.fields_names_and_values[field_i_name]
         assert isinstance(field_i_value_int, int)
         field_i_value_str = chr(field_i_value_int)
