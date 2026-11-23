@@ -61,9 +61,13 @@ def decode_also_fields_as_string(upper_layer_stm: "decode_unisig_s57_s58.UpperLa
     all_fields_as_one_string_value = ""
     for i in range(field_index_int + 1):
         field_i_name = f"{field_radical}{i:0{field_index_number_characters}d}"
-        field_i_value_int = upper_layer_stm.fields_names_and_values[field_i_name]
-        assert isinstance(field_i_value_int, int)
-        field_i_value_str = chr(field_i_value_int)
+        field_i_value_raw = upper_layer_stm.fields_names_and_values[field_i_name]
+        if isinstance(field_i_value_raw, int):
+            field_i_value_str = chr(field_i_value_raw)
+        else:
+            assert isinstance(field_i_value_raw, str)
+            field_i_value_str = field_i_value_raw
+
         all_fields_as_one_string_value += field_i_value_str
 
     all_fields_as_one_string_value = all_fields_as_one_string_value.lstrip("\x00")

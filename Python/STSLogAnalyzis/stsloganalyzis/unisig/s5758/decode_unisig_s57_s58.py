@@ -1016,7 +1016,7 @@ class UpperLayerStm:
                                 upper_layer_libraries.PacketFieldDefinition(
                                     name=f"{sub_field.name}",
                                     size_in_bits=sub_field.size_in_bits,
-                                    enum_type_definition=sub_field.enum_type_definition,
+                                    type_definition=sub_field.type_definition,
                                     fields_or_variants=sub_field.fields_or_variants,
                                 ),
                                 prefix=f"{prefix_with_space}N_ITER_{i}_",
@@ -1057,8 +1057,12 @@ class UpperLayerStm:
 
                 field_raw_unsigned_int_value = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=decoded_field_size_in_bits)
 
-                if field_definition.enum_type_definition:
-                    self.add_field(prefix_with_space + decoded_field_name, field_definition.enum_type_definition.states_ordered_by_value_from_zero[field_raw_unsigned_int_value])
+                if field_definition.type_definition:
+                    if field_definition.type_definition == "Char":
+                        self.add_field(prefix_with_space + decoded_field_name, chr(field_raw_unsigned_int_value))
+                        pass
+                    else:
+                        self.add_field(prefix_with_space + decoded_field_name, field_definition.type_definition.states_ordered_by_value_from_zero[field_raw_unsigned_int_value])
                 else:
                     self.add_field(prefix_with_space + decoded_field_name, field_raw_unsigned_int_value)
             else:

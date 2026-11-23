@@ -12,6 +12,9 @@ class EnumAttributesTypeDefinition:
     name: str
     states_ordered_by_value_from_zero: list[str]
 
+    def __post_init__(self) -> None:
+        assert self.name
+
 
 @dataclass
 class PacketVariantDefinition:
@@ -38,7 +41,7 @@ class PacketVariantsDefinition:
 class PacketFieldDefinition:
     name: str
     size_in_bits: int | None
-    enum_type_definition: EnumAttributesTypeDefinition | None = None
+    type_definition: EnumAttributesTypeDefinition | str | None = None
     fields_or_variants: list["PacketFieldDefinition|PacketVariantsDefinition"] | None = None
 
 
@@ -56,7 +59,7 @@ class UpperLayerDecodingLibrary:
     packets_definitions: list[PacketDefinition]
 
     @staticmethod
-    def create_fields_or_variants_definition(values_dicts: list[dict]) -> list[PacketVariantsDefinition | PacketFieldDefinition]:
+    def create_fields_or_variants_definition(enum_attributes_type_definitions: list[EnumAttributesTypeDefinition], values_dicts: list[dict]) -> list[PacketVariantsDefinition | PacketFieldDefinition]:
         ret: list[PacketVariantsDefinition | PacketFieldDefinition] = []
         for value_dict in values_dicts:
             name = value_dict.get("name")
@@ -67,20 +70,20 @@ class UpperLayerDecodingLibrary:
                 continue
 
             if name is not None:
-                ret.append(UpperLayerDecodingLibrary.create_packet_field_definition(value_dict))
+                ret.append(UpperLayerDecodingLibrary.create_packet_field_definition(enum_attributes_type_definitions, value_dict))
             elif variants is not None:
-                ret.append(UpperLayerDecodingLibrary.create_variants_definition(value_dict))
+                ret.append(UpperLayerDecodingLibrary.create_variants_definition(enum_attributes_type_definitions, value_dict))
 
         assert ret
         return ret
 
     @staticmethod
-    def create_variants_definition(value_dict: dict) -> PacketVariantsDefinition:
+    def create_variants_definition(enum_attributes_type_definitions: list[EnumAttributesTypeDefinition], value_dict: dict) -> PacketVariantsDefinition:
         variants_definitions = value_dict.get("Variants")
         assert variants_definitions
         packet_variant_definitions: list[PacketVariantDefinition] = []
         for variant_definition in variants_definitions:
-            packet_variant_definition = UpperLayerDecodingLibrary.create_variant_definition(value_dict=variant_definition)
+            packet_variant_definition = UpperLayerDecodingLibrary.create_variant_definition(enum_attributes_type_definitions, value_dict=variant_definition)
             packet_variant_definitions.append(packet_variant_definition)
             pass
 
@@ -88,7 +91,7 @@ class UpperLayerDecodingLibrary:
         return PacketVariantsDefinition(packet_variant_definitions)
 
     @staticmethod
-    def create_variant_definition(value_dict: dict) -> PacketVariantDefinition:
+    def create_variant_definition(enum_attributes_type_definitions: list[EnumAttributesTypeDefinition], value_dict: dict) -> PacketVariantDefinition:
 
         variables_found = [(variable_key, variable_value) for (variable_key, variable_value) in value_dict.items() if variable_key not in ["name", "Fields", "Alias"]]
 
@@ -110,21 +113,24 @@ class UpperLayerDecodingLibrary:
             name=name,
             trigger_variable_name=trigger_variable_name,
             trigger_variable_value=trigger_variable_value,
-            fields_or_variants=UpperLayerDecodingLibrary.create_fields_or_variants_definition(value_dict.get("Fields")) if value_dict.get("Fields") else [],
+            fields_or_variants=UpperLayerDecodingLibrary.create_fields_or_variants_definition(enum_attributes_type_definitions, value_dict.get("Fields")) if value_dict.get("Fields") else [],
             alias=alias,
         )
 
     @staticmethod
-    def create_packet_field_definition(value_dict: dict) -> PacketFieldDefinition:
+    def create_packet_field_definition(enum_attributes_type_definitions: list[EnumAttributesTypeDefinition], value_dict: dict) -> PacketFieldDefinition:
 
         name = value_dict.get("name")
         assert isinstance(name, str)
 
+        raw_type = value_dict.get("Type")
+        enum_type_found = [enum_attributes_type_definition for enum_attributes_type_definition in enum_attributes_type_definitions if enum_attributes_type_definition.name == raw_type]
+        type_definition = enum_type_found[0] if enum_type_found else str(raw_type) if raw_type else None
         return PacketFieldDefinition(
             name=name,
             size_in_bits=value_dict.get("size"),
-            enum_type_definition=value_dict.get("type"),
-            fields_or_variants=UpperLayerDecodingLibrary.create_fields_or_variants_definition(value_dict.get("Fields")) if value_dict.get("Fields") else [],
+            type_definition=type_definition,
+            fields_or_variants=UpperLayerDecodingLibrary.create_fields_or_variants_definition(enum_attributes_type_definitions, value_dict.get("Fields")) if value_dict.get("Fields") else [],
         )
 
     @classmethod
@@ -137,7 +143,7 @@ class UpperLayerDecodingLibrary:
             for type_definition_found in json_data.get("Types"):
                 enum_attributes_type_definitions.append(
                     EnumAttributesTypeDefinition(
-                        name=type_definition_found.get(""),
+                        name=type_definition_found.get("Enum"),
                         states_ordered_by_value_from_zero=[value_dict.get("name") for value_dict in type_definition_found.get("Values")],
                     )
                 )
@@ -148,7 +154,11 @@ class UpperLayerDecodingLibrary:
 
             for packet_definition_found in json_data.get("Packets"):
 
-                fields_or_variants = UpperLayerDecodingLibrary.create_fields_or_variants_definition(packet_definition_found.get("Fields")) if packet_definition_found.get("Fields") else []
+                fields_or_variants = (
+                    UpperLayerDecodingLibrary.create_fields_or_variants_definition(enum_attributes_type_definitions, packet_definition_found.get("Fields"))
+                    if packet_definition_found.get("Fields")
+                    else []
+                )
                 # for value_dict in packet_definition_found.get("Fields") or []:
                 #    fields.append(UpperLayerDecodingLibrary.create_packet_field_definition(value_dict))
                 packets_definitions.append(
