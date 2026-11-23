@@ -913,14 +913,43 @@ class UpperLayerStm:
         assert isinstance(raw_value, int)
         return raw_value
 
+    def handle_nid_event(self, variants_definition: upper_layer_libraries.PacketVariantsDefinition, prefix: str = "") -> None:
+        prefix_with_space = f"{prefix} " if prefix else ""
+
+        all_nid_events_found_so_far: list[int] = []
+
+        while self.stm_message_content_byte_message_decoded.number_of_bits_remaining_to_decode > 8:
+
+            nid_event = self.stm_message_content_byte_message_decoded.get_next_byte_as_single_int_unsigned()
+
+            nid_event_label = (
+                str(nid_event)
+                if nid_event not in all_nid_events_found_so_far
+                else f"{nid_event} #{len([nid_event_found for nid_event_found in all_nid_events_found_so_far if nid_event_found == nid_event])}"
+            )
+            nid_event_prefix_with_space = prefix_with_space + "Nexteo-" + nid_event_label
+            self.add_field(field_name=nid_event_prefix_with_space + "NID_EVENT", value=nid_event)
+            l_event = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=10)
+            self.add_field(field_name=nid_event_prefix_with_space + "L_EVENT", value=l_event)
+
+            variants_matching_trigger = [variant for variant in variants_definition.variants if variant.trigger_variable_value == nid_event]
+            assert len(variants_matching_trigger) == 1, f"STM {self.nid_stm} nid event {nid_event}: too many {len(variants_matching_trigger)} variants "
+            trigger_variable_name = variants_definition.trigger_variable_name
+
+            variant_matching_trigger = variants_matching_trigger[0]
+            self.add_field(nid_event_prefix_with_space + f"Variant {trigger_variable_name} name", variant_matching_trigger.name)
+            self.add_field(nid_event_prefix_with_space + f"Variant {trigger_variable_name} alias", variant_matching_trigger.alias)
+            for field_or_variants in variant_matching_trigger.fields_or_variants:
+                self.handle_packet_field_or_variants_definition(field_or_variants, prefix=f"{nid_event_prefix_with_space} {variant_matching_trigger.alias if variant_matching_trigger.alias else ''}")
+
+            all_nid_events_found_so_far.append(nid_event)
+
     def handle_variants_field(self, variants_definition: upper_layer_libraries.PacketVariantsDefinition, prefix: str = "") -> None:
         prefix_with_space = f"{prefix} " if prefix else ""
 
         if variants_definition.trigger_variable_name == "NID_EVENT":
-            variant_trigger_value = self.stm_message_content_byte_message_decoded.get_next_byte_as_single_int_unsigned()
-            self.add_field(field_name=prefix_with_space + "NID_EVENT", value=variant_trigger_value)
-            l_event = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=10)
-            self.add_field(field_name=prefix_with_space + "L_EVENT", value=l_event)
+            self.handle_nid_event(variants_definition, prefix)
+            return
         else:
             variant_trigger_value = self.fields_names_and_values[variants_definition.trigger_variable_name]
         trigger_variable_name = variants_definition.trigger_variable_name
@@ -954,13 +983,10 @@ class UpperLayerStm:
                 pass
 
             assert len(variants_matching_trigger) == 1, f"STM {self.nid_stm}: too many {len(variants_matching_trigger)} variants match {trigger_variable_name}"
-            # assert logger_config.print_and_log_error_if(
-            #    len(variants_matching_trigger) > 1,
-            #    f"STM {self.nid_stm}: too many {len(variants_matching_trigger)} variants match {trigger_variable_name}",
-            # )
+
             variant_matching_trigger = variants_matching_trigger[0]
-            self.add_field(f"Variant {trigger_variable_name} name", variant_matching_trigger.name)
-            self.add_field(f"Variant {trigger_variable_name} alias", variant_matching_trigger.alias)
+            self.add_field(prefix_with_space + f"Variant {trigger_variable_name} name", variant_matching_trigger.name)
+            self.add_field(prefix_with_space + f"Variant {trigger_variable_name} alias", variant_matching_trigger.alias)
             for field_or_variants in variant_matching_trigger.fields_or_variants:
                 self.handle_packet_field_or_variants_definition(
                     field_or_variants, prefix=f"{prefix_with_space}{variant_matching_trigger.name} {variant_matching_trigger.alias if variant_matching_trigger.alias else ''}"
@@ -1118,7 +1144,7 @@ class SdaForUpperLayerTelegram(OnboardSdaUnisigMessage):
 
         self.transmitted_jru_crc16: JruCrc | None = None
         self.recomputed_jru_crc16: JruCrc | None = None
-        if self.profibus_log_line and "JRU" in self.profibus_log_line.target_name.upper():
+        if self.profibus_log_line and ("JRU" in self.profibus_log_line.source_name.upper() or "JRU" in self.profibus_log_line.target_name.upper()):
             self.transmitted_jru_crc16 = JruCrc.from_decoded_bytes_message(self.all_data_aka_net_data.as_decoded_bytes_message)
             self.recomputed_jru_crc16 = JruCrc.compute_from_data(
                 self.header.NID_STM.to_bytes() + self.header.L_MESSAGE.to_bytes() + bytes_messages.DecodedBytesMessage.from_bit_string(delegate_content_biteset_str).get_remaining_bits_as_bytes()
