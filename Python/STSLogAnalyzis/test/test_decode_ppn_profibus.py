@@ -623,24 +623,48 @@ class TestDecodeOnePpnProfibusLogLine:
                     assert not upper_layer_decoded_stm.creational_and_decoding_errors
                     assert ppn_log_line.unisig_message.recomputed_jru_crc16_is_equal_to_transmitted
 
-                def test_pae_jru_stm_161_nid_events_3_4_53_54(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
-                    ppn_log_line = ppn_profibus_log.ProfibusLogLine.from_raw_log_line(
-                        line="2026-06-13 02:13:06:125 kppn 1.3.3: [99:2 => 3:2] Sending PROFIBUS message  [num:13][rt:1444][mode:SDA][len:228] 7c c9 1d dc a1 35 a8 06 a1 ff 66 78 70 cf 34 cd 11 b6 99 08 71 06 01 ad 40 01 80 03 7f c7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 ff ff ff e8 3d 0e d4 25 35 00 d4 3f ec 9f 14 0b 80 00 00 00 11 53 d3 11 40 08 7a a0 00 00 00 d8 00 02 0c 06 0a 00 83 f1 c9 a1 c1 b9 81 81 a9 c1 81 91 88 00 6f 9a 84 02 25 9b 26 a0 80 80 80 81 41 05 15 7d 7d 39 15 61 51 7d 41 05 15 7d 41 05 49 05 35 7d 31 49 7d 58 e1 7c c0 dd 7d 40 c4 80 d9 35 24 04 04 04 04 04 04 04 0a 08 28 ab eb e9 c8 ab 0a 8b ea 08 28 ab e8 6a a8 6a 0b ea c6 26 0b e6 8b ea 06 64 06 c9 aa 20 20 20 20 20 20 20 20 20 20 20 20 20 50 41 45 5f 5f 4e 45 58 54 5f 49 4e 56 5f 56 36 5f 31 36 5f 50 32 20 00 78 06 44 c1 88 ec 3f d4 00",
-                        upper_layer_decoding_library=next_unisig_58_library_fixture,
-                    )
-                    assert ppn_log_line
-                    ppn_log_line.decode_sdn_or_sda()
-                    assert isinstance(ppn_log_line.unisig_message, decode_unisig_s57_s58.SdaForUpperLayerTelegram)
-                    assert not ppn_log_line.unisig_message.creational_and_decoding_errors
-                    assert ppn_log_line.unisig_message.upper_layer_decoded_stms
-                    assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 2
-                    stm_161 = ppn_log_line.unisig_message.upper_layer_decoded_stms[0]
-                    assert not stm_161.creational_and_decoding_errors
-                    stm_15 = ppn_log_line.unisig_message.upper_layer_decoded_stms[1]
-                    assert not stm_15.creational_and_decoding_errors
-                    assert ppn_log_line.unisig_message.recomputed_jru_crc16_is_equal_to_transmitted
+                class TestPaeJruStm161NidEvents3And4And53And54And54And54:
 
-                def test_decode_161_fields_are_correct(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+                    def test_no_error(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+                        ppn_log_line = ppn_profibus_log.ProfibusLogLine.from_raw_log_line(
+                            line="2026-06-13 02:13:06:125 kppn 1.3.3: [99:2 => 3:2] Sending PROFIBUS message  [num:13][rt:1444][mode:SDA][len:228] 7c c9 1d dc a1 35 a8 06 a1 ff 66 78 70 cf 34 cd 11 b6 99 08 71 06 01 ad 40 01 80 03 7f c7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 ff ff ff e8 3d 0e d4 25 35 00 d4 3f ec 9f 14 0b 80 00 00 00 11 53 d3 11 40 08 7a a0 00 00 00 d8 00 02 0c 06 0a 00 83 f1 c9 a1 c1 b9 81 81 a9 c1 81 91 88 00 6f 9a 84 02 25 9b 26 a0 80 80 80 81 41 05 15 7d 7d 39 15 61 51 7d 41 05 15 7d 41 05 49 05 35 7d 31 49 7d 58 e1 7c c0 dd 7d 40 c4 80 d9 35 24 04 04 04 04 04 04 04 0a 08 28 ab eb e9 c8 ab 0a 8b ea 08 28 ab e8 6a a8 6a 0b ea c6 26 0b e6 8b ea 06 64 06 c9 aa 20 20 20 20 20 20 20 20 20 20 20 20 20 50 41 45 5f 5f 4e 45 58 54 5f 49 4e 56 5f 56 36 5f 31 36 5f 50 32 20 00 78 06 44 c1 88 ec 3f d4 00",
+                            upper_layer_decoding_library=next_unisig_58_library_fixture,
+                        )
+                        assert ppn_log_line
+                        ppn_log_line.decode_sdn_or_sda()
+                        assert isinstance(ppn_log_line.unisig_message, decode_unisig_s57_s58.SdaForUpperLayerTelegram)
+                        assert not ppn_log_line.unisig_message.creational_and_decoding_errors
+                        assert ppn_log_line.unisig_message.upper_layer_decoded_stms
+                        assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 2
+                        stm_161 = ppn_log_line.unisig_message.upper_layer_decoded_stms[0]
+                        assert not stm_161.creational_and_decoding_errors
+                        stm_15 = ppn_log_line.unisig_message.upper_layer_decoded_stms[1]
+                        assert not stm_15.creational_and_decoding_errors
+                        assert ppn_log_line.unisig_message.recomputed_jru_crc16_is_equal_to_transmitted
+
+                    def test_fields_are_correct(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
+                        ppn_log_line = ppn_profibus_log.ProfibusLogLine.from_raw_log_line(
+                            line="2026-06-13 02:13:06:125 kppn 1.3.3: [99:2 => 3:2] Sending PROFIBUS message  [num:13][rt:1444][mode:SDA][len:228] 7c c9 1d dc a1 35 a8 06 a1 ff 66 78 70 cf 34 cd 11 b6 99 08 71 06 01 ad 40 01 80 03 7f c7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 e7 ff ff ff e8 3d 0e d4 25 35 00 d4 3f ec 9f 14 0b 80 00 00 00 11 53 d3 11 40 08 7a a0 00 00 00 d8 00 02 0c 06 0a 00 83 f1 c9 a1 c1 b9 81 81 a9 c1 81 91 88 00 6f 9a 84 02 25 9b 26 a0 80 80 80 81 41 05 15 7d 7d 39 15 61 51 7d 41 05 15 7d 41 05 49 05 35 7d 31 49 7d 58 e1 7c c0 dd 7d 40 c4 80 d9 35 24 04 04 04 04 04 04 04 0a 08 28 ab eb e9 c8 ab 0a 8b ea 08 28 ab e8 6a a8 6a 0b ea c6 26 0b e6 8b ea 06 64 06 c9 aa 20 20 20 20 20 20 20 20 20 20 20 20 20 50 41 45 5f 5f 4e 45 58 54 5f 49 4e 56 5f 56 36 5f 31 36 5f 50 32 20 00 78 06 44 c1 88 ec 3f d4 00",
+                            upper_layer_decoding_library=next_unisig_58_library_fixture,
+                        )
+                        assert ppn_log_line
+                        ppn_log_line.decode_sdn_or_sda()
+                        assert isinstance(ppn_log_line.unisig_message, decode_unisig_s57_s58.SdaForUpperLayerTelegram)
+                        assert not ppn_log_line.unisig_message.creational_and_decoding_errors
+                        assert ppn_log_line.unisig_message.upper_layer_decoded_stms
+                        assert len(ppn_log_line.unisig_message.upper_layer_decoded_stms) == 2
+                        stm_161 = ppn_log_line.unisig_message.upper_layer_decoded_stms[0]
+                        assert "PAE__NEXT_INV_V6_16_P2" in stm_161.fields_names_and_values["STM-161 Nexteo specific datas entry point Packet #6 Nexteo-54 Versions des logiciels bord M_SW_VERSION"]
+                        assert (
+                            "PAE__NEXT_PAE_CUCP_V10_4_P3" in stm_161.fields_names_and_values["STM-161 Nexteo specific datas entry point Packet #5 Nexteo-54 Versions des logiciels bord M_SW_VERSION"]
+                        )
+                        assert (
+                            "PAE__NEXT_PAE_PARAM_LR_V8_07_P1"
+                            in stm_161.fields_names_and_values["STM-161 Nexteo specific datas entry point Packet #4 Nexteo-54 Versions des logiciels bord M_SW_VERSION"]
+                        )
+                        assert stm_161.fields_names_and_values["STM-161 Nexteo specific datas entry point NID_LIGNE"] == "EOLE"
+
+                def test_decode_161_nid_event_12_fields_are_correct(self, next_unisig_58_library_fixture: upper_layer_libraries.UpperLayerDecodingLibrary) -> None:
                     ppn_log_line = ppn_profibus_log.ProfibusLogLine.from_raw_log_line(
                         line="2026-03-28 18:17:17:722 kppn 1.3.3: [99:2 => 3:2] Sending PROFIBUS message  [num:25130][rt:1763][mode:SDA][len:102] 7a c9 1d 5e a1 16 28 21 20 dd da 88 70 51 34 7c 92 45 01 08 61 83 00 7d 40 00 00 02 00 a0 00 00 00 00 00 06 c7 06 26 06 a6 26 e9 80 00 00 00 00 68 0e 8e d4 21 45 04 24 1b bb 21 14 30 40 00 00 00 11 53 d3 11 40 02 3e e0 18 f0 1a 88 17 92 02 18 2f 51 55 b0 00 00 f8 00 09 21 80 00 78 06 50 9a 12 bb 1b 24 04",
                         upper_layer_decoding_library=next_unisig_58_library_fixture,
