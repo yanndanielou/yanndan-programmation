@@ -2,7 +2,7 @@ import datetime
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from stsloganalyzis.ppn import ppn_profibus_log
@@ -916,18 +916,17 @@ class UpperLayerStm:
     def handle_nid_event(self, variants_definition: upper_layer_libraries.PacketVariantsDefinition, prefix: str = "") -> None:
         prefix_with_space = f"{prefix} " if prefix else ""
 
-        all_nid_events_found_so_far: list[int] = []
+        n_event = cast(int, self.fields_names_and_values["STM-161 Nexteo specific datas entry point N_EVENT"])
+        self.all_nid_events_found_so_far: list[int] = []
 
-        while self.stm_message_content_byte_message_decoded.number_of_bits_remaining_to_decode > 8:
+        # https://code.siemens.com/smo_fr/xt_tools/gp_toolset/xt_gp_toolset/-/commit/0011820d05a2ecfce174dd3d034838ef048500d0
+
+        for event_iterator in range(n_event):
+            assert self.stm_message_content_byte_message_decoded.number_of_bits_remaining_to_decode > 18
 
             nid_event = self.stm_message_content_byte_message_decoded.get_next_byte_as_single_int_unsigned()
 
-            nid_event_label = (
-                str(nid_event)
-                if nid_event not in all_nid_events_found_so_far
-                else f"{nid_event} #{len([nid_event_found for nid_event_found in all_nid_events_found_so_far if nid_event_found == nid_event])}"
-            )
-            nid_event_prefix_with_space = prefix_with_space + "Nexteo-" + nid_event_label
+            nid_event_prefix_with_space = prefix_with_space + f"Packet #{event_iterator+1} Nexteo-{nid_event}"
             self.add_field(field_name=nid_event_prefix_with_space + "NID_EVENT", value=nid_event)
             l_event = self.stm_message_content_byte_message_decoded.get_next_bits_as_single_int_unsigned(size_bits=10)
             self.add_field(field_name=nid_event_prefix_with_space + "L_EVENT", value=l_event)
@@ -942,7 +941,14 @@ class UpperLayerStm:
             for field_or_variants in variant_matching_trigger.fields_or_variants:
                 self.handle_packet_field_or_variants_definition(field_or_variants, prefix=f"{nid_event_prefix_with_space} {variant_matching_trigger.alias if variant_matching_trigger.alias else ''}")
 
-            all_nid_events_found_so_far.append(nid_event)
+            self.all_nid_events_found_so_far.append(nid_event)
+
+        if self.stm_message_content_byte_message_decoded.number_of_bits_remaining_to_decode < 8:
+            padding_at_end_nid_event_as_string_bits = self.stm_message_content_byte_message_decoded.get_remaining_bits_as_str_of_bit()
+            self.add_field(f"{prefix_with_space} padding at end of all nid events, size in bits", len(padding_at_end_nid_event_as_string_bits))
+            self.add_field(f"{prefix_with_space} padding at end of all nid events, bits", padding_at_end_nid_event_as_string_bits)
+
+            pass
 
     def handle_variants_field(self, variants_definition: upper_layer_libraries.PacketVariantsDefinition, prefix: str = "") -> None:
         prefix_with_space = f"{prefix} " if prefix else ""
