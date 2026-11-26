@@ -92,12 +92,21 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Model\Types\primitives\stringfield.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\PpnConnectionSession.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\PpnConnectionsLibrary.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\SessionInterlocutor.cpp" />
     <ClCompile Include="Probes\Unisig\pae\stringunisigpaefield.cpp" />
     <ClCompile Include="Probes\Unisig\pae\unisigbasicmessagesdecoders.cpp" />
     <ClCompile Include="Probes\Unisig\pae\unisigpaehelpers.cpp" />
     <ClCompile Include="Probes\Unisig\pae\unisigpaelog.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\unisigpaelogcrc.cpp" />
     <ClCompile Include="Probes\Unisig\pae\unisigpaelogcreator.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\unisigpaelogdecodedline.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\unisigpaelogdecodingoptions.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\unisigpaelogpopuptochooseoptions.cpp" />
     <ClCompile Include="Probes\Unisig\pae\unisigpaeprotocolevent.cpp" />
+    <ClCompile Include="Probes\Unisig\pae\unisigpaesap.cpp" />
     <ClCompile Include="Probes\Unisig\pae\unisigpaespecificunisiginttypes.cpp" />
     <ClCompile Include="Probes\Unisig\pae\unisigpaestmmessagesupperlayersdecoders.cpp" />
     <ClCompile Include="Probes\Unisig\pae\unisigpaewarningevent.cpp" />
@@ -1133,13 +1142,23 @@
     <ClCompile Include="Model/types/primitives/numeric.cpp" />
     <ClCompile Include="Model/types/primitives/pad.cpp" />
     <ClCompile Include="Model/types/primitives/unitconverter.cpp" />
+    <ClInclude Include="Model\Types\primitives\stringfield.h" />
+    <ClInclude Include="Probes\Unisig\pae\PpnConnectionSession.h" />
+    <ClInclude Include="Probes\Unisig\pae\PpnConnectionsLibrary.h" />
+    <ClInclude Include="Probes\Unisig\pae\SessionInterlocutor.h" />
     <ClInclude Include="Probes\Unisig\pae\stringunisigpaefield.h" />
     <ClInclude Include="Probes\Unisig\pae\unisigbasicmessagesdecoders.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigpaebytes.h" />
     <ClInclude Include="Probes\Unisig\pae\unisigpaeconstants.h" />
     <ClInclude Include="Probes\Unisig\pae\unisigpaehelpers.h" />
     <ClInclude Include="Probes\Unisig\pae\unisigpaelog.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigpaelogcrc.h" />
     <ClInclude Include="Probes\Unisig\pae\unisigpaelogcreator.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigpaelogdecodedline.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigpaelogdecodingoptions.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigpaelogpopuptochooseoptions.h" />
     <ClInclude Include="Probes\Unisig\pae\unisigpaeprotocolevent.h" />
+    <ClInclude Include="Probes\Unisig\pae\unisigpaesap.h" />
     <ClInclude Include="Probes\Unisig\pae\unisigpaespecificunisiginttypes.h" />
     <ClInclude Include="Probes\Unisig\pae\unisigpaestmmessagesupperlayersdecoders.h" />
     <ClInclude Include="Probes\Unisig\pae\unisigpaewarningevent.h" />
