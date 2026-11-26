@@ -809,7 +809,7 @@ class ProfibusLogLine:
     previous_line_timestamp: datetime | None
 
     def __str__(self) -> str:
-        return f"At {self.timestamp} between {self.interlocutors_with_translation_without_direction} in {self.file_path}:{self.line_number} ({(self.previous_line_timestamp-self.timestamp).total_seconds if self.previous_line_timestamp else 'NA'} since previous line)"
+        return f"At {self.timestamp} between {self.interlocutors_with_translation_without_direction} in {self.file_path}:{self.line_number} ({(self.previous_line_timestamp-self.timestamp).total_seconds() if self.previous_line_timestamp else 'NA'} since previous line)"
 
     def __post_init__(self) -> None:
         self.unisig_message: decode_unisig_s57_s58.OnboardUnisigMessage | None = None
